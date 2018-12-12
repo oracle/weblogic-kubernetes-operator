@@ -9,29 +9,13 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import com.google.gson.GsonBuilder;
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.V1Capabilities;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1HostPathVolumeSource;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SELinuxOptions;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Sysctl;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
 import java.io.IOException;
 import java.util.Map;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
@@ -263,7 +247,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenExportT3ChannelsDefined_returnChannelNames() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
     configurator.withExportedNetworkAccessPoints("channel1", "channel2");
 
     assertThat(
@@ -279,7 +263,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenExportT3ChannelsDefinedWithLabels_returnChannelNames() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
     configurator
         .configureExportedNetworkAccessPoint("channel1")
         .addLabel("label1", "value1")
@@ -295,7 +279,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenExportT3ChannelsDefinedWithLabels_returnLabels() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
     configurator
         .configureExportedNetworkAccessPoint("channel1")
         .addLabel("label1", "value1")
@@ -306,7 +290,7 @@ public class DomainV2Test extends DomainTestBase {
 
   @Test
   public void whenExportT3ChannelsDefinedWithAnnotations_returnAnnotations() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer("");
+    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
     configurator
         .configureExportedNetworkAccessPoint("channel1")
         .addAnnotation("annotation1", "value1")
@@ -511,6 +495,35 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(serverSpec.getNodeSelectors(), hasEntry("key1", "domain"));
     assertThat(serverSpec.getNodeSelectors(), hasEntry("key2", "cluser"));
     assertThat(serverSpec.getNodeSelectors(), hasEntry("key3", "server"));
+  }
+
+  @Test
+  public void whenRestartVersionConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain).withRestartVersion("1");
+    configureCluster(CLUSTER_NAME).withRestartVersion("2");
+    configureServer(SERVER1).withRestartVersion("3");
+    configureAdminServer().withRestartVersion("4");
+
+    ServerSpec clusteredServer = domain.getServer(SERVER1, CLUSTER_NAME);
+    ServerSpec nonClusteredServerWithRestartVersion = domain.getServer(SERVER1, null);
+    ServerSpec nonClusteredServerNoRestartVersion = domain.getServer("anyServer", null);
+    ServerSpec adminServer = domain.getAdminServerSpec();
+
+    assertThat(clusteredServer.getDomainRestartVersion(), is("1"));
+    assertThat(clusteredServer.getClusterRestartVersion(), is("2"));
+    assertThat(clusteredServer.getServerRestartVersion(), is("3"));
+
+    assertThat(nonClusteredServerWithRestartVersion.getDomainRestartVersion(), is("1"));
+    assertThat(nonClusteredServerWithRestartVersion.getClusterRestartVersion(), nullValue());
+    assertThat(nonClusteredServerWithRestartVersion.getServerRestartVersion(), is("3"));
+
+    assertThat(nonClusteredServerNoRestartVersion.getDomainRestartVersion(), is("1"));
+    assertThat(nonClusteredServerNoRestartVersion.getClusterRestartVersion(), nullValue());
+    assertThat(nonClusteredServerNoRestartVersion.getServerRestartVersion(), nullValue());
+
+    assertThat(adminServer.getDomainRestartVersion(), is("1"));
+    assertThat(adminServer.getClusterRestartVersion(), nullValue());
+    assertThat(adminServer.getServerRestartVersion(), is("4"));
   }
 
   @Test
@@ -803,6 +816,34 @@ public class DomainV2Test extends DomainTestBase {
         containsInAnyOrder("overrides-secret-1", "overrides-secret-2"));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
     assertThat(serverSpec.shouldStart(1), is(true));
+  }
+
+  @Test
+  public void whenDomainReadFromYamlWithNoSetting_defaultsToDomainHomeInImage() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+
+    assertThat(domain.isDomainHomeInImage(), is(true));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_domainHomeInImageIsDisabled() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    assertThat(domain.isDomainHomeInImage(), is(false));
+  }
+
+  @Test
+  public void whenDomainReadFromYamlWithNoSetting_defaultsToServerOutInPodLog() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+
+    assertThat(domain.isIncludeServerOutInPodLog(), is(true));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_serverOutInPodLogIsSet() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    assertThat(domain.isIncludeServerOutInPodLog(), is(false));
   }
 
   @Test
@@ -1105,6 +1146,13 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain2ReadFromYaml_serviceAnnotationsFound() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    ServerSpec serverSpec = domain.getServer("server2", "cluster1");
+    assertThat(serverSpec.getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
+  }
+
+  @Test
   public void whenDomain3ReadFromYaml_PredefinedStorageDefinesClaimName() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
@@ -1137,6 +1185,62 @@ public class DomainV2Test extends DomainTestBase {
   public void whenDomain3ReadFromYaml_adminServerHasNodeSelector() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_adminServerHasAnnotationsAndLabels() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    assertThat(
+        domain.getAdminServerSpec().getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
+    assertThat(domain.getAdminServerSpec().getServiceLabels(), hasEntry("testKey1", "testValue1"));
+    assertThat(domain.getAdminServerSpec().getServiceLabels(), hasEntry("testKey2", "testValue2"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_AdminServerRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    assertThat(domain.getAdminServerSpec().getServerRestartVersion(), is("1"));
+  }
+
+  @Test
+  public void whenDomain3ReadFromYaml_NoRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    ServerSpec clusteredServer = domain.getServer("anyServer", "anyCluster");
+    ServerSpec nonClusteredServer = domain.getServer("anyServer", null);
+    assertThat(clusteredServer.getDomainRestartVersion(), nullValue());
+    assertThat(clusteredServer.getClusterRestartVersion(), nullValue());
+    assertThat(clusteredServer.getServerRestartVersion(), nullValue());
+    assertThat(nonClusteredServer.getDomainRestartVersion(), nullValue());
+    assertThat(nonClusteredServer.getClusterRestartVersion(), nullValue());
+    assertThat(nonClusteredServer.getServerRestartVersion(), nullValue());
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_DomainRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    assertThat(domain.getAdminServerSpec().getDomainRestartVersion(), is("1"));
+    assertThat(domain.getAdminServerSpec().getClusterRestartVersion(), nullValue());
+    assertThat(domain.getAdminServerSpec().getServerRestartVersion(), nullValue());
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_ClusterRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    ServerSpec serverSpec = domain.getServer("server1", "cluster2");
+
+    assertThat(serverSpec.getDomainRestartVersion(), is("1"));
+    assertThat(serverSpec.getClusterRestartVersion(), is("2"));
+    assertThat(serverSpec.getServerRestartVersion(), nullValue());
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_ServerRestartVersion() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    ServerSpec serverSpec = domain.getServer("server2", null);
+
+    assertThat(serverSpec.getDomainRestartVersion(), is("1"));
+    assertThat(serverSpec.getClusterRestartVersion(), nullValue());
+    assertThat(serverSpec.getServerRestartVersion(), is("3"));
   }
 
   @Test
@@ -1219,6 +1323,55 @@ public class DomainV2Test extends DomainTestBase {
             volumeMount("name1", "/domain-test1"),
             volumeMount("name2", "/cluster-test1"),
             volumeMount("name3", "/server-test1")));
+  }
+
+  @Test
+  public void whenDefaultConfiguration_domainHomeInImageIsTrue() {
+    configureDomain(domain);
+
+    assertThat(domain.getSpec().isDomainHomeInImage(), is(true));
+  }
+
+  @Test
+  public void whenDomainHomeInImageSpecified_useValue() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getSpec().isDomainHomeInImage(), is(false));
+  }
+
+  @Test
+  public void whenLogHomeNotSet_useDefault() {
+    configureDomain(domain);
+
+    assertThat(domain.getLogHome(), equalTo("/shared/logs/uid1"));
+  }
+
+  @Test
+  public void whenLogHomeSet_useValue() {
+    configureDomain(domain).withLogHome("/custom/logs");
+
+    assertThat(domain.getLogHome(), equalTo("/custom/logs"));
+  }
+
+  @Test
+  public void whenDomainHomeInImage_logHomeNotEnabled() {
+    configureDomain(domain).withDomainHomeInImage(true);
+
+    assertThat(domain.getSpec().getLogHomeEnabled(), is(false));
+  }
+
+  @Test
+  public void whenDomainHomeNotInImage_logHomeEnabled() {
+    configureDomain(domain).withDomainHomeInImage(false);
+
+    assertThat(domain.getSpec().getLogHomeEnabled(), is(true));
+  }
+
+  @Test
+  public void whenLogHomeEnabledSet_useValue() {
+    configureDomain(domain).withLogHomeEnabled(true);
+
+    assertThat(domain.getSpec().getLogHomeEnabled(), is(true));
   }
 
   @Test

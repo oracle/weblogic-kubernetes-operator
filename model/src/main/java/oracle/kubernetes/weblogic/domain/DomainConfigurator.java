@@ -37,7 +37,7 @@ public abstract class DomainConfigurator {
   /**
    * Sets the home for the domain.
    *
-   * @param home the home of the domain
+   * @param domainHome the home of the domain
    * @return this object
    */
   public DomainConfigurator withDomainHome(String domainHome) {
@@ -46,7 +46,7 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * @param homeInImage
+   * @param domainHomeInImage
    * @return
    */
   public DomainConfigurator withDomainHomeInImage(boolean domainHomeInImage) {
@@ -54,12 +54,8 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  /**
-   * Defines a name for the domain's admin server.
-   *
-   * @param adminServerName the name of the admin server
-   */
-  public abstract AdminServerConfigurator configureAdminServer(String adminServerName);
+  /** Defines a name for the domain's admin server. */
+  public abstract AdminServerConfigurator configureAdminServer();
 
   public void withDefaultReplicaCount(int replicas) {
     getDomainSpec().setReplicas(replicas);
@@ -107,6 +103,28 @@ public abstract class DomainConfigurator {
   public DomainConfigurator withDefaultImagePullSecrets(
       V1LocalObjectReference... secretReferences) {
     getDomainSpec().setImagePullSecrets(Arrays.asList(secretReferences));
+    return this;
+  }
+
+  /**
+   * Sets the log home value
+   *
+   * @param logHome the log home value
+   * @return this object
+   */
+  public DomainConfigurator withLogHome(String logHome) {
+    getDomainSpec().setLogHome(logHome);
+    return this;
+  }
+
+  /**
+   * Sets the log home enabled flag
+   *
+   * @param logHomeEnabled true if log home is enabled, false otherwise
+   * @return this object
+   */
+  public DomainConfigurator withLogHomeEnabled(boolean logHomeEnabled) {
+    getDomainSpec().setLogHomeEnabled(logHomeEnabled);
     return this;
   }
 
@@ -224,10 +242,6 @@ public abstract class DomainConfigurator {
     return domain.getSpec();
   }
 
-  protected String getAsName() {
-    return domain.getAsName();
-  }
-
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
 
   public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
@@ -308,4 +322,12 @@ public abstract class DomainConfigurator {
    */
   public abstract DomainConfigurator withPodSecurityContext(
       V1PodSecurityContext podSecurityContext);
+
+  /**
+   * Set the restart version for the Domain
+   *
+   * @param restartVersion
+   * @return this object
+   */
+  public abstract DomainConfigurator withRestartVersion(String restartVersion);
 }

@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator;
 
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
@@ -79,7 +81,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Before
   public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
@@ -145,7 +147,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private void readExistingResources() {
-    createCannedListDomainResponses();
+    readExistingResources(false);
+  }
+
+  private void readExistingResources(boolean isDelete) {
+    createCannedListDomainResponses(isDelete);
     testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
   }
 
@@ -330,7 +336,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @SuppressWarnings("unchecked")
-  private void createCannedListDomainResponses() {
+  private void createCannedListDomainResponses(boolean isDelete) {
     testSupport.createCannedResponse("listDomain").withNamespace(NS).returning(domains);
     testSupport
         .createCannedResponse("listService")
@@ -358,6 +364,13 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         .withName(DOMAIN_CONFIG_MAP_NAME)
         .ignoringBody()
         .returning(domainConfigMap);
+    if (!isDelete) {
+      testSupport
+          .createCannedResponse("readConfigMap")
+          .withNamespace(NS)
+          .withName(UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+          .returning(createEmptyConfigMap());
+    }
   }
 
   private DomainList createEmptyDomainList() {
@@ -460,7 +473,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
     isNamespaceStopping.get(NS).set(false);
 
-    readExistingResources();
+    readExistingResources(true);
 
     testSupport.verifyAllDefinedResponsesInvoked();
   }

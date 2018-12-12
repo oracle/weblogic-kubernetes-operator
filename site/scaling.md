@@ -8,17 +8,17 @@ The following blogs provide more in-depth information on support for scaling Web
 
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
-* On-demand, updating the domain custom resource directly (using `kubectl`).
+* On-demand, updating the domain resource directly (using `kubectl`).
 * Calling the operator's REST scale API, for example, from `curl`.
 * Using a WLDF policy rule and script action to call the operator's REST scale API.
 * Using a Prometheus alert action to call the operator's REST scale API.
 
-## On-demand, updating the domain custom resource directly
-The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` property within a domain custom resource.  This can be done by using the `kubectl` command-line interface for running commands against Kubernetes clusters.  More specifically, you can modify the domain custom resource directly by using the `kubectl edit` command.  For example:
+## On-demand, updating the domain resource directly
+The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` property within a domain resource.  This can be done by using the `kubectl` command-line interface for running commands against Kubernetes clusters.  More specifically, you can modify the domain resource directly by using the `kubectl edit` command.  For example:
 ```
 kubectl edit domain domain1 -n [namespace]
 ```
-Here we are editing a domain custom resource named 'domain1'.  The `kubectl edit` command will open the domain custom resource definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
+Here we are editing a domain resource named 'domain1'.  The `kubectl edit` command will open the domain resource definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
 ```
 spec:
   adminSecret:
@@ -112,25 +112,25 @@ are used to enable and configure the external REST endpoint:
 #    interface.  They are specified by the 'externalOperatorCert' and
 #    'eternalOperatorKey' properties.
 externalRestOption: NONE
-  
+
 # The node port that should be allocated for the external operator REST https interface.
 # This parameter is required if 'externalRestOption' is not 'NONE'.
 # Otherwise, it is ignored.
 externalRestHttpsPort: 31001
-  
+
 # The subject alternative names to put into the generated self-signed certificate
 # for the external WebLogic Operator REST https interface, for example:
 #   DNS:myhost,DNS:localhost,IP:127.0.0.1
 # This parameter is required if 'externalRestOption' is 'SELF_SIGNED_CERT'.
 # Otherwise, it is ignored.
 externalSans:
-  
+
 # The customer supplied certificate to use for the external operator REST
 # https interface.  The value must be a string containing a base64 encoded PEM certificate.
 # This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
 # Otherwise, it is ignored.
 externalOperatorCert:
-  
+
 # The customer supplied private key to use for the external operator REST
 # https interface.  The value must be a string containing a base64 encoded PEM key.
 # This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
@@ -148,11 +148,11 @@ When the operator receives a scaling request, it will:
 *	Validate that the specified domain, identified by `domainUID`, exists.
 *	Validate that the WebLogic cluster, identified by `clusterName`, exists.
 *	Verify that the specified WebLogic cluster has a sufficient number of configured servers to satisfy the scaling request.
-*	Initiate scaling by setting the `replicas` property within the corresponding domain custom resource, which can be done in either:
+*	Initiate scaling by setting the `replicas` property within the corresponding domain resource, which can be done in either:
   *	A `clusterStartup` entry, if defined within its cluster list.
   *	At the domain level, if not defined in a `clusterStartup` entry and the `startupControl` property is set to `AUTO`.
 
-In response to a change to either `replicas` property, in the domain custom resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count.
+In response to a change to either `replicas` property, in the domain resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count.
 
 ## Using a WLDF policy rule and script action to call the operator's REST scale API
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
@@ -184,13 +184,13 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
     ```
     ```
     Name:         `weblogic-operator-cm`
-      
+
     Namespace:    `weblogic-operator`
-      
+
     Labels:       `weblogic.operatorName=weblogic-operator`
-      
+
     Annotations:  `kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"v1","data":{"externalOperatorCert":"","internalOperatorCert":"LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t...`
-      
+
     Data
 
     ====
@@ -238,7 +238,7 @@ A more in-depth description and example on using WLDF's Policies and Actions com
 
 
 ### Create cluster role bindings to allow a namespace user to query WLS Kubernetes cluster information
-The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) in order to query the Kubernetes API server for both configuration and runtime information of the domain custom resource.
+The script `scalingAction.sh`, specified in the WLDF script action above, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) in order to query the Kubernetes API server for both configuration and runtime information of the domain resource.
 The following is an example YAML file for creating the appropriate Kubernetes cluster role bindings:
 
 **NOTE**: In the example cluster role binding definition below, the WebLogic domain is deployed to a namespace `weblogic-domain`.  Replace the namespace value with the name of the namespace in which the WebLogic domain is deployed in your Kubernetes environment.
@@ -319,13 +319,13 @@ an HTTPS scale request requires these mandatory header properties:
 * `X-Requested-By` header value
 
 The following shell script is an example of how to issue a scaling request, with the necessary HTTP request header values, using `curl`.
-This example assumes the operator and domain custom resource are configured with the following properties in Kubernetes:
+This example assumes the operator and domain resource are configured with the following properties in Kubernetes:
 * Operator properties:
   * externalRestOption: `SELF_SIGNED_CERT`
   * externalRestHttpsPort: `31001`
   * operator's namespace: `weblogic-operator`
   * operator's hostname is the same as the host shell script is executed on.
-* Domain custom resource properties:  
+* Domain resource properties:  
   * WebLogic cluster name: `DockerCluster`
   * Domain UID: `domain1`
 
@@ -340,31 +340,31 @@ size=3 #New cluster size
 domdir=${PWD}
 ns=weblogic-operator # Operator NameSpace
 domainuid=domain1
-  
+
 # Retrieve service account name for given namespace   
 sec=`kubectl get serviceaccount ${ns} -n ${ns} -o jsonpath='{.secrets[0].name}'`
 #echo "Secret [${sec}]"
-  
+
 # Retrieve base64 encoded secret for the given service account   
 enc_token=`kubectl get secret ${sec} -n ${ns} -o jsonpath='{.data.token}'`
 #echo "enc_token [${enc_token}]"
-  
+
 # Decode the base64 encoded token  
 token=`echo ${enc_token} | base64 --decode`
 #echo "token [${token}]"
-  
+
 # Retrieve SSL certificate for the external REST endpoint from the generated yaml file for the Operator  
 operator_cert_data=`kubectl get cm -n ${ns} weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'`
 #echo "operator_cert_data [${operator_cert_data}]"
-  
+
 # clean up any temporary files
 rm -rf operator.rest.response.body operator.rest.stderr operator.cert.pem
-  
+
 # Decode and store the encoded SSL certificate into a pem file  
 echo ${operator_cert_data} | base64 --decode > operator.cert.pem
-  
+
 echo "Rest EndPoint url https://${ophost}:${opport}/operator/v1/domains/${domainuid}/clusters/${cluster}/scale"
-  
+
 # Issue 'curl' request to external REST endpoint  
 curl --noproxy '*' -v --cacert operator.cert.pem \
 -H "Authorization: Bearer ${token}" \

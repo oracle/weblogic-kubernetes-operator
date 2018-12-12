@@ -42,6 +42,7 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SOURCEPATH="`echo $SCRIPTPATH | sed 's/weblogic-kubernetes-operator.*/weblogic-kubernetes-operator/'`"
 traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils.sh
 source ${traceFile}
+source ${SCRIPTPATH}/util_dots.sh
 [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && exit 1
 
 # Set TRACE_INCLUDE_FILE to true to cause tracing to include filename & line number.
@@ -117,7 +118,7 @@ export NODEMGR_HOME=${NODEMGR_HOME:-/shared/nodemanagers}
 #     values match the values in those macros.
 
 export ADMIN_NAME=${ADMIN_NAME:-"admin-server"}
-export ADMIN_PORT=${ADMIN_PROT:-7001}
+export ADMIN_PORT=${ADMIN_PORT:-7001}
 export MANAGED_SERVER_NAME_BASE=${MANAGED_SERVER_NAME_BASE:-"managed-server"}
 export DOMAIN_NAME=${DOMAIN_NAME:-"base_domain"}
 export ADMINISTRATION_PORT=${ADMINISTRATION_PORT:-7099}
@@ -173,11 +174,15 @@ function cleanup() {
   #   2 - delete contents of k8s weblogic domain PV/PVC
   #       (if CREATE_DOMAIN has been set to "true")
 
+  tracen "Info: Waiting for cleanup.sh to complete."
+  printdots_start
   DELETE_FILES=${CREATE_DOMAIN:-false} \
     ${SOURCEPATH}/src/integration-tests/bash/cleanup.sh 2>&1 > \
     ${test_home}/cleanup.out
+  status=$?
+  printdots_end
 
-  if [ $? -ne 0 ]; then
+  if [ $status -ne 0 ]; then
     trace "Error:  cleanup failed.   Cleanup output:"
     cat ${test_home}/cleanup.out
     exit 1
@@ -211,6 +216,8 @@ function runJob() {
 
   # Run the job
 
+  tracen "Info: Waiting for job '$job_name' to complete."
+  printdots_start
   env \
     KUBECONFIG=$KUBECONFIG \
     JOB_YAML=${test_home}/${yaml_file} \
@@ -218,8 +225,11 @@ function runJob() {
     NAMESPACE=$NAMESPACE \
     ${SCRIPTPATH}/util_job.sh \
     2>&1 > ${test_home}/job-${1}.out
+  local status=$?
+  printdots_end
 
-  if [ ! $? -eq 0 ]; then
+  if [ ! $status -eq 0 ]; then
+    printdots_end
     trace "Error:  job failed, job contents"
     cat ${test_home}/job-${1}.out
     trace "Error:  end of failed job contents"
@@ -242,7 +252,7 @@ function deployYamlTemplate() {
   if [ -f "{test_home}/${yaml_file}" ]; then
     kubectl -n $NAMESPACE delete -f ${test_home}/${yaml_file} \
       --ignore-not-found \
-      2>&1 | tracePipe "kubectl output: "
+      2>&1 | tracePipe "Info: kubectl output: "
     rm -f ${test_home}/${yaml_file}
   fi
 
@@ -251,7 +261,7 @@ function deployYamlTemplate() {
   ${SCRIPTPATH}/util_subst.sh -g ${yaml_file}t ${test_home}/${yaml_file} || exit 1
 
   kubectl create -f ${test_home}/${yaml_file} \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 }
 
 #############################################################################
@@ -266,13 +276,13 @@ createConfigMapFromDir() {
 
   kubectl -n $NAMESPACE create cm ${cm_name} \
     --from-file ${cm_dir} \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 
   kubectl -n $NAMESPACE label cm ${cm_name} \
     weblogic.createdByOperator=true \
     weblogic.operatorName=look-ma-no-hands \
     weblogic.resourceVersion=domain-v2 \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 }
 
 
@@ -301,7 +311,7 @@ function deployDomainConfigMap() {
 
   kubectl -n $NAMESPACE delete cm weblogic-domain-cm \
     --ignore-not-found  \
-    2>&1 | tracePipe "kubectl output: "
+    2>&1 | tracePipe "Info: kubectl output: "
 
   createConfigMapFromDir weblogic-domain-cm ${SOURCEPATH}/operator/src/main/resources/scripts
 }
@@ -330,10 +340,30 @@ function deployTestScriptConfigMap() {
   
   kubectl -n $NAMESPACE delete cm test-script-cm \
     --ignore-not-found  \
-    2>&1 | tracePipe "kubectl output: "
+    2>&1 | tracePipe "Info: kubectl output: "
 
   createConfigMapFromDir test-script-cm ${test_home}/test-scripts
 
+}
+
+#############################################################################
+#
+# Deploy custom override cm
+#
+#
+
+function deployCustomOverridesConfigMap() {
+  local cmdir="${test_home}/customOverrides"
+  local cmname="${DOMAIN_UID}-mycustom-overrides-cm"
+  mkdir -p $cmdir
+  cp ${SCRIPTPATH}/jdbc-testDS.xml $cmdir || exit 1
+  cp ${SCRIPTPATH}/version.txt $cmdir || exit 1
+
+  kubectl -n $NAMESPACE delete cm $cmname \
+    --ignore-not-found  \
+    2>&1 | tracePipe "Info: kubectl output: "
+
+  createConfigMapFromDir $cmname $cmdir || exit 1
 }
 
 #############################################################################
@@ -414,7 +444,7 @@ function deployIntrospectJob() {
 
   kubectl -n $NAMESPACE delete cm $introspect_output_cm_name \
     --ignore-not-found  \
-    2>&1 | tracePipe "kubectl output: "
+    2>&1 | tracePipe "Info: kubectl output: "
 
   # run introspection job
 
@@ -453,7 +483,7 @@ function deployPod() {
   if [ -f "${target_yaml}" ]; then
     kubectl -n $NAMESPACE delete -f ${target_yaml} \
       --ignore-not-found \
-      2>&1 | tracePipe "kubectl output: "
+      2>&1 | tracePipe "Info: kubectl output: "
     rm -f ${target_yaml}
   fi
 
@@ -461,21 +491,26 @@ function deployPod() {
 
   ( 
     export SERVER_NAME=${server_name}
-    # TBD SERVER_NAME should be derived from introspect results
+    # TBD SERVER_NAME, ADMIN_PORT, MANAGED_SERVER_PORT should be derived from introspect results
     export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
     export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
+    if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
+      export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
+    else
+      export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
+    fi
     ${SCRIPTPATH}/util_subst.sh -g wl-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
   kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 
   # Wait for pod to come up successfully
 
-  tracen "Waiting for pod readiness"
   local status="0/1"
   local startsecs=$SECONDS
   local maxsecs=180
+  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
   while [ "${status}" != "1/1" ] ; do
     if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
       echo
@@ -489,7 +524,7 @@ function deployPod() {
     sleep 1
     status=`kubectl get pods -n $NAMESPACE 2>&1 | egrep $pod_name | awk '{print $2}'`
   done
-  echo
+  echo "  ($((SECONDS - startsecs)) seconds)"
 }
 
 function deploySinglePodService() {
@@ -505,7 +540,7 @@ function deploySinglePodService() {
   if [ -f "${target_yaml}" ]; then
     kubectl -n $NAMESPACE delete -f ${target_yaml} \
       --ignore-not-found \
-      2>&1 | tracePipe "kubectl output: "
+      2>&1 | tracePipe "Info: kubectl output: "
     rm -f ${target_yaml}
   fi
 
@@ -518,7 +553,7 @@ function deploySinglePodService() {
   )
 
   kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "kubectl output: " || exit 1 
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1 
 
   local svc=""
   local startsecs=$SECONDS
@@ -548,6 +583,8 @@ deployDomainConfigMap
 
 deployTestScriptConfigMap
 
+deployCustomOverridesConfigMap
+
 createTestRootPVDir
 
 deployWebLogic_PV_PVC_and_Secret
@@ -562,14 +599,36 @@ deployIntrospectJob
 #     topology file
 #
 
-deployPod ${ADMIN_NAME}
+deployPod ${ADMIN_NAME?}
 
-deploySinglePodService ${ADMIN_NAME} 7001 30701
+deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
 
-deployPod ${MANAGED_SERVER_NAME_BASE}1
+deployPod ${MANAGED_SERVER_NAME_BASE?}1
+
+deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
 
 #
 # TBD potentially add additional checks to verify wl pods are healthy
 #
+
+# TBD 1 weblogic/welcome1 should be deduced via a base64 of the admin secret
+# TBD 2 generate checkBeans.input instead of using a hard coded file, add more beans to check, and check mgd servers too
+
+trace "Info: Checking beans to see if sit-cfg took effect.  Input file 'checkBeans.input', output file '$test_home/checkBeans.out'."
+kubectl cp checkBeans.input domain1-admin-server:/shared/checkBeans.input || exit 1
+kubectl cp checkBeans.py domain1-admin-server:/shared/checkBeans.py || exit 1
+tracen "Info: Waiting for WLST checkBeans.py to complete."
+printdots_start
+kubectl exec -it domain1-admin-server \
+  wlst.sh /shared/checkBeans.py \
+    weblogic welcome1 t3://domain1-admin-server:7001 \
+    /shared/checkBeans.input \
+    > $test_home/checkBeans.out 2>&1
+status=$?
+printdots_end
+if [ $status -ne 0 ]; then
+  trace "Error:  checkBeans failed, see '$test_home/checkBeans.out'."
+  exit 1
+fi
 
 trace "Info: success!"

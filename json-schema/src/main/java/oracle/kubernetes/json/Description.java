@@ -10,6 +10,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/** Supplies a description for a field to be inserted into the generated JSON schema. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(FIELD)
 public @interface Description {

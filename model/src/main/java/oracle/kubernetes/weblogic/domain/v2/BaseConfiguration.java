@@ -4,19 +4,15 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -33,9 +29,9 @@ public abstract class BaseConfiguration {
   private ServerPod serverPod = new ServerPod();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
-  @SerializedName("serverStartState")
-  @Expose
-  @Description("The state in which the server is to be started")
+  @EnumClass(ServerStartState.class)
+  @Description(
+      "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.")
   private String serverStartState;
 
   /**
@@ -46,12 +42,25 @@ public abstract class BaseConfiguration {
    *
    * @since 2.0
    */
-  @SerializedName("serverStartPolicy")
-  @Expose
+  @EnumClass(ServerStartPolicy.class)
   @Description(
       "The strategy for deciding whether to start a server. "
-          + "Legal values are NEVER, ALWAYS, or IF_NEEDED.")
+          + "Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.")
   private String serverStartPolicy;
+
+  /**
+   * Tells the operator whether the customer wants to restart the server pods. The value can be any
+   * String and it can be defined on domain, cluster or server to restart the different pods. After
+   * the value is added, the corresponding pods will be terminated and created again. If customer
+   * modifies the value again after the pods were recreated, then the pods will again be terminated
+   * and recreated.
+   *
+   * @since 2.0
+   */
+  @Description(
+      "If preseent, every time this value is updated the operator will restart"
+          + " the required servers")
+  private String restartVersion;
 
   /**
    * Fills in any undefined settings in this configuration from another configuration.
@@ -72,7 +81,7 @@ public abstract class BaseConfiguration {
     return serverStartPolicy == null || other.isStartNever();
   }
 
-  public boolean isStartAdminServerOnly() {
+  boolean isStartAdminServerOnly() {
     return Objects.equals(getServerStartPolicy(), ConfigurationConstants.START_ADMIN_ONLY);
   }
 
@@ -146,23 +155,23 @@ public abstract class BaseConfiguration {
     serverPod.addLimitRequirement(resource, quantity);
   }
 
-  public V1PodSecurityContext getPodSecurityContext() {
+  V1PodSecurityContext getPodSecurityContext() {
     return serverPod.getPodSecurityContext();
   }
 
-  public V1SecurityContext getContainerSecurityContext() {
+  V1SecurityContext getContainerSecurityContext() {
     return serverPod.getContainerSecurityContext();
   }
 
-  public void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+  void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
     serverPod.setPodSecurityContext(podSecurityContext);
   }
 
-  public void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
+  void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {
     serverPod.setContainerSecurityContext(containerSecurityContext);
   }
 
-  public List<V1Volume> getAdditionalVolumes() {
+  List<V1Volume> getAdditionalVolumes() {
     return serverPod.getAdditionalVolumes();
   }
 
@@ -170,7 +179,7 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolume(name, path);
   }
 
-  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+  List<V1VolumeMount> getAdditionalVolumeMounts() {
     return serverPod.getAdditionalVolumeMounts();
   }
 
@@ -178,7 +187,7 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolumeMount(name, path);
   }
 
-  public Map<String, String> getPodLabels() {
+  Map<String, String> getPodLabels() {
     return serverPod.getPodLabels();
   }
 
@@ -186,12 +195,36 @@ public abstract class BaseConfiguration {
     serverPod.addPodLabel(name, value);
   }
 
-  public Map<String, String> getPodAnnotations() {
+  Map<String, String> getPodAnnotations() {
     return serverPod.getPodAnnotations();
   }
 
   void addPodAnnotations(String name, String value) {
     serverPod.addPodAnnotations(name, value);
+  }
+
+  public Map<String, String> getServiceLabels() {
+    return serverPod.getServiceLabels();
+  }
+
+  void addServiceLabels(String name, String value) {
+    serverPod.addServiceLabel(name, value);
+  }
+
+  public Map<String, String> getServiceAnnotations() {
+    return serverPod.getServiceAnnotations();
+  }
+
+  void addServiceAnnotations(String name, String value) {
+    serverPod.addServiceAnnotations(name, value);
+  }
+
+  public String getRestartVersion() {
+    return restartVersion;
+  }
+
+  public void setRestartVersion(String restartVersion) {
+    this.restartVersion = restartVersion;
   }
 
   @Override
@@ -200,6 +233,7 @@ public abstract class BaseConfiguration {
         .append("serverStartState", serverStartState)
         .append("serverStartPolicy", serverStartPolicy)
         .append("serverPod", serverPod)
+        .append("restartVersion", restartVersion)
         .toString();
   }
 
@@ -215,6 +249,7 @@ public abstract class BaseConfiguration {
         .append(serverPod, that.serverPod)
         .append(serverStartState, that.serverStartState)
         .append(serverStartPolicy, that.serverStartPolicy)
+        .append(restartVersion, that.restartVersion)
         .isEquals();
   }
 
@@ -224,6 +259,7 @@ public abstract class BaseConfiguration {
         .append(serverPod)
         .append(serverStartState)
         .append(serverStartPolicy)
+        .append(restartVersion)
         .toHashCode();
   }
 }
