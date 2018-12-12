@@ -94,8 +94,8 @@ namespace: default
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim 
-# The default is <domainUID>-weblogic-sample-pvc
-persistentVolumeClaimName: 
+# If not specified, the value is derived from the domainUID as <domainUID>-weblogic-sample-pvc
+persistentVolumeClaimName: domain1-weblogic-sample-pvc 
 
 # Mount path of the domain persistent volume. 
 domainPVMountPath: /shared
