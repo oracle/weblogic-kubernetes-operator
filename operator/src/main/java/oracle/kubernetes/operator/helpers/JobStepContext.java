@@ -50,8 +50,8 @@ public abstract class JobStepContext implements StepContextConstants {
 
   abstract String getJobName();
 
-  String getAdminSecretName() {
-    return getDomain().getAdminSecret().getName();
+  String getWebLogicCredentialsSecretName() {
+    return getDomain().getWebLogicCredentialsSecret().getName();
   }
 
   abstract List<V1Volume> getAdditionalVolumes();
@@ -275,7 +275,9 @@ public abstract class JobStepContext implements StepContextConstants {
   }
 
   protected V1SecretVolumeSource getSecretsVolume() {
-    return new V1SecretVolumeSource().secretName(getAdminSecretName()).defaultMode(420);
+    return new V1SecretVolumeSource()
+        .secretName(getWebLogicCredentialsSecretName())
+        .defaultMode(420);
   }
 
   protected V1ConfigMapVolumeSource getConfigMapVolumeSource() {
