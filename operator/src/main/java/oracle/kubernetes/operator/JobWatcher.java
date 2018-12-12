@@ -46,6 +46,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
    * @param factory thread factory
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
+   * @param tuning Tuning parameters for the watch, for example watch lifetime
    * @param isStopping Stop signal
    * @return Job watcher for the namespace
    */
