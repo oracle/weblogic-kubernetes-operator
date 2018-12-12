@@ -9,9 +9,10 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -45,9 +46,11 @@ public class JobHelper {
   }
 
   static class DomainIntrospectorJobStepContext extends JobStepContext {
+    private final DomainPresenceInfo info;
 
-    DomainIntrospectorJobStepContext(Packet packet) {
+    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
       super(packet);
+      this.info = info;
 
       init();
     }
@@ -73,6 +76,20 @@ public class JobHelper {
       return LegalNames.toJobIntrospectorName(getDomainUID());
     }
 
+    Domain getDomain() {
+      return info.getDomain();
+    }
+
+    @Override
+    protected List<V1Volume> getAdditionalVolumes() {
+      return getDomain().getSpec().getAdditionalVolumes();
+    }
+
+    @Override
+    protected List<V1VolumeMount> getAdditionalVolumeMounts() {
+      return getDomain().getSpec().getAdditionalVolumeMounts();
+    }
+
     @Override
     List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
       List<V1EnvVar> envVarList = new ArrayList<V1EnvVar>();
@@ -83,7 +100,7 @@ public class JobHelper {
       addEnvVar(envVarList, "LOG_HOME", getEffectiveLogHome());
       addEnvVar(envVarList, "INTROSPECT_HOME", getIntrospectHome());
       addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-      addEnvVar(envVarList, "ADMIN_SECRET_NAME", getAdminSecretName());
+      addEnvVar(envVarList, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
 
       return envVarList;
     }
@@ -114,7 +131,7 @@ public class JobHelper {
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       if (runIntrospector(packet, info)) {
-        JobStepContext context = new DomainIntrospectorJobStepContext(packet);
+        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
 
         packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
 
@@ -153,11 +170,11 @@ public class JobHelper {
   private static boolean creatingServers(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
     DomainSpec spec = dom.getSpec();
-    Map<String, Cluster> clusters = spec.getClusters();
-    Map<String, ManagedServer> servers = spec.getManagedServers();
+    List<Cluster> clusters = spec.getClusters();
+    List<ManagedServer> servers = spec.getManagedServers();
 
     // Are we starting a cluster?
-    for (Cluster cluster : clusters.values()) {
+    for (Cluster cluster : clusters) {
       int replicaCount = cluster.getReplicas();
       LOGGER.fine("creatingServers replicaCount: " + replicaCount + " for cluster: " + cluster);
       if (replicaCount > 0) {

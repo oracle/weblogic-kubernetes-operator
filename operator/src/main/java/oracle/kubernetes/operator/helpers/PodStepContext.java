@@ -18,8 +18,6 @@ import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
@@ -175,24 +173,6 @@ public abstract class PodStepContext implements StepContextConstants {
   abstract Integer getPort();
 
   abstract String getServerName();
-
-  private List<V1PersistentVolumeClaim> getClaims() {
-    return info.getClaims().getItems();
-  }
-
-  private String getClaimName() {
-    return Optional.ofNullable(info.getDomain().getPersistentVolumeClaimName())
-        .orElse(getDiscoveredClaim());
-  }
-
-  /**
-   * Returns the claim name of a PVC labeled with this domain's UID, if any.
-   *
-   * @return the found PVC's claim name
-   */
-  private String getDiscoveredClaim() {
-    return getClaims().isEmpty() ? null : getClaims().iterator().next().getMetadata().getName();
-  }
 
   ServerKubernetesObjects getSko() {
     return info.getServers().computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
@@ -627,13 +607,6 @@ public abstract class PodStepContext implements StepContextConstants {
       podSpec.addImagePullSecretsItem(imagePullSecret);
     }
     /**/
-    if (getClaimName() != null) {
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(STORAGE_VOLUME)
-              .persistentVolumeClaim(
-                  new V1PersistentVolumeClaimVolumeSource().claimName(getClaimName())));
-    }
 
     for (V1Volume additionalVolume : getAdditionalVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
@@ -655,10 +628,6 @@ public abstract class PodStepContext implements StepContextConstants {
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
-
-    if (getClaimName() != null) {
-      v1Container.addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH));
-    }
 
     if (!mockWLS()) {
       v1Container.readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()));

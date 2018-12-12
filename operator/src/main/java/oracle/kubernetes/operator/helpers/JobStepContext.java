@@ -4,7 +4,6 @@ import io.kubernetes.client.models.*;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -49,28 +48,15 @@ public abstract class JobStepContext implements StepContextConstants {
     return info.getDomain();
   }
 
-  private String getDomainResourceName() {
-    return info.getDomain().getMetadata().getName();
-  }
-
   abstract String getJobName();
 
-  String getAdminSecretName() {
-    return getDomain().getAdminSecret().getName();
+  String getWebLogicCredentialsSecretName() {
+    return getDomain().getWebLogicCredentialsSecret().getName();
   }
 
-  private List<V1PersistentVolumeClaim> getClaims() {
-    return info.getClaims().getItems();
-  }
+  abstract List<V1Volume> getAdditionalVolumes();
 
-  private String getDiscoveredClaim() {
-    return getClaims().isEmpty() ? null : getClaims().iterator().next().getMetadata().getName();
-  }
-
-  private String getClaimName() {
-    return Optional.ofNullable(info.getDomain().getPersistentVolumeClaimName())
-        .orElse(getDiscoveredClaim());
-  }
+  abstract List<V1VolumeMount> getAdditionalVolumeMounts();
 
   // ----------------------- step methods ------------------------------
 
@@ -204,11 +190,9 @@ public abstract class JobStepContext implements StepContextConstants {
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
-    if (getClaimName() != null) {
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(STORAGE_VOLUME)
-              .persistentVolumeClaim(getPersistenVolumeClaimVolumeSource(getClaimName())));
+
+    for (V1Volume additionalVolume : getAdditionalVolumes()) {
+      podSpec.addVolumesItem(additionalVolume);
     }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
@@ -239,8 +223,8 @@ public abstract class JobStepContext implements StepContextConstants {
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
 
-    if (getClaimName() != null) {
-      container.addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH));
+    for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
+      container.addVolumeMountsItem(additionalVolumeMount);
     }
 
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
@@ -291,7 +275,9 @@ public abstract class JobStepContext implements StepContextConstants {
   }
 
   protected V1SecretVolumeSource getSecretsVolume() {
-    return new V1SecretVolumeSource().secretName(getAdminSecretName()).defaultMode(420);
+    return new V1SecretVolumeSource()
+        .secretName(getWebLogicCredentialsSecretName())
+        .defaultMode(420);
   }
 
   protected V1ConfigMapVolumeSource getConfigMapVolumeSource() {
