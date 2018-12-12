@@ -1,0 +1,6 @@
+/Servers/${ADMIN_NAME},ListenAddress,,${DOMAIN_UID}-${ADMIN_NAME}
+/Servers/${ADMIN_NAME}/Log/${ADMIN_NAME},FileName,logs/${ADMIN_NAME}.log,/shared/logs/${ADMIN_NAME}.log
+/Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel,ListenAddress,,${DOMAIN_UID}-${ADMIN_NAME}
+# /Servers/${ADMIN_NAME},MaxMessageSize,10000000,78787878  TBD Waiting on bug fix to WL 19.1
+# /Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel,PublicAddress,,${TEST_HOST}  TBD Waiting on bug fix to WL 19.1
+/JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,Url,jdbc:oracle:thin:@myoriginalhostname:1521:myoriginalsid,jdbc:oracle:thin:@mynewhost:1521:mynewsid

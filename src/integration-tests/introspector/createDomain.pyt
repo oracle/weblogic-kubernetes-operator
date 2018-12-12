@@ -49,7 +49,8 @@ set('Name', '${ADMIN_NAME}')
 create('T3Channel', 'NetworkAccessPoint')
 cd('/Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel')
 set('PublicPort', ${T3_CHANNEL_PORT})
-set('PublicAddress', '${T3_PUBLIC_ADDRESS}')
+#set('PublicAddress', '${T3_PUBLIC_ADDRESS}')
+#set('PublicAddress', 'invalid-${T3_PUBLIC_ADDRESS}')
 #set('ListenAddress', '${DOMAIN_UID}-${ADMIN_NAME}')
 #set('ListenAddress', 'invalid-${DOMAIN_UID}-${ADMIN_NAME}')
 set('ListenPort', ${T3_CHANNEL_PORT})
@@ -110,6 +111,8 @@ def createDataSource(dsName,dsJNDI,dsHost,dsSID,dsTarget):
   create('testJdbcConnectionPoolParams','JDBCConnectionPoolParams')
   cd('JDBCConnectionPoolParams/NO_NAME_0')
   set('TestTableName','SQL SELECT 1 FROM DUAL')
+  set('InitialCapacity', 0)
+  set('MinCapacity', 0)
 
 createDataSource('testDS','testDS','myoriginalhostname','myoriginalsid','${ADMIN_NAME}')
 
