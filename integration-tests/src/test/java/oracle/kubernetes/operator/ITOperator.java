@@ -505,7 +505,7 @@ public class ITOperator extends BaseTest {
     }
   }
 
-  @Test
+  // @Test
   public void testCustomSitConfigOverrides() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     logTestBegin("testCustomSitConfigOverrides");
