@@ -311,6 +311,7 @@ function validateCommonInputs {
     managedServerNameBase \
     namespace \
     t3PublicAddress \
+    includeServerOutInPodLog \
     version
 
   validateIntegerInputParamsSpecified \
@@ -336,6 +337,8 @@ function validateCommonInputs {
   validateManagedServerNameBase
   validateClusterName
   validateWeblogicCredentialsSecretName
+  validateWeblogicImagePullPolicy
+  validateWeblogicImagePullSecretName
   validateServerStartPolicy
   validateClusterType
   failIfValidationErrors
