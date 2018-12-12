@@ -49,6 +49,7 @@ public class ITOperator extends BaseTest {
   private static String domain9YamlFile = "domain9.yaml";
   private static String domain10YamlFile = "domain10.yaml";
   private static String domain11YamlFile = "domain11.yaml";
+  private static String domain12YamlFile = "domain12.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -490,6 +491,7 @@ public class ITOperator extends BaseTest {
       domain11 = testDomainCreation(domain11YamlFile);
       domain11.verifyDomainCreated();
       testBasicUseCases(domain11);
+      // testAdvancedUseCasesForADomain(operator1, domain11);
       testCompletedSuccessfully = true;
       logger.info("SUCCESS - testAutoSitConfigOverrides");
     } finally {
@@ -499,6 +501,47 @@ public class ITOperator extends BaseTest {
           StandardCopyOption.REPLACE_EXISTING);
       if (domain11 != null && (JENKINS || testCompletedSuccessfully)) {
         domain11.destroy();
+      }
+    }
+  }
+
+  @Test
+  public void testCustomSitConfigOverrides() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    logTestBegin("testCustomSitConfigOverrides");
+
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1YamlFile);
+    }
+    Domain domain12 = null;
+    boolean testCompletedSuccessfully = false;
+    String createDomainScriptDir =
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
+    try {
+
+      // cp py
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain-custom-sit-config.py").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+
+      domain12 = testDomainCreation(domain12YamlFile);
+      domain12.verifyDomainCreated();
+      testBasicUseCases(domain12);
+      // testAdvancedUseCasesForADomain(operator1, domain11);
+      testCompletedSuccessfully = true;
+      logger.info("SUCCESS - testCustomSitConfigOverrides");
+    } finally {
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+      if (domain12 != null && (JENKINS || testCompletedSuccessfully)) {
+        domain12.destroy();
       }
     }
   }
