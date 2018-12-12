@@ -348,7 +348,7 @@ public class TestUtils {
 
     Response response = null;
     int i = 0;
-    while (i < BaseTest.getMaxIterationsPod() / 2) {
+    while (i < BaseTest.getMaxIterationsPod()) {
       try {
         // Post scaling request to Operator
         if (jsonObjStr != null) {
@@ -357,9 +357,12 @@ public class TestUtils {
           response = request.get();
         }
       } catch (Exception ex) {
-        logger.info("Got exception " + ex.getMessage());
+        logger.info("Got exception, iteration " + i + " " + ex.getMessage());
         i++;
         if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
+          if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+            throw ex;
+          }
           logger.info("Sleeping 5 more seconds and try again");
           Thread.sleep(5 * 1000);
           continue;
