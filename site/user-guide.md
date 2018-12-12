@@ -2,7 +2,36 @@
 
 **TOOO** put intro here
 
-**TODO** put table of contents here
+## Table of contents
+
+**TODO** this is not the final TOC - we will restructure/reorganize for usability....
+
+* [Important terms](#important-terms)
+* [Getting started](#getting-started)
+* [Prerequisites](#prerequisites)
+* [Preparing your Kubernetes environment](#preparing-your-kubernetes-environment)
+  * [Set up your Kubernetes cluster](#set-up-your-kubernetes-cluster)
+  * [Set up load balancers](#set-up-load-balancers)
+  * [Configuring Kibana and Elasticsearch](#configuring-kibana-and-elasticsearch)
+* [Create and manage the operator](#create-and-manage-the-operator)
+  * [Starting the operator](#starting-the-operator)
+  * [Modifying the operator](#modifying-the-operator)
+  * [Shutting down the operator](#shutting-down-the-operator)
+* [Creating or obtaining WebLogic Docker images](#creating-or-obtaining-weblogic-docker-images)
+  * [Obtaining standard images from the Docker store](#obtaining-standard-images-from-the-docker-store)
+  * [Creating a custom images with patches applied](#creating-a-custom-images-with-patches-applied)
+  * [Creating a custom image with your domain inside the image](#creating-a-custom-image-with-your-domain-inside-the-image)
+* [Create and manage WebLogic domains](#create-and-manage-weblogic-domains)
+  * [Preparing the Kubernetes cluster to run WebLogic domains](#preparing-the-kubernetes-cluster-to-run-weblogic-domains)
+  * [Creating and managing WebLogic domains](#creating-and-managing-weblogic-domains)
+  * [Managing lifecycle operations](#managing-lifecycle-operations)
+  * [Modifying domain configurations](#modifying-domain-configurations)
+  * [Patching WebLogic and performing application updates](#patching-weblogic-and-performing-application-updates)
+  * [Shutting down domains](#shutting-down-domains)
+  * [Deleting domains](#deleting-domains)
+* [Additional integrations](#additional-integrations)
+  * [Sending WebLogic metrics to Prometheus](#sending-weblogic-metrics-to-prometheus)
+
 
 ## Important terms
 
@@ -15,33 +44,36 @@ This documentation uses several important terms which are intended to have a spe
 | Ingress	| A Kubernetes Ingress provides access to applications and services in a Kubernetes environment to external clients.  An Ingress may also provide additional features like load balancing. |
 | Namespace	| A Kubernetes namespace is a named entity that can be used to group together related objects, for example, pods and services. |
 | Operator	| A Kubernetes operator is software that performs management of complex applications. |
-|Pod	| A Kubernetes pod contains one or more containers and is the object that provides the execution environment for an instance of an application component, such as a web server or database. |
-| Job	 | A Kubernetes job is a type of controller that creates one or more pods that run to completion to complete a specific task. |
+| Pod	    | A Kubernetes pod contains one or more containers and is the object that provides the execution environment for an instance of an application component, such as a web server or database. |
+| Job	    | A Kubernetes job is a type of controller that creates one or more pods that run to completion to complete a specific task. |
 | Secret	| A Kubernetes secret is a named object that can store secret information like usernames, passwords, X.509 certificates, or any other arbitrary data. |
-|Service	| A Kubernetes service exposes application endpoints inside a pod to other pods, or outside the Kubernetes cluster.  A service may also provide additional features like load balancing. |
+| Service	| A Kubernetes service exposes application endpoints inside a pod to other pods, or outside the Kubernetes cluster.  A service may also provide additional features like load balancing. |
 
-# Getting started
+## Getting started
 
 Before using the operator, you might want to read the [design philosophy](site/design.md) to develop an understanding of the operator's design, and the [architectural overview](site/architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator. Also, worth reading are the details of the [Kubernetes RBAC definitions](site/rbac.md) required by the operator.
 
 ## Prerequisites
 
-*	Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+  (check with `kubectl version`).
-*	Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`)
-*	Docker 18.03.1.ce (check with `docker version`)
-*	Oracle WebLogic Server 12.2.1.3.0
+* Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+  (check with `kubectl version`).
+* Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`)
+* Docker 18.03.1.ce (check with `docker version`)
+* Oracle WebLogic Server 12.2.1.3.0
+* If you wish to use dynamic clusters and/or situational configuration, patches 28186730 and 28076014 are required
 
-## Set up your Kubernetes cluster
+## Preparing your Kubernetes environment
+
+**TODO** write intro 
+
+### Set up your Kubernetes cluster
 
 If you need help setting up a Kubernetes environment, check our [cheat sheet](site/k8s_setup.md).
-
-## Manage your Kubernetes environment
 
 After creating Kubernetes clusters, you can optionally:
 * Create load balancers to direct traffic to backend domains.
 * Configure Kibana and Elasticsearch for your operator logs.
 
-### Creating load balancers
+### Set up load balancers
 
 Use these [scripts and Helm charts](kubernetes/samples/README.md) to install Traefik, Apache, or Voyager load balancers.
 
@@ -68,6 +100,23 @@ In your Kubernetes cluster you can have one or more operators that manage one or
 
 ### Shutting down the operator
 (See the operator sample README section that describes how to shutdown and delete all resources for the operator.)
+
+## Creating or obtaining WebLogic Docker images
+
+**TODO** write me
+
+### Obtaining standard images from the Docker store 
+
+**TODO** write me
+
+### Creating a custom images with patches applied 
+
+**TODO** write me
+
+### Creating a custom image with your domain inside the image
+
+**TODO** write me 
+
 
 ## Create and manage WebLogic domains
 
@@ -115,3 +164,11 @@ You can modify the WebLogic domain configuration for both the domain in PV and t
 
 ###  Deleting domains
 (Point to sample)
+
+## Additional integrations
+
+**TODO** write me
+
+### Sending WebLogic metrics to Prometheus
+
+**TODO** write me 
