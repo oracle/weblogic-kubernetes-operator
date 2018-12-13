@@ -1,3 +1,5 @@
+**TODO** review and update
+
 # Starting a WebLogic domain
 
 Startup of the domain is controlled by settings in the domain resource.  If used, the domain creation job will have created a domain resource YAML file. If the domain was created manually, this YAML file will also need to be created manually.
