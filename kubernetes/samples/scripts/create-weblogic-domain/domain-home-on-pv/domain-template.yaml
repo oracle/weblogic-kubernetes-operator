@@ -42,7 +42,7 @@ spec:
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "%SERVER_START_POLICY%"
   serverPod:
-    # an (optional) list of environment variable to be set on the server
+    # an (optional) list of environment variable to be set on the servers
     env:
     - name: JAVA_OPTIONS
       value: "%JAVA_OPTIONS%"
