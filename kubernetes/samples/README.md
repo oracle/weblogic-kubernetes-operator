@@ -1,12 +1,15 @@
 # WebLogic operator samples
 
+**TODO** write intro
+
 ## Sample scripts
 
-* [Sample for creating a Kubernetes secret](scripts/create-weblogic-domain/create-weblogic-credentials.sh) that contains the Administration Server credentials. This secret can be used in creating a WebLogic domain resource.
+* [Sample for creating a Kubernetes secret](scripts/create-weblogic-domain/README.md) that contains the Administration Server credentials. This secret can be used in creating a WebLogic domain resource.
 * [Sample for creating a PV or PVC](scripts/create-weblogic-domain-pv-pvc/README.md) that can be used by a domain resource as the persistent storage for the WebLogic domain home or log files.
 * [Sample for creating a WebLogic domain home on an existing PV or PVC](scripts/create-weblogic-domain/domain-home-on-pv/README.md), and the domain resource YAML file for deploying the generated WebLogic domain.
-* [Sample for configuring the Elasticsearch and Kibana](scripts/elasticsearch_and_kibana.yaml) deployments and services for the operator's logs.
-* [Sample for generating a self-signed certificate and private key](scripts/generate-external-rest-identity.sh) that can be used for the operator's external REST API.
+* [Sample for creating a WebLogic domain home inside a Docker image](scripts/create-weblogic-domain/domain-home-in-image/README.md), and the domain resource YAML file for deploying the generated WebLogic domain.
+* [Sample for configuring the Elasticsearch and Kibana](scripts/elasticsearch-and-kibana/README.md) deployments and services for the operator's logs.
+* [Sample for generating a self-signed certificate and private key](scripts/rest/README.md) that can be used for the operator's external REST API.
 
 ## Sample Helm charts
 

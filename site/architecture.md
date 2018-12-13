@@ -1,3 +1,5 @@
+**TODO** review and update
+
 # Architectural overview
 
 The operator consists of the following two main parts:
