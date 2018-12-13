@@ -86,10 +86,12 @@ a.	Create a new image with a domain home by running the [`create-domain-in-image
 * Then, copy the `inputs.yaml` file from the sample and modify it:
   * Specify a `domainUID`: `sample-domain1`
   * Specify the domain namespace: `sample-domains-ns1`
-  * Specify the number and type of servers:
 
 b.	The sample also creates a domain resource YAML file.
-* Also, use `kubectl apply -f` on the YAML file to create the domain resource.
+* Also, use `kubectl apply -f` on the YAML file to create the domain resource:
+```
+kubectl apply -f /path/to/output-directory/weblogic-domains/sample-domain1/domain.yaml
+```
     * This tells the operator to manage the new domain.
     * The operator will notice and start up the servers in the domain.
 
