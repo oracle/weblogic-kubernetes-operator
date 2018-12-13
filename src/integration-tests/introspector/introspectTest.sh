@@ -105,18 +105,6 @@ export DOMAIN_HOME=${DOMAIN_HOME:-/shared/domains/${DOMAIN_UID}}
 
 export NODEMGR_HOME=${NODEMGR_HOME:-/shared/nodemanagers}
 
-# TBD As a test enhancement, the following env vars could solely be derived
-#     from the introspect topology file output, and 
-#     so should only need to be specified when creating a new domain.
-#
-#     E.g. we ideally shouldn't need to define them here, and should 
-#     only need to explicitly set them when 'CREATE_DOMAIN' is set to true.
-#     Plus the introspection parsing step in this test should parse
-#     the topology file and use the parse results to export the needed values
-#     for the subsequent admin and managed server pod launches, or if
-#     the macros are already set, the test should verify the topology file
-#     values match the values in those macros.
-
 export ADMIN_NAME=${ADMIN_NAME:-"admin-server"}
 export ADMIN_PORT=${ADMIN_PORT:-7001}
 export MANAGED_SERVER_NAME_BASE=${MANAGED_SERVER_NAME_BASE:-"managed-server"}
@@ -127,20 +115,19 @@ export DOMAIN_NAME=${DOMAIN_NAME:-"base_domain"}
 # Set extra env vars needed when CREATE_DOMAIN == true
 #
 
-if [ "$CREATE_DOMAIN" = "true" ]; then
+#publicip="`kubectl cluster-info | grep KubeDNS | sed 's;.*//\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\):.*;\1;'`"
+#export TEST_HOST="`nslookup $publicip | grep 'name =' | sed 's/.*name = \(.*\)./\1/'`"
+export TEST_HOST="mycustompublicaddress"
 
-  publicip="`kubectl cluster-info | grep KubeDNS | sed 's;.*https://\(.*\):.*;\1;'`"
-  publicdns="`nslookup $publicip | grep 'name =' | sed 's/.*name = \(.*\)./\1/'`"
-
-  export CLUSTER_NAME="${CLUSTER_NAME:-mycluster}"
-  export MANAGED_SERVER_PORT=${MANAGED_SERVER_PORT:-8001}
-  export CONFIGURED_MANAGED_SERVER_COUNT=${CONFIGURED_MANAGED_SERVER_COUNT:-2}
-  export CLUSTER_TYPE="${CLUSTER_TYPE:-DYNAMIC}"
-  export T3_CHANNEL_PORT=${T3_CHANNEL_PORT:-30012}
-  export T3_PUBLIC_ADDRESS=${T3_PUBLIC_ADDRESS:-${publicdns}}
-  export PRODUCTION_MODE_ENABLED=${PRODUCTION_MODE_ENABLED:-true}
-
-fi
+export CLUSTER_NAME="${CLUSTER_NAME:-mycluster}"
+export MANAGED_SERVER_PORT=${MANAGED_SERVER_PORT:-8001}
+export CONFIGURED_MANAGED_SERVER_COUNT=${CONFIGURED_MANAGED_SERVER_COUNT:-2}
+export CLUSTER_TYPE="${CLUSTER_TYPE:-DYNAMIC}"
+export T3CHANNEL1_PORT=${T3CHANNEL1_PORT:-30012}
+export T3CHANNEL2_PORT=${T3CHANNEL2_PORT:-30013}
+export T3CHANNEL3_PORT=${T3CHANNEL3_PORT:-30014}
+export T3_PUBLIC_ADDRESS=${T3_PUBLIC_ADDRESS:-}
+export PRODUCTION_MODE_ENABLED=${PRODUCTION_MODE_ENABLED:-true}
 
 #############################################################################
 #
@@ -155,9 +142,9 @@ fi
 # Location for this test to put its temporary files
 test_home=/tmp/introspect
 
-function cleanup() {
+function cleanupMajor() {
   trace "Info: Cleaning files and k8s artifacts from previous run."
- 
+
   # first, let's delete the test's local tmp files for rm -fr
   #
   # CAUTION: We deliberately hard code the path here instead of using 
@@ -186,6 +173,22 @@ function cleanup() {
     cat ${test_home}/cleanup.out
     exit 1
   fi
+}
+
+function cleanupMinor() {
+  trace "Info: RERUN_INTROSPECT_ONLY==true, skipping cleanup.sh and domain home setup, and only deleting wl pods + introspector job."
+
+  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}-${ADMIN_NAME} > /dev/null 2>&1
+  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}1 > /dev/null 2>&1
+  kubectl -n $NAMESPACE delete job ${DOMAIN_UID}-introspect-domain-job > /dev/null 2>&1
+  rm -fr ${test_home}/jobfiles
+  tracen "Info: Waiting for wl pods to completely go away before continuing."
+  while [ 1 -eq 1 ]; do
+    echo -n "."
+    [ "`kubectl -n ${NAMESPACE} get pods | grep '${DOMAIN_UID}.*server'`" = "" ] && break
+    sleep 1
+  done
+  echo
 }
 
 #############################################################################
@@ -301,7 +304,8 @@ function toDNS1123Legal {
 #############################################################################
 #
 # Deploy domain cm 
-#   - contains introspect, nm, start server scripts, etc.
+#   - this emulates what the operator pod would do
+#   - contains the operator's introspect, nm, start server scripts, etc.
 #   - mounted by create domain job, introspect job, and wl pods
 #
 
@@ -347,16 +351,29 @@ function deployTestScriptConfigMap() {
 
 #############################################################################
 #
-# Deploy custom override cm
+# Deploy custom override cm, just like a customer would
 #
-#
+
 
 function deployCustomOverridesConfigMap() {
   local cmdir="${test_home}/customOverrides"
   local cmname="${DOMAIN_UID}-mycustom-overrides-cm"
+
+  trace "Info: Setting up custom overrides map '$cmname' using directory '$cmdir'."
+
   mkdir -p $cmdir
-  cp ${SCRIPTPATH}/jdbc-testDS.xml $cmdir || exit 1
-  cp ${SCRIPTPATH}/version.txt $cmdir || exit 1
+  rm -f $cmdir/*.xml
+  rm -f $cmdir/*.txt
+  local bfilname dfilname filname
+  for filname in override--*.xmlt override--*.txtt; do
+     bfilname="`basename $filname`"
+     bfilname="${bfilname/override--/}"
+     bfilname="${bfilname/xmlt/xml}"
+     bfilname="${bfilname/txtt/txt}"
+     #echo $filname "+" $bfilname "+" ${cmdir}/${bfilname} 
+     #cp ${filname} ${cmdir}/${bfilname} || exit 1
+     ${SCRIPTPATH}/util_subst.sh -g ${filname} ${cmdir}/${bfilname}  || exit 1
+  done
 
   kubectl -n $NAMESPACE delete cm $cmname \
     --ignore-not-found  \
@@ -364,6 +381,7 @@ function deployCustomOverridesConfigMap() {
 
   createConfigMapFromDir $cmname $cmdir || exit 1
 }
+
 
 #############################################################################
 #
@@ -432,6 +450,7 @@ function deployCreateDomainJob() {
 #############################################################################
 #
 # Run introspection job, parse its output to files, and put files in a cm
+#   - this emulates what the operator pod would do prior to start wl-pods
 #
 
 function deployIntrospectJob() {
@@ -466,8 +485,9 @@ function deployIntrospectJob() {
 
 #############################################################################
 #
-# Launch admin pod and wait up to 180 seconds for it to succeed, then launch
-# a managed server pod.
+# Launch pod and wait up to 180 seconds for it to succeed, also launch
+# services.
+#   - this emulates what the operator pod would do after running the introspect job
 #
 
 function deployPod() {
@@ -490,7 +510,6 @@ function deployPod() {
 
   ( 
     export SERVER_NAME=${server_name}
-    # TBD SERVER_NAME, ADMIN_PORT, MANAGED_SERVER_PORT should be derived from introspect results
     export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
     export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
     if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
@@ -521,7 +540,7 @@ function deployPod() {
     fi
     echo -n "."
     sleep 1
-    status=`kubectl get pods -n $NAMESPACE 2>&1 | egrep $pod_name | awk '{print $2}'`
+    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
   done
   echo "  ($((SECONDS - startsecs)) seconds)"
 }
@@ -568,6 +587,58 @@ function deploySinglePodService() {
   done
 }
 
+
+#############################################################################
+#
+# Check if automatic overrides and custom overrides took effect on the admin pod
+#
+
+function checkOverrides() {
+  
+  trace "Info: Checking admin server stdout to make sure situational config was loaded and there are no reported situational config errors."
+  
+  # Check for exactly 3 occurances of Info.*.BEA.*situational lines -- one for each file we're overriding.
+  #   the awk expression below gets the tail of the log, everything after the last occurance of 'Starting WebLogic...'
+  
+  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'Info.*BEA.*situational'`"
+  logstatus=0
+
+  if [ "$linecount" != "3" ]; then
+    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 3 lines that match ' grep 'Info.*BEA.*situational' ', this probably means that it's reporting situational config problems."
+    logstatus=1
+  fi
+  
+  #
+  # Call on-line WLST on the admin-server to determine if overrides are
+  # taking effect in the admin tree
+  #
+  
+  trace "Info: Checking beans to see if sit-cfg took effect.  Input file '$test_home/checkBeans.input', output file '$test_home/checkBeans.out'."
+  
+  rm -f ${test_home}/checkBeans.input
+  ${SCRIPTPATH}/util_subst.sh -g checkBeans.inputt ${test_home}/checkBeans.input || exit 1
+  kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
+  kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
+  tracen "Info: Waiting for WLST checkBeans.py to complete."
+  printdots_start
+  # TBD weblogic/welcome1 should be deduced via a base64 of the admin secret
+  kubectl exec -it ${DOMAIN_UID}-${ADMIN_NAME} \
+    wlst.sh /shared/checkBeans.py \
+      weblogic welcome1 t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} \
+      /shared/checkBeans.input \
+      > $test_home/checkBeans.out 2>&1
+  status=$?
+  printdots_end
+  if [ $status -ne 0 ]; then
+    trace "Error: The checkBeans verification failed, see '$test_home/checkBeans.out'."
+  fi
+
+  if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
+
 #############################################################################
 #
 # Main
@@ -576,58 +647,52 @@ function deploySinglePodService() {
 # PVCOMMENT is set, or if CREATE_DOMAIN is set to false.
 #
 
-cleanup
-
-deployDomainConfigMap
-
-deployTestScriptConfigMap
-
-deployCustomOverridesConfigMap
-
-createTestRootPVDir
-
-deployWebLogic_PV_PVC_and_Secret
-
-deployCreateDomainJob
-
-deployIntrospectJob
-
 #
-# TBD ADMIN_NAME, 7001, and MANAGED_SERVER_NAME_BASE
-#     below should all be derived from introspect
-#     topology file
+# TBD ADMIN_NAME, ADMIN_PORT, and MANAGED_SERVER_NAME_BASE, etc env vars
+#     should be checked to see if topology file the introspector generated
+#     matches
 #
 
-deployPod ${ADMIN_NAME?}
+if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
 
-deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
+  cleanupMajor
 
-deployPod ${MANAGED_SERVER_NAME_BASE?}1
+  deployDomainConfigMap
+  deployTestScriptConfigMap
+  deployCustomOverridesConfigMap
+  createTestRootPVDir
+  deployWebLogic_PV_PVC_and_Secret
+  deployCreateDomainJob
+  deployIntrospectJob
+  deployPod ${ADMIN_NAME?}
+  deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
+  deployPod ${MANAGED_SERVER_NAME_BASE?}1
+  deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
 
-deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
+else
+
+  # This path assumes we've already run the test succesfully once, it re-uses
+  # the existing domain-home/pv/pvc/secret/etc, deletes wl pods, deletes introspect job, then
+  # redeploys the custom overrides, reruns the introspect job, and restarts the admin server pod.
+
+  cleanupMinor
+
+  deployCustomOverridesConfigMap
+  deployIntrospectJob
+  deployPod ${ADMIN_NAME?}
+
+fi
+
+#
+# Check admin-server pod log and also Call on-line WLST to check
+# if automatic and custom overrides are taking effect in the bean
+# tree.
+#
+
+checkOverrides
 
 #
 # TBD potentially add additional checks to verify wl pods are healthy
 #
 
-# TBD 1 weblogic/welcome1 should be deduced via a base64 of the admin secret
-# TBD 2 generate checkBeans.input instead of using a hard coded file, add more beans to check, and check mgd servers too
-
-trace "Info: Checking beans to see if sit-cfg took effect.  Input file 'checkBeans.input', output file '$test_home/checkBeans.out'."
-kubectl cp checkBeans.input domain1-admin-server:/shared/checkBeans.input || exit 1
-kubectl cp checkBeans.py domain1-admin-server:/shared/checkBeans.py || exit 1
-tracen "Info: Waiting for WLST checkBeans.py to complete."
-printdots_start
-kubectl exec -it domain1-admin-server \
-  wlst.sh /shared/checkBeans.py \
-    weblogic welcome1 t3://domain1-admin-server:7001 \
-    /shared/checkBeans.input \
-    > $test_home/checkBeans.out 2>&1
-status=$?
-printdots_end
-if [ $status -ne 0 ]; then
-  trace "Error:  checkBeans failed, see '$test_home/checkBeans.out'."
-  exit 1
-fi
-
-trace "Info: success!"
+trace "Info: Success!"
