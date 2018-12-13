@@ -26,6 +26,11 @@ public class AdminServer extends Server {
   @Description("T3 network access points to export")
   private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
 
+  @Description(
+      "Configures which of the admin server's WebLogic admin channels should be exposed outside"
+          + " the Kubernetes cluster via a node port service.")
+  private AdminService adminService;
+
   /**
    * Configures an exported T3 network access point.
    *
@@ -54,6 +59,7 @@ public class AdminServer extends Server {
         .append("exportedNetworkAccessPoints", exportedNetworkAccessPoints)
         .append("nodePortLabels", nodePortLabels)
         .append("nodePortAnnotations", nodePortAnnotations)
+        .append("adminService", adminService)
         .toString();
   }
 
@@ -70,6 +76,7 @@ public class AdminServer extends Server {
         .append(exportedNetworkAccessPoints, that.exportedNetworkAccessPoints)
         .append(nodePortLabels, that.nodePortLabels)
         .append(nodePortAnnotations, that.nodePortAnnotations)
+        .append(adminService, that.adminService)
         .isEquals();
   }
 
@@ -80,6 +87,7 @@ public class AdminServer extends Server {
         .append(exportedNetworkAccessPoints)
         .append(nodePortLabels)
         .append(nodePortAnnotations)
+        .append(adminService)
         .toHashCode();
   }
 
@@ -93,5 +101,13 @@ public class AdminServer extends Server {
 
   void addNodePortAnnotations(String name, String value) {
     nodePortAnnotations.put(name, value);
+  }
+
+  public AdminService getAdminService() {
+    return adminService;
+  }
+
+  public void setAdminService(AdminService adminService) {
+    this.adminService = adminService;
   }
 }
