@@ -46,8 +46,8 @@ $ kubectl create -f samples/host-routing.yaml
 ```
 Now you can send requests to different WLS domains with the unique entry point of Traefik with different hostnames.
 ```
-$ curl --silent -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
-$ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
+$ curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
+$ curl -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
 ```
 #### Install a path-routing Ingress
 ```
@@ -55,8 +55,8 @@ $ kubectl create -f samples/path-routing.yaml
 ```
 Now you can send requests to different WLS domains with the unique entry point of Traefik with different paths.
 ```
-$ curl --silent http://${HOSTNAME}:30305/domain1/
-$ curl --silent http://${HOSTNAME}:30305/domain2/
+$ curl http://${HOSTNAME}:30305/domain1/
+$ curl http://${HOSTNAME}:30305/domain2/
 ```
 #### Install a TLS-enabled Ingress
 This sample demonstrates accessing the two WLS domains using an HTTPS endpoint and the WLS domains are protected by different TLS certificates.

@@ -61,8 +61,8 @@ $ kubectl create -f samples/host-routing.yaml
 ```
 Now you can send requests to different WLS domains with the unique entry point of Voyager with different hostnames.
 ```
-$ curl --silent -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
-$ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
+$ curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
+$ curl -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
 ```
 To see the Voyager host-routing stats web page, access the URL `http://${HOSTNAME}:30315` in your web browser.
 
