@@ -990,6 +990,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     resources.add(PodHelper.createAdminPodStep(null));
     resources.add(new BeforeAdminServiceStep(null));
 
+    Domain dom = info.getDomain();
     if (dom.getSpec().getAdminServer().getAdminService() != null) {
       resources.add(ServiceHelper.createForAdminServiceStep(null));
     }
