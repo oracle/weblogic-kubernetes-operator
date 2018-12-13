@@ -177,7 +177,11 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer("kubectl delete pvc ");
     cmd.append(pvcName).append(" -n ").append(namespace);
     logger.info("Deleting PVC " + cmd);
-    ExecCommand.exec(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: delete PVC failed with " + result.stderr() + " \n " + result.stdout());
+    }
   }
 
   public static boolean checkPVReleased(String pvBaseName, String namespace) throws Exception {
@@ -186,7 +190,7 @@ public class TestUtils {
 
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
-      logger.info("Checking if PV is Released " + cmd);
+      logger.info("Iteration " + i + " Checking if PV is Released " + cmd);
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0
           || result.exitValue() == 0 && !result.stdout().contains("Released")) {
@@ -344,7 +348,7 @@ public class TestUtils {
 
     Response response = null;
     int i = 0;
-    while (i < BaseTest.getMaxIterationsPod() / 2) {
+    while (i < BaseTest.getMaxIterationsPod()) {
       try {
         // Post scaling request to Operator
         if (jsonObjStr != null) {
@@ -353,9 +357,12 @@ public class TestUtils {
           response = request.get();
         }
       } catch (Exception ex) {
-        logger.info("Got exception " + ex.getMessage());
+        logger.info("Got exception, iteration " + i + " " + ex.getMessage());
         i++;
         if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
+          if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+            throw ex;
+          }
           logger.info("Sleeping 5 more seconds and try again");
           Thread.sleep(5 * 1000);
           continue;
