@@ -42,8 +42,8 @@ productionModeEnabled: true
 
 # Name of the Kubernetes secret for the Admin Server's username and password
 # The name must be lowercase. 
-# The default is <domainUID>-weblogic-credentials.
-weblogicCredentialsSecretName:
+# If not specified, the value is derived from the domainUID as <domainUID>-weblogic-credentials
+weblogicCredentialsSecretName: domain1-weblogic-credentials
 
 # Whether to include server .out to the pod's stdout.
 # The default is true.
@@ -72,4 +72,8 @@ namespace: default
 
 #Java Option for Weblogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
+
+#Base image used to build the domain home in image Docker image
+#If not specified, use the built-in base image oracle/weblogic:12.2.1.3-developer
+baseImage: oracle/weblogic:12.2.1.3-developer
 

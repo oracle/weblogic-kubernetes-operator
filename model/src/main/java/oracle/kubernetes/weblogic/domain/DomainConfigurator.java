@@ -12,7 +12,6 @@ import java.util.Arrays;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v2.DomainStorage;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -54,12 +53,8 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  /**
-   * Defines a name for the domain's admin server.
-   *
-   * @param adminServerName the name of the admin server
-   */
-  public abstract AdminServerConfigurator configureAdminServer(String adminServerName);
+  /** Defines a name for the domain's admin server. */
+  public abstract AdminServerConfigurator configureAdminServer();
 
   public void withDefaultReplicaCount(int replicas) {
     getDomainSpec().setReplicas(replicas);
@@ -133,62 +128,6 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Configures the domain to use a persistent volume claim defined before the domain is created.
-   *
-   * @param claimName the name of the persistent volume claim
-   * @return this object
-   */
-  public DomainConfigurator withPredefinedClaim(String claimName) {
-    getDomainSpec().setStorage(DomainStorage.createPredefinedClaim(claimName));
-    return this;
-  }
-
-  /**
-   * Configures the domain to use storage in the local node.
-   *
-   * @param path the path to the storage
-   * @return this object
-   */
-  public DomainConfigurator withHostPathStorage(String path) {
-    getDomainSpec().setStorage(DomainStorage.createHostPathStorage(path));
-    return this;
-  }
-
-  /**
-   * Configures the domain to use storage on a remote server.
-   *
-   * @param server the server hosting the storage
-   * @param path the path to the storage
-   * @return this object
-   */
-  public DomainConfigurator withNfsStorage(String server, String path) {
-    getDomainSpec().setStorage(DomainStorage.createNfsStorage(server, path));
-    return this;
-  }
-
-  /**
-   * Defines the amount of storage to allocate for the domain.
-   *
-   * @param size the size to allocate
-   * @return this object
-   */
-  public DomainConfigurator withStorageSize(String size) {
-    getDomainSpec().getStorage().setStorageSize(size);
-    return this;
-  }
-
-  /**
-   * Defines the amount of storage to allocate for the domain.
-   *
-   * @param policy the size to allocate
-   * @return this object
-   */
-  public DomainConfigurator withStorageReclaimPolicy(String policy) {
-    getDomainSpec().getStorage().setStorageReclaimPolicy(policy);
-    return this;
-  }
-
-  /**
    * Sets the WebLogic configuration overrides configmap name for the domain
    *
    * @param configMapName Name of the Kubernetes configmap that contains the config overrides
@@ -244,10 +183,6 @@ public abstract class DomainConfigurator {
 
   protected DomainSpec getDomainSpec() {
     return domain.getSpec();
-  }
-
-  protected String getAsName() {
-    return domain.getAsName();
   }
 
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
@@ -332,9 +267,15 @@ public abstract class DomainConfigurator {
       V1PodSecurityContext podSecurityContext);
 
   /**
-   * Set the restart version for the Domain
+   * Tells the operator whether the customer wants to restart the server pods. The value can be any
+   * String and it can be defined on domain, cluster or server to restart the different pods. After
+   * the value is added, the corresponding pods will be terminated and created again. If customer
+   * modifies the value again after the pods were recreated, then the pods will again be terminated
+   * and recreated.
    *
-   * @param restartVersion
+   * @since 2.0
+   * @param restartVersion If preseent, every time this value is updated the operator will restart
+   *     the required servers
    * @return this object
    */
   public abstract DomainConfigurator withRestartVersion(String restartVersion);

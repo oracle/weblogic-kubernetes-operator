@@ -15,7 +15,6 @@ import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -32,11 +31,8 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.helpers.Scan;
-import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
-import oracle.kubernetes.operator.helpers.StorageHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -44,10 +40,8 @@ import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.steps.ExternalAdminChannelsStep;
-import oracle.kubernetes.operator.steps.ListPersistentVolumeClaimStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
@@ -486,19 +480,19 @@ public class DomainProcessorImpl implements DomainProcessor {
     switch (item.type) {
       case "ADDED":
         d = item.object;
-        domainUID = d.getSpec().getDomainUID();
+        domainUID = d.getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
         makeRightDomainPresence(new DomainPresenceInfo(d), true, false, true);
         break;
       case "MODIFIED":
         d = item.object;
-        domainUID = d.getSpec().getDomainUID();
+        domainUID = d.getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
         makeRightDomainPresence(new DomainPresenceInfo(d), false, false, true);
         break;
       case "DELETED":
         d = item.object;
-        domainUID = d.getSpec().getDomainUID();
+        domainUID = d.getDomainUID();
         LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
         makeRightDomainPresence(new DomainPresenceInfo(d), true, true, true);
         break;
@@ -691,27 +685,12 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      Step strategy =
-          Step.chain(readExistingSituConfigMap(info), new RegisterStep(info, getNext()));
-      if (!info.isPopulated()) {
+      registerDomainPresenceInfo(info);
+      Step strategy = getNext();
+      if (!info.isPopulated() && !info.isDeleting()) {
         strategy = Step.chain(readExistingPods(info), readExistingServices(info), strategy);
       }
       return doNext(strategy, packet);
-    }
-  }
-
-  private static class RegisterStep extends Step {
-    private final DomainPresenceInfo info;
-
-    public RegisterStep(DomainPresenceInfo info, Step next) {
-      super(next);
-      this.info = info;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      registerDomainPresenceInfo(info);
-      return doNext(packet);
     }
   }
 
@@ -748,14 +727,6 @@ public class DomainProcessorImpl implements DomainProcessor {
             LabelConstants.forDomainUid(info.getDomainUID()),
             LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listServiceAsync(info.getNamespace(), new ServiceListStep(info));
-  }
-
-  private static Step readExistingSituConfigMap(DomainPresenceInfo info) {
-    String situConfigMapName =
-        ConfigMapHelper.SitConfigMapContext.getConfigMapName(info.getDomainUID());
-    return new CallBuilder()
-        .readConfigMapAsync(
-            situConfigMapName, info.getNamespace(), new ReadSituConfigMapStep(info));
   }
 
   private static class PodListStep extends ResponseStep<V1PodList> {
@@ -891,15 +862,22 @@ public class DomainProcessorImpl implements DomainProcessor {
     Domain dom = info.getDomain();
     Step managedServerStrategy =
         bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(new TailStep()));
-    Step adminServerStrategy = bringAdminServerUp(info, managedServerStrategy);
 
-    return new UpHeadStep(
-        info,
+    Step strategy =
+        Step.chain(
+            domainIntrospectionSteps(
+                info, new DomainStatusStep(info, bringAdminServerUp(info, managedServerStrategy))));
+
+    strategy =
         DomainStatusUpdater.createProgressingStep(
             DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON,
             true,
-            DomainPresenceStep.createDomainPresenceStep(
-                dom, adminServerStrategy, managedServerStrategy)));
+            DomainPresenceStep.createDomainPresenceStep(dom, strategy, managedServerStrategy));
+
+    return Step.chain(
+        new UpHeadStep(info),
+        ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUID()),
+        strategy);
   }
 
   static Step createDomainDownPlan(DomainPresenceInfo info) {
@@ -913,6 +891,10 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static class UpHeadStep extends Step {
     private final DomainPresenceInfo info;
+
+    public UpHeadStep(DomainPresenceInfo info) {
+      this(info, null);
+    }
 
     public UpHeadStep(DomainPresenceInfo info, Step next) {
       super(next);
@@ -929,6 +911,20 @@ public class DomainProcessorImpl implements DomainProcessor {
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(info, Main.getVersion(), PodAwaiterStepFactory.class, pw));
       packet.put(ProcessingConstants.PRINCIPAL, Main.getPrincipal());
+      return doNext(packet);
+    }
+  }
+
+  private static class DomainStatusStep extends Step {
+    private final DomainPresenceInfo info;
+
+    public DomainStatusStep(DomainPresenceInfo info, Step next) {
+      super(next);
+      this.info = info;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
       scheduleDomainStatusUpdating(info);
       return doNext(packet);
     }
@@ -975,58 +971,33 @@ public class DomainProcessorImpl implements DomainProcessor {
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
   private static Step bringAdminServerUp(DomainPresenceInfo info, Step next) {
-    return StorageHelper.insertStorageSteps(
-        info.getDomain(), Step.chain(bringAdminServerUpSteps(info, next)));
+    return Step.chain(bringAdminServerUpSteps(info, next));
   }
 
-  private static class ReadSituConfigMapStep extends ResponseStep<V1ConfigMap> {
-    private final DomainPresenceInfo info;
-
-    ReadSituConfigMapStep(DomainPresenceInfo info) {
-      this.info = info;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-      V1ConfigMap result = callResponse.getResult();
-      if (result != null) {
-        Map<String, String> data = result.getData();
-        String topologyYaml = data.get("topology.yaml");
-        if (topologyYaml != null) {
-          ConfigMapHelper.DomainTopology domainTopology =
-              ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
-          WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
-          ScanCache.INSTANCE.registerScan(
-              info.getNamespace(), info.getDomainUID(), new Scan(wlsDomainConfig, new DateTime()));
-        }
-      }
-
-      return doNext(packet);
-    }
-  }
-
-  private static Step[] bringAdminServerUpSteps(DomainPresenceInfo info, Step next) {
+  private static Step[] domainIntrospectionSteps(DomainPresenceInfo info, Step next) {
     Domain dom = info.getDomain();
     List<Step> resources = new ArrayList<>();
-    resources.add(new ListPersistentVolumeClaimStep(null));
     resources.add(
         JobHelper.deleteDomainIntrospectorJobStep(
             dom.getDomainUID(), dom.getMetadata().getNamespace(), null));
     resources.add(
-        JobHelper.createDomainIntrospectorJobStep(Main.tuningAndConfig.getWatchTuning(), null));
+        JobHelper.createDomainIntrospectorJobStep(Main.tuningAndConfig.getWatchTuning(), next));
+    return resources.toArray(new Step[resources.size()]);
+  }
+
+  private static Step[] bringAdminServerUpSteps(DomainPresenceInfo info, Step next) {
+    List<Step> resources = new ArrayList<>();
     resources.add(PodHelper.createAdminPodStep(null));
     resources.add(new BeforeAdminServiceStep(null));
+
+    if (dom.getSpec().getAdminServer().getAdminService() != null) {
+      resources.add(ServiceHelper.createForAdminServiceStep(null));
+    }
+
     resources.add(ServiceHelper.createForServerStep(null));
     resources.add(new WatchPodReadyAdminStep(Main.podWatchers, null));
     resources.add(new ExternalAdminChannelsStep(next));
-    return resources.toArray(new Step[0]);
+    return resources.toArray(new Step[resources.size()]);
   }
 
   private static Step bringManagedServersUp(Step next) {

@@ -23,7 +23,9 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,6 +49,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
+import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -77,12 +80,14 @@ public class Main {
   }
 
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
+  private static final ScheduledExecutorService wrappedExecutorService =
+      Engine.wrappedExecutorService("operator", container);
 
   static final TuningParameters tuningAndConfig;
 
   static {
     try {
-      TuningParameters.initializeInstance(threadFactory, "/operator/config");
+      TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
       tuningAndConfig = TuningParameters.getInstance();
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -91,9 +96,6 @@ public class Main {
   }
 
   private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
-
-  private static final ScheduledExecutorService wrappedExecutorService =
-      Engine.wrappedExecutorService("operator", container);
 
   static {
     container
@@ -127,7 +129,6 @@ public class Main {
 
   private static String principal;
   private static RestServer restServer = null;
-  private static Thread livenessThread = null;
   private static KubernetesVersion version = null;
 
   static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
@@ -299,12 +300,26 @@ public class Main {
     return isNamespaceStopping.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
-  static void runSteps(Step firstStep) {
-    runSteps(firstStep, null);
+  static Fiber runSteps(Step firstStep) {
+    return runSteps(firstStep, null);
   }
 
-  static void runSteps(Step firstStep, Runnable completionAction) {
-    engine.createFiber().start(firstStep, new Packet(), andThenDo(completionAction));
+  static Fiber runSteps(Step firstStep, Runnable completionAction) {
+    Fiber f = engine.createFiber();
+    f.start(firstStep, new Packet(), andThenDo(completionAction));
+    return f;
+  }
+
+  public static Packet runStepsToCompletion(Step firstStep)
+      throws InterruptedException, ExecutionException {
+    return runStepsToCompletion(firstStep, null);
+  }
+
+  public static Packet runStepsToCompletion(Step firstStep, Runnable completionAction)
+      throws InterruptedException, ExecutionException {
+    Fiber f = runSteps(firstStep, completionAction);
+    f.get();
+    return f.getPacket();
   }
 
   private static NullCompletionCallback andThenDo(Runnable completionAction) {
@@ -419,15 +434,24 @@ public class Main {
 
   private static void startLivenessThread() {
     LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
-    livenessThread = new OperatorLiveness();
-    livenessThread.setDaemon(true);
-    livenessThread.start();
+    // every five seconds we need to update the last modified time on the liveness file
+    wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(), 5, 5, TimeUnit.SECONDS);
   }
 
+  private static final Semaphore shutdownSignal = new Semaphore(0);
+
   private static void waitForDeath() {
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread() {
+              @Override
+              public void run() {
+                shutdownSignal.release();
+              }
+            });
 
     try {
-      livenessThread.join();
+      shutdownSignal.acquire();
     } catch (InterruptedException ignore) {
       // ignoring
     }
@@ -518,7 +542,7 @@ public class Main {
       Set<String> domainUIDs = new HashSet<>();
       if (callResponse.getResult() != null) {
         for (Domain dom : callResponse.getResult().getItems()) {
-          String domainUID = dom.getSpec().getDomainUID();
+          String domainUID = dom.getDomainUID();
           domainUIDs.add(domainUID);
           DomainPresenceInfo info =
               dpis.compute(

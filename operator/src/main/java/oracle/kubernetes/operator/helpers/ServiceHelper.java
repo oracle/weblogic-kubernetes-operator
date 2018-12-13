@@ -35,10 +35,12 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v2.AdminService;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
@@ -219,11 +221,7 @@ public class ServiceHelper {
     }
 
     private boolean isForAdminServer() {
-      return getServerName().equals(getAsName());
-    }
-
-    private String getAsName() {
-      return info.getDomain().getAsName();
+      return getServerName().equals(domainTopology.getAdminServerName());
     }
 
     @Override
@@ -235,10 +233,12 @@ public class ServiceHelper {
   private abstract static class ServiceStepContext {
     private final Step conflictStep;
     DomainPresenceInfo info;
+    WlsDomainConfig domainTopology;
 
     ServiceStepContext(Step conflictStep, Packet packet) {
       this.conflictStep = conflictStep;
       info = packet.getSPI(DomainPresenceInfo.class);
+      domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     }
 
     Step getConflictStep() {
@@ -296,7 +296,7 @@ public class ServiceHelper {
     }
 
     String getDomainName() {
-      return getDomain().getDomainName();
+      return domainTopology.getName();
     }
 
     Domain getDomain() {
@@ -742,6 +742,148 @@ public class ServiceHelper {
     @Override
     protected void removeServiceFromRecord() {
       sko.getChannels().remove(getChannelName());
+    }
+  }
+
+  /**
+   * Create asynchronous step for admin service
+   *
+   * @param next
+   * @return
+   */
+  public static Step createForAdminServiceStep(Step next) {
+    return new ForAdminServiceStep(next);
+  }
+
+  private static class ForAdminServiceStep extends ServiceHelperStep {
+    ForAdminServiceStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+      packet.put(
+          ForAdminServiceStepContext.ADMIN_SERVER_CONFIG,
+          config.getServerConfig(config.getAdminServerName()));
+      return super.apply(packet);
+    }
+
+    @Override
+    protected ServiceStepContext createContext(Packet packet) {
+      return new ForAdminServiceStepContext(this, packet);
+    }
+  }
+
+  private static class ForAdminServiceStepContext extends ServerServiceStepContext {
+    private static final String ADMIN_SERVER_CONFIG = "adminserverConfig";
+    private Packet packet;
+
+    ForAdminServiceStepContext(Step conflictStep, Packet packet) {
+      super(conflictStep, packet);
+      this.packet = packet;
+    }
+
+    @Override
+    protected String createServiceName() {
+      return LegalNames.toAdminServiceName(getDomainUID(), getServerName());
+    }
+
+    @Override
+    protected String getSpecType() {
+      return "NodePort";
+    }
+
+    @Override
+    protected V1ServicePort createServicePort() {
+      return new V1ServicePort().nodePort(1);
+    }
+
+    @Override
+    protected V1Service getServiceFromRecord() {
+      return sko.getService().get();
+    }
+
+    @Override
+    protected void addServiceToRecord(V1Service service) {
+      sko.getService().set(service);
+    }
+
+    @Override
+    protected void removeServiceFromRecord() {
+      sko.getService().set(null);
+    }
+
+    @Override
+    protected String getServiceCreatedMessageKey() {
+      return ADMIN_SERVICE_CREATED;
+    }
+
+    @Override
+    protected String getServiceReplaceMessageKey() {
+      return ADMIN_SERVICE_REPLACED;
+    }
+
+    @Override
+    protected V1ServiceSpec createServiceSpec() {
+      V1ServiceSpec spec = super.createServiceSpec();
+      List<V1ServicePort> ports = new ArrayList<>();
+      AdminService adminService = getAdminService();
+
+      for (String channel : adminService.getChannels().keySet()) {
+        int port = searchAdminChannelPort(channel);
+        if (port != -1) {
+          V1ServicePort servicePort =
+              new V1ServicePort()
+                  .name(channel)
+                  .port(port)
+                  .nodePort(adminService.getChannels().get(channel).getNodePort());
+
+          ports.add(servicePort);
+        }
+      }
+      spec.setPorts(ports);
+      return spec;
+    }
+
+    @Override
+    protected V1ObjectMeta createMetadata() {
+      V1ObjectMeta metadata = super.createMetadata();
+
+      AdminService adminService = getAdminService();
+      for (String label : adminService.getLabels().keySet()) {
+        metadata.putLabelsItem(label, adminService.getLabels().get(label));
+      }
+      for (String annotation : adminService.getAnnotations().keySet()) {
+        metadata.putAnnotationsItem(annotation, adminService.getAnnotations().get(annotation));
+      }
+      return metadata;
+    }
+
+    private int searchAdminChannelPort(String channel) {
+      WlsServerConfig serverConfig = (WlsServerConfig) packet.get(ADMIN_SERVER_CONFIG);
+      if (serverConfig != null) {
+        if ("default".equals(channel)) {
+          return serverConfig.getListenPort();
+        } else if ("defaultSecure".equals(channel) && serverConfig.isSslPortEnabled()) {
+          return serverConfig.getSslListenPort();
+        } /*else if("adminSecure".equals(channel) && serverConfig.isAdminPortEnabled()){
+            return serverConfig.getAdminPort();
+          }*/ else {
+          for (NetworkAccessPoint nap : serverConfig.getNetworkAccessPoints()) {
+            if (nap.getName().equals(channel)) {
+              return nap.getListenPort();
+            }
+          }
+          return -1;
+        }
+      }
+      // what to do if severConfig == null
+      return -1;
+    }
+
+    private AdminService getAdminService() {
+      return getDomain().getSpec().getAdminServer().getAdminService();
     }
   }
 }

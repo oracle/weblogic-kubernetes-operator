@@ -13,7 +13,7 @@ To install the chart with the release name, `my-ingress`, with the given `values
 ```
 # Change directory to the cloned git weblogic-kubernetes-operator repo.
 $ cd kubernetes/samples/charts
-$ helm install ingress-per-domain --name my-ingress --value values.yaml
+$ helm install ingress-per-domain --name my-ingress --values values.yaml
 ```
 The Ingress resource will be created in the same namespace as the WebLogic domain cluster.
 
