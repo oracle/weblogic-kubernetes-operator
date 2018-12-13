@@ -30,7 +30,7 @@ The following YAML files will be generated in the `/path/to/weblogic-operator-ou
 *	`weblogic-domain-pv.yaml` can be customized and used to create the persistent volume for this domain.
 *	`weblogic-domain-pvc.yaml` can be customized and used to create the persistent volume claim for this domain.
 *	`create-weblogic-domain-job.yaml` can be ignored when creating the domain manually.
-*	`domain-custom-resource.yaml` can be customized and used to create the domain custom resource.
+*	`domain-custom-resource.yaml` can be customized and used to create the domain resource.
 
 ## Preparing to create a persistent volume
 
@@ -94,24 +94,24 @@ kubectl describe pvc PVC_NAME
 
 Replace `PVC_NAME` with the name of the persistent volume claim.
 
-## Preparing to create the domain custom resource
+## Preparing to create the domain resource
 
-The file, `domain-custom-resource.yaml`, contains a template to create the domain custom resource.  The customizable items are:
+The file, `domain-custom-resource.yaml`, contains a template to create the domain resource.  The customizable items are:
 
 *	Domain name
 *	Namespace name
 *	Administration Server name
 *	Administration Server administration port
 
-## Creating the domain custom resource
+## Creating the domain resource
 
-To create the domain custom resource, issue the following command:
+To create the domain resource, issue the following command:
 
 ```
 kubectl create –f domain-custom-resource.yaml
 ```
 
-To verify that the domain custom resource was created, use this command:
+To verify that the domain resource was created, use this command:
 
 ```
 kubectl describe domain DOMAINUID –n NAMESPACE

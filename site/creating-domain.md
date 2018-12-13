@@ -158,7 +158,7 @@ The script will perform the following steps:
 *	Create a persistent volume for the shared state.
 *	Create a persistent volume claim for that volume.
 *	Create a Kubernetes job that will start up a utility WebLogic Server container and run WLST to create the domain on the shared storage.
-*	Wait for the job to finish and then create a domain custom resource for the new domain.
+*	Wait for the job to finish and then create a domain resource for the new domain.
 
 The default domain created by the script has the following characteristics:
 
@@ -235,15 +235,15 @@ spec:
 (many more lines omitted)
 ```
 
-The lines omitted at the end contain the actual scripts that are executed in this container.  These should generally not be modified, except by developers.  
+The lines omitted at the end contain the actual scripts that are executed in this container. Generally, these should not be modified, except by developers.  
 
 ## Verifying the domain creation
 
 The script will verify that the domain was created, and will report failure if there was any error.  However, it may be desirable to manually verify the domain, even if just to gain familiarity with the various Kubernetes objects that were created by the script.
 
-### Verify the domain custom resource
+### Verify the domain resource
 
-To confirm that the domain custom resource was created, use this command:
+To confirm that the domain resource was created, use this command:
 
 ```
 kubectl describe domain DOMAINUID -n NAMESPACE
@@ -314,11 +314,11 @@ Status:
 Events:  <none>
 ```
 
-In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting Managed Servers.
+In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
 
-### Verify pods
+### Verify the pods
 
-The following command can be used to see the pods running the servers:
+Use the following command to see the pods running the servers:
 
 ```
 kubectl get pods -n NAMESPACE
@@ -334,9 +334,9 @@ domain1-managed-server1   1/1       Running   0          22h
 domain1-managed-server2   1/1       Running   0          22h
 ```
 
-### Verify services
+### Verify the services
 
-The following command can be used to see the services for the domain:
+Use the following command to see the services for the domain:
 
 ```
 kubectl get services -n NAMESPACE
@@ -353,9 +353,9 @@ domain1-managed-server1                     ClusterIP   10.100.184.148   <none> 
 domain1-managed-server2                     ClusterIP   10.108.114.41    <none>        8001/TCP          22h
 ```
 
-### Verify Ingresses
+### Verify the Ingresses
 
-The following command can be used to see the Ingresses for the domain:
+Use the following command to see the Ingresses for the domain:
 
 ```
 kubectl describe ing -n domain1

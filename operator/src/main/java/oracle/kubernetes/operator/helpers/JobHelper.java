@@ -9,9 +9,10 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -24,6 +25,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -44,9 +46,11 @@ public class JobHelper {
   }
 
   static class DomainIntrospectorJobStepContext extends JobStepContext {
+    private final DomainPresenceInfo info;
 
-    DomainIntrospectorJobStepContext(Packet packet) {
+    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
       super(packet);
+      this.info = info;
 
       init();
     }
@@ -72,6 +76,20 @@ public class JobHelper {
       return LegalNames.toJobIntrospectorName(getDomainUID());
     }
 
+    Domain getDomain() {
+      return info.getDomain();
+    }
+
+    @Override
+    protected List<V1Volume> getAdditionalVolumes() {
+      return getDomain().getSpec().getAdditionalVolumes();
+    }
+
+    @Override
+    protected List<V1VolumeMount> getAdditionalVolumeMounts() {
+      return getDomain().getSpec().getAdditionalVolumeMounts();
+    }
+
     @Override
     List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
       List<V1EnvVar> envVarList = new ArrayList<V1EnvVar>();
@@ -82,7 +100,7 @@ public class JobHelper {
       addEnvVar(envVarList, "LOG_HOME", getEffectiveLogHome());
       addEnvVar(envVarList, "INTROSPECT_HOME", getIntrospectHome());
       addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-      addEnvVar(envVarList, "ADMIN_SECRET_NAME", getAdminSecretName());
+      addEnvVar(envVarList, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
 
       return envVarList;
     }
@@ -112,8 +130,8 @@ public class JobHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      if (runIntrospector(info)) {
-        JobStepContext context = new DomainIntrospectorJobStepContext(packet);
+      if (runIntrospector(packet, info)) {
+        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
 
         packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
 
@@ -128,13 +146,12 @@ public class JobHelper {
     }
   }
 
-  private static boolean runIntrospector(DomainPresenceInfo info) {
-    Domain dom = info.getDomain();
-    Scan scan = ScanCache.INSTANCE.lookupScan(dom.getMetadata().getNamespace(), dom.getDomainUID());
-    LOGGER.fine("runIntrospector scan: " + scan);
+  private static boolean runIntrospector(Packet packet, DomainPresenceInfo info) {
+    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    LOGGER.fine("runIntrospector topology: " + config);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    if (scan == null || (runningServersCount(info) == 0 && creatingServers(info))) {
+    if (config == null || (runningServersCount(info) == 0 && creatingServers(info))) {
       return true;
     }
     return false;
@@ -153,11 +170,11 @@ public class JobHelper {
   private static boolean creatingServers(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
     DomainSpec spec = dom.getSpec();
-    Map<String, Cluster> clusters = spec.getClusters();
-    Map<String, ManagedServer> servers = spec.getManagedServers();
+    List<Cluster> clusters = spec.getClusters();
+    List<ManagedServer> servers = spec.getManagedServers();
 
     // Are we starting a cluster?
-    for (Cluster cluster : clusters.values()) {
+    for (Cluster cluster : clusters) {
       int replicaCount = cluster.getReplicas();
       LOGGER.fine("creatingServers replicaCount: " + replicaCount + " for cluster: " + cluster);
       if (replicaCount > 0) {
@@ -256,13 +273,12 @@ public class JobHelper {
       Step step =
           new CallBuilder()
               .readPodLogAsync(
-                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep<>(next));
+                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
       return step;
     }
   }
 
-  private static class ReadDomainIntrospectorPodLogResponseStep<String>
-      extends ResponseStep<String> {
+  private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
     public ReadDomainIntrospectorPodLogResponseStep(Step nextStep) {
       super(nextStep);
     }

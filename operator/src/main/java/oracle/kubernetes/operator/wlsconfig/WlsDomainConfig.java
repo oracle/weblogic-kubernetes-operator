@@ -67,6 +67,7 @@ public class WlsDomainConfig implements WlsDomain {
    */
   public WlsDomainConfig(
       String name,
+      String adminServerName,
       Map<String, WlsClusterConfig> wlsClusterConfigs,
       Map<String, WlsServerConfig> wlsServerConfigs,
       Map<String, WlsServerConfig> wlsServerTemplates,
@@ -78,6 +79,7 @@ public class WlsDomainConfig implements WlsDomain {
         wlsServerTemplates != null ? new ArrayList<>(wlsServerTemplates.values()) : null;
     this.wlsMachineConfigs = wlsMachineConfigs;
     this.name = name;
+    this.adminServerName = adminServerName;
     // set domainConfig for each WlsClusterConfig
     if (wlsClusterConfigs != null) {
       for (WlsClusterConfig wlsClusterConfig : this.configuredClusters) {
@@ -244,6 +246,7 @@ public class WlsDomainConfig implements WlsDomain {
     }
 
     String name = parsedResult.domainName;
+    String adminServerName = parsedResult.adminServerName;
     Map<String, WlsClusterConfig> wlsClusterConfigs = new HashMap<>();
     Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
     Map<String, WlsServerConfig> wlsServerTemplates = new HashMap<>();
@@ -285,7 +288,12 @@ public class WlsDomainConfig implements WlsDomain {
       }
     }
     return new WlsDomainConfig(
-        name, wlsClusterConfigs, wlsServerConfigs, wlsServerTemplates, wlsMachineConfigs);
+        name,
+        adminServerName,
+        wlsClusterConfigs,
+        wlsServerConfigs,
+        wlsServerTemplates,
+        wlsMachineConfigs);
   }
 
   public static String getRetrieveServersSearchUrl() {
@@ -333,6 +341,7 @@ public class WlsDomainConfig implements WlsDomain {
       ParsedJson parsedJson = new ParsedJson();
       Map result = mapper.readValue(jsonString, Map.class);
       parsedJson.domainName = (String) result.get("name");
+      parsedJson.adminServerName = (String) result.get("adminServerName");
       Map servers = (Map<String, Object>) result.get("servers");
       if (servers != null) {
         parsedJson.servers = (List<Map<String, Object>>) servers.get("items");
@@ -419,6 +428,7 @@ public class WlsDomainConfig implements WlsDomain {
   /** Object used by the {@link #parseJson(String)} method to return multiple parsed objects */
   static class ParsedJson {
     String domainName;
+    String adminServerName;
     List<Map<String, Object>> servers;
     List<Map<String, Object>> serverTemplates;
     List<Map<String, Object>> clusters;
