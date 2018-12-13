@@ -87,7 +87,8 @@ public class Main {
 
   static {
     try {
-      TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
+      TuningParameters.initializeInstance(
+          wrappedExecutorService, Main::recheckDomains, "/operator/config");
       tuningAndConfig = TuningParameters.getInstance();
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);

@@ -23,10 +23,13 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   private WatchTuning watch = null;
   private PodTuning pod = null;
 
+  private final Runnable onUpdate;
+
   static synchronized TuningParameters initializeInstance(
-      ScheduledExecutorService executorService, String mountPoint) throws IOException {
+      ScheduledExecutorService executorService, Runnable onUpdate, String mountPoint)
+      throws IOException {
     if (INSTANCE == null) {
-      INSTANCE = new TuningParametersImpl(executorService, mountPoint);
+      INSTANCE = new TuningParametersImpl(executorService, onUpdate, mountPoint);
       return INSTANCE;
     }
     throw new IllegalStateException();
@@ -36,10 +39,12 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     return INSTANCE;
   }
 
-  private TuningParametersImpl(ScheduledExecutorService executorService, String mountPoint)
+  private TuningParametersImpl(
+      ScheduledExecutorService executorService, Runnable onUpdate, String mountPoint)
       throws IOException {
     super(executorService, mountPoint, TuningParametersImpl::updateTuningParameters);
-    update();
+    this.onUpdate = onUpdate;
+    update(false);
   }
 
   private static void updateTuningParameters() {
@@ -47,6 +52,10 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   }
 
   private void update() {
+    update(true);
+  }
+
+  private void update(boolean doCallback) {
     LOGGER.info(MessageKeys.TUNING_PARAMETERS);
 
     MainTuning main =
@@ -84,6 +93,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     } finally {
       lock.writeLock().unlock();
     }
+
+    if (doCallback) onUpdate.run();
   }
 
   @Override

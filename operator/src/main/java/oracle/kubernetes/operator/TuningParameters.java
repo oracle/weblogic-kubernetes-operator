@@ -11,8 +11,9 @@ import java.util.concurrent.ScheduledExecutorService;
 public interface TuningParameters extends Map<String, String> {
 
   static TuningParameters initializeInstance(
-      ScheduledExecutorService executorService, String mountPoint) throws IOException {
-    return TuningParametersImpl.initializeInstance(executorService, mountPoint);
+      ScheduledExecutorService executorService, Runnable onUpdate, String mountPoint)
+      throws IOException {
+    return TuningParametersImpl.initializeInstance(executorService, onUpdate, mountPoint);
   }
 
   public static TuningParameters getInstance() {
