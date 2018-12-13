@@ -14,6 +14,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -206,6 +207,14 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenExistingAdminPodSpecContainerHasRestartVersion_replaceIt() {
+    verifyAdminPodReplacedWhen(
+        (pod) ->
+            pod.getMetadata()
+                .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
+  }
+
+  @Test
   public void whenAdminPodCreated_specHasPodNameAsHostName() {
     assertThat(getCreatedPod().getSpec().getHostname(), equalTo(getPodName()));
   }
@@ -242,7 +251,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   private ServerConfigurator configureAdminServer() {
-    return getConfigurator().configureAdminServer(ADMIN_SERVER).withPort(ADMIN_PORT);
+    return getConfigurator().configureAdminServer();
   }
 
   @Test
@@ -310,7 +319,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withAdditionalVolume("volume1", "/domain-path1")
         .withAdditionalVolume("volume2", "/domain-path2")
-        .configureAdminServer((ADMIN_SERVER))
+        .configureAdminServer()
         .withAdditionalVolume("volume2", "/server-path");
 
     assertThat(
@@ -323,7 +332,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withAdditionalVolumeMount("volume1", "/domain-path1")
         .withAdditionalVolumeMount("volume2", "/domain-path2")
-        .configureAdminServer((ADMIN_SERVER))
+        .configureAdminServer()
         .withAdditionalVolumeMount("volume2", "/server-path");
 
     assertThat(
@@ -380,7 +389,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
         .withPodLabel("label2", "domain-label-value2")
-        .configureAdminServer((ADMIN_SERVER))
+        .configureAdminServer()
         .withPodLabel("label2", "server-label-value1");
 
     Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
@@ -393,7 +402,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getConfigurator()
         .withPodAnnotation("annotation1", "domain-annotation-value1")
         .withPodAnnotation("annotation2", "domain-annotation-value2")
-        .configureAdminServer((ADMIN_SERVER))
+        .configureAdminServer()
         .withPodAnnotation("annotation2", "server-annotation-value1");
 
     Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
@@ -405,7 +414,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenPodHasCustomLabelConflictWithInternal_createAdminPodWithInternal() {
     getConfigurator()
         .withPodLabel(LabelConstants.RESOURCE_VERSION_LABEL, "domain-label-value1")
-        .configureAdminServer((ADMIN_SERVER))
+        .configureAdminServer()
         .withPodLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "server-label-value1")
         .withPodLabel("label1", "server-label-value1");
 
@@ -415,6 +424,19 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION));
     assertThat(podLabels, hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
     assertThat(podLabels, hasEntry("label1", "server-label-value1"));
+  }
+
+  @Test
+  public void whenDomainAndAdminHasRestartVersion_createAdminPodWithRestartVersionLabel() {
+    getConfigurator()
+        .withRestartVersion("domainRestartV1")
+        .configureAdminServer()
+        .withRestartVersion("adminRestartV1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
+    assertThat(podLabels, hasEntry(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
+    assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
   }
 
   @Override
@@ -446,6 +468,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   protected ServerConfigurator getServerConfigurator(
       DomainConfigurator configurator, String serverName) {
-    return configurator.configureAdminServer(serverName);
+    return configurator.configureAdminServer();
   }
 }

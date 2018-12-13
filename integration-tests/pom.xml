@@ -59,12 +59,12 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>25.1-jre</version>
+			<version>${guava-version}</version>
 		</dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.21</version>            
+            <version>${snakeyaml-version}</version>
         </dependency>
         <dependency>
             <groupId>io.kubernetes</groupId>

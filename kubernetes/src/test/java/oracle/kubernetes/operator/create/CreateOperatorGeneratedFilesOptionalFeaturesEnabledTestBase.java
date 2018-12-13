@@ -13,7 +13,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 
@@ -49,18 +48,6 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
   @Override
   protected V1Service getExpectedExternalWeblogicOperatorService() {
     return getExpectedExternalWeblogicOperatorService(true, true);
-  }
-
-  @Override
-  protected V1Job getExpectedWeblogicOperatorHookJob(String hookType) {
-    V1Job expected = super.getExpectedWeblogicOperatorHookJob(hookType);
-    expected
-        .getSpec()
-        .getTemplate()
-        .getSpec()
-        .addImagePullSecretsItem(
-            newLocalObjectReference().name(getInputs().getWeblogicOperatorImagePullSecretName()));
-    return expected;
   }
 
   @Override

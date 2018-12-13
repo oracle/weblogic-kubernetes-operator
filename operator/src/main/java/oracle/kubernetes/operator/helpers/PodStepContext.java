@@ -7,7 +7,6 @@ package oracle.kubernetes.operator.helpers;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 
 import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.models.*;
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
@@ -19,13 +18,10 @@ import io.kubernetes.client.models.V1Handler;
 import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
@@ -37,6 +33,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -56,6 +53,7 @@ public abstract class PodStepContext implements StepContextConstants {
   private static final String READINESS_PATH = "/weblogic";
 
   private final DomainPresenceInfo info;
+  private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
   private V1Pod podModel;
   private Map<String, String> substitutionVariables = new HashMap<>();
@@ -63,6 +61,7 @@ public abstract class PodStepContext implements StepContextConstants {
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
     info = packet.getSPI(DomainPresenceInfo.class);
+    domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
   }
 
   void init() {
@@ -131,7 +130,7 @@ public abstract class PodStepContext implements StepContextConstants {
   }
 
   String getDomainName() {
-    return getDomain().getDomainName();
+    return domainTopology.getName();
   }
 
   private String getDomainResourceName() {
@@ -143,11 +142,11 @@ public abstract class PodStepContext implements StepContextConstants {
   }
 
   String getAsName() {
-    return getDomain().getAsName();
+    return domainTopology.getAdminServerName();
   }
 
   Integer getAsPort() {
-    return getDomain().getAsPort();
+    return domainTopology.getServerConfig(domainTopology.getAdminServerName()).getListenPort();
   }
 
   String getLogHome() {
@@ -174,28 +173,6 @@ public abstract class PodStepContext implements StepContextConstants {
   abstract Integer getPort();
 
   abstract String getServerName();
-
-  private String getAdminSecretName() {
-    return getDomain().getAdminSecret().getName();
-  }
-
-  private List<V1PersistentVolumeClaim> getClaims() {
-    return info.getClaims().getItems();
-  }
-
-  private String getClaimName() {
-    return Optional.ofNullable(info.getDomain().getPersistentVolumeClaimName())
-        .orElse(getDiscoveredClaim());
-  }
-
-  /**
-   * Returns the claim name of a PVC labeled with this domain's UID, if any.
-   *
-   * @return the found PVC's claim name
-   */
-  private String getDiscoveredClaim() {
-    return getClaims().isEmpty() ? null : getClaims().iterator().next().getMetadata().getName();
-  }
 
   ServerKubernetesObjects getSko() {
     return info.getServers().computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
@@ -319,6 +296,10 @@ public abstract class PodStepContext implements StepContextConstants {
       return false;
     }
 
+    if (!isRestartVersionValid(build, current)) {
+      return false;
+    }
+
     List<V1Container> buildContainers = build.getSpec().getContainers();
     List<V1Container> currentContainers = current.getSpec().getContainers();
 
@@ -349,6 +330,18 @@ public abstract class PodStepContext implements StepContextConstants {
     }
 
     return true;
+  }
+
+  private static boolean isRestartVersionValid(V1Pod build, V1Pod current) {
+    V1ObjectMeta m1 = build.getMetadata();
+    V1ObjectMeta m2 = current.getMetadata();
+    return isLabelSame(m1, m2, LabelConstants.DOMAINRESTARTVERSION_LABEL)
+        && isLabelSame(m1, m2, LabelConstants.CLUSTERRESTARTVERSION_LABEL)
+        && isLabelSame(m1, m2, LabelConstants.SERVERRESTARTVERSION_LABEL);
+  }
+
+  private static boolean isLabelSame(V1ObjectMeta build, V1ObjectMeta current, String labelName) {
+    return Objects.equals(build.getLabels().get(labelName), current.getLabels().get(labelName));
   }
 
   private static V1Container getContainerWithName(List<V1Container> containers, String name) {
@@ -555,7 +548,13 @@ public abstract class PodStepContext implements StepContextConstants {
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
-        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
+        .putLabelsItem(
+            LabelConstants.DOMAINRESTARTVERSION_LABEL, getServerSpec().getDomainRestartVersion())
+        .putLabelsItem(
+            LabelConstants.CLUSTERRESTARTVERSION_LABEL, getServerSpec().getClusterRestartVersion())
+        .putLabelsItem(
+            LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
     // Add custom annotations
     getPodAnnotations().forEach((k, v) -> metadata.putAnnotationsItem(k, v));
@@ -572,10 +571,6 @@ public abstract class PodStepContext implements StepContextConstants {
                 createContainer(tuningParameters)
                     .resources(getServerSpec().getResources())
                     .securityContext(getServerSpec().getContainerSecurityContext()))
-            .addVolumesItem(
-                new V1Volume()
-                    .name(SECRETS_VOLUME)
-                    .secret(new V1SecretVolumeSource().secretName(getAdminSecretName())))
             .addVolumesItem(
                 new V1Volume()
                     .name(SCRIPTS_VOLUME)
@@ -612,13 +607,6 @@ public abstract class PodStepContext implements StepContextConstants {
       podSpec.addImagePullSecretsItem(imagePullSecret);
     }
     /**/
-    if (getClaimName() != null) {
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(STORAGE_VOLUME)
-              .persistentVolumeClaim(
-                  new V1PersistentVolumeClaimVolumeSource().claimName(getClaimName())));
-    }
 
     for (V1Volume additionalVolume : getAdditionalVolumes()) {
       podSpec.addVolumesItem(additionalVolume);
@@ -637,8 +625,6 @@ public abstract class PodStepContext implements StepContextConstants {
             .env(getEnvironmentVariables(tuningParameters))
             .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
             .lifecycle(createLifecycle())
-            .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
-            .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));

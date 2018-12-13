@@ -22,12 +22,12 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.Scan;
-import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
@@ -39,7 +39,6 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,7 +81,7 @@ public class ManagedServersUpStepTest {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainUID(UID).withReplicas(1).withAsName(ADMIN);
+    return new DomainSpec().withDomainUID(UID).withReplicas(1);
   }
 
   @Before
@@ -176,7 +175,7 @@ public class ManagedServersUpStepTest {
   private void startAdminServerOnly() {
     configurator
         .withDefaultServerStartPolicy(START_NEVER)
-        .configureAdminServer(ADMIN)
+        .configureAdminServer()
         .withServerStartPolicy(START_ALWAYS);
   }
 
@@ -224,9 +223,9 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenMultipleWlsServersInDomainSpec_skipAdminServer() {
-    defineAdminServer("wls2");
-    configureServers("wls1", "wls2", "wls3");
-    addWlsServers("wls1", "wls2", "wls3");
+    defineAdminServer();
+    configureServers("wls1", ADMIN, "wls3");
+    addWlsServers("wls1", ADMIN, "wls3");
 
     invokeStep();
 
@@ -235,7 +234,7 @@ public class ManagedServersUpStepTest {
 
   @Test
   public void whenWlsServersDuplicatedInDomainSpec_skipDuplicates() {
-    defineAdminServer("admin");
+    defineAdminServer();
     configureServers("wls1", "wls1", "wls2");
     addWlsServers("wls1", "wls2");
 
@@ -514,12 +513,10 @@ public class ManagedServersUpStepTest {
   }
 
   private Step createNextStep(List<String> servers) {
-    ScanCache.INSTANCE.registerScan(
-        domainPresenceInfo.getNamespace(),
-        domainPresenceInfo.getDomainUID(),
-        new Scan(configSupport.createDomainConfig(), new DateTime()));
+    configSupport.setAdminServerName(ADMIN);
+    WlsDomainConfig config = configSupport.createDomainConfig();
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    return factory.createServerStep(domainPresenceInfo, servers, nextStep);
+    return factory.createServerStep(domainPresenceInfo, config, servers, nextStep);
   }
 
   private void addWlsServer(String serverName) {
@@ -546,8 +543,8 @@ public class ManagedServersUpStepTest {
     }
   }
 
-  private void defineAdminServer(String adminServerName) {
-    configurator.configureAdminServer(adminServerName);
+  private void defineAdminServer() {
+    configurator.configureAdminServer();
   }
 
   private WlsServerConfig getWlsServer(String serverName) {
@@ -585,15 +582,16 @@ public class ManagedServersUpStepTest {
   }
 
   private void invokeStep() {
-    ScanCache.INSTANCE.registerScan(
-        domainPresenceInfo.getNamespace(),
-        domainPresenceInfo.getDomainUID(),
-        new Scan(configSupport.createDomainConfig(), new DateTime()));
+    configSupport.setAdminServerName(ADMIN);
+
+    testSupport.addToPacket(
+        ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     testSupport.runSteps(step);
   }
 
   static class TestStepFactory implements ManagedServersUpStep.NextStepFactory {
     private static DomainPresenceInfo info;
+    private static WlsDomainConfig config;
     private static Collection<String> servers;
     private static Step next;
     private static TestStepFactory factory = new TestStepFactory();
@@ -616,8 +614,10 @@ public class ManagedServersUpStepTest {
     }
 
     @Override
-    public Step createServerStep(DomainPresenceInfo info, Collection<String> servers, Step next) {
+    public Step createServerStep(
+        DomainPresenceInfo info, WlsDomainConfig config, Collection<String> servers, Step next) {
       TestStepFactory.info = info;
+      TestStepFactory.config = config;
       TestStepFactory.servers = servers;
       TestStepFactory.next = next;
       return new TerminalStep();

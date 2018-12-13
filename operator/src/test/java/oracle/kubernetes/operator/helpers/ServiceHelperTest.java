@@ -49,7 +49,9 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -115,10 +117,15 @@ public class ServiceHelperTest {
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.installRequestStepFactory());
 
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
+    configSupport.addWlsServer(ADMIN_SERVER);
+    configSupport.setAdminServerName(ADMIN_SERVER);
+
     testSupport
         .addToPacket(CLUSTER_NAME, TEST_CLUSTER)
         .addToPacket(SERVER_NAME, TEST_SERVER_NAME)
         .addToPacket(PORT, TEST_PORT)
+        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig())
         .addDomainPresenceInfo(domainPresenceInfo);
     registerWlsDomainConfigScan();
   }
@@ -137,7 +144,7 @@ public class ServiceHelperTest {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainName(DOMAIN_NAME).withDomainUID(UID).withAsName(ADMIN_SERVER);
+    return new DomainSpec().withDomainUID(UID);
   }
 
   // ------ service deletion --------
@@ -427,7 +434,7 @@ public class ServiceHelperTest {
 
   @Test
   public void whenSupported_createServerServiceWithPublishNotReadyAddresses() {
-    testSupport.addVersion(new HealthCheckHelper.KubernetesVersion(1, 8));
+    testSupport.addVersion(new KubernetesVersion(1, 8));
 
     verifyMissingServerServiceCreated(withPublishNotReadyAddresses(createServerService()));
   }
@@ -598,7 +605,7 @@ public class ServiceHelperTest {
   }
 
   private AdminServerConfigurator configureAdminServer() {
-    return configureDomain().configureAdminServer(ADMIN_SERVER);
+    return configureDomain().configureAdminServer();
   }
 
   private DomainConfigurator configureDomain() {

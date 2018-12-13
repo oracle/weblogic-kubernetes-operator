@@ -10,15 +10,12 @@ import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.ProbeMatcher.hasExpectedTuning;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.readOnlyVolumeMount;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.writableVolumeMount;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.*;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
@@ -30,8 +27,6 @@ import io.kubernetes.client.models.V1Lifecycle;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1Pod;
@@ -40,7 +35,6 @@ import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.util.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,9 +45,11 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -79,7 +75,7 @@ public abstract class PodHelperTestBase {
   static final Integer ADMIN_PORT = 7001;
   private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
-  private static final String ADMIN_SECRET_NAME = "adminSecretName";
+  private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
   private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
   private static final String LATEST_IMAGE = "image:latest";
   static final String VERSIONED_IMAGE = "image:1.2.3";
@@ -94,10 +90,7 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_PERIOD = 35;
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
-  private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
-  private static final String SIT_CONFIG_MAP_VOLUME_SUFFIX =
-      "-weblogic-domain-introspect-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
   private static final Map<String, String> NODE_SELECTOR =
       Collections.singletonMap("labelKey", "labelValue");
@@ -140,7 +133,13 @@ public abstract class PodHelperTestBase {
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(TuningParametersStub.install());
 
-    testSupport.addDomainPresenceInfo(domainPresenceInfo);
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
+    configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
+    configSupport.setAdminServerName(ADMIN_SERVER);
+
+    testSupport
+        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig())
+        .addDomainPresenceInfo(domainPresenceInfo);
     onAdminExpectListPersistentVolume();
   }
 
@@ -160,7 +159,6 @@ public abstract class PodHelperTestBase {
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
     DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
-    domainPresenceInfo.setClaims(new V1PersistentVolumeClaimList());
     return domainPresenceInfo;
   }
 
@@ -170,11 +168,8 @@ public abstract class PodHelperTestBase {
 
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
-        .withDomainName(DOMAIN_NAME)
         .withDomainUID(UID)
-        .withAsName(ADMIN_SERVER)
-        .withAsPort(ADMIN_PORT)
-        .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
+        .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
         .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
         .withImage(LATEST_IMAGE);
   }
@@ -254,19 +249,6 @@ public abstract class PodHelperTestBase {
     configureDomain().withDefaultImagePullSecrets(imagePullSecret);
 
     assertThat(getCreatedPod().getSpec().getImagePullSecrets(), hasItem(imagePullSecret));
-  }
-
-  @Test
-  public void whenPodCreated_containerHasExpectedVolumeMounts() {
-    assertThat(
-        getCreatedPodSpecContainer().getVolumeMounts(),
-        containsInAnyOrder(
-            writableVolumeMount("weblogic-domain-storage-volume", "/shared"),
-            writableVolumeMount(
-                UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
-            readOnlyVolumeMount("weblogic-credentials-volume", "/weblogic-operator/secrets"),
-            readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
-            readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
   }
 
   @Test
@@ -379,38 +361,6 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenDomainPresenceLacksClaims_adminPodSpecHasNoDomainStorageVolume() {
     assertThat(getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME), nullValue());
-  }
-
-  @Test
-  public void whenDomainPresenceHasClaim_podSpecHasDomainStorageVolume() {
-    domainPresenceInfo
-        .getClaims()
-        .addItemsItem(
-            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
-
-    V1Volume storageVolume = getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME);
-
-    assertThat(storageVolume.getPersistentVolumeClaim().getClaimName(), equalTo("claim-name"));
-  }
-
-  @Test
-  public void whenDomainSpecifiesClaimName_podSpecUsesIt() {
-    configurator.withPredefinedClaim("predefined");
-    domainPresenceInfo
-        .getClaims()
-        .addItemsItem(
-            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
-
-    V1Volume storageVolume = getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME);
-
-    assertThat(storageVolume.getPersistentVolumeClaim().getClaimName(), equalTo("predefined"));
-  }
-
-  @Test
-  public void createdPod_hasCredentialsVolume() {
-    V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CREDENTIALS_VOLUME_NAME);
-
-    assertThat(credentialsVolume.getSecret().getSecretName(), equalTo(ADMIN_SECRET_NAME));
   }
 
   @Test

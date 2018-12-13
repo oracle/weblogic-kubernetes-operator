@@ -15,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -23,12 +24,13 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.Scan;
+import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.joda.time.DateTime;
@@ -261,11 +263,10 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      Domain domain = info.getDomain();
 
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
       // Parse results into separate data files
-      Map<String, String> data = parseIntrospectorResult(result, domain.getDomainUID());
+      Map<String, String> data = parseIntrospectorResult(result, info.getDomainUID());
       LOGGER.fine("================");
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
@@ -276,17 +277,14 @@ public class ConfigMapHelper {
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
         ScanCache.INSTANCE.registerScan(
             info.getNamespace(), info.getDomainUID(), new Scan(wlsDomainConfig, new DateTime()));
+        packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
         LOGGER.info(
             MessageKeys.WLS_CONFIGURATION_READ,
             (System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME))),
             wlsDomainConfig);
         SitConfigMapContext context =
             new SitConfigMapContext(
-                this,
-                domain.getDomainUID(),
-                getOperatorNamespace(),
-                domain.getMetadata().getNamespace(),
-                data);
+                this, info.getDomainUID(), getOperatorNamespace(), info.getNamespace(), data);
 
         return doNext(context.verifyConfigMap(getNext()), packet);
       }
@@ -467,6 +465,44 @@ public class ConfigMapHelper {
     }
   }
 
+  public static Step readExistingSituConfigMap(String ns, String domainUID) {
+    String situConfigMapName = ConfigMapHelper.SitConfigMapContext.getConfigMapName(domainUID);
+    return new CallBuilder().readConfigMapAsync(situConfigMapName, ns, new ReadSituConfigMapStep());
+  }
+
+  private static class ReadSituConfigMapStep extends ResponseStep<V1ConfigMap> {
+
+    ReadSituConfigMapStep() {}
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+
+      V1ConfigMap result = callResponse.getResult();
+      if (result != null) {
+        Map<String, String> data = result.getData();
+        String topologyYaml = data.get("topology.yaml");
+        if (topologyYaml != null) {
+          ConfigMapHelper.DomainTopology domainTopology =
+              ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
+          WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
+          ScanCache.INSTANCE.registerScan(
+              info.getNamespace(), info.getDomainUID(), new Scan(wlsDomainConfig, new DateTime()));
+          packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+        }
+      }
+
+      return doNext(packet);
+    }
+  }
+
   static Map<String, String> parseIntrospectorResult(String text, String domainUID) {
     Map<String, String> map = new HashMap<>();
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
@@ -534,6 +570,7 @@ public class ConfigMapHelper {
   public static class DomainTopology {
     private boolean domainValid;
     private WlsDomainConfig domain;
+    private List<String> validationErrors;
 
     public boolean getDomainValid() {
       return this.domainValid;
@@ -550,6 +587,14 @@ public class ConfigMapHelper {
 
     public void setDomain(WlsDomainConfig domain) {
       this.domain = domain;
+    }
+
+    public List<String> getValidationErrors() {
+      return validationErrors;
+    }
+
+    public void setValidationErrors(List<String> validationErrors) {
+      this.validationErrors = validationErrors;
     }
   }
 }
