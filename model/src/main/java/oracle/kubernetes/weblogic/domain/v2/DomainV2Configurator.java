@@ -39,8 +39,8 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   @Override
-  public AdminServerConfigurator configureAdminServer(String adminServerName) {
-    return new AdminServerConfiguratorImpl(getOrCreateAdminServer(adminServerName));
+  public AdminServerConfigurator configureAdminServer() {
+    return new AdminServerConfiguratorImpl(getOrCreateAdminServer());
   }
 
   @Override
@@ -125,12 +125,6 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
-    public AdminServerConfigurator withPort(int port) {
-      getDomainSpec().setAsPort(port);
-      return this;
-    }
-
-    @Override
     public AdminServerConfigurator withNodePort(int nodePort) {
       adminServer.setNodePort(nodePort);
       return this;
@@ -160,10 +154,18 @@ public class DomainV2Configurator extends DomainConfigurator {
     public ExportedNetworkAccessPoint configureExportedNetworkAccessPoint(String channelName) {
       return adminServer.addExportedNetworkAccessPoint(channelName);
     }
+
+    @Override
+    public AdminService configureAdminService() {
+      if (adminServer.getAdminService() == null) {
+        adminServer.setAdminService(new AdminService());
+      }
+      return adminServer.getAdminService();
+    }
   }
 
-  private AdminServer getOrCreateAdminServer(String adminServerName) {
-    return getDomainSpec().getOrCreateAdminServer(adminServerName);
+  private AdminServer getOrCreateAdminServer() {
+    return getDomainSpec().getOrCreateAdminServer();
   }
 
   @Override
@@ -172,9 +174,8 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   private Server getOrCreateManagedServer(@Nonnull String serverName) {
-    ManagedServer server = getDomainSpec().getManagedServers().get(serverName);
+    ManagedServer server = getDomainSpec().getManagedServer(serverName);
     if (server != null) {
-      server.setServerName(serverName);
       return server;
     }
 
@@ -183,7 +184,7 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   private Server createManagedServer(String serverName) {
     ManagedServer server = new ManagedServer().withServerName(serverName);
-    getDomainSpec().getManagedServers().put(serverName, server);
+    getDomainSpec().getManagedServers().add(server);
     return server;
   }
 
@@ -348,9 +349,8 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   private Cluster getOrCreateCluster(@Nonnull String clusterName) {
-    Cluster cluster = getDomainSpec().getClusters().get(clusterName);
+    Cluster cluster = getDomainSpec().getCluster(clusterName);
     if (cluster != null) {
-      cluster.setClusterName(clusterName);
       return cluster;
     }
 
@@ -359,13 +359,13 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   private Cluster createCluster(@Nonnull String clusterName) {
     Cluster cluster = new Cluster().withClusterName(clusterName);
-    getDomainSpec().getClusters().put(clusterName, cluster);
+    getDomainSpec().getClusters().add(cluster);
     return cluster;
   }
 
   @Override
   public void setShuttingDown(boolean shuttingDown) {
-    configureAdminServer("").withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
+    configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
@@ -378,6 +378,12 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withReplicas(int replicas) {
       cluster.setReplicas(replicas);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withMaxUnavailable(int maxUnavailable) {
+      cluster.setMaxUnavailable(maxUnavailable);
       return this;
     }
 

@@ -1,0 +1,60 @@
+{
+  "type": "object",
+  "javaType": "oracle.kubernetes.weblogic.domain.v1.Server",
+  "description": "Server describes the desired state of a server.",
+  "properties": {
+    "startedServerState": {
+      "description": "The state the server should be started in when the server needs to be started. Legal values are RUNNING and ADMIN. <p>Defaults to RUNNING.",
+      "type": "string"
+    },
+    "restartedLabel": {
+      "description": "Used both to indicate that a server should be restarted and to tell when the operator has restarted the server. <ul><li>If not null, and if there is a pod running for the server, and its metadata does not have a weblogic.serverStarted label with this value, then the operator will restart the server by deleting the old pod and creating a new one with this label. <li>If not null, and there is a pod running for the server, but its metadata already has a weblogic.serverStarted label with this value, then the operator will continue to let the pod run. <li>If not null, and there is no pod running for the server, and the operator needs to start the server, then the operator will start the server by creating a new pod with this label. <li>If null, and there is a pod running for the server, and its metadata has a weblogic.serverStarted label, the operator will continue to let the pod run, and remove its weblogic.serverStarted label. <li>If null, and there is a pod running for the server, and its metadata does not have a weblogic.serverStarted label, the operator will continue to let the pod run. <li>If null, and there is no pod running for the server, and the operator needs to start the server, then the operator will start the server by creating a new pod without this label.</ul> <p>Defaults to null.",
+      "type" : "string"
+    },
+    "nodePort": {
+      "description": "The port on each node on which this managed server will be exposed. If specified, this value must be an unused port. <p>By default, the server will not be exposed outside the Kubernetes cluster.",
+      "type": "integer"
+    },
+    "env": {
+      "description": "Environment variables to pass while starting this server. <p> If not specified, then the environment variables in config.xml will be used instead.",
+      "type": "array",
+      "items": {
+        "javaType": "io.kubernetes.client.models.V1EnvVar",
+        "type": "object"
+      }
+    },
+    "image": {
+      "description": "The WebLogic Docker image. <p>Defaults to store/oracle/weblogic:12.2.1.3.",
+      "type": "string"
+    },
+    "imagePullPolicy": {
+      "description": "   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise. <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images",
+      "type": "string"
+    },
+    "imagePullSecrets": {
+      "description": "An optional list of references to secrets in the same namespace to use for pulling the WebLogic Docker image.",
+      "type": "array",
+      "items": {
+         "javaType": "io.kubernetes.client.models.V1LocalObjectReference",
+         "type": "object"
+      }
+    },
+    "shutdownPolicy": {
+      "description": "Controls how the operator will stop this server. Legal values are GRACEFUL_SHUTDOWN and FORCED_SHUTDOWN. <p>Defaults to FORCED_SHUTDOWN.",
+      "type": "string"
+    },
+    "gracefulShutdownTimeout": {
+      "description": "Number of seconds to wait before aborting inflight work and gracefully shutting down the server. <p>Defaults to 0.",
+      "type": "integer",
+      "format": "int32"
+    },
+    "gracefulShutdownIgnoreSessions": {
+      "description": "Whether to ignore pending HTTP sessions during inflight work handling when gracefully shutting down the server. <p>Defaults to false.",
+      "type": "boolean"
+    },
+    "gracefulShutdownWaitForSessions": {
+      "description": "Whether to wait for all HTTP sessions during inflight work handling when gracefully shutting down the server. <p>Defaults to false.",
+      "type": "boolean"
+    }
+  }
+}

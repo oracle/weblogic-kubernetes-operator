@@ -1,0 +1,31 @@
+{
+    "type": "object",
+    "javaType": "oracle.kubernetes.weblogic.domain.v1.ClusterStartup",
+    "description": "ClusterStarup describes the desired startup state and passed environment variables for a specific cluster.",
+    "required": [
+     "clusterName"
+    ],
+    "properties": {
+     "desiredState": {
+      "description": "Desired startup state for any managed server started in this cluster. Legal values are RUNNING or ADMIN.",
+      "type": "string"
+     },
+     "clusterName": {
+      "description": "Name of specific cluster to start.  Managed servers in the cluster will be started beginning with replicas instances.",
+      "type": "string"
+     },
+     "replicas": {
+      "description": "Replicas is the desired number of managed servers running for this cluster.",
+      "type": "integer",
+      "format": "int32"
+     },
+     "env": {
+      "description": "Environment variables to pass while starting managed servers in this cluster.",
+      "type": "array",
+      "items": {
+       "javaType": "io.kubernetes.client.models.V1EnvVar",
+       "type": "object"
+      }
+     }
+    }
+ }

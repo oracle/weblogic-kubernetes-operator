@@ -62,7 +62,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   private WlsServerConfig createServerConfig() {
-    return new WlsServerConfig(SERVER_NAME, LISTEN_PORT, null, null, false, null, null);
+    return new WlsServerConfig(
+        SERVER_NAME, LISTEN_PORT, null, null, false, null, null, null, false);
   }
 
   @Override

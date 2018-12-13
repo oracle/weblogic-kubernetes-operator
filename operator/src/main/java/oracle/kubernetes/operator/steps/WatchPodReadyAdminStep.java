@@ -10,6 +10,7 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -26,7 +27,9 @@ public class WatchPodReadyAdminStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-    V1Pod adminPod = info.getAdmin().getPod().get();
+    WlsDomainConfig domainTopology =
+        (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    V1Pod adminPod = info.getServers().get(domainTopology.getAdminServerName()).getPod().get();
 
     PodWatcher pw = podWatchers.get(adminPod.getMetadata().getNamespace());
     packet
