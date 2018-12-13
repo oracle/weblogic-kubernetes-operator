@@ -119,8 +119,10 @@ $ curl --silent http://${HOSTNAME}:30305/sample-domain1/
 
 ## 6. Remove the domain.
 
-a.	Remove the domain's Ingress by using `helm`
-
+a.	Remove the domain's Ingress by using `helm`:
+```
+helm delete --purge domain1-ingress
+```
 b.	Remove the domain resource by using the sample [`delete-weblogic-domain-resources`](../kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script.
 
 c.	Use `kubectl` to confirm that the server pods and domain resource are gone.
