@@ -77,15 +77,6 @@ $ helm upgrade \
   --reuse-values \
   --set something about namespaces
 ```
-d.  Configure the operator to manage the domains created in this namespace:
-```
-$ helm upgrade \
-  --reuse-values \
-  --set "domainNamespaces={sample-domains-ns1}" \
-  --wait \
-  sample-weblogic-operator \
-  kubernetes/charts/weblogic-operator
-```
 
 ## 5. Create a domain in the domain namespace.
 
