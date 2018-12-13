@@ -113,7 +113,6 @@ public class DomainUpPlanTest {
         hasChainWithStepsInOrder(
             "ProgressingHookStep",
             "DomainPresenceStep",
-            "ListPersistentVolumeClaimStep",
             // "DeleteIntrospectorJobStep",
             "DomainIntrospectorJobStep",
             // "WatchDomainIntrospectorJobReadyStep",
@@ -127,21 +126,6 @@ public class DomainUpPlanTest {
             "ExternalAdminChannelsStep",
             "ManagedServersUpStep",
             "EndProgressingStep"));
-  }
-
-  @Test
-  public void whenOperatorCreatedStorageConfigured_createBeforeListingClaims() {
-    configurator.withNfsStorage("myhost", "/path");
-
-    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
-
-    assertThat(
-        plan,
-        hasChainWithStepsInOrder(
-            "ProgressingHookStep",
-            "PersistentVolumeStep",
-            "PersistentVolumeClaimStep",
-            "ListPersistentVolumeClaimStep"));
   }
 
   static class StepChainMatcher

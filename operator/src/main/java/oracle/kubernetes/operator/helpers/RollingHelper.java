@@ -35,8 +35,6 @@ import oracle.kubernetes.weblogic.domain.v2.ServerStatus;
 public class RollingHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final int MINIMUM_FOR_CLUSTER = 2;
-
   private RollingHelper() {}
 
   /**
@@ -117,7 +115,7 @@ public class RollingHelper {
       }
 
       if (!servers.isEmpty()) {
-        LOGGER.info(MessageKeys.CYCLING_SERVERS, dom.getSpec().getDomainUID(), servers);
+        LOGGER.info(MessageKeys.CYCLING_SERVERS, dom.getDomainUID(), servers);
       }
 
       Collection<StepAndPacket> work = new ArrayList<>();
@@ -173,6 +171,7 @@ public class RollingHelper {
     public NextAction apply(Packet packet) {
       if (it.hasNext()) {
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+        WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
         // Refresh as this is constantly changing
         Domain dom = info.getDomain();
@@ -198,14 +197,12 @@ public class RollingHelper {
 
         WlsServerConfig serverConfig =
             (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
-        servers.add(serverConfig != null ? serverConfig.getName() : dom.getSpec().getAsName());
+        servers.add(serverConfig != null ? serverConfig.getName() : config.getAdminServerName());
 
         // See if we can restart more now
         if (it.hasNext()) {
           // we are already pending a restart of one server, so start count at -1
           int countReady = -1;
-          Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
-          WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
           WlsClusterConfig cluster = config != null ? config.getClusterConfig(clusterName) : null;
           if (cluster != null) {
             List<WlsServerConfig> serversConfigs = cluster.getServerConfigs();
@@ -222,10 +219,11 @@ public class RollingHelper {
 
           // then add as many as possible next() entries leaving at least minimum cluster
           // availability
-          while (countReady-- > MINIMUM_FOR_CLUSTER) {
+          while (countReady-- > dom.getMinAvailable(clusterName)) {
             current = it.next();
             serverConfig = (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
-            servers.add(serverConfig != null ? serverConfig.getName() : dom.getSpec().getAsName());
+            servers.add(
+                serverConfig != null ? serverConfig.getName() : config.getAdminServerName());
             serversThatCanRestartNow.add(current);
             if (!it.hasNext()) {
               break;
@@ -234,8 +232,7 @@ public class RollingHelper {
         }
 
         readyServers.removeAll(servers);
-        LOGGER.info(
-            MessageKeys.ROLLING_SERVERS, dom.getSpec().getDomainUID(), servers, readyServers);
+        LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
 
         return doNext(new ServersThatCanRestartNowStep(serversThatCanRestartNow, this), packet);
       }
