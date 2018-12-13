@@ -81,51 +81,15 @@ fi
 # Function to initialize and validate the output directory
 # for the generated properties and yaml files for this domain.
 #
-function initAndValidateOutputDir {
+function initOutputDir {
   domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
-  validateOutputDir \
-    ${domainOutputDir} \
-    ${valuesInputFile} \
-    create-domain-inputs.yaml \
-    domain.properties \
-    domain.yaml
-}
-
-#
-# Function to validate the domain secret
-#
-function validateDomainSecret {
-  # Verify the secret exists
-  validateSecretExists ${weblogicCredentialsSecretName} ${namespace}
-  failIfValidationErrors
-
-  # Verify the secret contains a username
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a username"
-  fi
-
-  # Verify the secret contains a password
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a password"
-  fi
-  failIfValidationErrors
-}
-
-#
-# Function to validate a kubernetes secret exists
-# $1 - the name of the secret
-# $2 - namespace
-function validateSecretExists {
-  echo "Checking to see if the secret ${1} exists in namespace ${2}"
-  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The secret ${1} was not found in namespace ${2}"
-  fi
+  removeFileIfExists ${domainOutputDir}/${valuesInputFile}
+  removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
+  removeFileIfExists ${domainOutputDir}/domain.properties
+  removeFileIfExists ${domainOutputDir}/domain.yaml
 }
 
 # try to execute docker to see whether docker is available
@@ -170,45 +134,9 @@ function initialize {
 
   failIfValidationErrors
 
-  # Parse the commonn inputs file
-  parseCommonInputs
+  validateCommonInputs
 
-  validateInputParamsSpecified \
-    adminServerName \
-    domainUID \
-    clusterName \
-    managedServerNameBase \
-    namespace \
-    t3PublicAddress \
-    version 
-
-  validateIntegerInputParamsSpecified \
-    adminPort \
-    configuredManagedServerCount \
-    initialManagedServerReplicas \
-    managedServerPort \
-    t3ChannelPort \
-    adminNodePort 
-
-  validateBooleanInputParamsSpecified \
-    productionModeEnabled \
-    exposeAdminT3Channel \
-    exposeAdminNodePort \
-    includeServerOutInPodLog
-
-  export requiredInputsVersion="create-weblogic-sample-domain-inputs-v1"
-  validateVersion 
-
-  validateDomainUid
-  validateNamespace
-  validateAdminServerName
-  validateManagedServerNameBase
-  validateClusterName
-  validateWeblogicCredentialsSecretName
-  initAndValidateOutputDir
-  validateServerStartPolicy
-  validateClusterType
-  failIfValidationErrors
+  initOutputDir
 
   getDockerSample
 }
@@ -347,43 +275,10 @@ function printSummary {
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"
   echo "  ${domainPropertiesOutput}"
   echo "  ${dcrOutput}"
+  echo ""
+  echo "Completed"
 }
 
-#
-# Function to create the domain resource
-#
-function createDomainResource {
-  pwd
-  kubectl apply -f ${dcrOutput}
-  DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
-  if [ "${DCR_AVAIL}" != "1" ]; then
-    fail "The domain resource ${domainUID} was not found"
-  fi
-}
-
-#
-# Perform the following sequence of steps to create a domain
-#
-
-# Setup the environment for running this script and perform initial validation checks
-initialize
-
-# Generate the properties and yaml files for creating the domain
-createFiles
-
-# Check that the domain secret exists and contains the required elements
-validateDomainSecret
-
-# Create the WebLogic domain
-createDomainHome
-
-if [ "${executeIt}" = true ]; then
-  createDomainResource
-fi
-
-# Print a summary
-printSummary
-
-echo 
-echo Completed
+# Perform the sequence of steps to create a domain
+createDomain
 
