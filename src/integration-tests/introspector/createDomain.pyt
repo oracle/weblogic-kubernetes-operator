@@ -46,6 +46,8 @@ cd('/Servers/AdminServer')
 #set('ListenAddress', 'junk')                         # an invalid value, unesolvable as a DNS name
 set('ListenPort', ${ADMIN_PORT})
 set('Name', '${ADMIN_NAME}')
+set('AdministrationPort', ${ADMINISTRATION_PORT})
+set('AdministrationPortEnabled', 'true')
 
 cd('/Servers/${ADMIN_NAME}')
 set('MaxMessageSize',999999)
@@ -71,6 +73,11 @@ cd('/Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel3')
 set('ListenPort', ${T3CHANNEL3_PORT})
 #set('PublicPort', 40014)                       #not setting this value at all, commented out on purpose
 #set('PublicAddress', 'junk')                   #not setting this value at all, commented out on purpose
+
+cd('/Servers/${ADMIN_NAME}')
+ssl = create('${ADMIN_NAME}','SSL')
+cd('/Servers/${ADMIN_NAME}/SSL/${ADMIN_NAME}')
+set('Enabled', 'true')
 
 #cd('/Servers/${ADMIN_NAME}')
 #create('${ADMIN_NAME}', 'Log')
