@@ -789,6 +789,13 @@ class CustomSitConfigIntrospector(SecretManager):
 
 
   def addSecretsFromDirectory(self, secret_path, secret_name):
+    if not os.path.isdir(secret_path):
+      # The operator pod somehow put a file where we
+      # only expected to find a directory mount.
+      self.env.addError("Internal Error:  Secret path'" 
+                        + secret_path + "'" +
+                        + " is not a directory.")
+      return
     for the_file in os.listdir(secret_path):
       the_file_path = os.path.join(secret_path, the_file)
       if os.path.isfile(the_file_path):
