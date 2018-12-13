@@ -1,3 +1,5 @@
+**TODO** review and update
+
 # Developer guide
 
 This guide provides information for developers who wish to understand or contribute to the code.
@@ -96,7 +98,7 @@ To create them, first, make a copy of the inputs file (`create-weblogic-operator
 
 Next, choose and create a directory that generated operator-related files will be stored in, for example, `/path/to/weblogic-operator-output-directory`.
 
-Finally, run the operator installation script with the "generate only" option as shown below, pointing it at your inputs file and your output directory.  (See the [installation](installation.md) page for details about this script and the inputs):
+Finally, run the operator installation script with the "generate only" option as shown below, pointing it at your inputs file and your output directory.  (See the [installation](manual-installation.md) page for details about this script and the inputs):
 
 ```
 ./create-weblogic-operator.sh -g \
