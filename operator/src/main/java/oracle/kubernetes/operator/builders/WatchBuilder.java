@@ -91,8 +91,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      setReadTimeout(client);
 
       try {
         return new CoreV1Api(client)
@@ -136,8 +135,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      setReadTimeout(client);
 
       try {
         return new CoreV1Api(client)
@@ -181,8 +179,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      setReadTimeout(client);
 
       try {
         return new BatchV1Api(client)
@@ -226,8 +223,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      setReadTimeout(client);
 
       try {
         return new CoreV1Api(client)
@@ -262,6 +258,11 @@ public class WatchBuilder {
         ClientPool.getInstance(), callParams, Domain.class, new ListDomainsCall(namespace));
   }
 
+  private static void setReadTimeout(ApiClient client) {
+    // Ensure that client doesn't time out before call or watch
+    client.getHttpClient().setReadTimeout(0, TimeUnit.SECONDS);
+  }
+
   private class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
     private String namespace;
 
@@ -271,8 +272,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      setReadTimeout(client);
 
       try {
         return new WeblogicApi(client)
@@ -319,8 +319,7 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      setReadTimeout(client);
 
       try {
         return new CoreV1Api(client)
