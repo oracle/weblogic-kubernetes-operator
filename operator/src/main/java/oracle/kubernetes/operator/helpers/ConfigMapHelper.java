@@ -14,6 +14,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -274,6 +275,12 @@ public class ConfigMapHelper {
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
+        if (!domainTopology.getValidationErrors().isEmpty()) {
+          for (String err : domainTopology.getValidationErrors()) {
+            LOGGER.severe(err);
+          }
+          doNext(null, packet);
+        }
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
         ScanCache.INSTANCE.registerScan(
             info.getNamespace(), info.getDomainUID(), new Scan(wlsDomainConfig, new DateTime()));
@@ -590,7 +597,7 @@ public class ConfigMapHelper {
     }
 
     public List<String> getValidationErrors() {
-      return validationErrors;
+      return validationErrors == null ? Collections.emptyList() : validationErrors;
     }
 
     public void setValidationErrors(List<String> validationErrors) {
