@@ -1,7 +1,7 @@
 # Load balancing with Ingress
-Ingress is the standard approach to hook up and run a load balancer in k8s, as described in [the Ingress doc](https://kubernetes.io/docs/concepts/services-networking/ingress/).  
+Ingress is the standard approach to hook up and run a load balancer in k8s. Pls see detail in [the Ingress doc](https://kubernetes.io/docs/concepts/services-networking/ingress/).  
 
-## Interface between Ingress load balancer and WebLogic domains
+## WebLogic domains as backends of Ingress
 
 In Ingress a backend is defined as [a k8s service](https://kubernetes.io/docs/concepts/services-networking/service/), more specifically, a combination of a `serviceName` and a `servicePort`. A WebLogic domain is a backend of the load balancer. When the WebLogic operator creates a WebLogic domain, it always creates a k8s service for each WebLogic cluster in the domain. With the proper label selector defined in the generated service, the service contains all-and-only the running WebLogic server pods within the cluster.
 
@@ -14,7 +14,7 @@ To meet the limitation, if the domainUID or the cluster name contains some upper
 
 The service, `serviceName` and `servicePort`, of a WebLogic cluster will be used in the routing rules defined in Ingress resources and the load balancer will route traffic to the WebLogic servers within the cluster based on the rules. Note that eac traffic load, redirected by the load balancer, is not sent to the service directly, but instead, to one endpoint of the service based on its load-balancing algorithm. The load balancer depends on the k8s platform to maintain the live endpoint list of the service.
 
-## Steps to setup a Ingress load balancer
+## Steps to setup an Ingress load balancer
 
 1. Install the Ingress controller.  
 After the Ingress controller is running, it monitors Ingress resources in given namespace(s) and acts accordingly.
@@ -22,10 +22,10 @@ After the Ingress controller is running, it monitors Ingress resources in given 
 1. Install Ingress Resource(s)  
 Ingress resourcs contain routing rules to one or more backends. And Ingress controller is responsible to apply the rules to the underline load balancer.  
 There are two approaches to create the Ingress resource:  
-   1. Use the helm chart [ingress-per-domain](kubernetes/samples/charts/ingress-per-domain) to install the Ingress.
-   Each Ingress provider support a bunch of different annotations in Ingress resources. This helm chart allows you to define the routing rules without dealing with the detailed annotations. Currently we support two Ingress providers: Traefik and Voyager. The limitation of the helm chart is that it only support one WebLogic cluster as the backend.  
+   1. Use the helm chart [ingress-per-domain](kubernetes/samples/charts/ingress-per-domain).  
+   Each Ingress provider support a bunch of different annotations in Ingress resources. This helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations. Currently we support two Ingress providers: Traefik and Voyager. The limitation of the helm chart is that it only support one WebLogic cluster as the backend.  
 
-   1. Create and install the Ingress yaml manually.
+   1. Create and install the Ingress yaml manually.  
    Manually edit the Ingress yaml file and then install it to the k8s cluster. 
 
 ## Guide and samples for Traefik and Voyager/HAProxy
@@ -33,11 +33,7 @@ There are two approaches to create the Ingress resource:
  - [Treafik guide](kubernetes/samples/charts/traefik/README.md)
  - [Voyager guide](kubernetes/samples/charts/voyager/README.md)
 
-We also provide Ingress samples for these two Ingress providers, with multiple WebLogic clusters as the backends and covering different routing rules and TLS termination etc.
-- Host-routing Ingress
-- Path-routing Ingress
-- TLS-enabled Ingress
-
+We also provide Ingress samples for these two Ingress providers, with multiple WebLogic clusters as the backends and covering different routing rules, host-routing and path-routing, and TLS termination.
 - [Treafik samples](kubernetes/samples/charts/traefik/samples)
 - [Voyager samples](kubernetes/samples/charts/voyager/samples)
 
