@@ -1,3 +1,5 @@
+**TODO** update for 2.0
+
 # Recent changes to the Oracle WebLogic Server Kubernetes Operator
 
 This document tracks recent changes to the operator, especially ones that introduce backward incompatibilities.

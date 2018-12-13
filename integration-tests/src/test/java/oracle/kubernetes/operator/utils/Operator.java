@@ -253,7 +253,7 @@ public class Operator {
     // write certificates
     ExecCommand.exec(
         BaseTest.getProjectRoot()
-            + "/kubernetes/samples/scripts/generate-external-rest-identity.sh "
+            + "/kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "
             + "DNS:"
             + TestUtils.getHostName()
             + " >> "

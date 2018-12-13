@@ -1,3 +1,5 @@
+**TODO** review, update if necessary
+
 # Load balancing with the Apache HTTP Server
 
 This document describes how to set up and start an Apache HTTP Server for load balancing inside a Kubernetes cluster. 
