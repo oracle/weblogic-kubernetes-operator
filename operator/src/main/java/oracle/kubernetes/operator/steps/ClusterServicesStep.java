@@ -9,8 +9,6 @@ import java.util.Collection;
 import java.util.Map;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.Scan;
-import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -32,8 +30,7 @@ public class ClusterServicesStep extends Step {
     Collection<StepAndPacket> startDetails = new ArrayList<>();
 
     // Add cluster services
-    Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
-    WlsDomainConfig config = scan != null ? scan.getWlsDomainConfig() : null;
+    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     if (config != null) {
       for (Map.Entry<String, WlsClusterConfig> entry : config.getClusterConfigs().entrySet()) {
         Packet p = packet.clone();

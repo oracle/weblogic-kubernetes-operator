@@ -1,6 +1,0 @@
-/Servers/admin-server,ListenAddress,,domain1-admin-server
-#/Servers/admin-server,ListenAddress,foob,domain1-admin-server
-#/Servers/admin-server,ListenAddress,,foob
-#/Servers/admin-server,ListenAddress,,
-#,
-

@@ -16,7 +16,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 
 public class ManagedServerUpAfterStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -35,7 +34,6 @@ public class ManagedServerUpAfterStep extends Step {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
-      DomainSpec spec = dom.getSpec();
 
       Collection<String> rollingList = Collections.emptyList();
       if (rolling != null) {
@@ -43,7 +41,7 @@ public class ManagedServerUpAfterStep extends Step {
       }
       LOGGER.fine(
           "Rolling servers for domain with UID: "
-              + spec.getDomainUID()
+              + dom.getDomainUID()
               + ", rolling list: "
               + rollingList);
     }
