@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -56,9 +57,10 @@ public class PodWatcher extends Watcher<V1Pod>
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<V1Pod> listener,
       AtomicBoolean isStopping) {
-    PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, listener, isStopping);
+    PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -66,9 +68,10 @@ public class PodWatcher extends Watcher<V1Pod>
   private PodWatcher(
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<V1Pod> listener,
       AtomicBoolean isStopping) {
-    super(initialResourceVersion, isStopping);
+    super(initialResourceVersion, tuning, isStopping);
     setListener(this);
     this.ns = ns;
     this.listener = listener;
@@ -108,7 +111,8 @@ public class PodWatcher extends Watcher<V1Pod>
   }
 
   static boolean isTerminating(V1Pod pod) {
-    return pod.getMetadata().getDeletionTimestamp() != null;
+    return pod.getMetadata().getDeletionTimestamp() != null
+        || pod.getMetadata().getDeletionGracePeriodSeconds() != null;
   }
 
   static boolean isReady(V1Pod pod) {

@@ -252,19 +252,13 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>2.9.2</version>
+            <version>${jackson-version}</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.11</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-core-asl</artifactId>
-            <version>1.9.11</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -286,7 +280,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>22.0</version>
+            <version>${guava-version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -304,7 +298,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.19</version>
+            <version>${snakeyaml-version}</version>
         </dependency>
 
         <!-- test dependencies -->

@@ -17,6 +17,9 @@ public interface LabelConstants {
   String OPERATORNAME_LABEL = "weblogic.operatorName";
   String JOBNAME_LABEL = "job-name";
   String APP_LABEL = "app";
+  String DOMAINRESTARTVERSION_LABEL = "weblogic.domainRestartVersion";
+  String CLUSTERRESTARTVERSION_LABEL = "weblogic.clusterRestartVersion";
+  String SERVERRESTARTVERSION_LABEL = "weblogic.serverRestartVersion";
 
   static String forDomainUid(String uid) {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);

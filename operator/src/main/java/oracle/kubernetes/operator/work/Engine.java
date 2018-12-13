@@ -5,8 +5,8 @@
 package oracle.kubernetes.operator.work;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -15,9 +15,10 @@ public class Engine {
   private static final int DEFAULT_THREAD_COUNT = 10;
 
   public static ScheduledExecutorService wrappedExecutorService(String id, Container container) {
-    return wrap(
-        container,
-        Executors.newScheduledThreadPool(DEFAULT_THREAD_COUNT, new DaemonThreadFactory(id)));
+    ScheduledThreadPoolExecutor threadPool =
+        new ScheduledThreadPoolExecutor(DEFAULT_THREAD_COUNT, new DaemonThreadFactory(id));
+    threadPool.setRemoveOnCancelPolicy(true);
+    return wrap(container, threadPool);
   }
 
   private volatile ScheduledExecutorService threadPool;

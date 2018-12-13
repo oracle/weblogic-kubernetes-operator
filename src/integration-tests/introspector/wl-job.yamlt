@@ -31,7 +31,7 @@ spec:
           value: "${NODEMGR_HOME}"
         - name: LOG_HOME
           value: "${LOG_HOME}"
-        - name: ADMIN_SECRET_NAME
+        - name: CREDENTIALS_SECRET_NAME
           value: "${WEBLOGIC_CREDENTIALS_SECRET_NAME}"
         image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
         imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
@@ -42,6 +42,9 @@ spec:
           readOnly: true
         - name: weblogic-domain-cm-volume
           mountPath: /weblogic-operator/scripts
+          readOnly: true
+        - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
+          mountPath: /weblogic-operator/config-overrides
           readOnly: true
         - name: test-script-cm-volume
           mountPath: /test-scripts
@@ -57,6 +60,10 @@ spec:
         configMap:
           defaultMode: 365
           name: weblogic-domain-cm
+      - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
+        configMap:
+          defaultMode: 365
+          name: ${DOMAIN_UID}-mycustom-overrides-cm
       - name: test-script-cm-volume
         configMap:
           defaultMode: 365

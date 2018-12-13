@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
@@ -23,8 +24,7 @@ import javax.ws.rs.WebApplicationException;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.BodyMatcher;
 import oracle.kubernetes.operator.helpers.CallTestSupport;
-import oracle.kubernetes.operator.helpers.Scan;
-import oracle.kubernetes.operator.helpers.ScanCache;
+import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -34,7 +34,6 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,10 +67,21 @@ public class RestBackendImplTest {
         .withSpec(new DomainSpec().withDomainUID(uid));
   }
 
+  private WlsDomainConfig config;
+
+  private class TopologyRetrieverStub implements TopologyRetriever {
+    @Override
+    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUID) {
+      return config;
+    }
+  }
+
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.installSynchronousCallDispatcher());
+    mementos.add(
+        StaticStubSupport.install(RestBackendImpl.class, "INSTANCE", new TopologyRetrieverStub()));
 
     expectSecurityCalls();
     expectPossibleListDomainCall();
@@ -82,7 +92,6 @@ public class RestBackendImplTest {
     configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     restBackend = new RestBackendImpl("", "", Collections.singletonList(NS));
 
-    resetScanCache();
     setupScanCache();
   }
 
@@ -117,7 +126,6 @@ public class RestBackendImplTest {
   public void tearDown() {
     for (Memento memento : mementos) memento.revert();
     testSupport.verifyAllDefinedResponsesInvoked();
-    resetScanCache();
   }
 
   @Test(expected = WebApplicationException.class)
@@ -184,7 +192,7 @@ public class RestBackendImplTest {
 
   @Test
   public void verify_getWlsDomainConfig_doesNotReturnNull_whenScanIsNull() {
-    ScanCache.INSTANCE.registerScan(NS, UID, null);
+    config = null;
 
     WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(UID);
 
@@ -212,12 +220,7 @@ public class RestBackendImplTest {
     }
   }
 
-  void resetScanCache() {
-    ScanCache.INSTANCE.registerScan(NS, UID, null);
-  }
-
   void setupScanCache() {
-    ScanCache.INSTANCE.registerScan(
-        NS, UID, new Scan(configSupport.createDomainConfig(), new DateTime()));
+    config = configSupport.createDomainConfig();
   }
 }

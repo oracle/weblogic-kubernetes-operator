@@ -4,7 +4,6 @@ import io.kubernetes.client.models.*;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -49,32 +48,15 @@ public abstract class JobStepContext implements StepContextConstants {
     return info.getDomain();
   }
 
-  String getDomainName() {
-    return getDomain().getDomainName();
-  }
-
-  private String getDomainResourceName() {
-    return info.getDomain().getMetadata().getName();
-  }
-
   abstract String getJobName();
 
-  String getAdminSecretName() {
-    return getDomain().getAdminSecret().getName();
+  String getWebLogicCredentialsSecretName() {
+    return getDomain().getWebLogicCredentialsSecret().getName();
   }
 
-  private List<V1PersistentVolumeClaim> getClaims() {
-    return info.getClaims().getItems();
-  }
+  abstract List<V1Volume> getAdditionalVolumes();
 
-  private String getDiscoveredClaim() {
-    return getClaims().isEmpty() ? null : getClaims().iterator().next().getMetadata().getName();
-  }
-
-  private String getClaimName() {
-    return Optional.ofNullable(info.getDomain().getPersistentVolumeClaimName())
-        .orElse(getDiscoveredClaim());
-  }
+  abstract List<V1VolumeMount> getAdditionalVolumeMounts();
 
   // ----------------------- step methods ------------------------------
 
@@ -179,7 +161,6 @@ public abstract class JobStepContext implements StepContextConstants {
             .namespace(getNamespace())
             .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
             .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
-            .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
             .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     return metadata;
   }
@@ -210,11 +191,8 @@ public abstract class JobStepContext implements StepContextConstants {
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
-    if (getClaimName() != null) {
-      podSpec.addVolumesItem(
-          new V1Volume()
-              .name(STORAGE_VOLUME)
-              .persistentVolumeClaim(getPersistenVolumeClaimVolumeSource(getClaimName())));
+    for (V1Volume additionalVolume : getAdditionalVolumes()) {
+      podSpec.addVolumesItem(additionalVolume);
     }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
@@ -242,9 +220,12 @@ public abstract class JobStepContext implements StepContextConstants {
             .imagePullPolicy(getImagePullPolicy())
             .command(getContainerCommand())
             .env(getEnvironmentVariables(tuningParameters))
-            .addVolumeMountsItem(volumeMount(STORAGE_VOLUME, STORAGE_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
             .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+
+    for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
+      container.addVolumeMountsItem(additionalVolumeMount);
+    }
 
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       container.addVolumeMountsItem(
@@ -254,7 +235,8 @@ public abstract class JobStepContext implements StepContextConstants {
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       container.addVolumeMountsItem(
-          readOnlyVolumeMount(secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH));
+          readOnlyVolumeMount(
+              secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
     return container;
   }
@@ -278,7 +260,7 @@ public abstract class JobStepContext implements StepContextConstants {
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
 
   protected String getDomainHome() {
-    return "/shared/domains/" + getDomainUID();
+    return getDomain().getDomainHome();
   }
 
   static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
@@ -294,7 +276,9 @@ public abstract class JobStepContext implements StepContextConstants {
   }
 
   protected V1SecretVolumeSource getSecretsVolume() {
-    return new V1SecretVolumeSource().secretName(getAdminSecretName()).defaultMode(420);
+    return new V1SecretVolumeSource()
+        .secretName(getWebLogicCredentialsSecretName())
+        .defaultMode(420);
   }
 
   protected V1ConfigMapVolumeSource getConfigMapVolumeSource() {

@@ -1,14 +1,14 @@
 # Starting a WebLogic domain
 
-Startup of the domain is controlled by settings in the domain custom resource.  If used, the domain creation job will have created a domain custom resource YAML file. If the domain was created manually, this YAML file will also need to be created manually.
+Startup of the domain is controlled by settings in the domain resource.  If used, the domain creation job will have created a domain resource YAML file. If the domain was created manually, this YAML file will also need to be created manually.
 
-An example of the domain custom resource YAML file is shown below:
+An example of the domain resource YAML file is shown below:
 
 ```
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
-# This is an example of how to define a Domain Custom Resource.
+# This is an example of how to define a Domain Resource.
 #
 apiVersion: "weblogic.oracle/v1"
 kind: Domain
@@ -97,7 +97,7 @@ The operator determines which servers to start using the following logic:
 
   * The Administration Server will be started.
   * Each server listed in a `serverStartup` section will be brought up to the state that is specified in the `desiredState` in that section, `RUNNING` or `ADMIN`.
-  * For each cluster listed in a `clusterStartup` section, a number of servers in that cluster, equal to the `replicas` setting, will be brought up to the state that is specified in the `desiredState` in that section, `RUNNING` or `ADMIN`.  If `replicas` is not specified in `clusterStartup`, then the top-level `replicas` field in the domain custom resource will be used instead.
+  * For each cluster listed in a `clusterStartup` section, a number of servers in that cluster, equal to the `replicas` setting, will be brought up to the state that is specified in the `desiredState` in that section, `RUNNING` or `ADMIN`.  If `replicas` is not specified in `clusterStartup`, then the top-level `replicas` field in the domain resource will be used instead.
 
 * If `startupControl` is set to `AUTO`, then:
 

@@ -37,6 +37,12 @@ If you want, you can download the Voyager Helm chart and untar it into a local f
 $ helm fetch appscode/voyager --untar --version 7.4.0
 ```
 
+## Update the Voyager operator
+After the Voyager operator is installed and running, if you want to change some configurations of the operator, use `helm upgrade` to achieve this.
+```
+$ helm upgrade voyager-operator appscode/voyager [flags]
+```
+
 ## Configure Voyager as a load balancer for WLS domains
 We'll demonstrate how to use Voyager to handle traffic to backend WLS domains.
 
@@ -55,8 +61,8 @@ $ kubectl create -f samples/host-routing.yaml
 ```
 Now you can send requests to different WLS domains with the unique entry point of Voyager with different hostnames.
 ```
-$ curl --silent -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
-$ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
+$ curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
+$ curl -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
 ```
 To see the Voyager host-routing stats web page, access the URL `http://${HOSTNAME}:30315` in your web browser.
 
