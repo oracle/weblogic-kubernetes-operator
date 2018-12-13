@@ -3,7 +3,7 @@
 Use this quick start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production.
 
 ## Prerequisite
-For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](site/k8s_setup.md).
+For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
 
 ## 1.	Get these images and put them into your local registry.
 
