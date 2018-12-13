@@ -138,8 +138,7 @@ public class ITOperator extends BaseTest {
       if (!SMOKETEST) domain1.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-
-      if (domain1 != null && (JENKINS || testCompletedSuccessfully))
+      if (domain1 != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
         domain1.shutdownUsingServerStartPolicy();
     }
 

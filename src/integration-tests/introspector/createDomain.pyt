@@ -41,23 +41,42 @@ setOption('DomainName', '${DOMAIN_NAME}')
 # Configure the Administration Server
 # ===================================
 cd('/Servers/AdminServer')
-#set('ListenAddress', '${DOMAIN_UID}-${ADMIN_NAME}')
-#set('ListenAddress', 'invalid-${DOMAIN_UID}-${ADMIN_NAME}')
+#set('ListenAddress', '${DOMAIN_UID}-${ADMIN_NAME}')  # what override should set the value too
+#set('ListenAddress', 'unresolvable-dns-name')        # an invalid value, unesolvable as a DNS name
+#set('ListenAddress', 'junk')                         # an invalid value, unesolvable as a DNS name
 set('ListenPort', ${ADMIN_PORT})
 set('Name', '${ADMIN_NAME}')
 
-create('T3Channel', 'NetworkAccessPoint')
-cd('/Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel')
-set('PublicPort', ${T3_CHANNEL_PORT})
-set('PublicAddress', '${T3_PUBLIC_ADDRESS}')
-#set('ListenAddress', '${DOMAIN_UID}-${ADMIN_NAME}')
-#set('ListenAddress', 'invalid-${DOMAIN_UID}-${ADMIN_NAME}')
-set('ListenPort', ${T3_CHANNEL_PORT})
+cd('/Servers/${ADMIN_NAME}')
+set('MaxMessageSize',999999)
+create('T3Channel1', 'NetworkAccessPoint')
+cd('/Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel1')
+set('ListenAddress', 'unresolvable-dns-name')   #an invalid value, and an unresolvable DNS name
+set('ListenPort', ${T3CHANNEL1_PORT})
+set('PublicPort', 22222)
+set('PublicAddress', 'unresolvable-dns-name')   #an invalid value, and an unresolvable DNS name
+
+cd('/Servers/${ADMIN_NAME}')
+create('T3Channel2', 'NetworkAccessPoint')
+cd('/Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel2')
+set('ListenAddress', 'junk')                    #an invalid value, but a resolvable DNS name
+set('ListenPort', ${T3CHANNEL2_PORT})
+set('PublicPort', 22222)
+set('PublicAddress', 'junk')                    #an invalid value, but a resolvable DNS name
+
+cd('/Servers/${ADMIN_NAME}')
+create('T3Channel3', 'NetworkAccessPoint')
+cd('/Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel3')
+#set('ListenAddress', 'junk')                   #not setting this value at all, commented out on purpose
+set('ListenPort', ${T3CHANNEL3_PORT})
+#set('PublicPort', 40014)                       #not setting this value at all, commented out on purpose
+#set('PublicAddress', 'junk')                   #not setting this value at all, commented out on purpose
 
 #cd('/Servers/${ADMIN_NAME}')
 #create('${ADMIN_NAME}', 'Log')
 #cd('/Servers/${ADMIN_NAME}/Log/${ADMIN_NAME}')
 #set('FileName', '${LOG_HOME}/${ADMIN_NAME}.log')
+
 
 # Set the admin user's username and password
 # ==========================================
@@ -65,6 +84,26 @@ set('ListenPort', ${T3_CHANNEL_PORT})
 cd('/Security/${DOMAIN_NAME}/User/weblogic')
 cmo.setName(admin_username)
 cmo.setPassword(admin_password)
+
+
+# Configure a couple of non-clustered managed servers
+# ==========================================
+cd('/')
+mname='standalone1'
+create(mname, 'Server')
+cd('/Servers/%s/' % mname )
+# set('ListenAddress', '${DOMAIN_UID}-%s' % mname)
+set('ListenPort', 6123)
+set('MaxMessageSize', 7777777)
+
+cd('/')
+mname='standalone2'
+create(mname, 'Server')
+cd('/Servers/%s/' % mname )
+# set('ListenAddress', '${DOMAIN_UID}-%s' % mname)
+set('ListenPort', 6124)
+# set('MaxMessageSize', 7777777) # deliberately unset, so should be at the default of 10000000
+
 
 # Write the domain and close the domain template
 # ==============================================
@@ -110,6 +149,8 @@ def createDataSource(dsName,dsJNDI,dsHost,dsSID,dsTarget):
   create('testJdbcConnectionPoolParams','JDBCConnectionPoolParams')
   cd('JDBCConnectionPoolParams/NO_NAME_0')
   set('TestTableName','SQL SELECT 1 FROM DUAL')
+  set('InitialCapacity', 0)
+  set('MinCapacity', 0)
 
 createDataSource('testDS','testDS','myoriginalhostname','myoriginalsid','${ADMIN_NAME}')
 
