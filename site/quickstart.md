@@ -81,7 +81,7 @@ $ helm upgrade \
 
 ## 5. Create a domain in the domain namespace.
 
-a.	Create a new image with a domain home by running the [`create-domain`](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/) script. Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file, including:
+a.	Create a new image with a domain home by running the [`create-domain`](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file, including:
 
 * Modifying the sample `inputs.yaml` file with the `domainUID` (`sample-domain1`) and domain namespace (`sample-domains-ns1`).
 
