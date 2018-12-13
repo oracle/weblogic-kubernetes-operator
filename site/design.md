@@ -1,3 +1,4 @@
+**TODO** review and update, links to schema resources in particular
 
 # Design philosophy
 

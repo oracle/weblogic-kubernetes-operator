@@ -1,3 +1,5 @@
+**TODO** review and update - should use helm now
+
 # Shutting down a domain
 
 To shut down a domain, issue the following command:
