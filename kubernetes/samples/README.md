@@ -4,7 +4,7 @@
 
 ## Sample scripts
 
-* [Sample for creating a Kubernetes secret](scripts/create-weblogic-domain/README.md) that contains the Administration Server credentials. This secret can be used in creating a WebLogic domain resource.
+* [Sample for creating a Kubernetes secret](scripts/create-weblogic-domain-credentials/README.md) that contains the Administration Server credentials. This secret can be used in creating a WebLogic domain resource.
 * [Sample for creating a PV or PVC](scripts/create-weblogic-domain-pv-pvc/README.md) that can be used by a domain resource as the persistent storage for the WebLogic domain home or log files.
 * [Sample for creating a WebLogic domain home on an existing PV or PVC](scripts/create-weblogic-domain/domain-home-on-pv/README.md), and the domain resource YAML file for deploying the generated WebLogic domain.
 * [Sample for creating a WebLogic domain home inside a Docker image](scripts/create-weblogic-domain/domain-home-in-image/README.md), and the domain resource YAML file for deploying the generated WebLogic domain.
