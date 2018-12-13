@@ -110,6 +110,7 @@ public class AsyncRequestStep<T> extends Step {
 
     AtomicBoolean didResume = new AtomicBoolean(false);
     ApiClient client = helper.take();
+    client.getHttpClient().setReadTimeout(timeoutSeconds, TimeUnit.SECONDS);
     return doSuspend(
         (fiber) -> {
           ApiCallback<T> callback =
