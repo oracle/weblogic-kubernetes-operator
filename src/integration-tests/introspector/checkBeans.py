@@ -95,7 +95,7 @@ for line in file:
   overriddenExpected=words[3]
 
   print(
-      "Info: Checking bean_path='" + bean_path + "'"
+      "Info: Checking line#=" + str(line_no) + " bean_path='" + bean_path + "'"
     + " attr='" + attr + "'"
     + " originalExpected='" + originalExpected + "'"
     + " overriddenExpected='" + overriddenExpected + "'"
@@ -107,11 +107,10 @@ for line in file:
   serverConfig()
   cd(bean_path)
   overriddenActual=str(get(attr))
-
-  print("Info: originalActual='" + originalActual + "'")
-  print("Info: overriddenActual='" + overriddenActual + "'")
+  checkStatus='SUCCESS'
 
   if originalExpected != '*' and originalActual != originalExpected:
+    checkStatus='FAILED'
     addError(
       "Error: got '" + originalActual + "'"
              + " but expected value '" + originalExpected + "'"
@@ -120,12 +119,20 @@ for line in file:
     )
 
   if overriddenActual != overriddenExpected:
+    checkStatus='FAILED'
     addError(
       "Error: got '" + overriddenActual + "'"
              + " but expected value '" + overriddenExpected + "'"
              + " for bean_path=serverConfig/" + bean_path 
              + " attr='" + attr + "'. "
     )
+
+  print(
+      "Info: Checked line#=" + str(line_no) + " status=" + checkStatus + " bean_path='" + bean_path + "'"
+    + " attr='" + attr + "'"
+    + " originalExpected/Actual='" + originalExpected + "'/'" + originalActual + "'"
+    + " overriddenExpected/Actual='" + overriddenExpected + "'/'" + overriddenActual + "'"
+  )
 file.close()		
 
 if len(errors) > 0:
