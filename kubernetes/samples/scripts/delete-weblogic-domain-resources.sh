@@ -13,8 +13,6 @@
 #
 
 script="${BASH_SOURCE[0]}"
-scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/../../internal/utility.sh
 
 function usage {
 cat << EOF

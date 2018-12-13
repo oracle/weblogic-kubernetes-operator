@@ -64,7 +64,7 @@ fi
 # Function to initialize and validate the output directory
 # for the generated yaml files for this domain.
 #
-function initAndValidateOutputDir {
+function initOutputDir {
   pvOutputDir="$outputDir/pv-pvcs"
 
   if [ -z ${domainUID} ]; then
@@ -78,13 +78,10 @@ function initAndValidateOutputDir {
     persistentVolumeName=${domainUID}-${baseName}-pv
     persistentVolumeClaimName=${domainUID}-${baseName}-pvc
   fi
-
-  validateOutputDir \
-    ${pvOutputDir} \
-    ${valuesInputFile} \
-    create-pv-pvc-inputs.yaml \
-    ${pvOutput} \
-    ${pvcOutput}
+  removeFileIfExists ${pvOutputDir}/{valuesInputFile}
+  removeFileIfExists ${pvOutputDir}/{pvOutput}
+  removeFileIfExists ${pvOutputDir}/{pvcOutput}
+  removeFileIfExists ${pvOutputDir}/create-pv-pvc-inputs.yaml
 }
 
 #
@@ -133,7 +130,7 @@ function initialize {
   validateNamespace
   validateWeblogicDomainStorageType
   validateWeblogicDomainStorageReclaimPolicy
-  initAndValidateOutputDir
+  initOutputDir
   failIfValidationErrors
 }
 
