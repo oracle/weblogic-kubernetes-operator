@@ -24,7 +24,7 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
 
 The script will perform the following steps:
 
-* Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
+* Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 * Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
 * Clone the weblogic docker-images project via the `git clone https://github.com/oracle/docker-images.git` into the current directory.
 * Replace the built-in username and password in the `properties/docker_build/domain_security.properties` file with the `username` and `password` that are supplied in the command line via the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
@@ -188,11 +188,11 @@ API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
   Cluster Name:        
-  Creation Timestamp:  2018-12-11T01:33:27Z
+  Creation Timestamp:  2018-12-11T21:27:35Z
   Generation:          1
-  Resource Version:    46624
+  Resource Version:    814010
   Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
-  UID:                 c1f7be60-fce4-11e8-bc6c-0021f6985fb7
+  UID:                 93e55739-fd8b-11e8-b751-fa163e855ac8
 Spec:
   Admin Secret:
     Name:  domain1-weblogic-credentials
@@ -246,6 +246,10 @@ Spec:
   Server Pod:
     Container Security Context:
     Env:
+      Name:   JAVA_OPTIONS
+      Value:  -Dweblogic.StdoutDebugEnabled=false
+      Name:   USER_MEM_ARGS
+      Value:  -Xms64m -Xmx256m 
     Liveness Probe:
     Node Selector:
     Pod Annotations:
@@ -262,35 +266,27 @@ Spec:
   Server Start Policy:  IF_NEEDED
 Status:
   Conditions:
-    Last Transition Time:  2018-12-11T01:35:23.652Z
+    Last Transition Time:  2018-12-11T21:28:59.537Z
     Reason:                ServersReady
     Status:                True
     Type:                  Available
   Servers:
     Health:
-      Activation Time:  2018-12-11T01:34:59.546Z
+      Activation Time:  2018-12-11T21:28:36.983Z
       Overall Health:   ok
       Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   admin-server
     State:         RUNNING
     Cluster Name:  cluster-1
-    Health:
-      Activation Time:  2018-12-11T01:36:46.132Z
-      Overall Health:   ok
-      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server1
-    State:         RUNNING
+    State:         STARTING
     Cluster Name:  cluster-1
-    Health:
-      Activation Time:  2018-12-11T01:36:47.865Z
-      Overall Health:   ok
-      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server2
-    State:        RUNNING
-  Start Time:     2018-12-11T01:33:27.339Z
+    State:         STARTING
+  Start Time:      2018-12-11T21:27:35.869Z
 Events:            <none>
 ```
 

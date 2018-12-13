@@ -24,7 +24,7 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
 
 The script will perform the following steps:
 
-* Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
+* Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
 * Run and wait for the job to finish.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
@@ -212,28 +212,25 @@ Here is an example of the output of this command:
 $ kubectl describe domain domain1
 Name:         domain1
 Namespace:    default
-Labels:       weblogic.domainName=domain1
-              weblogic.domainUID=domain1
+Labels:       weblogic.domainUID=domain1
               weblogic.resourceVersion=domain-v2
 Annotations:  <none>
 API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
-  Cluster Name:
-  Creation Timestamp:  2018-12-07T04:32:13Z
+  Cluster Name:        
+  Creation Timestamp:  2018-12-11T22:08:09Z
   Generation:          1
-  Resource Version:    351622
+  Resource Version:    817145
   Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
-  UID:                 11d951d0-f9d9-11e8-b751-fa163e855ac8
+  UID:                 3ea383cb-fd91-11e8-b751-fa163e855ac8
 Spec:
   Admin Secret:
     Name:  domain1-weblogic-credentials
   Admin Server:
     Exported Network Access Points:
-      T 3 Channel:
-        Annotations:
-        Labels:
-    Node Port:  30701
+    Node Port Annotations:
+    Node Port Labels:
     Server Pod:
       Container Security Context:
       Env:
@@ -246,11 +243,11 @@ Spec:
       Resources:
         Limits:
         Requests:
+      Service Annotations:
+      Service Labels:
       Volume Mounts:
       Volumes:
     Server Start State:  RUNNING
-  As Name:               admin-server
-  As Port:               7001
   Clusters:
     Cluster - 1:
       Replicas:  2
@@ -266,14 +263,13 @@ Spec:
         Resources:
           Limits:
           Requests:
+        Service Annotations:
+        Service Labels:
         Volume Mounts:
         Volumes:
-      Server Start State:         RUNNING
   Domain Home:                    /shared/domains/domain1
   Domain Home In Image:           false
-  Domain Name:                    domain1
-  Domain UID:                     domain1
-  Image:                          store/oracle/weblogic:19.1.0.0
+  Image:                          store/oracle/weblogic:12.2.1.3
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Log Home:                       /shared/logs/domain1
@@ -281,6 +277,10 @@ Spec:
   Server Pod:
     Container Security Context:
     Env:
+      Name:   JAVA_OPTIONS
+      Value:  -Dweblogic.StdoutDebugEnabled=false
+      Name:   USER_MEM_ARGS
+      Value:  -Xms64m -Xmx256m 
     Liveness Probe:
     Node Selector:
     Pod Annotations:
@@ -290,22 +290,21 @@ Spec:
     Resources:
       Limits:
       Requests:
+    Service Annotations:
+    Service Labels:
     Volume Mounts:
     Volumes:
-  Server Start Policy:  NEVER
+  Server Start Policy:  IF_NEEDED
   Storage:
     Predefined:
       Claim:  domain1-weblogic-sample-pvc
 Status:
   Conditions:
-    Last Transition Time:  2018-12-07T04:37:14.905Z
-    Reason:                ServersReady
-    Status:                True
-    Type:                  Available
   Servers:
+    Node Name:    xxxxxxxx
     Server Name:  admin-server
-    State:        SHUTDOWN
-  Start Time:     2018-12-07T04:32:13.779Z
+    State:        RUNNING
+  Start Time:     2018-12-11T22:08:09.801Z
 Events:           <none>
 
 ```
