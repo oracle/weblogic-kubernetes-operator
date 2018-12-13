@@ -48,7 +48,12 @@ Full test use cases
 * shutdown and delete domain7
 * create domain domain8 and test that create domain fails when its pv is already populated by a shutdown domain
 * create another domain domain9 with APACHE load balancer and access admin console via LB port. shutdown domain.
-* create another domain domain10 with mostly default values from sample domain inputs, mainly exposeAdminT3Channel and exposeAdminNodePort which are false by default and verify domain startup and cluster scaling using operator rest endpoint works. 
+* create another domain domain10 with mostly default values from sample domain inputs, mainly exposeAdminT3Channel and exposeAdminNodePort which are false by default and verify domain startup and cluster scaling using operator rest endpoint works.
+* create another domain domain11 with listen address not set for admin server and t3 channel and incorrect file for admin server log
+* verify automatic situational config override works by bringing up the domain and by doing checks 2 - 5 listed in quick test
+* create another domain domain12 with some junk value for t3 channel public address and using custom situational config override replace with valid public address
+* verify the domain by doing checks 2 - 5 listed in quick test
+ 
 
 
 # Directory Configuration and Structure
