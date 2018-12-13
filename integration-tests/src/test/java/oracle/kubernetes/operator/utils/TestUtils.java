@@ -735,7 +735,8 @@ public class TestUtils {
   public static void deleteWeblogicDomainResources(String domainUid) throws Exception {
     StringBuilder cmd =
         new StringBuilder(BaseTest.getProjectRoot())
-            .append("/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh ")
+            .append(
+                "/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh ")
             .append("-d ")
             .append(domainUid);
     logger.info("Running " + cmd);
