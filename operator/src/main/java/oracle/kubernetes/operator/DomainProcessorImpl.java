@@ -989,6 +989,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     List<Step> resources = new ArrayList<>();
     resources.add(PodHelper.createAdminPodStep(null));
     resources.add(new BeforeAdminServiceStep(null));
+
+    if (dom.getSpec().getAdminServer().getAdminService() != null) {
+      resources.add(ServiceHelper.createForAdminServiceStep(null));
+    }
+
     resources.add(ServiceHelper.createForServerStep(null));
     resources.add(new WatchPodReadyAdminStep(Main.podWatchers, null));
     resources.add(new ExternalAdminChannelsStep(next));
