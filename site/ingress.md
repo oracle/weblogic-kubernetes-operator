@@ -20,7 +20,7 @@ The service, `serviceName` and `servicePort`, of a WebLogic cluster will be used
 After the Ingress controller is running, it monitors Ingress resources in given namespace(s) and acts accordingly.
 
 1. Install Ingress Resource(s)  
-Ingress resourcs contain routing rules to one or more backends. And Ingress controller is responsible to apply the rules to the underline load balancer.  
+Ingress resources contain routing rules to one or more backends. And Ingress controller is responsible to apply the rules to the underline load balancer.  
 There are two approaches to create the Ingress resource:  
    1. Use the helm chart [ingress-per-domain](kubernetes/samples/charts/ingress-per-domain).  
    Each Ingress provider support a bunch of different annotations in Ingress resources. This helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations. Currently we support two Ingress providers: Traefik and Voyager. The limitation of the helm chart is that it only support one WebLogic cluster as the backend.  
@@ -29,7 +29,7 @@ There are two approaches to create the Ingress resource:
    Manually edit the Ingress yaml file and then install it to the k8s cluster. 
 
 ## Guide and samples for Traefik and Voyager/HAProxy
- Traefik and Voyager/HAProxy are both popular Ingress providers. We provide detail guide to install and configure these two Ingress providers, specially in front of WebLogic domain(s).
+Traefik and Voyager/HAProxy are both popular Ingress providers. We provide detail guide to install and configure these two Ingress providers, specially in front of WebLogic domain(s).
  - [Treafik guide](kubernetes/samples/charts/traefik/README.md)
  - [Voyager guide](kubernetes/samples/charts/voyager/README.md)
 
