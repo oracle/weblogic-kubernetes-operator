@@ -96,7 +96,7 @@ $ helm update kubernetes/charts/weblogic-operator --name my-operator --namespace
 
 ```
 $ cd kubernetes/samples/charts
-$ helm install ingress-per-domain --name domain1-ingress --value values.yaml
+$ helm install ingress-per-domain --name domain1-ingress --values values.yaml
 ```
 
 (At this point, do they have a WebLogic Kubernetes deployment in a Kubernetes cluster? If so, we have to give them something to look at, to verify their results.)
