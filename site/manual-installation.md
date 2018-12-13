@@ -1,4 +1,14 @@
-# Installation
+**TODO** update 
+
+# Manual Installation
+
+The normal method of installation is the use the provided Helm charts, 
+please [see here](#) for detailed instructions. 
+
+If you are unable to or prefer not to use Helm, or you want to customize the process, you 
+should refer to the manual instructions below. 
+
+**TODO** update video links 
 
 Note that there is a short video demonstration of the installation process available [here](https://youtu.be/B5UmY2xAJnk).
 
@@ -11,7 +21,17 @@ Note that there is a short video demonstration of the installation process avail
 [comment]: # ( Note that you *must* create the `docker-registry` secret in the `weblogic-operator` namespace, so you will need to create the namespace first. )
 [comment]: # ( In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the operator will be deployed. )
 
-## Build the Docker image for the operator using Wercker
+## Build the Docker image
+
+There are two main ways to build the operator Docker image: 
+
+* [Using Wercker](#build-the-docker-image-for-the-operator-using-wercker), or 
+* [Locally, on your machine](#build-the-docker-image-for-the-operator-locally)
+
+The image is also published in Docker Store if you prefer to use a pre-built imaage.
+**TODO** add details of how to get it
+
+### Build the Docker image for the operator using Wercker
 
 You can build, test, and publish the Docker image for the operator directly from Wercker using the ```wercker.yml``` from this repository.
 
@@ -50,7 +70,7 @@ Select the "Runs" tab.  Scroll to the bottom and click "Trigger your first build
 
 When the run completes successfully, the Docker image for the operator will be built and published to your repository.
 
-## Build the Docker image for the operator locally
+### Build the Docker image for the operator locally
 
 In addition to the requirements listed in [README](../README.md#prerequisites), the following software is also required to obtain and build the operator:
 

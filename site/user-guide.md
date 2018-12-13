@@ -11,7 +11,7 @@
 * [Prerequisites](#prerequisites)
 * [Preparing your Kubernetes environment](#preparing-your-kubernetes-environment)
   * [Set up your Kubernetes cluster](#set-up-your-kubernetes-cluster)
-  * [Set up load balancers](#set-up-load-balancers)
+  * [Set up load balancers](load-balancing.md)
   * [Configuring Kibana and Elasticsearch](#configuring-kibana-and-elasticsearch)
 * [Create and manage the operator](#create-and-manage-the-operator)
   * [Starting the operator](#starting-the-operator)
@@ -72,10 +72,6 @@ If you need help setting up a Kubernetes environment, check our [cheat sheet](si
 After creating Kubernetes clusters, you can optionally:
 * Create load balancers to direct traffic to backend domains.
 * Configure Kibana and Elasticsearch for your operator logs.
-
-### Set up load balancers
-
-Use these [scripts and Helm charts](kubernetes/samples/README.md) to install Traefik, Apache, or Voyager load balancers.
 
 ### Configuring Kibana and Elasticsearch
 
