@@ -29,7 +29,10 @@ The script will perform the following steps:
 * Clone the weblogic docker-images project via the `git clone https://github.com/oracle/docker-images.git` into the current directory.
 * Replace the built-in username and password in the `properties/docker_build/domain_security.properties` file with the `username` and `password` that are supplied in the command line via the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
 * Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain in the Docker image. Also, you can run the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image), manually with the generated `domain.properties` to create a domain home image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
-* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
+* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
+```
+kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
+```
 
 As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services.
 
@@ -249,7 +252,7 @@ Spec:
       Name:   JAVA_OPTIONS
       Value:  -Dweblogic.StdoutDebugEnabled=false
       Name:   USER_MEM_ARGS
-      Value:  -Xms64m -Xmx256m 
+      Value:  -Xms64m -Xmx256m
     Liveness Probe:
     Node Selector:
     Pod Annotations:
