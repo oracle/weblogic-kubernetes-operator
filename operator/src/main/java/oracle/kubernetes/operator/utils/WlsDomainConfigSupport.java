@@ -126,7 +126,7 @@ public class WlsDomainConfigSupport {
     }
 
     WlsServerConfig build() {
-      return new WlsServerConfig(name, listenPort, null, null, false, null, null);
+      return new WlsServerConfig(name, listenPort, null, null, false, null, null, null, false);
     }
   }
 
