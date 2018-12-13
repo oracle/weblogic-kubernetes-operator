@@ -117,7 +117,7 @@ public class ServiceHelper {
 
     protected List<V1ServicePort> createServicePorts() {
       List<V1ServicePort> ports = new ArrayList<>();
-      if (scan != null) {
+      if (scan != null && scan.getNetworkAccessPoints() != null) {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
           V1ServicePort port =
               new V1ServicePort()
@@ -869,7 +869,7 @@ public class ServiceHelper {
           return serverConfig.getSslListenPort();
         } /*else if("adminSecure".equals(channel) && serverConfig.isAdminPortEnabled()){
             return serverConfig.getAdminPort();
-          }*/ else {
+          }*/ else if (serverConfig.getNetworkAccessPoints() != null) {
           for (NetworkAccessPoint nap : serverConfig.getNetworkAccessPoints()) {
             if (nap.getName().equals(channel)) {
               return nap.getListenPort();
