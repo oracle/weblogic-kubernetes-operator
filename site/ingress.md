@@ -1,3 +1,5 @@
+**TODO** review and udpate - link into [lb](load-balancing.md)
+
 # Load balancing with Ingress
 Ingress is a approach provided by k8s to hook up and run a load balancer. Pls see detail in [the Ingress doc](https://kubernetes.io/docs/concepts/services-networking/ingress/).  
 

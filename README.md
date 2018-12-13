@@ -52,7 +52,7 @@ The [User guide](site/user-guide.md) provides detailed information about all asp
 
 # Samples
 
-**TODO** put a list of samples here with a summary and links
+Please refer to our [samples](kubernetes/samples/README.md) for information about the available sample code we provide.
 
 # Developer guide
 
