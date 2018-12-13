@@ -239,10 +239,6 @@ function createDomainHome {
   sed -i -e "s|myuser|${username}|g" properties/docker_build/domain_security.properties
   sed -i -e "s|mypassword1|${password}|g" properties/docker_build/domain_security.properties
 
-  if [ ! -z $baseImage ]; then
-    sed -i -e "s|oracle/weblogic:12.2.1.3-developer|${baseImage}|g" Dockerfile
-  fi
-
   ./build.sh
 
   if [ "$?" != "0" ]; then
