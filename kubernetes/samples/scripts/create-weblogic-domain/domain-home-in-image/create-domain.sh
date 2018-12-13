@@ -234,11 +234,30 @@ function createFiles {
 function createDomainHome {
   cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_build
 
-  cd docker-images/OracleWebLogic/samples/12213-domain-home-in-image
+  if [ -z $imagePath ]; then
+    imagePath="12213-domain-home-in-image"
+  fi
 
-  sed -i -e "s|myuser|${username}|g" properties/docker_build/domain_security.properties
-  sed -i -e "s|mypassword1|${password}|g" properties/docker_build/domain_security.properties
+  cd docker-images/OracleWebLogic/samples/${imagePath}
+  usernameFile="properties/docker_build/domain_security.properties"
+  passwordFile="properties/docker_build/domain_security.properties"
 
+  if [ ! -f $usernameFile ]; then
+    usernameFile="properties/docker-build/adminuser.properties"
+    passwordFile="properties/docker-build/adminpass.properties"
+  fi
+    
+  sed -i -e "s|myuser|${username}|g" $usernameFile
+  sed -i -e "s|mypassword1|${password}|g" $passwordFile
+
+  if [ -f "build-archive.sh" ]; then
+    sh ./build-archive.sh
+    wget https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.14/weblogic-deploy.zip
+  fi
+
+  chmod 777 . build.sh
+
+  sh ./build.sh
   if [ ! -z $baseImage ]; then
     sed -i -e "s|oracle/weblogic:12.2.1.3-developer|${baseImage}|g" Dockerfile
   fi
