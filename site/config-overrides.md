@@ -5,13 +5,13 @@
 ---
 # Overview
 
-Use configuration overrides to customize a WebLogic domain home configuration. For example, you may want to override a JDBC Datasource xml module Username, Password, and URL so that it references a local database. 
+Use configuration overrides to customize a WebLogic domain home configuration without modifying the domain's actual config.xml or system resource files. For example, you may want to override a JDBC Datasource xml module Username, Password, and URL so that it references a local database. 
 
 How do you specify overrides? 
 * Create a Kubernetes config map that contains
-  * Situational config templates.
+  * Override templates (also known as situational config templates).
   * A file named 'version.txt' that contains the string '2.0'.
-* Set your Domain resource `configOverride` to the name of this config map.
+* Set your Domain resource `configOverrides` to the name of this config map.
 * Create Kubernetes secrets that contain template macro values.
 * Set your Domain `configOverrideSecrets` to reference the aforementioned secrets.
 * Start or restart your domain.
@@ -181,19 +181,26 @@ The following `config.xml` override file demonstrates setting the 'max-message-s
 
 ### Overriding a DataSource Module
 
-The following `jdbc-testDS.xml` override file demonstrates setting the URL of a JDBC driver via secret.  It overrides a datasource module named "testDS".
+The following `jdbc-testDS.xml` override template demonstrates setting the URL, username, and password-encrypted fields of a JDBC module named `testDS` via secret macros.  The generated situational config that replaces the macros with secret values will be located in the DOMAIN_HOME/optconfig/jdbc directory.   The `password-encrypted` field will be populated with an encrypted value since it uses a secret macro with a `:encrypted` suffix.  The secret is named `dbsecret` and contains three keys: `url`, `username`, and `password`.
 
-TBD expand this sample to include username and password.
 
 ```
 <?xml version='1.0' encoding='UTF-8'?>
 <jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source" 
                   xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment" 
                   xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+
   <name>testDS</name>
-    <jdbc-driver-params>
-      <url f:combine-mode="replace">${secret:dbsecret.url}</url>
-    </jdbc-driver-params>
+  <jdbc-driver-params>
+    <url f:combine-mode="replace">${secret:dbsecret.url}</url>
+    <properties>
+       <property>
+          <name>user</name>
+          <value f:combine-mode="replace">${secret:dbsecret.username}</value>
+       </property>
+    </properties>
+    <password-encrypted f:combine-mode="replace">${secret:dbsecret.password:encrypt}</password-encrypted>
+  </jdbc-driver-params>
 </jdbc-data-source>
 ```
 
@@ -274,7 +281,7 @@ TBD expand this sample to include username and password.
 
 * When a Domain is first deployed, or is restarted, the operator runtime creates an introspector Kubernetes job named `DOMAIN_UID-introspect-domain-job`.
 * The introspector job's pod:
-  * Mounts the Kubernetes config map and secrets specified via the operator Domain resource `configOverride`, `webLogicCredentialsSecret`, and `configOverrideSecrets` fields.
+  * Mounts the Kubernetes config map and secrets specified via the operator Domain resource `configOverrides`, `webLogicCredentialsSecret`, and `configOverrideSecrets` fields.
   * Reads the mounted situational config templates from the config map and expands them to create the actual situational config files for the domain:
     * It expands some fixed replaceable values (e.g. ${env:DOMAIN_UID}).
     * It expands referenced secrets by reading value from the corresponding mounted secret file (e.g. ${secret:mysecret.mykey}).
