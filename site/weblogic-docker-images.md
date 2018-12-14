@@ -75,5 +75,6 @@ run WebLogic 12.2.1.3 in Kubernetes using the operator.
 
 ## Creating a custom image with your domain inside the image
 
-**TODO** write me 
+**TODO** write me and, in this section, add:
 
+ **Note**: Oracle recommends keeping the domain home image private in the local repository.

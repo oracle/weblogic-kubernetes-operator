@@ -56,8 +56,8 @@ Before using the operator, you might want to read the [design philosophy](design
 ## Prerequisites
 
 * Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+  (check with `kubectl version`).
-* Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`)
-* Docker 18.03.1.ce (check with `docker version`)
-* Oracle WebLogic Server 12.2.1.3.0
-* If you wish to use dynamic clusters and/or Configuration Overrides, patch 28076014 is required.
+* Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
+* Docker 18.03.1.ce (check with `docker version`).
+* Oracle WebLogic Server 12.2.1.3.0 with patch 28076014.
+* You must have the `cluster-admin` role to install the operator.
 
