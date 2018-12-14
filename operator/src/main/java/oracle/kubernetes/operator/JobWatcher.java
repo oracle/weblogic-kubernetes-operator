@@ -171,14 +171,15 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
           (fiber) -> {
             Complete complete =
                 (V1Job job) -> {
-                  if (!shouldProcessJob(job)) {
-                    return;
-                  }
                   completeCallbackRegistrations.remove(job.getMetadata().getName());
                   if (didResume.compareAndSet(false, true)) {
-                    LOGGER.fine("Job status: " + job.getStatus());
-                    packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
-                    fiber.resume(packet);
+                    if (!shouldProcessJob(job)) {
+                      fiber.cancel(false);
+                    } else {
+                      LOGGER.fine("Job status: " + job.getStatus());
+                      packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
+                      fiber.resume(packet);
+                    }
                   }
                 };
             completeCallbackRegistrations.put(metadata.getName(), complete);
