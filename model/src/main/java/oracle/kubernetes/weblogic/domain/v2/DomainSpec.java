@@ -392,6 +392,16 @@ public class DomainSpec extends BaseConfiguration {
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusters.
    *
+   * @return replicas
+   */
+  public Integer getReplicas() {
+    return this.replicas;
+  }
+
+  /**
+   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
+   * configured in clusters.
+   *
    * @param replicas replicas
    */
   public void setReplicas(Integer replicas) {
