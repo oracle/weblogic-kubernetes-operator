@@ -7,14 +7,14 @@
 
 Use configuration overrides to customize a WebLogic domain home configuration. For example, you may want to override a JDBC Datasource xml module Username, Password, and URL so that it references a local database. 
 
-How do you specify overrides? Overrides are specified by:
-* Creating a Kubernetes config map that contains
+How do you specify overrides? 
+* Create a Kubernetes config map that contains
   * Situational config templates.
   * A file named 'version.txt' that contains the string '2.0'.
-* Setting your Domain resource `configOverride` to the name of this config map.
-* Creating Kubernetes secrets that contain template macro values.
-* Setting your Domain `configOverrideSecrets` to reference the aforementioned secrets.
-* Starting or restarting your domain.
+* Set your Domain resource `configOverride` to the name of this config map.
+* Create Kubernetes secrets that contain template macro values.
+* Set your Domain `configOverrideSecrets` to reference the aforementioned secrets.
+* Start or restart your domain.
 
 How do overrides work during runtime? 
 * When a Domain is first deployed, or is restarted, the Operator will:
@@ -79,7 +79,7 @@ The behavior when using an unsupported override is undefined.
 ---
 # Override Template Names and Syntax
 
-Overrides leverage a built-in WebLogic feature called 'Situational Config'. Situational config consists of XML formated files that closely resemble the structure of WebLogic config.xml and system resource module xml files. In addition, the attribute fields in these files can embed 'add', 'replace', and 'delete' verbs to specify the desired override action for the field.  
+Overrides leverage a built-in WebLogic feature called 'Situational Config' (See [References](#References)). Situational config consists of XML formated files that closely resemble the structure of WebLogic config.xml and system resource module xml files. In addition, the attribute fields in these files can embed 'add', 'replace', and 'delete' verbs to specify the desired override action for the field.  
 
 ## Override Template Names
 
@@ -146,11 +146,11 @@ Two types of macros are supported 'environment variable macros' and 'secret macr
 
 * Environment variable macros have the syntax `${env:ENV-VAR-NAME}`, where the supported env vars include `DOMAIN_HOME`, `LOG_HOME`, and `DOMAIN_UID`.
 
-* Secret macros have the syntax `${secret:SECRETNAME.SECRETKEY}` and ${secret:SECRETNAME.SECRETKEY:encrypt}.
+* Secret macros have the syntax `${secret:SECRETNAME.SECRETKEY}` and `${secret:SECRETNAME.SECRETKEY:encrypt}`.
 
-The secret macro SECRETNAME field is used to reference the name of a Secret, and the SECRETKEY field is used to reference a key within that secret.   For example, if you have defined a secret named `dbuser` with a key named `username` that contains the value `scott`, then the macro `${secret:dbuser.username}` will be replaced with the word `scott` before the template is copied into its WebLogic server pod.
+The secret macro SECRETNAME field must reference the name of a Kubernetes Secret, and the SECRETKEY field must reference a key within that secret. For example, if you have create a secret named `dbuser` with a key named `username` that contains the value `scott`, then the macro `${secret:dbuser.username}` will be replaced with the word `scott` before the template is copied into its WebLogic server pod.
 
-**SECURITY NOTE:** Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST encrypt command instead of leaving it at its plain text value.  This is useful for overriding mbean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and for ensuring that a custom override situational config file the Operator places in the domain home does not expose plain-text passwords.
+**SECURITY NOTE:** Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST encrypt command (instead of leaving it at its plain text value).  This is useful for overriding mbean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and is also useful for ensuring that a custom override situational config file the Operator places in the domain home does not expose passwords in plain-text.
 
 ## Override Template Samples
 
@@ -203,14 +203,9 @@ TBD expand this sample to include username and password.
 * Create a directory containing (A) a set of situational configuration templates for overriding the mbean properties you want to replace and (B) a version.txt file.
   * This directory must not contain any other files.
   * The version.txt file must contain only the string `2.0`.
-  * Template files must not override the settings listed in [Unsupported Overrides](#unsupported-overrides).
-  * Template files must be formatted and named as per [Override Template Names and Syntax](#override-template-names-and-syntax) and [References](#references).
-    * JDBC, JMS, WLDF module template files must override an existing module
-      * The file name must start with `jdbc`, `jms`, or `wldf` and must end with `-<module-name>.xml`.
-      * <module-name> must match the name of a system resource mbean (not the name of its file).
-      * E.g. to override data source named `myds`, use `jdbc-myds.xml`.
-    * A `config.xml` override template must be named `config.xml`.
-    * Templates can embed macros that reference environement variables or Kubernetes secrets.  See [Override Template Macros](#override-template-macros).
+  * Templates must not override the settings listed in [Unsupported Overrides](#unsupported-overrides).
+  * Templates must be formatted and named as per [Override Template Names and Syntax](#override-template-names-and-syntax) and [References](#references).
+  * Templates can embed macros that reference environement variables or Kubernetes secrets.  See [Override Template Macros](#override-template-macros).
 * Create a kubernetes config map from the directory of templates.
   * The config map must be in the same kubernetes namespace as the domain.
   * If the config map is going to be used by a single DOMAIN_UID, it is recommended to add the 'weblogic.domainUID=<mydomainuid>' label to help track the resource.
