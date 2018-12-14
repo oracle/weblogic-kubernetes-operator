@@ -5,7 +5,7 @@
 ---
 # Overview
 
-Use configuration overrides to customize a WebLogic domain home configuration. For example, you may want to override a JDBC Datasource xml module Username, Password, and URL so that it references a local database. Overrides can be used to customize domains as they are moved from QA to production, deployed to different sites, or even deployed multiple times at the same site.
+Use configuration overrides to customize a WebLogic domain home configuration. For example, you may want to override a JDBC Datasource xml module Username, Password, and URL so that it references a local database. Overrides can be used to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site.
 
 How do you specify overrides? Overrides are specified by:
 * Creating a Kubernetes config map that contains
@@ -196,20 +196,19 @@ TBD expand this sample to include username and password.
 ```
 
 
-# Putting it together step by step
+# Step-by-Step Guide
 
 1. Create a directory containing (A) a set of situational configuration templates for overriding the mbean properties you want to replace and (B) a version.txt file.
   * This directory must not contain any other files.
   * The version.txt file must contain only the string `2.0`.
-  * Template files must not override the settings listed in [Unsupported Overrides].
-  * Template files must be formatted and named as per [Override Template Names and Syntax] and [References].
-    * _NOTE:_ The template file name format is different than the file name format required when creating situational config files without using the kubernetes operator.
+  * Template files must not override the settings listed in [Unsupported Overrides](#unsupported-overrides).
+  * Template files must be formatted and named as per [Override Template Names and Syntax](#override-template-names-and-syntax) and [References](#references).
     * JDBC, JMS, WLDF module template files must override an existing module
       * The file name must start with `jdbc`, `jms`, or `wldf` and must end with `-<module-name>.xml`.
       * <module-name> must match the name of a system resource mbean (not the name of its file).
       * E.g. to override data source named `myds`, use `jdbc-myds.xml`.
     * A `config.xml` override template must be named `config.xml`.
-    * Templates can embed macros that reference environement variables or Kubernetes secrets.  See [Override Template Macros].
+    * Templates can embed macros that reference environement variables or Kubernetes secrets.  See [Override Template Macros](#override-template-macros).
 2. Create a kubernetes config map from the directory of templates.
   * The config map must be in the same kubernetes namespace as the domain.
   * It is recommended, but not required, to add the `weblogic.domainUID` label to the config map. This will help you keep track of the fact that the config map is associated with a particular domain.
@@ -227,7 +226,7 @@ TBD expand this sample to include username and password.
 5. Configure the names of each secret in Domain CR.
   * If the secret contains the WebLogic admin `username` and `password` keys, set the Domain CR `webLogicCredentialsSecret` field.
   * For all other secrets, add them to Domain CR `configOverrideSecrets` field.
-6. See [Debugging] for ways to check if sit cfg is taking effect or if there are errors.
+6. See [Debugging](#debugging) for ways to check if sit cfg is taking effect or if there are errors.
 
 # Debugging
 
@@ -284,11 +283,11 @@ TBD expand this sample to include username and password.
 
 # Advanced Situational Config
 
-WebLogic Situational Config feature provides advanced options and capabilities that aren't covered in this document.  See [References].
+WebLogic Situational Config feature provides advanced options and capabilities that are supported, but aren't covered in this document. For example, you can use a wildcard character in place of an mbean name. See [References](#references).
 
 # References
 
-TBD
+See the 'Managing Configuration Changes' chapter in 'OracleÂ Fusion Middleware Understanding Domain Configuration for Oracle WebLogic Sever' version TBD.
 
 # Release Notes
 
