@@ -5,7 +5,7 @@
 ---
 # Overview
 
-Use configuration overrides to customize a WebLogic domain home configuration. For example, you may want to override a JDBC Datasource xml module Username, Password, and URL so that it references a local database. Overrides can be used to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site.
+Use configuration overrides to customize a WebLogic domain home configuration. For example, you may want to override a JDBC Datasource xml module Username, Password, and URL so that it references a local database. 
 
 How do you specify overrides? Overrides are specified by:
 * Creating a Kubernetes config map that contains
@@ -24,12 +24,14 @@ How do overrides work during runtime?
   * Automatically load the override files from the `optconfig` directory.
   * Use the override values in the override files instead of the values specified in their config.xml or system resource xml.
 
+Overrides can be used to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site.
+
 ---
 # Prerequisites
 
-* A Domain Home must not already contain situational config xml in its existing `optconfig` directory.  Any existing situational config xml in this directory will be deleted and replaced by your Operator override templates (if any).
+* A WebLogic Domain Home must not already contain situational config xml in its existing `optconfig` directory.  Any existing situational config xml in this directory will be deleted and replaced by your Operator override templates (if any).
 
-* If you want to override a JDBC, JMS, or WLDF module it must be located in your Domain Home `config/jdbc`, `config/jms`, and `config/wldf` directory respectively.  These are the default locations for these types of modules.
+* If you want to override a JDBC, JMS, or WLDF module, the original module must be located in your Domain Home `config/jdbc`, `config/jms`, and `config/wldf` directory respectively. These are the default locations for these types of modules.
 
 ---
 # Typical Overrides
@@ -195,7 +197,7 @@ TBD expand this sample to include username and password.
 </jdbc-data-source>
 ```
 
-
+---
 # Step-by-Step Guide
 
 * Create a directory containing (A) a set of situational configuration templates for overriding the mbean properties you want to replace and (B) a version.txt file.
@@ -232,6 +234,7 @@ TBD expand this sample to include username and password.
   * For all other secrets, add them to Domain CR `configOverrideSecrets` field.
 * See [Debugging](#debugging) for ways to check if sit cfg is taking effect or if there are errors.
 
+---
 # Debugging
 
 * If WL pods do not come up at all, then:
@@ -271,6 +274,7 @@ TBD expand this sample to include username and password.
 
 **IMPORTANT: WebLogic Servers will still boot, and will skip overriding, when they detect an incorrectly formatted config override template file.  So it is important to make template files are correct in a QA environment before attempting to use them in production, as a custom override may be critical for correctness.**
 
+---
 # Internal Design Flow
 
 * When a Domain is first deployed, or is restarted, the operator runtime creates an introspector Kubernetes job named `DOMAIN_UID-introspect-domain-job`.
@@ -298,14 +302,17 @@ TBD expand this sample to include username and password.
   * Deletes any situational config files in the `optconfig` directory that do not have corresponding template files in the config map.
 * WebLogic Servers read their overrides from their domain home's 'optconfig' directory.
 
+---
 # Advanced Situational Config
 
 WebLogic Situational Config feature provides advanced options and capabilities that are supported, but aren't covered in this document. For example, you can use a wildcard character in place of an mbean name. See [References](#references).
 
+---
 # References
 
 See the 'Managing Configuration Changes' chapter in 'OracleÂ Fusion Middleware Understanding Domain Configuration for Oracle WebLogic Sever' version TBD.
 
+---
 # Release Notes
 
 TBD These are to be moved to a central release notes section?
