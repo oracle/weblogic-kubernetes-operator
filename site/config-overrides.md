@@ -249,8 +249,6 @@ TBD expand this sample to include username and password.
     * This directory, or a subdirectory within this directory, should contain each of your custom situational files.
     * If it doesn't, this likely indicates your Domain Resource configOverrides was not set to match your custom override config map name, or that your custom override config map does not contain your override files.
 
-* If you fix an error, then your override config map needs to be updated, and the Domain needs to be restarted.
-
 * If you'd like to verify that situational config is taking effect in the WebLogic bean tree, one way to do this is to compare the 'server config' and 'domain config' bean tree values. 
   * The 'domain config' value should reflect the original value in your domain home configuration.
   * The 'server config' value should reflect the overridden value. 
@@ -267,7 +265,9 @@ TBD expand this sample to include username and password.
   > exit()
   ```
 
-**IMPORTANT: WebLogic Servers will still boot, and will skip overriding, when they detect an incorrectly formatted config override template file.  So it is important to make template files are correct in a QA environment before attempting to use them in production, as a custom override may be critical for correctness.**
+**IMPORTANT: Custom override changes, such as updating an override config map, a secret, or a Domain resource, will not take effect until your Domain is restarted.**
+
+**IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings, but will still boot, and will skip overriding, when they detect an incorrectly formatted config override template file. So it is important to make sure template files are correct in a QA environment by checking your WebLogic Pod logs for situational config errors and warnings, before attempting to use them in production.**
 
 ---
 # Internal Design Flow
