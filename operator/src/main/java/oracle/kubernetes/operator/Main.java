@@ -206,7 +206,7 @@ public class Main {
       version = HealthCheckHelper.performK8sVersionCheck();
 
       runSteps(
-          CRDHelper.createDomainCRDStep(new StartNamespacesStep(targetNamespaces)),
+          CRDHelper.createDomainCRDStep(version, new StartNamespacesStep(targetNamespaces)),
           Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
