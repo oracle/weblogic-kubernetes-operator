@@ -204,11 +204,6 @@ public class JobHelper {
       }
     }
 
-    // Start Admin Server?
-    if (!spec.getAdminServer().getServerStartPolicy().equals(ConfigurationConstants.START_NEVER)) {
-      return true;
-    }
-
     return false;
   }
 
