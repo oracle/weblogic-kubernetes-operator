@@ -18,3 +18,5 @@
 /Servers/standalone2,MaxMessageSize,10000000,2222222
 
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,Url,jdbc:oracle:thin:@myoriginalhostname:1521:myoriginalsid,jdbc:oracle:thin:@mynewhost:1521:mynewsid
+/JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,PasswordEncrypted,*,!
+

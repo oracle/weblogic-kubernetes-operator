@@ -3,5 +3,6 @@
   <name>testDS</name>
     <jdbc-driver-params>
       <url f:combine-mode="replace">jdbc:oracle:thin:@mynewhost:1521:mynewsid</url>
+      <password-encrypted f:combine-mode="add">${secret:my-secret.key2:encrypt}</password-encrypted>
     </jdbc-driver-params>
 </jdbc-data-source>
