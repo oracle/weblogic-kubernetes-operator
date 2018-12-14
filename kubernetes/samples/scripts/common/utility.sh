@@ -42,6 +42,15 @@ function parseYaml {
 }
 
 #
+# Function to remove a file if it exists 
+#
+function removeFileIfExists {
+  if [ -f $1 ]; then
+    rm $1
+  fi
+}
+
+#
 # Function to parse the common parameter inputs file
 #
 function parseCommonInputs {
@@ -203,4 +212,44 @@ function getKubernetesClusterIP {
   K8S_IP="${array[1]}"
 }
 
+#
+# Function to create the domain recource
+#
+function createDomainResource {
+  kubectl apply -f ${dcrOutput}
+  DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
+  if [ "${DCR_AVAIL}" != "1" ]; then
+    fail "The domain resource ${domainUID} was not found"
+  fi
+}
+
+#
+# Function to create a domain
+#
+function createDomain {
+
+  # Setup the environment for running this script and perform initial validation checks
+  initialize
+
+  # Generate files for creating the domain
+  createFiles
+
+  # Check that the domain secret exists and contains the required elements
+  validateDomainSecret
+
+  # Validate the domain's persistent volume claim
+  if [ "$doValidation" == true ]; then
+    validateDomainPVC
+  fi
+
+  # Create the WebLogic domain home
+  createDomainHome
+
+  if [ "${executeIt}" = true ]; then
+    createDomainResource
+  fi
+
+  # Print a summary
+  printSummary
+}
 

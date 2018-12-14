@@ -62,23 +62,23 @@ fi
 # Function to initialize and validate the output directory
 # for the generated yaml files for this domain.
 #
-function initAndValidateOutputDir {
+function initOutputDir {
   lbOutputDir=${outputDir}/load-balancers/${domainUID}
 
   if [ ! -z "${loadBalancer}" ]; then
     case ${loadBalancer} in
       "TRAEFIK")
-        fileList="traefik.yaml \
-                  traefik-security.yaml "
+        removeFileIfExists ${lbOutputDir}/traefik.yaml
+        removeFileIfExists ${lbOutputDir}/traefik-security.yaml
       ;;
       "APACHE")
-        fileList="apache.yaml \
-                  apache-security.yaml "
+        removeFileIfExists ${lbOutputDir}/apache.yaml 
+        removeFileIfExists ${lbOutputDir}/apache-security.yaml 
       ;;
       "VOYAGER")
-        fileList="voyager-ingress.yaml \
-                  voyager-operator.yaml \
-                  voyager-operator-security.yaml"
+        removeFileIfExists ${lbOutputDir}/voyager-ingress.yaml 
+        removeFileIfExists ${lbOutputDir}/voyager-operator.yaml \
+        removeFileIfExists ${lbOutputDir}/voyager-operator-security.yaml
       ;;
       "NONE")
       ;;
@@ -87,11 +87,10 @@ function initAndValidateOutputDir {
       ;;
     esac
   fi
-  validateOutputDir \
-    ${lbOutputDir} \
-    ${valuesInputFile} \
-    create-load-balancer-inputs.yaml \
-    ${fileList}
+
+  removeFileIfExists ${lbOutputDir}/${valuesInputFile}
+  removeFileIfExists ${lbOutputDir}/create-load-balancer-inputs.yaml 
+
 }
 
 #
@@ -169,7 +168,7 @@ function initialize {
   validateNamespace
   validateClusterName
   validateLoadBalancer
-  initAndValidateOutputDir
+  initOutputDir
   failIfValidationErrors
 }
 

@@ -280,6 +280,7 @@ class TopologyGenerator(Generator):
   def validate(self):
     self.validateAdminServer()
     self.validateClusters()
+    self.validateServerCustomChannelName()
     return self.isValid()
 
   def generate(self):
@@ -340,6 +341,7 @@ class TopologyGenerator(Generator):
     self.validateNonDynamicClusterReferencedByAtLeastOneServer(cluster)
     self.validateNonDynamicClusterNotReferencedByAnyServerTemplates(cluster)
     self.validateNonDynamicClusterServersHaveSameListenPort(cluster)
+    self.validateNonDynamicClusterServerHaveSameCustomChannels(cluster)
 
   def validateNonDynamicClusterReferencedByAtLeastOneServer(self, cluster):
     for server in self.env.getDomain().getServers():
@@ -352,19 +354,111 @@ class TopologyGenerator(Generator):
       if template.getCluster() is cluster:
         self.addError("The non-dynamic cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ".")
 
+  LISTEN_PORT = 'listen port'
+  LISTEN_PORT_ENABLED = 'listen port enabled'
+  SSL_LISTEN_PORT = 'ssl listen port'
+  SSL_LISTEN_PORT_ENABLED = 'ssl listen port enabled'
+  ADMIN_LISTEN_PORT = 'admin listen port'
+  ADMIN_LISTEN_PORT_ENABLED = 'admin listen port enabled'
+
+  def getServerClusterPortPropertyValue(server, clusterListenPortProperty):
+    sslListenPort = None
+    if server.getSSL() != None:
+      sslListenPort = server.getSSL().getListenPort()
+    sslListenPortEnabled = None
+    if server.getSSL()!= None:
+      sslListenPortEnabled = server.getSSL().isListenPortEnabled()
+    return {
+             LISTEN_PORT: server.getListenPort(),
+             LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
+             SSL_LISTEN_PORT: sslListenPort,
+             SSL_LISTEN_PORT_ENABLED: sslListenPortEnabled,
+             ADMIN_LISTEN_PORT: server.getAdministrationPort(),
+             ADMIN_LISTEN_PORT_ENABLED: server.isAdministrationPortEnabled()
+     }[clusterListenPortProperty]
+
   def validateNonDynamicClusterServersHaveSameListenPort(self, cluster):
     firstServer = None
-    firstPort = None
+    firstListenPort = None
+    firstListenPortEnabled = None
+    firstSslListenPort = None
+    firstSslListenPortEnabled = None
+    firstAdminPort = None
+    firstAdminPortEnabled = None
     for server in self.env.getDomain().getServers():
       if cluster is server.getCluster():
-        port = server.getListenPort()
+        listenPort = server.getListenPort()
+        listenPortEnabled = server.isListenPortEnabled()
+        ssl = server.getSSL()
+        sslListenPort = None
+        sslListenPortEnabled = None
+        if ssl is not None:
+              sslListenPort = ssl.getListenPort()
+              sslListenPortEnabled = ssl.isEnabled()
+        adminPort = server.getAdministrationPort()
+        adminPortEnabled = server.isAdministrationPortEnabled()
         if firstServer is None:
           firstServer = server
-          firstPort = port
+          firstListenPort = listenPort
+          firstListenPortEnabled = listenPortEnabled
+          firstSslListenPort = sslListenPort
+          firstSslListenPortEnabled = sslListenPortEnabled
+          firstAdminPort = adminPort
+          firstAdminPortEnabled = adminPortEnabled
         else:
-          if port != firstPort:
-            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstPort) + " but its server " + self.name(server) + "'s listen port is " + str(port) + ".  All ports for the same channel in a cluster must be the same, including the default channel and the default SSL channel.")
+          if listenPort != firstListenPort:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstListenPort) + " but its server " + self.name(server) + "'s listen port is " + str(listenPort) + ". All ports for the same channel in a cluster must be the same.")
+          if listenPortEnabled != firstListenPortEnabled:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + self.booleanToString(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + self.booleanToString(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+          if sslListenPort != firstSslListenPort:
+             self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
+          if sslListenPortEnabled != firstSslListenPortEnabled:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+          if adminPort != firstAdminPort:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstAdminPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(adminPort) + ".  All ports for the same channel in a cluster must be the same.")
+          if adminPortEnabled != firstAdminPortEnabled:
+            self.addError("The non-dynamic cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+
+
+
+  def validateClusterServersListenPortProperty(self, cluster, errorMsg, clusterListenPortProperty):
+    firstServer = None
+    firstListenPortProperty = None
+    for server in self.env.getDomain().getServers():
+      if cluster is server.getCluster():
+        listenPortProperty = getServerClusterPortPropertyValue(server, clusterListenPortProperty)
+        if firstServer is None:
+          firstServer = server
+          firstListenPortProperty = listenPortProperty
+        else:
+          if listenPortProperty != firstListenPortProperty:
+            self.addError(errorMsg.substitute(cluster=self.name(cluster), server1=self.name(firstServer), property=clusterListenPortProperty, value1=str(firstListenPortProperty), server2=self.name(server), value2=str(firstListenPortProperty)))
             return
+
+  def validateNonDynamicClusterServerHaveSameCustomChannels(self, cluster):
+     firstServer = None
+     serverNap = {}
+     for server in self.env.getDomain().getServers():
+       if cluster is server.getCluster():
+         if firstServer is None:
+           for nap in server.getNetworkAccessPoints():
+             serverNap[nap.getName()] = nap.getProtocol() + "~" + str(nap.getListenPort());
+           firstServer = server
+         else:
+           naps = server.getNetworkAccessPoints()
+           if len(naps) != len(serverNap):
+             self.addError("The non-dynamic cluster " + self.name(cluster) + " has mismatched number of network access points in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+             return
+           else:
+             for nap in naps:
+               if nap.getName() in serverNap:
+                 if serverNap[nap.getName()] != nap.getProtocol() + "~" + str(nap.getListenPort()):
+                   self.addError("The non-dynamic cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                   return
+               else:
+                 self.addError("The non-dynamic cluster " + self.name(cluster) + " has mismatched network access point " + self.name(nap) + " in servers " + self.name(firstServer) + " and " + self.name(server) + ". All network access points in a cluster must be the same.")
+                 return
+
 
   def validateDynamicCluster(self, cluster):
     self.validateDynamicClusterReferencedByOneServerTemplate(cluster)
@@ -392,6 +486,14 @@ class TopologyGenerator(Generator):
   def validateDynamicClusterDynamicServersDoNotUseCalculatedListenPorts(self, cluster):
     if cluster.getDynamicServers().isCalculatedListenPorts() == True:
       self.addError("The dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
+
+  def validateServerCustomChannelName(self):
+    reservedNames = ['default','defaultSecure','defaultAdmin']
+    for server in self.env.getDomain().getServers():
+      naps = server.getNetworkAccessPoints()
+      for nap in naps:
+        if nap.getName() in reservedNames:
+          self.addError("The custom channel " + self.name(nap) + " is a reserved name.")
 
   def isValid(self):
     return len(self.env.getErrors()) == 0
@@ -475,9 +577,20 @@ class TopologyGenerator(Generator):
   def addClusteredServer(self, cluster, server):
     name=self.name(server)
     self.writeln("- name: " + name)
-    self.writeln("  listenPort: " + str(server.getListenPort()))
+    if server.isListenPortEnabled():
+      self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
+    if server.isAdministrationPortEnabled():
+      self.writeln("  adminPort: " + str(server.getAdministrationPort()))
+    self.addSSL(server)
     self.addNetworkAccessPoints(server)
+
+  def addSSL(self, server):
+    ssl = server.getSSL()
+    if ssl is not None and ssl.isEnabled():
+      self.indent()
+      self.writeln("sslListenPort: " + str(ssl.getListenPort()))
+      self.undent()
 
   def addServerTemplates(self):
     serverTemplates = self.env.getDomain().getServerTemplates()
@@ -492,7 +605,8 @@ class TopologyGenerator(Generator):
   def addServerTemplate(self, serverTemplate):
     name=self.name(serverTemplate)
     self.writeln("- name: " + name)
-    self.writeln("  listenPort: " + str(serverTemplate.getListenPort()))
+    if serverTemplate.isListenPortEnabled():
+      self.writeln("  listenPort: " + str(serverTemplate.getListenPort()))
     self.writeln("  clusterName: " + self.quote(serverTemplate.getCluster().getName()))
     listenAddress=serverTemplate.getListenAddress()
     if listenAddress is not None:
@@ -546,8 +660,12 @@ class TopologyGenerator(Generator):
   def addNonClusteredServer(self, server):
     name=self.name(server)
     self.writeln("- name: " + name)
-    self.writeln("  listenPort: " + str(server.getListenPort()))
+    if server.isListenPortEnabled():
+      self.writeln("  listenPort: " + str(server.getListenPort()))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
+    if server.isAdministrationPortEnabled():
+      self.writeln("  adminPort: " + str(server.getAdministrationPort()))
+    self.addSSL(server)
     self.addNetworkAccessPoints(server)
 
   def addNetworkAccessPoints(self, server):
@@ -567,6 +685,10 @@ class TopologyGenerator(Generator):
     self.writeln("    listenPort: " + str(nap.getListenPort()))
     self.writeln("    publicPort: " + str(nap.getPublicPort()))
 
+  def booleanToString(self, bool):
+    if bool == 0:
+      return "false"
+    return "true"
 
 class BootPropertiesGenerator(Generator):
 
@@ -789,6 +911,13 @@ class CustomSitConfigIntrospector(SecretManager):
 
 
   def addSecretsFromDirectory(self, secret_path, secret_name):
+    if not os.path.isdir(secret_path):
+      # The operator pod somehow put a file where we
+      # only expected to find a directory mount.
+      self.env.addError("Internal Error:  Secret path'" 
+                        + secret_path + "'" +
+                        + " is not a directory.")
+      return
     for the_file in os.listdir(secret_path):
       the_file_path = os.path.join(secret_path, the_file)
       if os.path.isfile(the_file_path):
