@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a WebLogic domain home on an existing PV/PVC, and generates the domain custom resource
+#  This sample script creates a WebLogic domain home on an existing PV/PVC, and generates the domain resource
 #  yaml file, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 #
 #  The domain creation inputs can be customized by editing create-domain-inputs.yaml
@@ -73,40 +73,16 @@ fi
 # Function to initialize and validate the output directory
 # for the generated yaml files for this domain.
 #
-function initAndValidateOutputDir {
+function initOutputDir {
   domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
-  validateOutputDir \
-    ${domainOutputDir} \
-    ${valuesInputFile} \
-    create-domain-inputs.yaml \
-    create-domain-job.yaml \
-    delete-domain-job.yaml \
-    domain.yaml
-}
-
-#
-# Function to validate the domain secret
-#
-function validateDomainSecret {
-  # Verify the secret exists
-  validateSecretExists ${weblogicCredentialsSecretName} ${namespace}
-  failIfValidationErrors
-
-  # Verify the secret contains a username
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a username"
-  fi
-
-  # Verify the secret contains a password
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a password"
-  fi
-  failIfValidationErrors
+  removeFileIfExists ${domainOutputDir}/${valuesInputFile}
+  removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
+  removeFileIfExists ${domainOutputDir}/create-domain-job.yaml
+  removeFileIfExists ${domainOutputDir}/delete-domain-job.yaml
+  removeFileIfExists ${domainOutputDir}/domain.yaml
 }
 
 #
@@ -146,18 +122,6 @@ function validateWeblogicImagePullSecretName {
     # Set name blank when not specified, and comment out the yaml
     imagePullSecretName=""
     imagePullSecretPrefix="#"
-  fi
-}
-
-#
-# Function to validate a kubernetes secret exists
-# $1 - the name of the secret
-# $2 - namespace
-function validateSecretExists {
-  echo "Checking to see if the secret ${1} exists in namespace ${2}"
-  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The secret ${1} was not found in namespace ${2}"
   fi
 }
 
@@ -218,60 +182,26 @@ function initialize {
 
   dcrInput="${scriptDir}/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
-    validationError "The template file ${dcrInput} for creating the domain custom resource was not found"
+    validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
 
   failIfValidationErrors
 
-  # Parse the common inputs file
-  parseCommonInputs
+  validateCommonInputs
 
-  validateInputParamsSpecified \
-    adminServerName \
-    domainUID \
-    clusterName \
-    managedServerNameBase \
-    namespace \
-    t3PublicAddress \
-    includeServerOutInPodLog \
-    version 
-
-  validateIntegerInputParamsSpecified \
-    adminPort \
-    configuredManagedServerCount \
-    initialManagedServerReplicas \
-    managedServerPort \
-    t3ChannelPort \
-    adminNodePort 
-
-  validateBooleanInputParamsSpecified \
-    productionModeEnabled \
-    exposeAdminT3Channel \
-    exposeAdminNodePort \
-    includeServerOutInPodLog
-
-  export requiredInputsVersion="create-weblogic-sample-domain-inputs-v1"
-  validateVersion 
-
-  validateDomainUid
-  validateNamespace
-  validateAdminServerName
-  validateManagedServerNameBase
-  validateClusterName
-  validateWeblogicCredentialsSecretName
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
-  initAndValidateOutputDir
-  validateServerStartPolicy
-  validateClusterType
+
   failIfValidationErrors
+
+  initOutputDir
 }
 
 
 #
 # Function to generate the yaml files for creating a domain
 #
-function createYamlFiles {
+function createFiles {
 
   # Make sure the output directory has a copy of the inputs file.
   # The user can either pre-create the output directory, put the inputs
@@ -370,7 +300,7 @@ function createYamlFiles {
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
 
-  # Generate the yaml to create the domain custom resource
+  # Generate the yaml to create the domain resource
   echo Generating ${dcrOutput}
 
   if [ "${exposeAdminT3Channel}" = true ]; then
@@ -402,9 +332,9 @@ function createYamlFiles {
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
   sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
@@ -534,48 +464,10 @@ function printSummary {
   echo "  ${domainPVCOutput}"
   echo "  ${createJobOutput}"
   echo "  ${dcrOutput}"
+  echo ""
+  echo "Completed"
 }
 
-#
-# Function to create the domain's persistent volume
-#
-function createDomainResource {
-  kubectl apply -f ${dcrOutput}
-  DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
-  if [ "${DCR_AVAIL}" != "1" ]; then
-    fail "The domain custom resource ${domainUID} was not found"
-  fi
-}
-
-#
-# Perform the following sequence of steps to create a domain
-#
-
-# Setup the environment for running this script and perform initial validation checks
-initialize
-
-# Generate the yaml files for creating the domain
-createYamlFiles
-
-# Check that the domain secret exists and contains the required elements
-validateDomainSecret
-
-# Validate the domain's persistent volume claim
-if [ "$doValidation" == true ]; then
-  validateDomainPVC
-fi
-
-# Create the WebLogic domain
-createDomainHome
-
-if [ "${executeIt}" = true ]; then
-  createDomainResource
-fi
-
-# Print a summary
-printSummary
-
-echo 
-echo Completed
-
+# Perform the sequence of steps to create a domain
+createDomain
 

@@ -24,10 +24,14 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
 
 The script will perform the following steps:
 
-* Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
+* Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
 * Run and wait for the job to finish.
-* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
+* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
+```
+kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
+```
+
 * Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home created by the create script.
 
 As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services as well.
@@ -73,7 +77,7 @@ The following parameters can be provided in the inputs file.
 | `createDomainFilesDir` | Directory to get all the create domain scripts and supporting files, including the script that is specified by the `createDomainScriptName` property. By default, this directory is set to the relative path `wlst`, and the create script will use the built-in WLST offline scripts in the `wlst` directory to create the WebLogic domain. It can also be set to the relative path `wdt`, and then the built-in WDT scripts will be used instead. An absolute path is also supported to point to an arbitrary directory in the file system. | `wlst` |
 | `createDomainScriptsMountPath` | Mount path of the directory where the create domain scripts are located inside the pod. | `/u01/weblogic` |
 | `createDomainScriptName` | Script that creates the domain. | `create-domain-job.sh` |
-| `domainHome` | Home directory of the WebLogic domain. | `/shared/domains/<domainUID>` |
+| `domainHome` | Home directory of the WebLogic domain. If not specified, the value is derived from the `domainUID` as `/shared/domains/<domainUID>`. | `/shared/domains/domain1` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
@@ -84,15 +88,16 @@ The following parameters can be provided in the inputs file.
 | `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `logHome` | The in-pod name of the directory to store the domain, node manager, server logs, and server .out files in. | `/shared/logs/<domainUID>` |
+| `logHome` | The in-pod name of the directory to store the domain, node manager, server logs, and server .out files in. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
+| `persistentVolumeClaimName` | Name of the persistent volume claim. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc` | `domain1-weblogic-sample-pvc` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
 | `serverStartPolicy` | Determines which WebLogic Servers will be started up. Legal values are `NEVER`, `ALWAYS`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
 | `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
 | `t3PublicAddress` | Public address for the T3 channel. | `kubernetes` |
-| `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. | `domain1-weblogic-credentials` |
+| `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-credentials`. | `domain1-weblogic-credentials` |
 | `weblogicImagePullSecretName` | Name of the Kubernetes secret for the Docker Store, used to pull the WebLogic Server image. | `docker-store-secret` |
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
@@ -211,28 +216,25 @@ Here is an example of the output of this command:
 $ kubectl describe domain domain1
 Name:         domain1
 Namespace:    default
-Labels:       weblogic.domainName=domain1
-              weblogic.domainUID=domain1
+Labels:       weblogic.domainUID=domain1
               weblogic.resourceVersion=domain-v2
 Annotations:  <none>
 API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
-  Cluster Name:
-  Creation Timestamp:  2018-12-07T04:32:13Z
+  Cluster Name:        
+  Creation Timestamp:  2018-12-11T22:08:09Z
   Generation:          1
-  Resource Version:    351622
+  Resource Version:    817145
   Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
-  UID:                 11d951d0-f9d9-11e8-b751-fa163e855ac8
+  UID:                 3ea383cb-fd91-11e8-b751-fa163e855ac8
 Spec:
   Admin Secret:
     Name:  domain1-weblogic-credentials
   Admin Server:
     Exported Network Access Points:
-      T 3 Channel:
-        Annotations:
-        Labels:
-    Node Port:  30701
+    Node Port Annotations:
+    Node Port Labels:
     Server Pod:
       Container Security Context:
       Env:
@@ -245,11 +247,11 @@ Spec:
       Resources:
         Limits:
         Requests:
+      Service Annotations:
+      Service Labels:
       Volume Mounts:
       Volumes:
     Server Start State:  RUNNING
-  As Name:               admin-server
-  As Port:               7001
   Clusters:
     Cluster - 1:
       Replicas:  2
@@ -265,14 +267,13 @@ Spec:
         Resources:
           Limits:
           Requests:
+        Service Annotations:
+        Service Labels:
         Volume Mounts:
         Volumes:
-      Server Start State:         RUNNING
   Domain Home:                    /shared/domains/domain1
   Domain Home In Image:           false
-  Domain Name:                    domain1
-  Domain UID:                     domain1
-  Image:                          store/oracle/weblogic:19.1.0.0
+  Image:                          store/oracle/weblogic:12.2.1.3
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Log Home:                       /shared/logs/domain1
@@ -280,6 +281,10 @@ Spec:
   Server Pod:
     Container Security Context:
     Env:
+      Name:   JAVA_OPTIONS
+      Value:  -Dweblogic.StdoutDebugEnabled=false
+      Name:   USER_MEM_ARGS
+      Value:  -Xms64m -Xmx256m
     Liveness Probe:
     Node Selector:
     Pod Annotations:
@@ -289,22 +294,21 @@ Spec:
     Resources:
       Limits:
       Requests:
+    Service Annotations:
+    Service Labels:
     Volume Mounts:
     Volumes:
-  Server Start Policy:  NEVER
+  Server Start Policy:  IF_NEEDED
   Storage:
     Predefined:
       Claim:  domain1-weblogic-sample-pvc
 Status:
   Conditions:
-    Last Transition Time:  2018-12-07T04:37:14.905Z
-    Reason:                ServersReady
-    Status:                True
-    Type:                  Available
   Servers:
+    Node Name:    xxxxxxxx
     Server Name:  admin-server
-    State:        SHUTDOWN
-  Start Time:     2018-12-07T04:32:13.779Z
+    State:        RUNNING
+  Start Time:     2018-12-11T22:08:09.801Z
 Events:           <none>
 
 ```

@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.kubernetes.client.models.*;
 import java.util.Collections;
+import java.util.HashMap;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -37,16 +38,16 @@ public class CRDHelper {
    * @param next Next step
    * @return Step for creating Domain custom resource definition
    */
-  public static Step createDomainCRDStep(Step next) {
-    return new CRDStep(next);
+  public static Step createDomainCRDStep(KubernetesVersion version, Step next) {
+    return new CRDStep(version, next);
   }
 
   static class CRDStep extends Step {
     CRDContext context;
 
-    CRDStep(Step next) {
+    CRDStep(KubernetesVersion version, Step next) {
       super(next);
-      context = new CRDContext(this);
+      context = new CRDContext(version, this);
     }
 
     @Override
@@ -58,18 +59,20 @@ public class CRDHelper {
   static class CRDContext {
     private final Step conflictStep;
     private final V1beta1CustomResourceDefinition model;
+    private final KubernetesVersion version;
 
-    CRDContext(Step conflictStep) {
+    CRDContext(KubernetesVersion version, Step conflictStep) {
+      this.version = version;
       this.conflictStep = conflictStep;
-      this.model = createModel();
+      this.model = createModel(version);
     }
 
-    static V1beta1CustomResourceDefinition createModel() {
+    static V1beta1CustomResourceDefinition createModel(KubernetesVersion version) {
       return new V1beta1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1beta1")
           .kind("CustomResourceDefinition")
           .metadata(createMetadata())
-          .spec(createSpec());
+          .spec(createSpec(version));
     }
 
     static V1ObjectMeta createMetadata() {
@@ -78,13 +81,24 @@ public class CRDHelper {
           .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_OPERATOR_VERSION);
     }
 
-    static V1beta1CustomResourceDefinitionSpec createSpec() {
-      return new V1beta1CustomResourceDefinitionSpec()
-          .group(KubernetesConstants.DOMAIN_GROUP)
-          .version(KubernetesConstants.DOMAIN_VERSION)
-          .scope("Namespaced")
-          .names(getCRDNames())
-          .validation(createSchemaValidation());
+    static V1beta1CustomResourceDefinitionSpec createSpec(KubernetesVersion version) {
+      V1beta1CustomResourceDefinitionSpec spec =
+          new V1beta1CustomResourceDefinitionSpec()
+              .group(KubernetesConstants.DOMAIN_GROUP)
+              .version(KubernetesConstants.DOMAIN_VERSION)
+              .scope("Namespaced")
+              .names(getCRDNames())
+              .validation(createSchemaValidation());
+      if (version.isCRDSubresourcesSupported()) {
+        spec.setSubresources(
+            new V1beta1CustomResourceSubresources()
+                .scale(
+                    new V1beta1CustomResourceSubresourceScale()
+                        .specReplicasPath(".spec.replicas")
+                        .statusReplicasPath(".status.replicas"))
+                .status(new HashMap<String, Object>()));
+      }
+      return spec;
     }
 
     static V1beta1CustomResourceDefinitionNames getCRDNames() {

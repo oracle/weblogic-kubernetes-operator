@@ -8,6 +8,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -30,8 +31,10 @@ import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v2.Cluster;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainCondition;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v2.DomainStatus;
 import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
 import oracle.kubernetes.weblogic.domain.v2.ServerStatus;
@@ -160,17 +163,27 @@ public class DomainStatusUpdater {
             serverStatuses.put(serverName, ss);
           }
         }
+
+        Map<String, Integer> clusterCounts = new HashMap<>();
         for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
           String serverName = entry.getKey();
           if (!serverStatuses.containsKey(serverName)) {
             V1Pod pod = entry.getValue().getPod().get();
             if (pod != null) {
+              String clusterName =
+                  pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
+              if (clusterName != null) {
+                clusterCounts.compute(
+                    clusterName,
+                    (key, value) -> {
+                      return (value == null) ? 1 : value + 1;
+                    });
+              }
               ServerStatus ss =
                   new ServerStatus()
                       .withState(
                           serverState.getOrDefault(serverName, WebLogicConstants.SHUTDOWN_STATE))
-                      .withClusterName(
-                          pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL))
+                      .withClusterName(clusterName)
                       .withNodeName(pod.getSpec().getNodeName())
                       .withServerName(serverName)
                       .withHealth(serverHealth.get(serverName));
@@ -187,6 +200,37 @@ public class DomainStatusUpdater {
         } else if (!serverStatuses.isEmpty()) {
           status.setServers(new ArrayList<>(serverStatuses.values()));
           madeChange = true;
+        }
+
+        // Check if we should set top-level replicas value
+        DomainSpec spec = dom.getSpec();
+        if (spec.getReplicas() != null) {
+          int replicas = -1;
+          for (Map.Entry<String, Integer> entry : clusterCounts.entrySet()) {
+            // Does this cluster specify an explicit value for replicas?
+            String clusterName = entry.getKey();
+            for (Cluster c : spec.getClusters()) {
+              if (clusterName.equals(c.getClusterName())) {
+                if (c.getReplicas() == null) {
+                  // There is no explicit replicas for for this cluster
+                  if (replicas == -1) {
+                    replicas = entry.getValue();
+                  } else {
+                    replicas = Math.min(replicas, entry.getValue());
+                  }
+                }
+                break;
+              }
+            }
+          }
+
+          if (replicas != -1) {
+            Integer current = status.getReplicas();
+            if (current == null || current.intValue() != replicas) {
+              status.setReplicas(replicas);
+              madeChange = true;
+            }
+          }
         }
 
         // Now, we'll build the conditions.

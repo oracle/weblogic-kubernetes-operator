@@ -51,7 +51,7 @@ public class Operator {
   }
 
   /**
-   * verifies operator is created
+   * verifies operator pod is created
    *
    * @throws Exception
    */
@@ -62,7 +62,7 @@ public class Operator {
   }
 
   /**
-   * verifies operator is ready
+   * verifies operator pod is ready
    *
    * @throws Exception
    */
@@ -115,7 +115,11 @@ public class Operator {
     verifyOperatorReady();
     verifyExternalRESTService();
   }
-
+  /**
+   * Verify external REST service is running
+   *
+   * @throws Exception
+   */
   public void verifyExternalRESTService() throws Exception {
     if (externalRestEnabled) {
       logger.info("Checking REST service is running");
@@ -139,6 +143,11 @@ public class Operator {
     }
   }
 
+  /**
+   * delete operator helm release
+   *
+   * @throws Exception
+   */
   public void destroy() throws Exception {
     String cmd = "helm del --purge " + operatorMap.get("releaseName");
     ExecResult result = ExecCommand.exec(cmd);
@@ -150,6 +159,14 @@ public class Operator {
     runCommandInLoop("kubectl get services -n " + operatorNS + " | egrep weblogic-operator-svc ");
   }
 
+  /**
+   * scale the given cluster in a domain to the given number of servers using Operator REST API
+   *
+   * @param domainUid
+   * @param clusterName
+   * @param numOfMS
+   * @throws Exception
+   */
   public void scale(String domainUid, String clusterName, int numOfMS) throws Exception {
     String myJsonObjStr = "{\"managedServerCount\": " + numOfMS + "}";
 
@@ -172,6 +189,12 @@ public class Operator {
     Thread.sleep(30 * 1000);
   }
 
+  /**
+   * Verify the domain exists using Operator REST Api
+   *
+   * @param domainUid
+   * @throws Exception
+   */
   public void verifyDomainExists(String domainUid) throws Exception {
     // Operator REST external API URL to scale
     StringBuffer myOpRestApiUrl =
@@ -230,7 +253,7 @@ public class Operator {
     // write certificates
     ExecCommand.exec(
         BaseTest.getProjectRoot()
-            + "/kubernetes/samples/scripts/generate-external-rest-identity.sh "
+            + "/kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "
             + "DNS:"
             + TestUtils.getHostName()
             + " >> "

@@ -3,3 +3,5 @@
 
 domainUID: domain11
 namespace: default
+exposeAdminT3Channel: true
+exposeAdminNodePort: true

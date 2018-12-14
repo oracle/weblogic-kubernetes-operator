@@ -1,3 +1,7 @@
+**TODO** finish this page - make sure we tell people how to run 
+a db in a pod with persistent storage, and how to configure the 
+persistent store/leases etc in there
+
 # Running the Oracle Database in Kubernetes
 
 **PLEASE NOTE**:  This page is a work in progress.  We will update this with either better details about how to put the data files onto a persistent volume, or a pointer to the official Oracle Database Kubernetes pages, or both.

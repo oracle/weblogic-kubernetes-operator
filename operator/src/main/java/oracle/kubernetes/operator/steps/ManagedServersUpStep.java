@@ -128,7 +128,7 @@ public class ManagedServersUpStep extends Step {
     Collection<String> runningList = new ArrayList<>();
     for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
       ServerKubernetesObjects sko = entry.getValue();
-      if (sko != null && sko.getPod() != null) {
+      if (sko != null && sko.getPod().get() != null) {
         runningList.add(entry.getKey());
       }
     }
