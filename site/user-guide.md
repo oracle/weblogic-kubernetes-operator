@@ -1,19 +1,27 @@
 # User Guide
 
-**TOOO** put intro here
+This document provides detailed information that is targeted at the user of the Oracle WebLogic 
+Server Kubernetes Operator.  It provides instructions on how to install the operator in your 
+Kubernetes cluster and how to use it to manage WebLogic domains.  
+
+If you are looking for information about how the operator is designed, implemented, built, etc., then 
+you should refer to the [Developer guide](developer.md).
 
 ## Table of contents
 
-**TODO** this is not the final TOC - we will restructure/reorganize for usability....
+The information in this guide is organized in the order that you would most likely need to use it.  If you 
+want to set up an operator and use it to create and manage WebLogic domains, you should 
+follow this guide from top to bottom, and the necessary information will be 
+presented in the correct order.
 
 * [Important terms](#important-terms)
 * [Getting started](#getting-started)
 * [Prerequisites](#prerequisites)
-* [Preparing your Kubernetes environment](prepare-k8s.md)
+* [Preparing your Kubernetes environment to run the operator](prepare-k8s.md)
   * [Set up your Kubernetes cluster](prepare-k8s.md#set-up-your-kubernetes-cluster)
   * [Set up load balancers](load-balancing.md)
   * [Configuring Kibana and Elasticsearch](prepare-k8s.md#configuring-kibana-and-elasticsearch)
-* [Create and manage the operator](install.md)
+* [Install and manage the operator](install.md)
   * [Using the Helm charts](helm-charts.md) is the *preferred* method
   * [Manual installation](manual-installation.md) is also possible
 * [Creating or obtaining WebLogic Docker images](weblogic-docker-images.md)
