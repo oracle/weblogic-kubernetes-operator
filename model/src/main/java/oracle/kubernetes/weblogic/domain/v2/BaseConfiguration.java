@@ -111,11 +111,11 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
 
-  void setServerStartPolicy(String serverStartPolicy) {
+  public void setServerStartPolicy(String serverStartPolicy) {
     this.serverStartPolicy = serverStartPolicy;
   }
 
-  protected String getServerStartPolicy() {
+  public String getServerStartPolicy() {
     return serverStartPolicy;
   }
 
