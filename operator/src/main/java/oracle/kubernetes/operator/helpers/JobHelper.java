@@ -175,31 +175,39 @@ public class JobHelper {
     List<ManagedServer> servers = spec.getManagedServers();
 
     // Are we starting a cluster?
+    // NOTE: clusterServerStartPolicy == null indicates default policy
     for (Cluster cluster : clusters) {
       int replicaCount = cluster.getReplicas();
+      String clusterServerStartPolicy = cluster.getServerStartPolicy();
       LOGGER.fine(
           "Start Policy: "
-              + cluster.getServerStartPolicy()
+              + clusterServerStartPolicy
               + ", replicaCount: "
               + replicaCount
               + " for cluster: "
               + cluster);
-      if (!cluster.getServerStartPolicy().equals(ConfigurationConstants.START_NEVER)
+      if ((clusterServerStartPolicy == null
+              || !clusterServerStartPolicy.equals(ConfigurationConstants.START_NEVER))
           && replicaCount > 0) {
         return true;
       }
     }
 
     // If Domain level Server Start Policy = ALWAYS, IF_NEEDED or ADMIN_ONLY then we most likely
-    // will
-    // start a server pod
-    if (!dom.getSpec().getServerStartPolicy().equals(ConfigurationConstants.START_NEVER)) {
+    // will start a server pod
+    // NOTE: domainServerStartPolicy == null indicates default policy
+    String domainServerStartPolicy = dom.getSpec().getServerStartPolicy();
+    if (domainServerStartPolicy == null
+        || !domainServerStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
       return true;
     }
 
     // Are we starting any explicitly specified individual server?
+    // NOTE: serverStartPolicy == null indicates default policy
     for (ManagedServer server : servers) {
-      if (!server.getServerStartPolicy().equals(ConfigurationConstants.START_NEVER)) {
+      String serverStartPolicy = server.getServerStartPolicy();
+      if (serverStartPolicy == null
+          || !serverStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
         return true;
       }
     }
