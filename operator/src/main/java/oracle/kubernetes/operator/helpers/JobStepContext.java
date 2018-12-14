@@ -21,6 +21,8 @@ public abstract class JobStepContext implements StepContextConstants {
 
   private final DomainPresenceInfo info;
   private V1Job jobModel;
+  final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
+  final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
 
   JobStepContext(Packet packet) {
     info = packet.getSPI(DomainPresenceInfo.class);
@@ -165,9 +167,22 @@ public abstract class JobStepContext implements StepContextConstants {
     return metadata;
   }
 
+  private long getActiveDeadlineSeconds() {
+    return DEFAULT_ACTIVE_DEADLINE_SECONDS
+        + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
+  }
+
   protected V1JobSpec createJobSpec(TuningParameters tuningParameters) {
+    LOGGER.fine(
+        "Creating job "
+            + getJobName()
+            + " with activeDeadlineSeconds = "
+            + getActiveDeadlineSeconds());
     V1JobSpec jobSpec =
-        new V1JobSpec().backoffLimit(0).template(createPodTemplateSpec(tuningParameters));
+        new V1JobSpec()
+            .backoffLimit(0)
+            .activeDeadlineSeconds(getActiveDeadlineSeconds())
+            .template(createPodTemplateSpec(tuningParameters));
 
     return jobSpec;
   }
