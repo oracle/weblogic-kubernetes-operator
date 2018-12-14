@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -668,11 +669,14 @@ public class Domain {
 
   private void callCreateDomainScript(String outputDir) throws Exception {
     StringBuffer cmd = new StringBuffer(BaseTest.getProjectRoot());
+
     cmd.append(
             "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
-        .append(generatedInputYamlFile)
-        .append(" -e -v -o ")
-        .append(outputDir);
+        .append(generatedInputYamlFile);
+    if (!domainMap.containsKey("configOverrides")) {
+      cmd.append(" -e ");
+    }
+    cmd.append(" -v -o ").append(outputDir);
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString(), true);
     if (result.exitValue() != 0) {
@@ -686,6 +690,37 @@ public class Domain {
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
+
+    // write configOverride and configOverrideSecrets to domain.yaml
+    if (domainMap.containsKey("configOverrides")) {
+      String contentToAppend =
+          "  configOverrides: "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + "\n"
+              + "  configOverrideSecrets: [ \""
+              + domainUid
+              + "-t3publicaddress\" ]"
+              + "\n";
+
+      String domainYaml =
+          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+      Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+
+      String command = "kubectl create -f " + domainYaml;
+      result = ExecCommand.exec(command);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command "
+                + cmd
+                + " failed, returned "
+                + result.stdout()
+                + "\n"
+                + result.stderr());
+      }
+      logger.info("Command returned " + result.stdout().trim());
+    }
   }
 
   private void createLoadBalancer() throws Exception {
@@ -790,7 +825,12 @@ public class Domain {
       ExecResult result = ExecCommand.exec(curlCmd.toString());
       if (result.exitValue() != 0) {
         throw new RuntimeException(
-            "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
+            "FAILURE: command "
+                + curlCmd
+                + " failed, returned "
+                + result.stderr()
+                + " \n "
+                + result.stdout());
       } else {
         logger.info("webapp invoked successfully");
       }
@@ -863,9 +903,9 @@ public class Domain {
     }
 
     domainMap.put("domainHome", "/shared/domains/" + domainUid);
-    /* domainMap.put(
-    "createDomainFilesDir",
-    BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv"); */
+    domainMap.put(
+        "createDomainFilesDir",
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
@@ -889,6 +929,56 @@ public class Domain {
     }
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
+
+    // create config map and secret for custom sit config
+    if (domainMap.get("configOverrides") != null) {
+      // write hostname in config file for public address
+
+      String cmd =
+          "kubectl -n "
+              + domainNS
+              + " create cm "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + " --from-file "
+              + BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig";
+      ExecResult result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+      cmd =
+          "kubectl -n "
+              + domainNS
+              + " label cm "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + " weblogic.domainUID="
+              + domainUid;
+      result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+      // create secret for custom sit config t3 public address
+      cmd =
+          "kubectl -n "
+              + domainNS
+              + " create secret generic "
+              + domainUid
+              + "-"
+              + "t3publicaddress "
+              + " --from-literal=hostname="
+              + TestUtils.getHostName();
+      result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+    }
   }
 
   private String getNodeHost() throws Exception {

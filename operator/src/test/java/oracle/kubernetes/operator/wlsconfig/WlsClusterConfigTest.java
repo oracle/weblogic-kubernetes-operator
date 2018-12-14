@@ -665,7 +665,7 @@ public class WlsClusterConfigTest {
   static WlsDynamicServersConfig createDynamicServersConfig(
       int clusterSize, int maxClusterSize, String serverNamePrefix, String clusterName) {
     WlsServerConfig serverTemplate =
-        new WlsServerConfig("serverTemplate1", 7001, "host1", 7002, false, null, null);
+        new WlsServerConfig("serverTemplate1", 7001, "host1", 7002, false, null, null, null, false);
     List<String> serverNames = new ArrayList<>();
     final int startingServerNameIndex = 1;
     for (int i = 0; i < clusterSize; i++) {

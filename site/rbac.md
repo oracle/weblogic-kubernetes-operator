@@ -1,3 +1,5 @@
+**TODO** review and update
+
 # Role-Based Access Control (RBAC)
 
 The operator assumes that certain roles and role bindings are created on the Kubernetes cluster.  The operator installation scripts create these, and the operator verifies that they are correct when the cluster starts up.  This document lists the [RBAC](https://kubernetes.io/docs/admin/authorization/rbac/) definitions that are created.

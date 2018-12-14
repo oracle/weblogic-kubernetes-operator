@@ -8,7 +8,7 @@ The following prerequisites must be handled prior to running the create domain s
 * Make sure the WebLogic operator is running.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
-* Build the Oracle WebLogic image `oracle/weblogic:12.2.1.3-developer`. Refer to [Oracle WebLogic Server on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/dockerfiles/12.2.1.3).
+* Build the Oracle WebLogic image `oracle/weblogic:12.2.1.3-developer`. Refer to [Oracle WebLogic Server on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/dockerfiles/12.2.1.3). If a different `baseImage` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository.
 
 ## Use the script to create a domain
 
@@ -24,11 +24,11 @@ Make a copy of the `create-domain-inputs.yaml` file, and run the create script, 
 
 The script will perform the following steps:
 
-* Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. Note that the script fails if the directory is not empty when the `create-domain.sh` script is executed.
+* Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 * Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
 * Clone the weblogic docker-images project via the `git clone https://github.com/oracle/docker-images.git` into the current directory.
 * Replace the built-in username and password in the `properties/docker_build/domain_security.properties` file with the `username` and `password` that are supplied in the command line via the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
-* Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain in the Docker image. Also, you can run the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image), manually with the generated `domain.properties` to create a domain home image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
+* Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt) and [Example Image with a WebLogic Server Domain using WLST](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain in the Docker image. Also, you can run the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image), manually with the generated `domain.properties` to create a domain home image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 
 As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services.
@@ -68,12 +68,14 @@ The following parameters can be provided in the inputs file.
 | `adminPort` | Port number for the Administration Server inside the Kubernetes cluster. | `7001` |
 | `adminNodePort` | Port number of the Administration Server outside the Kubernetes cluster. | `30701` |
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
+| `baseImage` | The image that is used to build the domain-home-in-image Docker image. If not specified, use the built-in base image `oracle/weblogic:12.2.1.3-developer`. The image specified here needs to be built locally or pulled from a repository before the `create-domain.sh` script is executed. | `oracle/weblogic:12.2.1.3-developer` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `clusterType` | Type of the WebLogic Cluster. Legal values are `CONFIGURED` or `DYNAMIC`. | `DYNAMIC` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `2` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
+| `imagePath` | The relative directory of the WebLogic domain home in image Docker image in `https://github.com/oracle/docker-images.git` project under the `docker-images/OracleWebLogic/samples` directory.  | `12213-domain-home-in-image-wdt` |
 | `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
@@ -187,11 +189,11 @@ API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
   Cluster Name:        
-  Creation Timestamp:  2018-12-11T01:33:27Z
+  Creation Timestamp:  2018-12-11T21:27:35Z
   Generation:          1
-  Resource Version:    46624
+  Resource Version:    814010
   Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
-  UID:                 c1f7be60-fce4-11e8-bc6c-0021f6985fb7
+  UID:                 93e55739-fd8b-11e8-b751-fa163e855ac8
 Spec:
   Admin Secret:
     Name:  domain1-weblogic-credentials
@@ -245,6 +247,10 @@ Spec:
   Server Pod:
     Container Security Context:
     Env:
+      Name:   JAVA_OPTIONS
+      Value:  -Dweblogic.StdoutDebugEnabled=false
+      Name:   USER_MEM_ARGS
+      Value:  -Xms64m -Xmx256m
     Liveness Probe:
     Node Selector:
     Pod Annotations:
@@ -261,35 +267,27 @@ Spec:
   Server Start Policy:  IF_NEEDED
 Status:
   Conditions:
-    Last Transition Time:  2018-12-11T01:35:23.652Z
+    Last Transition Time:  2018-12-11T21:28:59.537Z
     Reason:                ServersReady
     Status:                True
     Type:                  Available
   Servers:
     Health:
-      Activation Time:  2018-12-11T01:34:59.546Z
+      Activation Time:  2018-12-11T21:28:36.983Z
       Overall Health:   ok
       Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   admin-server
     State:         RUNNING
     Cluster Name:  cluster-1
-    Health:
-      Activation Time:  2018-12-11T01:36:46.132Z
-      Overall Health:   ok
-      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server1
-    State:         RUNNING
+    State:         STARTING
     Cluster Name:  cluster-1
-    Health:
-      Activation Time:  2018-12-11T01:36:47.865Z
-      Overall Health:   ok
-      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server2
-    State:        RUNNING
-  Start Time:     2018-12-11T01:33:27.339Z
+    State:         STARTING
+  Start Time:      2018-12-11T21:27:35.869Z
 Events:            <none>
 ```
 
