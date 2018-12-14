@@ -111,6 +111,10 @@ public class KubernetesVersion {
     return this.major > 1 || (this.major == 1 && this.minor >= 8);
   }
 
+  boolean isCRDSubresourcesSupported() {
+    return this.major > 1 || (this.major == 1 && this.minor >= 10);
+  }
+
   @Override
   public boolean equals(Object o) {
     return this == o || o instanceof KubernetesVersion && equals((KubernetesVersion) o);

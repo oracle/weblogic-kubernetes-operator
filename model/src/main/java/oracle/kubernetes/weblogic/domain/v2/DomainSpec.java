@@ -392,6 +392,16 @@ public class DomainSpec extends BaseConfiguration {
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusters.
    *
+   * @return replicas
+   */
+  public Integer getReplicas() {
+    return this.replicas;
+  }
+
+  /**
+   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
+   * configured in clusters.
+   *
    * @param replicas replicas
    */
   public void setReplicas(Integer replicas) {
@@ -440,7 +450,7 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   @Override
-  protected String getServerStartPolicy() {
+  public String getServerStartPolicy() {
     return Optional.ofNullable(super.getServerStartPolicy()).orElse(START_IF_NEEDED);
   }
 
@@ -559,7 +569,7 @@ public class DomainSpec extends BaseConfiguration {
     return cluster != null && cluster.getMaxUnavailable() != null;
   }
 
-  private AdminServer getAdminServer() {
+  public AdminServer getAdminServer() {
     return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
   }
 

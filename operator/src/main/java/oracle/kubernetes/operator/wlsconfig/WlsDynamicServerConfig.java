@@ -104,7 +104,9 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
         sslListenPort,
         sslPortEnabled,
         machineName,
-        networkAccessPoints);
+        networkAccessPoints,
+        null,
+        false);
   }
 
   /**

@@ -23,6 +23,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int domainPresenceFailureRetrySeconds;
     public final int domainPresenceFailureRetryMaxCount;
     public final int domainPresenceRecheckIntervalSeconds;
+    public final int targetNamespaceRecheckIntervalSeconds;
     public final int statusUpdateTimeoutSeconds;
     public final int unchangedCountToDelayStatusRecheck;
     public final long initialShortDelay;
@@ -32,6 +33,7 @@ public interface TuningParameters extends Map<String, String> {
         int domainPresenceFailureRetrySeconds,
         int domainPresenceFailureRetryMaxCount,
         int domainPresenceRecheckIntervalSeconds,
+        int targetNamespaceRecheckIntervalSeconds,
         int statusUpdateTimeoutSeconds,
         int unchangedCountToDelayStatusRecheck,
         long initialShortDelay,
@@ -39,6 +41,7 @@ public interface TuningParameters extends Map<String, String> {
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
       this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;
+      this.targetNamespaceRecheckIntervalSeconds = targetNamespaceRecheckIntervalSeconds;
       this.statusUpdateTimeoutSeconds = statusUpdateTimeoutSeconds;
       this.unchangedCountToDelayStatusRecheck = unchangedCountToDelayStatusRecheck;
       this.initialShortDelay = initialShortDelay;

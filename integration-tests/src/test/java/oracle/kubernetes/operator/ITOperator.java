@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -46,6 +49,7 @@ public class ITOperator extends BaseTest {
   private static String domain9YamlFile = "domain9.yaml";
   private static String domain10YamlFile = "domain10.yaml";
   private static String domain11YamlFile = "domain11.yaml";
+  private static String domain12YamlFile = "domain12.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -87,7 +91,7 @@ public class ITOperator extends BaseTest {
   }
 
   /**
-   * Releases k8s cluster lease
+   * Releases k8s cluster lease, archives result, pv directories
    *
    * @throws Exception
    */
@@ -120,6 +124,19 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS");
   }
 
+  /**
+   * Create operator and verify its deployed successfully. Create domain and verify domain is
+   * started. Verify admin external service by accessing admin REST endpoint with nodeport in URL
+   * Verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel
+   * port for WLST Verify web app load balancing by accessing the webapp using loadBalancerWebPort
+   * Verify domain life cycle(destroy and create) should not any impact on Operator Cluster scale
+   * up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. Operator
+   * life cycle(destroy and create) should not impact the running domain Verify liveness probe by
+   * killing managed server 1 process 3 times to kick pod auto-restart shutdown the domain by
+   * changing domain serverStartPolicy to NEVER
+   *
+   * @throws Exception
+   */
   @Test
   public void test1CreateFirstOperatorAndDomain() throws Exception {
 
@@ -138,14 +155,21 @@ public class ITOperator extends BaseTest {
       if (!SMOKETEST) domain1.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-
-      if (domain1 != null && (JENKINS || testCompletedSuccessfully))
+      if (domain1 != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
         domain1.shutdownUsingServerStartPolicy();
     }
 
     logger.info("SUCCESS - test1CreateFirstOperatorAndDomain");
   }
-
+  /**
+   * Create operator if its not running and create domain and verify domain in started successfully.
+   * Verify admin external service by accessing admin REST endpoint with nodeport in URL Verify
+   * admin t3 channel port by exec into the admin pod and deploying webapp using the channel port
+   * for WLST Verify web app load balancing by accessing the webapp using loadBalancerWebPort
+   * shutdown by deleting domain CRD using yaml
+   *
+   * @throws Exception
+   */
   @Test
   public void test2CreateAnotherDomainInDefaultNS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -171,7 +195,13 @@ public class ITOperator extends BaseTest {
     }
     logger.info("SUCCESS - test2CreateAnotherDomainInDefaultNS");
   }
-
+  /**
+   * Create operator if its not running. Create domain with dynamic cluster using WDT and verify the
+   * domain is started successfully. Verify cluster scaling by doing scale up for domain3 using WLDF
+   * scaling shutdown by deleting domain CRD using yaml
+   *
+   * @throws Exception
+   */
   @Test
   public void test3CreateDomainInTest1NS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -198,7 +228,11 @@ public class ITOperator extends BaseTest {
 
     logger.info("SUCCESS - test3CreateDomainInTest1NS");
   }
-
+  /**
+   * Create operator managing test2 namespace
+   *
+   * @throws Exception
+   */
   @Test
   public void test4CreateAnotherOperatorManagingTest2NS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -210,6 +244,15 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test4CreateAnotherOperatorManagingTest2NS");
   }
 
+  /**
+   * Create two operators if they are not running. Create domain domain4 with dynamic cluster in
+   * default namespace, managed by operator1 Create domain domain5 with Configured cluster using WDT
+   * in test2 namespace, managed by operator2 Verify scaling for domain5 cluster from 2 to 3 servers
+   * and back to 2, plus verify no impact on domain4 Cycle domain4 down and back up, plus verify no
+   * impact on domain5 shutdown by deleting both domain4 and domain5 CRD's
+   *
+   * @throws Exception
+   */
   @Test
   public void test5CreateConfiguredDomainInTest2NS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -251,7 +294,7 @@ public class ITOperator extends BaseTest {
       logger.info("Verify no impact on domain5");
       domain5.verifyDomainCreated();
       testCompletedSuccessfully = true;
-      logger.info("SUCCESS - test5CreateConfiguredDomainInTest2NS");
+
     } finally {
       if (domain4 != null && (JENKINS || testCompletedSuccessfully)) {
         domain4.destroy();
@@ -260,8 +303,15 @@ public class ITOperator extends BaseTest {
         domain5.destroy();
       }
     }
+    logger.info("SUCCESS - test5CreateConfiguredDomainInTest2NS");
   }
-
+  /**
+   * Create operator if its not running and create domain with serverStartPolicy="ADMIN_ONLY" Verify
+   * only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV
+   * storage shutdown by deleting domain CRD
+   *
+   * @throws Exception
+   */
   @Test
   public void test6CreateDomainWithStartPolicyAdminOnly() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -285,7 +335,12 @@ public class ITOperator extends BaseTest {
 
     logger.info("SUCCESS - test6CreateDomainWithStartPolicyAdminOnly");
   }
-
+  /**
+   * Create operator and create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted
+   * once the domain and PVC are deleted
+   *
+   * @throws Exception
+   */
   @Test
   public void test7CreateDomainPVReclaimPolicyRecycle() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -308,7 +363,12 @@ public class ITOperator extends BaseTest {
     domain7.deletePVCAndCheckPVReleased();
     logger.info("SUCCESS - test7CreateDomainPVReclaimPolicyRecycle");
   }
-
+  /**
+   * Create operator and create domain and verify that create domain fails when its pv is already
+   * populated by a shutdown domain
+   *
+   * @throws Exception
+   */
   @Test
   public void test8CreateDomainOnExistingDir() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -334,6 +394,12 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - test8CreateDomainOnExistingDir");
   }
 
+  /**
+   * Create operator and create domain with APACHE load balancer and verify domain is started
+   * successfully and access admin console via LB port. shutdown domain.
+   *
+   * @throws Exception
+   */
   // @Test
   public void testACreateDomainApacheLB() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -356,7 +422,13 @@ public class ITOperator extends BaseTest {
     }
     logger.info("SUCCESS - testACreateDomainApacheLB");
   }
-
+  /**
+   * Create operator and create domain with mostly default values from sample domain inputs, mainly
+   * exposeAdminT3Channel and exposeAdminNodePort which are false by default and verify domain
+   * startup and cluster scaling using operator rest endpoint works.
+   *
+   * @throws Exception
+   */
   @Test
   public void testBCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -458,8 +530,15 @@ public class ITOperator extends BaseTest {
     TestUtils.verifyAfterDeletion(domainDel2);
     logger.info("SUCCESS - testDeleteTwoDomains");
   }
-
-  // @Test
+  /**
+   * Create Operator and create domain with listen address not set for admin server, t3 channel and
+   * incorrect file for admin server log location Verify automatic situational config override works
+   * by bringing up the domain and by verifying domain is started successfully and web application
+   * can be deployed and accessed.
+   *
+   * @throws Exception
+   */
+  @Test
   public void testAutoSitConfigOverrides() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     logTestBegin("testAutoSitConfigOverrides");
@@ -469,30 +548,84 @@ public class ITOperator extends BaseTest {
     }
     Domain domain11 = null;
     boolean testCompletedSuccessfully = false;
+    String createDomainScriptDir =
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
     try {
+
       // cp py
-      copyCreateDomainScript();
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain-auto-sit-config.py").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+
       domain11 = testDomainCreation(domain11YamlFile);
       domain11.verifyDomainCreated();
       testBasicUseCases(domain11);
+      // testAdvancedUseCasesForADomain(operator1, domain11);
       testCompletedSuccessfully = true;
-      logger.info("SUCCESS - testAutoSitConfigOverrides");
+
     } finally {
-
-      StringBuffer cmd = new StringBuffer("cd ");
-      cmd.append(BaseTest.getProjectRoot())
-          .append(
-              "/integration-tests/src/test/resources/domain-home-on-pv && cp create-domain.py.bak create-domain.py");
-      logger.info("Running " + cmd);
-      ExecResult result = ExecCommand.exec(cmd.toString());
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(cmd + " failed");
-      }
-
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
       if (domain11 != null && (JENKINS || testCompletedSuccessfully)) {
         domain11.destroy();
       }
     }
+    logger.info("SUCCESS - testAutoSitConfigOverrides");
+  }
+  /**
+   * Create Operator and create domain with some junk value for t3 channel public address and using
+   * custom situational config override replace with valid public address using secret Verify the
+   * domain is started successfully and web application can be deployed and accessed.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testCustomSitConfigOverrides() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    logTestBegin("testCustomSitConfigOverrides");
+
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1YamlFile);
+    }
+    Domain domain12 = null;
+    boolean testCompletedSuccessfully = false;
+    String createDomainScriptDir =
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
+    try {
+
+      // cp py
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain-custom-sit-config.py").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+
+      domain12 = testDomainCreation(domain12YamlFile);
+      domain12.verifyDomainCreated();
+      testBasicUseCases(domain12);
+      // testAdvancedUseCasesForADomain(operator1, domain11);
+      testCompletedSuccessfully = true;
+
+    } finally {
+      Files.copy(
+          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+          new File(createDomainScriptDir + "/create-domain.py").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+      if (domain12 != null && (JENKINS || testCompletedSuccessfully)) {
+        domain12.destroy();
+      }
+    }
+    logger.info("SUCCESS - testCustomSitConfigOverrides");
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
@@ -511,28 +644,5 @@ public class ITOperator extends BaseTest {
   private void testBasicUseCases(Domain domain) throws Exception {
     testAdminT3Channel(domain);
     testAdminServerExternalService(domain);
-  }
-
-  private void copyCreateDomainScript() throws Exception {
-    String createDomainScriptPath =
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
-
-    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(createDomainScriptPath).append(" && cp create-domain.py create-domain.py.bak");
-    logger.info("Running " + cmd);
-
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(cmd + " failed");
-    }
-
-    cmd = new StringBuffer("cd ");
-    cmd.append(createDomainScriptPath)
-        .append(" && cp create-domain-auto-sit-config.py create-domain.py");
-    logger.info("Running " + cmd);
-    result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(cmd + " failed");
-    }
   }
 }

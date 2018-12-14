@@ -1,3 +1,5 @@
+**TODO** review and update
+
 # Creating a WebLogic domain
 
 The WebLogic domain must be installed into the folder that will be mounted as `/shared/domain`. The recommended approach is to use the provided `create-weblogic-domain.sh` script; however, instructions are also provided for manually installing and configuring a WebLogic domain (see [Manually creating a domain](manually-creating-domain.md)).
