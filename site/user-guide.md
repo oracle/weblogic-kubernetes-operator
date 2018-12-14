@@ -14,9 +14,8 @@
   * [Set up load balancers](load-balancing.md)
   * [Configuring Kibana and Elasticsearch](prepare-k8s.md#configuring-kibana-and-elasticsearch)
 * [Create and manage the operator](install.md)
-  * [Starting the operator](install.md#starting-the-operator)
-  * [Modifying the operator](install.md#modifying-the-operator)
-  * [Shutting down the operator](install.md#shutting-down-the-operator)
+  * [Using the Helm charts](helm-charts.md) is the *preferred* method
+  * [Manual installation](manual-installation.md) is also possible
 * [Creating or obtaining WebLogic Docker images](weblogic-docker-images.md)
   * [Obtaining standard images from the Docker store](weblogic-docker-images.md#obtaining-standard-images-from-the-docker-store)
   * [Creating a custom images with patches applied](weblogic-docker-images.md#creating-a-custom-images-with-patches-applied)
