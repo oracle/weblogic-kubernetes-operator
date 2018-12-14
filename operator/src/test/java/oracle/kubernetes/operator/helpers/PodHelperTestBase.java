@@ -459,7 +459,6 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  @Ignore("suspect feature")
   public void whenPodSecurityContextIsDifferent_replaceIt() {
     configurator.withPodSecurityContext(new V1PodSecurityContext().runAsGroup(12345L));
     verifyReplacePodWhen(pod -> {});
@@ -472,7 +471,6 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  @Ignore("suspect feature")
   public void whenPodContainerSecurityContextIsDifferent_replaceIt() {
     configurator.withContainerSecurityContext(new V1SecurityContext().runAsGroup(9876L));
     verifyReplacePodWhen(pod -> {});
@@ -491,14 +489,12 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  @Ignore("suspect feature")
   public void whenPodRequestRequirementIsDifferent_replaceIt() {
     configurator.withRequestRequirement("resource", "5");
     verifyReplacePodWhen(pod -> {});
   }
 
   @Test
-  @Ignore("suspect feature")
   public void whenPodLimitRequirementIsDifferent_replaceIt() {
     configurator.withLimitRequirement("limit", "7");
     verifyReplacePodWhen(pod -> {});
