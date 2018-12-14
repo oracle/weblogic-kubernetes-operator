@@ -23,7 +23,7 @@ d.	Then patch the WebLogic image according to these [instructions](https://githu
 
 ## 2. Create a Traefik (Ingress-based) load balancer.
 
-Use Helm to install the [Traefik](kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
+Use Helm to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 ```
 $ helm install \
 --name traefik-operator \
