@@ -322,7 +322,13 @@ public class Domain {
           "webapp is not deployed as exposeAdminT3Channel is false, can not verify loadbalancing");
     }
   }
-
+  /**
+   * call webapp and verify load balancing by checking server name in the response
+   *
+   * @param webappName
+   * @param verifyLoadBalance
+   * @throws Exception
+   */
   public void callWebAppAndVerifyLoadBalancing(String webappName, boolean verifyLoadBalance)
       throws Exception {
     if (!loadBalancer.equals("NONE")) {
@@ -362,7 +368,7 @@ public class Domain {
   }
 
   /**
-   * startup the domain
+   * create domain crd
    *
    * @throws Exception
    */
@@ -390,7 +396,7 @@ public class Domain {
   }
 
   /**
-   * shutdown the domain
+   * delete domain crd using yaml
    *
    * @throws Exception
    */
@@ -411,6 +417,11 @@ public class Domain {
     verifyDomainDeleted(replicas);
   }
 
+  /**
+   * delete domain using domain name
+   *
+   * @throws Exception
+   */
   public void shutdown() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
     String cmd = "kubectl delete domain " + domainUid + " -n " + domainNS;
@@ -424,6 +435,11 @@ public class Domain {
     verifyDomainDeleted(replicas);
   }
 
+  /**
+   * shutdown domain by setting serverStartPolicy to NEVER
+   *
+   * @throws Exception
+   */
   public void shutdownUsingServerStartPolicy() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
     String cmd =
@@ -454,6 +470,12 @@ public class Domain {
     verifyServerPodsDeleted(replicas);
   }
 
+  /**
+   * verify server pods are deleted
+   *
+   * @param replicas
+   * @throws Exception
+   */
   public void verifyServerPodsDeleted(int replicas) throws Exception {
     TestUtils.checkPodDeleted(domainUid + "-" + adminServerName, domainNS);
     for (int i = 1; i <= replicas; i++) {
@@ -465,6 +487,11 @@ public class Domain {
     return domainMap;
   }
 
+  /**
+   * delete PVC and check PV status released when weblogicDomainStorageReclaimPolicy is Recycle
+   *
+   * @throws Exception
+   */
   public void deletePVCAndCheckPVReleased() throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     String pvBaseName = (String) pvMap.get("baseName");
@@ -485,7 +512,11 @@ public class Domain {
       logger.info("PV is released when PVC is deleted");
     }
   }
-
+  /**
+   * create domain on existing directory
+   *
+   * @throws Exception
+   */
   public void createDomainOnExistingDirectory() throws Exception {
     String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
     String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
@@ -507,7 +538,11 @@ public class Domain {
     }
     throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
   }
-
+  /**
+   * access admin console using load balancer web port for Apache load balancer
+   *
+   * @throws Exception
+   */
   public void verifyAdminConsoleViaLB() throws Exception {
     if (!loadBalancer.equals("APACHE")) {
       logger.info("This check is done only for APACHE load balancer");
@@ -554,7 +589,11 @@ public class Domain {
   public String getDomainUid() {
     return domainUid;
   }
-
+  /**
+   * test liveness probe for managed server 1
+   *
+   * @throws Exception
+   */
   public void testWlsLivenessProbe() throws Exception {
 
     // test managed server1 pod auto restart
