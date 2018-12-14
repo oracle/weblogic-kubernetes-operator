@@ -8,10 +8,11 @@
 Use configuration overrides to customize a WebLogic domain home configuration. For example, you may want to override a JDBC Datasource xml module Username, Password, and URL so that it references a local database. Overrides can be used to customize domains as they are moved from QA to production, deployed to different sites, or even deployed multiple times at the same site.
 
 How do you specify overrides? Overrides are specified by:
-* Defining situational config templates and deploying them via a Kubernetes config map.
-* Including a file named 'version.txt' that contains the string '2.0' in the same config map.
+* Creating a Kubernetes config map that contains
+  * Situational config templates.
+  * A file named 'version.txt' that contains the string '2.0'.
 * Setting your Domain resource `configOverride` to the name of this config map.
-* Defining template macro values via Kubernetes secrets.
+* Creating Kubernetes secrets that contain template macro values.
 * Setting your Domain `configOverrideSecrets` to reference the aforementioned secrets.
 * Starting or restarting your domain.
 
@@ -157,13 +158,49 @@ The secret macro SECRETNAME field is used to reference the name of a Secret, and
 
 **SECURITY NOTE:** Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST encrypt command instead of leaving it at its plain text value.  This is useful for overriding mbean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and for ensuring that a custom override situational config file the Operator places in the domain home does not expose plain-text passwords.
 
-## Sample Override Templates
+## Override Template Samples
 
-TBD
+Here are some sample template override files.  Use 'combine-mode="add"' to specify the values for mbean attributes that have not been set in the original configuration, and use the 'combine-mode="replace"' to specify the values for mbean fields that are already set in the original configuration.
+
+**IMPORTANT: Your overrides may not take effect if you use 'add' for an mbean attribute that already has a value specified in your original configuration, or use 'replace' for an attribute that does not already exist.**
+
+### Overriding config.xml
+
+The following `config.xml` override file demonstrates setting the 'max-message-size' field on a WebLogic Server named 'admin-server', and replacing the `public-address` and `public-port` fields with values obtained from a secret named `test-host` with keys `hostname` and `port`.
+
+```
+<?xml version='1.0' encoding='UTF-8'?>
+<domain xmlns="http://xmlns.oracle.com/weblogic/domain" xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+  <server>
+    <name>admin-server</name>
+    <max-message-size f:combine-mode="add">78787878</max-message-size>
+    <network-access-point>
+      <name>T3Channel</name>
+      <public-address f:combine-mode="replace">${secret:test-host.hostname}</public-address>
+      <public-port f:combine-mode="replace">${secret:test-host.port}</public-port>
+    </network-access-point>
+  </server>
+</domain>
+```
+
+### Overriding a DataSource Module
+
+The following `jdbc-testDS.xml` override file demonstrates setting the URL of a JDBC driver via secret.  It overrides a datasource module named "testDS".
+
+```
+<?xml version='1.0' encoding='UTF-8'?>
+<jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source" xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+  <name>testDS</name>
+    <jdbc-driver-params>
+      <url f:combine-mode="replace">${secret:dbsecret.url}</url>
+    </jdbc-driver-params>
+</jdbc-data-source>
+```
+
 
 # Putting it together step by step
 
-1. Create a directory to containing (A) a set of situational configuration templates for overriding the mbean properties you want to replace and (B) a version.txt file.
+1. Create a directory containing (A) a set of situational configuration templates for overriding the mbean properties you want to replace and (B) a version.txt file.
   * This directory must not contain any other files.
   * The version.txt file must contain only the string `2.0`.
   * Template files must not override the settings listed in [Unsupported Overrides].
@@ -195,13 +232,36 @@ TBD
 
 # Debugging
 
-TBD
+* If WL pods do not come up at all, then
+  * In the domain's namespace, see if you can find a job named 'DOMAIN_UID-introspect-domain-job' and a corresponding pod named something like 'DOMAIN_UID-introspect-domain-job-xxxx'.  If so, examine:
+    * `kubectl -n MYDOMAINNAMESPACE describe job INTROSPECTJOBNAME`
+    * `kubectl -n MYDOMAINNAMESPACE logs INTROSPECTPODNAME`
+  * Check operator log for Warning/Error/Severe messages.
+    * `kubectl -n MYOPERATORNAMESPACE logs OPERATORPODNAME`
 
-* Search server pod log for the keyword `situational`.  The only hits should be lines that look like TBD to indicate a situational config file has been loaded.   If you see Warning or Error lines, then the format of the custom situational config template is incorrect.
+* If WL pods do start, then:
+  * Search your admin server pod's `kubectl log` for the keyword `situational`, for example `kubectl logs MYADMINPOD | grep -i situational`.
+  * The only hits should be lines that look like 
+    * TBD
+    * Which indicate a situational config file has been loaded.
+  * If the search yields Warning or Error lines, then the format of the custom situational config template is incorrect, and the Warning or Error text should describe the problem.
 
-* If you discover an error, the override config map needs to be updated, and the Domain needs to be restarted.
+* If you fix an error, then your override config map needs to be updated, and the Domain needs to be restarted.
 
-* _IMPORTANT_ WebLogic Servers will still boot, and skip overriding, when they detect incorrectly formatted config override template files.  It is therefore important to make sure they're correct in a QA environment before attempting to use them in production, where a custom override may be critical for correctness.
+* If you'd like to verify that situational config is taking effect in the WebLogic bean tree, one way to do this is to compare the 'server config' and 'domain config' bean tree values. The 'domain config' value should reflect the original value in your domain home configuration, and the 'server config' value should reflect the overridden value. For example, assuming your DOMAIN_UID is `domain1`, and your domain contains a WebLogic Server named 'admin-server', then:
+
+  ```
+  kubectl exec -it domain1-admin-server /bin/bash
+  $ wlst.sh
+  > connect(MYADMINUSERNAME, MYADMINPASSWORD, 't3://domain1-admin-server:7001')
+  > domainConfig()
+  > get('/Servers/admin-server/MaxMessageSize')
+  > serverConfig()
+  > get('/Servers/admin-server/MaxMessageSize')
+  > exit()
+  ```
+
+** _IMPORTANT_ WebLogic Servers will still boot, and skip overriding, when they detect incorrectly formatted config override template files.  It is therefore important to make sure they're correct in a QA environment before attempting to use them in production, where a custom override may be critical for correctness. **
 
 # Internal Design Flow
 
@@ -227,5 +287,5 @@ TBD
 
 # Release Notes
 
-TBD These are to be moved to a release notes section?
+TBD These are to be moved to a central release notes section?
 
