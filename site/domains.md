@@ -50,11 +50,13 @@ To create and manage a WebLogic domain in Kubernetes we create a deployment type
 * Create Ingress controllers if you are using a load balancer that supports them, such as Traefik or Voyager.
 
 ### Modifying domain configurations
-You can modify the WebLogic domain configuration for both the domain in PV and the domain in image:
 
-* When the domain is in a PV, use WLST or WDT to change the configuration.
-* Use [configuration overrides](config-overrides.md) when using the domain in image.
-The automatic and custom overrides apply to all domains - not just domain-in-image domains.
+You can modify the WebLogic domain configuration for both the "domain in persistent volume" and the "domain in image" options before deploying a domain resource:
+
+* When the domain is in a persistent volume, you can use WLST or WDT to change the configuration, or
+* For either case you can use [configuration overrides](config-overrides.md).   
+
+Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource xml files, and also support parameterizing overrides so that you can inject values into them from Kubernetes secrets.   For example, you can inject database usernames, passwords, and URLs that are stored in a secret.
 
 ### Managing lifecycle operations
 
