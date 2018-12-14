@@ -7,24 +7,7 @@ package oracle.kubernetes.operator.helpers;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 
 import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.models.V1ConfigMapVolumeSource;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ExecAction;
-import io.kubernetes.client.models.V1HTTPGetAction;
-import io.kubernetes.client.models.V1Handler;
-import io.kubernetes.client.models.V1Lifecycle;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeList;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
 import java.io.File;
 import java.util.*;
 import oracle.kubernetes.operator.*;
@@ -149,15 +132,11 @@ public abstract class PodStepContext implements StepContextConstants {
     return domainTopology.getServerConfig(domainTopology.getAdminServerName()).getListenPort();
   }
 
-  String getLogHome() {
+  private String getLogHome() {
     return getDomain().getLogHome();
   }
 
-  protected boolean isDomainHomeInImage() {
-    return getDomain().isDomainHomeInImage();
-  }
-
-  String getEffectiveLogHome() {
+  private String getEffectiveLogHome() {
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
       // logHome not specified, use default value
@@ -290,7 +269,7 @@ public abstract class PodStepContext implements StepContextConstants {
   // returns fields, such as nodeName, even when export=true is specified.
   // Therefore, we'll just compare specific fields
   private static boolean isCurrentPodValid(V1Pod build, V1Pod current) {
-
+    List<String> ignoring = getVolumesToIgnore(current);
     if (!VersionHelper.matchesResourceVersion(
         current.getMetadata(), VersionConstants.DEFAULT_DOMAIN_VERSION)) {
       return false;
@@ -299,6 +278,18 @@ public abstract class PodStepContext implements StepContextConstants {
     if (!isRestartVersionValid(build, current)) {
       return false;
     }
+
+    if (areUnequal(
+        volumesWithout(current.getSpec().getVolumes(), ignoring), build.getSpec().getVolumes()))
+      return false;
+
+    if (areUnequal(current.getSpec().getImagePullSecrets(), build.getSpec().getImagePullSecrets()))
+      return false;
+
+    if (areUnequal(getCustomerLabels(current), getCustomerLabels(build))) return false;
+
+    if (areUnequal(current.getMetadata().getAnnotations(), build.getMetadata().getAnnotations()))
+      return false;
 
     List<V1Container> buildContainers = build.getSpec().getContainers();
     List<V1Container> currentContainers = current.getSpec().getContainers();
@@ -317,6 +308,10 @@ public abstract class PodStepContext implements StepContextConstants {
             || !fcc.getImagePullPolicy().equals(bc.getImagePullPolicy())) {
           return false;
         }
+
+        if (areUnequal(mountsWithout(fcc.getVolumeMounts(), ignoring), bc.getVolumeMounts()))
+          return false;
+
         if (areUnequal(fcc.getPorts(), bc.getPorts())) {
           return false;
         }
@@ -330,6 +325,53 @@ public abstract class PodStepContext implements StepContextConstants {
     }
 
     return true;
+  }
+
+  private static List<V1Volume> volumesWithout(
+      List<V1Volume> volumeMounts, List<String> volumesToIgnore) {
+    List<V1Volume> result = new ArrayList<>(volumeMounts);
+    for (Iterator<V1Volume> each = result.iterator(); each.hasNext(); )
+      if (volumesToIgnore.contains(each.next().getName())) each.remove();
+
+    return result;
+  }
+
+  private static List<V1VolumeMount> mountsWithout(
+      List<V1VolumeMount> volumeMounts, List<String> volumesToIgnore) {
+    List<V1VolumeMount> result = new ArrayList<>(volumeMounts);
+    for (Iterator<V1VolumeMount> each = result.iterator(); each.hasNext(); )
+      if (volumesToIgnore.contains(each.next().getName())) each.remove();
+
+    return result;
+  }
+
+  private static List<String> getVolumesToIgnore(V1Pod current) {
+    List<String> k8sVolumeNames = new ArrayList<>();
+    for (V1Container container : getContainers(current))
+      for (V1VolumeMount mount : getVolumeMounts(container))
+        if (PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH.equals(mount.getMountPath()))
+          k8sVolumeNames.add(mount.getName());
+
+    return k8sVolumeNames;
+  }
+
+  private static List<V1Container> getContainers(V1Pod current) {
+    return Optional.ofNullable(current.getSpec().getContainers()).orElse(Collections.emptyList());
+  }
+
+  private static List<V1VolumeMount> getVolumeMounts(V1Container container) {
+    return Optional.ofNullable(container.getVolumeMounts()).orElse(Collections.emptyList());
+  }
+
+  private static Map<String, String> getCustomerLabels(V1Pod pod) {
+    Map<String, String> result = new HashMap<>();
+    for (Map.Entry<String, String> entry : pod.getMetadata().getLabels().entrySet())
+      if (!isOperatorLabel(entry)) result.put(entry.getKey(), entry.getValue());
+    return result;
+  }
+
+  private static boolean isOperatorLabel(Map.Entry<String, String> label) {
+    return label.getKey().startsWith("weblogic.");
   }
 
   private static boolean isRestartVersionValid(V1Pod build, V1Pod current) {
@@ -356,9 +398,11 @@ public abstract class PodStepContext implements StepContextConstants {
   private static <T> boolean areUnequal(List<T> a, List<T> b) {
     if (a == b) {
       return false;
-    } else if (a == null || b == null) {
-      return true;
     }
+
+    if (a == null) a = Collections.emptyList();
+    if (b == null) b = Collections.emptyList();
+
     if (a.size() != b.size()) {
       return true;
     }
@@ -370,6 +414,14 @@ public abstract class PodStepContext implements StepContextConstants {
       }
     }
     return false;
+  }
+
+  private static <K, V> boolean areUnequal(Map<K, V> a, Map<K, V> b) {
+    return !emptyIfNull(a).equals(emptyIfNull(b));
+  }
+
+  private static <K, V> Map<K, V> emptyIfNull(Map<K, V> map) {
+    return map != null ? map : Collections.emptyMap();
   }
 
   private class VerifyPodStep extends Step {
@@ -538,7 +590,7 @@ public abstract class PodStepContext implements StepContextConstants {
   protected V1ObjectMeta createMetadata() {
     V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
     // Add custom labels
-    getPodLabels().forEach((k, v) -> metadata.putLabelsItem(k, v));
+    getPodLabels().forEach(metadata::putLabelsItem);
 
     // Add internal labels. This will overwrite any custom labels that conflict with internal
     // labels.
@@ -557,7 +609,7 @@ public abstract class PodStepContext implements StepContextConstants {
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
     // Add custom annotations
-    getPodAnnotations().forEach((k, v) -> metadata.putAnnotationsItem(k, v));
+    getPodAnnotations().forEach(metadata::putAnnotationsItem);
 
     // Add prometheus annotations. This will overwrite any custom annotations with same name.
     AnnotationHelper.annotateForPrometheus(metadata, getPort());
@@ -571,48 +623,22 @@ public abstract class PodStepContext implements StepContextConstants {
                 createContainer(tuningParameters)
                     .resources(getServerSpec().getResources())
                     .securityContext(getServerSpec().getContainerSecurityContext()))
-            .addVolumesItem(
-                new V1Volume()
-                    .name(SCRIPTS_VOLUME)
-                    .configMap(
-                        new V1ConfigMapVolumeSource()
-                            .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
-                            .defaultMode(ALL_READ_AND_EXECUTE)))
-            .addVolumesItem(
-                new V1Volume()
-                    .name(DEBUG_CM_VOLUME)
-                    .configMap(
-                        new V1ConfigMapVolumeSource()
-                            .name(
-                                getDomainUID() + KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX)
-                            .defaultMode(ALL_READ_AND_EXECUTE)
-                            .optional(Boolean.TRUE)))
-            .addVolumesItem(
-                new V1Volume()
-                    .name(getSitConfigMapVolumeName(getDomainUID()))
-                    .configMap(
-                        new V1ConfigMapVolumeSource()
-                            .name(
-                                ConfigMapHelper.SitConfigMapContext.getConfigMapName(
-                                    getDomainUID()))
-                            .defaultMode(ALL_READ_AND_EXECUTE)))
             .nodeSelector(getServerSpec().getNodeSelectors())
             .securityContext(getServerSpec().getPodSecurityContext());
 
-    /**/
     podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());
-    /*/
-    V1LocalObjectReference imagePullSecret = getServerSpec().getImagePullSecret();
-    if (imagePullSecret != null) {
-      podSpec.addImagePullSecretsItem(imagePullSecret);
-    }
-    /**/
 
-    for (V1Volume additionalVolume : getAdditionalVolumes()) {
+    for (V1Volume additionalVolume : getVolumes(getDomainUID())) {
       podSpec.addVolumesItem(additionalVolume);
     }
 
     return podSpec;
+  }
+
+  private List<V1Volume> getVolumes(String domainUID) {
+    List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUID);
+    volumes.addAll(getServerSpec().getAdditionalVolumes());
+    return volumes;
   }
 
   private V1Container createContainer(TuningParameters tuningParameters) {
@@ -625,26 +651,17 @@ public abstract class PodStepContext implements StepContextConstants {
             .env(getEnvironmentVariables(tuningParameters))
             .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
             .lifecycle(createLifecycle())
-            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
-            .addVolumeMountsItem(readOnlyVolumeMount(DEBUG_CM_VOLUME, DEBUG_CM_MOUNTS_PATH))
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
 
     if (!mockWLS()) {
       v1Container.readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()));
     }
 
-    for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
+    for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
 
-    v1Container.addVolumeMountsItem(
-        volumeMount(getSitConfigMapVolumeName(getDomainUID()), "/weblogic-operator/introspector"));
-
     return v1Container;
-  }
-
-  private static String getSitConfigMapVolumeName(String domainUID) {
-    return domainUID + SIT_CONFIG_MAP_VOLUME_SUFFIX;
   }
 
   private String getImageName() {
@@ -661,9 +678,11 @@ public abstract class PodStepContext implements StepContextConstants {
 
   abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
 
-  abstract List<V1Volume> getAdditionalVolumes();
-
-  abstract List<V1VolumeMount> getAdditionalVolumeMounts();
+  private List<V1VolumeMount> getVolumeMounts() {
+    List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUID());
+    mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
+    return mounts;
+  }
 
   void overrideContainerWeblogicEnvVars(List<V1EnvVar> vars) {
     // Override the domain name, domain directory, admin server name and admin server port.
@@ -733,14 +752,6 @@ public abstract class PodStepContext implements StepContextConstants {
     return new V1ExecAction().command(Arrays.asList(commandItems));
   }
 
-  private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
-    return volumeMount(volumeName, mountPath).readOnly(true);
-  }
-
-  private static V1VolumeMount volumeMount(String volumeName, String mountPath) {
-    return new V1VolumeMount().name(volumeName).mountPath(mountPath);
-  }
-
   private V1Probe createReadinessProbe(TuningParameters.PodTuning tuning) {
     V1Probe readinessProbe = new V1Probe();
     readinessProbe
@@ -752,6 +763,7 @@ public abstract class PodStepContext implements StepContextConstants {
     return readinessProbe;
   }
 
+  @SuppressWarnings("SameParameterValue")
   private V1HTTPGetAction httpGetAction(String path, int port) {
     V1HTTPGetAction getAction = new V1HTTPGetAction();
     getAction.path(path).port(new IntOrString(port));

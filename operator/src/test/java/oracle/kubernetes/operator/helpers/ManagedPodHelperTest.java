@@ -4,28 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.anEmptyMap;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
+import static oracle.kubernetes.operator.logging.MessageKeys.*;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Pod;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import io.kubernetes.client.models.*;
+import java.util.*;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -158,8 +145,43 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenExistingManagedPodHasExtraCustomerLabel_designateForRoll() {
+    verifyRollManagedPodWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
+  }
+
+  @Test
+  public void whenExistingManagedPodSpecHasExtraCustomerAnnotation_replaceIt() {
+    verifyRollManagedPodWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
+  }
+
+  @Test
   public void whenExistingManagedPodSpecHasNoContainers_replaceIt() {
     verifyRollManagedPodWhen((pod) -> pod.getSpec().setContainers(null));
+  }
+
+  @Test
+  public void whenExistingManagedPodSpecHasSuperfluousVolume_replaceIt() {
+    verifyRollManagedPodWhen((pod) -> pod.getSpec().addVolumesItem(new V1Volume().name("dummy")));
+  }
+
+  @Test
+  public void whenExistingManagedPodSpecHasK8sVolume_ignoreIt() {
+    verifyManagedPodNotRolledWhen(
+        (pod) -> {
+          pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
+          getSpecContainer(pod)
+              .addVolumeMountsItem(
+                  new V1VolumeMount()
+                      .name("k8s")
+                      .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH));
+        });
+  }
+
+  @Test
+  public void whenExistingManagedPodSpecHasExtraImagePullSecret_replaceIt() {
+    verifyRollManagedPodWhen(
+        (pod) ->
+            pod.getSpec().addImagePullSecretsItem(new V1LocalObjectReference().name("secret")));
   }
 
   @Test
@@ -169,6 +191,23 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   private V1Container getSpecContainer(V1Pod pod) {
     return pod.getSpec().getContainers().get(0);
+  }
+
+  @Test
+  public void whenExistingManagedPodSpecHasExtraVolumeMount_replaceIt() {
+    verifyRollManagedPodWhen(
+        (pod) -> getSpecContainer(pod).addVolumeMountsItem(new V1VolumeMount().name("dummy")));
+  }
+
+  @Test
+  public void whenExistingManagedPodSpecHasK8sVolumeMount_ignoreIt() {
+    verifyManagedPodNotRolledWhen(
+        (pod) ->
+            getSpecContainer(pod)
+                .addVolumeMountsItem(
+                    new V1VolumeMount()
+                        .name("dummy")
+                        .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH)));
   }
 
   @Test
@@ -208,7 +247,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingManagedPodSpecContainerHasWrongEnvFrom_replaceIt() {
-    verifyRollManagedPodWhen((pod) -> getSpecContainer(pod).envFrom(Collections.emptyList()));
+    verifyRollManagedPodWhen(
+        (pod) -> getSpecContainer(pod).envFrom(Collections.singletonList(new V1EnvFromSource())));
   }
 
   @Test
@@ -486,6 +526,12 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   private void verifyRollManagedPodWhen(PodMutator mutator) {
+    Map<String, StepAndPacket> rolling = computePodsToRoll(mutator);
+
+    assertThat(rolling, not(anEmptyMap()));
+  }
+
+  private Map<String, StepAndPacket> computePodsToRoll(PodMutator mutator) {
     Map<String, StepAndPacket> rolling = new HashMap<>();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
 
@@ -494,8 +540,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     initializeExistingPod(existingPod);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
+    return rolling;
+  }
 
-    assertThat(rolling, not(anEmptyMap()));
+  private void verifyManagedPodNotRolledWhen(PodMutator mutator) {
+    Map<String, StepAndPacket> rolling = computePodsToRoll(mutator);
+
+    assertThat(rolling, is(anEmptyMap()));
+    assertThat(logRecords, containsFine(getPodExistsMessageKey()));
   }
 
   @Override
