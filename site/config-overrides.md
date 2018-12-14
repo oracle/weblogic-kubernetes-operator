@@ -77,19 +77,11 @@ The behavior when using an unsupported override is undefined.
 ---
 # Override Template Names and Syntax
 
-Overrides leverage a built-in WebLogic feature called 'Situational Config'.  
-
-Situational config consists of XML formated files that closely resemble the structure of WebLogic config.xml and system resource module xml files.  
-
-In addition, the attribute fields in these files can embed 'add', 'replace', and 'delete' verbs to specify the desired override action for the field.  
-
-Use 'add' to specify the values for mbean attributes that have not been set in the original configuration, and use the 'replace' verb to specify the values for mbean fields that are already set in the original configuration.
-
-**IMPORTANT: Your overrides may not take effect if you use 'add' for an mbean attribute that already has a value specified in your original configuration, or use 'replace' for an attribute that does not already exist.**
+Overrides leverage a built-in WebLogic feature called 'Situational Config'. Situational config consists of XML formated files that closely resemble the structure of WebLogic config.xml and system resource module xml files. In addition, the attribute fields in these files can embed 'add', 'replace', and 'delete' verbs to specify the desired override action for the field.  
 
 ## Override Template Names
 
-The Operator requires a different file name format for override templates than WebLogic's built-in Situational Config feature.  It converts the names to the format required by situational config when it moves the templates to the domain home `optconfig` directory.  Consult the following table for the required file name format:
+The Operator requires a different file name format for override templates than WebLogic's built-in Situational Config feature.  It converts the names to the format required by situational config when it moves the templates to the domain home `optconfig` directory.  The following table describes the format:
 
 | Original Config |  Required Override Name |
 | --------------- |  ---------------------  |
@@ -170,7 +162,9 @@ The following `config.xml` override file demonstrates setting the 'max-message-s
 
 ```
 <?xml version='1.0' encoding='UTF-8'?>
-<domain xmlns="http://xmlns.oracle.com/weblogic/domain" xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+<domain xmlns="http://xmlns.oracle.com/weblogic/domain" 
+        xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment" 
+        xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
   <server>
     <name>admin-server</name>
     <max-message-size f:combine-mode="add">78787878</max-message-size>
@@ -187,9 +181,13 @@ The following `config.xml` override file demonstrates setting the 'max-message-s
 
 The following `jdbc-testDS.xml` override file demonstrates setting the URL of a JDBC driver via secret.  It overrides a datasource module named "testDS".
 
+TBD expand this sample to include username and password.
+
 ```
 <?xml version='1.0' encoding='UTF-8'?>
-<jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source" xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+<jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source" 
+                  xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment" 
+                  xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
   <name>testDS</name>
     <jdbc-driver-params>
       <url f:combine-mode="replace">${secret:dbsecret.url}</url>
@@ -215,15 +213,16 @@ The following `jdbc-testDS.xml` override file demonstrates setting the URL of a 
 2. Create a kubernetes config map from the directory of templates.
   * The config map must be in the same kubernetes namespace as the domain.
   * It is recommended, but not required, to add the `weblogic.domainUID` label to the config map. This will help you keep track of the fact that the config map is associated with a particular domain.
-  * Similarly, it is also recommended, but not required, to embed the domainUID within the name of the config map.
   * For example, assuming './mydir' contains your version.txt and situation config template files:
-    `kubectl -n MYNAMESPACE create cm DOMAIN_UID-MYCMNAME --from-file ./mydir`
-    `kubectl -n MYNAMESPACE label cm DOMAIN_UID-MYCMNAME weblogic.domainUID=DOMAIN_UID`
+    `kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir`
+    `kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID`
 3. Create any kubernetes secrets referenced by a template macro.
   * Secrets can have multiple keys (files) that can hold either cleartext or base64 values
   * Secrets must be in the same kubernetes namespace as the domain
   * It is recommended that the customer add the 'weblogic.domainUID=<mydomainuid>' label to each secret.  This will help you keep track of the fact that the secret is associated with a particular domain.
-  * Similarly, it is also recommended, but not required, to embed the domainUID within the name of the secret.
+  * For example:
+    `kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret`
+    `kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID`
 4. Configure the name of the config map in the Domain CR `configOverrides` field.
 5. Configure the names of each secret in Domain CR.
   * If the secret contains the WebLogic admin `username` and `password` keys, set the Domain CR `webLogicCredentialsSecret` field.
@@ -232,23 +231,29 @@ The following `jdbc-testDS.xml` override file demonstrates setting the URL of a 
 
 # Debugging
 
-* If WL pods do not come up at all, then
+* If WL pods do not come up at all, then:
   * In the domain's namespace, see if you can find a job named 'DOMAIN_UID-introspect-domain-job' and a corresponding pod named something like 'DOMAIN_UID-introspect-domain-job-xxxx'.  If so, examine:
     * `kubectl -n MYDOMAINNAMESPACE describe job INTROSPECTJOBNAME`
     * `kubectl -n MYDOMAINNAMESPACE logs INTROSPECTPODNAME`
-  * Check operator log for Warning/Error/Severe messages.
+  * Check your operator log for Warning/Error/Severe messages.
     * `kubectl -n MYOPERATORNAMESPACE logs OPERATORPODNAME`
 
 * If WL pods do start, then:
   * Search your admin server pod's `kubectl log` for the keyword `situational`, for example `kubectl logs MYADMINPOD | grep -i situational`.
-  * The only hits should be lines that look like 
-    * TBD
-    * Which indicate a situational config file has been loaded.
-  * If the search yields Warning or Error lines, then the format of the custom situational config template is incorrect, and the Warning or Error text should describe the problem.
+    * The only WebLogic Server log lines that match should look something like like 
+      * `<Dec 14, 2018 12:20:47 PM UTC> <Info> <Management> <BEA-141330> <Loading situational config file: /shared/domains/domain1/optconfig/custom-situational-config.xml>`
+      * This line indicates a situational config file has been loaded.
+    * If the search yields Warning or Error lines, then the format of the custom situational config template is incorrect, and the Warning or Error text should describe the problem.
+  * Look in your 'DOMAIN_HOME/optconfig' directory.
+    * This directory, or a subdirectory within this directory, should contain each of your custom situational files.
+    * If it doesn't, this likely indicates your Domain Resource configOverrides was not set to match your custom override config map name, or that your custom override config map does not contain your override files.
 
 * If you fix an error, then your override config map needs to be updated, and the Domain needs to be restarted.
 
-* If you'd like to verify that situational config is taking effect in the WebLogic bean tree, one way to do this is to compare the 'server config' and 'domain config' bean tree values. The 'domain config' value should reflect the original value in your domain home configuration, and the 'server config' value should reflect the overridden value. For example, assuming your DOMAIN_UID is `domain1`, and your domain contains a WebLogic Server named 'admin-server', then:
+* If you'd like to verify that situational config is taking effect in the WebLogic bean tree, one way to do this is to compare the 'server config' and 'domain config' bean tree values. 
+  * The 'domain config' value should reflect the original value in your domain home configuration.
+  * The 'server config' value should reflect the overridden value. 
+  * For example, assuming your DOMAIN_UID is `domain1`, and your domain contains a WebLogic Server named 'admin-server', then:
 
   ```
   kubectl exec -it domain1-admin-server /bin/bash
