@@ -856,8 +856,10 @@ public class DomainProcessorImpl implements DomainProcessor {
                 gate.getExecutor()
                     .schedule(
                         () -> {
-                          existing.setPopulated(false);
-                          makeRightDomainPresence(existing, true, isDeleting, false);
+                          DomainPresenceInfo existing2 =
+                              getExistingDomainPresenceInfo(ns, domainUID);
+                          existing2.setPopulated(false);
+                          makeRightDomainPresence(existing2, true, isDeleting, false);
                         },
                         DomainPresence.getDomainPresenceFailureRetrySeconds(),
                         TimeUnit.SECONDS);
