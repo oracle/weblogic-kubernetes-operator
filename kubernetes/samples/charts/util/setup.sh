@@ -79,7 +79,7 @@ function createTraefik() {
 
 
 function purgeCRDs() {
-  # get rid of crd deletijon deadlock:  https://github.com/kubernetes/kubernetes/issues/60538
+  # get rid of Voyager crd deletion deadlock:  https://github.com/kubernetes/kubernetes/issues/60538
   crds=(certificates ingresses)
   for crd in "${crds[@]}"; do
     pairs=($(kubectl get ${crd}.voyager.appscode.com --all-namespaces -o jsonpath='{range .items[*]}{.metadata.name} {.metadata.namespace} {end}' || true))
