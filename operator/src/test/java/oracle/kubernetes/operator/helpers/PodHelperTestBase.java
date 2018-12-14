@@ -79,8 +79,6 @@ public abstract class PodHelperTestBase {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
-  private static final Map<String, String> NODE_SELECTOR =
-      Collections.singletonMap("labelKey", "labelValue");
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -305,6 +303,8 @@ public abstract class PodHelperTestBase {
     return getServerConfigurator(new DomainV2Configurator(domain), getServerName());
   }
 
+  protected abstract void verifyReplacePodWhen(PodMutator mutator);
+
   protected abstract ServerConfigurator getServerConfigurator(
       DomainConfigurator configurator, String serverName);
 
@@ -442,6 +442,64 @@ public abstract class PodHelperTestBase {
         .withLabelSelectors("weblogic.domainUID=" + UID);
   }
 
+  @Test
+  public void whenPodHasBadVersion_replaceIt() {
+    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
+  }
+
+  @Test
+  public void whenPodHasUnknownCustomerLabel_replaceIt() {
+    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
+  }
+
+  @Test
+  public void whenPodLacksExpectedCustomerLabel_replaceIt() {
+    configurator.withPodLabel("expected.label", "value");
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodSecurityContextIsDifferent_replaceIt() {
+    configurator.withPodSecurityContext(new V1PodSecurityContext().runAsGroup(12345L));
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodHasDifferentNodeSelector_replaceIt() {
+    configurator.withNodeSelector("key", "value");
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodContainerSecurityContextIsDifferent_replaceIt() {
+    configurator.withContainerSecurityContext(new V1SecurityContext().runAsGroup(9876L));
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodLivenessProbeSettingsAreDifferent_replaceIt() {
+    configurator.withDefaultLivenessProbeSettings(8, 7, 6);
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodReadinessProbeSettingsAreDifferent_replaceIt() {
+    configurator.withDefaultReadinessProbeSettings(5, 4, 3);
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodRequestRequirementIsDifferent_replaceIt() {
+    configurator.withRequestRequirement("resource", "5");
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodLimitRequirementIsDifferent_replaceIt() {
+    configurator.withLimitRequirement("limit", "7");
+    verifyReplacePodWhen(pod -> {});
+  }
+
   protected void onAdminExpectListPersistentVolume() {
     // default is no-op
   }
@@ -534,8 +592,10 @@ public abstract class PodHelperTestBase {
         .name(CONTAINER_NAME)
         .image(LATEST_IMAGE)
         .imagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
+        .securityContext(new V1SecurityContext())
         .addPortsItem(new V1ContainerPort().protocol("TCP").containerPort(listenPort))
         .lifecycle(createLifecycle())
+        .resources(createEmptyResourceRequirements())
         .volumeMounts(PodDefaults.getStandardVolumeMounts(UID))
         .command(createStartCommand())
         .addEnvItem(envItem("DOMAIN_NAME", DOMAIN_NAME))
@@ -555,15 +615,18 @@ public abstract class PodHelperTestBase {
         .readinessProbe(createReadinessProbe());
   }
 
-  V1PodSpec createPodSpec() {
-    return new V1PodSpec()
-        .containers(Collections.singletonList(createPodSpecContainer()))
-        .nodeSelector(createNodeSelector())
-        .volumes(PodDefaults.getStandardVolumes(UID));
+  private V1ResourceRequirements createEmptyResourceRequirements() {
+    return new V1ResourceRequirements()
+        .limits(Collections.emptyMap())
+        .requests(Collections.emptyMap());
   }
 
-  private Map<String, String> createNodeSelector() {
-    return NODE_SELECTOR;
+  V1PodSpec createPodSpec() {
+    return new V1PodSpec()
+        .securityContext(new V1PodSecurityContext())
+        .containers(Collections.singletonList(createPodSpecContainer()))
+        .nodeSelector(Collections.emptyMap())
+        .volumes(PodDefaults.getStandardVolumes(UID));
   }
 
   abstract List<String> createStartCommand();
@@ -637,6 +700,7 @@ public abstract class PodHelperTestBase {
     }
   }
 
+  @SuppressWarnings("unused")
   static class VolumeMountMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1VolumeMount> {
     private String expectedName;
@@ -683,6 +747,7 @@ public abstract class PodHelperTestBase {
     }
   }
 
+  @SuppressWarnings("unused")
   static class ProbeMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Probe> {
     private static final Integer EXPECTED_FAILURE_THRESHOLD = 1;

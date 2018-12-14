@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.models.*;
@@ -270,61 +271,69 @@ public abstract class PodStepContext implements StepContextConstants {
   // Therefore, we'll just compare specific fields
   private static boolean isCurrentPodValid(V1Pod build, V1Pod current) {
     List<String> ignoring = getVolumesToIgnore(current);
-    if (!VersionHelper.matchesResourceVersion(
-        current.getMetadata(), VersionConstants.DEFAULT_DOMAIN_VERSION)) {
-      return false;
-    }
 
-    if (!isRestartVersionValid(build, current)) {
-      return false;
-    }
+    return isCurrentPodMetadataValid(build.getMetadata(), current.getMetadata())
+        && isCurrentPodSpecValid(build.getSpec(), current.getSpec(), ignoring);
+  }
 
-    if (areUnequal(
-        volumesWithout(current.getSpec().getVolumes(), ignoring), build.getSpec().getVolumes()))
-      return false;
+  private static boolean isCurrentPodMetadataValid(V1ObjectMeta build, V1ObjectMeta current) {
+    return VersionHelper.matchesResourceVersion(current, DEFAULT_DOMAIN_VERSION)
+        && isRestartVersionValid(build, current)
+        && Objects.equals(getCustomerLabels(current), getCustomerLabels(build))
+        && Objects.equals(current.getAnnotations(), build.getAnnotations());
+  }
 
-    if (areUnequal(current.getSpec().getImagePullSecrets(), build.getSpec().getImagePullSecrets()))
-      return false;
+  private static boolean isCurrentPodSpecValid(
+      V1PodSpec build, V1PodSpec current, List<String> ignoring) {
+    return Objects.equals(current.getSecurityContext(), build.getSecurityContext())
+        && Objects.equals(current.getNodeSelector(), build.getNodeSelector())
+        && equalSets(volumesWithout(current.getVolumes(), ignoring), build.getVolumes())
+        && equalSets(current.getImagePullSecrets(), build.getImagePullSecrets())
+        && areCompatible(build.getContainers(), current.getContainers(), ignoring);
+  }
 
-    if (areUnequal(getCustomerLabels(current), getCustomerLabels(build))) return false;
+  private static boolean areCompatible(
+      List<V1Container> build, List<V1Container> current, List<String> ignoring) {
+    if (build != null) {
+      if (current == null) return false;
 
-    if (areUnequal(current.getMetadata().getAnnotations(), build.getMetadata().getAnnotations()))
-      return false;
-
-    List<V1Container> buildContainers = build.getSpec().getContainers();
-    List<V1Container> currentContainers = current.getSpec().getContainers();
-
-    if (buildContainers != null) {
-      if (currentContainers == null) {
-        return false;
-      }
-
-      for (V1Container bc : buildContainers) {
-        V1Container fcc = getContainerWithName(currentContainers, bc.getName());
-        if (fcc == null) {
-          return false;
-        }
-        if (!fcc.getImage().equals(bc.getImage())
-            || !fcc.getImagePullPolicy().equals(bc.getImagePullPolicy())) {
-          return false;
-        }
-
-        if (areUnequal(mountsWithout(fcc.getVolumeMounts(), ignoring), bc.getVolumeMounts()))
-          return false;
-
-        if (areUnequal(fcc.getPorts(), bc.getPorts())) {
-          return false;
-        }
-        if (areUnequal(fcc.getEnv(), bc.getEnv())) {
-          return false;
-        }
-        if (areUnequal(fcc.getEnvFrom(), bc.getEnvFrom())) {
+      for (V1Container bc : build) {
+        V1Container fcc = getContainerWithName(current, bc.getName());
+        if (fcc == null || !isCompatible(bc, fcc, ignoring)) {
           return false;
         }
       }
     }
 
     return true;
+  }
+
+  /**
+   * Compares two pod spec containers for equality
+   *
+   * @param build the desired container model
+   * @param current the current container, obtained from Kubernetes
+   * @param ignoring a list of volume names to ignore
+   * @return true if the containers are considered equal
+   */
+  private static boolean isCompatible(
+      V1Container build, V1Container current, List<String> ignoring) {
+    return current.getImage().equals(build.getImage())
+        && current.getImagePullPolicy().equals(build.getImagePullPolicy())
+        && Objects.equals(current.getSecurityContext(), build.getSecurityContext())
+        && Objects.equals(current.getResources(), build.getResources())
+        && equalSettings(current.getLivenessProbe(), build.getLivenessProbe())
+        && equalSettings(current.getReadinessProbe(), build.getReadinessProbe())
+        && equalSets(mountsWithout(current.getVolumeMounts(), ignoring), build.getVolumeMounts())
+        && equalSets(current.getPorts(), build.getPorts())
+        && equalSets(current.getEnv(), build.getEnv())
+        && equalSets(current.getEnvFrom(), build.getEnvFrom());
+  }
+
+  private static boolean equalSettings(V1Probe probe1, V1Probe probe2) {
+    return Objects.equals(probe1.getInitialDelaySeconds(), probe2.getInitialDelaySeconds())
+        && Objects.equals(probe1.getTimeoutSeconds(), probe2.getTimeoutSeconds())
+        && Objects.equals(probe1.getPeriodSeconds(), probe2.getPeriodSeconds());
   }
 
   private static List<V1Volume> volumesWithout(
@@ -363,9 +372,9 @@ public abstract class PodStepContext implements StepContextConstants {
     return Optional.ofNullable(container.getVolumeMounts()).orElse(Collections.emptyList());
   }
 
-  private static Map<String, String> getCustomerLabels(V1Pod pod) {
+  private static Map<String, String> getCustomerLabels(V1ObjectMeta metadata) {
     Map<String, String> result = new HashMap<>();
-    for (Map.Entry<String, String> entry : pod.getMetadata().getLabels().entrySet())
+    for (Map.Entry<String, String> entry : metadata.getLabels().entrySet())
       if (!isOperatorLabel(entry)) result.put(entry.getKey(), entry.getValue());
     return result;
   }
@@ -374,12 +383,10 @@ public abstract class PodStepContext implements StepContextConstants {
     return label.getKey().startsWith("weblogic.");
   }
 
-  private static boolean isRestartVersionValid(V1Pod build, V1Pod current) {
-    V1ObjectMeta m1 = build.getMetadata();
-    V1ObjectMeta m2 = current.getMetadata();
-    return isLabelSame(m1, m2, LabelConstants.DOMAINRESTARTVERSION_LABEL)
-        && isLabelSame(m1, m2, LabelConstants.CLUSTERRESTARTVERSION_LABEL)
-        && isLabelSame(m1, m2, LabelConstants.SERVERRESTARTVERSION_LABEL);
+  private static boolean isRestartVersionValid(V1ObjectMeta build, V1ObjectMeta current) {
+    return isLabelSame(build, current, LabelConstants.DOMAINRESTARTVERSION_LABEL)
+        && isLabelSame(build, current, LabelConstants.CLUSTERRESTARTVERSION_LABEL)
+        && isLabelSame(build, current, LabelConstants.SERVERRESTARTVERSION_LABEL);
   }
 
   private static boolean isLabelSame(V1ObjectMeta build, V1ObjectMeta current, String labelName) {
@@ -395,33 +402,13 @@ public abstract class PodStepContext implements StepContextConstants {
     return null;
   }
 
-  private static <T> boolean areUnequal(List<T> a, List<T> b) {
-    if (a == b) {
-      return false;
-    }
-
-    if (a == null) a = Collections.emptyList();
-    if (b == null) b = Collections.emptyList();
-
-    if (a.size() != b.size()) {
-      return true;
-    }
-
-    List<T> bprime = new ArrayList<>(b);
-    for (T at : a) {
-      if (!bprime.remove(at)) {
-        return true;
-      }
-    }
-    return false;
+  private static <T> boolean equalSets(List<T> first, List<T> second) {
+    if (first == second) return true;
+    return asSet(first).equals(asSet(second));
   }
 
-  private static <K, V> boolean areUnequal(Map<K, V> a, Map<K, V> b) {
-    return !emptyIfNull(a).equals(emptyIfNull(b));
-  }
-
-  private static <K, V> Map<K, V> emptyIfNull(Map<K, V> map) {
-    return map != null ? map : Collections.emptyMap();
+  private static <T> Set<T> asSet(List<T> first) {
+    return (first == null) ? Collections.emptySet() : new HashSet<>(first);
   }
 
   private class VerifyPodStep extends Step {
@@ -595,8 +582,7 @@ public abstract class PodStepContext implements StepContextConstants {
     // Add internal labels. This will overwrite any custom labels that conflict with internal
     // labels.
     metadata
-        .putLabelsItem(
-            LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
+        .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
