@@ -23,22 +23,43 @@ Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
 * Optionally, [create a PV & persistent volume claim (PVC)](kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md) which can hold the domain home, logs, and application binaries.
 * [Configure a load balancer](kubernetes/samples/charts/README.md) to manage the domains and ingresses.
 
+### Important considerations for WebLogic domains in Kubernetes
+
+Please be aware of the following important considerations for WebLogic domains
+running in Kubernetes.
+
+* Channel Listen Addresses in a configuration must either be left completely unset (e.g. not set to anything), or must be set to the exact required value of ‘DOMAIN_UID-SERVER_NAME’ (with all lower case, underscores converted to dashes).  This includes default, SSL, admin, and custom channels.     
+
+The following features are not certified or supported in this release:
+
+* Whole Server Migration,
+* Consensus Leasing,
+* Node Manager (although it is used internally for the liveness probe and to start WebLogic Server instances),
+* Multicast,
+* If using a hostPath persistent volume, then it must have read/write/many permissions for all container/pods in the WebLogic Server deployment,
+* Multitenancy, and
+* Production redeployment.
+
+Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments.
+
+
 ### Creating and managing WebLogic domains
 
-To create and manage a WebLogic domain in Kubernetes we create a deployment type, the domain custom resource.   The operator introspects the custom resource and manages the domain deployment to adjust to the definitions in the custom resource.   This custom resource can also be managed using the Kubernetes command-line interface `kubectl`.  
+To create and manage a WebLogic domain in Kubernetes we create a deployment type, the domain custom resource.   The operator introspects the custom resource and manages the domain deployment to adjust to the definitions in the custom resource. This custom resource can also be managed using the Kubernetes command-line interface `kubectl`.  
 * (Point to documentation how to edit the domain inputs YAML and how to create the domain custom resource.)
 * Create Ingress controllers if you are using a load balancer that supports them, such as Traefik or Voyager.
-
-### Managing lifecycle operations
-
-In Operator 2.0 you can perform lifecycle operations on WebLogic servers, clusters, or domains.
-* Point to the documentation on how to manage lifecycle operations.
 
 ### Modifying domain configurations
 You can modify the WebLogic domain configuration for both the domain in PV and the domain in image:
 
 * When the domain is in a PV, use WLST or WDT to change the configuration.
-* Use configuration overrides when using the domain in image.(Check with Tom B, "The automatic and custom overrides apply to all domains - not just domain-in-image domains." Point to the documentation.)
+* Use [configuration overrides](config-overrides.md) when using the domain in image.
+The automatic and custom overrides apply to all domains - not just domain-in-image domains.
+
+### Managing lifecycle operations
+
+In Operator 2.0 you can perform lifecycle operations on WebLogic servers, clusters, or domains.
+* Point to the documentation on how to manage lifecycle operations.
 
 ### Patching WebLogic and performing application updates
 
