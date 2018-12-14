@@ -102,21 +102,24 @@ a.	Create a new image with a domain home by running the [`create-domain`](../kub
 
 * Creating Kubernetes secrets `username` and `password` using the [`create-weblogic-credentials`](../kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 ```
-cd ../kubernetes/samples/scripts/create-weblogic-domain-credentials
-./create-weblogic-credentials.sh -u <weblogic> -p <welcome1> -n sample-domain1-ns -d sample-domain1
+$ cd ../kubernetes/samples/scripts/create-weblogic-domain-credentials
+$ ./create-weblogic-credentials.sh -u <weblogic> -p <welcome1> -n sample-domain1-ns -d sample-domain1
 ```
 
 b.	Confirm that the operator started the servers for the domain:
 ```
 $ kubectl get po -n sample-domain1-ns
 ```
+
+You will see the Administration Server and Managed Servers running.
+
 * Use `kubectl` to show that the domain resource was created:
 ```
 $ kubectl describe domain sample-domain1 -n sample-domain1-ns
 ```
 * Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
 ```
-kubectl get pods -n sample-weblogic-operator1-ns
+$ kubectl get pods -n sample-weblogic-operator1-ns
 ```
 
 c.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
@@ -136,14 +139,14 @@ $ curl http://${HOSTNAME}:30305/sample-domain1/
 
 a.	Remove the domain's Ingress by using `helm`:
 ```
-helm delete --purge domain1-ingress
+$ helm delete --purge domain1-ingress
 ```
 b.	Remove the domain resources by using the sample [`delete-weblogic-domain-resources`](../kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script.
 
 c.	Use `kubectl` to confirm that the server pods and domain resource are gone.
 ```
-kubectl get pods -n sample-domains-ns1
-kubectl get domains -n sample-domains-ns1
+$ kubectl get pods -n sample-domains-ns1
+$ kubectl get domains -n sample-domains-ns1
 ```
 
 ## 7. Remove the domain namespace.
@@ -177,7 +180,7 @@ $ kubectl delete namespace sample-domains-ns1
 
 a.	Remove the operator:
 ```
-helm delete --purge sample-weblogic-operator
+$ helm delete --purge sample-weblogic-operator
 ```
 b.	Remove the operator's namespace:
 
@@ -187,7 +190,7 @@ $ kubectl delete namespace sample-weblogic-operator-ns
 ## 9. Remove the load balancer.
 a.	Remove the Traefik load balancer:
 ```
-helm delete --purge traefik-operator
+$ helm delete --purge traefik-operator
 ```
 b.	Remove the Traefik namespace:
 
