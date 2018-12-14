@@ -234,16 +234,36 @@ function createFiles {
 function createDomainHome {
   cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_build
 
-  cd docker-images/OracleWebLogic/samples/12213-domain-home-in-image
-
-  sed -i -e "s|myuser|${username}|g" properties/docker_build/domain_security.properties
-  sed -i -e "s|mypassword1|${password}|g" properties/docker_build/domain_security.properties
-
-  if [ ! -z $baseImage ]; then
-    sed -i -e "s|oracle/weblogic:12.2.1.3-developer|${baseImage}|g" Dockerfile
+  if [ -z $imagePath ]; then
+    imagePath="12213-domain-home-in-image-wdt"
   fi
 
-  ./build.sh
+  cd docker-images/OracleWebLogic/samples/${imagePath}
+
+  # 12213-domain-home-in-image use one properties file for the credentials 
+  usernameFile="properties/docker_build/domain_security.properties"
+  passwordFile="properties/docker_build/domain_security.properties"
+
+  # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
+  if [ ! -f $usernameFile ]; then
+    usernameFile="properties/docker-build/adminuser.properties"
+    passwordFile="properties/docker-build/adminpass.properties"
+  fi
+    
+  sed -i -e "s|myuser|${username}|g" $usernameFile
+  sed -i -e "s|mypassword1|${password}|g" $passwordFile
+
+  # use the existence of build-archive.sh file to determine if we need to download WDT
+  if [ -f "build-archive.sh" ]; then
+    sh ./build-archive.sh
+    wget https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.14/weblogic-deploy.zip
+  fi
+
+  if [ ! -z $baseImage ]; then
+    sed -i -e "s|\(FROM \).*|\1 ${baseImage}|g" Dockerfile
+  fi
+
+  sh ./build.sh
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."
