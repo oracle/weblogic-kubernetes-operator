@@ -29,6 +29,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -57,6 +58,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
+import org.joda.time.DateTime;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -126,6 +128,8 @@ public class Main {
   static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
 
   private static final String operatorNamespace = getOperatorNamespace();
+  private static final AtomicReference<DateTime> lastFullRecheck =
+      new AtomicReference<>(DateTime.now());
 
   private static String principal;
   private static RestServer restServer = null;
@@ -202,7 +206,7 @@ public class Main {
       version = HealthCheckHelper.performK8sVersionCheck();
 
       runSteps(
-          CRDHelper.createDomainCRDStep(new StartNamespacesStep(targetNamespaces)),
+          CRDHelper.createDomainCRDStep(version, new StartNamespacesStep(targetNamespaces)),
           Main::completeBegin);
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -215,7 +219,7 @@ public class Main {
       startRestServer(principal, isNamespaceStopping.keySet());
 
       // start periodic retry and recheck
-      int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
+      int recheckInterval = tuningAndConfig.getMainTuning().targetNamespaceRecheckIntervalSeconds;
       engine
           .getExecutor()
           .scheduleWithFixedDelay(
@@ -335,7 +339,17 @@ public class Main {
       namespacesToStop.removeAll(targetNamespaces);
       stopNamespaces(namespacesToStop);
 
-      runSteps(new StartNamespacesStep(targetNamespaces));
+      Collection<String> namespacesToStart = targetNamespaces;
+      int recheckInterval = tuningAndConfig.getMainTuning().domainPresenceRecheckIntervalSeconds;
+      DateTime now = DateTime.now();
+      if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {
+        lastFullRecheck.set(now);
+      } else {
+        namespacesToStart = new TreeSet<>(targetNamespaces);
+        namespacesToStart.removeAll(isNamespaceStarted.keySet());
+      }
+
+      if (!namespacesToStart.isEmpty()) runSteps(new StartNamespacesStep(namespacesToStart));
     };
   }
 

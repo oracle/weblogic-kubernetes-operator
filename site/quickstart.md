@@ -1,160 +1,199 @@
 # Quick start guide
 
-Use this quick start guide to create a WebLogic deployment in a Kubernetes cluster.
+Use this quick start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production.
 
-## 1.	Get the images and put them into your local registry.
+## Prerequisite
+For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
 
-For the Operator image:
+## 1.	Get these images and put them into your local registry.
+
+a.	Pull the operator image:
 ```
 $ docker pull oracle/weblogic-kubernetes-operator:2.0
 ```
-For the Traefik image:
+b.	Pull the Traefik load balancer image:
 ```
 $ docker pull traefik:latest
 ```
+c.	Pull the WebLogic 12.2.1.3 install image:
+```
+$ docker pull store/oracle/weblogic:12.2.1.3
+```
+d.	Then patch the WebLogic image according to these [instructions](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s).
+
 ## 2. Create a Traefik (Ingress-based) load balancer.
 
-Use Helm to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer.
+Use `helm` to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](../kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 ```
-$ helm install --name traefik-operator --namespace traefik stable/traefik
+$ helm install \
+--name traefik-operator \
+--namespace traefik \
+--values <path>/values.yaml  \
+--set "kubernetes.namespaces={traefik}" \
+stable/traefik
 ```
-## 3. Configure Kibana and Elasticsearch.
+Wait until the Traefik operator pod is running and ready.
+```
+$ kubectl -n traefik get pod -w
+```
+## 3. Install the operator.
 
-Use the [`elasticsearch_and_kibana`](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/elasticsearch_and_kibana.yaml) YAML file.
+a.  Create a namespace for the operator:
 ```
-$ kubectl apply -f kubernetes/samples/scripts/elasticsearch_and_kibana.yaml
+$ kubectl create namespace sample-weblogic-operator-ns
 ```
-
-## 4. Install the operator.
-
-* Create a namespace for the operator:
+b.	Create a service account for the operator in the operator's namespace:
 ```
-$ kubectl create namespace weblogic-operator
+$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
-* Create a `serviceAccount` for the operator's namespace. If not specified, it defaults to `default` (for example, the namespace's default service account).
-* Invoke the script to generate the credentials for the operator and add it to the operator YAML file (you can keep all the default values).
-* Create the operator using `helm install`, and passing in the namespace, service account, and location of Elasticsearch.
-  * Helm is used to deploy the operator in a Kubernetes cluster.
-  * Use the `helm install` command to install the operator Helm chart, passing in the `values.yaml`.
-  * Edit the `values.yaml` file to update the information such as the operator's namespace and service account.
-```
-  $ helm install kubernetes/charts/weblogic-operator --name my-operator --namespace weblogic-operator-ns --values values.yaml --wait
-```
-
-## 5. Prepare your environment for a domain.
-
-* Optionally, create a domain namespace if you want to persist the domain home in a PV:
-```
-$ kubectl create namespace domain1-ns
-```
-* Create the Kubernetes secrets for the Administration Server boot credentials by invoking the [`create-weblogic-credentials` script](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain/create-weblogic-credentials.sh).
-
-* Create a PV & PVC for the domain:
-  * Find the `create_pv_pvc.sh script` and YAML files you'll need to edit to create the PV and PVC, in the https://github.com/oracle/weblogic-kubernetes-operator/tree/develop/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc directory.
-* Edit the operator YAML file to add the domain namespace, then do a `helm upgrade`.
-* Create the Docker image for the domain home in the image or use the WebLogic binary image.
-  * Run WLST to create the domain in PV (remember to apply the patch).
-
-## 6. Create a domain.
-
-* Edit the domain YAML file (can the defaults be used?).
-* Create the domain home for the domain.
-  * For a domain home on a PV, first pull the WebLogic 12.2.1.3 install image into a local repository:
-
-```  
-$ docker pull store/oracle/weblogic:12.2.1.3-dev
-```
- * For reference, see the [domain home on PV README](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md).
- * The `create-domain.sh` will:
-   * Create a directory for the generated Kubernetes YAML files for this domain. The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/`.
-   * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
-   * Run and wait for the job to finish.
-   * Create a Kubernetes domain resource YAML file, `domain-custom-resource.yaml`, in the directory that is created above. You can use this YAML file to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
+c.  Use ` helm` to install and start the operator:	 
 
 ```
-          ./create-domain.sh
-          -i create-domain-inputs.yaml
-          -o /path/to/output-directory
+$ helm install \
+  --name sample-weblogic-operator \
+  --namespace sample-weblogic-operator-ns \
+  --set serviceAccount=sample-weblogic-operator-sa \
+  --set "domainNamespaces={}" \
+  -- wait \
+  kubernetes/charts/weblogic-operator
 ```
-
-* For a domain home in image, use the sample in the Docker GitHub project.
-
-* Optionally, create a configuration overrides template and any additional Kubernetes secrets it needs (for example, to override the domain home configuration of a database URL, username, and password).
-
-* Create a domain resource in the domain namespace.
-  * Specify the following information: domain UID, service account, secret name, the domain home details, and optionally, the configuration overrides template name.
-
-* Configure the operator to know about the domain.
-   * Edit the operator `values.yaml` file to add the namespace of the domain:
+d.  Verify that the operator is up and running by viewing the operator pod's log:
 
 ```
-$ helm update kubernetes/charts/weblogic-operator --name my-operator --namespace weblogic-operator-ns --values values.yaml --wait
+$ kubectl log -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
 ```
 
-* Configure the Traefik load balancer to manage the domain as follows:
-  * Create an Ingress for the domain in the domain namespace (it contains the routing rules for the domain):
+## 4. Prepare your environment for a domain.
 
+a.  Create a namespace that can host one or more domains:
+
+```
+$ kubectl create namespace sample-domains-ns1
+```
+b.	Use `helm` to configure the operator to manage domains in this namespace:
+
+```
+$ helm upgrade \
+  --reuse-values \
+  --set "domainNamespaces={sample-domains-ns1}" \
+  --wait \
+  sample-weblogic-operator \
+  kubernetes/charts/weblogic-operator
+
+```
+c.  Configure Traefik to manage Ingresses created in this namespace:
+```
+$ helm upgrade \
+  --reuse-values \
+  --set "kubernetes.namespaces={traefik,sample-domains-ns1}" \
+  traefik-operator \
+  stable/traefik
+```
+d. Wait until the Traefik operator pod finishes restarting.
+```
+$ kubectl -n traefik get pod -w
+```
+
+## 5. Create a domain in the domain namespace.
+
+a.	Create a new image with a domain home by running the [`create-domain`](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file, including:
+
+* Modifying the sample `inputs.yaml` file with the `domainUID` (`sample-domain1`), domain namespace (`sample-domains-ns1`) and the base image (`oracle/weblogic:12213-patch-wls-for-k8s`).
+
+* Creating Kubernetes secrets `username` and `password` using the [`create-weblogic-credentials`](../kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
+```
+$ cd ../kubernetes/samples/scripts/create-weblogic-domain-credentials
+$ ./create-weblogic-credentials.sh -u <weblogic> -p <welcome1> -n sample-domain1-ns -d sample-domain1
+```
+
+b.	Confirm that the operator started the servers for the domain:
+```
+$ kubectl get po -n sample-domain1-ns
+```
+
+You will see the Administration Server and Managed Servers running.
+
+* Use `kubectl` to show that the domain resource was created:
+```
+$ kubectl describe domain sample-domain1 -n sample-domain1-ns
+```
+* Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
+```
+$ kubectl get pods -n sample-weblogic-operator1-ns
+```
+
+c.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
+* Use `helm install`, specifying the `domainUID` (`sample-domain1`) and domain namespace (`sample-domains-ns1`) in the `values.yaml` file.
 ```
 $ cd kubernetes/samples/charts
-$ helm install ingress-per-domain --name domain1-ingress --value values.yaml
+$ helm install ingress-per-domain --name domain1-ingress --values ingress-per-domain/values.yaml
 ```
 
-(At this point, do they have a WebLogic Kubernetes deployment in a Kubernetes cluster? If so, we have to give them something to look at, to verify their results.)
-
-## 7. Remove a domain.
-
-* Remove the domain's Kubernetes resources (domain, secrets, ingress, ...).
-  * To remove the domain and all the Kubernetes resources (labeled with the `domainUID`), invoke the [delete domain resources script](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/delete-weblogic-domain-resources.sh).
-
-  * The operator will notice that the domain's domain resource has been removed and will then kill the pods.
-* Configure the Traefik load balancer to stop managing the domain.
-  * If you have configured Traefik to manage the domain's namespace (instead of the default: all namespaces), then edit the Traefik YAML file to remove the domain namespace and do a `helm update`:
-
+d.	Confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods:
 ```
-helm update --name traefik-operator --namespace traefik (default values in yaml)
-or
-helm update --name traefik-operator --namespace traefik --values values.yaml stable/traefik
+$ curl http://${HOSTNAME}:30305/sample-domain1/
 ```
 
-* Remove the domain home if it's on a PV.
 
-## 8. Remove the domain namespace.
+## 6. Remove the domain.
 
-* Configure the Traefik load balancer to stop managing the domain namespace. Use `helm upgrade` to remove the domain namespace from the list of namespaces.
-* Configure the operator to stop managing the domain. Use `helm upgrade` to remove the domain namespace from the list of domain namespaces.
-* Remove the PV & PVC for the domain namespace.
-* Remove the domain namespace:
+a.	Remove the domain's Ingress by using `helm`:
 ```
-$ kubectl delete namespaces domain1-ns
+$ helm delete --purge domain1-ingress
 ```
+b.	Remove the domain resources by using the sample [`delete-weblogic-domain-resources`](../kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script.
 
-## 9. Remove the operator.
-
-* Remove the operator:
-
+c.	Use `kubectl` to confirm that the server pods and domain resource are gone.
 ```
-helm delete --purge my-operator
-```
-* Remove the operator namespace:
-
-```
-$ kubectl delete namespaces weblogic-operator-ns
+$ kubectl get pods -n sample-domains-ns1
+$ kubectl get domains -n sample-domains-ns1
 ```
 
-## 10. Remove other resources.
-
-* Optionally, remove Kibana and Elasticsearch:
-
-```
-$ kubectl apply -f kubernetes/samples/scripts/elasticsearch_and_kibana.yaml
-```
-* Remove the Traefik load balancer:
+## 7. Remove the domain namespace.
+a.	Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:
 
 ```
-helm delete --purge
+$ helm upgrade \
+  --reuse-values \
+  --set "kubernetes.namespaces={traefik}" \
+  traefik-operator \
+  stable/traefik
 ```
-* Remove the Traefik namespace:
+
+b.	Configure the operator to stop managing the domain.
 
 ```
-$ kubectl delete namespaces traefik
+$ helm upgrade \
+  --reuse-values \
+  --set "domainNamespaces={}" \
+  --wait \
+  sample-weblogic-operator \
+  kubernetes/charts/weblogic-operator
+```
+c.	Delete the domain namespace:
+
+```
+$ kubectl delete namespace sample-domains-ns1
+```
+
+## 8. Remove the operator.
+
+a.	Remove the operator:
+```
+$ helm delete --purge sample-weblogic-operator
+```
+b.	Remove the operator's namespace:
+
+```
+$ kubectl delete namespace sample-weblogic-operator-ns
+```
+## 9. Remove the load balancer.
+a.	Remove the Traefik load balancer:
+```
+$ helm delete --purge traefik-operator
+```
+b.	Remove the Traefik namespace:
+
+```
+$ kubectl delete namespace traefik
 ```

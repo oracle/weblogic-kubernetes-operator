@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -321,7 +322,13 @@ public class Domain {
           "webapp is not deployed as exposeAdminT3Channel is false, can not verify loadbalancing");
     }
   }
-
+  /**
+   * call webapp and verify load balancing by checking server name in the response
+   *
+   * @param webappName
+   * @param verifyLoadBalance
+   * @throws Exception
+   */
   public void callWebAppAndVerifyLoadBalancing(String webappName, boolean verifyLoadBalance)
       throws Exception {
     if (!loadBalancer.equals("NONE")) {
@@ -361,7 +368,7 @@ public class Domain {
   }
 
   /**
-   * startup the domain
+   * create domain crd
    *
    * @throws Exception
    */
@@ -389,7 +396,7 @@ public class Domain {
   }
 
   /**
-   * shutdown the domain
+   * delete domain crd using yaml
    *
    * @throws Exception
    */
@@ -410,6 +417,11 @@ public class Domain {
     verifyDomainDeleted(replicas);
   }
 
+  /**
+   * delete domain using domain name
+   *
+   * @throws Exception
+   */
   public void shutdown() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
     String cmd = "kubectl delete domain " + domainUid + " -n " + domainNS;
@@ -423,6 +435,11 @@ public class Domain {
     verifyDomainDeleted(replicas);
   }
 
+  /**
+   * shutdown domain by setting serverStartPolicy to NEVER
+   *
+   * @throws Exception
+   */
   public void shutdownUsingServerStartPolicy() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
     String cmd =
@@ -453,6 +470,12 @@ public class Domain {
     verifyServerPodsDeleted(replicas);
   }
 
+  /**
+   * verify server pods are deleted
+   *
+   * @param replicas
+   * @throws Exception
+   */
   public void verifyServerPodsDeleted(int replicas) throws Exception {
     TestUtils.checkPodDeleted(domainUid + "-" + adminServerName, domainNS);
     for (int i = 1; i <= replicas; i++) {
@@ -464,6 +487,11 @@ public class Domain {
     return domainMap;
   }
 
+  /**
+   * delete PVC and check PV status released when weblogicDomainStorageReclaimPolicy is Recycle
+   *
+   * @throws Exception
+   */
   public void deletePVCAndCheckPVReleased() throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     String pvBaseName = (String) pvMap.get("baseName");
@@ -484,7 +512,11 @@ public class Domain {
       logger.info("PV is released when PVC is deleted");
     }
   }
-
+  /**
+   * create domain on existing directory
+   *
+   * @throws Exception
+   */
   public void createDomainOnExistingDirectory() throws Exception {
     String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
     String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
@@ -506,7 +538,11 @@ public class Domain {
     }
     throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
   }
-
+  /**
+   * access admin console using load balancer web port for Apache load balancer
+   *
+   * @throws Exception
+   */
   public void verifyAdminConsoleViaLB() throws Exception {
     if (!loadBalancer.equals("APACHE")) {
       logger.info("This check is done only for APACHE load balancer");
@@ -553,7 +589,11 @@ public class Domain {
   public String getDomainUid() {
     return domainUid;
   }
-
+  /**
+   * test liveness probe for managed server 1
+   *
+   * @throws Exception
+   */
   public void testWlsLivenessProbe() throws Exception {
 
     // test managed server1 pod auto restart
@@ -668,11 +708,14 @@ public class Domain {
 
   private void callCreateDomainScript(String outputDir) throws Exception {
     StringBuffer cmd = new StringBuffer(BaseTest.getProjectRoot());
+
     cmd.append(
             "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
-        .append(generatedInputYamlFile)
-        .append(" -e -v -o ")
-        .append(outputDir);
+        .append(generatedInputYamlFile);
+    if (!domainMap.containsKey("configOverrides")) {
+      cmd.append(" -e ");
+    }
+    cmd.append(" -v -o ").append(outputDir);
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString(), true);
     if (result.exitValue() != 0) {
@@ -686,6 +729,37 @@ public class Domain {
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
+
+    // write configOverride and configOverrideSecrets to domain.yaml
+    if (domainMap.containsKey("configOverrides")) {
+      String contentToAppend =
+          "  configOverrides: "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + "\n"
+              + "  configOverrideSecrets: [ \""
+              + domainUid
+              + "-t3publicaddress\" ]"
+              + "\n";
+
+      String domainYaml =
+          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+      Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+
+      String command = "kubectl create -f " + domainYaml;
+      result = ExecCommand.exec(command);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command "
+                + cmd
+                + " failed, returned "
+                + result.stdout()
+                + "\n"
+                + result.stderr());
+      }
+      logger.info("Command returned " + result.stdout().trim());
+    }
   }
 
   private void createLoadBalancer() throws Exception {
@@ -790,7 +864,12 @@ public class Domain {
       ExecResult result = ExecCommand.exec(curlCmd.toString());
       if (result.exitValue() != 0) {
         throw new RuntimeException(
-            "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
+            "FAILURE: command "
+                + curlCmd
+                + " failed, returned "
+                + result.stderr()
+                + " \n "
+                + result.stdout());
       } else {
         logger.info("webapp invoked successfully");
       }
@@ -863,9 +942,9 @@ public class Domain {
     }
 
     domainMap.put("domainHome", "/shared/domains/" + domainUid);
-    /* domainMap.put(
-    "createDomainFilesDir",
-    BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv"); */
+    domainMap.put(
+        "createDomainFilesDir",
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
@@ -889,6 +968,56 @@ public class Domain {
     }
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
+
+    // create config map and secret for custom sit config
+    if (domainMap.get("configOverrides") != null) {
+      // write hostname in config file for public address
+
+      String cmd =
+          "kubectl -n "
+              + domainNS
+              + " create cm "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + " --from-file "
+              + BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig";
+      ExecResult result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+      cmd =
+          "kubectl -n "
+              + domainNS
+              + " label cm "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + " weblogic.domainUID="
+              + domainUid;
+      result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+      // create secret for custom sit config t3 public address
+      cmd =
+          "kubectl -n "
+              + domainNS
+              + " create secret generic "
+              + domainUid
+              + "-"
+              + "t3publicaddress "
+              + " --from-literal=hostname="
+              + TestUtils.getHostName();
+      result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+    }
   }
 
   private String getNodeHost() throws Exception {

@@ -813,10 +813,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         new CompletionCallback() {
           @Override
           public void onCompletion(Packet packet) {
-            DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
-            if (existing != null) {
-              existing.resetFailureCount();
-            }
+            // no-op
           }
 
           @Override
@@ -840,31 +837,33 @@ public class DomainProcessorImpl implements DomainProcessor {
                   }
                 });
 
-            DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
-            if (existing != null) {
-              int failureCount = existing.incrementAndGetFailureCount();
-              LOGGER.fine(
-                  "Failure count for DomainPresenceInfo: " + existing + " is now: " + failureCount);
-              if (failureCount > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
-                LOGGER.warning(
-                    MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
-                    domainUID,
-                    ns,
-                    DomainPresence.getDomainPresenceFailureRetryMaxCount(),
-                    throwable);
-              } else {
-                gate.getExecutor()
-                    .schedule(
-                        () -> {
-                          DomainPresenceInfo existing2 =
-                              getExistingDomainPresenceInfo(ns, domainUID);
-                          existing2.setPopulated(false);
-                          makeRightDomainPresence(existing2, true, isDeleting, false);
-                        },
-                        DomainPresence.getDomainPresenceFailureRetrySeconds(),
-                        TimeUnit.SECONDS);
-              }
-            }
+            gate.getExecutor()
+                .schedule(
+                    () -> {
+                      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
+                      if (existing != null) {
+                        existing.setPopulated(false);
+                        // proceed only if we have not already retried max number of times
+                        int retryCount = existing.incrementAndGetFailureCount();
+                        LOGGER.fine(
+                            "Failure count for DomainPresenceInfo: "
+                                + existing
+                                + " is now: "
+                                + retryCount);
+                        if (retryCount <= DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
+                          makeRightDomainPresence(existing, true, isDeleting, false);
+                        } else {
+                          LOGGER.severe(
+                              MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
+                              domainUID,
+                              ns,
+                              DomainPresence.getDomainPresenceFailureRetryMaxCount(),
+                              throwable);
+                        }
+                      }
+                    },
+                    DomainPresence.getDomainPresenceFailureRetrySeconds(),
+                    TimeUnit.SECONDS);
           }
         };
 
@@ -1006,6 +1005,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     List<Step> resources = new ArrayList<>();
     resources.add(PodHelper.createAdminPodStep(null));
     resources.add(new BeforeAdminServiceStep(null));
+
+    Domain dom = info.getDomain();
+    if (dom.getSpec().getAdminServer().getAdminService() != null) {
+      resources.add(ServiceHelper.createForAdminServiceStep(null));
+    }
+
     resources.add(ServiceHelper.createForServerStep(null));
     resources.add(new WatchPodReadyAdminStep(Main.podWatchers, null));
     resources.add(new ExternalAdminChannelsStep(next));

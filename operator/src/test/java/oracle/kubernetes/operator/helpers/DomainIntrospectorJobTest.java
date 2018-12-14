@@ -30,6 +30,7 @@ import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.v2.Cluster;
+import oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.hamcrest.Matcher;
@@ -158,6 +159,7 @@ public class DomainIntrospectorJobTest {
     Cluster cluster = new Cluster();
     cluster.setClusterName("cluster-1");
     cluster.setReplicas(1);
+    cluster.setServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
     DomainSpec spec =
         new DomainSpec()
             .withDomainUID(UID)
@@ -166,6 +168,7 @@ public class DomainIntrospectorJobTest {
             .withCluster(cluster)
             .withImage(LATEST_IMAGE)
             .withDomainHomeInImage(false);
+    spec.setServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
 
     List<String> overrideSecrets = new ArrayList<>();
     overrideSecrets.add(OVERRIDE_SECRET_1);
