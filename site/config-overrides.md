@@ -198,7 +198,7 @@ TBD expand this sample to include username and password.
 
 # Step-by-Step Guide
 
-1. Create a directory containing (A) a set of situational configuration templates for overriding the mbean properties you want to replace and (B) a version.txt file.
+* Create a directory containing (A) a set of situational configuration templates for overriding the mbean properties you want to replace and (B) a version.txt file.
   * This directory must not contain any other files.
   * The version.txt file must contain only the string `2.0`.
   * Template files must not override the settings listed in [Unsupported Overrides](#unsupported-overrides).
@@ -209,24 +209,28 @@ TBD expand this sample to include username and password.
       * E.g. to override data source named `myds`, use `jdbc-myds.xml`.
     * A `config.xml` override template must be named `config.xml`.
     * Templates can embed macros that reference environement variables or Kubernetes secrets.  See [Override Template Macros](#override-template-macros).
-2. Create a kubernetes config map from the directory of templates.
+* Create a kubernetes config map from the directory of templates.
   * The config map must be in the same kubernetes namespace as the domain.
-  * It is recommended, but not required, to add the `weblogic.domainUID` label to the config map. This will help you keep track of the fact that the config map is associated with a particular domain.
+  * If the config map is going to be used by a single DOMAIN_UID, it is recommended to add the 'weblogic.domainUID=<mydomainuid>' label to help track the resource.
   * For example, assuming './mydir' contains your version.txt and situation config template files:
-    `kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir`
-    `kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID`
-3. Create any kubernetes secrets referenced by a template macro.
+    ```
+    kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
+    kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
+    ```
+* Create any kubernetes secrets referenced by a template macro.
   * Secrets can have multiple keys (files) that can hold either cleartext or base64 values
   * Secrets must be in the same kubernetes namespace as the domain
-  * It is recommended that the customer add the 'weblogic.domainUID=<mydomainuid>' label to each secret.  This will help you keep track of the fact that the secret is associated with a particular domain.
+  * If a secret is going to be used by a single DOMAIN_UID, it is recommended to add the 'weblogic.domainUID=<mydomainuid>' label to help track the resource.
   * For example:
-    `kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret`
-    `kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID`
-4. Configure the name of the config map in the Domain CR `configOverrides` field.
-5. Configure the names of each secret in Domain CR.
+    ```
+    kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
+    kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
+    ```
+* Configure the name of the config map in the Domain CR `configOverrides` field.
+* Configure the names of each secret in Domain CR.
   * If the secret contains the WebLogic admin `username` and `password` keys, set the Domain CR `webLogicCredentialsSecret` field.
   * For all other secrets, add them to Domain CR `configOverrideSecrets` field.
-6. See [Debugging](#debugging) for ways to check if sit cfg is taking effect or if there are errors.
+* See [Debugging](#debugging) for ways to check if sit cfg is taking effect or if there are errors.
 
 # Debugging
 
@@ -265,7 +269,7 @@ TBD expand this sample to include username and password.
   > exit()
   ```
 
-** _IMPORTANT_ WebLogic Servers will still boot, and skip overriding, when they detect incorrectly formatted config override template files.  It is therefore important to make sure they're correct in a QA environment before attempting to use them in production, where a custom override may be critical for correctness. **
+**IMPORTANT: WebLogic Servers will still boot, and will skip overriding, when they detect an incorrectly formatted config override template file.  So it is important to make template files are correct in a QA environment before attempting to use them in production, as a custom override may be critical for correctness.**
 
 # Internal Design Flow
 
