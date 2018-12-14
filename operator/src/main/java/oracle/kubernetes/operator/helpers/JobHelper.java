@@ -30,6 +30,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Cluster;
+import oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v2.ManagedServer;
@@ -176,16 +177,37 @@ public class JobHelper {
     // Are we starting a cluster?
     for (Cluster cluster : clusters) {
       int replicaCount = cluster.getReplicas();
-      LOGGER.fine("creatingServers replicaCount: " + replicaCount + " for cluster: " + cluster);
-      if (replicaCount > 0) {
+      LOGGER.fine(
+          "Start Policy: "
+              + cluster.getServerStartPolicy()
+              + ", replicaCount: "
+              + replicaCount
+              + " for cluster: "
+              + cluster);
+      if (!cluster.getServerStartPolicy().equals(ConfigurationConstants.START_NEVER)
+          && replicaCount > 0) {
         return true;
       }
     }
 
-    // Are we starting a standalone managed server?
-    // for (ManagedServer server : servers.values()) {
-    // if (server.)
-    // }
+    // If Domain level Server Start Policy = ALWAYS, IF_NEEDED or ADMIN_ONLY then we most likely
+    // will
+    // start a server pod
+    if (!dom.getSpec().getServerStartPolicy().equals(ConfigurationConstants.START_NEVER)) {
+      return true;
+    }
+
+    // Are we starting any explicitly specified individual server?
+    for (ManagedServer server : servers) {
+      if (!server.getServerStartPolicy().equals(ConfigurationConstants.START_NEVER)) {
+        return true;
+      }
+    }
+
+    // Start Admin Server?
+    if (!spec.getAdminServer().getServerStartPolicy().equals(ConfigurationConstants.START_NEVER)) {
+      return true;
+    }
 
     return false;
   }
