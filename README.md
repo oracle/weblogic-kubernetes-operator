@@ -18,7 +18,7 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 * Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-The fastest way to experience the operator is to follow the [Quick start guide](site/quickstart.md), or you can peruse our [documentation](site), read our blogs, or try out the [samples](kubernetes/samples/README.md).
+The fastest way to experience the operator is to follow the [Quick start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](kubernetes/samples/README.md).
 
 # About this documentation
 
@@ -52,7 +52,15 @@ The [User guide](site/user-guide.md) provides detailed information about all asp
 
 # Samples
 
-**TODO** put a list of samples here with a summary and links
+Please refer to our [samples](kubernetes/samples/README.md) for information about the available sample code we provide.
+
+# Need more help?
+
+We have a public Slack channel where you can get in touch with us to ask questions about using the operator.  To join our channel, please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include details of how to access our Slack workspace.  After you are logged in, please come to #operator and say, "hello!"
+
+# Recent changes
+
+See [Recent changes](site/recent-changes.md) for changes to the operator, including any backward incompatible changes.
 
 # Developer guide
 
@@ -69,15 +77,6 @@ Documentation for APIs is provided here:
 * See the [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
 
 * [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
-
-## Need more help?
-
-We have a public Slack channel where you can get in touch with us to ask questions about using the operator.  To join our channel, please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include details of how to access our Slack workspace.  After you are logged in, please come to #operator and say, "hello!"
-
-## Recent changes
-
-See [Recent changes](site/recent-changes.md) for changes to the operator, including any backward incompatible changes.
-
 
 # Contributing to the operator
 

@@ -1,7 +1,7 @@
 # Install and configure Traefik
 ## Install the Traefik operator with a Helm chart
 The Traefik Helm chart is located in the official Helm project `charts` directory at https://github.com/helm/charts/tree/master/stable/traefik.
-The chart is in the default repository for Helm at https://kubernetes-charts.storage.googleapis.com/ and is installed by default.
+The chart is in the default repository for Helm.
 
 To install the Traefik operator in the `traefik` namespace with default settings:
 ```
@@ -22,6 +22,12 @@ If you want, you can download the Traefik Helm chart and untar it into a local f
 $ helm fetch  stable/traefik --untar
 ```
 
+## Update the Traefik operator
+After the Traefik operator is installed and running, if you want to change some configurations of the operator, use `helm upgrade` to achieve this.
+```
+$ helm upgrade traefik-operator stable/traefik --values values.yaml 
+```
+
 ## Configure Traefik as a load balancer for WLS domains
 In this section we'll demonstrate how to use Traefik to handle traffic to backend WLS domains.
 
@@ -40,8 +46,8 @@ $ kubectl create -f samples/host-routing.yaml
 ```
 Now you can send requests to different WLS domains with the unique entry point of Traefik with different hostnames.
 ```
-$ curl --silent -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
-$ curl --silent -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
+$ curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp/
+$ curl -H 'host: domain2.org' http://${HOSTNAME}:30305/testwebapp/
 ```
 #### Install a path-routing Ingress
 ```
@@ -49,8 +55,8 @@ $ kubectl create -f samples/path-routing.yaml
 ```
 Now you can send requests to different WLS domains with the unique entry point of Traefik with different paths.
 ```
-$ curl --silent http://${HOSTNAME}:30305/domain1/
-$ curl --silent http://${HOSTNAME}:30305/domain2/
+$ curl http://${HOSTNAME}:30305/domain1/
+$ curl http://${HOSTNAME}:30305/domain2/
 ```
 #### Install a TLS-enabled Ingress
 This sample demonstrates accessing the two WLS domains using an HTTPS endpoint and the WLS domains are protected by different TLS certificates.

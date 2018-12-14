@@ -48,7 +48,7 @@ public class YamlUtils {
     }
 
     @Override
-    protected Node representMapping(Tag tag, Map<?, ?> mapping, Boolean flowStyle) {
+    protected Node representMapping(Tag tag, Map<?, ?> mapping, DumperOptions.FlowStyle flowStyle) {
       Map<?, ?> sortedMapping = new TreeMap<>(mapping);
       return super.representMapping(tag, sortedMapping, flowStyle);
     }

@@ -16,15 +16,31 @@ import os
 #   For example:
 #      /Servers/admin-server,ListenAddress,,domain1-admin-server
 #
-#   If you don't want to check the original-val is as expected
-#   then specify an asterisk (*) instead of the expected value.
+#   Special values '*' and '!':
+# 
+#      original-val=*
+#      If you don't want to check the original-val is a specific
+#      expected value, then specify an asterisk (*) instead
+#      of the expected value.
+#
+#      overridden-val=!
+#      If you don't want to check that the overridden-val is a specific 
+#      expected val, but only want to assert that it's different than
+#      the original-val, then specify a bang (!) instead of the 
+#      expected value.
 #
 #   Then run this program:
 #      wlst.sh checkBeans admin_name admin_pass url input_file_name
 #
-#   The program will check that the original-val matches the value
-#   in the 'domainConfig' mbean tree and that the overridden-val
-#   matches the value in the 'serverConfig' mbean tree.
+#   The program will:
+#      Check that the original-val matches the value in the
+#      'domainConfig' mbean tree (or matches any value if
+#      original-val is '*').
+#
+#      Check if the overridden-val matches the value in the
+#      'serverConfig' mbean tree (or simply assert the
+#      serverConfig and the domainConfig values differ
+#      if the overridden-val is '!').
 #
 #   The program exits with a non-zero exit code on any failure
 #   (including an unexpected attribute value).
@@ -95,7 +111,7 @@ for line in file:
   overriddenExpected=words[3]
 
   print(
-      "Info: Checking bean_path='" + bean_path + "'"
+      "Info: Checking line#=" + str(line_no) + " bean_path='" + bean_path + "'"
     + " attr='" + attr + "'"
     + " originalExpected='" + originalExpected + "'"
     + " overriddenExpected='" + overriddenExpected + "'"
@@ -107,11 +123,10 @@ for line in file:
   serverConfig()
   cd(bean_path)
   overriddenActual=str(get(attr))
-
-  print("Info: originalActual='" + originalActual + "'")
-  print("Info: overriddenActual='" + overriddenActual + "'")
+  checkStatus='SUCCESS'
 
   if originalExpected != '*' and originalActual != originalExpected:
+    checkStatus='FAILED'
     addError(
       "Error: got '" + originalActual + "'"
              + " but expected value '" + originalExpected + "'"
@@ -119,13 +134,30 @@ for line in file:
              + " attr='" + attr + "'. "
     )
 
-  if overriddenActual != overriddenExpected:
+  if overriddenExpected != '!' and overriddenActual != overriddenExpected:
+    checkStatus='FAILED'
     addError(
       "Error: got '" + overriddenActual + "'"
              + " but expected value '" + overriddenExpected + "'"
              + " for bean_path=serverConfig/" + bean_path 
              + " attr='" + attr + "'. "
     )
+
+  if overriddenExpected == '!' and overriddenActual == originalActual:
+    checkStatus='FAILED'
+    addError(
+      "Error: expected original value and actual value to differ "
+             + " but got value '" + originalValue + "' for both"
+             + " for bean_path=serverConfig/" + bean_path 
+             + " attr='" + attr + "'. "
+    )
+
+  print(
+      "Info: Checked line#=" + str(line_no) + " status=" + checkStatus + " bean_path='" + bean_path + "'"
+    + " attr='" + attr + "'"
+    + " originalExpected/Actual='" + originalExpected + "'/'" + originalActual + "'"
+    + " overriddenExpected/Actual='" + overriddenExpected + "'/'" + overriddenActual + "'"
+  )
 file.close()		
 
 if len(errors) > 0:

@@ -67,11 +67,13 @@ public class ExternalAdminChannelsStep extends Step {
     // Pick out externalized channels from the server channels list
     for (String incomingChannel : dom.getExportedNetworkAccessPointNames()) {
       boolean missingChannel = true;
-      for (NetworkAccessPoint nap : naps) {
-        if (nap.getName().equalsIgnoreCase(incomingChannel)) {
-          missingChannel = false;
-          channels.add(nap);
-          break;
+      if (naps != null) {
+        for (NetworkAccessPoint nap : naps) {
+          if (nap.getName().equalsIgnoreCase(incomingChannel)) {
+            missingChannel = false;
+            channels.add(nap);
+            break;
+          }
         }
       }
       if (missingChannel) {
