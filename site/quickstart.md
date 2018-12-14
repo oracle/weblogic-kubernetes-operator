@@ -23,9 +23,18 @@ d.	Then patch the WebLogic image according to these [instructions](https://githu
 
 ## 2. Create a Traefik (Ingress-based) load balancer.
 
-Use Helm to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer.
+Use Helm to install the [Traefik](kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 ```
-$ helm install --name traefik-operator --namespace traefik stable/traefik
+$ helm install \
+--name traefik-operator \
+--namespace traefik \
+--values <path>/values.yaml  \
+--set "kubernetes.namespaces={traefik}" \
+stable/traefik
+```
+Wait until the Traefik operator pod is running and ready.
+```
+$ kubectl -n traefik get pod -w
 ```
 ## 3. Install the operator.
 
@@ -76,7 +85,13 @@ c.  Configure Traefik to manage Ingresses created in this namespace:
 ```
 $ helm upgrade \
   --reuse-values \
-  --set something about namespaces
+  --set "kubernetes.namespaces={traefik,sample-domains-ns1}" \
+  traefik-operator \
+  stable/traefik
+```
+d. Wait until the Traefik operator pod finish restart.
+```
+$ kubectl -n traefik get pod -w
 ```
 
 ## 5. Create a domain in the domain namespace.
@@ -108,12 +123,12 @@ c.	Create an Ingress for the domain, in the domain namespace, by using the [samp
 * Use `helm install`, specifying the `domainUID` (`sample-domain1`) and domain namespace (`sample-domains-ns1`).
 ```
 $ cd kubernetes/samples/charts
-$ helm install ingress-per-domain --name domain1-ingress --value values.yaml
+$ helm install ingress-per-domain --name domain1-ingress --values values.yaml
 ```
 
 d.	Confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods:
 ```
-$ curl --silent http://${HOSTNAME}:30305/sample-domain1/
+$ curl http://${HOSTNAME}:30305/sample-domain1/
 ```
 
 
@@ -133,7 +148,9 @@ a.	Configure the Traefik load balancer to stop managing the Ingresses in the dom
 ```
 $ helm upgrade \
   --reuse-values \
-  --set something about namespaces
+  --set "kubernetes.namespaces={traefik}" \
+  traefik-operator \
+  stable/traefik
 ```
 
 b.	Configure the operator to stop managing the domain.
@@ -171,5 +188,5 @@ helm delete --purge traefik-operator
 b.	Remove the Traefik namespace:
 
 ```
-$ kubectl delete namespaces traefik
+$ kubectl delete namespace traefik
 ```
