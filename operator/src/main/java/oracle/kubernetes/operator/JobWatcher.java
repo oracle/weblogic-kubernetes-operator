@@ -83,10 +83,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       case "ADDED":
       case "MODIFIED":
         V1Job job = item.object;
-        Boolean isComplete = isComplete(job) || isFailed(job);
+        Boolean isComplete = isComplete(job);
+        Boolean isFailed = isFailed(job);
         String jobName = job.getMetadata().getName();
-        if (isComplete) {
-          Complete complete = completeCallbackRegistrations.remove(jobName);
+        if (isComplete || isFailed) {
+          Complete complete = completeCallbackRegistrations.get(jobName);
           if (complete != null) {
             complete.isComplete(job);
           }
@@ -150,6 +151,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       this.job = job;
     }
 
+    boolean shouldProcessJob(V1Job job) {
+      return (this.job.getMetadata().getCreationTimestamp().getMillis()
+          == job.getMetadata().getCreationTimestamp().getMillis());
+    }
+
     @Override
     public NextAction apply(Packet packet) {
       if (isComplete(job)) {
@@ -165,6 +171,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
           (fiber) -> {
             Complete complete =
                 (V1Job job) -> {
+                  if (!shouldProcessJob(job)) {
+                    return;
+                  }
+                  completeCallbackRegistrations.remove(job.getMetadata().getName());
                   if (didResume.compareAndSet(false, true)) {
                     LOGGER.fine("Job status: " + job.getStatus());
                     packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
