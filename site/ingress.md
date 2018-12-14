@@ -24,7 +24,7 @@ After the Ingress controller is running, it monitors Ingress resources in given 
 1. Install Ingress Resource(s)  
 Ingress resources contain routing rules to one or more backends. And Ingress controller is responsible to apply the rules to the underline load balancer.  
 There are two approaches to create the Ingress resource:  
-   1. Use the helm chart [ingress-per-domain](kubernetes/samples/charts/ingress-per-domain).  
+   1. Use the helm chart [ingress-per-domain](../kubernetes/samples/charts/ingress-per-domain).  
    Each Ingress provider support a bunch of different annotations in Ingress resources. This helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations. Currently we support two Ingress providers: Traefik and Voyager. The limitation of the helm chart is that it only support one WebLogic cluster as the backend.  
 
    1. Create and install the Ingress yaml manually.  
@@ -32,12 +32,12 @@ There are two approaches to create the Ingress resource:
 
 ## Guide and samples for Traefik and Voyager/HAProxy
 Traefik and Voyager/HAProxy are both popular Ingress providers. We provide detail guide to install and configure these two Ingress providers, specially in front of WebLogic domain(s).
- - [Treafik guide](kubernetes/samples/charts/traefik/README.md)
- - [Voyager guide](kubernetes/samples/charts/voyager/README.md)
+ - [Treafik guide](../kubernetes/samples/charts/traefik/README.md)
+ - [Voyager guide](../kubernetes/samples/charts/voyager/README.md)
 
 We also provide Ingress samples for these two Ingress providers, with multiple WebLogic clusters as the backends and covering different routing rules, host-routing and path-routing, and TLS termination.
-- [Treafik samples](kubernetes/samples/charts/traefik/samples)
-- [Voyager samples](kubernetes/samples/charts/voyager/samples)
+- [Treafik samples](../kubernetes/samples/charts/traefik/samples)
+- [Voyager samples](../kubernetes/samples/charts/voyager/samples)
 
 
 
