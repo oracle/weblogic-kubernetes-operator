@@ -70,10 +70,17 @@ exposeAdminNodePort: false
 # Name of the domain namespace
 namespace: default
 
-#Java Option for Weblogic Server
+# Java Option for Weblogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
-#Base image used to build the domain home in image Docker image
-#If not specified, use the built-in base image oracle/weblogic:12.2.1.3-developer
+# Base image used to build the domain home in image Docker image
+# If not specified, use the built-in base image oracle/weblogic:12.2.1.3-developer
 baseImage: oracle/weblogic:12.2.1.3-developer
+
+# The relative directory of the WebLogic domain home in image Docker image in the i
+# `https://github.com/oracle/docker-images.git` project under the `docker-images/OracleWebLogic/samples` directory.
+# If not specified, use 12213-domain-home-in-image-wdt. 
+# Another possible value is 12213-domain-home-in-image which uses WLST script instead of WDT to 
+# generate the domain home.
+imagePath: 12213-domain-home-in-image-wdt
 
