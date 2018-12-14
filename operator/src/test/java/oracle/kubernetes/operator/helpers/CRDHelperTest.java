@@ -29,6 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class CRDHelperTest {
+  private static final KubernetesVersion KUBERNETES_VERSION = new KubernetesVersion(1, 10);
+
   private final V1beta1CustomResourceDefinition defaultCRD = defineDefaultCRD();
   private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
 
@@ -37,7 +39,7 @@ public class CRDHelperTest {
   private List<LogRecord> logRecords = new ArrayList<>();
 
   private V1beta1CustomResourceDefinition defineDefaultCRD() {
-    return CRDHelper.CRDContext.createModel();
+    return CRDHelper.CRDContext.createModel(KUBERNETES_VERSION);
   }
 
   private V1beta1CustomResourceDefinition defineCRD(String version, String operatorVersion) {
@@ -89,7 +91,7 @@ public class CRDHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     expectReadCRD().failingWithStatus(401);
 
-    Step scriptCRDStep = CRDHelper.createDomainCRDStep(null);
+    Step scriptCRDStep = CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null);
     testSupport.runSteps(scriptCRDStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
@@ -100,7 +102,7 @@ public class CRDHelperTest {
     expectReadCRD().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
     expectSuccessfulCreateCRD(defaultCRD);
 
-    testSupport.runSteps(CRDHelper.createDomainCRDStep(null));
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -111,7 +113,7 @@ public class CRDHelperTest {
     expectReadCRD().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
     expectCreateCRD(defaultCRD).failingWithStatus(401);
 
-    Step scriptCRDStep = CRDHelper.createDomainCRDStep(null);
+    Step scriptCRDStep = CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null);
     testSupport.runSteps(scriptCRDStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
@@ -122,7 +124,7 @@ public class CRDHelperTest {
   public void whenMatchingCRDExists_noop() {
     expectReadCRD().returning(defaultCRD);
 
-    testSupport.runSteps(CRDHelper.createDomainCRDStep(null));
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
   }
 
   @Test
@@ -130,7 +132,7 @@ public class CRDHelperTest {
     expectReadCRD().returning(defineCRD("v1", OPERATOR_V1));
     expectSuccessfulReplaceCRD(defaultCRD);
 
-    testSupport.runSteps(CRDHelper.createDomainCRDStep(null));
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -139,7 +141,7 @@ public class CRDHelperTest {
   public void whenExistingCRDHasFutureVersion_dontReplaceIt() {
     expectReadCRD().returning(defineCRD("v4", "operator-v4"));
 
-    testSupport.runSteps(CRDHelper.createDomainCRDStep(null));
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
   }
 
   @Test
@@ -148,7 +150,7 @@ public class CRDHelperTest {
     expectReadCRD().returning(defineCRD("v1", OPERATOR_V1));
     expectReplaceCRD(defaultCRD).failingWithStatus(401);
 
-    Step scriptCRDStep = CRDHelper.createDomainCRDStep(null);
+    Step scriptCRDStep = CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null);
     testSupport.runSteps(scriptCRDStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
