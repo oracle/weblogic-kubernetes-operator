@@ -56,11 +56,8 @@ Please refer to our [samples](kubernetes/samples/README.md) for information abou
 
 # Need more help? Have a suggestion? Come and say "Hello!"
 
-<table border="0"><tr><td><img src="site/images/slack.jpeg"></td>
-<td>We have a public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback
-or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel, 
-please <a href="https://weblogic-slack-inviter.herokuapp.com/">visit this site to get an invitation</a>.  The invitation email will include 
-details of how to access our Slack workspace.  After you are logged in, please come to <span style="color:blue">#operator</span> and say, "hello!"</td></tr></table>
+
+| ![Slack icon](site/images/slack.jpeg)  |  We have a public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,  please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include  details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!" | 
 
 # Recent changes
 
