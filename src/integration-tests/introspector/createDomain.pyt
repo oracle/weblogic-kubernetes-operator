@@ -140,7 +140,7 @@ def createDataSource(dsName,dsJNDI,dsHost,dsSID,dsTarget):
   cd('JDBCDriverParams/NO_NAME_0')
   set('DriverName','oracle.jdbc.OracleDriver')
   set('URL','jdbc:oracle:thin:@' + dsHost + ':1521:' + dsSID)
-  set('PasswordEncrypted', 'manager')
+  #set('PasswordEncrypted', 'manager')
   set('UseXADataSourceInterface', 'false')
  
   print 'create JDBCDriverParams Properties'
