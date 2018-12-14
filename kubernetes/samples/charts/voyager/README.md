@@ -29,7 +29,7 @@ $ helm install appscode/voyager --name voyager-operator --version 7.4.0 \
   --namespace voyager \
   --set cloudProvider=baremetal \
   --set apiserver.ca="$(onessl get kube-ca)" \
-  --set apiserver.enableValidatingWebhook=true
+  --set apiserver.enableValidatingWebhook=false
 ```
 ## Optionally, download the Voyager Helm chart
 If you want, you can download the Voyager Helm chart and untar it into a local folder:
