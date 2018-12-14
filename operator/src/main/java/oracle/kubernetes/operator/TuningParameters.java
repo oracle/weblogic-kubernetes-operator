@@ -22,6 +22,7 @@ public interface TuningParameters extends Map<String, String> {
   public static class MainTuning {
     public final int domainPresenceFailureRetrySeconds;
     public final int domainPresenceRecheckIntervalSeconds;
+    public final int targetNamespaceRecheckIntervalSeconds;
     public final int statusUpdateTimeoutSeconds;
     public final int unchangedCountToDelayStatusRecheck;
     public final long initialShortDelay;
@@ -30,12 +31,14 @@ public interface TuningParameters extends Map<String, String> {
     public MainTuning(
         int domainPresenceFailureRetrySeconds,
         int domainPresenceRecheckIntervalSeconds,
+        int targetNamespaceRecheckIntervalSeconds,
         int statusUpdateTimeoutSeconds,
         int unchangedCountToDelayStatusRecheck,
         long initialShortDelay,
         long eventualLongDelay) {
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;
+      this.targetNamespaceRecheckIntervalSeconds = targetNamespaceRecheckIntervalSeconds;
       this.statusUpdateTimeoutSeconds = statusUpdateTimeoutSeconds;
       this.unchangedCountToDelayStatusRecheck = unchangedCountToDelayStatusRecheck;
       this.initialShortDelay = initialShortDelay;
