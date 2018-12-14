@@ -559,7 +559,7 @@ public class DomainSpec extends BaseConfiguration {
     return cluster != null && cluster.getMaxUnavailable() != null;
   }
 
-  private AdminServer getAdminServer() {
+  public AdminServer getAdminServer() {
     return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
   }
 

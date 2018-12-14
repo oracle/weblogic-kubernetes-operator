@@ -33,11 +33,12 @@ spec:
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "%SERVER_START_POLICY%"
   # an (optional) list of environment variable to be set on the servers
-  env:
-  - name: JAVA_OPTIONS
-    value: "%JAVA_OPTIONS%"
-  - name: USER_MEM_ARGS
-    value: "-Xms64m -Xmx256m "
+  serverPod:
+    env:
+    - name: JAVA_OPTIONS
+      value: "%JAVA_OPTIONS%"
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
     # serverStartState legal values are "RUNNING" or "ADMIN"
