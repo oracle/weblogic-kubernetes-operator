@@ -29,7 +29,7 @@ public class DomainPresenceInfo {
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
-  private final AtomicInteger failureCount = new AtomicInteger(0);
+  private final AtomicInteger retryCount = new AtomicInteger(0);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
@@ -78,11 +78,15 @@ public class DomainPresenceInfo {
   }
 
   public void resetFailureCount() {
-    failureCount.set(0);
+    retryCount.set(0);
   }
 
   public int incrementAndGetFailureCount() {
-    return failureCount.incrementAndGet();
+    return retryCount.incrementAndGet();
+  }
+
+  public int getRetryCount() {
+    return retryCount.get();
   }
 
   /**
@@ -97,6 +101,7 @@ public class DomainPresenceInfo {
   /** Sets the last completion time to now */
   public void complete() {
     this.lastCompletionTime = new DateTime();
+    resetFailureCount();
   }
 
   /**
