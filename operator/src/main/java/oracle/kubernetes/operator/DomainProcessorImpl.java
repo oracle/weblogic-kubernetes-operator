@@ -843,7 +843,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
             if (existing != null) {
               int failureCount = existing.incrementAndGetFailureCount();
-              LOGGER.finer(
+              LOGGER.fine(
                   "Failure count for DomainPresenceInfo: " + existing + " is now: " + failureCount);
               if (failureCount > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
                 LOGGER.warning(
