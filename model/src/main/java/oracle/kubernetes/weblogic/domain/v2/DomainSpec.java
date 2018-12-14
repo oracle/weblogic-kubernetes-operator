@@ -440,7 +440,7 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   @Override
-  protected String getServerStartPolicy() {
+  public String getServerStartPolicy() {
     return Optional.ofNullable(super.getServerStartPolicy()).orElse(START_IF_NEEDED);
   }
 
