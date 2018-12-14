@@ -1,105 +1,109 @@
-# Using operator Helm Charts
+# Using operator Helm charts
 
 ## Overview
 
-The WebLogic Kubernetes Operator uses Helm to create and deploy any necessary resources and then run the operator in a Kubernetes cluster. Helm helps you manage Kubernetes applications. Helm Charts help you define and install applications into the Kubernetes cluster. The operator's Helm Chart is located in the "kubernetes/charts/weblogic-operator" directory.
+The WebLogic Kubernetes Operator uses Helm to create and deploy any necessary resources and then run the operator in a Kubernetes cluster. Helm helps you manage Kubernetes applications. Helm charts help you define and install applications into the Kubernetes cluster. The operator's Helm chart is located in the "kubernetes/charts/weblogic-operator" directory.
 
 ## Install Helm and Tiller
 
 Helm has two parts: a client (helm) and a server (tiller). Tiller runs inside of your Kubernetes cluster, and manages releases (installations) of your charts.  See https://github.com/kubernetes/helm/blob/master/docs/install.md for detailed instructions on installing helm and tiller.
 
-## Operator's Helm Chart values file
+## Operator's Helm chart configuration
 
-The operator Helm Chart comes with a built-in values.yaml that has all the default values for the configuration of the operator. This file is located in the "kubernetes/charts/weblogic-operator" directory. Users can create their own customized values.yaml file that can contain both additional and override property values for the operator. This is the recommended approach, rather than changing the supplied values.yaml file.
+The operator Helm chart is pre-configured with default values for the configuration of the operator.
 
-The available values and their categories for the values.yaml file are explained in [Operator Helm Chart values.yaml details](#operator-helm-chart-values.yaml-details) below.
+The user can override these values by doing one of the following:
+- create a custom YAML file with the only values to be overridden, and specify the --value option on the Helm command line
+- override individual values directly on the helm command line, using the --set option 
 
-## Optional: Configure the operator's external REST https interface
+The user can find out the configuration values that the Helm chart supports, as well as the default values, using this command:
+```
+helm inspect values kubernetes/charts/weblogic-operator
+```
 
-The operator can expose an external REST https interface which can be accessed from outside the Kubernetes cluster. As with the Operator's internal REST interface, the external REST interface requires an SSL certificate and private key that the operator will use as the identity of the external REST interface (see below).
+The available configuration values are explained by category in [Operator Helm configuration values](#operator-helm-configuration-values) below.
 
-To enable the external REST interface, configure these properties values.yaml file:
+Helm commands are explained in more detail in [Useful Helm operations](#useful-helm-operations) below.
+
+## Optional: Configure the operator's external REST HTTPS interface
+
+The operator can expose an external REST HTTPS interface which can be accessed from outside the Kubernetes cluster. As with the Operator's internal REST interface, the external REST interface requires an SSL certificate and private key that the operator will use as the identity of the external REST interface (see below).
+
+To enable the external REST interface, configure these values in a custom configuration file, or on the Helm command line:
 
 * set "externalRestEnabled" to true
 * set "externalOperatorCert" to the certificate's Base64 encoded PEM
 * set "externalOperatorKey" to the keys Base64 encoded PEM
 * optionally, set "externalRestHttpsPort" to the external port number for the operator REST interface (defaults to 31001)
 
-More detailed information about properties in values.yaml can be found in [Operator Helm Chart values.yaml details](#operator-helm-chart-values.yaml-details)
+More detailed information about configuration values can be found in [Operator Helm configuration values](#operator-helm-configuration-values)
 
 ### SSL certificate and private key for the REST interface
 
-For testing purposes, the WebLogic Kubernetes Operator project provides a sample script that generates a self-signed certificate and private key for the operator REST interface and appends them to the values.yaml that will eventually be used to install the operator's helm chart.
+For testing purposes, the WebLogic Kubernetes Operator project provides a sample script that generates a self-signed certificate and private key for the operator REST interface and outputs them out in YAML format. These values can be added to the user's custom YAML configuration file, for use when the operator's Helm chart is installed.
    
 ___This script should not be used in a production environment (since self-signed certificates are normally not considered safe).___
    
-The script takes the subject alternative names that should be added to the certificate - i.e.the list of hostnames that clients can use to access the external REST interface.  For example:
-
+The script takes the subject alternative names that should be added to the certificate - i.e. the list of hostnames that clients can use to access the external REST interface. In this example, the output is directly appended to the user's custom YAML configuration:
 ```
-kubernetes/generate-external-weblogic-operator-certificate.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> values.yaml
+kubernetes/generate-external-weblogic-operator-certificate.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> custom-values.yaml
 ```
 
 ## Optional: ELK (Elasticsearch, Logstash and Kibana) integration
 
-The operator Helm Chart includes the option of installing the necessary Kubernetes resources for ELK integration.
+The operator Helm chart includes the option of installing the necessary Kubernetes resources for ELK integration.
 
-The user is responsible for configuring Kibana and Elasticsearch, then configuring the operator Helm Chart to send events to Elasticsearch. In turn, the operator Helm Chart configures Logstash in the operator deployment to send the operator's log contents to that Elasticsearch location.
+The user is responsible for configuring Kibana and Elasticsearch, then configuring the operator Helm chart to send events to Elasticsearch. In turn, the operator Helm chart configures Logstash in the operator deployment to send the operator's log contents to that Elasticsearch location.
 
 ### ELK per-operator configuration
 
-As part of the ELK integration, Logstash configuration occurs for each deployed operator instance.  The following properties in values.yaml can be used to configure the integration:
+As part of the ELK integration, Logstash configuration occurs for each deployed operator instance.  The following configuration values can be used to configure the integration:
 
 * set "elkIntegrationEnabled" is "true" to enable the integration
-* set "logStashImage" to control which version of logstash is used
-* set "elasticSearchHost" and "elasticSearchPort" to tell the operator where Elasticsearch is running. This will configure Logstash to send the operator's log contents there.
+* set "logStashImage" to override the default version of logstash to be used (logstash:6.2)
+* set "elasticSearchHost" and "elasticSearchPort" to override the default location where Elasticsearch is running (elasticsearch2.default.svc.cluster.local:9201). This will configure Logstash to send the operator's log contents there.
 
-More detailed information about properties in values.yaml can be found in [Operator Helm Chart values.yaml details](#operator-helm-chart-values.yaml-details)
+More detailed information about configuration values can be found in [Operator Helm configuration values](#operator-helm-configuration-values)
 
-When ELK integration is enabled, the operator's Helm Chart will create a Kubernetes deployment for the operator that will define:
+## Install the Helm chart
 
-* a Logstash container
-* a persistent volume for the logs
-* a volume mount with mount path "/logs"
-* environment properties for referencing the ElasticSearch resource/pod
+The "helm install" command is used to install the operator Helm chart. As part of this, the user specifies a "release" name for their operator.
 
-## Install the Helm Chart
-
-The "helm install" command is used to install the operator Helm Chart, passing in the user's values.yaml file. As part of this, the user specifies a "release" name for their operator.
+The user can override default configuration values in the operator Helm chart by doing one of the following:
+- create a custom YAML file containing the values to be overridden, and specify the --value option on the Helm command line
+- override individual values directly on the helm command line, using the --set option 
 
 The user supplies the "–namespace" argument from the "helm install" command line to specify the namespace in which the operator should be installed.  If not specified, it defaults to "default".  If the namespace does not already exist, Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is deleted.  If the namespace already exists, Helm will re-use it.  These are standard Helm behaviors.
 
-Similarly, the user configures the "serviceAccount" parameter in values.yaml to specify which service account in the operator's namespace that the operator should use.  If not specified, it defaults to "default" (i.e. the namespace's default service account).  If the user wants to use a different service account, then the user must create the operator's namespace and the service account before installing the operator helm chart.
+Similarly, the user may override the default "serviceAccount" configuration value to specify which service account in the operator's namespace the operator should use.  If not specified, it defaults to "default" (i.e. the namespace's default service account).  If the user wants to use a different service account, then the user must create the operator's namespace and the service account before installing the operator Helm chart.
 
 For example:
-
 ```
-helm install kubernetes/charts/weblogic-operator --name my-operator --namespace my-operator-namespace --values values.yaml --wait
+helm install kubernetes/charts/weblogic-operator \
+  --name weblogic-operator --namespace weblogic-operator-namespace \
+  --values custom-values.yaml --wait
+```
+or:
+```
+helm install kubernetes/charts/weblogic-operator \
+  --name weblogic-operator --namespace weblogic-operator-namespace \
+  --set "javaLoggingLevel:FINE" --wait
 ```
 
-This creates a Helm release, named "my-operator" in the "my-operator-namespace" namespace, and creates all of the Kubernetes resources needed to deploy and run the operator, including:
+This creates a Helm release, named "weblogic-operator" in the "weblogic-operator-namespace" namespace, and configures a deployment and supporting resources for the operator.
 
-* services for the internal (and external, if configured) REST interfaces
-* cluster roles and bindings for the operator
-* secret containing the private keys for the internal (and external, if configured) REST interfaces
-* ConfigMap containing:
-  * certificates for the internal (and external, if configured) REST interfaces
-  * operator service account information
-  * list of WebLogic domain namespaces which the operator manages
-
-If "my-operator-namespace" exists, it will be used.  If it does not exist, then Helm will create it.
-
-___NOTE: The values.yaml file supplied to the "helm install" command is a user file that contains values that are added to or override the default values defined in the chart.___
+If "weblogic-operator-namespace" exists, it will be used.  If it does not exist, then Helm will create it.
 
 You can verify the operator installation by examining the output from the "helm install" command.
 
 ## Removing the Operator
 
-The "helm delete" command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the "helm delete" command is the same release name used with the "helm install" command (see [Install the Helm Chart](#install-the-helm-chart)).  For example:
+The "helm delete" command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the "helm delete" command is the same release name used with the "helm install" command (see [Install the Helm chart](#install-the-helm-chart)).  For example:
 ```
-helm delete --purge my-operator
+helm delete --purge weblogic-operator
 ```
 
-Note: if the operator's namespace did not exist before the Helm Chart was installed, then Helm will create it, however, "helm delete" will not remove it.
+Note: if the operator's namespace did not exist before the Helm chart was installed, then Helm will create it, however, "helm delete" will not remove it.
 
 ## Useful Helm operations
 
@@ -110,12 +114,12 @@ helm inspect values kubernetes/charts/weblogic-operator
 
 Show the custom values you configured for the operator Helm release:
 ```
-helm get values sample-weblogic-operator1
+helm get values weblogic-operator
 ```
 
 Show all of the values your operator Helm release is using:
 ```
-helm get values --all sample-weblogic-operator1
+helm get values --all weblogic-operator
 ```
 
 List the Helm releases that have been installed in this Kubernetes cluster:
@@ -125,17 +129,17 @@ helm list
 
 Get the status of the operator Helm release.
 ```
-helm status sample-weblogic-operator1
+helm status weblogic-operator
 ```
 
 Show the history of the operator Helm release:
 ```
-helm history sample-weblogic-operator1
+helm history weblogic-operator
 ```
 
-Roll back to a previous operator Helm release, in this case release 1:
+Roll back to a previous version of this operator Helm release, in this case the first version.
 ```
-helm rollback sample-weblogic-operator1 1
+helm rollback weblogic-operator 1
 ```
 
 Change one or more values in the operator Helm release. In this example, the --reuse-values flag indicates that previous overrides of other values should be retained:
@@ -145,13 +149,13 @@ helm upgrade \
   --set "domainNamespaces={sample-domains-ns1}" \
   --set "javaLoggingLevel:FINE" \
   --wait \
-  sample-weblogic-operator1 \
+  weblogic-operator \
   kubernetes/charts/weblogic-operator
 ```
 
-## Operator Helm Chart values.yaml details
+## Operator Helm configuration values
 
-This section describes the details of the operator Helm Chart's values.yaml file.
+This section describes the details of the operator Helm chart's available configuration values.
 
 ### Overall Operator information
 
@@ -181,7 +185,7 @@ javaLoggingLevel:  "FINE"
 
 #### image 
 
-Specifies the docker image containing the operator code.
+Specifies the Docker image containing the operator code.
 
 Defaults to "weblogic-kubernetes-operator:2.0".
 
@@ -191,7 +195,7 @@ image:  "weblogic-kubernetes-operator:LATEST"
 ```
 
 #### imagePullPolicy
-Specifies the image pull policy for the operator docker image.
+Specifies the image pull policy for the operator Docker image.
 
 Defaults to "IfNotPresent"
 
@@ -217,7 +221,7 @@ Specifies a list of WebLogic Domain namespaces which the operator manages. The n
 
 This property is required.
 
-Example 1: In the configuration below, the operator will monitor the "default" Kubernetes namespace.
+Example 1: In the configuration below, the operator will monitor the "default" Kubernetes namespace:
 ```
 domainNamespaces:
 - "default"
@@ -229,6 +233,8 @@ domainNamespaces: [ "namespace1", "namespace2" ]
 ```
 
 NOTE: one must include the "default" namespace in the list if you want the operator to monitor both the "default" namespace and some other namespaces.
+
+NOTE: these examples show two valid YAML syntax options for arrays.
 
 ### ELK integration
 
@@ -245,7 +251,7 @@ elkIntegrationEnabled:  true
 
 #### logStashImage 
 
-Specifies the docker image containing Logstash.  This parameter is ignored if "elkIntegrationEnabled" is false.
+Specifies the Docker image containing Logstash.  This parameter is ignored if "elkIntegrationEnabled" is false.
 
 Defaults to "logstash:5"
 
@@ -290,7 +296,7 @@ externalRestEnabled: true
 ```
 
 #### externalRestHttpsPort
-Specifies node port that should be allocated for the external operator REST https interface.
+Specifies node port that should be allocated for the external operator REST HTTPS interface.
 
 Only used when externalRestEnabled is true, otherwise ignored.
 
@@ -303,7 +309,7 @@ externalRestHttpsPort: 32009
 
 #### externalOperatorCert
 
-Specifies the user supplied certificate to use for the external operator REST https interface. The value must be a string containing a Base64 encoded PEM certificate. This parameter is required if 'externalRestEnabled' is true, otherwise, it is ignored.
+Specifies the user supplied certificate to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM certificate. This parameter is required if 'externalRestEnabled' is true, otherwise, it is ignored.
 
 There is no default value.
 
@@ -322,7 +328,7 @@ externalOperatorCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S 
 
 #### externalOperatorKey
 
-Specifies user supplied private key to use for the external operator REST https interface. The value must be a string containing a Base64 encoded PEM key. This parameter is required if 'externalRestEnabled' is true, otherwise, it is ignored.
+Specifies user supplied private key to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM key. This parameter is required if 'externalRestEnabled' is true, otherwise, it is ignored.
 
 There is no default value.
 
@@ -384,7 +390,7 @@ externalDebugHttpPort:  30777
 
 A new 'FAILED' helm release is created
 ```
-helm install --no-hooks --name op2 --namespace myuser-op-ns --values op_values.yaml kubernetes/charts/weblogic-operator
+helm install --no-hooks --name op2 --namespace myuser-op-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
 Error: release op2 failed: secrets "weblogic-operator-secrets" already exists
 ```
 
@@ -405,20 +411,20 @@ See https://github.com/helm/helm/issues/2349
 
 A new 'FAILED' helm release is created.
 ```
-helm install --no-hooks --name op2 --namespace myuser-op2-ns --values op_values.yaml kubernetes/charts/weblogic-operator
+helm install --no-hooks --name op2 --namespace myuser-op2-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
 Error: release op2 failed: rolebindings.rbac.authorization.k8s.io "weblogic-operator-rolebinding-namespace" already exists
 ```
 
 To recover:
 - helm delete --purge the failed release
   - note: this deletes the role binding in the domain namespace that was created by the first operator release to give the operator access to the domain namespace
-- helm upgrade <old op release> kubernetes/charts/weblogic-operator --values <old op values.yaml>
+- helm upgrade <old op release> kubernetes/charts/weblogic-operator --values <old op custom-values.yaml>
   - this recreates the role binding
   - there might be intermittent failures in the operator for the period of time when the role binding was deleted
 
 ### Upgrade an operator and tell it to manage a domain namespace that another operator is already managing
 
-The helm upgrade succeeds, and silently adopts the resources the first operator's Helm Chart created in the domain namespace (i.e. rolebinding), and, if you also told it to stop managing another domain namespace, it abandons the role binding it created in that namespace
+The helm upgrade succeeds, and silently adopts the resources the first operator's Helm chart created in the domain namespace (i.e. rolebinding), and, if you also told it to stop managing another domain namespace, it abandons the role binding it created in that namespace
 
 i.e. if you delete this release, then the first operator will get messed up because the role binding it needs is gone
 
