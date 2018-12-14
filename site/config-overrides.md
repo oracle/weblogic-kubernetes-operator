@@ -156,7 +156,7 @@ Here are some sample template override files.  Use 'combine-mode="add"' to speci
 
 **IMPORTANT: Your overrides may not take effect if you use 'add' for an mbean attribute that already has a value specified in your original configuration, or use 'replace' for an attribute that does not already exist.**
 
-### Overriding config.xml
+### Overriding 'config.xml'
 
 The following `config.xml` override file demonstrates setting the 'max-message-size' field on a WebLogic Server named 'admin-server', and replacing the `public-address` and `public-port` fields with values obtained from a secret named `test-host` with keys `hostname` and `port`.
 
@@ -273,17 +273,30 @@ TBD expand this sample to include username and password.
 
 # Internal Design Flow
 
-1. When a Domain is first deployed, or is restarted, the operator runtime creates an introspector Kubernetes job named `DOMAIN_UID-introspect-domain-job`
-1. The introspector job's pod mounts the Kubernetes config map and secrets specified via the operator Domain resource `configOverride`, `webLogicCredentialsSecret`, and `configOverrideSecrets` fields.
-1. The introspector job's pod reads the mounted situational config templates from the config map and expands them to create the actual situational config files for the domain:
-  1. It expands some fixed replaceable values (e.g. ${env:DOMAIN_UID}).
-  1. It expands referenced secrets by reading value from the corresponding mounted secret file (e.g. ${secret:mysecret.mykey}).
-  1. It optionally encrypts secrets using offline WLST to encrypt the value - useful for passwords (e.g. ${secret:mysecret.mykey:encrypt}).
-  1. It returns expanded situational config files to the operator.
-  1. It reports any errors when attempting expansion to the operator.
-1. The operator runtime reads the expanded situational config files and/or errors from the introspector, and, if the introspector reports no errors, puts situational config files in a config map named `DOMAIN_UID-weblogic-domain-introspect-cm`, and mounts this config map into the WebLogic Server pods.
-1. The startServer.sh script in the WebLogic Server pods copies the expanded situational config files in a location that the WebLogic runtime can find them (specifically the `optconfig` directory in its domain home directory for config.xml overrides, and `optconfig/jdbc`, `optconfig/jms`, or `optconfig/wldf` for module override files).  The script also deletes any situational config files in this directory that do not have corresponding template files in the config map.
-1. WebLogic Servers read their overrides from their domain home's 'optconfig' directory.
+* When a Domain is first deployed, or is restarted, the operator runtime creates an introspector Kubernetes job named `DOMAIN_UID-introspect-domain-job`.
+* The introspector job's pod:
+  * Mounts the Kubernetes config map and secrets specified via the operator Domain resource `configOverride`, `webLogicCredentialsSecret`, and `configOverrideSecrets` fields.
+  * Reads the mounted situational config templates from the config map and expands them to create the actual situational config files for the domain:
+    * It expands some fixed replaceable values (e.g. ${env:DOMAIN_UID}).
+    * It expands referenced secrets by reading value from the corresponding mounted secret file (e.g. ${secret:mysecret.mykey}).
+    * It optionally encrypts secrets using offline WLST to encrypt the value - useful for passwords (e.g. ${secret:mysecret.mykey:encrypt}).
+    * It returns expanded situational config files to the operator.
+    * It reports any errors when attempting expansion to the operator.
+* The operator runtime:
+  * Reads the expanded situational config files and/or errors from the introspector.
+  * And if the introspector reported no errors, it:
+    * Puts situational config files in a config map named `DOMAIN_UID-weblogic-domain-introspect-cm`.
+    * Mounts this config map into the WebLogic Server pods.
+    * Starts the WebLogic Server pods.
+  * Otherwise, if the introspector reported errors, it:
+    * Logs warning, error, or severe messages.
+    * Will not start WebLogic Server pods.
+* The startServer.sh script in the WebLogic Server pods
+  * Copies the expanded situational config files to a special location where the WebLogic runtime can find them:
+    * `config.xml` overrides are copied to the `optconfig` directory in its domain home.
+    * Module overrides are copied to the `optconfig/jdbc`, `optconfig/jms`, or `optconfig/wldf` directory.
+  * Deletes any situational config files in the `optconfig` directory that do not have corresponding template files in the config map.
+* WebLogic Servers read their overrides from their domain home's 'optconfig' directory.
 
 # Advanced Situational Config
 
