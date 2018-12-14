@@ -285,10 +285,10 @@ public abstract class PodStepContext implements StepContextConstants {
 
   private static boolean isCurrentPodSpecValid(
       V1PodSpec build, V1PodSpec current, List<String> ignoring) {
-    return Objects.equals(current.getSecurityContext(), build.getSecurityContext())
-        && Objects.equals(current.getNodeSelector(), build.getNodeSelector())
-        && equalSets(volumesWithout(current.getVolumes(), ignoring), build.getVolumes())
+    return equalSets(volumesWithout(current.getVolumes(), ignoring), build.getVolumes())
         && equalSets(current.getImagePullSecrets(), build.getImagePullSecrets())
+        //        && Objects.equals(current.getSecurityContext(), build.getSecurityContext())
+        && Objects.equals(current.getNodeSelector(), build.getNodeSelector())
         && areCompatible(build.getContainers(), current.getContainers(), ignoring);
   }
 
@@ -320,8 +320,8 @@ public abstract class PodStepContext implements StepContextConstants {
       V1Container build, V1Container current, List<String> ignoring) {
     return current.getImage().equals(build.getImage())
         && current.getImagePullPolicy().equals(build.getImagePullPolicy())
-        && Objects.equals(current.getSecurityContext(), build.getSecurityContext())
-        && Objects.equals(current.getResources(), build.getResources())
+        //        && Objects.equals(current.getSecurityContext(), build.getSecurityContext())
+        //        && Objects.equals(current.getResources(), build.getResources())
         && equalSettings(current.getLivenessProbe(), build.getLivenessProbe())
         && equalSettings(current.getReadinessProbe(), build.getReadinessProbe())
         && equalSets(mountsWithout(current.getVolumeMounts(), ignoring), build.getVolumeMounts())
