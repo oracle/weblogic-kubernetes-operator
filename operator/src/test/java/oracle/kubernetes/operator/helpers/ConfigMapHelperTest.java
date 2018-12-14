@@ -368,13 +368,11 @@ public class ConfigMapHelperTest {
           + "        listenPort: 7003\n"
           + "        listenAddress: \"domain1-managed-server1\"\n"
           + "        sslListenPort: 7103\n"
-          + "        sslPortEnabled: true\n"
           + "        machineName: \"machine-managed-server1\"\n"
           + "      - name: \"managed-server2\"\n"
           + "        listenPort: 7004\n"
           + "        listenAddress: \"domain1-managed-server2\"\n"
           + "        sslListenPort: 7104\n"
-          + "        sslPortEnabled: false\n"
           + "        networkAccessPoints:\n"
           + "          - name: \"nap2\"\n"
           + "            protocol: \"t3\"\n"
@@ -384,17 +382,16 @@ public class ConfigMapHelperTest {
           + "    - name: \"admin-server\"\n"
           + "      listenPort: 7001\n"
           + "      listenAddress: \"domain1-admin-server\"\n"
+          + "      adminPort: 7099\n"
           + "    - name: \"server1\"\n"
           + "      listenPort: 9003\n"
           + "      listenAddress: \"domain1-managed-server1\"\n"
           + "      sslListenPort: 8003\n"
-          + "      sslPortEnabled: true\n"
           + "      machineName: \"machine-managed-server1\"\n"
           + "    - name: \"server2\"\n"
           + "      listenPort: 9004\n"
           + "      listenAddress: \"domain1-managed-server2\"\n"
           + "      sslListenPort: 8004\n"
-          + "      sslPortEnabled: false\n"
           + "      networkAccessPoints:\n"
           + "        - name: \"nap2\"\n"
           + "          protocol: \"t3\"\n"
@@ -444,13 +441,11 @@ public class ConfigMapHelperTest {
           + "        listenPort: 7003\n"
           + "        listenAddress: \"domain1-managed-server1\"\n"
           + "        sslListenPort: 7103\n"
-          + "        sslPortEnabled: true\n"
           + "        machineName: \"machine-managed-server1\"\n"
           + "      - name: \"ms2\"\n"
           + "        listenPort: 7004\n"
           + "        listenAddress: \"domain1-managed-server2\"\n"
           + "        sslListenPort: 7104\n"
-          + "        sslPortEnabled: false\n"
           + "        networkAccessPoints:\n"
           + "          - name: \"nap2\"\n"
           + "            protocol: \"t3\"\n"
@@ -465,6 +460,11 @@ public class ConfigMapHelperTest {
           + "    - name: \"admin-server\"\n"
           + "      listenPort: 7001\n"
           + "      listenAddress: \"domain1-admin-server\"\n";
+
+  private static final String INVALID_TOPOLOGY =
+      "domainValid: false\n"
+          + "validationErrors:\n"
+          + "  - \"The dynamic cluster \\\"mycluster\\\"'s dynamic servers use calculated listen ports.\"";
 
   @Test
   public void parseDomainTopologyYaml() {
@@ -495,12 +495,15 @@ public class ConfigMapHelperTest {
     assertTrue(serverConfigMap.containsKey("admin-server"));
     assertTrue(serverConfigMap.containsKey("server1"));
     assertTrue(serverConfigMap.containsKey("server2"));
+    WlsServerConfig adminServerConfig = serverConfigMap.get("admin-server");
+    assertEquals(7099, adminServerConfig.getAdminPort().intValue());
+    assertTrue(adminServerConfig.isAdminPortEnabled());
 
     WlsServerConfig server2Config = serverConfigMap.get("server2");
     assertEquals("domain1-managed-server2", server2Config.getListenAddress());
     assertEquals(9004, server2Config.getListenPort().intValue());
     assertEquals(8004, server2Config.getSslListenPort().intValue());
-    assertFalse(server2Config.isSslPortEnabled());
+    assertTrue(server2Config.isSslPortEnabled());
     List<NetworkAccessPoint> server2ConfigNAPs = server2Config.getNetworkAccessPoints();
     assertEquals(1, server2ConfigNAPs.size());
 
@@ -581,5 +584,17 @@ public class ConfigMapHelperTest {
     assertEquals(2, wlsClusterConfig.getClusterSize());
     assertEquals(3, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(5, wlsClusterConfig.getServerConfigs().size());
+  }
+
+  @Test
+  public void parseInvalidTopologyYamlWithValidationErrors() {
+    ConfigMapHelper.DomainTopology domainTopology =
+        ConfigMapHelper.parseDomainTopologyYaml(INVALID_TOPOLOGY);
+
+    assertNotNull(domainTopology.getValidationErrors());
+    assertFalse(domainTopology.getDomainValid());
+    assertEquals(
+        "The dynamic cluster \"mycluster\"'s dynamic servers use calculated listen ports.",
+        domainTopology.getValidationErrors().get(0));
   }
 }
