@@ -37,6 +37,9 @@ spec:
         imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
         name: weblogic-server
         volumeMounts:
+        - name: my-secret-volume
+          mountPath: /weblogic-operator/config-overrides-secrets/my-secret
+          readOnly: true
         - name: weblogic-credentials-volume
           mountPath: /weblogic-operator/secrets
           readOnly: true
@@ -52,6 +55,10 @@ spec:
         ${PVCOMMENT}- mountPath: /shared
         ${PVCOMMENT}  name: weblogic-domain-storage-volume
       volumes:
+      - name: my-secret-volume
+        secret:
+          defaultMode: 420
+          secretName:  my-secret
       - name: weblogic-credentials-volume
         secret:
           defaultMode: 420
