@@ -19,4 +19,5 @@
 
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,Url,jdbc:oracle:thin:@myoriginalhostname:1521:myoriginalsid,jdbc:oracle:thin:@mynewhost:1521:mynewsid
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,PasswordEncrypted,*,!
+/JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS/Properties/testDS/Properties/user,Value,scott,supersecret
 
