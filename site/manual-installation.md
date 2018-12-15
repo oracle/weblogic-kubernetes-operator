@@ -3,7 +3,7 @@
 # Manual Installation
 
 The normal method of installation is the use the provided Helm charts, 
-please [see here](#) for detailed instructions. 
+please [see here](helm-charts.md) for detailed instructions. 
 
 If you are unable to or prefer not to use Helm, or you want to customize the process, you 
 should refer to the manual instructions below. 
