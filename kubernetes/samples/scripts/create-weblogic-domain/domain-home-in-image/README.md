@@ -37,12 +37,14 @@ The usage of the create script is as follows:
 
 ```
 $ sh create-domain.sh -h
-usage: create-domain.sh -o dir -i file -u username -p password [-e] [-h]
+usage: create-domain.sh -o dir -i file -u username -p password [-s] [-e] [-h]
   -i Parameter inputs file, must be specified.
   -o Ouput directory for the generated properties and YAML files, must be specified.
   -u Username used in building the Docker image for WebLogic domain in image.
   -p Password used in building the Docker image for WebLogic domain in image.
   -e Also create the resources in the generated YAML files, optional.
+  -k Keep what has been previously cloned from https://github.com/oracle/docker-images.git, optional. 
+     If not specified, this script will always remove existing project and clone again.
   -h Help
 
 ```
