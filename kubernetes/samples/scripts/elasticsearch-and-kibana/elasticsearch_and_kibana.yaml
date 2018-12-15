@@ -1,19 +1,19 @@
 # Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-# When the customer installs the weblogic operator helm chart, the customer can set
+# When a user installs the WebLogic operator Helm chart, the user can set
 # elkIntegrationEnabled to true in their values.yaml to tell the operator to send the
-# contents of the operator's log to elasticsearch.
+# contents of the operator's log to Elasticsearch.
 #
-# Typically, a customer would have already configured elasticsearch and kibana in the
+# Typically, a user would have already configured Elasticsearch and Kibana in the
 # Kubernetes cluster, and also would specify elasticSearchHost and elasticSearchPort
-# in their values.yaml file to point to where elasticsearch is already running.
+# in their values.yaml file to point to where Elasticsearch is already running.
 #
-# This sample configures the elasticsearch and kibana deployments and services.
+# This sample configures the Elasticsearch and Kibana deployments and services.
 # It's useful for trying out the operator in a Kubernetes cluster that doesn't already
 # have them configured.
 #
-# It runs elasticstack on the same host and port that the operator's helm chart defaults
+# It runs Elasticstack on the same host and port that the operator's Helm chart defaults
 # to, therefore, the customer only needs to set elkIntegrationEnabled to true in their
 # values.yaml file.
 #
