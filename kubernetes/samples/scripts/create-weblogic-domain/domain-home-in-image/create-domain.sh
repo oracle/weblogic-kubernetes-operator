@@ -20,12 +20,13 @@ source ${scriptDir}/../../common/utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-e] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-s] [-e] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Ouput directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the Docker image for WebLogic domain in image."
   echo "  -p Password used in building the Docker image for WebLogic domain in image."
   echo "  -e Also create the resources in the generated YAML files, optional."
+  echo "  -s Save what has been previously cloned https://github.com/oracle/docker-images.git, optional. The default is false, which means this script will always remove existing project and clone again."
   echo "  -h Help"
   exit $1
 }
@@ -34,7 +35,8 @@ function usage {
 # Parse the command line options
 #
 executeIt=false
-while getopts "evhi:o:u:p:" opt; do
+cloneIt=true
+while getopts "evhsi:o:u:p:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -45,6 +47,8 @@ while getopts "evhi:o:u:p:" opt; do
     u) username="${OPTARG}"
     ;;
     p) password="${OPTARG}"
+    ;;
+    s) cloneIt=false;
     ;;
     h) usage 0
     ;;
@@ -138,7 +142,9 @@ function initialize {
 
   initOutputDir
 
-  getDockerSample
+  if [ "${cloneIt}" = true ]; then
+    getDockerSample
+  fi
 }
 
 #
@@ -232,11 +238,11 @@ function createFiles {
 # Function to build docker image and create WebLogic domain home
 #
 function createDomainHome {
-  cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_build
-
   if [ -z $imagePath ]; then
     imagePath="12213-domain-home-in-image-wdt"
   fi
+
+  cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/${imagePath}/properties/docker_build
 
   cd docker-images/OracleWebLogic/samples/${imagePath}
 
@@ -244,19 +250,23 @@ function createDomainHome {
   usernameFile="properties/docker_build/domain_security.properties"
   passwordFile="properties/docker_build/domain_security.properties"
 
+  imageName="12213-domain-home-in-image:latest"
   # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
   if [ ! -f $usernameFile ]; then
     usernameFile="properties/docker-build/adminuser.properties"
     passwordFile="properties/docker-build/adminpass.properties"
+    sed -i -e "s|weblogic|${username}|g" $usernameFile
+    sed -i -e "s|welcome1|${password}|g" $passwordFile
+  else
+    sed -i -e "s|myuser|${username}|g" $usernameFile
+    sed -i -e "s|mypassword1|${password}|g" $passwordFile
   fi
     
-  sed -i -e "s|myuser|${username}|g" $usernameFile
-  sed -i -e "s|mypassword1|${password}|g" $passwordFile
-
   # use the existence of build-archive.sh file to determine if we need to download WDT
   if [ -f "build-archive.sh" ]; then
     sh ./build-archive.sh
     wget https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.14/weblogic-deploy.zip
+    imageName="12213-domain-wdt:latest"
   fi
 
   if [ ! -z $baseImage ]; then
@@ -264,6 +274,10 @@ function createDomainHome {
   fi
 
   sh ./build.sh
+
+  cd -
+  # now we know which image to use, update the domain yaml file
+  sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${dcrOutput}
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."
