@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
@@ -28,6 +29,7 @@ public class DomainPresenceInfo {
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
+  private final AtomicInteger retryCount = new AtomicInteger(0);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
@@ -75,6 +77,18 @@ public class DomainPresenceInfo {
     isPopulated.set(populated);
   }
 
+  public void resetFailureCount() {
+    retryCount.set(0);
+  }
+
+  public int incrementAndGetFailureCount() {
+    return retryCount.incrementAndGet();
+  }
+
+  public int getRetryCount() {
+    return retryCount.get();
+  }
+
   /**
    * Last completion time
    *
@@ -87,6 +101,7 @@ public class DomainPresenceInfo {
   /** Sets the last completion time to now */
   public void complete() {
     this.lastCompletionTime = new DateTime();
+    resetFailureCount();
   }
 
   /**
