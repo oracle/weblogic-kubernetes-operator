@@ -591,7 +591,7 @@ public class ConfigMapHelperTest {
     ConfigMapHelper.DomainTopology domainTopology =
         ConfigMapHelper.parseDomainTopologyYaml(INVALID_TOPOLOGY);
 
-    assertNotNull(domainTopology.getValidationErrors());
+    assertFalse(domainTopology.getValidationErrors().isEmpty());
     assertFalse(domainTopology.getDomainValid());
     assertEquals(
         "The dynamic cluster \"mycluster\"'s dynamic servers use calculated listen ports.",
