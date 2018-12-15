@@ -43,8 +43,8 @@ usage: create-domain.sh -o dir -i file -u username -p password [-s] [-e] [-h]
   -u Username used in building the Docker image for WebLogic domain in image.
   -p Password used in building the Docker image for WebLogic domain in image.
   -e Also create the resources in the generated YAML files, optional.
-  -s Save what has been previously cloned https://github.com/oracle/docker-images.git, optional. 
-     The default is false, which means this script will always remove existing project and clone again.
+  -k Keep what has been previously cloned from https://github.com/oracle/docker-images.git, optional. 
+     If not specified, this script will always remove existing project and clone again.
   -h Help
 
 ```

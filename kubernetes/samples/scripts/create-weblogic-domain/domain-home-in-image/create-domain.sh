@@ -20,14 +20,14 @@ source ${scriptDir}/../../common/utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-s] [-e] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Ouput directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the Docker image for WebLogic domain in image."
   echo "  -p Password used in building the Docker image for WebLogic domain in image."
   echo "  -e Also create the resources in the generated YAML files, optional."
-  echo "  -s Save what has been previously cloned https://github.com/oracle/docker-images.git, optional. "
-  echo "     The default is false, which means this script will always remove existing project and clone again."
+  echo "  -k Keep what has been previously from cloned https://github.com/oracle/docker-images.git, optional. "
+  echo "     If not specified, this script will always remove existing project directory and clone again."
   echo "  -h Help"
   exit $1
 }
@@ -37,7 +37,7 @@ function usage {
 #
 executeIt=false
 cloneIt=true
-while getopts "evhsi:o:u:p:" opt; do
+while getopts "evhki:o:u:p:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -49,7 +49,7 @@ while getopts "evhsi:o:u:p:" opt; do
     ;;
     p) password="${OPTARG}"
     ;;
-    s) cloneIt=false;
+    k) cloneIt=false;
     ;;
     h) usage 0
     ;;
@@ -152,7 +152,7 @@ function initialize {
 # Function to get the dependency docker sample
 #
 function getDockerSample {
-  rm -rf {scriptDir}/docker-images
+  rm -rf ${scriptDir}/docker-images
   git clone https://github.com/oracle/docker-images.git
 }
 
