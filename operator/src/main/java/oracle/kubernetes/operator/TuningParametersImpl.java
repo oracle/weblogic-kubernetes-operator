@@ -52,6 +52,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     MainTuning main =
         new MainTuning(
             (int) readTuningParameter("domainPresenceFailureRetrySeconds", 10),
+            (int) readTuningParameter("domainPresenceFailureRetryMaxCount", 5),
             (int) readTuningParameter("domainPresenceRecheckIntervalSeconds", 120),
             (int) readTuningParameter("targetNamespaceRecheckIntervalSeconds", 3),
             (int) readTuningParameter("statusUpdateTimeoutSeconds", 10),
