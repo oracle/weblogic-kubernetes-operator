@@ -843,7 +843,23 @@ public class DomainProcessorImpl implements DomainProcessor {
                       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
                       if (existing != null) {
                         existing.setPopulated(false);
-                        makeRightDomainPresence(existing, true, isDeleting, false);
+                        // proceed only if we have not already retried max number of times
+                        int retryCount = existing.incrementAndGetFailureCount();
+                        LOGGER.fine(
+                            "Failure count for DomainPresenceInfo: "
+                                + existing
+                                + " is now: "
+                                + retryCount);
+                        if (retryCount <= DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
+                          makeRightDomainPresence(existing, true, isDeleting, false);
+                        } else {
+                          LOGGER.severe(
+                              MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
+                              domainUID,
+                              ns,
+                              DomainPresence.getDomainPresenceFailureRetryMaxCount(),
+                              throwable);
+                        }
                       }
                     },
                     DomainPresence.getDomainPresenceFailureRetrySeconds(),
