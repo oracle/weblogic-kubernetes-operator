@@ -26,7 +26,8 @@ function usage {
   echo "  -u Username used in building the Docker image for WebLogic domain in image."
   echo "  -p Password used in building the Docker image for WebLogic domain in image."
   echo "  -e Also create the resources in the generated YAML files, optional."
-  echo "  -s Save what has been previously cloned https://github.com/oracle/docker-images.git, optional. The default is false, which means this script will always remove existing project and clone again."
+  echo "  -s Save what has been previously cloned https://github.com/oracle/docker-images.git, optional. "
+  echo "     The default is false, which means this script will always remove existing project and clone again."
   echo "  -h Help"
   exit $1
 }
@@ -244,13 +245,21 @@ function createDomainHome {
 
   cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/${imagePath}/properties/docker_build
 
+  imageName="12213-domain-home-in-image:latest"
+  # use the existence of build-archive.sh file to determine if we need to download WDT
+  if [ -f "./docker-images/OracleWebLogic/samples/${imagePath}/build-archive.sh" ]; then
+    imageName="12213-domain-wdt:latest"
+  fi
+
+  # now we know which image to use, update the domain yaml file
+  sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${dcrOutput}
+
   cd docker-images/OracleWebLogic/samples/${imagePath}
 
   # 12213-domain-home-in-image use one properties file for the credentials 
   usernameFile="properties/docker_build/domain_security.properties"
   passwordFile="properties/docker_build/domain_security.properties"
 
-  imageName="12213-domain-home-in-image:latest"
   # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
   if [ ! -f $usernameFile ]; then
     usernameFile="properties/docker-build/adminuser.properties"
@@ -266,7 +275,6 @@ function createDomainHome {
   if [ -f "build-archive.sh" ]; then
     sh ./build-archive.sh
     wget https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.14/weblogic-deploy.zip
-    imageName="12213-domain-wdt:latest"
   fi
 
   if [ ! -z $baseImage ]; then
@@ -274,10 +282,6 @@ function createDomainHome {
   fi
 
   sh ./build.sh
-
-  cd -
-  # now we know which image to use, update the domain yaml file
-  sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${dcrOutput}
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."
