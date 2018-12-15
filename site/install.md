@@ -1,7 +1,4 @@
-**TODO** write me -- richard is working on helm install docs too
-
-
-## Create and manage the operator
+# Create and manage the operator
 
 An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances 
 of complex applications. The Oracle WebLogic Server Kubernetes Operator follows the standard Kubernetes operator pattern, and 
@@ -16,7 +13,7 @@ If, for some reason, you do not want to use Helm, it is still possible to perfor
 installation of the operator.  This is *not the recommended approach*, but is fully [documented here](manual-installation.md)
 if you wish to use this approach.
 
-### Operator Docker image
+## Operator Docker image
 
 You can find the operator image in 
 [Docker Hub](https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/).
