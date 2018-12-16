@@ -80,13 +80,12 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator
 3.  Use `helm` to install and start the operator, from the directory you just cloned:	 
 
 ```
-$ helm install \
+$ helm install kubernetes/charts/weblogic-operator \
   --name sample-weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "domainNamespaces={}" \
-  -- wait \
-  kubernetes/charts/weblogic-operator
+  --wait 
 ```
 f.  Verify that the operator is up and running by viewing the operator pod's log:
 
@@ -127,19 +126,31 @@ $ kubectl -n traefik get pod -w
 
 ## 5. Create a domain in the domain namespace.
 
-a.	Create a new image with a domain home by running the [`create-domain`](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file, including:
+a. Create a Kubernetes secret containing the `username` and `password` for the domain using the [`create-weblogic-credentials`](../kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 
-* Modifying the sample `inputs.yaml` file with the `domainUID` (`sample-domain1`), domain namespace (`sample-domains-ns1`) and the base image (`oracle/weblogic:12213-patch-wls-for-k8s`).
-
-* Creating Kubernetes secrets `username` and `password` using the [`create-weblogic-credentials`](../kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 ```
-$ cd ../kubernetes/samples/scripts/create-weblogic-domain-credentials
-$ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domain1-ns -d sample-domain1
+$ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
+$ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domain-ns1 -d sample-domain1
 ```
 
-b.	Confirm that the operator started the servers for the domain:
+b.	Create a new image with a domain home by running the [`create-domain`](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. 
+Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file, 
+including:
+ 
+* Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`), 
+domain namespace (`sample-domains-ns1`) and the base image (`oracle/weblogic:12213-patch-wls-for-k8s`).
+
+* Setting `weblogicCredentialsSecretName` to the `domainUID` (`sample-domain1`).
+
+For example, assuming you named your copy `my-inputs.yaml`:
 ```
-$ kubectl get pods -n sample-domain1-ns
+$ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
+$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e -v
+```
+
+c.	Confirm that the operator started the servers for the domain:
+```
+$ kubectl get pods -n sample-domain-ns1
 ```
 
 After a short time, you will see the Administration Server and Managed Servers running.
@@ -153,14 +164,14 @@ $ kubectl describe domain sample-domain1 -n sample-domain1-ns
 $ kubectl get pods -n sample-weblogic-operator1-ns
 ```
 
-c.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
+d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
 * Use `helm install`, specifying the `domainUID` (`sample-domain1`) and domain namespace (`sample-domains-ns1`) in the `values.yaml` file.
 ```
 $ cd kubernetes/samples/charts
 $ helm install ingress-per-domain --name domain1-ingress --values ingress-per-domain/values.yaml
 ```
 
-d.	Confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods:
+e.	Confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods:
 ```
 $ curl http://${HOSTNAME}:30305/sample-domain1/
 ```
