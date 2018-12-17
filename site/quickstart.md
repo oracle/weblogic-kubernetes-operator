@@ -7,6 +7,12 @@ refer to the [User guide](user-guide.md).
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
 
+You should clone this repository to your local machine so that you have access to the 
+various sample files mentioned throughout this guide:
+```
+$ git clone https://github.com/oracle/weblogic-kubernetes-operator
+```
+
 ## 1.	Get these images and put them into your local registry.
 
 a.  If you don't already have one, obtain a Docker Store account, log in to the Docker Store
@@ -73,10 +79,7 @@ subjects:
   namespace: kube-system
 EOF
 ```
-d.  Clone this repository:
-```
-$ git clone https://github.com/oracle/weblogic-kubernetes-operator
-```
+
 3.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
 ```
