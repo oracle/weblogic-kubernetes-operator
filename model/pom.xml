@@ -87,6 +87,7 @@
             </goals>
             <configuration>
               <rootClass>oracle.kubernetes.weblogic.domain.v2.Domain</rootClass>
+              <outputFile>Domain.json</outputFile>
             </configuration>
           </execution>
         </executions>
@@ -154,34 +155,34 @@
   <profiles>
 
     <profile>
-      <id>generate-model</id>
+      <id>publish-schema</id>
       <build>
         <plugins>
           <plugin>
-            <groupId>org.jsonschema2pojo</groupId>
-            <artifactId>jsonschema2pojo-maven-plugin</artifactId>
-            <version>0.5.1</version>
-            <configuration>
-              <sourceDirectory>${basedir}/src/main/resources/schema</sourceDirectory>
-              <targetPackage>oracle.kubernetes.operator.domain.model.v2</targetPackage>
-              <targetVersion>1.8</targetVersion>
-              <annotationStyle>gson</annotationStyle>
-              <includeJsr303Annotations>true</includeJsr303Annotations>
-              <generateBuilders>true</generateBuilders>
-              <useJodaDates>true</useJodaDates>
-              <useCommonsLang3>true</useCommonsLang3>
-              <removeOldOutput>true</removeOldOutput>
-            </configuration>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-resources-plugin</artifactId>
             <executions>
               <execution>
+                <id>copy-schema</id>
+                <phase>install</phase>
                 <goals>
-                  <goal>generate</goal>
+                  <goal>copy-resources</goal>
                 </goals>
+
+                <configuration>
+                  <outputDirectory>../docs/domain</outputDirectory>
+                  <resources>
+                    <resource>
+                      <directory>${build.outputDirectory}</directory>
+                      <includes>
+                        <include>**/Domain.json</include>
+                      </includes>
+                    </resource>
+                  </resources>
+                </configuration>
               </execution>
             </executions>
           </plugin>
-
-
         </plugins>
       </build>
     </profile>
