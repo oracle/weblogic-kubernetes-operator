@@ -313,8 +313,3 @@ The WebLogic situational configuration feature provides advanced options and cap
 # References
 
 See the "Managing Configuration Changes" chapter in _Oracle Fusion Middleware Understanding Domain Configuration for Oracle WebLogic Server_ version 19.1.0.0.0.
-
----
-# Release Notes
-
-TBD These are to be moved to a central release notes section.
