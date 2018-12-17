@@ -22,17 +22,16 @@ The fastest way to experience the operator is to follow the [Quick start guide](
 
 # About this documentation
 
-This documentation includes sections aimed at different audiences.  To help you find what you are looking for more easily, 
+This documentation includes sections aimed at different audiences.  To help you find what you are looking for more easily,
 please consult this table of contents:
 
 * The [Quick start guide](site/quickstart.md) explains how to just get the operator running quickly, using all the defaults, nothing special.
-* The [User guide](site/user-guide.md) contains detailed information for users of the operator, including how to install and configure it, 
+* The [User guide](site/user-guide.md) contains detailed information for users of the operator, including how to install and configure it,
   and how to use it to create and manage WebLogic domains.  
-* Our [samples](#samples) provide detailed example code and instructions that show you how to perform 
+* Our [samples](kubernetes/samples/README.md) provide detailed example code and instructions that show you how to perform
   various tasks related to the operator.
-* The [Developer guide](site/developer.md) provides details for people who want to understand how the operator is built, tested, and so on,
-  and those who wish to contribute to the operator code will find useful information here.  This section also includes
-  API documentation (JavaDoc) and Swagger/OpenAPI documentation for the REST APIs.
+* The [Developer guide](site/developer.md) provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to contribute to the operator code will find useful information here.  This section also includes
+  API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.
 * The [Contributing](#contributing-to-the-operator) section provides information about conribution requirements.
 
 
@@ -40,15 +39,15 @@ please consult this table of contents:
 
 The [User guide](site/user-guide.md) provides detailed information about all aspects of using the operator including:
 
-* installing and configuring the operator,
-* using the operator to create and manage WebLogic domains,
-* manually creating WebLogic domains to be managed by the operator, 
-* scaling WebLogic clusters, 
-* configuring Kubernetes load balancers, 
-* configuring Elasticsearch and Kibana to access the operator's log files,
-* shutting down domains, 
-* removing/deleting domains, 
-* and much more! 
+* Installing and configuring the operator.
+* Using the operator to create and manage WebLogic domains.
+* Manually creating WebLogic domains to be managed by the operator.
+* Scaling WebLogic clusters.
+* Configuring Kubernetes load balancers.
+* Configuring Elasticsearch and Kibana to access the operator's log files.
+* Shutting down domains.
+* Removing/deleting domains.
+* And much more!
 
 # Samples
 
@@ -57,8 +56,8 @@ Please refer to our [samples](kubernetes/samples/README.md) for information abou
 # Need more help? Have a suggestion? Come and say "Hello!"
 
 We have a **public Slack channel** where you can get in touch with us to ask questions about using the operator or give us feedback
-or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel, 
-please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include 
+or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
+please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include
 details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!"
 
 # Recent changes
