@@ -155,6 +155,8 @@ The operator will restart servers when any of the follow properties on the domai
 * volumes
 * volumeMounts
 
+TBD - do we need to include this table?  Also, Russ is still working on implementing this feature for 2.0.
+
 ### Rolling Restarts
 
 Clustered servers that need to be restarted are gradually restarted (i.e. 'rolling restarted') so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.
