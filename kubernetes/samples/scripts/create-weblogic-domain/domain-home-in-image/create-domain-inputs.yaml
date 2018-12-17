@@ -40,6 +40,11 @@ managedServerPort: 8001
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
 
+# WebLogic Docker image that the domain resource will use. 
+# If not specified, the value is the name of the generated Docker image, which in turn is the same as 
+# the value of the imagePath property. 
+image: 12213-domain-home-in-image-wdt 
+
 # Image pull policy
 # Legal values are "IfNotPresent", "Always", or "Never"
 imagePullPolicy: IfNotPresent

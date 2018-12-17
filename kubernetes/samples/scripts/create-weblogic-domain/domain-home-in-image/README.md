@@ -77,6 +77,7 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
+| `image` | WebLogic Docker image that the domain resource will use. If not specified, the value is the name of the generated Docker image, which in turn is the same as the value of the imagePath property. | `12213-domain-home-in-image-wdt` |
 | `imagePath` | The relative directory of the WebLogic domain home in image Docker image in `https://github.com/oracle/docker-images.git` project under the `docker-images/OracleWebLogic/samples` directory.  | `12213-domain-home-in-image-wdt` |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are "IfNotPresent", "Always", or "Never" | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified |  |
