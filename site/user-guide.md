@@ -34,6 +34,7 @@ presented in the correct order.
   * [Creating and managing WebLogic domains](domains.md#creating-and-managing-weblogic-domains)
   * [Managing lifecycle operations](domains.md#managing-lifecycle-operations)
   * [Using WLST](wlst.md)
+  * [Scaling clusters](scaling.md)
   * [Modifying domain configurations](domains.md#modifying-domain-configurations)
   * [Patching WebLogic and performing application updates](domains.md#patching-weblogic-and-performing-application-updates)
   * [Shutting down domains](domains.md#shutting-down-domains)
