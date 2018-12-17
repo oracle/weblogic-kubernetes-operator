@@ -79,6 +79,7 @@ function createFolder {
   fi
 }
 
+
 ###############################################################################
 #
 # Determine WebLogic server log and out files locations
@@ -86,14 +87,18 @@ function createFolder {
 # -Dweblogic.Stdout system property is used to tell node manager to send server .out 
 #  file to the configured location
 #
-server_out_in_pod_log=${SERVER_OUT_IN_POD_LOG:-true}
 
-# server .out file goes to the path specified in LOG_HOME
-serverOutFile="${LOG_HOME}/${SERVER_NAME}.out"
+if [ "${SERVER_NAME}" = "introspector" ]; then
+  # introspector pod doesn't start a WL server
+  serverOutOption=""
+else
+  # setup ".out" location for a WL server
+  serverLogHome="${LOG_HOME:-${DOMAIN_HOME}/servers/${SERVER_NAME}/logs}"
+  export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
+  serverOutOption="-Dweblogic.Stdout=${SERVER_OUT_FILE}"
+  createFolder "${serverLogHome}"
+fi
 
-export SERVER_OUT_FILE=${serverOutFile}
-
-createFolder ${LOG_HOME}
 
 ###############################################################################
 #
@@ -107,9 +112,6 @@ createFolder ${NODEMGR_HOME}
 NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}/${DOMAIN_UID}}}
 
 createFolder ${NODEMGR_LOG_HOME}
-
-#nodemgr_log_file=${NODEMGR_LOG_HOME}/nodemanager.log
-#nodemgr_out_file=${NODEMGR_LOG_HOME}/nodemanager.out
 
 nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
 nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
@@ -224,7 +226,7 @@ RestartInterval=3600
 NumberOfFilesLimited=true
 FileTimeSpan=24
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap -Dweblogic.Stdout=${serverOutFile} ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap ${serverOutOption} ${JAVA_OPTIONS}
 
 EOF
  
