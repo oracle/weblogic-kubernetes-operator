@@ -464,8 +464,7 @@ public abstract class PodHelperTestBase {
     testSupport.verifyCompletionThrowable(ApiException.class);
   }
 
-  // TBD This test fails - don't know why.
-  // @Test
+  @Test
   public void whenCompliantPodExists_recordIt() {
     initializeExistingPod(createPodModel());
     testSupport.runSteps(getStepFactory(), terminalStep);
@@ -563,7 +562,7 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
         .addEnvItem(
             envItem("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)))
-        .addEnvItem(envItem("LOG_HOME", LOG_HOME + "/" + UID))
+        .addEnvItem(envItem("LOG_HOME", ""))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
         .livenessProbe(createLivenessProbe())
