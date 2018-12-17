@@ -111,6 +111,8 @@ In Operator 2.0 you can perform lifecycle operations on WebLogic servers, cluste
 
 ### Patching WebLogic and performing application updates
 
+**TODO** write me
+
 ### Scaling clusters
 
 The operator allows you to initiate scaling of clusters in various ways:
@@ -122,5 +124,9 @@ The operator allows you to initiate scaling of clusters in various ways:
 
 ###  Shutting down domains
 
+**TODO** write me
+
 ###  Deleting domains
 (Point to sample)
+
+**TODO** write me
