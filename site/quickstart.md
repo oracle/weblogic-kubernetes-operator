@@ -1,7 +1,7 @@
 # Quick start guide
 
 Use this quick start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production.
-These instructions assume you are already familiar with Kubernetes.  If you need more detailed instructions, please
+These instructions assume that you are already familiar with Kubernetes.  If you need more detailed instructions, please
 refer to the [User guide](user-guide.md).
 
 ## Prerequisites
@@ -9,7 +9,7 @@ For this exercise, you’ll need a Kubernetes cluster. If you need help setting 
 
 ## 1.	Get these images and put them into your local registry.
 
-a.  If you don't already have one, obtain a Docker Store account, log on to the Docker Store
+a.  If you don't already have one, obtain a Docker Store account, log in to the Docker Store
     and accept the license agreement for the [WebLogic Server image](https://hub.docker.com/_/oracle-weblogic-server-12c).
 
 b.  Log in to the Docker Store from your docker client:
@@ -56,8 +56,8 @@ b.	Create a service account for the operator in the operator's namespace:
 ```
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
-c.  Grant the helm service account the `cluster-admin` role:
-``` 
+c.  Grant the Helm service account the `cluster-admin` role:
+```
 $ cat <<EOF | kubectl apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -77,7 +77,7 @@ d.  Clone this repository:
 ```
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator
 ```
-3.  Use `helm` to install and start the operator, from the directory you just cloned:	 
+3.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
 ```
 $ helm install kubernetes/charts/weblogic-operator \
@@ -85,7 +85,7 @@ $ helm install kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "domainNamespaces={}" \
-  --wait 
+  --wait
 ```
 f.  Verify that the operator is up and running by viewing the operator pod's log:
 
@@ -133,15 +133,15 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
 $ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domain-ns1 -d sample-domain1
 ```
 
-The sample will create a secret named `domdinUID-weblogic-credentials` where the `domainUID` is replaced 
+The sample will create a secret named `domdinUID-weblogic-credentials` where the `domainUID` is replaced
 with the value you provided.  For example, the command above would create a secret named
 `sample-domain1-weblogic-credentials`.
 
-b.	Create a new image with a domain home by running the [`create-domain`](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. 
-Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file, 
+b.	Create a new image with a domain home by running the [`create-domain`](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script.
+Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file,
 including:
- 
-* Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`), 
+
+* Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
 domain namespace (`sample-domains-ns1`) and the base image (`oracle/weblogic:12213-patch-wls-for-k8s`).
 
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials.
@@ -181,7 +181,7 @@ e.	Confirm that the load balancer noticed the new Ingress and is successfully ro
 ```
 $ curl http://${HOSTNAME}:30305/sample-domain1/
 ```
-Note: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
+**Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
 update security lists to allow ingress to this port.
 
 ## 6. Remove the domain.
