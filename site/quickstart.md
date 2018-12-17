@@ -133,6 +133,10 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
 $ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domain-ns1 -d sample-domain1
 ```
 
+The sample will create a secret named `domdinUID-weblogic-credentials` where the `domainUID` is replaced 
+with the value you provided.  For example, the command above would create a secret named
+`sample-domain1-weblogic-credentials`.
+
 b.	Create a new image with a domain home by running the [`create-domain`](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. 
 Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file, 
 including:
@@ -140,7 +144,9 @@ including:
 * Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`), 
 domain namespace (`sample-domains-ns1`) and the base image (`oracle/weblogic:12213-patch-wls-for-k8s`).
 
-* Setting `weblogicCredentialsSecretName` to the `domainUID` (`sample-domain1`).
+* Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials.
+  By convention, the secret will be named`domainUID-weblogic-credentials` (where `domainUID` is replaced with the
+  actual `domainUID` value).
 
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
