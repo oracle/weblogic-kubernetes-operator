@@ -11,23 +11,10 @@ To start, stop or restart servers, the should user modify these properties on th
 (e.g. using kubectl or the Kubernetes REST api).  The operator will notice the changes
 and apply them.
 
-### Starting and Stopping Servers
+## Starting and Stopping Servers
 
 The "serverStartPolicy" property on domain resource controls which servers should be running.
 The operator runtime monitors this property and creates or deletes the corresponding server pods.
-
-### Restarting Servers
-
-The operator runtime automatically recreates (restarts) server pods when properties on the domain resource that affect server pods change (such as "image", "volumes" and "env").
-The "restartVersion" property on the domain resource lets the user force the operator to restart a set of server pods.
-
-The operator runtime does rolling restarts of clustered servers so that service is maintained.
-The "maxUnavailable" property determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
-By default, the servers are restarted one at a time.
-
-## Starting and Stopping Servers
-
-The "serverStartPolicy" property determine which servers should be running.
 
 ### "serverStartPolicy" Rules
 
@@ -40,21 +27,21 @@ The "serverStartPolicy" property determine which servers should be running.
 | Cluster | IF_NEEDED | IF_NEEDED, NEVER |
 | Server | IF_NEEDED | IF_NEEDED, ALWAYS, NEVER |
 
-#### Admin Server Rules
+#### Admin Server Start/Stop Rules
 | Domain | Admin Server | Started / Stopped |
 | --- | --- | --- |
 | NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
 | ADMIN_ONLY, IF_NEEDED | NEVER | Stopped |
 | ADMIN_ONLY, IF_NEEDED | IF_NEEDED, ALWAYS | Started |
 
-#### Standalone Managed Server Rules
+#### Standalone Managed Server Start/Stop Rules
 | Domain | Standalone Server | Started / Stopped |
 | --- | --- | --- |
 | ADMIN_ONLY, NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
 | IF_NEEDED | NEVER | Stopped |
 | IF_NEEDED | IF_NEEDED, ALWAYS | Started |
 
-#### Clustered Managed Server Rules
+#### Clustered Managed Server Start/Stop Rules
 | Domain | Cluster | Clustered Server | Started / Stopped |
 | --- | --- | --- | --- |
 | ADMIN_ONLY, NEVER | IF_NEEDED, NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
@@ -136,3 +123,102 @@ This is done by adding the server to the domain resource and settings its "serve
 ```
 
 Note: the server will count towards the cluster's "replicas" count.  Also, if the user configures more than "replicas" servers to "ALWAYS", they will all be started, even though "replicas" will be exceeded.
+
+## Restarting Servers
+
+The operator runtime automatically recreates (restarts) server pods when properties on the domain resource that affect server pods change (such as "image", "volumes" and "env").
+The "restartVersion" property on the domain resource lets the user force the operator to restart a set of server pods.
+
+The operator runtime does rolling restarts of clustered servers so that service is maintained.
+
+### Properties that Cause Servers To Be Restarted
+The operator will restart servers when any of the follow properties on the domain resource that affect the server are changed.
+
+| Property |
+| --- |
+| annotations |
+| containerSecurityContext |
+| image |
+| imagePullPolicy |
+| imagePullSecrets |
+| labels |
+| livenessProbe |
+| podSecurityContext |
+| readinessProbe |
+| resources |
+| restartLabel |
+| volumes |
+| volumeMounts |
+
+### Rolling Restarts
+
+Clustered servers that need to be restarted are gradually restarted (i.e. 'rolling restarts') so that the cluster is not taken out of service and so that in-flight work can be migrated to other servers in the cluster.
+
+The "maxUnavailable" property on the domain resource determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
+By default, the servers are restarted one at a time.
+
+### Using restartVersion to Force the Operator to Restart Servers
+
+The "restartVersion" property lets users force the operator to restart servers.
+
+It's basically a user-specified string that gets added to new server pods (as a label) so that the operator can tell which servers need to be restarted.
+If the value is different, then the server pod is old and needs to be restarted.  If the value matches, then the server pod has already been restarted.
+
+Each time the user wants to restart some servers, the user needs to set "restartVersion" to a different string (the particular value doesn't matter).
+
+The operator will notice the new value and restart the affected servers (using the same mechanisms as when other properties that affect the server pods are changed, including doing rolling restarts of clustered servers).
+
+"restartVersion" can be specified at the domain, cluster and server levels.  A server will be restarted if any of these three values change.
+
+### Common Scenarios
+
+#### Restart All the Servers in the Domain
+
+Set "restartVersion" at the domain level to a new value.
+
+```
+   domain:
+     spec:
+       restartVersion: "domainV1"
+       ...
+```
+
+#### Restart All the Servers in the Cluster
+
+Set "restartVersion" at the cluster level to a new value.
+
+```
+   domain:
+     spec:
+       clusters:
+       - clusterName : "cluster1"
+         restartVersion: "cluster1V1"
+       ...
+```
+
+#### Restart the Admin Server
+
+Set "restartVersion" at the adminServer level to a new value.
+
+```
+   domain:
+     spec:
+       adminServer:
+         restartVersion: "adminV1"
+       ...
+```
+
+#### Restart a Standalone or Clustered Manged Server
+
+Set "restartVersion" at the managedServer level to a new value.
+
+```
+   domain:
+     spec:
+       managedServers:
+       - serverName: "standalone_server1"
+         restartVersion: "v1"
+       - serverName: "cluster1_server1"
+         restartVersion: "v1"
+       ...
+```
