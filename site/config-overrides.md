@@ -79,7 +79,7 @@ The behavior when using an unsupported override is undefined.
 ---
 # Override template names and syntax
 
-Overrides leverage a built-in WebLogic feature called "Configuration Overriding" (See [References](#References)). Situational configuration consists of XML formated files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.  
+Overrides leverage a built-in WebLogic feature called "Configuration Overriding" which is often informally called "Situational Configuration." (See [References](#References)). Situational configuration consists of XML formatted files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.  
 
 ## Override template names
 
@@ -150,7 +150,7 @@ Two types of macros are supported `environment variable macros` and `secret macr
 
 The secret macro `SECRETNAME` field must reference the name of a Kubernetes secret, and the `SECRETKEY` field must reference a key within that secret. For example, if you have created a secret named `dbuser` with a key named `username` that contains the value `scott`, then the macro `${secret:dbuser.username}` will be replaced with the word `scott` before the template is copied into its WebLogic server pod.
 
-**SECURITY NOTE:** Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST `encrypt` command (instead of leaving it at its plain text value).  This is useful for overriding MBean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and is also useful for ensuring that a custom override situational configuration file the operator places in the domain home does not expose passwords in plain-text.
+**SECURITY NOTE: Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST `encrypt` command (instead of leaving it at its plain text value).  This is useful for overriding MBean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and is also useful for ensuring that a custom override situational configuration file the operator places in the domain home does not expose passwords in plain-text.**
 
 ## Override template samples
 
@@ -312,7 +312,7 @@ The WebLogic situational configuration feature provides advanced options and cap
 ---
 # References
 
-See the "Managing Configuration Changes" chapter in _Oracle Fusion Middleware Understanding Domain Configuration for Oracle WebLogic Sever_ version 19.1.0.0.0.
+See the "Managing Configuration Changes" chapter in _Oracle Fusion Middleware Understanding Domain Configuration for Oracle WebLogic Server_ version 19.1.0.0.0.
 
 ---
 # Release Notes
