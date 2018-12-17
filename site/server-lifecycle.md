@@ -4,6 +4,13 @@ This document describes how the user can start, stop and restart the domain's se
 
 ## Overview
 
+There are properties on the domain resource that specify which servers should be running
+and which servers should be restarted.
+
+To start, stop or restart servers, the should user modify these properties on the domain resource
+(e.g. using kubectl or the Kubernetes REST api).  The operator will notice the changes
+and apply them.
+
 ### Starting and Stopping Servers
 
 The "serverStartPolicy" property on domain resource controls which servers should be running.
@@ -20,31 +27,42 @@ By default, the servers are restarted one at a time.
 
 ## Starting and Stopping Servers
 
-### "serverStartPolicy" Rules
-
 The "serverStartPolicy" property determine which servers should be running.
 
-It can be specified at the domain, cluster and server levels. Each level supports a different set of values:
-* domain:  "NEVER", "IF_NEEDED", "ADMIN_ONLY", defaults to "IF_NEEDED"
-* cluster: "NEVER", "IF_NEEDED", defaults to "IF_NEEDED"
-* server:  "NEVER", "IF_NEEDED", "ALWAYS", defaults to "IF_NEEDED"
+### "serverStartPolicy" Rules
 
-The admin server will be started if:
-* the domain is "ADMIN_ONLY" or "IF_NEEDED" (i.e. not "NEVER")
-* AND
-* the adminServer is "ALWAYS" or "IF_NEEDED" (i.e. not "NEVER")
+"serverStartPolicy" can be specified at the domain, cluster and server levels. Each level supports a different set of values:
 
-A stand alone managed server will be started if:
-* the domain is "IF_NEEDED" (i.e. not "NEVER" or "ADMIN_ONLY")
-* AND
-* the server is "ALWAYS" or "IF_NEEDED" (i.e. not "NEVER")
+#### Available serverStartPolicy Values
+| Level | Default Value | Supported Value |
+| --- | --- | --- |
+| Domain | IF_NEEDED | IF_NEEDED, ADMIN_ONLY, NEVER |
+| Cluster | IF_NEEDED | IF_NEEDED, NEVER |
+| Server | IF_NEEDED | IF_NEEDED, ALWAYS, NEVER |
 
-A clustered managed server will be started if:
-* the domain is "IF_NEEDED" (i.e. not "NEVER" or "ADMIN_ONLY")
-* AND
-* the cluster is "IF_NEEDED" (I.e. not "NEVER")
-* AND
-* the server is "ALWAYS", or if the server is "IF_NEEDED" and the operator needs to start it to get to the cluster's "replicas" count
+#### Admin Server Rules
+| Domain | Admin Server | Should Run |
+| NEVER | IF_NEEDED, ALWAYS, NEVER | no |
+| ADMIN_ONLY, IF_NEEDED | NEVER | no |
+| ADMIN_ONLY, IF_NEEDED | IF_NEEDED, ALWAYS | yes |
+
+#### Standalone Managed Server Rules
+| Domain | Standalone Server | Should Run |
+| ADMIN_ONLY, NEVER | IF_NEEDED, ALWAYS, NEVER | no |
+| IF_NEEDED | NEVER | no |
+| IF_NEEDED | IF_NEEDED, ALWAYS | yes |
+
+#### Clustered Managed Server Rules
+| Domain | Cluster | Clustered Server | Should Run |
+| ADMIN_ONLY, NEVER | IF_NEEDED, NEVER | IF_NEEDED, ALWAYS, NEVER | no |
+| IF_NEEDED | NEVER | IF_NEEDED, ALWAYS, NEVER | no |
+| IF_NEEDED | IF_NEEDED | NEVER | no |
+| IF_NEEDED | IF_NEEDED | ALWAYS | yes |
+| IF_NEEDED | IF_NEEDED | IF_NEEDED | started if needed to get to the cluster's "replicas" count |
+
+Note: servers configured as ALWAYS count towards the cluster's "replicas" count.
+
+Note: if more servers are configured as ALWAYS than the cluster's "replicas" count, they will all be started and the "replicas" count will be ignored.
 
 ### Common Scenarios
 
@@ -115,4 +133,3 @@ This is done by adding the server to the domain resource and settings its "serve
 ```
 
 Note: the server will count towards the cluster's "replicas" count.  Also, if the user configures more than "replicas" servers to "ALWAYS", they will all be started, even though "replicas" will be exceeded.
-
