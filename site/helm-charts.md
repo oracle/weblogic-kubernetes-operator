@@ -46,7 +46,7 @@ ___This script should not be used in a production environment (since self-signed
    
 The script takes the subject alternative names that should be added to the certificate - i.e. the list of hostnames that clients can use to access the external REST interface. In this example, the output is directly appended to the user's custom YAML configuration:
 ```
-kubernetes/generate-external-weblogic-operator-certificate.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> custom-values.yaml
+kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> custom-values.yaml
 ```
 
 ## Optional: ELK (Elasticsearch, Logstash and Kibana) integration
