@@ -14,13 +14,13 @@ The operator runtime monitors this property and creates or deletes the correspon
 The operator runtime automatically recreates (restarts) server pods when properties on the domain resource that affect server pods change (such as "image", "volumes" and "env").
 The "restartVersion" property on the domain resource lets the user force the operator to restart a set of server pods.
 
-The operator runtime does rolling restarts of clustered servers so that that service is maintained.
+The operator runtime does rolling restarts of clustered servers so that service is maintained.
 The "maxUnavailable" property determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
 By default, the servers are restarted one at a time.
 
 ## Starting and Stopping Servers
 
-### serverStartPolicy rules
+### "serverStartPolicy" Rules
 
 The "serverStartPolicy" property determine which servers should be running.
 
@@ -44,7 +44,7 @@ A clustered managed server will be started if:
 * AND
 * the cluster is "IF_NEEDED" (I.e. not "NEVER")
 * AND
-** the server is "ALWAYS", or if the server is "IF_NEEDED" and the operator needs to start it to get to the cluster's "replicas" count
+* the server is "ALWAYS", or if the server is "IF_NEEDED" and the operator needs to start it to get to the cluster's "replicas" count
 
 ### Common Scenarios
 
@@ -62,7 +62,6 @@ For example:
 
 #### Shut Down All the Servers
 Sometimes the user needs to completely shut down the domain (i.e. take it out of service).
-The simplest was to do this is to set the domain level "serverStartPolicy" to "NEVER":
 ```
    domain:
      spec:
@@ -80,7 +79,7 @@ Sometimes the user wants to only start the admin server, that is, take the domai
 ```
 
 #### Shut Down A Cluster
-To shut down a cluster, add it to the domain resource and set its "serverStartPolicy" to "NEVER"
+To shut down a cluster (i.e. take it out of service), add it to the domain resource and set its "serverStartPolicy" to "NEVER".
 ```
    domain:
      spec:
@@ -102,8 +101,8 @@ To shut down a specific stand alone server, add it to the domain resource and se
 ```
 
 #### Force a Specific Clustered Managed Server To Start
-Normally, all of the managed servers in a cluster are identical and it doesn't matter which ones are run as long as the operator starts enough to get to the cluster's "replicas" count.
-However, sometimes some of the managed servers might be different (e.g support some extra services that the other servers in the cluster use) and need to always to started.
+Normally, all of the managed servers in a cluster are identical and it doesn't matter which ones are running as long as the operator starts enough to get to the cluster's "replicas" count.
+However, sometimes some of the managed servers are different (e.g support some extra services that the other servers in the cluster use) and need to always to started.
 
 This is done by adding the server to the domain resource and settings its "serverStartPolicy" to "ALWAYS".
 ```
