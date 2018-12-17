@@ -182,50 +182,38 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
     For example:
     ```
     #> kubectl describe configmap weblogic-operator-cm -n weblogic-operator
-
-    ```
-    ```
     Name:         `weblogic-operator-cm`
-
     Namespace:    `weblogic-operator`
-
     Labels:       `weblogic.operatorName=weblogic-operator`
-
     Annotations:  `kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"v1","data":{"externalOperatorCert":"","internalOperatorCert":"LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t...`
-
     Data
-
     ====
-
     internalOperatorCert:
-
     ----
-
     LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3akNDQXFxZ0F3SUJBZ0lFRzhYT1N6QU...
-
-     ```
+    ```
 
     The scalingAction.sh script accepts a number of customizable parameters:
 
-    * action - scaleUp or scaleDown (Required)
+    * `action` - scaleUp or scaleDown (Required)
 
-    * domain_uid - WebLogic domain unique identifier (Required)
+    * `domain_uid` - WebLogic domain unique identifier (Required)
 
-    * cluster_name - WebLogic cluster name (Required)
+    * `cluster_name` - WebLogic cluster name (Required)
 
-    * kubernetes_master - Kubernetes master URL, default=https://kubernetes
+    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes
 
-    * access_token - Service Account Bearer token for authentication and authorization for access to REST Resources
+    * `access_token` - Service Account Bearer token for authentication and authorization for access to REST Resources
 
-    * wls_domain_namespace - Kubernetes namespace in which the WebLogic domain is defined, default=default
+    * `wls_domain_namespace` - Kubernetes namespace in which the WebLogic domain is defined, default=default
 
-    * operator_service_name - WebLogic Operator Service name of the REST endpoint, default=internal-weblogic-operator-service
+    * `operator_service_name` - WebLogic Operator Service name of the REST endpoint, default=internal-weblogic-operator-service
 
-    * operator_service_account - Kubernetes Service Account name for the WebLogic Operator, default=weblogic-operator
+    * `operator_service_account` - Kubernetes Service Account name for the WebLogic Operator, default=weblogic-operator
 
-    * operator_namespace – Namespace in which the WebLogic Operator is deployed, default=weblogic-operator
+    * `operator_namespace` – Namespace in which the WebLogic Operator is deployed, default=weblogic-operator
 
-    * scaling_size – Incremental number of WebLogic Server instances by which to scale up or down, default=1
+    * `scaling_size` – Incremental number of WebLogic Server instances by which to scale up or down, default=1
 
     You can use any of the following tools to configure policies for diagnostic system modules:
     * WebLogic Server Administration Console
