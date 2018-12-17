@@ -6,7 +6,7 @@ This guide provides information for developers who wish to understand or contrib
 
 ## Requirements
 
-In addition to the requirements listed in [README](../README.md#prerequisites), the following software is also required to obtain and build the operator:
+In addition to the requirements listed in [User Guide](user-guide.md#prerequisites), the following software is also required to obtain and build the operator:
 
 *	Git (1.8 or later recommended)
 * Java Developer Kit (1.8u131 or later recommended, please use 1.8, tests will not work on 1.9 or later versions)
@@ -68,7 +68,7 @@ The Javadoc is also available in the GitHub repository [here](https://oracle.git
 
 ## Running integration tests
 
-The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.7.5+, 1.8.0+, 1.9.0+, and 1.10.0.
+The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+.
 
 To run the tests, uncomment the following `execution` element in the `pom.xml` file and update the `KUBECONFIG` to point to your kube config file.
 
@@ -92,7 +92,7 @@ To run the tests, uncomment the following `execution` element in the `pom.xml` f
 -->
 ```
 
-These tests assume that the RBAC definitions exist on the Kubernetes cluster.
+These tests assume that the [RBAC definitions](rbac.md) exist on the Kubernetes cluster.
 
 To create them, first, make a copy of the inputs file (`create-weblogic-operator-inputs.yaml`) and update it.
 
