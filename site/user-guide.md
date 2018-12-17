@@ -41,7 +41,7 @@ presented in the correct order.
   * [Deleting domains](domains.md#deleting-domains)
 * [Additional integrations](additional-integrations.md)
   * [Sending WebLogic metrics to Prometheus](additional-integrations.md#sending-weblogic-metrics-to-prometheus)
-
+  * [Running an Oracle database in your cluster](database.md) for state stores, leasing, etc.
 
 ## Important terms
 
