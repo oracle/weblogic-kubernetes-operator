@@ -111,6 +111,15 @@ In Operator 2.0 you can perform lifecycle operations on WebLogic servers, cluste
 
 ### Patching WebLogic and performing application updates
 
+### Scaling clusters
+
+The operator allows you to initiate scaling of clusters in various ways:
+
+* [Using kubectl to edit the domain resource](scaling.md#on-demand-updating-the-domain-resource-directly)
+* [Using the operator's REST APIs](scaling.md#calling-the-operators-rest-scale-api)
+* [Using WLDF policies](scaling.md#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api)
+* [Using a Prometheus action](scaling.md#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api)
+
 ###  Shutting down domains
 
 ###  Deleting domains
