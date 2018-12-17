@@ -24,5 +24,5 @@ To install ElasticSearch and Kibana, use:
 
 To remove them, use:
 ```
-  kubectl apply -f kubernetes/samples/scripts/elasticsearch_and_kibana.yaml
+  kubectl delete -f kubernetes/samples/scripts/elasticsearch_and_kibana.yaml
 ```
