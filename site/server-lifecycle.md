@@ -34,31 +34,34 @@ The "serverStartPolicy" property determine which servers should be running.
 "serverStartPolicy" can be specified at the domain, cluster and server levels. Each level supports a different set of values:
 
 #### Available serverStartPolicy Values
-| Level | Default Value | Supported Value |
+| Level | Default Value | Supported Values |
 | --- | --- | --- |
 | Domain | IF_NEEDED | IF_NEEDED, ADMIN_ONLY, NEVER |
 | Cluster | IF_NEEDED | IF_NEEDED, NEVER |
 | Server | IF_NEEDED | IF_NEEDED, ALWAYS, NEVER |
 
 #### Admin Server Rules
-| Domain | Admin Server | Should Run |
-| NEVER | IF_NEEDED, ALWAYS, NEVER | no |
-| ADMIN_ONLY, IF_NEEDED | NEVER | no |
-| ADMIN_ONLY, IF_NEEDED | IF_NEEDED, ALWAYS | yes |
+| Domain | Admin Server | Started / Stopped |
+| --- | --- | --- |
+| NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
+| ADMIN_ONLY, IF_NEEDED | NEVER | Stopped |
+| ADMIN_ONLY, IF_NEEDED | IF_NEEDED, ALWAYS | Started |
 
 #### Standalone Managed Server Rules
-| Domain | Standalone Server | Should Run |
-| ADMIN_ONLY, NEVER | IF_NEEDED, ALWAYS, NEVER | no |
-| IF_NEEDED | NEVER | no |
-| IF_NEEDED | IF_NEEDED, ALWAYS | yes |
+| Domain | Standalone Server | Started / Stopped |
+| --- | --- | --- |
+| ADMIN_ONLY, NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
+| IF_NEEDED | NEVER | Stopped |
+| IF_NEEDED | IF_NEEDED, ALWAYS | Started |
 
 #### Clustered Managed Server Rules
-| Domain | Cluster | Clustered Server | Should Run |
-| ADMIN_ONLY, NEVER | IF_NEEDED, NEVER | IF_NEEDED, ALWAYS, NEVER | no |
-| IF_NEEDED | NEVER | IF_NEEDED, ALWAYS, NEVER | no |
-| IF_NEEDED | IF_NEEDED | NEVER | no |
-| IF_NEEDED | IF_NEEDED | ALWAYS | yes |
-| IF_NEEDED | IF_NEEDED | IF_NEEDED | started if needed to get to the cluster's "replicas" count |
+| Domain | Cluster | Clustered Server | Started / Stopped |
+| --- | --- | --- | --- |
+| ADMIN_ONLY, NEVER | IF_NEEDED, NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
+| IF_NEEDED | NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
+| IF_NEEDED | IF_NEEDED | NEVER | Stopped |
+| IF_NEEDED | IF_NEEDED | ALWAYS | Started |
+| IF_NEEDED | IF_NEEDED | IF_NEEDED | Started if needed to get to the cluster's "replicas" count |
 
 Note: servers configured as ALWAYS count towards the cluster's "replicas" count.
 
