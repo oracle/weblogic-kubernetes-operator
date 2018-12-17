@@ -133,7 +133,7 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
 $ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domain-ns1 -d sample-domain1
 ```
 
-The sample will create a secret named `domdinUID-weblogic-credentials` where the `domainUID` is replaced
+The sample will create a secret named `domainUID-weblogic-credentials` where the `domainUID` is replaced
 with the value you provided.  For example, the command above would create a secret named
 `sample-domain1-weblogic-credentials`.
 
