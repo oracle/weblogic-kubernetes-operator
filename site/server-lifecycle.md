@@ -132,27 +132,32 @@ The "restartVersion" property on the domain resource lets the user force the ope
 The operator runtime does rolling restarts of clustered servers so that service is maintained.
 
 ### Properties that Cause Servers To Be Restarted
-The operator will restart servers when any of the follow properties on the domain resource that affect the server are changed.
-
-| Property |
-| --- |
-| annotations |
-| containerSecurityContext |
-| image |
-| imagePullPolicy |
-| imagePullSecrets |
-| labels |
-| livenessProbe |
-| podSecurityContext |
-| readinessProbe |
-| resources |
-| restartLabel |
-| volumes |
-| volumeMounts |
+The operator will restart servers when any of the follow properties on the domain resource that affect the server are changed:
+* annotations
+* containerSecurityContext
+* domainHome
+* domainHomeInImage
+* env
+* image
+* imagePullPolicy
+* imagePullSecrets
+* includeServerOutInPodLog
+* labels
+* logHomeEnabled
+* logHome
+* livenessProbe
+* nodeSelector
+* podSecurityContext
+* readinessProbe
+* resources
+* restartLabel
+* serverStartState
+* volumes
+* volumeMounts
 
 ### Rolling Restarts
 
-Clustered servers that need to be restarted are gradually restarted (i.e. 'rolling restarts') so that the cluster is not taken out of service and so that in-flight work can be migrated to other servers in the cluster.
+Clustered servers that need to be restarted are gradually restarted (i.e. 'rolling restarted') so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.
 
 The "maxUnavailable" property on the domain resource determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
 By default, the servers are restarted one at a time.
@@ -193,6 +198,7 @@ Set "restartVersion" at the cluster level to a new value.
        clusters:
        - clusterName : "cluster1"
          restartVersion: "cluster1V1"
+         maxUnavailable: 2
        ...
 ```
 
