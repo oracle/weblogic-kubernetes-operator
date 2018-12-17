@@ -130,7 +130,7 @@ a. Create a Kubernetes secret containing the `username` and `password` for the d
 
 ```
 $ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
-$ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domain-ns1 -d sample-domain1
+$ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domains-ns1 -d sample-domain1
 ```
 
 The sample will create a secret named `domainUID-weblogic-credentials` where the `domainUID` is replaced
