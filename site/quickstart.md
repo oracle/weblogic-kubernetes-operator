@@ -7,7 +7,7 @@ refer to the [User guide](user-guide.md).
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
 
-You should clone this repository to your local machine so that you have access to the 
+You should clone this repository to your local machine so that you have access to the
 various sample files mentioned throughout this guide:
 ```
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator
@@ -159,7 +159,7 @@ $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e -v
 
 c.	Confirm that the operator started the servers for the domain:
 ```
-$ kubectl get pods -n sample-domain-ns1
+$ kubectl get pods -n sample-domains-ns1
 ```
 
 After a short time, you will see the Administration Server and Managed Servers running.
@@ -170,7 +170,7 @@ $ kubectl describe domain sample-domain1 -n sample-domain1-ns
 ```
 * Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
 ```
-$ kubectl get pods -n sample-weblogic-operator1-ns
+$ kubectl get pods -n sample-weblogic-operator-ns
 ```
 
 d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
