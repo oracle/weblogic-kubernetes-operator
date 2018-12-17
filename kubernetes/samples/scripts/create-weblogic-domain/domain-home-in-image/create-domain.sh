@@ -153,7 +153,7 @@ function initialize {
 #
 function getDockerSample {
   rm -rf ${scriptDir}/docker-images
-  git clone https://github.com/oracle/docker-images.git
+  git clone -C ${scriptDir} https://github.com/oracle/docker-images.git
 }
 
 #
@@ -178,12 +178,6 @@ function createFiles {
 
   # Generate the properties file that will be used when creating the weblogic domain
   echo Generating ${domainPropertiesOutput}
-
-  if [ "${productionModeEnabled}" = true ]; then
-     serverStartMode="prod"
-  else
-     serverStartMode="dev"
-  fi 
    
   cp ${domainPropertiesInput} ${domainPropertiesOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
@@ -195,7 +189,6 @@ function createFiles {
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${domainPropertiesOutput}
   sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${domainPropertiesOutput}
   sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%SERVER_START_MODE%:${serverStartMode}:g" ${domainPropertiesOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
