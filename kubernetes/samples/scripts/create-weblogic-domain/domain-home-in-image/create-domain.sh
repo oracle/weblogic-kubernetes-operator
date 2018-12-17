@@ -152,6 +152,7 @@ function initialize {
 # Function to get the dependency docker sample
 #
 function getDockerSample {
+  rm -rf ${scriptDir}/docker-images
   git clone https://github.com/oracle/docker-images.git
 }
 
@@ -257,23 +258,26 @@ function createDomainHome {
     
   dockerDir=${scriptDir}/docker-images/OracleWebLogic/samples/${imagePath}
   dockerPropsDir=${dockerDir}/properties
-  cp ${domainPropertiesOutput} ${dockerPropsDir}
+
 
   # 12213-domain-home-in-image use one properties file for the credentials 
-  usernameFile="${dockerPropsDir}/docker_build/domain_security.properties"
-  passwordFile="${dockerPropsDir}/docker_build/domain_security.properties"
+  dockerBuildDir=docker_build
+  usernameFile="${dockerPropsDir}/${dockerBuildDir}/domain_security.properties"
+  passwordFile="${dockerPropsDir}/${dockerBuildDir}/domain_security.properties"
  
   # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
   if [ ! -f $usernameFile ]; then
-    usernameFile="${dockerPropsDir}/docker-build/adminuser.properties"
-    passwordFile="${dockerPropsDir}/docker-build/adminpass.properties"
+    dockerBuildDir=docker-build
+    usernameFile="${dockerPropsDir}/${dockerBuildDir}/adminuser.properties"
+    passwordFile="${dockerPropsDir}/${dockerBuildDir}/adminpass.properties"
   fi
+  cp ${domainPropertiesOutput} ${dockerPropsDir}/${dockerBuildDir}
   
   sed -i -e "s|myuser|${username}|g" $usernameFile
   sed -i -e "s|mypassword1|${password}|g" $passwordFile
     
   if [ ! -z $baseImage ]; then
-    sed -i -e "s|\(FROM \).*|\1 ${baseImage}|g" Dockerfile
+    sed -i -e "s|\(FROM \).*|\1 ${baseImage}|g" ${dockerDir}/Dockerfile
   fi
 
   sh ${dockerDir}/build.sh
