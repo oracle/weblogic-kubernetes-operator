@@ -129,7 +129,8 @@ To run the operator in a Kubernetes cluster, you need to build the Docker image 
 After you have run the build (that is, `mvn clean install`), create the Docker image as follows:
 
 ```
-docker build -t weblogic-kubernetes-operator:some-tag --no-cache=true .
+docker build -t weblogic-kubernetes-operator:some-tag \
+       --build-arg VERSION=2.0-SNAPSHOT --no-cache=true .
 ```
 
 We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, we used the GitHub ID of the developer.
@@ -144,7 +145,7 @@ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 docker load < /some/path/operator.tar
 ```
 
-Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image IDs.
+Verify that you have the right image by running `docker images | grep weblogic-kubernetes-operator` on both machines and comparing the image IDs.
 
 To create and deploy the operator, first, make a copy of the inputs file (`create-weblogic-operator-inputs.yaml`) and update it, making sure that `weblogicOperatorImagePullPolicy` is set to `Never` and `weblogicOperatorImage` matches the name you used in your `docker build` command.
 
