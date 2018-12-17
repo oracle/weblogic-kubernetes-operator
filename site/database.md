@@ -4,15 +4,25 @@ persistent store/leases etc in there
 
 # Running the Oracle Database in Kubernetes
 
-**PLEASE NOTE**:  This page is a work in progress.  We will update this with either better details about how to put the data files onto a persistent volume, or a pointer to the official Oracle Database Kubernetes pages, or both.
+If you wish to run the Oracle Database inside your Kubernetes cluster, in order to place 
+your state store, leasing tables, etc., in that database, then you can use this 
+sample to install the database. 
 
+First create a namespace for the database: 
+
+``` 
+kubectl create namespace database-namespace
 ```
 
+Next, create a file called `database.yml` with the following content.  Make sure you update the
+password field with you chosen administrator password for the database. 
+
+```
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: database
-  namespace: domain2
+  namespace: database-namespace
   labels:
     app: database
     version: 12.1.0.2
@@ -68,7 +78,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: database
-  namespace: domain2
+  namespace: database-namespace
 spec:
   selector:
     app: database
@@ -77,4 +87,31 @@ spec:
   - protocol: TCP
     port: 1521
     targetPort: 1521
+```
+
+If you have not previously done so, you will need to go to the [Oracle Container Registry](https://container-registry.oracle.com)
+and accept the license for the [Oracle database image](https://container-registry.oracle.com/pls/apex/f?p=113:4:11538835301670).
+
+Create a Docker registry secret so that Kubernetes can pull the database image:
+
+``` 
+kubectl create secret docker-registry regsecret \
+        --docker-server=container-registry.oracle.com \
+        --docker-username=your.email@some.com \
+        --docker-password=your-password \
+        --docker-email=your.email@some.com \
+        -n database-namespace
+
+```
+
+Now use the following command to install the database:
+
+``` 
+kubectl apply -f database.yml
+```
+
+This will start up the database and expose it in the cluster at the following address:
+
+``` 
+database.database-namespace.svc.cluster.local:1521
 ```
