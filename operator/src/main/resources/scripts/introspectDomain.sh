@@ -60,7 +60,6 @@ checkEnv DOMAIN_UID \
          DOMAIN_HOME \
          JAVA_HOME \
          NODEMGR_HOME \
-         LOG_HOME \
          WL_HOME \
          MW_HOME \
          || exit 1
