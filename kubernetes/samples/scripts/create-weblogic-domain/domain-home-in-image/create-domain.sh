@@ -20,12 +20,14 @@ source ${scriptDir}/../../common/utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-e] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Ouput directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the Docker image for WebLogic domain in image."
   echo "  -p Password used in building the Docker image for WebLogic domain in image."
   echo "  -e Also create the resources in the generated YAML files, optional."
+  echo "  -k Keep what has been previously from cloned https://github.com/oracle/docker-images.git, optional. "
+  echo "     If not specified, this script will always remove existing project directory and clone again."
   echo "  -h Help"
   exit $1
 }
@@ -34,7 +36,8 @@ function usage {
 # Parse the command line options
 #
 executeIt=false
-while getopts "evhi:o:u:p:" opt; do
+cloneIt=true
+while getopts "evhki:o:u:p:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -45,6 +48,8 @@ while getopts "evhi:o:u:p:" opt; do
     u) username="${OPTARG}"
     ;;
     p) password="${OPTARG}"
+    ;;
+    k) cloneIt=false;
     ;;
     h) usage 0
     ;;
@@ -81,51 +86,15 @@ fi
 # Function to initialize and validate the output directory
 # for the generated properties and yaml files for this domain.
 #
-function initAndValidateOutputDir {
+function initOutputDir {
   domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
-  validateOutputDir \
-    ${domainOutputDir} \
-    ${valuesInputFile} \
-    create-domain-inputs.yaml \
-    domain.properties \
-    domain.yaml
-}
-
-#
-# Function to validate the domain secret
-#
-function validateDomainSecret {
-  # Verify the secret exists
-  validateSecretExists ${weblogicCredentialsSecretName} ${namespace}
-  failIfValidationErrors
-
-  # Verify the secret contains a username
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a username"
-  fi
-
-  # Verify the secret contains a password
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a password"
-  fi
-  failIfValidationErrors
-}
-
-#
-# Function to validate a kubernetes secret exists
-# $1 - the name of the secret
-# $2 - namespace
-function validateSecretExists {
-  echo "Checking to see if the secret ${1} exists in namespace ${2}"
-  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
-  if [ "${SECRET}" != "1" ]; then
-    validationError "The secret ${1} was not found in namespace ${2}"
-  fi
+  removeFileIfExists ${domainOutputDir}/${valuesInputFile}
+  removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
+  removeFileIfExists ${domainOutputDir}/domain.properties
+  removeFileIfExists ${domainOutputDir}/domain.yaml
 }
 
 # try to execute docker to see whether docker is available
@@ -170,54 +139,19 @@ function initialize {
 
   failIfValidationErrors
 
-  # Parse the commonn inputs file
-  parseCommonInputs
+  validateCommonInputs
 
-  validateInputParamsSpecified \
-    adminServerName \
-    domainUID \
-    clusterName \
-    managedServerNameBase \
-    namespace \
-    t3PublicAddress \
-    version 
+  initOutputDir
 
-  validateIntegerInputParamsSpecified \
-    adminPort \
-    configuredManagedServerCount \
-    initialManagedServerReplicas \
-    managedServerPort \
-    t3ChannelPort \
-    adminNodePort 
-
-  validateBooleanInputParamsSpecified \
-    productionModeEnabled \
-    exposeAdminT3Channel \
-    exposeAdminNodePort \
-    includeServerOutInPodLog
-
-  export requiredInputsVersion="create-weblogic-sample-domain-inputs-v1"
-  validateVersion 
-
-  validateDomainUid
-  validateNamespace
-  validateAdminServerName
-  validateManagedServerNameBase
-  validateClusterName
-  validateWeblogicCredentialsSecretName
-  initAndValidateOutputDir
-  validateServerStartPolicy
-  validateClusterType
-  failIfValidationErrors
-
-  getDockerSample
+  if [ "${cloneIt}" = true ]; then
+    getDockerSample
+  fi
 }
 
 #
 # Function to get the dependency docker sample
 #
 function getDockerSample {
-  rm -rf {scriptDir}/docker-images
   git clone https://github.com/oracle/docker-images.git
 }
 
@@ -239,11 +173,17 @@ function createFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  domainName=${domainUID}
+  domainName=${domainUID} 
 
   # Generate the properties file that will be used when creating the weblogic domain
   echo Generating ${domainPropertiesOutput}
 
+  if [ "${productionModeEnabled}" = true ]; then
+     serverStartMode="prod"
+  else
+     serverStartMode="dev"
+  fi 
+   
   cp ${domainPropertiesInput} ${domainPropertiesOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
@@ -254,6 +194,7 @@ function createFiles {
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${domainPropertiesOutput}
   sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${domainPropertiesOutput}
   sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${domainPropertiesOutput}
+  sed -i -e "s:%SERVER_START_MODE%:${serverStartMode}:g" ${domainPropertiesOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
@@ -304,20 +245,43 @@ function createFiles {
 # Function to build docker image and create WebLogic domain home
 #
 function createDomainHome {
-  cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image/properties/docker_build
+  if [ -z $imagePath ]; then
+    imagePath="12213-domain-home-in-image-wdt"
+  fi
 
-  cd docker-images/OracleWebLogic/samples/12213-domain-home-in-image
+  if [ -z $imageName ]; then
+    imageName="${imagePath}:latest"
+  fi 
+  # now we know which image to use, update the domain yaml file
+  sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${dcrOutput} 
+    
+  dockerDir=${scriptDir}/docker-images/OracleWebLogic/samples/${imagePath}
+  dockerPropsDir=${dockerDir}/properties
+  cp ${domainPropertiesOutput} ${dockerPropsDir}
 
-  sed -i -e "s|myuser|${username}|g" properties/docker_build/domain_security.properties
-  sed -i -e "s|mypassword1|${password}|g" properties/docker_build/domain_security.properties
+  # 12213-domain-home-in-image use one properties file for the credentials 
+  usernameFile="${dockerPropsDir}/docker_build/domain_security.properties"
+  passwordFile="${dockerPropsDir}/docker_build/domain_security.properties"
+ 
+  # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
+  if [ ! -f $usernameFile ]; then
+    usernameFile="${dockerPropsDir}/docker-build/adminuser.properties"
+    passwordFile="${dockerPropsDir}/docker-build/adminpass.properties"
+  fi
+  
+  sed -i -e "s|myuser|${username}|g" $usernameFile
+  sed -i -e "s|mypassword1|${password}|g" $passwordFile
+    
+  if [ ! -z $baseImage ]; then
+    sed -i -e "s|\(FROM \).*|\1 ${baseImage}|g" Dockerfile
+  fi
 
-  ./build.sh
+  sh ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."
   fi
 
-  cd -
   echo ""
   echo "Create domain ${domainName} successfully."
 }
@@ -343,43 +307,10 @@ function printSummary {
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"
   echo "  ${domainPropertiesOutput}"
   echo "  ${dcrOutput}"
+  echo ""
+  echo "Completed"
 }
 
-#
-# Function to create the domain resource
-#
-function createDomainResource {
-  pwd
-  kubectl apply -f ${dcrOutput}
-  DCR_AVAIL=`kubectl get domain -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
-  if [ "${DCR_AVAIL}" != "1" ]; then
-    fail "The domain resource ${domainUID} was not found"
-  fi
-}
-
-#
-# Perform the following sequence of steps to create a domain
-#
-
-# Setup the environment for running this script and perform initial validation checks
-initialize
-
-# Generate the properties and yaml files for creating the domain
-createFiles
-
-# Check that the domain secret exists and contains the required elements
-validateDomainSecret
-
-# Create the WebLogic domain
-createDomainHome
-
-if [ "${executeIt}" = true ]; then
-  createDomainResource
-fi
-
-# Print a summary
-printSummary
-
-echo 
-echo Completed
+# Perform the sequence of steps to create a domain
+createDomain
 
