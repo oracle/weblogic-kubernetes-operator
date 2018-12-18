@@ -80,7 +80,7 @@ public class MessageKeys {
   public static final String APIEXCEPTION_FROM_SUBJECT_ACCESS_REVIEW = "WLSKO-0069";
   public static final String SUBJECT_ACCESS_REVIEW = "WLSKO-0070";
   public static final String REPLICA_MORE_THAN_WLS_SERVERS = "WLSKO-0071";
-  public static final String K8S_MIN_VERSION_CHECK_FAILED = "WLSKO-0073";
+  public static final String K8S_VERSION_TOO_LOW = "WLSKO-0073";
   public static final String VERIFY_K8S_MIN_VERSION = "WLSKO-0074";
   public static final String DOMAIN_UID_UNIQUENESS_FAILED = "WLSKO-0076";
   public static final String PV_NOT_FOUND_FOR_DOMAIN_UID = "WLSKO-0077";
@@ -144,4 +144,5 @@ public class MessageKeys {
   public static final String CANNOT_PARSE_TOPOLOGY = "WLSKO-0141";
   public static final String CANNOT_PARSE_INTROSPECTOR_RESULT = "WLSKO-0142";
   public static final String CANNOT_PARSE_INTROSPECTOR_FILE = "WLSKO-0143";
+  public static final String CANNOT_START_DOMAIN_AFTER_MAX_RETRIES = "WLSKO-0144";
 }

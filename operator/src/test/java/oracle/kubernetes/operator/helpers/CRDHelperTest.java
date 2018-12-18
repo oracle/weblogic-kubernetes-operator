@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_OPERATOR_VERSION;
 import static oracle.kubernetes.operator.VersionConstants.OPERATOR_V1;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
 import static org.hamcrest.Matchers.sameInstance;
@@ -14,10 +13,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
-import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
+import io.kubernetes.client.models.*;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class CRDHelperTest {
+  private static final KubernetesVersion KUBERNETES_VERSION = new KubernetesVersion(1, 10);
+
   private final V1beta1CustomResourceDefinition defaultCRD = defineDefaultCRD();
   private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
 
@@ -41,7 +39,7 @@ public class CRDHelperTest {
   private List<LogRecord> logRecords = new ArrayList<>();
 
   private V1beta1CustomResourceDefinition defineDefaultCRD() {
-    return defineCRD(KubernetesConstants.DOMAIN_VERSION, DEFAULT_OPERATOR_VERSION);
+    return CRDHelper.CRDContext.createModel(KUBERNETES_VERSION);
   }
 
   private V1beta1CustomResourceDefinition defineCRD(String version, String operatorVersion) {
@@ -93,7 +91,7 @@ public class CRDHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     expectReadCRD().failingWithStatus(401);
 
-    Step scriptCRDStep = CRDHelper.createDomainCRDStep(null);
+    Step scriptCRDStep = CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null);
     testSupport.runSteps(scriptCRDStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
@@ -104,7 +102,7 @@ public class CRDHelperTest {
     expectReadCRD().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
     expectSuccessfulCreateCRD(defaultCRD);
 
-    testSupport.runSteps(CRDHelper.createDomainCRDStep(null));
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
@@ -115,48 +113,44 @@ public class CRDHelperTest {
     expectReadCRD().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
     expectCreateCRD(defaultCRD).failingWithStatus(401);
 
-    Step scriptCRDStep = CRDHelper.createDomainCRDStep(null);
+    Step scriptCRDStep = CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null);
     testSupport.runSteps(scriptCRDStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCRDStep));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void whenMatchingCRDExists_noop() {
     expectReadCRD().returning(defaultCRD);
 
-    testSupport.runSteps(CRDHelper.createDomainCRDStep(null));
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void whenExistingCRDHasOldVersion_replaceIt() {
     expectReadCRD().returning(defineCRD("v1", OPERATOR_V1));
     expectSuccessfulReplaceCRD(defaultCRD);
 
-    testSupport.runSteps(CRDHelper.createDomainCRDStep(null));
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void whenExistingCRDHasFutureVersion_dontReplaceIt() {
     expectReadCRD().returning(defineCRD("v4", "operator-v4"));
 
-    testSupport.runSteps(CRDHelper.createDomainCRDStep(null));
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
   }
 
-  @SuppressWarnings("unchecked")
   @Test
   public void whenReplaceFails_scheduleRetry() {
     testSupport.addRetryStrategy(retryStrategy);
     expectReadCRD().returning(defineCRD("v1", OPERATOR_V1));
     expectReplaceCRD(defaultCRD).failingWithStatus(401);
 
-    Step scriptCRDStep = CRDHelper.createDomainCRDStep(null);
+    Step scriptCRDStep = CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null);
     testSupport.runSteps(scriptCRDStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
@@ -167,7 +161,6 @@ public class CRDHelperTest {
     return testSupport.createCannedResponse("readCRD").withName(KubernetesConstants.CRD_NAME);
   }
 
-  @SuppressWarnings("unchecked")
   private void expectSuccessfulCreateCRD(V1beta1CustomResourceDefinition expectedConfig) {
     expectCreateCRD(expectedConfig).returning(expectedConfig);
   }
@@ -179,7 +172,6 @@ public class CRDHelperTest {
         .withBody(new V1beta1CustomResourceDefinitionMatcher(expectedConfig));
   }
 
-  @SuppressWarnings("unchecked")
   private void expectSuccessfulReplaceCRD(V1beta1CustomResourceDefinition expectedConfig) {
     expectReplaceCRD(expectedConfig).returning(expectedConfig);
   }
@@ -206,11 +198,24 @@ public class CRDHelperTest {
     }
 
     private boolean matches(V1beta1CustomResourceDefinition actualBody) {
-      return hasExpectedVersion(actualBody);
+      return hasExpectedVersion(actualBody) && hasSchemaVerification(actualBody);
     }
 
     private boolean hasExpectedVersion(V1beta1CustomResourceDefinition actualBody) {
       return expected.getSpec().getVersion().equals(actualBody.getSpec().getVersion());
+    }
+
+    private boolean hasSchemaVerification(V1beta1CustomResourceDefinition actualBody) {
+      V1beta1CustomResourceValidation validation = actualBody.getSpec().getValidation();
+      if (validation == null) return false;
+
+      V1beta1JSONSchemaProps openAPIV3Schema = validation.getOpenAPIV3Schema();
+      if (openAPIV3Schema == null || openAPIV3Schema.getProperties().size() != 1) return false;
+
+      V1beta1JSONSchemaProps spec = openAPIV3Schema.getProperties().get("spec");
+      if (spec == null || spec.getProperties().isEmpty()) return false;
+
+      return spec.getProperties().containsKey("serverStartState");
     }
   }
 }

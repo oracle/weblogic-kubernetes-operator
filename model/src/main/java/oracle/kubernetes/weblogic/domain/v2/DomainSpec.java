@@ -6,45 +6,32 @@ package oracle.kubernetes.weblogic.domain.v2;
 
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import javax.annotation.Nonnull;
+import java.util.*;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.json.Pattern;
+import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** DomainSpec is a description of a domain. */
-@SuppressWarnings("NullableProblems")
 public class DomainSpec extends BaseConfiguration {
 
-  /** The pattern for computing the default persistent volume claim name. */
-  private static final String PVC_NAME_PATTERN = "%s-weblogic-domain-pvc";
-
-  /** Domain unique identifier. Must be unique across the Kubernetes cluster. (Required) */
-  @SerializedName("domainUID")
-  @Expose
-  @NotNull
+  /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
+  @Description(
+      "Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required)"
+          + "Defaults to the value of metadata.name")
+  @Pattern("^[a-z0-9_.]{1,253}$")
   private String domainUID;
-
-  /** Domain name (Required) */
-  @SerializedName("domainName")
-  @Expose
-  @NotNull
-  private String domainName;
 
   /**
    * Domain home
@@ -55,50 +42,36 @@ public class DomainSpec extends BaseConfiguration {
       "The folder for the Weblogic Domain. (Not required)"
           + "Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
           + "Defaults to /shared/domains/domain if domainHomeInImage is true")
-  @SerializedName("domainHome")
-  @Expose
   private String domainHome;
 
   /**
-   * Reference to secret containing domain administrator username and password. Secret must contain
-   * keys names 'username' and 'password' (Required)
+   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * contain keys names 'username' and 'password' (Required)
    */
-  @SerializedName("adminSecret")
-  @Expose
-  @Valid
-  @NotNull
-  private V1SecretReference adminSecret;
-
-  /**
-   * Admin server name. Note: Possibly temporary as we could find this value through domain home
-   * inspection. (Required)
-   */
-  @SerializedName("asName")
-  @Expose
-  @NotNull
-  private String asName;
-
-  /**
-   * Administration server port. Note: Possibly temporary as we could find this value through domain
-   * home inspection. (Required)
-   */
-  @SerializedName("asPort")
-  @Expose
-  @NotNull
-  private Integer asPort;
+  @Valid @NotNull private V1SecretReference webLogicCredentialsSecret;
 
   /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
    * .out files in.
    */
-  @SerializedName("logHome")
-  @Expose
+  @Description(
+      "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files")
   private String logHome;
 
+  /**
+   * Whether the log home is enabled.
+   *
+   * @since 2.0
+   */
+  @Description(
+      "Specified whether the log home folder is enabled (Not required). "
+          + "Defaults to true if domainHomeInImage is false. "
+          + "Defaults to false if domainHomeInImage is true. ")
+  private Boolean logHomeEnabled; // Boolean object, null if unspecified
+
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @SerializedName("includeServerOutInPodLog")
-  @Expose
-  private String includeServerOutInPodLog;
+  @Description("If true (the default), the server .out file will be included in the pod's stdout")
+  private Boolean includeServerOutInPodLog;
 
   /**
    * The WebLogic Docker image.
@@ -108,8 +81,6 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "The Weblogic Docker image; required when domainHomeInImage is true; "
           + "otherwise, defaults to store/oracle/weblogic:12.2.1.3")
-  @SerializedName("image")
-  @Expose
   private String image;
 
   /**
@@ -122,11 +93,9 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The image pull policy for the WebLogic Docker image. "
-          + ""
           + "Legal values are Always, Never and IfNotPresent. "
           + "Defaults to Always if image ends in :latest, IfNotPresent otherwise")
-  @SerializedName("imagePullPolicy")
-  @Expose
+  @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
   /**
@@ -138,16 +107,15 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("A list of image pull secrets for the WebLogic Docker image.")
-  @SerializedName("imagePullSecrets")
-  @Expose
   private List<V1LocalObjectReference> imagePullSecrets;
 
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in a cluster specification.
    */
-  @SerializedName("replicas")
-  @Expose
+  @Description(
+      "The number of managed servers to run in any cluster that does not specify a replica count")
+  @Range(minimum = 0)
   private Integer replicas;
 
   /**
@@ -155,18 +123,9 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @SerializedName("domainHomeInImage")
-  @Expose
-  private boolean domainHomeInImage;
-
-  /** The definition of the storage used for this domain. */
-  @SerializedName("storage")
-  @Expose
   @Description(
-      "The storage used for this domain. "
-          + "Defaults to a predefined claim for a PVC whose name is "
-          + "the domain UID followed by '-weblogic-domain-pvc'")
-  private DomainStorage storage;
+      "True if this domain's home is defined in the docker image for the domain. Defaults to true")
+  private Boolean domainHomeInImage;
 
   /**
    * The name of the Kubernetes configmap used for optional WebLogic configuration overrides.
@@ -174,8 +133,6 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("The name of the configmap for optional WebLogic configuration overrides.")
-  @SerializedName("configOverrides")
-  @Expose
   private String configOverrides;
 
   /**
@@ -184,8 +141,6 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
-  @SerializedName("configOverrideSecrets")
-  @Expose
   private List<String> configOverrideSecrets;
 
   /**
@@ -193,8 +148,6 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @SerializedName("adminServer")
-  @Expose
   @Description("Configuration for the admin server")
   private AdminServer adminServer;
 
@@ -203,44 +156,48 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @SerializedName("managedServers")
-  @Expose
   @Description("Configuration for the managed servers")
-  private Map<String, ManagedServer> managedServers = new HashMap<>();
+  private List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
    * The configured clusters.
    *
    * @since 2.0
    */
-  @SerializedName("clusters")
-  @Expose
   @Description("Configuration for the clusters")
-  protected Map<String, Cluster> clusters = new HashMap<>();
+  protected List<Cluster> clusters = new ArrayList<>();
 
-  public AdminServer getOrCreateAdminServer(String adminServerName) {
-    if (adminServer != null) return adminServer;
-
-    return createAdminServer(adminServerName);
+  /**
+   * Adds a Cluster to the DomainSpec
+   *
+   * @param cluster
+   * @return
+   */
+  public DomainSpec withCluster(Cluster cluster) {
+    clusters.add(cluster);
+    return this;
   }
 
-  private AdminServer createAdminServer(String adminServerName) {
-    setAsName(adminServerName);
+  AdminServer getOrCreateAdminServer() {
+    if (adminServer != null) return adminServer;
+
+    return createAdminServer();
+  }
+
+  private AdminServer createAdminServer() {
     AdminServer adminServer = new AdminServer();
     setAdminServer(adminServer);
     return adminServer;
   }
 
+  @SuppressWarnings("unused")
   EffectiveConfigurationFactory getEffectiveConfigurationFactory(String resourceVersionLabel) {
     return new V2EffectiveConfigurationFactory();
   }
 
-  private boolean isVersion2Specified(String resourceVersionLabel) {
-    return VersionConstants.DOMAIN_V2.equals(resourceVersionLabel);
-  }
-
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
+   * to the value of metadata.name
    *
    * @return domain UID
    */
@@ -249,7 +206,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
+   * to the value of metadata.name
    *
    * @param domainUID domain UID
    */
@@ -269,41 +227,12 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain name (Required)
-   *
-   * @return domain name
-   */
-  public String getDomainName() {
-    return domainName;
-  }
-
-  /**
-   * Domain name (Required)
-   *
-   * @param domainName domain name
-   */
-  public void setDomainName(String domainName) {
-    this.domainName = domainName;
-  }
-
-  /**
-   * Domain name (Required)
-   *
-   * @param domainName domain name
-   * @return this
-   */
-  public DomainSpec withDomainName(String domainName) {
-    this.domainName = domainName;
-    return this;
-  }
-
-  /**
    * Domain home
    *
    * @since 2.0
    * @return domain home
    */
-  public String getDomainHome() {
+  String getDomainHome() {
     return domainHome;
   }
 
@@ -328,93 +257,24 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
-   * IfNotPresent.
-   *
-   * <p>Defaults to Always if image ends in :latest, IfNotPresent otherwise.
-   *
-   * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
-   *
-   * @param imagePullPolicy image pull policy
-   * @return this
-   */
-  public DomainSpec withImagePullPolicy(String imagePullPolicy) {
-    setImagePullPolicy(imagePullPolicy);
-    return this;
-  }
-
-  /**
-   * The name of the secret used to authenticate a request for an image pull.
-   *
-   * <p>More info:
-   * https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
-   */
-  public DomainSpec withImagePullSecretName(String imagePullSecretName) {
-    setImagePullSecret(new V1LocalObjectReference().name(imagePullSecretName));
-    return this;
-  }
-
-  public V1SecretReference getAdminSecret() {
-    return adminSecret;
+  public V1SecretReference getWebLogicCredentialsSecret() {
+    return webLogicCredentialsSecret;
   }
 
   @SuppressWarnings("unused")
-  public void setAdminSecret(V1SecretReference adminSecret) {
-    this.adminSecret = adminSecret;
+  public void setWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 
   /**
-   * Reference to secret containing domain administrator username and password. Secret must contain
-   * keys names 'username' and 'password' (Required)
+   * Reference to secret containing WebLogic startup credentials username and password. Secret must
+   * contain keys names 'username' and 'password' (Required)
    *
-   * @param adminSecret admin secret
+   * @param webLogicCredentialsSecret WebLogic startup credentials secret
    * @return this
    */
-  public DomainSpec withAdminSecret(V1SecretReference adminSecret) {
-    this.adminSecret = adminSecret;
-    return this;
-  }
-
-  public String getAsName() {
-    return asName;
-  }
-
-  public void setAsName(String asName) {
-    this.asName = asName;
-  }
-
-  /**
-   * Admin server name. Note: Possibly temporary as we could find this value through domain home
-   * inspection. (Required)
-   *
-   * @param asName admin server name
-   * @return this
-   */
-  public DomainSpec withAsName(String asName) {
-    this.asName = asName;
-    return this;
-  }
-
-  public Integer getAsPort() {
-    return asPort;
-  }
-
-  @SuppressWarnings("WeakerAccess")
-  // public access is needed for yaml processing
-  public void setAsPort(Integer asPort) {
-    this.asPort = asPort;
-  }
-
-  /**
-   * Administration server port. Note: Possibly temporary as we could find this value through domain
-   * home inspection. (Required)
-   *
-   * @param asPort admin server port
-   * @return this
-   */
-  public DomainSpec withAsPort(Integer asPort) {
-    this.asPort = asPort;
+  public DomainSpec withWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
+    this.webLogicCredentialsSecret = webLogicCredentialsSecret;
     return this;
   }
 
@@ -460,7 +320,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return The in-pod name of the directory to store the domain, node manager, server logs, and
    *     server .out files in.
    */
-  public String getLogHome() {
+  String getLogHome() {
     return logHome;
   }
 
@@ -468,9 +328,24 @@ public class DomainSpec extends BaseConfiguration {
     this.logHome = logHome;
   }
 
-  public DomainSpec withLogHome(String logHome) {
-    this.logHome = logHome;
-    return this;
+  /**
+   * Log home enabled
+   *
+   * @since 2.0
+   * @return log home enabled
+   */
+  boolean getLogHomeEnabled() {
+    return Optional.ofNullable(logHomeEnabled).orElse(!isDomainHomeInImage());
+  }
+
+  /**
+   * Log home enabled
+   *
+   * @since 2.0
+   * @param logHomeEnabled log home enabled
+   */
+  public void setLogHomeEnabled(boolean logHomeEnabled) {
+    this.logHomeEnabled = logHomeEnabled;
   }
 
   /**
@@ -479,20 +354,12 @@ public class DomainSpec extends BaseConfiguration {
    * @return whether server .out should be included in pod's stdout.
    * @since 2.0
    */
-  public String getIncludeServerOutInPodLog() {
-    return Optional.ofNullable(getConfiguredIncludeServerOutInPodLog())
+  boolean getIncludeServerOutInPodLog() {
+    return Optional.ofNullable(includeServerOutInPodLog)
         .orElse(KubernetesConstants.DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG);
   }
 
-  String getConfiguredIncludeServerOutInPodLog() {
-    return includeServerOutInPodLog;
-  }
-
-  public void setIncludeServerOutInPodLog(String includeServerOutInPodLog) {
-    this.includeServerOutInPodLog = includeServerOutInPodLog;
-  }
-
-  public DomainSpec withIncludeServerOutInPodLog(String includeServerOutInPodLog) {
+  public DomainSpec withIncludeServerOutInPodLog(boolean includeServerOutInPodLog) {
     this.includeServerOutInPodLog = includeServerOutInPodLog;
     return this;
   }
@@ -503,26 +370,32 @@ public class DomainSpec extends BaseConfiguration {
    * @return true or false
    * @since 2.0
    */
-  public boolean isDomainHomeInImage() {
-    return domainHomeInImage;
+  boolean isDomainHomeInImage() {
+    return Optional.ofNullable(domainHomeInImage).orElse(true);
   }
 
-  /** @param domainHomeInImage */
+  /**
+   * Specifies whether the domain home is stored in the image
+   *
+   * @param domainHomeInImage true if the domain home is in the image
+   */
   public void setDomainHomeInImage(boolean domainHomeInImage) {
     this.domainHomeInImage = domainHomeInImage;
   }
 
+  public DomainSpec withDomainHomeInImage(boolean domainHomeInImage) {
+    setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
   /**
-   * Replicas is the desired number of managed servers running in each WebLogic cluster that is not
-   * configured in clusters. Provided so that administrators can scale the Domain resource.
+   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
+   * configured in clusters.
    *
-   * @deprecated use {@link Domain#getReplicaCount(String)} to obtain the effective setting.
    * @return replicas
    */
-  @SuppressWarnings("DeprecatedIsStillUsed")
-  @Deprecated
   public Integer getReplicas() {
-    return replicas != null ? replicas : 0;
+    return this.replicas;
   }
 
   /**
@@ -531,7 +404,6 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @param replicas replicas
    */
-  @SuppressWarnings("deprecation")
   public void setReplicas(Integer replicas) {
     this.replicas = replicas;
   }
@@ -543,36 +415,17 @@ public class DomainSpec extends BaseConfiguration {
    * @param replicas replicas
    * @return this
    */
-  @SuppressWarnings("deprecation")
   public DomainSpec withReplicas(Integer replicas) {
     this.replicas = replicas;
     return this;
   }
 
-  /**
-   * Specifies the storage for the domain.
-   *
-   * @param storage the definition of the domain storage.
-   */
-  public void setStorage(DomainStorage storage) {
-    this.storage = storage;
-  }
-
-  /**
-   * Returns the storage for the domain.
-   *
-   * @return the definition of the domain storage.
-   */
-  public DomainStorage getStorage() {
-    return storage;
-  }
-
   @Nullable
-  public String getConfigOverrides() {
+  String getConfigOverrides() {
     return configOverrides;
   }
 
-  public void setConfigOverrides(@Nullable String overridess) {
+  void setConfigOverrides(@Nullable String overridess) {
     this.configOverrides = overridess;
   }
 
@@ -586,7 +439,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   @Nullable
-  public List<String> getConfigOverrideSecrets() {
+  List<String> getConfigOverrideSecrets() {
     if (hasConfigOverrideSecrets()) return configOverrideSecrets;
     else return Collections.emptyList();
   }
@@ -595,28 +448,9 @@ public class DomainSpec extends BaseConfiguration {
     this.configOverrideSecrets = overridesSecretNames;
   }
 
-  public DomainSpec withConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
-    this.configOverrideSecrets = overridesSecretNames;
-    return this;
-  }
-
-  /**
-   * Returns the name of the persistent volume claim for the logs and PV-based domain.
-   *
-   * @return volume claim
-   */
-  String getPersistentVolumeClaimName() {
-    return storage == null ? null : getConfiguredClaimName(storage);
-  }
-
-  private String getConfiguredClaimName(@Nonnull DomainStorage storage) {
-    return Optional.ofNullable(storage.getPersistentVolumeClaimName())
-        .orElse(String.format(PVC_NAME_PATTERN, domainUID));
-  }
-
   @Nullable
   @Override
-  protected String getServerStartPolicy() {
+  public String getServerStartPolicy() {
     return Optional.ofNullable(super.getServerStartPolicy()).orElse(START_IF_NEEDED);
   }
 
@@ -626,21 +460,18 @@ public class DomainSpec extends BaseConfiguration {
         new ToStringBuilder(this)
             .appendSuper(super.toString())
             .append("domainUID", domainUID)
-            .append("domainName", domainName)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
-            .append("adminSecret", adminSecret)
-            .append("asName", asName)
-            .append("asPort", asPort)
+            .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
-            .append("storage", storage)
             .append("imagePullSecrets", imagePullSecrets)
             .append("adminServer", adminServer)
             .append("managedServers", managedServers)
             .append("clusters", clusters)
             .append("replicas", replicas)
             .append("logHome", logHome)
+            .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets);
@@ -654,21 +485,18 @@ public class DomainSpec extends BaseConfiguration {
         new HashCodeBuilder()
             .appendSuper(super.hashCode())
             .append(domainUID)
-            .append(domainName)
             .append(domainHome)
             .append(domainHomeInImage)
-            .append(adminSecret)
-            .append(asName)
-            .append(asPort)
+            .append(webLogicCredentialsSecret)
             .append(image)
             .append(imagePullPolicy)
-            .append(storage)
             .append(imagePullSecrets)
             .append(adminServer)
             .append(managedServers)
             .append(clusters)
             .append(replicas)
             .append(logHome)
+            .append(logHomeEnabled)
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets);
@@ -686,14 +514,10 @@ public class DomainSpec extends BaseConfiguration {
         new EqualsBuilder()
             .appendSuper(super.equals(other))
             .append(domainUID, rhs.domainUID)
-            .append(domainName, rhs.domainName)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
-            .append(adminSecret, rhs.adminSecret)
-            .append(asName, rhs.asName)
-            .append(asPort, rhs.asPort)
+            .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(image, rhs.image)
-            .append(storage, rhs.storage)
             .append(imagePullPolicy, rhs.imagePullPolicy)
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(adminServer, rhs.adminServer)
@@ -701,6 +525,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(clusters, rhs.clusters)
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
+            .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets);
@@ -708,12 +533,22 @@ public class DomainSpec extends BaseConfiguration {
     return builder.isEquals();
   }
 
-  private Server getServer(String serverName) {
-    return managedServers.get(serverName);
+  ManagedServer getManagedServer(String serverName) {
+    if (serverName != null) {
+      for (ManagedServer s : managedServers) {
+        if (serverName.equals(s.getServerName())) return s;
+      }
+    }
+    return null;
   }
 
-  private Cluster getCluster(String clusterName) {
-    return clusters.get(clusterName);
+  Cluster getCluster(String clusterName) {
+    if (clusterName != null) {
+      for (Cluster c : clusters) {
+        if (clusterName.equals(c.getClusterName())) return c;
+      }
+    }
+    return null;
   }
 
   private int getReplicaCountFor(Cluster cluster) {
@@ -726,19 +561,27 @@ public class DomainSpec extends BaseConfiguration {
     return cluster != null && cluster.getReplicas() != null;
   }
 
+  private int getMaxUnavailableFor(Cluster cluster) {
+    return hasMaxUnavailable(cluster) ? cluster.getMaxUnavailable() : 1;
+  }
+
+  private boolean hasMaxUnavailable(Cluster cluster) {
+    return cluster != null && cluster.getMaxUnavailable() != null;
+  }
+
   public AdminServer getAdminServer() {
     return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
   }
 
-  public void setAdminServer(AdminServer adminServer) {
+  private void setAdminServer(AdminServer adminServer) {
     this.adminServer = adminServer;
   }
 
-  public Map<String, ManagedServer> getManagedServers() {
+  public List<ManagedServer> getManagedServers() {
     return managedServers;
   }
 
-  public Map<String, Cluster> getClusters() {
+  public List<Cluster> getClusters() {
     return clusters;
   }
 
@@ -752,10 +595,9 @@ public class DomainSpec extends BaseConfiguration {
     public ServerSpec getServerSpec(String serverName, String clusterName) {
       return new ManagedServerSpecV2Impl(
           DomainSpec.this,
-          getServer(serverName),
-          getClusterLimit(clusterName),
+          getManagedServer(serverName),
           getCluster(clusterName),
-          DomainSpec.this);
+          getClusterLimit(clusterName));
     }
 
     private Integer getClusterLimit(String clusterName) {
@@ -775,6 +617,11 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public void setReplicaCount(String clusterName, int replicaCount) {
       getOrCreateCluster(clusterName).setReplicas(replicaCount);
+    }
+
+    @Override
+    public int getMaxUnavailable(String clusterName) {
+      return getMaxUnavailableFor(getCluster(clusterName));
     }
 
     @Override
@@ -814,7 +661,7 @@ public class DomainSpec extends BaseConfiguration {
 
     private Cluster createClusterWithName(String clusterName) {
       Cluster cluster = new Cluster().withClusterName(clusterName);
-      clusters.put(clusterName, cluster);
+      clusters.add(cluster);
       return cluster;
     }
   }

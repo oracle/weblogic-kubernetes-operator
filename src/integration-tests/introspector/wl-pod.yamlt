@@ -43,6 +43,8 @@ spec:
       value: "${SERVICE_NAME}"
     - name: AS_SERVICE_NAME
       value: "${AS_SERVICE_NAME}"
+    - name: LOCAL_SERVER_DEFAULT_PORT
+      value: "${LOCAL_SERVER_DEFAULT_PORT}"
     - name: ADMIN_USERNAME
       value: ""
     - name: ADMIN_PASSWORD
@@ -71,15 +73,16 @@ spec:
     #  timeoutSeconds: 5
     name: weblogic-server
     ports:
-    - containerPort: ${ADMIN_PORT}
+    - containerPort: ${LOCAL_SERVER_DEFAULT_PORT}
       protocol: TCP
     readinessProbe:
-      exec:
-        command:
-        - /weblogic-operator/scripts/readinessProbe.sh
       failureThreshold: 1
+      httpGet:
+        path: /weblogic
+        port: ${LOCAL_SERVER_DEFAULT_PORT}
+        scheme: HTTP
       initialDelaySeconds: 2
-      periodSeconds: 5
+      periodSeconds: 1
       successThreshold: 1
       timeoutSeconds: 5
     resources: {}

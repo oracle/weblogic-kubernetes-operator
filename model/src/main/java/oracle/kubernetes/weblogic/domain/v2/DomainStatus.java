@@ -9,6 +9,7 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
+import oracle.kubernetes.json.Range;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -45,6 +46,14 @@ public class DomainStatus {
   @SerializedName("startTime")
   @Expose
   private DateTime startTime;
+
+  /**
+   * The number of running managed servers in the WebLogic cluster if there is only one cluster in
+   * the domain and where the cluster does not explicitly configure its replicas in a cluster
+   * specification.
+   */
+  @Range(minimum = 0)
+  private Integer replicas;
 
   /**
    * Current service state of domain.
@@ -130,6 +139,41 @@ public class DomainStatus {
    */
   public DomainStatus withReason(String reason) {
     this.reason = reason;
+    return this;
+  }
+
+  /**
+   * The number of running managed servers in the WebLogic cluster if there is only one cluster in
+   * the domain and where the cluster does not explicitly configure its replicas in a cluster
+   * specification.
+   *
+   * @param replicas replicas
+   */
+  public void setReplicas(Integer replicas) {
+    this.replicas = replicas;
+  }
+
+  /**
+   * The number of running managed servers in the WebLogic cluster if there is only one cluster in
+   * the domain and where the cluster does not explicitly configure its replicas in a cluster
+   * specification.
+   *
+   * @return replicas
+   */
+  public Integer getReplicas() {
+    return this.replicas;
+  }
+
+  /**
+   * The number of running managed servers in the WebLogic cluster if there is only one cluster in
+   * the domain and where the cluster does not explicitly configure its replicas in a cluster
+   * specification.
+   *
+   * @param replicas replicas
+   * @return this
+   */
+  public DomainStatus withReplicas(Integer replicas) {
+    this.replicas = replicas;
     return this;
   }
 

@@ -7,11 +7,10 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1SecretReference;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import oracle.kubernetes.json.Description;
@@ -25,9 +24,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster. */
 @SuppressWarnings("deprecation")
 public class Domain {
-
-  /** The default number of replicas for a cluster. */
-  static final int DEFAULT_REPLICA_LIMIT = 2;
+  /** The pattern for computing the default shared logs directory. */
+  private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
 
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
@@ -45,7 +43,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
-  @Description("The type of resourced. Should be 'Domain'")
+  @Description("The type of resource. Should be 'Domain'")
   private String kind;
   /**
    * Standard object's metadata. More info:
@@ -217,6 +215,26 @@ public class Domain {
   }
 
   /**
+   * Returns the maximum number of unavailable replicas for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMaxUnavailable(String clusterName) {
+    return getEffectiveConfigurationFactory().getMaxUnavailable(clusterName);
+  }
+
+  /**
+   * Returns the minimum number of replicas for the specified cluster.
+   *
+   * @param clusterName the name of the cluster
+   * @return the result of applying any configurations for this value
+   */
+  public int getMinAvailable(String clusterName) {
+    return Math.max(getReplicaCount(clusterName) - getMaxUnavailable(clusterName), 0);
+  }
+
+  /**
    * DomainSpec is a description of a domain.
    *
    * @return Specification
@@ -266,30 +284,12 @@ public class Domain {
   }
 
   /**
-   * Reference to secret containing domain administrator username and password.
+   * Reference to secret containing WebLogic startup credentials username and password.
    *
-   * @return admin secret
+   * @return credentials secret
    */
-  public V1SecretReference getAdminSecret() {
-    return spec.getAdminSecret();
-  }
-
-  /**
-   * Returns the name of the admin server.
-   *
-   * @return admin server name
-   */
-  public String getAsName() {
-    return spec.getAsName();
-  }
-
-  /**
-   * Returns the port used by the admin server.
-   *
-   * @return admin server port
-   */
-  public Integer getAsPort() {
-    return spec.getAsPort();
+  public V1SecretReference getWebLogicCredentialsSecret() {
+    return spec.getWebLogicCredentialsSecret();
   }
 
   /**
@@ -298,23 +298,15 @@ public class Domain {
    * @return domain UID
    */
   public String getDomainUID() {
-    return spec.getDomainUID();
-  }
-
-  /**
-   * Returns the domain name
-   *
-   * @return domain name
-   */
-  public String getDomainName() {
-    return spec.getDomainName();
+    return Optional.ofNullable(spec.getDomainUID()).orElse(getMetadata().getName());
   }
 
   public String getLogHome() {
-    return spec.getLogHome();
+    return Optional.ofNullable(spec.getLogHome())
+        .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUID()));
   }
 
-  public String getIncludeServerOutInPodLog() {
+  public boolean isIncludeServerOutInPodLog() {
     return spec.getIncludeServerOutInPodLog();
   }
 
@@ -357,37 +349,6 @@ public class Domain {
   }
 
   /**
-   * Returns the name of the persistent volume claim for the logs and PV-based domain.
-   *
-   * @return volume claim
-   */
-  public String getPersistentVolumeClaimName() {
-    return spec.getPersistentVolumeClaimName();
-  }
-
-  /**
-   * Returns the persistent volume that must be created for domain storage. May be null.
-   *
-   * @return a definition of the kubernetes resource to create
-   */
-  public V1PersistentVolume getRequiredPersistentVolume() {
-    return spec.getStorage() == null
-        ? null
-        : spec.getStorage().getRequiredPersistentVolume(getDomainUID());
-  }
-
-  /**
-   * Returns the persistent volume claim that must be created for domain storage. May be null.
-   *
-   * @return a definition of the kubernetes resource to create
-   */
-  public V1PersistentVolumeClaim getRequiredPersistentVolumeClaim() {
-    return spec.getStorage() == null
-        ? null
-        : spec.getStorage().getRequiredPersistentVolumeClaim(getDomainUID(), getNamespace());
-  }
-
-  /**
    * Returns the name of the Kubernetes configmap that contains optional configuration overrides.
    *
    * @return name of the configmap
@@ -403,10 +364,6 @@ public class Domain {
    */
   public List<String> getConfigOverrideSecrets() {
     return spec.getConfigOverrideSecrets();
-  }
-
-  private String getNamespace() {
-    return getMetadata().getNamespace();
   }
 
   @Override

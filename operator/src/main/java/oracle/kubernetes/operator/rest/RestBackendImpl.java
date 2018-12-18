@@ -27,8 +27,6 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.Scan;
-import oracle.kubernetes.operator.helpers.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -161,7 +159,7 @@ public class RestBackendImpl implements RestBackend {
     Set<String> result = new TreeSet<>();
     List<Domain> domains = getDomainsList();
     for (Domain domain : domains) {
-      result.add(domain.getSpec().getDomainUID());
+      result.add(domain.getDomainUID());
     }
     LOGGER.exiting(result);
     return result;
@@ -293,6 +291,17 @@ public class RestBackendImpl implements RestBackend {
     return getWlsDomainConfig(domainUID).getClusterConfigs();
   }
 
+  static interface TopologyRetriever {
+    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUID);
+  }
+
+  static final TopologyRetriever INSTANCE =
+      (String ns, String domainUID) -> {
+        Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUID);
+        if (s != null) return s.getWlsDomainConfig();
+        return null;
+      };
+
   /**
    * Find the WlsDomainConfig corresponding to the given domain UID.
    *
@@ -302,20 +311,15 @@ public class RestBackendImpl implements RestBackend {
    */
   WlsDomainConfig getWlsDomainConfig(String domainUID) {
     for (String ns : targetNamespaces) {
-      Scan scan = ScanCache.INSTANCE.lookupScan(ns, domainUID);
-      if (scan != null) {
-        WlsDomainConfig config = scan.getWlsDomainConfig();
-        if (config != null) {
-          return config;
-        }
-      }
+      WlsDomainConfig config = INSTANCE.getWlsDomainConfig(ns, domainUID);
+      if (config != null) return config;
     }
     return new WlsDomainConfig(null);
   }
 
   private Domain findDomain(String domainUID, List<Domain> domains) {
     for (Domain domain : domains) {
-      if (domainUID.equals(domain.getSpec().getDomainUID())) {
+      if (domainUID.equals(domain.getDomainUID())) {
         return domain;
       }
     }

@@ -13,6 +13,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -46,7 +47,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   private static final String VALUE1 = "value1";
   private static final String VALUE2 = "value2";
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
-  private static final String END_VALUE_1 = "find uid1 at /shared/domains/uid1";
+  private static final String END_VALUE_1 = "find uid1 at /shared/domain";
   private static final String RAW_VALUE_2 = "$(SERVER_NAME) is not $(ADMIN_NAME):$(ADMIN_PORT)";
   private static final String END_VALUE_2 = "ms1 is not ADMIN_SERVER:7001";
   private static final String CLUSTER_NAME = "test-cluster";
@@ -61,7 +62,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   private WlsServerConfig createServerConfig() {
-    return new WlsServerConfig(SERVER_NAME, LISTEN_PORT, null, null, false, null, null);
+    return new WlsServerConfig(
+        SERVER_NAME, LISTEN_PORT, null, null, false, null, null, null, false);
   }
 
   @Override
@@ -207,6 +209,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenExistingManagedPodSpecContainerHasWrongEnvFrom_replaceIt() {
     verifyRollManagedPodWhen((pod) -> getSpecContainer(pod).envFrom(Collections.emptyList()));
+  }
+
+  @Test
+  public void whenExistingManagedPodRestartVersionChange() {
+    verifyRollManagedPodWhen(
+        (pod) ->
+            pod.getMetadata()
+                .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "serverRestartV1"));
   }
 
   @Test
@@ -363,6 +373,28 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenClusterHasRestartVersion_createManagedPodWithRestartVersionLabel() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().configureCluster(CLUSTER_NAME).withRestartVersion("clusterRestartV1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry(LabelConstants.CLUSTERRESTARTVERSION_LABEL, "clusterRestartV1"));
+    assertThat(podLabels, hasKey(not(LabelConstants.DOMAINRESTARTVERSION_LABEL)));
+    assertThat(podLabels, hasKey(not(LabelConstants.SERVERRESTARTVERSION_LABEL)));
+  }
+
+  @Test
+  public void whenDomainHasRestartVersion_createManagedPodWithRestartVersionLabel() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().withRestartVersion("domainRestartV1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
+    assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
+    assertThat(podLabels, hasKey(not(LabelConstants.SERVERRESTARTVERSION_LABEL)));
+  }
+
+  @Test
   public void whenClusterHasAnnotations_createManagedPodWithThem() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
@@ -453,7 +485,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(podLabels, hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
 
-  @SuppressWarnings("unchecked")
   private void verifyRollManagedPodWhen(PodMutator mutator) {
     Map<String, StepAndPacket> rolling = new HashMap<>();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);

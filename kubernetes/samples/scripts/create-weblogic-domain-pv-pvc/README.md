@@ -1,14 +1,13 @@
-# Sample Persistent Volume and Persistent Volume Claim
+# Sample persistent volume and persistent volume claim
 
-The sample scripts demonstrate the creation of a Kubernetes persistent volume (PV) and persistent volume claim (PVC), which can then be used in a domain custom resource as a persistent storage for the WebLogic domain home or log files.
+The sample scripts demonstrate the creation of a Kubernetes persistent volume (PV) and persistent volume claim (PVC), which can then be used in a domain resource as a persistent storage for the WebLogic domain home or log files.
 
 A PV and PVC can be shared by multiple WebLogic domains or dedicated to a particular domain.
 
 ## Prerequisites
 
-The following prerequisites must be handled prior to running the create script:
-* Create a Kubernetes namespace for the persistent volume claim unless the intention is to use the default namespace. Note that a PVC has to be in the same namespace as the domain resource that uses it.
-* Make sure that the host directory that will be used as the persistent volume already exists and has the appropriate file permissions set.
+Please read this guide before proceeding.
+* [Persistent Volumes](../../../../site/persistent-volumes.md)
 
 ## Using the scripts to create a PV and PVC  
 
@@ -62,19 +61,9 @@ The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-i
 
 ## Shared versus dedicated PVC
 
-By default, the `domainUID` is left empty in the inputs file so that the generated PV and PVC can be shared by multiple domain resources in the same Kubernetes namespaces.
+By default, the `domainUID` is left empty in the inputs file, which means the generated PV and PVC will not be associated with a particular domain, but can be shared by multiple domain resources in the same Kubernetes namespaces as the PV and PVC.
 
-For the use cases where a dedicated PV and PVC is desired for a particular domain, the `domainUID` can be set, which will cause the generated PV and PVC to be associated with the specified `domainUID`. In the per domain PV and PVC case, the names of the generated YAML files and the Kubernetes PV and PVC objects are decorated with the `domainUID`, and the PV and PVC objects are also labeled with the `domainUID`.
-
-## Common problems
-
-This section provides details of common problems that might occur while running the script and how to resolve them.
-
-### Persistent volume provider not configured correctly
-
-Possibly the most common problem experienced during testing was the incorrect configuration of the persistent volume provider.  The persistent volume must be accessible to all Kubernetes nodes, and must be able to be mounted as Read/Write/Many.  If this is not the case, the PV/PVC creation will fail.
-
-The simplest case is where the `HOST_PATH` provider is used.  This can be either with one Kubernetes node, or with the `HOST_PATH` residing in shared storage available at the same location on every node (for example, on an NFS mount).  In this case, the path used for the persistent volume must have its permission bits set to 777.
+For the use cases where dedicated PV and PVC are desired for a particular domain, the `domainUID` needs to be set in the `create-pv-pvc-inputs.yaml` file. The presence of a non-empty domainUID in the inputs file will cause the generated PV and PVC to be associated with the specified `domainUID`. The association includes that the names of the generated YAML files and the Kubernetes PV and PVC objects are decorated with the `domainUID`, and the PV and PVC objects are also labeled with the `domainUID`.
 
 ## Verify the results
 
@@ -183,15 +172,6 @@ spec:
 ```
 
 ### Verify the PV and PVC objects
-
-To confirm that the PV and PVC were created, use these commands:
-
-```
-kubectl describe pv
-kubectl describe pvc -n NAMESPACE
-```
-
-Replace `NAMESPACE` with the namespace that the PVC was created in.  The output of this command will provide details of the PV, as shown in this example:
 
 ```
 $ kubectl describe pv weblogic-sample-pv

@@ -5,6 +5,8 @@
 {{- include "operator.operatorClusterRoleGeneral" . }}
 {{- include "operator.operatorClusterRoleNamespace" . }}
 {{- include "operator.operatorClusterRoleNonResource" . }}
+{{- include "operator.operatorClusterRoleOperatorAdmin" . }}
+{{- include "operator.operatorClusterRoleDomainAdmin" . }}
 {{- include "operator.clusterRoleBindingGeneral" . }}
 {{- include "operator.clusterRoleBindingAuthDelegator" . }}
 {{- include "operator.clusterRoleBindingDiscovery" . }}

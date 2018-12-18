@@ -21,8 +21,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newDeploy
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVar;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVarSource;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newExecAction;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newJob;
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newJobSpec;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newNamespace;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newObjectFieldSelector;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newObjectMeta;
@@ -50,8 +48,6 @@ import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Role;
 import io.kubernetes.client.models.V1RoleBinding;
@@ -90,79 +86,6 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     CreateOperatorGeneratedFilesTestBase.factory = factory;
     inputs = val;
     generatedFiles = factory.generate(val);
-  }
-
-  @Test
-  public void generatesCorrect_operatorPreInstallHookJob() {
-    assertThat(
-        getActualWeblogicOperatorPreInstallHookJob(),
-        yamlEqualTo(getExpectedWeblogicOperatorPreInstallHookJob()));
-  }
-
-  private V1Job getActualWeblogicOperatorPreInstallHookJob() {
-    return getGeneratedFiles().getOperatorPreInstallHookJob();
-  }
-
-  protected V1Job getExpectedWeblogicOperatorPreInstallHookJob() {
-    return getExpectedWeblogicOperatorHookJob("pre-install");
-  }
-
-  @Test
-  public void generatesCorrect_operatorPreUpgradeHookJob() {
-    assertThat(
-        getActualWeblogicOperatorPreUpgradeHookJob(),
-        yamlEqualTo(getExpectedWeblogicOperatorPreUpgradeHookJob()));
-  }
-
-  private V1Job getActualWeblogicOperatorPreUpgradeHookJob() {
-    return getGeneratedFiles().getOperatorPreUpgradeHookJob();
-  }
-
-  protected V1Job getExpectedWeblogicOperatorPreUpgradeHookJob() {
-    return getExpectedWeblogicOperatorHookJob("pre-upgrade");
-  }
-
-  protected V1Job getExpectedWeblogicOperatorHookJob(String hookType) {
-    V1Job job =
-        newJob()
-            .metadata(
-                newObjectMeta()
-                    .name(OPERATOR_RELEASE + "-weblogic-operator-" + hookType + "-hook")
-                    .namespace(getInputs().getTillerNamespace())
-                    .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V2)
-                    .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace())
-                    .putAnnotationsItem("helm.sh/hook", hookType)
-                    .putAnnotationsItem(
-                        "helm.sh/hook-delete-policy", "before-hook-creation,hook-succeeded"))
-            .spec(
-                newJobSpec()
-                    .backoffLimit(0)
-                    .template(
-                        newPodTemplateSpec()
-                            .metadata(
-                                newObjectMeta()
-                                    .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V2)
-                                    .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-                            .spec(
-                                newPodSpec()
-                                    .restartPolicy("Never")
-                                    .serviceAccount(getInputs().getTillerServiceAccount())
-                                    .addContainersItem(
-                                        newContainer()
-                                            .name("weblogic-operator")
-                                            .image(getInputs().getWeblogicOperatorImage())
-                                            .imagePullPolicy(
-                                                getInputs().getWeblogicOperatorImagePullPolicy())
-                                            .addCommandItem(
-                                                "/operator/operator-helm-verification-hook.sh")
-                                            .addCommandItem(hookType)
-                                            .addCommandItem(getInputs().getNamespace())
-                                            .addCommandItem(getInputs().getServiceAccount())))));
-    V1Container container = job.getSpec().getTemplate().getSpec().getContainers().get(0);
-    for (String targetNamespace : getInputs().getTargetNamespaces().split(",")) {
-      container.addCommandItem(targetNamespace);
-    }
-    return job;
   }
 
   @Test

@@ -26,6 +26,11 @@ public class AdminServer extends Server {
   @Description("T3 network access points to export")
   private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
 
+  @Description(
+      "Configures which of the admin server's WebLogic admin channels should be exposed outside"
+          + " the Kubernetes cluster via a node port service.")
+  private AdminService adminService;
+
   /**
    * Configures an exported T3 network access point.
    *
@@ -52,6 +57,9 @@ public class AdminServer extends Server {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("exportedNetworkAccessPoints", exportedNetworkAccessPoints)
+        .append("nodePortLabels", nodePortLabels)
+        .append("nodePortAnnotations", nodePortAnnotations)
+        .append("adminService", adminService)
         .toString();
   }
 
@@ -66,6 +74,9 @@ public class AdminServer extends Server {
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(exportedNetworkAccessPoints, that.exportedNetworkAccessPoints)
+        .append(nodePortLabels, that.nodePortLabels)
+        .append(nodePortAnnotations, that.nodePortAnnotations)
+        .append(adminService, that.adminService)
         .isEquals();
   }
 
@@ -74,6 +85,29 @@ public class AdminServer extends Server {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
         .append(exportedNetworkAccessPoints)
+        .append(nodePortLabels)
+        .append(nodePortAnnotations)
+        .append(adminService)
         .toHashCode();
+  }
+
+  private Map<String, String> nodePortLabels = new HashMap<>();
+
+  private Map<String, String> nodePortAnnotations = new HashMap<>();
+
+  void addNodePortLabels(String name, String value) {
+    nodePortLabels.put(name, value);
+  }
+
+  void addNodePortAnnotations(String name, String value) {
+    nodePortAnnotations.put(name, value);
+  }
+
+  public AdminService getAdminService() {
+    return adminService;
+  }
+
+  public void setAdminService(AdminService adminService) {
+    this.adminService = adminService;
   }
 }

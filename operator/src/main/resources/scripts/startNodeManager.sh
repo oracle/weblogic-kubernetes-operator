@@ -113,9 +113,12 @@ createFolder ${NODEMGR_LOG_HOME}
 
 nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
 nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
+nodemgr_lck_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log.lck
 
-checkEnv NODEMGR_LOG_HOME nodemgr_log_file nodemgr_out_file
+checkEnv NODEMGR_LOG_HOME nodemgr_log_file nodemgr_out_file nodemgr_lck_file
 
+trace "remove nodemanager .lck file"
+rm -f ${nodemgr_lck_file}
 
 
 ###############################################################################
@@ -208,6 +211,7 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
     trace "Removing stale file '$wl_state_file'."
     rm -f ${wl_state_file} || exit 1
   fi
+
 
 cat <<EOF > ${wl_props_file}
 # Server startup properties

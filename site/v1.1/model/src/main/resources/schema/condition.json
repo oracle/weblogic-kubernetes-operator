@@ -1,0 +1,37 @@
+{
+    "type": "object",
+    "javaType": "oracle.kubernetes.weblogic.domain.v1.DomainCondition",
+    "description": "DomainCondition contains details for the current condition of this domain.",
+    "required": [
+     "type",
+     "status"
+    ],
+    "properties": {
+     "lastProbeTime": {
+      "description": "Last time we probed the condition.",
+      "type": "date-time",
+      "javaType": "org.joda.time.DateTime"
+     },
+     "lastTransitionTime": {
+      "description": "Last time the condition transitioned from one status to another.",
+      "type": "date-time",
+      "javaType": "org.joda.time.DateTime"
+     },
+     "message": {
+      "description": "Human-readable message indicating details about last transition.",
+      "type": "string"
+     },
+     "reason": {
+      "description": "Unique, one-word, CamelCase reason for the condition's last transition.",
+      "type": "string"
+     },
+     "status": {
+      "description": "Status is the status of the condition. Can be True, False, Unknown.",
+      "type": "string"
+     },
+     "type": {
+      "description": "Type is the type of the condition. Currently, valid types are Progressing, Available, and Failure.",
+      "type": "string"
+     }
+   }
+}

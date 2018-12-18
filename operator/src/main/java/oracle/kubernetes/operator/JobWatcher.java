@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
@@ -45,18 +46,24 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
    * @param factory thread factory
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
+   * @param tuning Tuning parameters for the watch, for example watch lifetime
    * @param isStopping Stop signal
    * @return Job watcher for the namespace
    */
   public static JobWatcher create(
-      ThreadFactory factory, String ns, String initialResourceVersion, AtomicBoolean isStopping) {
-    JobWatcher watcher = new JobWatcher(ns, initialResourceVersion, isStopping);
+      ThreadFactory factory,
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      AtomicBoolean isStopping) {
+    JobWatcher watcher = new JobWatcher(ns, initialResourceVersion, tuning, isStopping);
     watcher.start(factory);
     return watcher;
   }
 
-  private JobWatcher(String ns, String initialResourceVersion, AtomicBoolean isStopping) {
-    super(initialResourceVersion, isStopping);
+  private JobWatcher(
+      String ns, String initialResourceVersion, WatchTuning tuning, AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping);
     setListener(this);
     this.ns = ns;
   }
@@ -76,10 +83,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       case "ADDED":
       case "MODIFIED":
         V1Job job = item.object;
-        Boolean isComplete = isComplete(job); // isReady(job);
+        Boolean isComplete = isComplete(job);
+        Boolean isFailed = isFailed(job);
         String jobName = job.getMetadata().getName();
-        if (isComplete) {
-          Complete complete = completeCallbackRegistrations.remove(jobName);
+        if (isComplete || isFailed) {
+          Complete complete = completeCallbackRegistrations.get(jobName);
           if (complete != null) {
             complete.isComplete(job);
           }
@@ -143,6 +151,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       this.job = job;
     }
 
+    boolean shouldProcessJob(V1Job job) {
+      return (this.job.getMetadata().getCreationTimestamp().getMillis()
+          == job.getMetadata().getCreationTimestamp().getMillis());
+    }
+
     @Override
     public NextAction apply(Packet packet) {
       if (isComplete(job)) {
@@ -158,6 +171,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
           (fiber) -> {
             Complete complete =
                 (V1Job job) -> {
+                  if (!shouldProcessJob(job)) {
+                    return;
+                  }
+                  completeCallbackRegistrations.remove(job.getMetadata().getName());
                   if (didResume.compareAndSet(false, true)) {
                     LOGGER.fine("Job status: " + job.getStatus());
                     packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
