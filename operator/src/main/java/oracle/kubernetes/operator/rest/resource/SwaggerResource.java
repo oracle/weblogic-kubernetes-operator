@@ -39,9 +39,9 @@ public class SwaggerResource extends BaseResource {
   @Produces(MediaType.APPLICATION_JSON)
   public InputStream get() {
     LOGGER.entering();
-    InputStream is = this.getClass().getClassLoader().getResourceAsStream("Operator.swagger");
+    InputStream is = this.getClass().getClassLoader().getResourceAsStream("operator-swagger.json");
     if (is == null) {
-      throw new AssertionError("Could not find Operator.swagger");
+      throw new AssertionError("Could not find operator-swagger.json");
     }
     LOGGER.exiting();
     return is;
