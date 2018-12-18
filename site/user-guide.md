@@ -24,6 +24,7 @@ presented in the correct order.
 * [Install and manage the operator](install.md)
   * [Using the Helm charts](helm-charts.md) is the *preferred* method
   * [Manual installation](manual-installation.md) is also possible
+* [Using the operator's REST interface](rest.md)
 * [Creating or obtaining WebLogic Docker images](weblogic-docker-images.md)
   * [Obtaining standard images from the Docker store](weblogic-docker-images.md#obtaining-standard-images-from-the-docker-store)
   * [Creating a custom images with patches applied](weblogic-docker-images.md#creating-a-custom-images-with-patches-applied)
@@ -32,13 +33,15 @@ presented in the correct order.
   * [Preparing the Kubernetes cluster to run WebLogic domains](domains.md#preparing-the-kubernetes-cluster-to-run-weblogic-domains)
   * [Creating and managing WebLogic domains](domains.md#creating-and-managing-weblogic-domains)
   * [Managing lifecycle operations](domains.md#managing-lifecycle-operations)
+  * [Using WLST](wlst.md)
+  * [Scaling clusters](scaling.md)
   * [Modifying domain configurations](domains.md#modifying-domain-configurations)
   * [Patching WebLogic and performing application updates](domains.md#patching-weblogic-and-performing-application-updates)
   * [Shutting down domains](domains.md#shutting-down-domains)
   * [Deleting domains](domains.md#deleting-domains)
 * [Additional integrations](additional-integrations.md)
   * [Sending WebLogic metrics to Prometheus](additional-integrations.md#sending-weblogic-metrics-to-prometheus)
-
+  * [Running an Oracle database in your cluster](database.md) for state stores, leasing, etc.
 
 ## Important terms
 
