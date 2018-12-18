@@ -153,7 +153,7 @@ function initialize {
 #
 function getDockerSample {
   rm -rf ${scriptDir}/docker-images
-  git clone -C ${scriptDir} https://github.com/oracle/docker-images.git
+  git clone https://github.com/oracle/docker-images.git ${scriptDir}/docker-images
 }
 
 #
