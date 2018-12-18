@@ -53,6 +53,7 @@ public class DomainPresenceInfo {
    * Create presence for a domain
    *
    * @param namespace Namespace
+   * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
    */
   public DomainPresenceInfo(String namespace, String domainUID) {
     this.domain = new AtomicReference<>(null);
