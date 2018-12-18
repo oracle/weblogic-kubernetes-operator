@@ -146,16 +146,15 @@ The operator will restart servers when any of the follow properties on the domai
 * logHomeEnabled
 * logHome
 * livenessProbe
-* nodeSelector
 * podSecurityContext
 * readinessProbe
-* resources
 * restartVersion
 * serverStartState
 * volumes
 * volumeMounts
 
-TBD - do we need to include this table?  Also, Russ is still working on implementing this feature for 2.0.
+Note: the operator does not restart affected servers when 'nodeSelector' or 'resources' is changed on the domain resource.
+In these cases, the user can use 'restartVersion' to force the operator to restart the servers.
 
 ### Rolling Restarts
 
