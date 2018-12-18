@@ -277,16 +277,19 @@ public abstract class PodStepContext implements StepContextConstants {
 
     if (!isRestartVersionValid(build, current)) return false;
 
+    if (areUnequal(getCustomerLabels(current), getCustomerLabels(build))) return false;
+
+    if (areUnequal(current.getMetadata().getAnnotations(), build.getMetadata().getAnnotations()))
+      return false;
+
+    if (!Objects.equals(
+        current.getSpec().getSecurityContext(), build.getSpec().getSecurityContext())) return false;
+
     if (areUnequal(
         volumesWithout(current.getSpec().getVolumes(), ignoring), build.getSpec().getVolumes()))
       return false;
 
     if (areUnequal(current.getSpec().getImagePullSecrets(), build.getSpec().getImagePullSecrets()))
-      return false;
-
-    if (areUnequal(getCustomerLabels(current), getCustomerLabels(build))) return false;
-
-    if (areUnequal(current.getMetadata().getAnnotations(), build.getMetadata().getAnnotations()))
       return false;
 
     List<V1Container> buildContainers = build.getSpec().getContainers();

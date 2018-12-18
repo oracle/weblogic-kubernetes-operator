@@ -454,6 +454,18 @@ public abstract class PodHelperTestBase {
     verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
   }
 
+  @Test
+  public void whenPodLacksExpectedCustomerLabel_replaceIt() {
+    configurator.withPodLabel("expected.label", "value");
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodLacksExpectedSecurityContext_replaceIt() {
+    configurator.withPodSecurityContext(new V1PodSecurityContext().runAsGroup(12345L));
+    verifyReplacePodWhen(pod -> {});
+  }
+
   protected void onAdminExpectListPersistentVolume() {
     // default is no-op
   }
@@ -569,6 +581,7 @@ public abstract class PodHelperTestBase {
 
   V1PodSpec createPodSpec() {
     return new V1PodSpec()
+        .securityContext(new V1PodSecurityContext())
         .containers(Collections.singletonList(createPodSpecContainer()))
         .nodeSelector(createNodeSelector())
         .volumes(PodDefaults.getStandardVolumes(UID));
