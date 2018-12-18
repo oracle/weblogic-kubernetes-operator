@@ -54,7 +54,7 @@ g.  Grant the Helm service account the `cluster-admin` role:
       name: default
       namespace: kube-system
     EOF
-    ```
+```
 
 ## 2. Create a Traefik (Ingress-based) load balancer.
 
