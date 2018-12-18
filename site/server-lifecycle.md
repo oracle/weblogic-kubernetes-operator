@@ -30,22 +30,22 @@ The operator runtime monitors this property and creates or deletes the correspon
 #### Admin Server Start/Stop Rules
 | Domain | Admin Server | Started / Stopped |
 | --- | --- | --- |
-| NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
+| NEVER | any value | Stopped |
 | ADMIN_ONLY, IF_NEEDED | NEVER | Stopped |
 | ADMIN_ONLY, IF_NEEDED | IF_NEEDED, ALWAYS | Started |
 
 #### Standalone Managed Server Start/Stop Rules
 | Domain | Standalone Server | Started / Stopped |
 | --- | --- | --- |
-| ADMIN_ONLY, NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
+| ADMIN_ONLY, NEVER | any value | Stopped |
 | IF_NEEDED | NEVER | Stopped |
 | IF_NEEDED | IF_NEEDED, ALWAYS | Started |
 
 #### Clustered Managed Server Start/Stop Rules
 | Domain | Cluster | Clustered Server | Started / Stopped |
 | --- | --- | --- | --- |
-| ADMIN_ONLY, NEVER | IF_NEEDED, NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
-| IF_NEEDED | NEVER | IF_NEEDED, ALWAYS, NEVER | Stopped |
+| ADMIN_ONLY, any value | any value | any value | Stopped |
+| IF_NEEDED | NEVER | any value | Stopped |
 | IF_NEEDED | IF_NEEDED | NEVER | Stopped |
 | IF_NEEDED | IF_NEEDED | ALWAYS | Started |
 | IF_NEEDED | IF_NEEDED | IF_NEEDED | Started if needed to get to the cluster's "replicas" count |
