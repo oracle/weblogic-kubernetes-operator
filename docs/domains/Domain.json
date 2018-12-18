@@ -36,6 +36,20 @@
         }
       }
     },
+    "V1Initializers": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/V1Status"
+        },
+        "pending": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1Initializer"
+          }
+        }
+      }
+    },
     "V1StatusDetails": {
       "type": "object",
       "properties": {
@@ -59,20 +73,6 @@
         },
         "group": {
           "type": "string"
-        }
-      }
-    },
-    "V1Initializers": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/V1Status"
-        },
-        "pending": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/V1Initializer"
-          }
         }
       }
     },
@@ -542,23 +542,6 @@
         }
       }
     },
-    "V1VolumeProjection": {
-      "type": "object",
-      "properties": {
-        "downwardAPI": {
-          "$ref": "#/definitions/V1DownwardAPIProjection"
-        },
-        "configMap": {
-          "$ref": "#/definitions/V1ConfigMapProjection"
-        },
-        "secret": {
-          "$ref": "#/definitions/V1SecretProjection"
-        },
-        "serviceAccountToken": {
-          "$ref": "#/definitions/V1ServiceAccountTokenProjection"
-        }
-      }
-    },
     "V1ScaleIOVolumeSource": {
       "type": "object",
       "properties": {
@@ -628,6 +611,23 @@
         "restartVersion": {
           "description": "If present, every time this value is updated the operator will restart the required servers",
           "type": "string"
+        }
+      }
+    },
+    "V1VolumeProjection": {
+      "type": "object",
+      "properties": {
+        "downwardAPI": {
+          "$ref": "#/definitions/V1DownwardAPIProjection"
+        },
+        "configMap": {
+          "$ref": "#/definitions/V1ConfigMapProjection"
+        },
+        "secret": {
+          "$ref": "#/definitions/V1SecretProjection"
+        },
+        "serviceAccountToken": {
+          "$ref": "#/definitions/V1ServiceAccountTokenProjection"
         }
       }
     },
@@ -724,6 +724,23 @@
         }
       }
     },
+    "V1ConfigMapProjection": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1KeyToPath"
+          }
+        }
+      }
+    },
     "V1QuobyteVolumeSource": {
       "type": "object",
       "properties": {
@@ -744,23 +761,6 @@
         }
       }
     },
-    "V1ConfigMapProjection": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "optional": {
-          "type": "boolean"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/V1KeyToPath"
-          }
-        }
-      }
-    },
     "V1FlockerVolumeSource": {
       "type": "object",
       "properties": {
@@ -769,29 +769,6 @@
         },
         "datasetUUID": {
           "type": "string"
-        }
-      }
-    },
-    "V1OwnerReference": {
-      "type": "object",
-      "properties": {
-        "uid": {
-          "type": "string"
-        },
-        "controller": {
-          "type": "boolean"
-        },
-        "apiVersion": {
-          "type": "string"
-        },
-        "kind": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "blockOwnerDeletion": {
-          "type": "boolean"
         }
       }
     },
@@ -818,6 +795,29 @@
         },
         "fsType": {
           "type": "string"
+        }
+      }
+    },
+    "V1OwnerReference": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "controller": {
+          "type": "boolean"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "blockOwnerDeletion": {
+          "type": "boolean"
         }
       }
     },
@@ -943,23 +943,6 @@
         }
       }
     },
-    "V1SecretProjection": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "optional": {
-          "type": "boolean"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/V1KeyToPath"
-          }
-        }
-      }
-    },
     "V1Capabilities": {
       "type": "object",
       "properties": {
@@ -973,6 +956,23 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        }
+      }
+    },
+    "V1SecretProjection": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1KeyToPath"
           }
         }
       }
@@ -1009,26 +1009,6 @@
           "type": "string"
         },
         "type": {
-          "type": "string"
-        }
-      }
-    },
-    "V1VolumeMount": {
-      "type": "object",
-      "properties": {
-        "mountPath": {
-          "type": "string"
-        },
-        "mountPropagation": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "readOnly": {
-          "type": "boolean"
-        },
-        "subPath": {
           "type": "string"
         }
       }
@@ -1096,6 +1076,26 @@
         "containerSecurityContext": {
           "description": "Container-level security attributes. Will override any matching pod-level attributes",
           "$ref": "#/definitions/V1SecurityContext"
+        }
+      }
+    },
+    "V1VolumeMount": {
+      "type": "object",
+      "properties": {
+        "mountPath": {
+          "type": "string"
+        },
+        "mountPropagation": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "subPath": {
+          "type": "string"
         }
       }
     },
@@ -1560,6 +1560,17 @@
         }
       }
     },
+    "V1ResourceRequirements": {
+      "type": "object",
+      "properties": {
+        "requests": {
+          "$ref": "#/definitions/Map"
+        },
+        "limits": {
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
     "DomainStatus": {
       "type": "object",
       "properties": {
@@ -1587,17 +1598,6 @@
         },
         "message": {
           "type": "string"
-        }
-      }
-    },
-    "V1ResourceRequirements": {
-      "type": "object",
-      "properties": {
-        "requests": {
-          "$ref": "#/definitions/Map"
-        },
-        "limits": {
-          "$ref": "#/definitions/Map"
         }
       }
     }
