@@ -275,18 +275,9 @@ public abstract class PodStepContext implements StepContextConstants {
       return false;
     }
 
-    if (!isRestartVersionValid(build, current)) return false;
-
-    if (areUnequal(getCustomerLabels(current), getCustomerLabels(build))) return false;
-
-    if (areUnequal(current.getMetadata().getAnnotations(), build.getMetadata().getAnnotations()))
+    if (!isRestartVersionValid(build, current)) {
       return false;
-
-    if (!Objects.equals(
-        current.getSpec().getSecurityContext(), build.getSpec().getSecurityContext())) return false;
-
-    if (!Objects.equals(current.getSpec().getNodeSelector(), build.getSpec().getNodeSelector()))
-      return false;
+    }
 
     if (areUnequal(
         volumesWithout(current.getSpec().getVolumes(), ignoring), build.getSpec().getVolumes()))
@@ -295,15 +286,25 @@ public abstract class PodStepContext implements StepContextConstants {
     if (areUnequal(current.getSpec().getImagePullSecrets(), build.getSpec().getImagePullSecrets()))
       return false;
 
+    if (areUnequal(getCustomerLabels(current), getCustomerLabels(build))) return false;
+
+    if (areUnequal(current.getMetadata().getAnnotations(), build.getMetadata().getAnnotations()))
+      return false;
+
     List<V1Container> buildContainers = build.getSpec().getContainers();
     List<V1Container> currentContainers = current.getSpec().getContainers();
 
     if (buildContainers != null) {
-      if (currentContainers == null) return false;
+      if (currentContainers == null) {
+        return false;
+      }
 
       for (V1Container bc : buildContainers) {
         V1Container fcc = getContainerWithName(currentContainers, bc.getName());
-        if (fcc == null || !equals(bc, fcc, ignoring)) {
+        if (fcc == null) {
+          return false;
+        }
+        if (notEquals(bc, fcc, ignoring)) {
           return false;
         }
       }
@@ -312,21 +313,15 @@ public abstract class PodStepContext implements StepContextConstants {
     return true;
   }
 
-  /**
-   * Compares two pod spec containers for equality
-   *
-   * @param build the desired container model
-   * @param current the current container, obtained from Kubernetes
-   * @param ignoring a list of volume names to ignore
-   * @return true if the containers are considered equal
-   */
-  private static boolean equals(V1Container build, V1Container current, List<String> ignoring) {
-    return current.getImage().equals(build.getImage())
-        && current.getImagePullPolicy().equals(build.getImagePullPolicy())
-        && equalSets(mountsWithout(current.getVolumeMounts(), ignoring), build.getVolumeMounts())
-        && equalSets(current.getPorts(), build.getPorts())
-        && equalSets(current.getEnv(), build.getEnv())
-        && equalSets(current.getEnvFrom(), build.getEnvFrom());
+  private static boolean notEquals(
+      V1Container build, V1Container current, List<String> ignoringVolumes) {
+    return !current.getImage().equals(build.getImage())
+        || !current.getImagePullPolicy().equals(build.getImagePullPolicy())
+        || !equalSets(
+            mountsWithout(current.getVolumeMounts(), ignoringVolumes), build.getVolumeMounts())
+        || !equalSets(current.getPorts(), build.getPorts())
+        || !equalSets(current.getEnv(), build.getEnv())
+        || !equalSets(current.getEnvFrom(), build.getEnvFrom());
   }
 
   private static List<V1Volume> volumesWithout(

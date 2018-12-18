@@ -305,8 +305,6 @@ public abstract class PodHelperTestBase {
     return getServerConfigurator(new DomainV2Configurator(domain), getServerName());
   }
 
-  protected abstract void verifyReplacePodWhen(PodMutator mutator);
-
   protected abstract ServerConfigurator getServerConfigurator(
       DomainConfigurator configurator, String serverName);
 
@@ -444,34 +442,6 @@ public abstract class PodHelperTestBase {
         .withLabelSelectors("weblogic.domainUID=" + UID);
   }
 
-  @Test
-  public void whenPodHasBadVersion_replaceIt() {
-    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
-  }
-
-  @Test
-  public void whenPodHasUnknownCustomerLabel_replaceIt() {
-    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
-  }
-
-  @Test
-  public void whenPodLacksExpectedCustomerLabel_replaceIt() {
-    configurator.withPodLabel("expected.label", "value");
-    verifyReplacePodWhen(pod -> {});
-  }
-
-  @Test
-  public void whenPodSecurityContextIsDifferent_replaceIt() {
-    configurator.withPodSecurityContext(new V1PodSecurityContext().runAsGroup(12345L));
-    verifyReplacePodWhen(pod -> {});
-  }
-
-  @Test
-  public void whenPodHasDifferentNodeSelector_replaceIt() {
-    configurator.withNodeSelector("key", "value");
-    verifyReplacePodWhen(pod -> {});
-  }
-
   protected void onAdminExpectListPersistentVolume() {
     // default is no-op
   }
@@ -587,10 +557,13 @@ public abstract class PodHelperTestBase {
 
   V1PodSpec createPodSpec() {
     return new V1PodSpec()
-        .securityContext(new V1PodSecurityContext())
         .containers(Collections.singletonList(createPodSpecContainer()))
-        .nodeSelector(Collections.emptyMap())
+        .nodeSelector(createNodeSelector())
         .volumes(PodDefaults.getStandardVolumes(UID));
+  }
+
+  private Map<String, String> createNodeSelector() {
+    return NODE_SELECTOR;
   }
 
   abstract List<String> createStartCommand();

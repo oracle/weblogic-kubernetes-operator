@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.logging.MessageKeys.*;
 import static org.hamcrest.Matchers.*;
@@ -77,6 +78,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     return PodHelper::createManagedPodStep;
   }
 
+  @SuppressWarnings("unchecked")
   private void expectReplaceDomain() {
     testSupport
         .createCannedResponse("replaceDomain")
@@ -92,7 +94,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Override
   List<String> createStartCommand() {
-    return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
+    return Arrays.asList("/weblogic-operator/scripts/startServer.sh");
   }
 
   @Test
@@ -138,18 +140,28 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenExistingManagedPodHasBadVersion_designateForRoll() {
+    verifyRollManagedPodWhen(pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
+  }
+
+  @Test
+  public void whenExistingManagedPodHasExtraCustomerLabel_designateForRoll() {
+    verifyRollManagedPodWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
+  }
+
+  @Test
   public void whenExistingManagedPodSpecHasExtraCustomerAnnotation_replaceIt() {
-    verifyReplacePodWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
+    verifyRollManagedPodWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
   }
 
   @Test
   public void whenExistingManagedPodSpecHasNoContainers_replaceIt() {
-    verifyReplacePodWhen((pod) -> pod.getSpec().setContainers(null));
+    verifyRollManagedPodWhen((pod) -> pod.getSpec().setContainers(null));
   }
 
   @Test
   public void whenExistingManagedPodSpecHasSuperfluousVolume_replaceIt() {
-    verifyReplacePodWhen((pod) -> pod.getSpec().addVolumesItem(new V1Volume().name("dummy")));
+    verifyRollManagedPodWhen((pod) -> pod.getSpec().addVolumesItem(new V1Volume().name("dummy")));
   }
 
   @Test
@@ -167,14 +179,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingManagedPodSpecHasExtraImagePullSecret_replaceIt() {
-    verifyReplacePodWhen(
+    verifyRollManagedPodWhen(
         (pod) ->
             pod.getSpec().addImagePullSecretsItem(new V1LocalObjectReference().name("secret")));
   }
 
   @Test
   public void whenExistingManagedPodSpecHasNoContainersWithExpectedName_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setName("???"));
+    verifyRollManagedPodWhen((pod) -> getSpecContainer(pod).setName("???"));
   }
 
   private V1Container getSpecContainer(V1Pod pod) {
@@ -183,7 +195,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingManagedPodSpecHasExtraVolumeMount_replaceIt() {
-    verifyReplacePodWhen(
+    verifyRollManagedPodWhen(
         (pod) -> getSpecContainer(pod).addVolumeMountsItem(new V1VolumeMount().name("dummy")));
   }
 
@@ -200,48 +212,48 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingManagedPodSpecContainerHasWrongImage_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
+    verifyRollManagedPodWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
   }
 
   @Test
   public void whenExistingManagedPodSpecContainerHasWrongImagePullPolicy_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
+    verifyRollManagedPodWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
   }
 
   @Test
   public void whenExistingManagedPodSpecContainerHasNoPorts_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
+    verifyRollManagedPodWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
   }
 
   @Test
   public void whenExistingManagedPodSpecContainerHasExtraPort_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
+    verifyRollManagedPodWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
   }
 
-  @SuppressWarnings("SameParameterValue")
   private V1ContainerPort definePort(int port) {
     return new V1ContainerPort().protocol("TCP").containerPort(port);
   }
 
   @Test
   public void whenExistingManagedPodSpecContainerHasIncorrectPort_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
+    verifyRollManagedPodWhen(
+        (pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
   }
 
   @Test
   public void whenExistingManagedPodSpecContainerHasWrongEnvVariable_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
+    verifyRollManagedPodWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
   }
 
   @Test
   public void whenExistingManagedPodSpecContainerHasWrongEnvFrom_replaceIt() {
-    verifyReplacePodWhen(
+    verifyRollManagedPodWhen(
         (pod) -> getSpecContainer(pod).envFrom(Collections.singletonList(new V1EnvFromSource())));
   }
 
   @Test
   public void whenExistingManagedPodRestartVersionChange() {
-    verifyReplacePodWhen(
+    verifyRollManagedPodWhen(
         (pod) ->
             pod.getMetadata()
                 .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "serverRestartV1"));
@@ -513,8 +525,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(podLabels, hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
   }
 
-  @Override
-  protected void verifyReplacePodWhen(PodMutator mutator) {
+  private void verifyRollManagedPodWhen(PodMutator mutator) {
     Map<String, StepAndPacket> rolling = computePodsToRoll(mutator);
 
     assertThat(rolling, not(anEmptyMap()));
