@@ -4,6 +4,8 @@
 
 In this guide, we outline how to set up and configure your own domain resource which can be used to configure your WLS domain. Then, you can use the domain resource to start the Kubernetes artifacts of the corresponding domain. 
 
+Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/domains/index.html).
+
 ## Prerequisites
 
 The following prerequisites must be fulfilled before proceeding with the creation of the resource.
