@@ -230,6 +230,10 @@ function createFiles {
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
@@ -245,14 +249,18 @@ function createDomainHome {
 
   cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/${imagePath}/properties/docker_build
 
-  imageName="12213-domain-home-in-image:latest"
+  imageName="12213-domain-home-in-image"
   # use the existence of build-archive.sh file to determine if we need to download WDT
   if [ -f "./docker-images/OracleWebLogic/samples/${imagePath}/build-archive.sh" ]; then
-    imageName="12213-domain-wdt:latest"
+    imageName="12213-domain-wdt"
   fi
 
   # now we know which image to use, update the domain yaml file
-  sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${dcrOutput}
+  if [ -z $image ]; then
+    sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${dcrOutput}
+  else
+    sed -i -e "s|%IMAGE_NAME%|${image}|g" ${dcrOutput}
+  fi
 
   cd docker-images/OracleWebLogic/samples/${imagePath}
 
