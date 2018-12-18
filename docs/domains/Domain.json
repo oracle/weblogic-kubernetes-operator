@@ -1,0 +1,1630 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "definitions": {
+    "V1FlexVolumeSource": {
+      "type": "object",
+      "properties": {
+        "driver": {
+          "type": "string"
+        },
+        "options": {
+          "$ref": "#/definitions/Map"
+        },
+        "secretRef": {
+          "$ref": "#/definitions/V1LocalObjectReference"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "AdminService": {
+      "type": "object",
+      "properties": {
+        "channels": {
+          "$ref": "#/definitions/Map"
+        },
+        "annotations": {
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "V1Initializers": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/V1Status"
+        },
+        "pending": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1Initializer"
+          }
+        }
+      }
+    },
+    "V1StatusDetails": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "causes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1StatusCause"
+          }
+        },
+        "retryAfterSeconds": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        }
+      }
+    },
+    "V1Status": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/definitions/V1ListMeta"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "code": {
+          "type": "number"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "details": {
+          "$ref": "#/definitions/V1StatusDetails"
+        },
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "V1ObjectMeta": {
+      "type": "object",
+      "properties": {
+        "generation": {
+          "type": "number"
+        },
+        "finalizers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resourceVersion": {
+          "type": "string"
+        },
+        "annotations": {
+          "$ref": "#/definitions/Map"
+        },
+        "generateName": {
+          "type": "string"
+        },
+        "deletionTimestamp": {
+          "$ref": "#/definitions/DateTime"
+        },
+        "labels": {
+          "$ref": "#/definitions/Map"
+        },
+        "ownerReferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1OwnerReference"
+          }
+        },
+        "selfLink": {
+          "type": "string"
+        },
+        "deletionGracePeriodSeconds": {
+          "type": "number"
+        },
+        "uid": {
+          "type": "string"
+        },
+        "initializers": {
+          "$ref": "#/definitions/V1Initializers"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "creationTimestamp": {
+          "$ref": "#/definitions/DateTime"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      }
+    },
+    "V1RBDVolumeSource": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "pool": {
+          "type": "string"
+        },
+        "secretRef": {
+          "$ref": "#/definitions/V1LocalObjectReference"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "fsType": {
+          "type": "string"
+        },
+        "keyring": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "monitors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "SubsystemHealth": {
+      "type": "object",
+      "properties": {
+        "symptoms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "health": {
+          "type": "string"
+        },
+        "subsystemName": {
+          "type": "string"
+        }
+      }
+    },
+    "DateTime": {
+      "type": "object",
+      "properties": {
+        "iChronology": {
+          "$ref": "#/definitions/Chronology"
+        },
+        "iMillis": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "iMillis"
+      ]
+    },
+    "V1CephFSVolumeSource": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "secretRef": {
+          "$ref": "#/definitions/V1LocalObjectReference"
+        },
+        "secretFile": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "user": {
+          "type": "string"
+        },
+        "monitors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "V1EnvVarSource": {
+      "type": "object",
+      "properties": {
+        "secretKeyRef": {
+          "$ref": "#/definitions/V1SecretKeySelector"
+        },
+        "resourceFieldRef": {
+          "$ref": "#/definitions/V1ResourceFieldSelector"
+        },
+        "configMapKeyRef": {
+          "$ref": "#/definitions/V1ConfigMapKeySelector"
+        },
+        "fieldRef": {
+          "$ref": "#/definitions/V1ObjectFieldSelector"
+        }
+      }
+    },
+    "DomainSpec": {
+      "type": "object",
+      "properties": {
+        "serverStartState": {
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.",
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "ADMIN"
+          ]
+        },
+        "image": {
+          "description": "The Weblogic Docker image; required when domainHomeInImage is true; otherwise, defaults to store/oracle/weblogic:12.2.1.3",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNotPresent"
+          ]
+        },
+        "replicas": {
+          "description": "The number of managed servers to run in any cluster that does not specify a replica count",
+          "type": "number",
+          "minimum": 0
+        },
+        "configOverrideSecrets": {
+          "description": "A list of names of the secrets for optional WebLogic configuration overrides.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "imagePullSecrets": {
+          "description": "A list of image pull secrets for the WebLogic Docker image.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1LocalObjectReference"
+          }
+        },
+        "domainHomeInImage": {
+          "description": "True if this domain\u0027s home is defined in the docker image for the domain. Defaults to true",
+          "type": "boolean"
+        },
+        "domainUID": {
+          "pattern": "^[a-z0-9_.]{1,253}$",
+          "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required)Defaults to the value of metadata.name",
+          "type": "string"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "type": "string",
+          "enum": [
+            "NEVER",
+            "ALWAYS",
+            "IF_NEEDED",
+            "ADMIN_ONLY"
+          ]
+        },
+        "restartVersion": {
+          "description": "If present, every time this value is updated the operator will restart the required servers",
+          "type": "string"
+        },
+        "configOverrides": {
+          "description": "The name of the configmap for optional WebLogic configuration overrides.",
+          "type": "string"
+        },
+        "domainHome": {
+          "description": "The folder for the Weblogic Domain. (Not required)Defaults to /shared/domains/domains/domainUID if domainHomeInImage is falseDefaults to /shared/domains/domain if domainHomeInImage is true",
+          "type": "string"
+        },
+        "logHomeEnabled": {
+          "description": "Specified whether the log home folder is enabled (Not required). Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true. ",
+          "type": "boolean"
+        },
+        "webLogicCredentialsSecret": {
+          "$ref": "#/definitions/V1SecretReference"
+        },
+        "adminServer": {
+          "description": "Configuration for the admin server",
+          "$ref": "#/definitions/AdminServer"
+        },
+        "serverPod": {
+          "description": "Configuration affecting the server pod",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "logHome": {
+          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
+          "type": "string"
+        },
+        "includeServerOutInPodLog": {
+          "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout",
+          "type": "boolean"
+        },
+        "managedServers": {
+          "description": "Configuration for the managed servers",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManagedServer"
+          }
+        },
+        "clusters": {
+          "description": "Configuration for the clusters",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Cluster"
+          }
+        }
+      }
+    },
+    "DomainCondition": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "lastTransitionTime": {
+          "$ref": "#/definitions/DateTime"
+        },
+        "message": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "lastProbeTime": {
+          "$ref": "#/definitions/DateTime"
+        },
+        "status": {
+          "type": "string"
+        }
+      }
+    },
+    "V1KeyToPath": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "number"
+        },
+        "path": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        }
+      }
+    },
+    "ServerHealth": {
+      "type": "object",
+      "properties": {
+        "overallHealth": {
+          "type": "string"
+        },
+        "activationTime": {
+          "$ref": "#/definitions/DateTime"
+        },
+        "subsystems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SubsystemHealth"
+          }
+        }
+      }
+    },
+    "ServerStatus": {
+      "type": "object",
+      "properties": {
+        "nodeName": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "serverName": {
+          "type": "string"
+        },
+        "health": {
+          "$ref": "#/definitions/ServerHealth"
+        },
+        "state": {
+          "type": "string"
+        }
+      }
+    },
+    "V1ServiceAccountTokenProjection": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "audience": {
+          "type": "string"
+        },
+        "expirationSeconds": {
+          "type": "number"
+        }
+      }
+    },
+    "V1AWSElasticBlockStoreVolumeSource": {
+      "type": "object",
+      "properties": {
+        "partition": {
+          "type": "number"
+        },
+        "volumeID": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "V1ConfigMapVolumeSource": {
+      "type": "object",
+      "properties": {
+        "defaultMode": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1KeyToPath"
+          }
+        }
+      }
+    },
+    "V1Sysctl": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "V1AzureDiskVolumeSource": {
+      "type": "object",
+      "properties": {
+        "diskName": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "cachingMode": {
+          "type": "string"
+        },
+        "diskURI": {
+          "type": "string"
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "V1ScaleIOVolumeSource": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "protectionDomain": {
+          "type": "string"
+        },
+        "sslEnabled": {
+          "type": "boolean"
+        },
+        "storageMode": {
+          "type": "string"
+        },
+        "volumeName": {
+          "type": "string"
+        },
+        "secretRef": {
+          "$ref": "#/definitions/V1LocalObjectReference"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "fsType": {
+          "type": "string"
+        },
+        "storagePool": {
+          "type": "string"
+        },
+        "gateway": {
+          "type": "string"
+        }
+      }
+    },
+    "ManagedServer": {
+      "type": "object",
+      "properties": {
+        "serverStartState": {
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.",
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "ADMIN"
+          ]
+        },
+        "serverPod": {
+          "description": "Configuration affecting the server pod",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "serverName": {
+          "type": "string"
+        },
+        "nodePort": {
+          "type": "number"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "type": "string",
+          "enum": [
+            "NEVER",
+            "ALWAYS",
+            "IF_NEEDED",
+            "ADMIN_ONLY"
+          ]
+        },
+        "restartVersion": {
+          "description": "If present, every time this value is updated the operator will restart the required servers",
+          "type": "string"
+        }
+      }
+    },
+    "V1VolumeProjection": {
+      "type": "object",
+      "properties": {
+        "downwardAPI": {
+          "$ref": "#/definitions/V1DownwardAPIProjection"
+        },
+        "configMap": {
+          "$ref": "#/definitions/V1ConfigMapProjection"
+        },
+        "secret": {
+          "$ref": "#/definitions/V1SecretProjection"
+        },
+        "serviceAccountToken": {
+          "$ref": "#/definitions/V1ServiceAccountTokenProjection"
+        }
+      }
+    },
+    "V1ProjectedVolumeSource": {
+      "type": "object",
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1VolumeProjection"
+          }
+        },
+        "defaultMode": {
+          "type": "number"
+        }
+      }
+    },
+    "V1SecretVolumeSource": {
+      "type": "object",
+      "properties": {
+        "secretName": {
+          "type": "string"
+        },
+        "defaultMode": {
+          "type": "number"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1KeyToPath"
+          }
+        }
+      }
+    },
+    "V1ListMeta": {
+      "type": "object",
+      "properties": {
+        "continue": {
+          "type": "string"
+        },
+        "resourceVersion": {
+          "type": "string"
+        },
+        "selfLink": {
+          "type": "string"
+        }
+      }
+    },
+    "V1NFSVolumeSource": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "server": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        }
+      }
+    },
+    "V1SELinuxOptions": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        }
+      }
+    },
+    "V1PortworxVolumeSource": {
+      "type": "object",
+      "properties": {
+        "volumeID": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "V1ConfigMapProjection": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1KeyToPath"
+          }
+        }
+      }
+    },
+    "V1QuobyteVolumeSource": {
+      "type": "object",
+      "properties": {
+        "volume": {
+          "type": "string"
+        },
+        "registry": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "user": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        }
+      }
+    },
+    "V1FlockerVolumeSource": {
+      "type": "object",
+      "properties": {
+        "datasetName": {
+          "type": "string"
+        },
+        "datasetUUID": {
+          "type": "string"
+        }
+      }
+    },
+    "V1FCVolumeSource": {
+      "type": "object",
+      "properties": {
+        "lun": {
+          "type": "number"
+        },
+        "targetWWNs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "wwids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "V1OwnerReference": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "controller": {
+          "type": "boolean"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "blockOwnerDeletion": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ProbeTuning": {
+      "type": "object",
+      "properties": {
+        "periodSeconds": {
+          "description": "The number of seconds between checks",
+          "type": "number"
+        },
+        "timeoutSeconds": {
+          "description": "The number of seconds with no response that indicates a failure",
+          "type": "number"
+        },
+        "initialDelaySeconds": {
+          "description": "The number of seconds before the first check is performed",
+          "type": "number"
+        }
+      }
+    },
+    "V1Initializer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "Map": {
+      "type": "object",
+      "properties": {}
+    },
+    "V1AzureFileVolumeSource": {
+      "type": "object",
+      "properties": {
+        "secretName": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "shareName": {
+          "type": "string"
+        }
+      }
+    },
+    "V1StatusCause": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "field": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "V1GCEPersistentDiskVolumeSource": {
+      "type": "object",
+      "properties": {
+        "partition": {
+          "type": "number"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "pdName": {
+          "type": "string"
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "AdminServer": {
+      "type": "object",
+      "properties": {
+        "serverStartState": {
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.",
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "ADMIN"
+          ]
+        },
+        "nodePortAnnotations": {
+          "$ref": "#/definitions/Map"
+        },
+        "serverPod": {
+          "description": "Configuration affecting the server pod",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "exportedNetworkAccessPoints": {
+          "description": "T3 network access points to export",
+          "$ref": "#/definitions/Map"
+        },
+        "nodePortLabels": {
+          "$ref": "#/definitions/Map"
+        },
+        "nodePort": {
+          "type": "number"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "type": "string",
+          "enum": [
+            "NEVER",
+            "ALWAYS",
+            "IF_NEEDED",
+            "ADMIN_ONLY"
+          ]
+        },
+        "restartVersion": {
+          "description": "If present, every time this value is updated the operator will restart the required servers",
+          "type": "string"
+        },
+        "adminService": {
+          "description": "Configures which of the admin server\u0027s WebLogic admin channels should be exposed outside the Kubernetes cluster via a node port service.",
+          "$ref": "#/definitions/AdminService"
+        }
+      }
+    },
+    "V1Capabilities": {
+      "type": "object",
+      "properties": {
+        "add": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "drop": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "V1SecretProjection": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1KeyToPath"
+          }
+        }
+      }
+    },
+    "V1EmptyDirVolumeSource": {
+      "type": "object",
+      "properties": {
+        "sizeLimit": {
+          "type": "string"
+        },
+        "medium": {
+          "type": "string"
+        }
+      }
+    },
+    "V1EnvVar": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "valueFrom": {
+          "$ref": "#/definitions/V1EnvVarSource"
+        }
+      }
+    },
+    "V1HostPathVolumeSource": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "ServerPod": {
+      "type": "object",
+      "properties": {
+        "serviceLabels": {
+          "description": "Labels applied to services",
+          "$ref": "#/definitions/Map"
+        },
+        "livenessProbe": {
+          "description": "Settings for the liveness probe associated with a server",
+          "$ref": "#/definitions/ProbeTuning"
+        },
+        "podSecurityContext": {
+          "description": "Pod-level security attributes",
+          "$ref": "#/definitions/V1PodSecurityContext"
+        },
+        "volumes": {
+          "description": "Additional volumes to be created in the server pod",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1Volume"
+          }
+        },
+        "resources": {
+          "description": "Memory and cpu minimum requirements and limits for the server",
+          "$ref": "#/definitions/V1ResourceRequirements"
+        },
+        "env": {
+          "description": "A list of environment variables to add to a server",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1EnvVar"
+          }
+        },
+        "podAnnotations": {
+          "description": "Annotations applied to pods",
+          "$ref": "#/definitions/Map"
+        },
+        "nodeSelector": {
+          "description": "Selector which must match a node\u0027s labels for the pod to be scheduled on that node.",
+          "$ref": "#/definitions/Map"
+        },
+        "volumeMounts": {
+          "description": "Additional volume mounts for the server pod",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1VolumeMount"
+          }
+        },
+        "podLabels": {
+          "description": "Labels applied to pods",
+          "$ref": "#/definitions/Map"
+        },
+        "readinessProbe": {
+          "description": "Settings for the readiness probe associated with a server",
+          "$ref": "#/definitions/ProbeTuning"
+        },
+        "serviceAnnotations": {
+          "description": "Annotations applied to services",
+          "$ref": "#/definitions/Map"
+        },
+        "containerSecurityContext": {
+          "description": "Container-level security attributes. Will override any matching pod-level attributes",
+          "$ref": "#/definitions/V1SecurityContext"
+        }
+      }
+    },
+    "V1VolumeMount": {
+      "type": "object",
+      "properties": {
+        "mountPath": {
+          "type": "string"
+        },
+        "mountPropagation": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "subPath": {
+          "type": "string"
+        }
+      }
+    },
+    "V1PodSecurityContext": {
+      "type": "object",
+      "properties": {
+        "runAsUser": {
+          "type": "number"
+        },
+        "seLinuxOptions": {
+          "$ref": "#/definitions/V1SELinuxOptions"
+        },
+        "fsGroup": {
+          "type": "number"
+        },
+        "supplementalGroups": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "runAsGroup": {
+          "type": "number"
+        },
+        "runAsNonRoot": {
+          "type": "boolean"
+        },
+        "sysctls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1Sysctl"
+          }
+        }
+      }
+    },
+    "V1ConfigMapKeySelector": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "key": {
+          "type": "string"
+        }
+      }
+    },
+    "V1DownwardAPIVolumeFile": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "number"
+        },
+        "path": {
+          "type": "string"
+        },
+        "resourceFieldRef": {
+          "$ref": "#/definitions/V1ResourceFieldSelector"
+        },
+        "fieldRef": {
+          "$ref": "#/definitions/V1ObjectFieldSelector"
+        }
+      }
+    },
+    "V1Volume": {
+      "type": "object",
+      "properties": {
+        "quobyte": {
+          "$ref": "#/definitions/V1QuobyteVolumeSource"
+        },
+        "azureFile": {
+          "$ref": "#/definitions/V1AzureFileVolumeSource"
+        },
+        "flexVolume": {
+          "$ref": "#/definitions/V1FlexVolumeSource"
+        },
+        "secret": {
+          "$ref": "#/definitions/V1SecretVolumeSource"
+        },
+        "projected": {
+          "$ref": "#/definitions/V1ProjectedVolumeSource"
+        },
+        "cephfs": {
+          "$ref": "#/definitions/V1CephFSVolumeSource"
+        },
+        "scaleIO": {
+          "$ref": "#/definitions/V1ScaleIOVolumeSource"
+        },
+        "emptyDir": {
+          "$ref": "#/definitions/V1EmptyDirVolumeSource"
+        },
+        "glusterfs": {
+          "$ref": "#/definitions/V1GlusterfsVolumeSource"
+        },
+        "gcePersistentDisk": {
+          "$ref": "#/definitions/V1GCEPersistentDiskVolumeSource"
+        },
+        "photonPersistentDisk": {
+          "$ref": "#/definitions/V1PhotonPersistentDiskVolumeSource"
+        },
+        "azureDisk": {
+          "$ref": "#/definitions/V1AzureDiskVolumeSource"
+        },
+        "cinder": {
+          "$ref": "#/definitions/V1CinderVolumeSource"
+        },
+        "downwardAPI": {
+          "$ref": "#/definitions/V1DownwardAPIVolumeSource"
+        },
+        "awsElasticBlockStore": {
+          "$ref": "#/definitions/V1AWSElasticBlockStoreVolumeSource"
+        },
+        "flocker": {
+          "$ref": "#/definitions/V1FlockerVolumeSource"
+        },
+        "iscsi": {
+          "$ref": "#/definitions/V1ISCSIVolumeSource"
+        },
+        "rbd": {
+          "$ref": "#/definitions/V1RBDVolumeSource"
+        },
+        "configMap": {
+          "$ref": "#/definitions/V1ConfigMapVolumeSource"
+        },
+        "storageos": {
+          "$ref": "#/definitions/V1StorageOSVolumeSource"
+        },
+        "name": {
+          "type": "string"
+        },
+        "nfs": {
+          "$ref": "#/definitions/V1NFSVolumeSource"
+        },
+        "persistentVolumeClaim": {
+          "$ref": "#/definitions/V1PersistentVolumeClaimVolumeSource"
+        },
+        "gitRepo": {
+          "$ref": "#/definitions/V1GitRepoVolumeSource"
+        },
+        "portworxVolume": {
+          "$ref": "#/definitions/V1PortworxVolumeSource"
+        },
+        "vsphereVolume": {
+          "$ref": "#/definitions/V1VsphereVirtualDiskVolumeSource"
+        },
+        "fc": {
+          "$ref": "#/definitions/V1FCVolumeSource"
+        },
+        "hostPath": {
+          "$ref": "#/definitions/V1HostPathVolumeSource"
+        }
+      }
+    },
+    "V1SecretReference": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      }
+    },
+    "V1PersistentVolumeClaimVolumeSource": {
+      "type": "object",
+      "properties": {
+        "claimName": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        }
+      }
+    },
+    "V1ObjectFieldSelector": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
+        "fieldPath": {
+          "type": "string"
+        }
+      }
+    },
+    "V1DownwardAPIProjection": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1DownwardAPIVolumeFile"
+          }
+        }
+      }
+    },
+    "Chronology": {
+      "type": "object",
+      "properties": {}
+    },
+    "V1VsphereVirtualDiskVolumeSource": {
+      "type": "object",
+      "properties": {
+        "storagePolicyName": {
+          "type": "string"
+        },
+        "storagePolicyID": {
+          "type": "string"
+        },
+        "volumePath": {
+          "type": "string"
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "V1PhotonPersistentDiskVolumeSource": {
+      "type": "object",
+      "properties": {
+        "pdID": {
+          "type": "string"
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "V1DownwardAPIVolumeSource": {
+      "type": "object",
+      "properties": {
+        "defaultMode": {
+          "type": "number"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1DownwardAPIVolumeFile"
+          }
+        }
+      }
+    },
+    "V1SecurityContext": {
+      "type": "object",
+      "properties": {
+        "privileged": {
+          "type": "boolean"
+        },
+        "runAsUser": {
+          "type": "number"
+        },
+        "capabilities": {
+          "$ref": "#/definitions/V1Capabilities"
+        },
+        "seLinuxOptions": {
+          "$ref": "#/definitions/V1SELinuxOptions"
+        },
+        "allowPrivilegeEscalation": {
+          "type": "boolean"
+        },
+        "runAsGroup": {
+          "type": "number"
+        },
+        "runAsNonRoot": {
+          "type": "boolean"
+        },
+        "readOnlyRootFilesystem": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Cluster": {
+      "type": "object",
+      "properties": {
+        "serverStartState": {
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.",
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "ADMIN"
+          ]
+        },
+        "maxUnavailable": {
+          "description": "The maximum number of cluster membrers that can be temporarily unavailable. Defaults to 1.",
+          "type": "number",
+          "minimum": 1
+        },
+        "replicas": {
+          "description": "The number of managed servers to run in this cluster",
+          "type": "number",
+          "minimum": 0
+        },
+        "clusterName": {
+          "description": "The name of this cluster. Required",
+          "type": "string"
+        },
+        "serverPod": {
+          "description": "Configuration affecting the server pod",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "type": "string",
+          "enum": [
+            "NEVER",
+            "ALWAYS",
+            "IF_NEEDED",
+            "ADMIN_ONLY"
+          ]
+        },
+        "restartVersion": {
+          "description": "If present, every time this value is updated the operator will restart the required servers",
+          "type": "string"
+        }
+      },
+      "required": [
+        "clusterName"
+      ]
+    },
+    "V1ResourceFieldSelector": {
+      "type": "object",
+      "properties": {
+        "divisor": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "containerName": {
+          "type": "string"
+        }
+      }
+    },
+    "V1GitRepoVolumeSource": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "directory": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        }
+      }
+    },
+    "V1CinderVolumeSource": {
+      "type": "object",
+      "properties": {
+        "secretRef": {
+          "$ref": "#/definitions/V1LocalObjectReference"
+        },
+        "volumeID": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "V1StorageOSVolumeSource": {
+      "type": "object",
+      "properties": {
+        "volumeNamespace": {
+          "type": "string"
+        },
+        "volumeName": {
+          "type": "string"
+        },
+        "secretRef": {
+          "$ref": "#/definitions/V1LocalObjectReference"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "fsType": {
+          "type": "string"
+        }
+      }
+    },
+    "V1GlusterfsVolumeSource": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "endpoints": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        }
+      }
+    },
+    "V1ISCSIVolumeSource": {
+      "type": "object",
+      "properties": {
+        "chapAuthSession": {
+          "type": "boolean"
+        },
+        "iscsiInterface": {
+          "type": "string"
+        },
+        "lun": {
+          "type": "number"
+        },
+        "chapAuthDiscovery": {
+          "type": "boolean"
+        },
+        "iqn": {
+          "type": "string"
+        },
+        "portals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "secretRef": {
+          "$ref": "#/definitions/V1LocalObjectReference"
+        },
+        "initiatorName": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "fsType": {
+          "type": "string"
+        },
+        "targetPortal": {
+          "type": "string"
+        }
+      }
+    },
+    "V1LocalObjectReference": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "V1SecretKeySelector": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "key": {
+          "type": "string"
+        }
+      }
+    },
+    "V1ResourceRequirements": {
+      "type": "object",
+      "properties": {
+        "requests": {
+          "$ref": "#/definitions/Map"
+        },
+        "limits": {
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "DomainStatus": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "servers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServerStatus"
+          }
+        },
+        "replicas": {
+          "type": "number",
+          "minimum": 0
+        },
+        "startTime": {
+          "$ref": "#/definitions/DateTime"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DomainCondition"
+          }
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "properties": {
+    "metadata": {
+      "description": "The domain meta-data. Must include the name and namespace.",
+      "$ref": "#/definitions/V1ObjectMeta"
+    },
+    "apiVersion": {
+      "description": "The API version for the Domain. Must be \u0027weblogic.oracle/v2\u0027",
+      "type": "string"
+    },
+    "kind": {
+      "description": "The type of resource. Should be \u0027Domain\u0027",
+      "type": "string"
+    },
+    "spec": {
+      "description": "The actual specification of the domain. Required.",
+      "$ref": "#/definitions/DomainSpec"
+    },
+    "status": {
+      "$ref": "#/definitions/DomainStatus"
+    }
+  },
+  "required": [
+    "spec",
+    "metadata"
+  ]
+}
