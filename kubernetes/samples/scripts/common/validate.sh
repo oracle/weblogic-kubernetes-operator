@@ -153,6 +153,56 @@ function validateWeblogicCredentialsSecretName {
   validateLowerCase "weblogicCredentialsSecretName" ${weblogicCredentialsSecretName}
 }
 
+#
+# Function to validate the weblogic image pull policy
+#
+function validateWeblogicImagePullPolicy {
+  if [ ! -z ${imagePullPolicy} ]; then
+    case ${imagePullPolicy} in
+      "IfNotPresent")
+      ;;
+      "Always")
+      ;;
+      "Never")
+      ;;
+      *)
+        validationError "Invalid value for imagePullPolicy: ${imagePullPolicy}. Valid values are IfNotPresent, Always, and Never."
+      ;;
+    esac
+  else
+    # Set the default
+    imagePullPolicy="IfNotPresent"
+  fi
+  failIfValidationErrors
+}
+
+#
+# Function to validate the weblogic image pull secret name
+#
+function validateWeblogicImagePullSecretName {
+  if [ ! -z ${imagePullSecretName} ]; then
+    validateLowerCase imagePullSecretName ${imagePullSecretName}
+    imagePullSecretPrefix=""
+    if [ "${generateOnly}" = false ]; then
+      validateWeblogicImagePullSecret
+    fi
+  else
+    # Set name blank when not specified, and comment out the yaml
+    imagePullSecretName=""
+    imagePullSecretPrefix="#"
+  fi
+}
+
+#
+# Function to validate the weblogic image pull secret exists
+#
+function validateWeblogicImagePullSecret {
+  # The kubernetes secret for pulling images from the docker store is optional.
+  # If it was specified, make sure it exists.
+  validateSecretExists ${imagePullSecretName} ${namespace}
+  failIfValidationErrors
+}
+
 # try to execute kubectl to see whether kubectl is available
 function validateKubectlAvailable {
   if ! [ -x "$(command -v kubectl)" ]; then
@@ -339,6 +389,9 @@ function validateCommonInputs {
   validateWeblogicCredentialsSecretName
   validateServerStartPolicy
   validateClusterType
+  validateWeblogicImagePullPolicy
+  validateWeblogicImagePullSecretName
+
   failIfValidationErrors
 }
 
