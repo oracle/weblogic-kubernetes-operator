@@ -144,7 +144,7 @@ The operator supports embedding macros within override templates.  This helps ma
 
 Two types of macros are supported `environment variable macros` and `secret macros`:
 
-* Environment variable macros have the syntax `${env:ENV-VAR-NAME}`, where the supported env vars include `DOMAIN_HOME`, `LOG_HOME`, and `DOMAIN_UID`.
+* Environment variable macros have the syntax `${env:ENV-VAR-NAME}`, where the supported environment variables include `DOMAIN_HOME`, `LOG_HOME`, and `DOMAIN_UID`.
 
 * Secret macros have the syntax `${secret:SECRETNAME.SECRETKEY}` and `${secret:SECRETNAME.SECRETKEY:encrypt}`.
 
@@ -271,6 +271,11 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
   > get('/Servers/admin-server/MaxMessageSize')
   > exit()
   ```
+* To cause the WebLogic situational configuration feature to produce additional debugging information in the WebLogic Server logs, configure the `JAVA_OPTIONS` environment variable in your domain resource with:
+```
+-Dweblogic.debug.DebugSituationalConfig=true
+-Dweblogic.debug.DebugSituationalConfigDumpXml=true
+```
 
 **IMPORTANT: Custom override changes, such as updating an override configuration map, a secret, or a domain resource, will not take effect until your domain is restarted.**
 
