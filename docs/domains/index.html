@@ -956,20 +956,6 @@ window.onload = function() {
         }
       }
     },
-    "V1Initializers": {
-      "type": "object",
-      "properties": {
-        "result": {
-          "$ref": "#/definitions/V1Status"
-        },
-        "pending": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/V1Initializer"
-          }
-        }
-      }
-    },
     "V1StatusDetails": {
       "type": "object",
       "properties": {
@@ -993,6 +979,20 @@ window.onload = function() {
         },
         "group": {
           "type": "string"
+        }
+      }
+    },
+    "V1Initializers": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "$ref": "#/definitions/V1Status"
+        },
+        "pending": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1Initializer"
+          }
         }
       }
     },
@@ -1462,6 +1462,23 @@ window.onload = function() {
         }
       }
     },
+    "V1VolumeProjection": {
+      "type": "object",
+      "properties": {
+        "downwardAPI": {
+          "$ref": "#/definitions/V1DownwardAPIProjection"
+        },
+        "configMap": {
+          "$ref": "#/definitions/V1ConfigMapProjection"
+        },
+        "secret": {
+          "$ref": "#/definitions/V1SecretProjection"
+        },
+        "serviceAccountToken": {
+          "$ref": "#/definitions/V1ServiceAccountTokenProjection"
+        }
+      }
+    },
     "V1ScaleIOVolumeSource": {
       "type": "object",
       "properties": {
@@ -1534,23 +1551,6 @@ window.onload = function() {
         }
       }
     },
-    "V1VolumeProjection": {
-      "type": "object",
-      "properties": {
-        "downwardAPI": {
-          "$ref": "#/definitions/V1DownwardAPIProjection"
-        },
-        "configMap": {
-          "$ref": "#/definitions/V1ConfigMapProjection"
-        },
-        "secret": {
-          "$ref": "#/definitions/V1SecretProjection"
-        },
-        "serviceAccountToken": {
-          "$ref": "#/definitions/V1ServiceAccountTokenProjection"
-        }
-      }
-    },
     "V1ProjectedVolumeSource": {
       "type": "object",
       "properties": {
@@ -1585,20 +1585,6 @@ window.onload = function() {
         }
       }
     },
-    "V1NFSVolumeSource": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "server": {
-          "type": "string"
-        },
-        "readOnly": {
-          "type": "boolean"
-        }
-      }
-    },
     "V1ListMeta": {
       "type": "object",
       "properties": {
@@ -1610,6 +1596,20 @@ window.onload = function() {
         },
         "selfLink": {
           "type": "string"
+        }
+      }
+    },
+    "V1NFSVolumeSource": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "server": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
         }
       }
     },
@@ -1644,23 +1644,6 @@ window.onload = function() {
         }
       }
     },
-    "V1ConfigMapProjection": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "optional": {
-          "type": "boolean"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/V1KeyToPath"
-          }
-        }
-      }
-    },
     "V1QuobyteVolumeSource": {
       "type": "object",
       "properties": {
@@ -1678,6 +1661,23 @@ window.onload = function() {
         },
         "group": {
           "type": "string"
+        }
+      }
+    },
+    "V1ConfigMapProjection": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1KeyToPath"
+          }
         }
       }
     },
@@ -1715,23 +1715,6 @@ window.onload = function() {
         }
       }
     },
-    "ProbeTuning": {
-      "type": "object",
-      "properties": {
-        "periodSeconds": {
-          "description": "The number of seconds between checks",
-          "type": "number"
-        },
-        "timeoutSeconds": {
-          "description": "The number of seconds with no response that indicates a failure",
-          "type": "number"
-        },
-        "initialDelaySeconds": {
-          "description": "The number of seconds before the first check is performed",
-          "type": "number"
-        }
-      }
-    },
     "V1FCVolumeSource": {
       "type": "object",
       "properties": {
@@ -1755,6 +1738,23 @@ window.onload = function() {
         },
         "fsType": {
           "type": "string"
+        }
+      }
+    },
+    "ProbeTuning": {
+      "type": "object",
+      "properties": {
+        "periodSeconds": {
+          "description": "The number of seconds between checks",
+          "type": "number"
+        },
+        "timeoutSeconds": {
+          "description": "The number of seconds with no response that indicates a failure",
+          "type": "number"
+        },
+        "initialDelaySeconds": {
+          "description": "The number of seconds before the first check is performed",
+          "type": "number"
         }
       }
     },
@@ -1933,6 +1933,26 @@ window.onload = function() {
         }
       }
     },
+    "V1VolumeMount": {
+      "type": "object",
+      "properties": {
+        "mountPath": {
+          "type": "string"
+        },
+        "mountPropagation": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "subPath": {
+          "type": "string"
+        }
+      }
+    },
     "ServerPod": {
       "type": "object",
       "properties": {
@@ -2028,26 +2048,6 @@ window.onload = function() {
           "items": {
             "$ref": "#/definitions/V1Sysctl"
           }
-        }
-      }
-    },
-    "V1VolumeMount": {
-      "type": "object",
-      "properties": {
-        "mountPath": {
-          "type": "string"
-        },
-        "mountPropagation": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "readOnly": {
-          "type": "boolean"
-        },
-        "subPath": {
-          "type": "string"
         }
       }
     },
@@ -2204,10 +2204,6 @@ window.onload = function() {
         }
       }
     },
-    "Chronology": {
-      "type": "object",
-      "properties": {}
-    },
     "V1DownwardAPIProjection": {
       "type": "object",
       "properties": {
@@ -2218,6 +2214,10 @@ window.onload = function() {
           }
         }
       }
+    },
+    "Chronology": {
+      "type": "object",
+      "properties": {}
     },
     "V1VsphereVirtualDiskVolumeSource": {
       "type": "object",
@@ -2352,6 +2352,20 @@ window.onload = function() {
         }
       }
     },
+    "V1GitRepoVolumeSource": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string"
+        },
+        "directory": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        }
+      }
+    },
     "V1CinderVolumeSource": {
       "type": "object",
       "properties": {
@@ -2365,20 +2379,6 @@ window.onload = function() {
           "type": "boolean"
         },
         "fsType": {
-          "type": "string"
-        }
-      }
-    },
-    "V1GitRepoVolumeSource": {
-      "type": "object",
-      "properties": {
-        "repository": {
-          "type": "string"
-        },
-        "directory": {
-          "type": "string"
-        },
-        "revision": {
           "type": "string"
         }
       }
