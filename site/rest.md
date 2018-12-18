@@ -24,6 +24,8 @@ If using `curl`, you can use the `-k` option to bypass the check to verify that 
 
 Here is a small BASH script that may help to prepare the necessary token, certificates, and such, to call the operator's REST services:
 
+**TODO** mark: update this to explain which sa, ns, etc., need to be udpated 
+
 ```
 #!/bin/bash
 KUBERNETES_SERVER=$1
