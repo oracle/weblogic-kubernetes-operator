@@ -6,17 +6,8 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
+import static oracle.kubernetes.operator.logging.MessageKeys.*;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.ApiException;
@@ -67,7 +58,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     return ADMIN_POD_REPLACED;
   }
 
-  private void verifyAdminPodReplacedWhen(PodMutator mutator) {
+  @Override
+  protected void verifyReplacePodWhen(PodMutator mutator) {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
@@ -159,24 +151,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenExistingAdminPodHasBadVersion_replaceIt() {
-    verifyAdminPodReplacedWhen(
-        pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
-  }
-
-  @Test
-  public void whenExistingManagedPodHasUnknownCustomerLabel_designateForRoll() {
-    verifyAdminPodReplacedWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
-  }
-
-  @Test
   public void whenExistingAdminPodSpecHasUnknownCustomerAnnotation_replaceIt() {
-    verifyAdminPodReplacedWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
+    verifyReplacePodWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
   }
 
   @Test
   public void whenExistingAdminPodSpecHasUnknownAddedVolumes_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> pod.getSpec().addVolumesItem(new V1Volume().name("dummy")));
+    verifyReplacePodWhen((pod) -> pod.getSpec().addVolumesItem(new V1Volume().name("dummy")));
   }
 
   @Test
@@ -194,19 +175,19 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingAdminPodSpecHasUnusedImagePullSecret_replaceIt() {
-    verifyAdminPodReplacedWhen(
+    verifyReplacePodWhen(
         (pod) ->
             pod.getSpec().addImagePullSecretsItem(new V1LocalObjectReference().name("secret")));
   }
 
   @Test
   public void whenExistingAdminPodSpecHasNoContainers_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> pod.getSpec().setContainers(null));
+    verifyReplacePodWhen((pod) -> pod.getSpec().setContainers(null));
   }
 
   @Test
   public void whenExistingAdminPodSpecHasNoContainersWithExpectedName_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setName("???"));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setName("???"));
   }
 
   private V1Container getSpecContainer(V1Pod pod) {
@@ -215,7 +196,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingAdminPodSpecHasUnneededVolumeMount_replaceIt() {
-    verifyAdminPodReplacedWhen(
+    verifyReplacePodWhen(
         (pod) -> getSpecContainer(pod).addVolumeMountsItem(new V1VolumeMount().name("dummy")));
   }
 
@@ -232,22 +213,22 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongImage_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongImagePullPolicy_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasNoPorts_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasExtraPort_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
   }
 
   private V1ContainerPort definePort(int port) {
@@ -256,24 +237,23 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingAdminPodSpecContainerHasIncorrectPort_replaceIt() {
-    verifyAdminPodReplacedWhen(
-        (pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongEnvVariable_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongEnvFrom_replaceIt() {
-    verifyAdminPodReplacedWhen(
+    verifyReplacePodWhen(
         (pod) -> getSpecContainer(pod).envFrom(Collections.singletonList(new V1EnvFromSource())));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasRestartVersion_replaceIt() {
-    verifyAdminPodReplacedWhen(
+    verifyReplacePodWhen(
         (pod) ->
             pod.getMetadata()
                 .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
