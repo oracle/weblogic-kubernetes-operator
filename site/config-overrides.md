@@ -1,6 +1,6 @@
 # Configuration overrides
 
-**PLEASE NOTE**:  This page is a work in progress.
+**PLEASE NOTE**:  This document is a work in progress.
 
 ---
 # Overview
@@ -181,7 +181,7 @@ The following `config.xml` override file demonstrates setting the `max-message-s
 
 ### Overriding a data source module
 
-The following `jdbc-testDS.xml` override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named `testDS` via secret macros.  The generated situational configuration that replaces the macros with secret values will be located in the `DOMAIN_HOME/optconfig/jdbc` directory.   The `password-encrypted` field will be populated with an encrypted value because it uses a secret macro with an `:encrypted` suffix.  The secret is named `dbsecret` and contains three keys: `url`, `username`, and `password`.
+The following `jdbc-testDS.xml` override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named `testDS` via secret macros.  The generated situational configuration that replaces the macros with secret values will be located in the `DOMAIN_HOME/optconfig/jdbc` directory.   The `password-encrypted` field will be populated with an encrypted value because it uses a secret macro with an `:encrypt` suffix.  The secret is named `dbsecret` and contains three keys: `url`, `username`, and `password`.
 
 
 ```
@@ -215,16 +215,16 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
   * Templates can embed macros that reference environement variables or Kubernetes secrets.  See [Override template macros](#override-template-macros).
 * Create a Kubernetes configuration map from the directory of templates.
   * The configuration map must be in the same Kubernetes namespace as the domain.
-  * If the configuration map is going to be used by a single `DOMAIN_UID`, it is recommended to add the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
+  * If the configuration map is going to be used by a single `DOMAIN_UID`, we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example, assuming `./mydir` contains your `version.txt` and situation configuration template files:
     ```
     kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
     kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
     ```
 * Create any Kubernetes secrets referenced by a template macro.
-  * Secrets can have multiple keys (files) that can hold either cleartext or base64 values.
+  * Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords via `Opaque` type secrets in their `data` field, so that they can't be easily read at a casual glance. For more information, see https://kubernetes.io/docs/concepts/configuration/secret/.
   * Secrets must be in the same Kubernetes namespace as the domain.
-  * If a secret is going to be used by a single `DOMAIN_UID`, it is recommended to add the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
+  * If a secret is going to be used by a single `DOMAIN_UID`, we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example:
     ```
     kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
