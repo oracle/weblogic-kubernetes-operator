@@ -35,6 +35,7 @@ public class CRDHelper {
   /**
    * Factory for {@link Step} that creates Domain CRD
    *
+   * @param version Version of the Kubernetes API Server
    * @param next Next step
    * @return Step for creating Domain custom resource definition
    */
