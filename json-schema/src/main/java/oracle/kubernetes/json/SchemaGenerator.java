@@ -154,7 +154,7 @@ public class SchemaGenerator {
     result.put("$schema", JSON_SCHEMA_REFERENCE);
     generateObjectTypeIn(result, aClass);
     if (!definedObjects.isEmpty()) {
-      Map<String, Object> definitions = new HashMap<>();
+      Map<String, Object> definitions = new TreeMap<>();
       result.put("definitions", definitions);
       for (Class<?> type : definedObjects.keySet())
         if (!definedObjects.get(type).equals(EXTERNAL_CLASS))
