@@ -58,7 +58,7 @@ public abstract class BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "If preseent, every time this value is updated the operator will restart"
+      "If present, every time this value is updated the operator will restart"
           + " the required servers")
   private String restartVersion;
 
