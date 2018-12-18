@@ -305,6 +305,8 @@ public abstract class PodHelperTestBase {
     return getServerConfigurator(new DomainV2Configurator(domain), getServerName());
   }
 
+  protected abstract void verifyReplacePodWhen(PodMutator mutator);
+
   protected abstract ServerConfigurator getServerConfigurator(
       DomainConfigurator configurator, String serverName);
 
@@ -440,6 +442,16 @@ public abstract class PodHelperTestBase {
     return testSupport
         .createCannedResponse("listPersistentVolume")
         .withLabelSelectors("weblogic.domainUID=" + UID);
+  }
+
+  @Test
+  public void whenPodHasBadVersion_replaceIt() {
+    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
+  }
+
+  @Test
+  public void whenPodHasUnknownCustomerLabel_replaceIt() {
+    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
   }
 
   protected void onAdminExpectListPersistentVolume() {
