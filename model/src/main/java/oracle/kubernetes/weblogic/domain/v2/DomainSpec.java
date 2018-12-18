@@ -170,8 +170,8 @@ public class DomainSpec extends BaseConfiguration {
   /**
    * Adds a Cluster to the DomainSpec
    *
-   * @param cluster
-   * @return
+   * @param cluster The cluster to be added to this DomainSpec
+   * @return this object
    */
   public DomainSpec withCluster(Cluster cluster) {
     clusters.add(cluster);
