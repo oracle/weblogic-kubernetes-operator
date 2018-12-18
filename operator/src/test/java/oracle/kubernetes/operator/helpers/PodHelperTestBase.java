@@ -79,6 +79,8 @@ public abstract class PodHelperTestBase {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
+  private static final Map<String, String> NODE_SELECTOR =
+      Collections.singletonMap("labelKey", "labelValue");
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -444,7 +446,8 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodHasBadVersion_replaceIt() {
-    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
+    verifyReplacePodWhen(
+        pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
   }
 
   @Test
@@ -467,36 +470,6 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenPodHasDifferentNodeSelector_replaceIt() {
     configurator.withNodeSelector("key", "value");
-    verifyReplacePodWhen(pod -> {});
-  }
-
-  @Test
-  public void whenPodContainerSecurityContextIsDifferent_replaceIt() {
-    configurator.withContainerSecurityContext(new V1SecurityContext().runAsGroup(9876L));
-    verifyReplacePodWhen(pod -> {});
-  }
-
-  @Test
-  public void whenPodLivenessProbeSettingsAreDifferent_replaceIt() {
-    configurator.withDefaultLivenessProbeSettings(8, 7, 6);
-    verifyReplacePodWhen(pod -> {});
-  }
-
-  @Test
-  public void whenPodReadinessProbeSettingsAreDifferent_replaceIt() {
-    configurator.withDefaultReadinessProbeSettings(5, 4, 3);
-    verifyReplacePodWhen(pod -> {});
-  }
-
-  @Test
-  public void whenPodRequestRequirementIsDifferent_replaceIt() {
-    configurator.withRequestRequirement("resource", "5");
-    verifyReplacePodWhen(pod -> {});
-  }
-
-  @Test
-  public void whenPodLimitRequirementIsDifferent_replaceIt() {
-    configurator.withLimitRequirement("limit", "7");
     verifyReplacePodWhen(pod -> {});
   }
 
@@ -592,10 +565,8 @@ public abstract class PodHelperTestBase {
         .name(CONTAINER_NAME)
         .image(LATEST_IMAGE)
         .imagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
-        .securityContext(new V1SecurityContext())
         .addPortsItem(new V1ContainerPort().protocol("TCP").containerPort(listenPort))
         .lifecycle(createLifecycle())
-        .resources(createEmptyResourceRequirements())
         .volumeMounts(PodDefaults.getStandardVolumeMounts(UID))
         .command(createStartCommand())
         .addEnvItem(envItem("DOMAIN_NAME", DOMAIN_NAME))
@@ -613,12 +584,6 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
-  }
-
-  private V1ResourceRequirements createEmptyResourceRequirements() {
-    return new V1ResourceRequirements()
-        .limits(Collections.emptyMap())
-        .requests(Collections.emptyMap());
   }
 
   V1PodSpec createPodSpec() {
@@ -700,7 +665,6 @@ public abstract class PodHelperTestBase {
     }
   }
 
-  @SuppressWarnings("unused")
   static class VolumeMountMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1VolumeMount> {
     private String expectedName;
@@ -747,7 +711,6 @@ public abstract class PodHelperTestBase {
     }
   }
 
-  @SuppressWarnings("unused")
   static class ProbeMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Probe> {
     private static final Integer EXPECTED_FAILURE_THRESHOLD = 1;
