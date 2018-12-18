@@ -107,7 +107,7 @@ Configuration overrides allow changing a configuration without modifying its ori
 ### Managing lifecycle operations
 
 In Operator 2.0 you can perform lifecycle operations on WebLogic servers, clusters, or domains.
-* Point to the documentation on how to manage lifecycle operations.
+See [Starting, stopping and restarting servers](server-lifecycle.md).
 
 ### Patching WebLogic and performing application updates
 
