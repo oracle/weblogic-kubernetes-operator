@@ -44,7 +44,7 @@ The operator runtime monitors this property and creates or deletes the correspon
 #### Clustered Managed Server Start/Stop Rules
 | Domain | Cluster | Clustered Server | Started / Stopped |
 | --- | --- | --- | --- |
-| ADMIN_ONLY, any value | any value | any value | Stopped |
+| ADMIN_ONLY, NEVER | any value | any value | Stopped |
 | IF_NEEDED | NEVER | any value | Stopped |
 | IF_NEEDED | IF_NEEDED | NEVER | Stopped |
 | IF_NEEDED | IF_NEEDED | ALWAYS | Started |
