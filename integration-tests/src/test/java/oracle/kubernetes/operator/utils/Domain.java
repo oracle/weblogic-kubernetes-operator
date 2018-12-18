@@ -942,6 +942,7 @@ public class Domain {
     }
 
     domainMap.put("domainHome", "/shared/domains/" + domainUid);
+    domainMap.put("logHome", "/shared/logs/" + domainUid);
     domainMap.put(
         "createDomainFilesDir",
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
