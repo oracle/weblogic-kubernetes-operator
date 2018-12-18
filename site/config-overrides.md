@@ -23,8 +23,10 @@ Use configuration overrides (also called _situational configuration_) to customi
   * A file named `version.txt` that contains the string `2.0`.
 * Set your domain resource `configOverrides` to the name of this configuration map.
 * Create Kubernetes secrets that contain template macro values.
-* Set your domain `configOverrideSecrets` to reference the aforementioned secrets. For example:
+* Set your domain `configOverrideSecrets` to reference the aforementioned secrets. See the example below.
+* Start or restart your domain.
 
+Example:
 ```
 apiVersion: "weblogic.oracle/v2"
 kind: Domain
@@ -42,8 +44,6 @@ spec:
   configOverrideSecrets: [domain1-overrides-db1-secret, domain1-config-jms1-secret]
   [ ... ]
 ```
-
-* Start or restart your domain.
 
 ## How do overrides work during runtime?
 * When a domain is first deployed, or is restarted, the operator will:
