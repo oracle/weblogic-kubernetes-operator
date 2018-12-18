@@ -37,7 +37,7 @@ The usage of the create script is as follows:
 
 ```
 $ sh create-domain.sh -h
-usage: create-domain.sh -o dir -i file -u username -p password [-s] [-e] [-h]
+usage: create-domain.sh -o dir -i file -u username -p password [-k] [-e] [-h]
   -i Parameter inputs file, must be specified.
   -o Ouput directory for the generated properties and YAML files, must be specified.
   -u Username used in building the Docker image for WebLogic domain in image.
@@ -77,7 +77,10 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
+| `image` | WebLogic Docker image that the domain resource will use. If not specified, the value is the name of the generated Docker image. | `12213-domain-wdt` |
 | `imagePath` | The relative directory of the WebLogic domain home in image Docker image in `https://github.com/oracle/docker-images.git` project under the `docker-images/OracleWebLogic/samples` directory.  | `12213-domain-home-in-image-wdt` |
+| `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are "IfNotPresent", "Always", or "Never" | `IfNotPresent` |
+| `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
@@ -133,9 +136,9 @@ spec:
     name: domain1-weblogic-credentials
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
-  # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
+  # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-  # - "ALWAYS" will start up all defined servers
+  # - "NEVER" will not start any servers in the domain 
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
@@ -186,19 +189,17 @@ Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
               weblogic.resourceVersion=domain-v2
-Annotations:  <none>
+Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"weblogic.oracle/v2","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"domain1","weblogic.resourceVersion":"do...
 API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
   Cluster Name:        
-  Creation Timestamp:  2018-12-11T21:27:35Z
+  Creation Timestamp:  2018-12-17T05:58:12Z
   Generation:          1
-  Resource Version:    814010
+  Resource Version:    15193
   Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
-  UID:                 93e55739-fd8b-11e8-b751-fa163e855ac8
+  UID:                 bce25779-01c0-11e9-baf4-0021f6985fb7
 Spec:
-  Admin Secret:
-    Name:  domain1-weblogic-credentials
   Admin Server:
     Exported Network Access Points:
     Node Port Annotations:
@@ -221,25 +222,25 @@ Spec:
       Volumes:
     Server Start State:  RUNNING
   Clusters:
-    Cluster - 1:
-      Replicas:  2
-      Server Pod:
-        Container Security Context:
-        Env:
-        Liveness Probe:
-        Node Selector:
-        Pod Annotations:
-        Pod Labels:
-        Pod Security Context:
-        Readiness Probe:
-        Resources:
-          Limits:
-          Requests:
-        Service Annotations:
-        Service Labels:
-        Volume Mounts:
-        Volumes:
-      Server Start State:         RUNNING
+    Cluster Name:  cluster-1
+    Replicas:      2
+    Server Pod:
+      Container Security Context:
+      Env:
+      Liveness Probe:
+      Node Selector:
+      Pod Annotations:
+      Pod Labels:
+      Pod Security Context:
+      Readiness Probe:
+      Resources:
+        Limits:
+        Requests:
+      Service Annotations:
+      Service Labels:
+      Volume Mounts:
+      Volumes:
+    Server Start State:           RUNNING
   Domain Home:                    /u01/oracle/user_projects/domains/domain1
   Domain Home In Image:           true
   Image:                          12213-domain-home-in-image:latest
@@ -267,29 +268,39 @@ Spec:
     Volume Mounts:
     Volumes:
   Server Start Policy:  IF_NEEDED
+  Web Logic Credentials Secret:
+    Name:  domain1-weblogic-credentials
 Status:
   Conditions:
-    Last Transition Time:  2018-12-11T21:28:59.537Z
+    Last Transition Time:  2018-12-17T05:59:55.227Z
     Reason:                ServersReady
     Status:                True
     Type:                  Available
   Servers:
     Health:
-      Activation Time:  2018-12-11T21:28:36.983Z
+      Activation Time:  2018-12-17T05:59:37.977Z
       Overall Health:   ok
       Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   admin-server
     State:         RUNNING
     Cluster Name:  cluster-1
+    Health:
+      Activation Time:  2018-12-17T06:01:23.764Z
+      Overall Health:   ok
+      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server1
-    State:         STARTING
+    State:         RUNNING
     Cluster Name:  cluster-1
+    Health:
+      Activation Time:  2018-12-17T06:01:25.393Z
+      Overall Health:   ok
+      Subsystems:
     Node Name:     xxxxxxxx
     Server Name:   managed-server2
-    State:         STARTING
-  Start Time:      2018-12-11T21:27:35.869Z
+    State:        RUNNING
+  Start Time:     2018-12-17T05:58:12.615Z
 Events:            <none>
 ```
 
@@ -308,9 +319,9 @@ Here is an example of the output of this command:
 ```
 $ kubectl get pods
 NAME                                         READY     STATUS    RESTARTS   AGE
-domain1-admin-server                         1/1       Running   0          1m
-domain1-managed-server1                      1/1       Running   0          8m
-domain1-managed-server2                      1/1       Running   0          8m
+domain1-admin-server                         1/1       Running   0          30m
+domain1-managed-server1                      1/1       Running   0          29m
+domain1-managed-server2                      1/1       Running   0          29m
 ```
 
 ### Verify the services
@@ -325,10 +336,9 @@ Here is an example of the output of this command:
 ```
 $ kubectl get services
 NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
-domain1-admin-server                        NodePort    10.96.206.134    <none>        7001:30701/TCP    23m
-domain1-admin-server-extchannel-t3channel   NodePort    10.107.164.241   <none>        30012:30012/TCP   22m
-domain1-cluster-cluster-1                   ClusterIP   10.109.133.168   <none>        8001/TCP          22m
-domain1-managed-server1                     ClusterIP   None             <none>        8001/TCP          22m
+domain1-admin-server                        ClusterIP   None             <none>        7001/TCP          32m
+domain1-cluster-cluster-1                   ClusterIP   10.99.151.142    <none>        8001/TCP          31m
+domain1-managed-server1                     ClusterIP   None             <none>        8001/TCP          31m
 domain1-managed-server2                     ClusterIP   None             <none>        8001/TCP          22m
 ```
 

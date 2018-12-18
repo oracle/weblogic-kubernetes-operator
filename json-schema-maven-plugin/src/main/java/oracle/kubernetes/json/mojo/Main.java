@@ -56,6 +56,7 @@ public interface Main {
   /**
    * Returns a resource from the classpath, corresponding to the specified name.
    *
+   * @param name Name of the resource to be returned
    * @return a url to the specified resource, or null if none is found
    */
   URL getResource(String name);
@@ -65,6 +66,7 @@ public interface Main {
    *
    * @param className the root class for the schema
    * @param outputFile the file to generate
+   * @throws MojoExecutionException If an exception occurred during the schema generation
    */
   void generateSchema(String className, File outputFile) throws MojoExecutionException;
 }

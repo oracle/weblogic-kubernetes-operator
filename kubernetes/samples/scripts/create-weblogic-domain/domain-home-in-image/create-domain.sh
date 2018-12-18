@@ -230,6 +230,10 @@ function createFiles {
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
  
   # Remove any "...yaml-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
@@ -242,29 +246,28 @@ function createDomainHome {
   if [ -z $imagePath ]; then
     imagePath="12213-domain-home-in-image-wdt"
   fi
+  imageName="${imagePath}:latest"
 
-  if [ -z $imageName ]; then
-    imageName="${imagePath}:latest"
-  fi 
   # now we know which image to use, update the domain yaml file
-  sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${dcrOutput} 
+  if [ -z $image ]; then
+    sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${dcrOutput}
+  else
+    sed -i -e "s|%IMAGE_NAME%|${image}|g" ${dcrOutput}
+  fi
     
   dockerDir=${scriptDir}/docker-images/OracleWebLogic/samples/${imagePath}
   dockerPropsDir=${dockerDir}/properties
-
-
+  cp ${domainPropertiesOutput} ${dockerPropsDir}/docker-build
+  
   # 12213-domain-home-in-image use one properties file for the credentials 
-  dockerBuildDir=docker_build
-  usernameFile="${dockerPropsDir}/${dockerBuildDir}/domain_security.properties"
-  passwordFile="${dockerPropsDir}/${dockerBuildDir}/domain_security.properties"
+  usernameFile="${dockerPropsDir}/docker-build/domain_security.properties"
+  passwordFile="${dockerPropsDir}/docker-build/domain_security.properties"
  
   # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
   if [ ! -f $usernameFile ]; then
-    dockerBuildDir=docker-build
-    usernameFile="${dockerPropsDir}/${dockerBuildDir}/adminuser.properties"
-    passwordFile="${dockerPropsDir}/${dockerBuildDir}/adminpass.properties"
+    usernameFile="${dockerPropsDir}/docker-build/adminuser.properties"
+    passwordFile="${dockerPropsDir}/docker-build/adminpass.properties"
   fi
-  cp ${domainPropertiesOutput} ${dockerPropsDir}/${dockerBuildDir}
   
   sed -i -e "s|myuser|${username}|g" $usernameFile
   sed -i -e "s|mypassword1|${password}|g" $passwordFile

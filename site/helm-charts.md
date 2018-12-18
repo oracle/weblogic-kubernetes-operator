@@ -13,8 +13,8 @@ Helm has two parts: a client (helm) and a server (tiller). Tiller runs inside of
 The operator Helm chart is pre-configured with default values for the configuration of the operator.
 
 The user can override these values by doing one of the following:
-- create a custom YAML file with the only values to be overridden, and specify the --value option on the Helm command line
-- override individual values directly on the helm command line, using the --set option 
+- create a custom YAML file with the only values to be overridden, and specify the `--value` option on the Helm command line
+- override individual values directly on the helm command line, using the `--set` option 
 
 The user can find out the configuration values that the Helm chart supports, as well as the default values, using this command:
 ```
@@ -31,10 +31,10 @@ The operator can expose an external REST HTTPS interface which can be accessed f
 
 To enable the external REST interface, configure these values in a custom configuration file, or on the Helm command line:
 
-* set "externalRestEnabled" to true
-* set "externalOperatorCert" to the certificate's Base64 encoded PEM
-* set "externalOperatorKey" to the keys Base64 encoded PEM
-* optionally, set "externalRestHttpsPort" to the external port number for the operator REST interface (defaults to 31001)
+* set `externalRestEnabled` to true
+* set `externalOperatorCert` to the certificate's Base64 encoded PEM
+* set `externalOperatorKey` to the keys Base64 encoded PEM
+* optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`)
 
 More detailed information about configuration values can be found in [Operator Helm configuration values](#operator-helm-configuration-values)
 
@@ -46,7 +46,7 @@ ___This script should not be used in a production environment (since self-signed
    
 The script takes the subject alternative names that should be added to the certificate - i.e. the list of hostnames that clients can use to access the external REST interface. In this example, the output is directly appended to the user's custom YAML configuration:
 ```
-kubernetes/generate-external-weblogic-operator-certificate.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> custom-values.yaml
+kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> custom-values.yaml
 ```
 
 ## Optional: ELK (Elasticsearch, Logstash and Kibana) integration
@@ -59,23 +59,23 @@ The user is responsible for configuring Kibana and Elasticsearch, then configuri
 
 As part of the ELK integration, Logstash configuration occurs for each deployed operator instance.  The following configuration values can be used to configure the integration:
 
-* set "elkIntegrationEnabled" is "true" to enable the integration
-* set "logStashImage" to override the default version of logstash to be used (logstash:6.2)
-* set "elasticSearchHost" and "elasticSearchPort" to override the default location where Elasticsearch is running (elasticsearch2.default.svc.cluster.local:9201). This will configure Logstash to send the operator's log contents there.
+* set `elkIntegrationEnabled` is `true` to enable the integration
+* set `logStashImage` to override the default version of logstash to be used (`logstash:6.2`)
+* set `elasticSearchHost` and `elasticSearchPort` to override the default location where Elasticsearch is running (`elasticsearch2.default.svc.cluster.local:9201`). This will configure Logstash to send the operator's log contents there.
 
 More detailed information about configuration values can be found in [Operator Helm configuration values](#operator-helm-configuration-values)
 
 ## Install the Helm chart
 
-The "helm install" command is used to install the operator Helm chart. As part of this, the user specifies a "release" name for their operator.
+The `helm install` command is used to install the operator Helm chart. As part of this, the user specifies a "release" name for their operator.
 
 The user can override default configuration values in the operator Helm chart by doing one of the following:
-- create a custom YAML file containing the values to be overridden, and specify the --value option on the Helm command line
-- override individual values directly on the helm command line, using the --set option 
+- create a custom YAML file containing the values to be overridden, and specify the `--value` option on the Helm command line
+- override individual values directly on the helm command line, using the `--set` option 
 
-The user supplies the "–namespace" argument from the "helm install" command line to specify the namespace in which the operator should be installed.  If not specified, it defaults to "default".  If the namespace does not already exist, Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is deleted.  If the namespace already exists, Helm will re-use it.  These are standard Helm behaviors.
+The user supplies the `–namespace` argument from the `helm install` command line to specify the namespace in which the operator should be installed.  If not specified, it defaults to `default`.  If the namespace does not already exist, Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is deleted.  If the namespace already exists, Helm will re-use it.  These are standard Helm behaviors.
 
-Similarly, the user may override the default "serviceAccount" configuration value to specify which service account in the operator's namespace the operator should use.  If not specified, it defaults to "default" (i.e. the namespace's default service account).  If the user wants to use a different service account, then the user must create the operator's namespace and the service account before installing the operator Helm chart.
+Similarly, the user may override the default `serviceAccount` configuration value to specify which service account in the operator's namespace the operator should use.  If not specified, it defaults to `default` (i.e. the namespace's default service account).  If the user wants to use a different service account, then the user must create the operator's namespace and the service account before installing the operator Helm chart.
 
 For example:
 ```
@@ -90,20 +90,20 @@ helm install kubernetes/charts/weblogic-operator \
   --set "javaLoggingLevel:FINE" --wait
 ```
 
-This creates a Helm release, named "weblogic-operator" in the "weblogic-operator-namespace" namespace, and configures a deployment and supporting resources for the operator.
+This creates a Helm release, named `weblogic-operator` in the `weblogic-operator-namespace` namespace, and configures a deployment and supporting resources for the operator.
 
-If "weblogic-operator-namespace" exists, it will be used.  If it does not exist, then Helm will create it.
+If `weblogic-operator-namespace` exists, it will be used.  If it does not exist, then Helm will create it.
 
-You can verify the operator installation by examining the output from the "helm install" command.
+You can verify the operator installation by examining the output from the `helm install` command.
 
 ## Removing the Operator
 
-The "helm delete" command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the "helm delete" command is the same release name used with the "helm install" command (see [Install the Helm chart](#install-the-helm-chart)).  For example:
+The `helm delete` command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the `helm delete` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-helm-chart)).  For example:
 ```
 helm delete --purge weblogic-operator
 ```
 
-Note: if the operator's namespace did not exist before the Helm chart was installed, then Helm will create it, however, "helm delete" will not remove it.
+Note: if the operator's namespace did not exist before the Helm chart was installed, then Helm will create it, however, `helm delete` will not remove it.
 
 ## Useful Helm operations
 
@@ -142,7 +142,7 @@ Roll back to a previous version of this operator Helm release, in this case the 
 helm rollback weblogic-operator 1
 ```
 
-Change one or more values in the operator Helm release. In this example, the --reuse-values flag indicates that previous overrides of other values should be retained:
+Change one or more values in the operator Helm release. In this example, the `--reuse-values` flag indicates that previous overrides of other values should be retained:
 ```
 helm upgrade \
   --reuse-values \
@@ -163,7 +163,7 @@ This section describes the details of the operator Helm chart's available config
 
 Specifies the name of the service account in the operator's namespace that the operator will use to make requests to the Kubernetes API server. The user is responsible for creating the service account.
 
-Defaults to "default".
+Defaults to `default`.
 
 Example:
 ```
@@ -174,7 +174,7 @@ serviceAccount: "weblogic-operator"
 
 Specifies the level of Java logging that should be enabled in the operator. Valid values are:  "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
 
-Defaults to "INFO"
+Defaults to `INFO`
 
 Example:
 ```
@@ -187,7 +187,7 @@ javaLoggingLevel:  "FINE"
 
 Specifies the Docker image containing the operator code.
 
-Defaults to "weblogic-kubernetes-operator:2.0".
+Defaults to `weblogic-kubernetes-operator:2.0`.
 
 Example:
 ```
@@ -197,7 +197,7 @@ image:  "weblogic-kubernetes-operator:LATEST"
 #### imagePullPolicy
 Specifies the image pull policy for the operator Docker image.
 
-Defaults to "IfNotPresent"
+Defaults to `IfNotPresent`
 
 Example:
 ```
@@ -221,18 +221,18 @@ Specifies a list of WebLogic Domain namespaces which the operator manages. The n
 
 This property is required.
 
-Example 1: In the configuration below, the operator will monitor the "default" Kubernetes namespace:
+Example 1: In the configuration below, the operator will monitor the `default` Kubernetes namespace:
 ```
 domainNamespaces:
 - "default"
 ```
 
-Example 2: In the configuration below, the Helm installation will manage "namespace1" and "namespace2":
+Example 2: In the configuration below, the Helm installation will manage `namespace1` and `namespace2`:
 ```
 domainNamespaces: [ "namespace1", "namespace2" ]
 ```
 
-NOTE: one must include the "default" namespace in the list if you want the operator to monitor both the "default" namespace and some other namespaces.
+NOTE: one must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
 
 NOTE: these examples show two valid YAML syntax options for arrays.
 
@@ -251,9 +251,9 @@ elkIntegrationEnabled:  true
 
 #### logStashImage 
 
-Specifies the Docker image containing Logstash.  This parameter is ignored if "elkIntegrationEnabled" is false.
+Specifies the Docker image containing Logstash.  This parameter is ignored if `elkIntegrationEnabled` is false.
 
-Defaults to "logstash:5"
+Defaults to `logstash:5`
 
 Example:
 ```
@@ -261,9 +261,9 @@ logStashImage:  "logstash:6.2"
 ```
 
 #### elasticSearchHost 
-Specifies the hostname where Elasticsearch is running. This parameter is ignored if 'elkIntegrationEnabled' is false.
+Specifies the hostname where Elasticsearch is running. This parameter is ignored if `elkIntegrationEnabled` is false.
 
-Defaults to "elasticsearch.default.svc.cluster.local"
+Defaults to `elasticsearch.default.svc.cluster.local`
 
 Example:
 ```
@@ -272,9 +272,9 @@ elasticSearchHost: "elasticsearch2.default.svc.cluster.local"
 
 #### elasticSearchPort 
 
-Specifies the port number where Elasticsearch is running. This parameter is ignored if 'elkIntegrationEnabled' is false.
+Specifies the port number where Elasticsearch is running. This parameter is ignored if `elkIntegrationEnabled` is false.
 
-Defaults to 9200.
+Defaults to `9200`.
 
 Example:
 ```
@@ -286,9 +286,9 @@ elasticSearchPort: 9201
 #### externalRestEnabled
 Determines whether the operator's REST interface will be exposed outside the Kubernetes cluster.
 
-Defaults to false.
+Defaults to `false`.
 
-If set to true, the user must provide the SSL certificate and private key for the operator's external REST interface by specifying the "externalOperatorCert" and "externalOperatorKey" properties.
+If set to true, the user must provide the SSL certificate and private key for the operator's external REST interface by specifying the `externalOperatorCert` and `externalOperatorKey` properties.
 
 Example:
 ```
@@ -298,9 +298,9 @@ externalRestEnabled: true
 #### externalRestHttpsPort
 Specifies node port that should be allocated for the external operator REST HTTPS interface.
 
-Only used when externalRestEnabled is true, otherwise ignored.
+Only used when `externalRestEnabled` is `true`, otherwise ignored.
 
-Defaults to 31001.
+Defaults to `31001`.
 
 Example:
 ```
@@ -309,11 +309,11 @@ externalRestHttpsPort: 32009
 
 #### externalOperatorCert
 
-Specifies the user supplied certificate to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM certificate. This parameter is required if 'externalRestEnabled' is true, otherwise, it is ignored.
+Specifies the user supplied certificate to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM certificate. This parameter is required if `externalRestEnabled` is true, otherwise, it is ignored.
 
 There is no default value.
 
-The helm installation will produce an error, similar to the following, if "externalOperatorCert" is not specified (left blank) and "externalRestEnabled" is true:
+The helm installation will produce an error, similar to the following, if `externalOperatorCert` is not specified (left blank) and `externalRestEnabled` is true:
 ```
 Error: render error in "weblogic-operator/templates/main.yaml": template: weblogic-operator/templates/main.yaml:4:3: executing "weblogic-operator/templates/main.yaml"
   at <include "operator.va...>: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing "operator.validateInputs"
@@ -328,11 +328,11 @@ externalOperatorCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S 
 
 #### externalOperatorKey
 
-Specifies user supplied private key to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM key. This parameter is required if 'externalRestEnabled' is true, otherwise, it is ignored.
+Specifies user supplied private key to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM key. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored.
 
 There is no default value.
 
-The helm installation will produce an error, similar to the following, if "externalOperatorKey" is not specified (left blank) and "externalRestEnabled" is true:
+The helm installation will produce an error, similar to the following, if `externalOperatorKey` is not specified (left blank) and `externalRestEnabled` is true:
 ```
 Error: render error in "weblogic-operator/templates/main.yaml": template: weblogic-operator/templates/main.yaml:4:3: executing "weblogic-operator/templates/main.yaml"
   at <include "operator.va...>: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:53:4: executing "operator.validateInputs"
@@ -351,7 +351,7 @@ externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B
 
 Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached. 
 
-Defaults to false
+Defaults to `false`
 
 Example:
 ```
@@ -362,9 +362,9 @@ remoteDebugNodePortEnabled:  true
 
 Specifies the port number inside the Kubernetes cluster for the operator's Java remote debug server.
 
-This parameter is required if "remoteDebugNodePortEnabled" is true. Otherwise, it is ignored.
+This parameter is required if `remoteDebugNodePortEnabled` is `true`. Otherwise, it is ignored.
 
-Defaults to 30999
+Defaults to `30999`
 
 Example:
 ```
@@ -375,9 +375,9 @@ internalDebugHttpPort:  30888
 
 Specifies the node port that should be allocated for the Kubernetes cluster for the operator's Java remote debug server.
 
-This parameter is required if "remoteDebugNodePortEnabled" is true. Otherwise, it is ignored.
+This parameter is required if `remoteDebugNodePortEnabled` is `true`. Otherwise, it is ignored.
 
-Defaults to 30999
+Defaults to `30999`
 
 Example:
 ```
@@ -416,9 +416,9 @@ Error: release op2 failed: rolebindings.rbac.authorization.k8s.io "weblogic-oper
 ```
 
 To recover:
-- helm delete --purge the failed release
+- `helm delete --purge` the failed release
   - note: this deletes the role binding in the domain namespace that was created by the first operator release to give the operator access to the domain namespace
-- helm upgrade <old op release> kubernetes/charts/weblogic-operator --values <old op custom-values.yaml>
+- `helm upgrade <old op release> kubernetes/charts/weblogic-operator --values <old op custom-values.yaml>`
   - this recreates the role binding
   - there might be intermittent failures in the operator for the period of time when the role binding was deleted
 
@@ -443,8 +443,8 @@ Error: release op2 failed: Service "external-weblogic-operator-svc" is invalid: 
 ```
 
 To recover:
-- helm delete --purge the failed release
-- change the port # and helm install the second operator again
+- `helm delete --purge` the failed release
+- change the port number and `helm install` the second operator again
 
 ### Upgrade an operator and tell it to use the same external REST port number as another operator
 
@@ -471,9 +471,9 @@ kubectl log -n kube-system tiller-deploy-f9b8476d-mht6v
 ```
 
 To recover:
-- helm delete --purge the failed release
+- `helm delete --purge` the failed release
 - create the service account
-- helm install again
+- `helm install` again
 
 ### Upgrade an operator and tell it to use a service account that doesn't exist
 
@@ -490,8 +490,8 @@ type: ReplicaFailure
 
 To recover:
 - create the service account
-- helm rollback
-- helm upgrade again
+- `helm rollback`
+- `helm upgrade` again
 
 ### Install an operator and tell it to manage a domain namespace that doesn't exist
 
@@ -502,9 +502,9 @@ Error: release op2 failed: namespaces "myuser-d2-ns" not found
 ```
 
 To recover
-- helm delete --purge the failed release
+- `helm delete --purge` the failed release
 - create the domain namespace
-- helm install again
+- `helm install` again
 
 ### Upgrade an operator and tell it to manage a domain namespace that doesn't exist
 
@@ -514,6 +514,6 @@ helm upgrade myuser-op kubernetes/charts/weblogic-operator --values o.yaml --no-
 Error: UPGRADE FAILED: failed to create resource: namespaces "myuser-d2-ns" not found
 ```
 To recover:
-- helm rollback
+- `helm rollback`
 - create the domain namespace
-- helm upgrade again
+- `helm upgrade` again
