@@ -4,13 +4,13 @@
 
 * [Overview](#overview)
 * [Prerequisites](#prerequisites)
-* [Typical overrides](#typicaloverrides)
-* [Unsupported overrides](#unsupportedoverrides)
-* [Override template names and syntax](#overridetemplatenamesandsyntax)
-* [Step-by-step guide](#step-by-stepguide)
+* [Typical overrides](#typical-overrides)
+* [Unsupported overrides](#unsupported-overrides)
+* [Override template names and syntax](#override-template-names-and-syntax)
+* [Step-by-step guide](#step-by-step-guide)
 * [Debugging](#debugging)
-* [Internal design flow](#internaldesignflow)
-* [Advanced situational configuration](#advancedsituationalconfiguration)
+* [Internal design flow](#internal-design-flow)
+* [Advanced situational configuration](#advanced-situational-configuration)
 * [References](#references)
 ---
 # Overview
