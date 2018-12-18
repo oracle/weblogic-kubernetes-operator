@@ -40,6 +40,20 @@ managedServerPort: 8001
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
 
+# WebLogic Docker image that the domain resource will use. 
+# If not specified, the value is the name of the generated Docker image, which is
+#    "12213-domain-home-in-image" if the imagePath property is specified as "12213-domain-home-in-image";
+#    "12213-domain-wdt" if the imagePath property is specified as "12213-domain-home-in-image-wdt".
+image: 12213-domain-wdt 
+
+# Image pull policy
+# Legal values are "IfNotPresent", "Always", or "Never"
+imagePullPolicy: IfNotPresent
+
+# Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
+# The presence of the secret will be validated when this parameter is enabled.
+#imagePullSecretName:
+
 # Name of the Kubernetes secret for the Admin Server's username and password
 # The name must be lowercase. 
 # If not specified, the value is derived from the domainUID as <domainUID>-weblogic-credentials
