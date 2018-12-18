@@ -1,7 +1,17 @@
 # Configuration overrides
 
-**PLEASE NOTE**:  This document is a work in progress.
+## Table of contents
 
+* [Overview](#overview)
+* [Prerequisites](#prerequisites)
+* [Typical overrides](#typical overrides)
+* [Unsupported overrides](#unsupported overrides)
+* [Override template names and syntax](#override template names and syntax)
+* [Step-by-step guide](#step-by-step guide)
+* [Debugging](#debugging)
+* [Internal design flow](#internal design flow)
+* [Advanced situational configuration](#advanced situational configuration)
+* [References](#references)
 ---
 # Overview
 
