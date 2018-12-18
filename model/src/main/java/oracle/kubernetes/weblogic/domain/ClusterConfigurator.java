@@ -101,7 +101,7 @@ public interface ClusterConfigurator {
    * and recreated.
    *
    * @since 2.0
-   * @param restartVersion If preseent, every time this value is updated the operator will restart
+   * @param restartVersion If present, every time this value is updated the operator will restart
    *     the required servers
    * @return this object
    */
