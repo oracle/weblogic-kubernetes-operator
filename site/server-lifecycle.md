@@ -150,7 +150,7 @@ The operator will restart servers when any of the follow properties on the domai
 * podSecurityContext
 * readinessProbe
 * resources
-* restartLabel
+* restartVersion
 * serverStartState
 * volumes
 * volumeMounts
@@ -162,7 +162,7 @@ TBD - do we need to include this table?  Also, Russ is still working on implemen
 Clustered servers that need to be restarted are gradually restarted (i.e. 'rolling restarted') so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.
 
 The "maxUnavailable" property on the domain resource determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
-By default, the servers are restarted one at a time.
+It can be specified at the domain and cluster levels and defaults to 1 (that is, by default, clustered servers are restarted one at a time).
 
 ### Using restartVersion to Force the Operator to Restart Servers
 
@@ -176,6 +176,8 @@ Each time the user wants to restart some servers, the user needs to set "restart
 The operator will notice the new value and restart the affected servers (using the same mechanisms as when other properties that affect the server pods are changed, including doing rolling restarts of clustered servers).
 
 "restartVersion" can be specified at the domain, cluster and server levels.  A server will be restarted if any of these three values change.
+
+Note: the servers will also be restarted if restartVersion is removed from the domain resource (for example, if the user had previously specified a value to cause a restart then the user removes that value after the previous restart has completed).
 
 ### Common Scenarios
 
