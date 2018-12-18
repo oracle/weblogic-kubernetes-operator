@@ -1497,6 +1497,23 @@ window.onload = function() {
         }
       }
     },
+    "V1VolumeProjection": {
+      "type": "object",
+      "properties": {
+        "downwardAPI": {
+          "$ref": "#/definitions/V1DownwardAPIProjection"
+        },
+        "configMap": {
+          "$ref": "#/definitions/V1ConfigMapProjection"
+        },
+        "secret": {
+          "$ref": "#/definitions/V1SecretProjection"
+        },
+        "serviceAccountToken": {
+          "$ref": "#/definitions/V1ServiceAccountTokenProjection"
+        }
+      }
+    },
     "ManagedServer": {
       "type": "object",
       "properties": {
@@ -1534,23 +1551,6 @@ window.onload = function() {
         }
       }
     },
-    "V1VolumeProjection": {
-      "type": "object",
-      "properties": {
-        "downwardAPI": {
-          "$ref": "#/definitions/V1DownwardAPIProjection"
-        },
-        "configMap": {
-          "$ref": "#/definitions/V1ConfigMapProjection"
-        },
-        "secret": {
-          "$ref": "#/definitions/V1SecretProjection"
-        },
-        "serviceAccountToken": {
-          "$ref": "#/definitions/V1ServiceAccountTokenProjection"
-        }
-      }
-    },
     "V1ProjectedVolumeSource": {
       "type": "object",
       "properties": {
@@ -1585,20 +1585,6 @@ window.onload = function() {
         }
       }
     },
-    "V1ListMeta": {
-      "type": "object",
-      "properties": {
-        "continue": {
-          "type": "string"
-        },
-        "resourceVersion": {
-          "type": "string"
-        },
-        "selfLink": {
-          "type": "string"
-        }
-      }
-    },
     "V1NFSVolumeSource": {
       "type": "object",
       "properties": {
@@ -1610,6 +1596,20 @@ window.onload = function() {
         },
         "readOnly": {
           "type": "boolean"
+        }
+      }
+    },
+    "V1ListMeta": {
+      "type": "object",
+      "properties": {
+        "continue": {
+          "type": "string"
+        },
+        "resourceVersion": {
+          "type": "string"
+        },
+        "selfLink": {
+          "type": "string"
         }
       }
     },
@@ -1681,6 +1681,29 @@ window.onload = function() {
         }
       }
     },
+    "V1OwnerReference": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "controller": {
+          "type": "boolean"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "blockOwnerDeletion": {
+          "type": "boolean"
+        }
+      }
+    },
     "V1FlockerVolumeSource": {
       "type": "object",
       "properties": {
@@ -1689,6 +1712,23 @@ window.onload = function() {
         },
         "datasetUUID": {
           "type": "string"
+        }
+      }
+    },
+    "ProbeTuning": {
+      "type": "object",
+      "properties": {
+        "periodSeconds": {
+          "description": "The number of seconds between checks",
+          "type": "number"
+        },
+        "timeoutSeconds": {
+          "description": "The number of seconds with no response that indicates a failure",
+          "type": "number"
+        },
+        "initialDelaySeconds": {
+          "description": "The number of seconds before the first check is performed",
+          "type": "number"
         }
       }
     },
@@ -1715,46 +1755,6 @@ window.onload = function() {
         },
         "fsType": {
           "type": "string"
-        }
-      }
-    },
-    "V1OwnerReference": {
-      "type": "object",
-      "properties": {
-        "uid": {
-          "type": "string"
-        },
-        "controller": {
-          "type": "boolean"
-        },
-        "apiVersion": {
-          "type": "string"
-        },
-        "kind": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "blockOwnerDeletion": {
-          "type": "boolean"
-        }
-      }
-    },
-    "ProbeTuning": {
-      "type": "object",
-      "properties": {
-        "periodSeconds": {
-          "description": "The number of seconds between checks",
-          "type": "number"
-        },
-        "timeoutSeconds": {
-          "description": "The number of seconds with no response that indicates a failure",
-          "type": "number"
-        },
-        "initialDelaySeconds": {
-          "description": "The number of seconds before the first check is performed",
-          "type": "number"
         }
       }
     },
@@ -1933,6 +1933,38 @@ window.onload = function() {
         }
       }
     },
+    "V1PodSecurityContext": {
+      "type": "object",
+      "properties": {
+        "runAsUser": {
+          "type": "number"
+        },
+        "seLinuxOptions": {
+          "$ref": "#/definitions/V1SELinuxOptions"
+        },
+        "fsGroup": {
+          "type": "number"
+        },
+        "supplementalGroups": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "runAsGroup": {
+          "type": "number"
+        },
+        "runAsNonRoot": {
+          "type": "boolean"
+        },
+        "sysctls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/V1Sysctl"
+          }
+        }
+      }
+    },
     "ServerPod": {
       "type": "object",
       "properties": {
@@ -2016,38 +2048,6 @@ window.onload = function() {
         },
         "subPath": {
           "type": "string"
-        }
-      }
-    },
-    "V1PodSecurityContext": {
-      "type": "object",
-      "properties": {
-        "runAsUser": {
-          "type": "number"
-        },
-        "seLinuxOptions": {
-          "$ref": "#/definitions/V1SELinuxOptions"
-        },
-        "fsGroup": {
-          "type": "number"
-        },
-        "supplementalGroups": {
-          "type": "array",
-          "items": {
-            "type": "number"
-          }
-        },
-        "runAsGroup": {
-          "type": "number"
-        },
-        "runAsNonRoot": {
-          "type": "boolean"
-        },
-        "sysctls": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/V1Sysctl"
-          }
         }
       }
     },
@@ -2204,6 +2204,10 @@ window.onload = function() {
         }
       }
     },
+    "Chronology": {
+      "type": "object",
+      "properties": {}
+    },
     "V1DownwardAPIProjection": {
       "type": "object",
       "properties": {
@@ -2214,10 +2218,6 @@ window.onload = function() {
           }
         }
       }
-    },
-    "Chronology": {
-      "type": "object",
-      "properties": {}
     },
     "V1VsphereVirtualDiskVolumeSource": {
       "type": "object",
@@ -2480,17 +2480,6 @@ window.onload = function() {
         }
       }
     },
-    "V1ResourceRequirements": {
-      "type": "object",
-      "properties": {
-        "requests": {
-          "$ref": "#/definitions/Map"
-        },
-        "limits": {
-          "$ref": "#/definitions/Map"
-        }
-      }
-    },
     "DomainStatus": {
       "type": "object",
       "properties": {
@@ -2518,6 +2507,17 @@ window.onload = function() {
         },
         "message": {
           "type": "string"
+        }
+      }
+    },
+    "V1ResourceRequirements": {
+      "type": "object",
+      "properties": {
+        "requests": {
+          "$ref": "#/definitions/Map"
+        },
+        "limits": {
+          "$ref": "#/definitions/Map"
         }
       }
     }
