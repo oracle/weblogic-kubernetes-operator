@@ -446,8 +446,7 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodHasBadVersion_replaceIt() {
-    verifyReplacePodWhen(
-        pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
+    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
   }
 
   @Test

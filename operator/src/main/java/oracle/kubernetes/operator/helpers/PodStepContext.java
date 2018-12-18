@@ -282,8 +282,8 @@ public abstract class PodStepContext implements StepContextConstants {
     if (areUnequal(current.getMetadata().getAnnotations(), build.getMetadata().getAnnotations()))
       return false;
 
-    if (!Objects.equals(current.getSpec().getSecurityContext(), build.getSpec().getSecurityContext()))
-      return false;
+    if (!Objects.equals(
+        current.getSpec().getSecurityContext(), build.getSpec().getSecurityContext())) return false;
 
     if (!Objects.equals(current.getSpec().getNodeSelector(), build.getSpec().getNodeSelector()))
       return false;
@@ -314,6 +314,7 @@ public abstract class PodStepContext implements StepContextConstants {
 
   /**
    * Compares two pod spec containers for equality
+   *
    * @param build the desired container model
    * @param current the current container, obtained from Kubernetes
    * @param ignoring a list of volume names to ignore
@@ -322,8 +323,7 @@ public abstract class PodStepContext implements StepContextConstants {
   private static boolean equals(V1Container build, V1Container current, List<String> ignoring) {
     return current.getImage().equals(build.getImage())
         && current.getImagePullPolicy().equals(build.getImagePullPolicy())
-        && equalSets(
-            mountsWithout(current.getVolumeMounts(), ignoring), build.getVolumeMounts())
+        && equalSets(mountsWithout(current.getVolumeMounts(), ignoring), build.getVolumeMounts())
         && equalSets(current.getPorts(), build.getPorts())
         && equalSets(current.getEnv(), build.getEnv())
         && equalSets(current.getEnvFrom(), build.getEnvFrom());

@@ -237,8 +237,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingAdminPodSpecContainerHasIncorrectPort_replaceIt() {
-    verifyReplacePodWhen(
-        (pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
   }
 
   @Test
