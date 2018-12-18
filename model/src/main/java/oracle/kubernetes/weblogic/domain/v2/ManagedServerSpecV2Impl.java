@@ -10,9 +10,9 @@ public class ManagedServerSpecV2Impl extends ServerSpecV2Impl {
    *
    * @param spec the domain specification
    * @param server the server whose configuration is to be returned
+   * @param cluster the cluster that this managed server belongs to
    * @param clusterLimit the number of servers desired for the cluster, or null if not a clustered
    *     server
-   * @param configurations the additional configurations to search for values if the server lacks
    */
   public ManagedServerSpecV2Impl(
       DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
