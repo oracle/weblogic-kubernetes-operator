@@ -14,4 +14,5 @@ After creating Kubernetes clusters, you can optionally:
 
 ### Configuring Kibana and Elasticsearch
 
-You can send the operator logs to Elasticsearch, to be displayed in Kibana. Use this [sample script](kubernetes/samples/scripts/elasticsearch_and_kibana.yaml) to configure Elasticsearch and Kibana deployments and services.
+You can send the operator logs to Elasticsearch, to be displayed in Kibana. Use 
+this [sample script](/kubernetes/samples/scripts/elasticsearch-and-kibana/README.md) to configure Elasticsearch and Kibana deployments and services.
