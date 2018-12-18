@@ -6,7 +6,7 @@
 # Declare variables to be passed into your templates.
 
 # Load balancer type.  Supported values are: TRAEFIK, VOYAGER
-type: TRAEFIK 
+type: TRAEFIK
 
 # WLS domain as backend to the load balancer
 wlsDomain:
@@ -18,7 +18,7 @@ wlsDomain:
 # Traefik specific values
 traefik:
   # hostname used by host-routing
-  hostname: doamin1.org
+  hostname: domain1.org
 
 # Voyager specific values
 voyager:
