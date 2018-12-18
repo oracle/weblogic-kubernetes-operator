@@ -101,14 +101,14 @@ $ kubectl log -n sample-weblogic-operator-ns -c weblogic-operator deployments/we
 a.  Create a namespace that can host one or more domains:
 
 ```
-$ kubectl create namespace sample-domains-ns1
+$ kubectl create namespace sample-domain1-ns
 ```
 b.	Use `helm` to configure the operator to manage domains in this namespace:
 
 ```
 $ helm upgrade \
   --reuse-values \
-  --set "domainNamespaces={sample-domains-ns1}" \
+  --set "domainNamespaces={sample-domain1-ns}" \
   --wait \
   sample-weblogic-operator \
   kubernetes/charts/weblogic-operator
@@ -118,7 +118,7 @@ c.  Configure Traefik to manage Ingresses created in this namespace:
 ```
 $ helm upgrade \
   --reuse-values \
-  --set "kubernetes.namespaces={traefik,sample-domains-ns1}" \
+  --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
   traefik-operator \
   stable/traefik
 ```
@@ -133,7 +133,7 @@ a. Create a Kubernetes secret containing the `username` and `password` for the d
 
 ```
 $ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
-$ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domains-ns1 -d sample-domain1
+$ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domain1-ns -d sample-domain1
 ```
 
 The sample will create a secret named `domainUID-weblogic-credentials` where the `domainUID` is replaced
@@ -145,7 +145,7 @@ Follow the directions in the [README](../kubernetes/samples/scripts/create-weblo
 including:
 
 * Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
-domain namespace (`sample-domains-ns1`) and the base image (`oracle/weblogic:12213-patch-wls-for-k8s`).
+domain namespace (`sample-domain1-ns`) and the base image (`oracle/weblogic:12213-patch-wls-for-k8s`).
 
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials.
   By convention, the secret will be named`domainUID-weblogic-credentials` (where `domainUID` is replaced with the
@@ -159,7 +159,7 @@ $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e -v
 
 c.	Confirm that the operator started the servers for the domain:
 ```
-$ kubectl get pods -n sample-domains-ns1
+$ kubectl get pods -n sample-domain1-ns
 ```
 
 After a short time, you will see the Administration Server and Managed Servers running.
@@ -174,7 +174,7 @@ $ kubectl get pods -n sample-weblogic-operator-ns
 ```
 
 d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
-* Use `helm install`, specifying the `domainUID` (`sample-domain1`) and domain namespace (`sample-domains-ns1`) in the `values.yaml` file.
+* Use `helm install`, specifying the `domainUID` (`sample-domain1`) and domain namespace (`sample-domain1-ns`) in the `values.yaml` file.
 ```
 $ cd kubernetes/samples/charts
 $ helm install ingress-per-domain --name domain1-ingress --values ingress-per-domain/values.yaml
@@ -197,8 +197,8 @@ b.	Remove the domain resources by using the sample [`delete-weblogic-domain-reso
 
 c.	Use `kubectl` to confirm that the server pods and domain resource are gone.
 ```
-$ kubectl get pods -n sample-domains-ns1
-$ kubectl get domains -n sample-domains-ns1
+$ kubectl get pods -n sample-domain1-ns
+$ kubectl get domains -n sample-domain1-ns
 ```
 
 ## 7. Remove the domain namespace.
@@ -225,7 +225,7 @@ $ helm upgrade \
 c.	Delete the domain namespace:
 
 ```
-$ kubectl delete namespace sample-domains-ns1
+$ kubectl delete namespace sample-domain1-ns
 ```
 
 ## 8. Remove the operator.
