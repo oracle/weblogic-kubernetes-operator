@@ -45,15 +45,17 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * @param domainHomeInImage
-   * @return
+   * Specifies whether the domain home is stored in the image
+   *
+   * @param domainHomeInImage boolean indicating if the domain home is stored in the image
+   * @return this object
    */
   public DomainConfigurator withDomainHomeInImage(boolean domainHomeInImage) {
     getDomainSpec().setDomainHomeInImage(domainHomeInImage);
     return this;
   }
 
-  /** Defines a name for the domain's admin server. */
+  /** @return An AdminServerConfigurator object for configuring an admin server */
   public abstract AdminServerConfigurator configureAdminServer();
 
   public void withDefaultReplicaCount(int replicas) {
@@ -169,6 +171,7 @@ public abstract class DomainConfigurator {
    * Sets the default server start policy ("ALWAYS", "NEVER" or "IF_NEEDED") for the domain.
    *
    * @param startPolicy the new default policy
+   * @return this object
    */
   public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
 
@@ -260,7 +263,7 @@ public abstract class DomainConfigurator {
    * Add security constraints at container level, if the same constraint is also defined at pod
    * level then container constraint take precedence
    *
-   * @param podSecurityContext
+   * @param podSecurityContext pod-level security attributes to be added to this DomainConfigurator
    * @return this object
    */
   public abstract DomainConfigurator withPodSecurityContext(

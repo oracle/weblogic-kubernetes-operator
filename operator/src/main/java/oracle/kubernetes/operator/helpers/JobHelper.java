@@ -110,6 +110,7 @@ public class JobHelper {
   /**
    * Factory for {@link Step} that creates WebLogic domain introspector job
    *
+   * @param tuning Watch tuning parameters
    * @param next Next processing step
    * @return Step for creating job
    */
@@ -218,8 +219,10 @@ public class JobHelper {
   /**
    * Factory for {@link Step} that deletes WebLogic domain introspector job
    *
+   * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
+   * @param namespace Namespace
    * @param next Next processing step
-   * @return Step for deleting server pod
+   * @return Step for deleting the domain introsepctor jod
    */
   public static Step deleteDomainIntrospectorJobStep(
       String domainUID, String namespace, Step next) {
@@ -270,6 +273,7 @@ public class JobHelper {
   /**
    * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log
    *
+   * @param tuning Watch tuning parameters
    * @param next Next processing step
    * @return Step for reading WebLogic domain introspector pod log
    */
