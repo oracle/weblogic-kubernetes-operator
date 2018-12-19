@@ -40,20 +40,20 @@ f.	Then patch the WebLogic image according to these [instructions](https://githu
 g.  Grant the Helm service account the `cluster-admin` role:
 
 ```
-    $ cat <<EOF | kubectl apply -f -
-    apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRoleBinding
-    metadata:
-      name: helm-user-cluster-admin-role
-    roleRef:
-      apiGroup: rbac.authorization.k8s.io
-      kind: ClusterRole
-      name: cluster-admin
-    subjects:
-    - kind: ServiceAccount
-      name: default
-      namespace: kube-system
-    EOF
+$ cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: helm-user-cluster-admin-role
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+EOF
 ```
 
 ## 2. Create a Traefik (Ingress-based) load balancer.
