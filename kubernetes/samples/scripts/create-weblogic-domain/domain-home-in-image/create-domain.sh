@@ -174,8 +174,8 @@ function createFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  if [ -z "${image}" ]; then
-    fail "Please specify image in your input YAML"
+  if [ -z "${domainHomeImageBase}" ]; then
+    fail "Please specify domainHomeImageBase in your input YAML"
   fi
 
   domainName=${domainUID}
@@ -238,11 +238,13 @@ function createFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
- 
-  if [ -z $imagePath ]; then
-    imagePath="12213-domain-home-in-image-wdt"
+
+  domainHomeImageBuildPathDefault="./docker-images/OracleWebLogic/samples/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt"
+  if [ -z $domainHomeImageBuildPath ]; then
+    domainHomeImageBuildPath=${domainHomeImageBuildPathDefault}
   fi
-  imageName="${imagePath}:latest"
+
+  imageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
 
   # now we know which image to use, update the domain yaml file
   if [ -z $image ]; then
@@ -259,7 +261,7 @@ function createFiles {
 # Function to build docker image and create WebLogic domain home
 #
 function createDomainHome {
-  dockerDir=${scriptDir}/docker-images/OracleWebLogic/samples/${imagePath}
+  dockerDir=${scriptDir}/${domainHomeImageBuildPath}
   dockerPropsDir=${dockerDir}/properties
   cp ${domainPropertiesOutput} ${dockerPropsDir}/docker-build
 
@@ -276,11 +278,17 @@ function createDomainHome {
   sed -i -e "s|myuser|${username}|g" $usernameFile
   sed -i -e "s|mypassword1|${password}|g" $passwordFile
     
-  if [ ! -z $baseImage ]; then
-    sed -i -e "s|\(FROM \).*|\1 ${baseImage}|g" ${dockerDir}/Dockerfile
+  if [ ! -z $domainHomeImageBase ]; then
+    sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
   fi
 
   sh ${dockerDir}/build.sh
+  imageNameOrigin="`basename ${domainHomeImageBuildPath}`"
+
+  # if use the default images, we tag it to a more generic name (without the release version numbers)
+  if [ -z $image ]; then
+    docker tag $imageNameOrigin:latest $imageName:latest
+  fi
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."

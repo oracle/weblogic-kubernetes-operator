@@ -40,9 +40,12 @@ managedServerPort: 8001
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
 
-# WebLogic Docker image.
-# The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. See README.md for more help.
-#image:
+# WebLogic Docker image that the domain resource will pull if needed.
+# You only need to specify this if you are going to push the generated image from the local Docker repository
+# to another Docker repository.
+# If not specified, will use the internally generated image name, say "domain-home-in-image-wlst:latest"
+# or "domain-home-in-image-wdt:latest".
+# image: 
 
 # Image pull policy
 # Legal values are "IfNotPresent", "Always", or "Never"
@@ -85,14 +88,14 @@ namespace: default
 # Java Option for Weblogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
-# Base image used to build the domain home in image Docker image
-# If not specified, use the built-in base image oracle/weblogic:12.2.1.3-developer
-baseImage: oracle/weblogic:12.2.1.3-developer
+# WebLogic binary image used to build the WebLogic domain image
+# The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. See README.md for more help.
+# domainHomeImageBase: 
 
-# The relative directory of the WebLogic domain home in image Docker image in the i
-# `https://github.com/oracle/docker-images.git` project under the `docker-images/OracleWebLogic/samples` directory.
-# If not specified, use 12213-domain-home-in-image-wdt. 
-# Another possible value is 12213-domain-home-in-image which uses WLST script instead of WDT to 
-# generate the domain home.
-imagePath: 12213-domain-home-in-image-wdt
+# Location of the WebLogic "domain home in image" Docker image sample in the 
+# `https://github.com/oracle/docker-images.git` project.
+# If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt".
+# Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image" which 
+# uses WLST script, instead of WDT, to generate the domain configuration.
+domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt
 
