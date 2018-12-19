@@ -68,6 +68,8 @@ The Javadoc is also available in the GitHub repository [here](https://oracle.git
 
 ## Running integration tests
 
+TODO - I think this entire section needs a redo.  Also, helm must be used to install the operator - heml-charts.md (v.s. manual-installation.md)
+
 The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+.
 
 To run the tests, uncomment the following `execution` element in the `pom.xml` file and update the `KUBECONFIG` to point to your kube config file.
