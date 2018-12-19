@@ -37,6 +37,25 @@ $ docker pull store/oracle/weblogic:12.2.1.3
 f.	Then patch the WebLogic image according to these [instructions](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s),
     and copy the image to all nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
+g.  Grant the Helm service account the `cluster-admin` role:
+
+```
+$ cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: helm-user-cluster-admin-role
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+EOF
+```
+
 ## 2. Create a Traefik (Ingress-based) load balancer.
 
 Use `helm` to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](../kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
@@ -62,25 +81,8 @@ b.	Create a service account for the operator in the operator's namespace:
 ```
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
-c.  Grant the Helm service account the `cluster-admin` role:
-```
-$ cat <<EOF | kubectl apply -f -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: helm-user-cluster-admin-role
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: kube-system
-EOF
-```
 
-3.  Use `helm` to install and start the operator from the directory you just cloned:	 
+c.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
 ```
 $ helm install kubernetes/charts/weblogic-operator \
@@ -90,7 +92,7 @@ $ helm install kubernetes/charts/weblogic-operator \
   --set "domainNamespaces={}" \
   --wait
 ```
-f.  Verify that the operator is up and running by viewing the operator pod's log:
+d.  Verify that the operator is up and running by viewing the operator pod's log:
 
 ```
 $ kubectl log -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
