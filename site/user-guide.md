@@ -22,8 +22,7 @@ presented in the correct order.
   * [Set up load balancers](load-balancing.md)
   * [Configuring Kibana and Elasticsearch](prepare-k8s.md#configuring-kibana-and-elasticsearch)
 * [Install and manage the operator](install.md)
-  * [Using the Helm charts](helm-charts.md) is the *preferred* method
-  * [Manual installation](manual-installation.md) is also possible
+  * [Using the Helm charts](helm-charts.md)
 * [Using the operator's REST interface](rest.md)
 * [Creating or obtaining WebLogic Docker images](weblogic-docker-images.md)
   * [Obtaining standard images from the Docker store](weblogic-docker-images.md#obtaining-standard-images-from-the-docker-store)
