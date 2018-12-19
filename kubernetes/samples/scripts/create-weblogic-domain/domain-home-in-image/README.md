@@ -6,10 +6,9 @@ The sample scripts demonstrate the creation of a WebLogic domain home in a Docke
 
 The following prerequisites must be handled prior to running the create domain script:
 * Make sure the WebLogic operator is running.
-* The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one.
+* The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
-* Build the Oracle WebLogic image `oracle/weblogic:12.2.1.3-developer`. Refer to [Oracle WebLogic Server on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/dockerfiles/12.2.1.3). If a different `baseImage` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository.
 
 ## Use the script to create a domain
 
@@ -71,15 +70,15 @@ The following parameters can be provided in the inputs file.
 | `adminPort` | Port number for the Administration Server inside the Kubernetes cluster. | `7001` |
 | `adminNodePort` | Port number of the Administration Server outside the Kubernetes cluster. | `30701` |
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
-| `baseImage` | The image that is used to build the domain-home-in-image Docker image. If not specified, use the built-in base image `oracle/weblogic:12.2.1.3-developer`. The image specified here needs to be built locally or pulled from a repository before the `create-domain.sh` script is executed. | `oracle/weblogic:12.2.1.3-developer` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `clusterType` | Type of the WebLogic Cluster. Legal values are `CONFIGURED` or `DYNAMIC`. | `DYNAMIC` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `2` |
+| `domainHomeImageBase` | WebLogic binary image used to build the WebLogic domain image. The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository before the `create-domain.sh` script is executed. | |
+| `domainHomeImageBuildPath` | Location of the WebLogic "domain home in image" Docker image in `https://github.com/oracle/docker-images.git` project. If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt". Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image" whichuses WLST script, instead of WDT, to generate the domain configuration. | `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `image` | WebLogic Docker image that the domain resource will use. If not specified, the value is the name of the generated Docker image. | `12213-domain-home-in-image-wdt` |
-| `imagePath` | The relative directory of the WebLogic domain home in image Docker image in `https://github.com/oracle/docker-images.git` project under the `docker-images/OracleWebLogic/samples` directory.  | `12213-domain-home-in-image-wdt` |
+| `image` | WebLogic Docker image that the domain resource will pull if needed. You only need to specify this if you are going to push the generated image from the local Docker repository to another Docker repository. If not specified, will use the internally generated image name, say "domain-home-in-image-wlst:latest" or "domain-home-in-image-wdt:latest". | |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are "IfNotPresent", "Always", or "Never" | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
