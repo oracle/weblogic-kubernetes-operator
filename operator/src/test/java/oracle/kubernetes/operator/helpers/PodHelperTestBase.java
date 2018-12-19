@@ -327,7 +327,7 @@ public abstract class PodHelperTestBase {
             hasEnvVar("DOMAIN_UID", UID),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
             hasEnvVar("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)),
-            hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID),
+            hasEnvVar("LOG_HOME", ""),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
             hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
   }
@@ -335,12 +335,14 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenPodCreated_withLogHomeSpecified_hasLogHomeEnvVariable() {
     final String MY_LOG_HOME = "/shared/mylogs";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs");
     assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", MY_LOG_HOME)));
   }
 
   @Test
   public void whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeEnvVariable() {
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome(null);
     assertThat(
         getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID)));
@@ -560,7 +562,7 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
         .addEnvItem(
             envItem("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)))
-        .addEnvItem(envItem("LOG_HOME", LOG_HOME + "/" + UID))
+        .addEnvItem(envItem("LOG_HOME", ""))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
         .livenessProbe(createLivenessProbe())
