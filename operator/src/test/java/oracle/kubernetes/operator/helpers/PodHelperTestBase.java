@@ -305,6 +305,8 @@ public abstract class PodHelperTestBase {
 
   protected abstract void verifyReplacePodWhen(PodMutator mutator);
 
+  protected abstract void verifyPodNotReplacedWhen(PodMutator mutator);
+
   protected abstract ServerConfigurator getServerConfigurator(
       DomainConfigurator configurator, String serverName);
 
@@ -465,10 +467,14 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  @Ignore
-  public void whenPodHasDifferentNodeSelector_dontReplaceIt() {
+  public void whenPodHasDifferentNodeSelector_replaceIt() {
     configurator.withNodeSelector("key", "value");
     verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenNullVsEmptyNodeSelector_dontReplaceIt() {
+    verifyPodNotReplacedWhen(pod -> pod.getSpec().setNodeSelector(null));
   }
 
   @Test
@@ -486,6 +492,23 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenPodReadinessProbeSettingsAreDifferent_replaceIt() {
     configurator.withDefaultReadinessProbeSettings(5, 4, 3);
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodRequestRequirementIsDifferent_replaceIt() {
+    configurator.withRequestRequirement("resource", "5");
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodRequestRequirementsEmptyVsNull_dontReplaceIt() {
+    verifyPodNotReplacedWhen(pod -> pod.getSpec().getContainers().get(0).resources(null));
+  }
+
+  @Test
+  public void whenPodLimitRequirementIsDifferent_replaceIt() {
+    configurator.withLimitRequirement("limit", "7");
     verifyReplacePodWhen(pod -> {});
   }
 

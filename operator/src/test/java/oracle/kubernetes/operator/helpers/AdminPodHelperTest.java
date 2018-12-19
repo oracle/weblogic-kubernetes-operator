@@ -76,7 +76,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(logRecords, containsInfo(getPodReplacedMessageKey()));
   }
 
-  private void verifyAdminPodNotReplacedWhen(PodMutator mutator) {
+  @Override
+  protected void verifyPodNotReplacedWhen(PodMutator mutator) {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
@@ -162,7 +163,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingAdminPodSpecHasK8sVolume_ignoreIt() {
-    verifyAdminPodNotReplacedWhen(
+    verifyPodNotReplacedWhen(
         (pod) -> {
           pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
           getSpecContainer(pod)
@@ -202,7 +203,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingAdminPodSpecHasK8sVolumeMount_ignoreIt() {
-    verifyAdminPodNotReplacedWhen(
+    verifyPodNotReplacedWhen(
         (pod) ->
             getSpecContainer(pod)
                 .addVolumeMountsItem(
