@@ -28,7 +28,7 @@ Oracle provides a [WebLogic Server 12.2.1.3.0 Docker image](https://store.docker
 must have a Docker Store account, log on to the Docker Store, navigate 
 to that image and click on the "Proceed to Checkout" button which will 
 prompt you to read and accept the license agreement for the image. 
-Once you have accepted the license agreement, you will be abel to 
+Once you have accepted the license agreement, you will be able to 
 pull the image using your Docker store credentials. 
 
 First, you will need to login to the Docker Store:
