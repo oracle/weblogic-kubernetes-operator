@@ -43,8 +43,8 @@ productionModeEnabled: true
 # WebLogic Docker image that the domain resource will use. 
 # If not specified, the value is the name of the generated Docker image, which is
 #    "12213-domain-home-in-image" if the imagePath property is specified as "12213-domain-home-in-image";
-#    "12213-domain-wdt" if the imagePath property is specified as "12213-domain-home-in-image-wdt".
-image: 12213-domain-wdt 
+#    "12213-domain-home-in-image-wdt" if the imagePath property is specified as "12213-domain-home-in-image-wdt".
+image: 12213-domain-home-in-image-wdt 
 
 # Image pull policy
 # Legal values are "IfNotPresent", "Always", or "Never"
