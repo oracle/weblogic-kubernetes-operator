@@ -41,8 +41,8 @@ managedServerNameBase: managed-server
 # Port number for each managed server
 managedServerPort: 8001
 
-# WebLogic Docker image. The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied.
-# Please refer to ../../../../../site/weblogic-docker-images.md for help.
+# WebLogic Docker image.
+# The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. See README.md for more help.
 #image:
 
 # Image pull policy
