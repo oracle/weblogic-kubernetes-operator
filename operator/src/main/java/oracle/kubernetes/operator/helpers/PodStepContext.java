@@ -139,6 +139,7 @@ public abstract class PodStepContext implements StepContextConstants {
   }
 
   private String getEffectiveLogHome() {
+    if (!getDomain().getLogHomeEnabled()) return "";
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
       // logHome not specified, use default value

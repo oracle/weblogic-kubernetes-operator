@@ -162,6 +162,10 @@ function createFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
+  if [ -z "${image}" ]; then
+    fail "Please specify image in your input YAML"
+  fi
+
   domainName=${domainUID}
 
   # Use the default value if not defined.
