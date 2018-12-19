@@ -130,7 +130,7 @@ After you have run the build (that is, `mvn clean install`), create the Docker i
 
 ```
 docker build -t weblogic-kubernetes-operator:some-tag \
-       --build-arg VERSION=2.0-SNAPSHOT --no-cache=true .
+       --build-arg VERSION=2.0-rc1 --no-cache=true .
 ```
 
 We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, we used the GitHub ID of the developer.
