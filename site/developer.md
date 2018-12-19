@@ -64,56 +64,6 @@ mvn javadoc:javadoc
 
 The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
 
-## Running integration tests
-
-*FIXME*
-
-The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+.
-
-To run the tests, uncomment the following `execution` element in the `pom.xml` file and update the `KUBECONFIG` to point to your kube config file.
-
-```
-<!--
-<execution>
-  <id>kubernetes-config</id>
-  <phase>test</phase>
-  <goals>
-      <goal>test</goal>
-  </goals>
-  <configuration>
-      <argLine>${surefireArgLine} -Xms512m -Xmx1500m</argLine>
-      <environmentVariables>
-          <KUBECONFIG>
-              ${project.basedir}/your.kube.config
-          </KUBECONFIG>
-      </environmentVariables>
-  </configuration>
-</execution>
--->
-```
-
-These tests assume that the [RBAC definitions](rbac.md) exist on the Kubernetes cluster.
-
-To create them, first, make a copy of the inputs file (`create-weblogic-operator-inputs.yaml`) and update it.
-
-Next, choose and create a directory that generated operator-related files will be stored in, for example, `/path/to/weblogic-operator-output-directory`.
-
-Finally, run the operator installation script with the "generate only" option as shown below, pointing it at your inputs file and your output directory.  (See the [installation](manual-installation.md) page for details about this script and the inputs):
-
-```
-./create-weblogic-operator.sh -g \
-  -i create-weblogic-operator-inputs.yaml \
-  -o /path/to/weblogic-operator-output-directory
-```
-
-This will create a file called `/path/to/weblogic-operator-output-directory/weblogic-operators/weblogic-operator/weblogic-operator-security.yaml`, which you will need to apply to your cluster:
-
-```
-kubectl apply -f /path/to/weblogic-operator-output-directory/weblogic-operators/webogic-operator/weblogic-operator-security.yaml
-```
-
-After this is done, and the `execution` is uncommented, the tests will run against your cluster.
-
 ## Running the operator from an IDE
 
 The operator can be run from an IDE, which is useful for debugging.  In order to do so, the machine running the IDE must be configured with a Kubernetes configuration file in `~/.kube/config` or in a location pointed to by the `KUBECONFIG` environment variable.
@@ -137,6 +87,17 @@ docker load < /some/path/operator.tar
 Use the Helm charts to [install the operator](helm-charts.md).
 
 If the operator's behavior or Pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options](helm-charts.md#debugging-options).
+
+## Running integration tests
+
+The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  The Kubernetes cluster must meet the version number requirements and have Helm installed.  Ensure that the operator Docker image is in a Docker registry visible to the Kubernetes cluster.
+
+
+You will need to obtain the `kube.config` file for an administrative user and make it available on the machine running the build.  To run the tests, update the `KUBECONFIG` environment varaible to point to your config file and then execute:
+
+```
+mvn clean verify -P java-integration-tests
+```
 
 ## Coding standards
 
