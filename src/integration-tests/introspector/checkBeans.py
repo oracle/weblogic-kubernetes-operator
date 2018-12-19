@@ -147,7 +147,7 @@ for line in file:
     checkStatus='FAILED'
     addError(
       "Error: expected original value and actual value to differ "
-             + " but got value '" + originalValue + "' for both"
+             + " but got value '" + originalActual + "' for both"
              + " for bean_path=serverConfig/" + bean_path 
              + " attr='" + attr + "'. "
     )
