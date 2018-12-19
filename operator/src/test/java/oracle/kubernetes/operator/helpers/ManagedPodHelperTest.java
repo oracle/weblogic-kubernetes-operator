@@ -154,7 +154,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingManagedPodSpecHasK8sVolume_ignoreIt() {
-    verifyManagedPodNotRolledWhen(
+    verifyPodNotReplacedWhen(
         (pod) -> {
           pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
           getSpecContainer(pod)
@@ -189,7 +189,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingManagedPodSpecHasK8sVolumeMount_ignoreIt() {
-    verifyManagedPodNotRolledWhen(
+    verifyPodNotReplacedWhen(
         (pod) ->
             getSpecContainer(pod)
                 .addVolumeMountsItem(
@@ -532,7 +532,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     return rolling;
   }
 
-  private void verifyManagedPodNotRolledWhen(PodMutator mutator) {
+  @Override
+  protected void verifyPodNotReplacedWhen(PodMutator mutator) {
     Map<String, StepAndPacket> rolling = computePodsToRoll(mutator);
 
     assertThat(rolling, is(anEmptyMap()));

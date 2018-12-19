@@ -8,6 +8,7 @@ import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.*;
 import java.io.File;
 import java.util.*;
@@ -23,6 +24,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -279,17 +281,21 @@ public abstract class PodStepContext implements StepContextConstants {
   private static boolean isCurrentPodMetadataValid(V1ObjectMeta build, V1ObjectMeta current) {
     return VersionHelper.matchesResourceVersion(current, DEFAULT_DOMAIN_VERSION)
         && isRestartVersionValid(build, current)
-        && Objects.equals(getCustomerLabels(current), getCustomerLabels(build))
-        && Objects.equals(current.getAnnotations(), build.getAnnotations());
+        && mapEquals(getCustomerLabels(current), getCustomerLabels(build))
+        && mapEquals(current.getAnnotations(), build.getAnnotations());
   }
 
   private static boolean isCurrentPodSpecValid(
       V1PodSpec build, V1PodSpec current, List<String> ignoring) {
     return Objects.equals(current.getSecurityContext(), build.getSecurityContext())
-        //  && Objects.equals(current.getNodeSelector(), build.getNodeSelector())
+        && mapEquals(current.getNodeSelector(), build.getNodeSelector())
         && equalSets(volumesWithout(current.getVolumes(), ignoring), build.getVolumes())
         && equalSets(current.getImagePullSecrets(), build.getImagePullSecrets())
         && areCompatible(build.getContainers(), current.getContainers(), ignoring);
+  }
+
+  private static <K, V> boolean mapEquals(Map<K, V> first, Map<K, V> second) {
+    return Objects.equals(first, second) || (MapUtils.isEmpty(first) && MapUtils.isEmpty(second));
   }
 
   private static boolean areCompatible(
@@ -323,6 +329,7 @@ public abstract class PodStepContext implements StepContextConstants {
         && Objects.equals(current.getSecurityContext(), build.getSecurityContext())
         && equalSettings(current.getLivenessProbe(), build.getLivenessProbe())
         && equalSettings(current.getReadinessProbe(), build.getReadinessProbe())
+        && resourcesEqual(current.getResources(), build.getResources())
         && equalSets(mountsWithout(current.getVolumeMounts(), ignoring), build.getVolumeMounts())
         && equalSets(current.getPorts(), build.getPorts())
         && equalSets(current.getEnv(), build.getEnv())
@@ -333,6 +340,18 @@ public abstract class PodStepContext implements StepContextConstants {
     return Objects.equals(probe1.getInitialDelaySeconds(), probe2.getInitialDelaySeconds())
         && Objects.equals(probe1.getTimeoutSeconds(), probe2.getTimeoutSeconds())
         && Objects.equals(probe1.getPeriodSeconds(), probe2.getPeriodSeconds());
+  }
+
+  private static boolean resourcesEqual(V1ResourceRequirements a, V1ResourceRequirements b) {
+    return mapEquals(getLimits(a), getLimits(b)) && mapEquals(getRequests(a), getRequests(b));
+  }
+
+  private static Map<String, Quantity> getLimits(V1ResourceRequirements requirements) {
+    return requirements == null ? Collections.emptyMap() : requirements.getLimits();
+  }
+
+  private static Map<String, Quantity> getRequests(V1ResourceRequirements requirements) {
+    return requirements == null ? Collections.emptyMap() : requirements.getRequests();
   }
 
   private static List<V1Volume> volumesWithout(
