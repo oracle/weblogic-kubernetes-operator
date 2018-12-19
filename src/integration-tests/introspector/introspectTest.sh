@@ -336,6 +336,7 @@ function deployTestScriptConfigMap() {
   cp ${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils* ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/createDomain.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/createTestRoot.sh ${test_home}/test-scripts || exit 1
+  cp ${SCRIPTPATH}/introspectDomainProxy.sh ${test_home}/test-scripts || exit 1
 
   if [ "$CREATE_DOMAIN" = "true" ]; then
     rm -f ${test_home}/scripts/createDomain.py
@@ -454,6 +455,7 @@ function deployCreateDomainJob() {
 #   - this emulates what the operator pod would do prior to start wl-pods
 #
 
+# Alternatively, run deployIntrospectJobPod() instead.
 function deployIntrospectJob() {
   local introspect_output_cm_name=${DOMAIN_UID}-weblogic-domain-introspect-cm
 
@@ -482,6 +484,105 @@ function deployIntrospectJob() {
 
   createConfigMapFromDir $introspect_output_cm_name ${test_home}/jobfiles 
 
+}
+
+# Here we emulate the introspect job by directly starting an introspect pod and monitoring it.
+# deployIntrospectJob() does about the same thing, but starts a pod via a job
+# (Running a pod directly is helpful for debugging.)
+
+function deployIntrospectJobPod() {
+  local introspect_output_cm_name=${DOMAIN_UID}-weblogic-domain-introspect-cm
+  local target_yaml=${test_home}/wl-introspect-pod.yaml
+  local pod_name=${DOMAIN_UID}--introspect-domain-pod
+  local job_name=$pod_name
+
+  trace "Info: Run introspection job, parse its output to files, and put files in configmap '$introspect_output_cm_name'."
+
+  # delete anything left over from a previous invocation of this function
+
+  kubectl -n $NAMESPACE delete cm $introspect_output_cm_name \
+    --ignore-not-found  \
+    2>&1 | tracePipe "Info: kubectl output: "
+
+  if [ -f "${target_yaml}" ]; then
+    kubectl -n $NAMESPACE delete -f ${target_yaml} \
+      --ignore-not-found \
+      2>&1 | tracePipe "Info: kubectl output: "
+    rm -f ${target_yaml}
+  fi
+
+  trace "Info: Deploying job pod '$pod_name' and waiting for it to be ready."
+
+  (
+    export SERVER_NAME=introspect
+    export JOB_NAME=${DOMAIN_UID}--introspect-domain-pod
+    export JOB_SCRIPT=/test-scripts/introspectDomainProxy.sh
+    export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
+    export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
+    if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
+      export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
+    else
+      export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
+    fi
+    ${SCRIPTPATH}/util_subst.sh -g wl-introspect-pod.yamlt ${target_yaml}  || exit 1
+  ) || exit 1
+
+  kubectl create -f ${target_yaml} \
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+
+  # Wait for pod to come up successfully
+
+  # TBD make the following a helper fn since this is the second place
+  #     we wait for a pod to start, and the code is exactly the same...
+  local status="0/1"
+  local startsecs=$SECONDS
+  local maxsecs=180
+  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
+  while [ "${status}" != "1/1" ] ; do
+    if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
+      echo
+      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl describe:"
+      kubectl -n $NAMESPACE describe pod $pod_name
+      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl log:"
+      kubectl -n $NAMESPACE logs $pod_name
+      exit 1
+    fi
+    echo -n "."
+    sleep 1
+    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
+  done
+  echo "  ($((SECONDS - startsecs)) seconds)"
+
+  local startSecs=$SECONDS
+  local maxsecs=30
+  local exitString=""
+  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' to run the introspectDomain.py script."
+  printdots_start
+  while [ $((SECONDS - startSecs)) -lt $maxsecs ] && [ "$exitString" = "" ]; do
+    exitString="`kubectl -n $NAMESPACE logs $pod_name 2>&1 | grep INTROSPECT_DOMAIN_EXIT`"
+    sleep 1
+  done
+  printdots_end
+  if [ "$exitString" = "" ]; then
+    trace "Error: Introspector timed out, see 'kubectl -n $NAMESPACE logs $pod_name'."
+    exit 1
+  fi
+  if [ ! "$exitString" = "INTROSPECT_DOMAIN_EXIT=0" ]; then
+    trace "Error: Introspector pod script failed, see 'kubectl -n $NAMESPACE logs $pod_name'."
+    exit 1
+  fi
+
+  # parse job pod's output files
+
+  kubectl -n $NAMESPACE logs $pod_name > ${test_home}/job-${DOMAIN_UID}-introspect-domain-pod-job.out 
+
+  ${SCRIPTPATH}/util_fsplit.sh \
+    ${test_home}/job-${DOMAIN_UID}-introspect-domain-pod-job.out \
+    ${test_home}/jobfiles || exit 1
+
+  # put the outputfile in a cm
+
+  createConfigMapFromDir $introspect_output_cm_name ${test_home}/jobfiles 
 }
 
 #############################################################################
@@ -669,7 +770,8 @@ if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   createTestRootPVDir
   deployWebLogic_PV_PVC_and_Secret
   deployCreateDomainJob
-  deployIntrospectJob
+  #deployIntrospectJob
+  deployIntrospectJobPod
   deployPod ${ADMIN_NAME?}
   deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
   deployPod ${MANAGED_SERVER_NAME_BASE?}1
