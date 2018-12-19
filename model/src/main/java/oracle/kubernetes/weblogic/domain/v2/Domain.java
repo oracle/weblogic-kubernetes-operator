@@ -306,6 +306,10 @@ public class Domain {
         .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUID()));
   }
 
+  public boolean getLogHomeEnabled() {
+    return spec.getLogHomeEnabled();
+  }
+
   public boolean isIncludeServerOutInPodLog() {
     return spec.getIncludeServerOutInPodLog();
   }
