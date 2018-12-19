@@ -24,7 +24,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -281,21 +280,17 @@ public abstract class PodStepContext implements StepContextConstants {
   private static boolean isCurrentPodMetadataValid(V1ObjectMeta build, V1ObjectMeta current) {
     return VersionHelper.matchesResourceVersion(current, DEFAULT_DOMAIN_VERSION)
         && isRestartVersionValid(build, current)
-        && mapEquals(getCustomerLabels(current), getCustomerLabels(build))
-        && mapEquals(current.getAnnotations(), build.getAnnotations());
+        && KubernetesUtils.areLabelsValid(build, current)
+        && KubernetesUtils.areAnnotationsValid(build, current);
   }
 
   private static boolean isCurrentPodSpecValid(
       V1PodSpec build, V1PodSpec current, List<String> ignoring) {
     return Objects.equals(current.getSecurityContext(), build.getSecurityContext())
-        && mapEquals(current.getNodeSelector(), build.getNodeSelector())
+        && KubernetesUtils.mapEquals(current.getNodeSelector(), build.getNodeSelector())
         && equalSets(volumesWithout(current.getVolumes(), ignoring), build.getVolumes())
         && equalSets(current.getImagePullSecrets(), build.getImagePullSecrets())
         && areCompatible(build.getContainers(), current.getContainers(), ignoring);
-  }
-
-  private static <K, V> boolean mapEquals(Map<K, V> first, Map<K, V> second) {
-    return Objects.equals(first, second) || (MapUtils.isEmpty(first) && MapUtils.isEmpty(second));
   }
 
   private static boolean areCompatible(
@@ -343,7 +338,8 @@ public abstract class PodStepContext implements StepContextConstants {
   }
 
   private static boolean resourcesEqual(V1ResourceRequirements a, V1ResourceRequirements b) {
-    return mapEquals(getLimits(a), getLimits(b)) && mapEquals(getRequests(a), getRequests(b));
+    return KubernetesUtils.mapEquals(getLimits(a), getLimits(b))
+        && KubernetesUtils.mapEquals(getRequests(a), getRequests(b));
   }
 
   private static Map<String, Quantity> getLimits(V1ResourceRequirements requirements) {
@@ -388,17 +384,6 @@ public abstract class PodStepContext implements StepContextConstants {
 
   private static List<V1VolumeMount> getVolumeMounts(V1Container container) {
     return Optional.ofNullable(container.getVolumeMounts()).orElse(Collections.emptyList());
-  }
-
-  private static Map<String, String> getCustomerLabels(V1ObjectMeta metadata) {
-    Map<String, String> result = new HashMap<>();
-    for (Map.Entry<String, String> entry : metadata.getLabels().entrySet())
-      if (!isOperatorLabel(entry)) result.put(entry.getKey(), entry.getValue());
-    return result;
-  }
-
-  private static boolean isOperatorLabel(Map.Entry<String, String> label) {
-    return label.getKey().startsWith("weblogic.");
   }
 
   private static boolean isRestartVersionValid(V1ObjectMeta build, V1ObjectMeta current) {
