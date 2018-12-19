@@ -14,8 +14,8 @@ It's useful for trying out the operator in a Kubernetes cluster that doesn't alr
 have them configured.
 
 It runs Elasticstack on the same host and port that the operator's Helm chart defaults
-to, therefore, the customer only needs to set elkIntegrationEnabled to true in their
-`values.yaml` file.
+to, therefore, the customer only needs to set `elkIntegrationEnabled` to `true` in their
+`values.yaml` file.``
 
 To install ElasticSearch and Kibana, use:
 ```
