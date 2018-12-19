@@ -8,6 +8,7 @@ Before you begin, read this guide, [Domain Resource](../../../../../site/domain-
 
 The following prerequisites must be handled prior to running the create domain script:
 * Make sure the WebLogic operator is running.
+* The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
 * In the same Kubernetes namespace, create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
