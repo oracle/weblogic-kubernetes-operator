@@ -235,14 +235,6 @@ function createFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
  
-  # Remove any "...yaml-e" files left over from running sed
-  rm -f ${domainOutputDir}/*.yaml-e
-}
-
-#
-# Function to build docker image and create WebLogic domain home
-#
-function createDomainHome {
   if [ -z $imagePath ]; then
     imagePath="12213-domain-home-in-image-wdt"
   fi
@@ -254,7 +246,15 @@ function createDomainHome {
   else
     sed -i -e "s|%IMAGE_NAME%|${image}|g" ${dcrOutput}
   fi
-    
+
+  # Remove any "...yaml-e" files left over from running sed
+  rm -f ${domainOutputDir}/*.yaml-e
+}
+
+#
+# Function to build docker image and create WebLogic domain home
+#
+function createDomainHome {
   dockerDir=${scriptDir}/docker-images/OracleWebLogic/samples/${imagePath}
   dockerPropsDir=${dockerDir}/properties
   cp ${domainPropertiesOutput} ${dockerPropsDir}/docker-build
