@@ -19,7 +19,7 @@ domainUID: domain1
 clusterType: DYNAMIC
 
 # Determines which WebLogic Servers the Operator will start up
-# Legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
+# Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
 serverStartPolicy: IF_NEEDED
 
 # Cluster name

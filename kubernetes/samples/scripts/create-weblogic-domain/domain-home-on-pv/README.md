@@ -95,7 +95,7 @@ The following parameters can be provided in the inputs file.
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
 | `persistentVolumeClaimName` | Name of the persistent volume claim. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc` | `domain1-weblogic-sample-pvc` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
-| `serverStartPolicy` | Determines which WebLogic Servers will be started up. Legal values are `NEVER`, `ALWAYS`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
+| `serverStartPolicy` | Determines which WebLogic Servers will be started up. Legal values are `NEVER`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
 | `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
 | `t3PublicAddress` | Public address for the T3 channel. | `kubernetes` |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-credentials`. | `domain1-weblogic-credentials` |
@@ -159,9 +159,9 @@ spec:
   # If not specified or empty, domain log file, server logs, server out, and node manager log files
   # will be stored in the default logHome location of /shared/logs/<domainUID>/.
   logHome: /shared/logs/domain1
-  # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
+  # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the operator will start up when it discovers this Domain
-  # - "ALWAYS" will start up all defined servers
+  # - "NEVER" will not start up any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
