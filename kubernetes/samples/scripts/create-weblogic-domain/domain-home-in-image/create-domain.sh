@@ -174,11 +174,15 @@ function createFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  domainName=${domainUID} 
+  if [ -z "${image}" ]; then
+    fail "Please specify image in your input YAML"
+  fi
+
+  domainName=${domainUID}
 
   # Generate the properties file that will be used when creating the weblogic domain
   echo Generating ${domainPropertiesOutput}
-   
+
   cp ${domainPropertiesInput} ${domainPropertiesOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
@@ -258,7 +262,7 @@ function createDomainHome {
   dockerDir=${scriptDir}/docker-images/OracleWebLogic/samples/${imagePath}
   dockerPropsDir=${dockerDir}/properties
   cp ${domainPropertiesOutput} ${dockerPropsDir}/docker-build
-  
+
   # 12213-domain-home-in-image use one properties file for the credentials 
   usernameFile="${dockerPropsDir}/docker-build/domain_security.properties"
   passwordFile="${dockerPropsDir}/docker-build/domain_security.properties"
