@@ -162,7 +162,7 @@ cat <<EOF > ${nm_props_file}
   LogLimit=0
   DomainsDirRemoteSharingEnabled=true
   PropertiesVersion=12.2.1
-  AuthenticationEnabled=true
+  AuthenticationEnabled=false
   NodeManagerHome=${NODEMGR_HOME}
   JavaHome=${JAVA_HOME}
   LogLevel=FINEST
