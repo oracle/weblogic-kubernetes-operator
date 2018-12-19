@@ -174,11 +174,15 @@ function createFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
-  domainName=${domainUID} 
+  if [ -z "${image}" ]; then
+    fail "Please specify image in your input YAML"
+  fi
+
+  domainName=${domainUID}
 
   # Generate the properties file that will be used when creating the weblogic domain
   echo Generating ${domainPropertiesOutput}
-   
+
   cp ${domainPropertiesInput} ${domainPropertiesOutput}
   sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
