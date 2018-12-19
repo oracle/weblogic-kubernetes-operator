@@ -4,8 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.KubernetesConstants.*;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.*;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
+import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.ALL_READ_AND_EXECUTE;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_MOUNTS_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX;
 
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Volume;
