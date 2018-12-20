@@ -20,6 +20,10 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 
 The fastest way to experience the operator is to follow the [Quick start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](kubernetes/samples/README.md).
 
+```diff
++ The current release is 2.0-rc1
+```
+
 # About this documentation
 
 This documentation includes sections aimed at different audiences.  To help you find what you are looking for more easily,
