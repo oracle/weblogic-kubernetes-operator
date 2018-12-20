@@ -103,7 +103,7 @@ $ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30307/testwebapp/
 ## Uninstall the Voyager Operator
 After removing all the Voyager Ingress resources, uninstall the Voyager operator:
 ```
-helm delete --purge voyager-operator
+$ helm delete --purge voyager-operator
 ```
 
 ## Install and uninstall the Voyager operator with setup.sh
