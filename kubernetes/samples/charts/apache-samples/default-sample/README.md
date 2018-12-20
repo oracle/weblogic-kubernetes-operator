@@ -2,7 +2,7 @@
 In this sample, we will configure the Apache webtier as a load balancer for a WebLogic domain using the default configuration. We will demonstrate how to use the Apache webtier to handle traffic to a backend WebLogic domain.
 
 ## 1. Create a WebLogic domain
-We need to prepare a backend domain for load balancing by the Apache webtier. Refer to the sample, https://github.com/oracle/weblogic-kubernetes-operator/tree/develop/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv, to create a WebLogic domain. Keep the default values for the following configuration parameters:
+We need to prepare a backend domain for load balancing by the Apache webtier. Refer to the [sample](/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md), to create a WebLogic domain. Keep the default values for the following configuration parameters:
 - namespace: `default`
 - domainUID: `domain1`
 - clusterName: `cluster-1`
@@ -13,10 +13,10 @@ We need to prepare a backend domain for load balancing by the Apache webtier. Re
 After the domain is successfully created, deploy the sample web application, `testwebapp.war`, on the domain cluster using the WLS Administration Console. The sample web application is located in the `kubernetes/samples/charts/application` directory.
 
 ## 2. Build the Apache webtier Docker image
-Refer to the sample, https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache, to build the Apache webtier Docker image.
+Refer to the [sample](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache), to build the Apache webtier Docker image.
 
 ## 3. Install the Apache webtier with a Helm chart
-The Apache webtier Helm chart is located at https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/charts/apache-webtier.
+The Apache webtier Helm chart [is located here](kubernetes/samples/charts/apache-webtier).
 Install the Apache webtier Helm chart into the default namespace with the default settings:
 ```
 $ cd kubernetes/samples/charts

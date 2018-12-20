@@ -8,6 +8,7 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.util.Iterator;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.helpers.Pool;
 
 /**
@@ -15,7 +16,7 @@ import oracle.kubernetes.operator.helpers.Pool;
  */
 public class WatchImpl<T> implements WatchI<T> {
   private final Pool<ApiClient> pool;
-  private final ApiClient client;
+  private ApiClient client;
   private Watch<T> impl;
 
   WatchImpl(Pool<ApiClient> pool, ApiClient client, Watch<T> impl) {
@@ -31,6 +32,12 @@ public class WatchImpl<T> implements WatchI<T> {
   }
 
   @Override
+  public void discardClient() {
+    client = pool.take();
+  }
+
+  @Override
+  @Nonnull
   public Iterator<Watch.Response<T>> iterator() {
     return impl.iterator();
   }

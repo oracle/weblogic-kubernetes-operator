@@ -18,19 +18,19 @@ The following prerequisites must be handled prior to running the create domain s
 Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at your inputs file and an output directory:
 
 ```
-  ./create-domain.sh \
+$ ./create-domain.sh \
   -i create-domain-inputs.yaml \
   -o /path/to/output-directory
 ```
 
 The script will perform the following steps:
 
-* Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
+* Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. If the directory already exists, its contents must be removed before using this script.
 * Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
 * Run and wait for the job to finish.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
 ```
-kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
+$ kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
 ```
 
 * Create a convenient utility script, `delete-domain-job.yaml`, to clean up the domain home created by the create script.
@@ -206,7 +206,7 @@ spec:
 To confirm that the domain was created, use this command:
 
 ```
-kubectl describe domain DOMAINUID -n NAMESPACE
+$ kubectl describe domain DOMAINUID -n NAMESPACE
 ```
 
 Replace `DOMAINUID` with the `domainUID` and `NAMESPACE` with the actual namespace.
@@ -321,7 +321,7 @@ In the `Status` section of the output, the available servers and clusters are li
 Use the following command to see the pods running the servers:
 
 ```
-kubectl get pods -n NAMESPACE
+$ kubectl get pods -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
@@ -339,7 +339,7 @@ domain1-managed-server2                      1/1       Running   0          8m
 Use the following command to see the services for the domain:
 
 ```
-kubectl get services -n NAMESPACE
+$ kubectl get services -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
