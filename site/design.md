@@ -22,6 +22,6 @@ The operator is designed to avoid imposing any arbitrary restriction on how WebL
 
 The operator learns of WebLogic domains through instances of a domain Kubernetes resource.  When the operator is installed, it creates a Kubernetes [Custom Resource Definition](https://kubernetes.io/docs/concepts/api-extension/custom-resources/).  This custom resource definition defines the domain resource type.  After this type is defined, you can manage domain resources using `kubectl` just like any other resource type.  For instance, `kubectl get domain` or `kubectl edit domain domain1`.  
 
-Schema for Domain resources is [here](../docs/domains/Domain.json).
+Schema for Domain resources is [here](https://oracle.github.io/weblogic-kubernetes-operator/domains/Domain.json).
 
 The schema for the domain resource is designed to be as sparse as possible.  It includes the connection details for the Administration Server, but all of the other content is operational details about which servers should be started, environment variables, and details about what should be exposed outside the Kubernetes cluster.  This way, the WebLogic domain's configuration remains the normative configuration.
