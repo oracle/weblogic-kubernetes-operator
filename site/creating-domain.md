@@ -1,5 +1,3 @@
-**TODO** review and update
-
 # Creating a WebLogic domain
 
 The WebLogic domain must be installed into the folder that will be mounted as `/shared/domain`. The recommended approach is to use the provided `create-weblogic-domain.sh` script; however, instructions are also provided for manually installing and configuring a WebLogic domain (see [Manually creating a domain](manually-creating-domain.md)).
@@ -21,7 +19,7 @@ Any namespaces that were listed in the `targetNamespaces` parameter in the opera
 To create an additional namespace, issue the following command:
 
 ```
-kubectl create namespace NAMESPACE
+$ kubectl create namespace NAMESPACE
 ```
 
 In this command, replace `NAMESPACE` with the desired namespace.
@@ -33,7 +31,7 @@ In this command, replace `NAMESPACE` with the desired namespace.
 In order to obtain the WebLogic Server Docker image from the Docker Store, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Docker Store credentials, issue the following command:
 
 ```
-kubectl create secret docker-registry SECRET_NAME
+$ kubectl create secret docker-registry SECRET_NAME
   -n NAMESPACE
   --docker-server=index.docker.io/v1/
   --docker-username=YOUR_USERNAME
@@ -52,8 +50,8 @@ If you have never used the WebLogic Server image before, you will need to go to 
 You can let Kubernetes pull the Docker image for you the first time you try to create a pod that uses the image, but we have found that you can generally avoid various common issues, like putting the secret in the wrong namespace or getting the credentials wrong, by just manually pulling the image by running these commands *on the Kubernetes nodes*:
 
 ```
-docker login
-docker pull store/oracle/weblogic:12.2.1.3
+$ docker login
+$ docker pull store/oracle/weblogic:12.2.1.3
 ```
 ## Setting up secrets for the Administration Server credentials
 
@@ -62,7 +60,7 @@ The username and password credentials for access to the Administration Server mu
 Issue the following command to create the secret:
 
 ```
-kubectl -n NAMESPACE create secret generic SECRET_NAME
+$ kubectl -n NAMESPACE create secret generic SECRET_NAME
   --from-literal=username=ADMIN-USERNAME
   --from-literal=password=ADMIN-PASSWORD
 ```
@@ -82,7 +80,7 @@ In a single-node Kubernetes cluster, such as may be used for testing or proof of
 The persistent volume for the domain must be created using the appropriate tools before running the script to create the domain.  In the simplest case, namely the `HOST_PATH` provider, this means creating a directory on the Kubernetes master and ensuring that it has the correct permissions:
 
 ```
-mkdir –m 777 –p /path/to/domain1PersistentVolume
+$ mkdir –m 777 –p /path/to/domain1PersistentVolume
 ```
 
 For other providers, consult the provider documentation for instructions on how to create a persistent volume.
@@ -144,10 +142,13 @@ Next, choose and create a directory in which generated operator related files wi
 Finally, run the create script, pointing it at your inputs file and output directory:
 
 ```
-  ./create-weblogic-domain.sh \
+$ ./create-weblogic-domain.sh -e -v \
   –i create-weblogic-domain-inputs.yaml \
   -o /path/to/weblogic-operator-output-directory
 ```
+
+The `-e` option tells the script that it should not only create the YAML files but also apply them to the Kubernetes environment. 
+If you omit this option, the YAML files will be generated in the output directory and you can inspect them and apply them manually. 
 
 ## What the script does
 
@@ -246,7 +247,7 @@ The script will verify that the domain was created, and will report failure if t
 To confirm that the domain resource was created, use this command:
 
 ```
-kubectl describe domain DOMAINUID -n NAMESPACE
+$ kubectl describe domain DOMAINUID -n NAMESPACE
 ```
 
 Replace `DOMAINUID` with the `domainUID`, and replace `NAMESPACE` with the namespace that the domain was created in.  The output of this command will provide details of the domain, as shown in this example:
@@ -321,7 +322,7 @@ In the `Status` section of the output, the available servers and clusters are li
 Use the following command to see the pods running the servers:
 
 ```
-kubectl get pods -n NAMESPACE
+$ kubectl get pods -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
@@ -339,7 +340,7 @@ domain1-managed-server2   1/1       Running   0          22h
 Use the following command to see the services for the domain:
 
 ```
-kubectl get services -n NAMESPACE
+$ kubectl get services -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
@@ -352,33 +353,6 @@ domain1-admin-server-extchannel-t3channel   NodePort    10.98.239.197    <none> 
 domain1-managed-server1                     ClusterIP   10.100.184.148   <none>        8001/TCP          22h
 domain1-managed-server2                     ClusterIP   10.108.114.41    <none>        8001/TCP          22h
 ```
-
-### Verify the Ingresses
-
-Use the following command to see the Ingresses for the domain:
-
-```
-kubectl describe ing -n domain1
-```
-
-Here is an example of the output of this command:
-
-```
-$ kubectl describe ing -n domain1
-Name:             domain1-cluster-1
-Namespace:        domain1
-Address:          
-Default backend:  default-http-backend:80 (<none>)
-Rules:
-  Host  Path  Backends
-  ----  ----  --------
-  *     
-        /   domain1-managed-server1:8001 (<none>)
-        /   domain1-managed-server2:8001 (<none>)
-Annotations:
-Events:  <none>
-```
-
 
 ## Configuring the domain readiness
 
