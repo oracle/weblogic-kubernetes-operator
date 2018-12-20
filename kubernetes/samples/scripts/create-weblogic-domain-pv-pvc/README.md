@@ -173,8 +173,8 @@ spec:
 
 ### Verify the PV and PVC objects
 
-You can use this command to verify the persistent volume was created, note that the 'Status' field
-should have the value 'Bound', indicating the that persistent volume has been claimed:
+You can use this command to verify the persistent volume was created, note that the `Status` field
+should have the value `Bound`, indicating the that persistent volume has been claimed:
 
 ```
 $ kubectl describe pv weblogic-sample-pv
