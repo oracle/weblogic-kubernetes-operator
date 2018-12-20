@@ -131,7 +131,7 @@ The `restartVersion` property on the domain resource lets you force the operator
 The operator runtime does rolling restarts of clustered servers so that service is maintained.
 
 ### Properties that cause servers to be restarted
-The operator will restart servers when any of the follow properties on the domain resource that affect the server, are changed:
+The operator will restart servers when any of the follow properties on the domain resource that affect the server are changed:
 * `annotations`
 * `containerSecurityContext`
 * `domainHome`
@@ -145,15 +145,14 @@ The operator will restart servers when any of the follow properties on the domai
 * `logHomeEnabled`
 * `logHome`
 * `livenessProbe`
+* `nodeSelector`
 * `podSecurityContext`
 * `readinessProbe`
+* `resources`
 * `restartVersion`
 * `serverStartState`
 * `volumes`
 * `volumeMounts`
-
-**Note**: The operator does not restart affected servers when `nodeSelector` or `resources` is changed on the domain resource.
-In these cases, you can use `restartVersion` to force the operator to restart the servers.
 
 ### Rolling restarts
 
