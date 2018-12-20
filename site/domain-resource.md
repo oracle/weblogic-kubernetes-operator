@@ -1,5 +1,3 @@
-**TODO** review and update
-
 # Domain resource
 
 In this guide, we outline how to set up and configure your own domain resource which can be used to configure your WLS domain. Then, you can use the domain resource to start the Kubernetes artifacts of the corresponding domain. 
@@ -24,8 +22,7 @@ For sample YAML templates, see the [Domain resource example](../kubernetes/sampl
 After you have written your YAML files, please use them to create your WLS domain artifacts using the `kubectl apply -f` command.
 
 ```
-  kubectl apply -f domain-resource.yaml
-
+$ kubectl apply -f domain-resource.yaml
 ```
 
 ## Verify the results
@@ -33,5 +30,5 @@ After you have written your YAML files, please use them to create your WLS domai
 To confirm that the domain resource was created, use this command:
 
 ```
-kubectl describe domain [domain name] -n [namespace]
+$ kubectl describe domain [domain name] -n [namespace]
 ```
