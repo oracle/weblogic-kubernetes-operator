@@ -1,17 +1,17 @@
-# User Guide
+# User guide
 
-This document provides detailed information that is targeted at the user of the Oracle WebLogic 
-Server Kubernetes Operator.  It provides instructions on how to install the operator in your 
+This document provides detailed information that is targeted at the user of the Oracle WebLogic
+Server Kubernetes Operator.  It provides instructions on how to install the operator in your
 Kubernetes cluster and how to use it to manage WebLogic domains.  
 
-If you are looking for information about how the operator is designed, implemented, built, etc., then 
+If you are looking for information about how the operator is designed, implemented, built, and such, then
 you should refer to the [Developer guide](developer.md).
 
 ## Table of contents
 
-The information in this guide is organized in the order that you would most likely need to use it.  If you 
-want to set up an operator and use it to create and manage WebLogic domains, you should 
-follow this guide from top to bottom, and the necessary information will be 
+The information in this guide is organized in the order that you would most likely need to use it.  If you
+want to set up an operator and use it to create and manage WebLogic domains, you should
+follow this guide from top to bottom, and the necessary information will be
 presented in the correct order.
 
 * [Important terms](#important-terms)
@@ -19,7 +19,7 @@ presented in the correct order.
 * [Prerequisites](#prerequisites)
 * [Preparing your Kubernetes environment to run the operator](prepare-k8s.md)
   * [Set up your Kubernetes cluster](prepare-k8s.md#set-up-your-kubernetes-cluster)
-  * [Set up load balancers](load-balancing.md)
+  * [Set up load balancers](prepare-k8s.md#load-balancing-with-an-ingress-controller-or-a-web-server)
   * [Configuring Kibana and Elasticsearch](prepare-k8s.md#configuring-kibana-and-elasticsearch)
 * [Install and manage the operator](install.md)
   * [Using the Helm charts](helm-charts.md)
@@ -70,4 +70,3 @@ Before using the operator, you might want to read the [design philosophy](design
 * Helm 2.8.2+ (check with `helm version`).
 * Oracle WebLogic Server 12.2.1.3.0 with patch 28076014.
 * You must have the `cluster-admin` role to install the operator.
-
