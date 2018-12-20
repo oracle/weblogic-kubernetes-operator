@@ -126,7 +126,13 @@ abstract class Watcher<T> {
                 .withResourceVersion(resourceVersion.toString())
                 .withTimeoutSeconds(tuning.watchLifetime))) {
       while (watch.hasNext()) {
-        Watch.Response<T> item = watch.next();
+        Watch.Response<T> item;
+        try {
+          item = watch.next();
+        } catch (Throwable e) {
+          watch.discardClient();
+          throw e;
+        }
 
         if (isStopping()) setIsDraining(true);
         if (isDraining()) continue;
