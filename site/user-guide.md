@@ -30,14 +30,12 @@ presented in the correct order.
   * [Creating a custom image with your domain inside the image](weblogic-docker-images.md#creating-a-custom-image-with-your-domain-inside-the-image)
 * [Create and manage WebLogic domains](domains.md)
   * [Preparing the Kubernetes cluster to run WebLogic domains](domains.md#preparing-the-kubernetes-cluster-to-run-weblogic-domains)
-  * [Creating and managing WebLogic domains](domains.md#creating-and-managing-weblogic-domains)
+  * [Important considerations for WebLogic domains in Kubernetes](domains.md#important-considerations-for-weblogic-domains-in-kubernetes)
+  * [Creating and managing WebLogic domains](creating-domain.md)
+  * [Modifying domain configurations](domains.md#modifying-domain-configurations)
   * [Managing lifecycle operations](domains.md#managing-lifecycle-operations)
   * [Using WLST](wlst.md)
   * [Scaling clusters](scaling.md)
-  * [Modifying domain configurations](domains.md#modifying-domain-configurations)
-  * [Patching WebLogic and performing application updates](domains.md#patching-weblogic-and-performing-application-updates)
-  * [Shutting down domains](domains.md#shutting-down-domains)
-  * [Deleting domains](domains.md#deleting-domains)
 
 ## Important terms
 
