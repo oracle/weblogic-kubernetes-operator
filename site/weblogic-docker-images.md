@@ -1,6 +1,3 @@
-**TODO** write me
-
-
 # Creating or obtaining WebLogic Docker images
 
 You will need Docker images to run your WebLogic domains in Kubernetes.
@@ -54,6 +51,15 @@ This patch does have some prerequisites that will also need to be applied.
 [This sample](https://github.com/oracle/docker-images/blob/master/OracleWebLogic/samples/12213-patch-wls-for-k8s/README.md) in 
 the Oracle GitHub Docker images repository demonstrates how to create 
 a patched image.
+
+When using that sample, you will need to download the required patch and also 
+some prerequisite patches.  To find the correct version of the patch, you should 
+use the "Product or Family (Advanced)" option, then choose "Oracle WebLogic Server"
+as the product, and set the release to "Oracle WebLogic Server 12.2.1.3.181016" as
+shown in the image below:
+
+![patch download page](images/patch-download.png)
+
 
 The `Dockerfile` in that sample lists the base image as follows:
 
