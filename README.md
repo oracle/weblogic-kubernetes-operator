@@ -21,7 +21,7 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 The fastest way to experience the operator is to follow the [Quick start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](kubernetes/samples/README.md).
 
 ```diff
-+ The current release is 2.0-rc1
++ The current release of the operator is 2.0-rc1, a release candidate for our 2.0 release. This release candidate was published on Dec 20, 2018. We expect to publish the final 2.0 release in January 2019.
 ```
 
 # About this documentation
