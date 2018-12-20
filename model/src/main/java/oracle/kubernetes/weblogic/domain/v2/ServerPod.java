@@ -104,8 +104,7 @@ class ServerPod {
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
   /**
-   * The labels to be attached to pods.
-   * The label names must not start with 'weblogic.'.
+   * The labels to be attached to pods. The label names must not start with 'weblogic.'.
    *
    * @since 2.0
    */
@@ -121,8 +120,7 @@ class ServerPod {
   private Map<String, String> podAnnotations = new HashMap<>();
 
   /**
-   * The labels to be attached to Service.
-   * The label names must not start with 'weblogic.'.
+   * The labels to be attached to Service. The label names must not start with 'weblogic.'.
    *
    * @since 2.0
    */
