@@ -13,15 +13,15 @@ The chart is in the default repository for Helm.
 
 To install the Traefik operator in the `traefik` namespace with default settings:
 ```
-helm install --name traefik-operator --namespace traefik stable/traefik
+$ helm install --name traefik-operator --namespace traefik stable/traefik
 ```
 Or, with a given `values.yaml`:
 ```
-helm install --name traefik-operator --namespace traefik --values values.yaml stable/traefik
+$ helm install --name traefik-operator --namespace traefik --values values.yaml stable/traefik
 ```
 With the dashboard enabled, you can access the Traefik dashboard with the URL `http://${HOSTNAME}:30305`, with the HTTP host `traefik.example.com`.
 ```
-curl -H 'host: traefik.example.com' http://${HOSTNAME}:30305/
+$ curl -H 'host: traefik.example.com' http://${HOSTNAME}:30305/
 ```
 
 ## Optionally, download the Traefik Helm chart
@@ -94,7 +94,7 @@ $ curl -k -H 'host: domain2.org' https://${HOSTNAME}:30443/testwebapp/
 ## Uninstall the Traefik operator
 After removing all the Ingress resources, uninstall the Traefik operator:
 ```
-helm delete --purge traefik-operator
+$ helm delete --purge traefik-operator
 ```
 ## Install and uninstall the Traefik operator with setup.sh
 Alternatively, you can run the helper script `setup.sh`, under the `kubernetes/samples/charts/util` folder, to install and uninstall Traefik.
