@@ -30,8 +30,8 @@ For sample YAML templates, refer to the [Persistent volumes example](../kubernet
 After you have written your YAML files, you use them to create the persistent volume by creating Kubernetes resources using the `kubectl create -f` command.
 
 ```
-  kubectl create -f pv.yaml
-  kubectl create -f pvc.yaml
+$ kubectl create -f pv.yaml
+$ kubectl create -f pvc.yaml
 
 ```
 
@@ -40,9 +40,8 @@ After you have written your YAML files, you use them to create the persistent vo
 To confirm that the persistent volume was created, use these commands:
 
 ```
-  kubectl describe pv [persistent volume name]
-  kubectl describe pvc -n NAMESPACE [persistent volume claim name]
-
+$ kubectl describe pv [persistent volume name]
+$ kubectl describe pvc -n NAMESPACE [persistent volume claim name]
 ```
 
 # Common problems

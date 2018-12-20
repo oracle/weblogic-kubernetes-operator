@@ -16,7 +16,7 @@ The operator provides several ways to initiate scaling of WebLogic clusters, inc
 ## On-demand, updating the domain resource directly
 The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` property within a domain resource.  This can be done by using the `kubectl` command-line interface for running commands against Kubernetes clusters.  More specifically, you can modify the domain resource directly by using the `kubectl edit` command.  For example:
 ```
-kubectl edit domain domain1 -n [namespace]
+$ kubectl edit domain domain1 -n [namespace]
 ```
 Here we are editing a domain resource named 'domain1'.  The `kubectl edit` command will open the domain resource definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
 ```

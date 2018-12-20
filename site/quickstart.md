@@ -155,7 +155,7 @@ domain namespace (`sample-domain1-ns`) and the base image (`oracle/weblogic:1221
 
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
-$ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
+$ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
 $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e -v
 ```
 
@@ -180,11 +180,27 @@ d.	Create an Ingress for the domain, in the domain namespace, by using the [samp
 ```
 $ cd kubernetes/samples/charts
 $ helm install ingress-per-domain --name domain1-ingress --values ingress-per-domain/values.yaml
-```
+``` 
 
-e.	Confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods:
+e.	To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods
+    you can hit the URL for the "WebLogic Ready App" which will return a HTTP 200 status code as
+    shown in the example below.  If you used the host-based routing ingress sample you will need to 
+    provide the hostname in the `-H` option:
 ```
-$ curl http://${HOSTNAME}:30305/sample-domain1/
+$ curl -v -H 'host: domain1.org' http://your.server.com:30305/weblogic/ 
+*  About to connect() to your.server.com port 30305 (#0) 
+*   Trying 10.196.1.64... 
+* Connected to your.server.com (10.196.1.64) port 30305 (#0)
+ > GET /weblogic/ HTTP/1.1 
+> User-Agent: curl/7.29.0 
+> Accept: */* 
+> host: domain1.org 
+> 
+ < HTTP/1.1 200 OK 
+< Content-Length: 0 
+< Date: Thu, 20 Dec 2018 14:52:22 GMT
+ < Vary: Accept-Encoding 
+<  * Connection #0 to host your.server.com left intact 
 ```
 **Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
 update security lists to allow ingress to this port.
