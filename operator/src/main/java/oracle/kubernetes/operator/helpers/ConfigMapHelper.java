@@ -249,6 +249,7 @@ public class ConfigMapHelper {
   /**
    * Factory for {@link Step} that creates config map containing sit config
    *
+   * @param next Next step
    * @return Step for creating config map containing sit config
    */
   public static Step createSitConfigMapStep(Step next) {
@@ -425,6 +426,8 @@ public class ConfigMapHelper {
   /**
    * Factory for {@link Step} that deletes introspector config map
    *
+   * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
+   * @param namespace Namespace
    * @param next Next processing step
    * @return Step for deleting introspector config map
    */

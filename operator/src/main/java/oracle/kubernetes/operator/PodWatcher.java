@@ -49,6 +49,7 @@ public class PodWatcher extends Watcher<V1Pod>
    * @param factory thread factory
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
+   * @param tuning Watch tuning parameters
    * @param listener Callback for watch events
    * @param isStopping Stop signal
    * @return Pod watcher for the namespace

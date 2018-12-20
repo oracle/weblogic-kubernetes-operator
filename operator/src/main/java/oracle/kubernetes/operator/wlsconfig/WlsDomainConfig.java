@@ -60,9 +60,10 @@ public class WlsDomainConfig implements WlsDomain {
    * Constructor
    *
    * @param name Name of this WLS domain
+   * @param adminServerName Name of the admin server in this WLS domain
    * @param wlsClusterConfigs A Map containing clusters configured in this WLS domain
    * @param wlsServerConfigs A Map containing servers configured in the WLS domain
-   * @param serverTemplates A Map containing server templates configued in this WLS domain
+   * @param wlsServerTemplates A Map containing server templates configued in this WLS domain
    * @param wlsMachineConfigs A Map containing machines configured in the WLS domain
    */
   public WlsDomainConfig(

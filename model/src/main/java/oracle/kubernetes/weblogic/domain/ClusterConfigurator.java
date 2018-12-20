@@ -76,7 +76,7 @@ public interface ClusterConfigurator {
    * Add security constraints at container level, if the same constraint is also defined at pod
    * level then container constraint take precedence
    *
-   * @param podSecurityContext
+   * @param podSecurityContext pod-level security attributes to be added to this ClusterConfigurator
    * @return this object
    */
   ClusterConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext);
@@ -101,7 +101,7 @@ public interface ClusterConfigurator {
    * and recreated.
    *
    * @since 2.0
-   * @param restartVersion If preseent, every time this value is updated the operator will restart
+   * @param restartVersion If present, every time this value is updated the operator will restart
    *     the required servers
    * @return this object
    */
