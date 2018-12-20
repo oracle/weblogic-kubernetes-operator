@@ -74,7 +74,7 @@ public class RollingHelper {
       DomainStatus status = dom.getStatus();
       // These are presently Ready servers
       List<String> availableServers = new ArrayList<>();
-      List<ServerStatus> ss = status.getServers();
+      List<ServerStatus> ss = status != null ? status.getServers() : null;
       if (ss != null) {
         for (ServerStatus s : ss) {
           if (WebLogicConstants.RUNNING_STATE.equals(s.getState())) {
