@@ -155,7 +155,7 @@ domain namespace (`sample-domain1-ns`) and the base image (`oracle/weblogic:1221
 
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
-$ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
+$ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
 $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e -v
 ```
 
@@ -181,6 +181,8 @@ d.	Create an Ingress for the domain, in the domain namespace, by using the [samp
 $ cd kubernetes/samples/charts
 $ helm install ingress-per-domain --name domain1-ingress --values ingress-per-domain/values.yaml
 ```
+
+**TODO** fix this 
 
 e.	Confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods:
 ```
