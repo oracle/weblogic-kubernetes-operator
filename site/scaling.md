@@ -326,7 +326,7 @@ One way to add scalingAction.sh to the Administration Server's pod is to put it 
 First, create a directory containing a copy of scalingAction.sh.
 ```
 mkdir scaling-cm-dir
-cp weblogic-kubernets-operator/scripts/scaling/scalingAction.sh scaling-cm-dir
+cp weblogic-kubernetes-operator/src/scripts/scaling/scalingAction.sh scaling-cm-dir
 ```
 
 Second, convert this directory into a config map in the domain's namespace.
