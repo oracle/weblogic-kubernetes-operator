@@ -7,8 +7,6 @@ package oracle.kubernetes.operator.builders;
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.ProgressRequestBody;
-import io.kubernetes.client.ProgressResponseBody;
 import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1ConfigMap;
@@ -32,6 +30,8 @@ public class WatchBuilder {
 
   /** Ignored for watches. */
   private static final String START_LIST = null;
+
+  private static final int ADDITIONAL_TIMEOUT_FOR_SOCKET = 60;
 
   private static WatchFactory FACTORY = new WatchFactoryImpl();
 
@@ -92,7 +92,7 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
 
       try {
         return new CoreV1Api(client)
@@ -137,7 +137,7 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
 
       try {
         return new CoreV1Api(client)
@@ -182,7 +182,7 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
 
       try {
         return new BatchV1Api(client)
@@ -227,7 +227,7 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
 
       try {
         return new CoreV1Api(client)
@@ -272,7 +272,7 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
 
       try {
         return new WeblogicApi(client)
@@ -320,7 +320,7 @@ public class WatchBuilder {
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
       // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(callParams.getTimeoutSeconds(), TimeUnit.SECONDS);
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
 
       try {
         return new CoreV1Api(client)
@@ -343,6 +343,10 @@ public class WatchBuilder {
     }
   }
 
+  private Integer getSocketTimeout(CallParams callParams) {
+    return callParams.getTimeoutSeconds() + ADDITIONAL_TIMEOUT_FOR_SOCKET;
+  }
+
   /**
    * Sets a value for the fieldSelector parameter for the call that will set up this watch. Defaults
    * to null.
@@ -355,7 +359,8 @@ public class WatchBuilder {
     return this;
   }
 
-  public WatchBuilder withIncludeUninitialized(Boolean includeUninitialized) {
+  @SuppressWarnings("SameParameterValue")
+  WatchBuilder withIncludeUninitialized(Boolean includeUninitialized) {
     callParams.setIncludeUninitialized(includeUninitialized);
     return this;
   }
@@ -370,13 +375,9 @@ public class WatchBuilder {
     return this;
   }
 
-  public WatchBuilder withLimit(Integer limit) {
+  @SuppressWarnings("SameParameterValue")
+  WatchBuilder withLimit(Integer limit) {
     callParams.setLimit(limit);
-    return this;
-  }
-
-  public WatchBuilder withPrettyPrinting() {
-    callParams.setPretty("true");
     return this;
   }
 
@@ -390,17 +391,6 @@ public class WatchBuilder {
     return this;
   }
 
-  public WatchBuilder withProgressListener(ProgressResponseBody.ProgressListener progressListener) {
-    callParams.setProgressListener(progressListener);
-    return this;
-  }
-
-  public WatchBuilder withProgressRequestListener(
-      ProgressRequestBody.ProgressRequestListener progressRequestListener) {
-    callParams.setProgressRequestListener(progressRequestListener);
-    return this;
-  }
-
   static class WatchFactoryImpl implements WatchFactory {
     @Override
     public <T> WatchI<T> createWatch(
@@ -411,7 +401,7 @@ public class WatchBuilder {
         throws ApiException {
       ApiClient client = pool.take();
       try {
-        return new WatchImpl<T>(
+        return new WatchImpl<>(
             pool,
             client,
             Watch.createWatch(
