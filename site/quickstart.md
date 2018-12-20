@@ -187,10 +187,10 @@ e.	To confirm that the load balancer noticed the new Ingress and is successfully
     shown in the example below.  If you used the host-based routing ingress sample you will need to 
     provide the hostname in the `-H` option:
 ```
-$ curl -v -H 'host: domain1.org' http://den01smd.us.oracle.com:30305/weblogic/ 
-*  About to connect() to den01smd.us.oracle.com port 30305 (#0) 
+$ curl -v -H 'host: domain1.org' http://your.server.com:30305/weblogic/ 
+*  About to connect() to your.server.com port 30305 (#0) 
 *   Trying 10.196.1.64... 
-* Connected to den01smd.us.oracle.com (10.196.1.64) port 30305 (#0)
+* Connected to your.server.com (10.196.1.64) port 30305 (#0)
  > GET /weblogic/ HTTP/1.1 
 > User-Agent: curl/7.29.0 
 > Accept: */* 
@@ -200,7 +200,7 @@ $ curl -v -H 'host: domain1.org' http://den01smd.us.oracle.com:30305/weblogic/�
 < Content-Length: 0 
 < Date: Thu, 20 Dec 2018 14:52:22 GMT
  < Vary: Accept-Encoding 
-<  * Connection #0 to host den01smd.us.oracle.com left intact 
+<  * Connection #0 to host your.server.com left intact 
 ```
 **Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
 update security lists to allow ingress to this port.
