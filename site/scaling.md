@@ -148,7 +148,7 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
 
     * `cluster_name` - WebLogic cluster name (Required)
 
-    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes.  Note: set this to https://kubernetes.default.svc when invoking `scalingAction.sh` from the Administration Server pod.
+    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes.  Note: Set this to https://kubernetes.default.svc when invoking `scalingAction.sh` from the Administration Server pod.
 
     * `access_token` - Service Account Bearer token for authentication and authorization for access to REST Resources
 
