@@ -21,7 +21,7 @@ The operator source code is published on GitHub at https://github.com/oracle/web
 To clone the repository from GitHub, issue this command:
 
 ```
-git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 
 ## Operator branching model
@@ -43,7 +43,7 @@ The operator is built using [Apache Maven](http://maven.apache.org).  The build 
 To build the operator, issue the following command in the project directory:
 
 ```
-mvn clean install
+$ mvn clean install
 ```
 
 This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.
@@ -51,7 +51,7 @@ This will compile the source files, build JAR files containing the compiled clas
 Contributions must conform to [coding and formatting standards](#coding-standards).  To automatically update local code to conform to formatting standards, issue the following command:
 
 ```
-mvn fmt:format
+$ mvn fmt:format
 ```
 
 ## Building Javadoc
@@ -59,7 +59,7 @@ mvn fmt:format
 To build the Javadoc for the operator, issue the following command:
 
 ```
-mvn javadoc:javadoc
+$ mvn javadoc:javadoc
 ```
 
 The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
@@ -78,10 +78,10 @@ If you're not running Kubernetes on your development machine, you'll need to mak
 
 ```
 # on your build machine
-docker save weblogic-kubernetes-operator:some-tag > operator.tar
-scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
+$ docker save weblogic-kubernetes-operator:some-tag > operator.tar
+$ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 # on the Kubernetes server
-docker load < /some/path/operator.tar
+$ docker load < /some/path/operator.tar
 ```
 
 Use the Helm charts to [install the operator](helm-charts.md).
@@ -96,7 +96,7 @@ The project includes integration tests that can be run against a Kubernetes clus
 You will need to obtain the `kube.config` file for an administrative user and make it available on the machine running the build.  To run the tests, update the `KUBECONFIG` environment varaible to point to your config file and then execute:
 
 ```
-mvn clean verify -P java-integration-tests
+$ mvn clean verify -P java-integration-tests
 ```
 
 ## Coding standards
@@ -172,7 +172,7 @@ Each `Step` has a reference to the next `Step` in the processing flow; however, 
 
 In this sample, the caller creates an `Engine`, `Fiber`, linked set of `Step` instances, and `Packet`.  The `Fiber` is then started.  The `Engine` would typically be a singleton, since it's backed by a `ScheduledExecutorService`.  The `Packet` would also typically be pre-loaded with values that the `Steps` would use in their `apply()` methods.
 
-```
+```java
     Engine engine = new Engine("worker-pool");
 
     Fiber fiber = engine.createFiber();
@@ -197,7 +197,7 @@ In this sample, the caller creates an `Engine`, `Fiber`, linked set of `Step` in
 
 In this sample, the step uses asynchronous file IO and the suspend/resume `Fiber` pattern.
 
-```
+```java
     static class StepTwo extends Step {
       public StepTwo(Step next) {
         super(next);
@@ -244,7 +244,7 @@ The asynchronous call model is implemented by classes in the `oracle.kubernetes.
 
 In this sample, the developer is using the pattern to list pods from the default namespace that are labeled as part of `cluster-1`.
 
-```
+```java
     static class StepOne extends Step {
       public StepOne(Step next) {
         super(next);

@@ -16,7 +16,7 @@ The following prerequisites must be handled prior to running the create domain s
 Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at your inputs file and an output directory:
 
 ```
-  ./create-domain.sh \
+$ ./create-domain.sh \
   -u <username> \
   -p <password> \
   -i create-domain-inputs.yaml \
@@ -177,7 +177,7 @@ spec:
 To confirm that the domain was created, use this command:
 
 ```
-kubectl describe domain DOMAINUID -n NAMESPACE
+$ kubectl describe domain DOMAINUID -n NAMESPACE
 ```
 
 Replace `DOMAINUID` with the `domainUID` and `NAMESPACE` with the actual namespace.
@@ -312,7 +312,7 @@ In the `Status` section of the output, the available servers and clusters are li
 Use the following command to see the pods running the servers:
 
 ```
-kubectl get pods -n NAMESPACE
+$ kubectl get pods -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
@@ -330,7 +330,7 @@ domain1-managed-server2                      1/1       Running   0          29m
 Use the following command to see the services for the domain:
 
 ```
-kubectl get services -n NAMESPACE
+$ kubectl get services -n NAMESPACE
 ```
 
 Here is an example of the output of this command:

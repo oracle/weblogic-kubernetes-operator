@@ -1,5 +1,3 @@
-**TODO** write me
-
 ## Create and manage WebLogic domains
 
 In this version of the operator, a WebLogic domain can be located either in a persistent volume (PV) or in a Docker image.
@@ -19,14 +17,6 @@ You can also mix and match on a domain by domain basis.
 | There are less images to manage and store, which could provide significant storage and network savings.  |  There are more images to manage and store in this approach. |
 | You may be able to use standard Oracle-provided images or at least a very small number of self-built images, e.g. with patches installed. | You may need to do more work to set up processes to build and maintain your images. |
 
-* WebLogic binary image when domain is persisted to a PV (as in Operator v1.1)
-* WebLogic domain image where the domain is persisted to a Docker image (new for Operator v2.0).  The WebLogic domain image will contain the WebLogic binaries, domain configuration, and applications.
-
-You create the WebLogic domain inside of a Docker image or in a PV using WebLogic Scripting Tool (WLST) or WebLogic Deploy Tooling (WDT).  
-* (Describe the advantages of using WDT. See samples, Domain in image WDT, Domain in image WLST, Domain in PV WDT, Domain in PV WLST.)
-
-(What images do we need before we get started? Operator 2.0 requires you to patch your WebLogic image 12.2.1.3 with patch #.)
-
 ### Preparing the Kubernetes cluster to run WebLogic domains
 
 Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
@@ -40,7 +30,6 @@ Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
    Replace `domain-namespace-1` with name you want to use.  The name must follow standard Kubernetes naming conventions, i.e. lower case, 
    numbers and hyphens.
 
-1. Define RBAC roles for the domain.  **TODO** what RBAC roles?
 1. Create a Kubernetes secret containing the Administration Server boot credentials.  You can do this manually or using 
    [the provided sample](/kubernetes/samples/scripts/create-weblogic-domain-credentials/README.md).  To create
    the secret manually, use this command: 
@@ -91,9 +80,7 @@ Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information abo
 
 ### Creating and managing WebLogic domains
 
-To create and manage a WebLogic domain in Kubernetes we create a deployment type, the domain custom resource.   The operator introspects the custom resource and manages the domain deployment to adjust to the definitions in the custom resource. This custom resource can also be managed using the Kubernetes command-line interface `kubectl`.  
-* (Point to documentation how to edit the domain inputs YAML and how to create the domain custom resource.)
-* Create Ingress controllers if you are using a load balancer that supports them, such as Traefik or Voyager.
+Please see [this page](creating-domain.md) for information about creating and managing domains.
 
 ### Modifying domain configurations
 
@@ -104,14 +91,10 @@ You can modify the WebLogic domain configuration for both the "domain in persist
 
 Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource xml files, and also support parameterizing overrides so that you can inject values into them from Kubernetes secrets.   For example, you can inject database usernames, passwords, and URLs that are stored in a secret.
 
-### Managing lifecycle operations
+### Managing lifecycle operations including shutting down and deleting domains
 
 In Operator 2.0 you can perform lifecycle operations on WebLogic servers, clusters, or domains.
 See [Starting, stopping and restarting servers](server-lifecycle.md).
-
-### Patching WebLogic and performing application updates
-
-**TODO** write me
 
 ### Scaling clusters
 
@@ -122,11 +105,3 @@ The operator allows you to initiate scaling of clusters in various ways:
 * [Using WLDF policies](scaling.md#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api)
 * [Using a Prometheus action](scaling.md#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api)
 
-###  Shutting down domains
-
-**TODO** write me
-
-###  Deleting domains
-(Point to sample)
-
-**TODO** write me
