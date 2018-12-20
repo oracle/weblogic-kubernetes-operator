@@ -320,22 +320,22 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
 
 ```
 
-### Example of how to use a config map to mount scalingAction.sh into the Administration Server's pod
-One way to make scalingAction.sh available to the Administration Server's pod is to put it into a config map then mount that config map into the Administration Server's pod.
+### Example of how to mount scalingAction.sh into the Administration Server's pod
+One way to add scalingAction.sh to the Administration Server's pod is to put it into a config map then mount that config map into the pod.
 
-First, create a directory containing a copy of scalingAction.sh
+First, create a directory containing a copy of scalingAction.sh.
 ```
 mkdir scaling-cm-dir
 cp weblogic-kubernets-operator/scripts/scaling/scalingAction.sh scaling-cm-dir
 ```
 
 Second, convert this directory into a config map in the domain's namespace.
-Replace <domain namespace> with your domain's namespace (often 'default').
+Replace `domain-namespace` with your domain's namespace (often 'default').
 ```
-kubectl create cm -n <domain namespace> --from-file scaling-cm-dir scaling-cm
+kubectl create cm -n domain-namespace --from-file scaling-cm-dir scaling-cm
 ```
 
-Third, add the following lines, which mount this config map into the Administration Server's pod, to your domain resource.
+Third, add the following lines to your domain resource.
 They will add `/scaling/scripts/scalingAction.sh` to the Administration Server's pod (and not the managed servers' pods).
 ```
 spec:
