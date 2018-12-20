@@ -2,7 +2,7 @@
 In this sample, we will configure the Apache webtier as a load balancer for a WebLogic domain using the default configuration. We will demonstrate how to use the Apache webtier to handle traffic to a backend WebLogic domain.
 
 ## 1. Create a WebLogic domain
-We need to prepare a backend domain for load balancing by the Apache webtier. Refer to the [sample](/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv), to create a WebLogic domain. Keep the default values for the following configuration parameters:
+We need to prepare a backend domain for load balancing by the Apache webtier. Refer to the [sample](/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md), to create a WebLogic domain. Keep the default values for the following configuration parameters:
 - namespace: `default`
 - domainUID: `domain1`
 - clusterName: `cluster-1`
