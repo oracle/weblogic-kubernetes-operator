@@ -15,7 +15,7 @@ have them configured.
 
 It runs Elasticstack on the same host and port that the operator's Helm chart defaults
 to, therefore, the customer only needs to set `elkIntegrationEnabled` to `true` in their
-`values.yaml` file.``
+`values.yaml` file.
 
 To install ElasticSearch and Kibana, use:
 ```
