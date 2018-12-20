@@ -134,15 +134,13 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
     For example:
     ```
     #> kubectl describe configmap weblogic-operator-cm -n weblogic-operator
-    Name:         `weblogic-operator-cm`
-    Namespace:    `weblogic-operator`
-    Labels:       `weblogic.operatorName=weblogic-operator`
-    Annotations:  `kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"v1","data":{"externalOperatorCert":"","internalOperatorCert":"LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t...`
+    ...
     Data
     ====
     internalOperatorCert:
     ----
     LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3akNDQXFxZ0F3SUJBZ0lFRzhYT1N6QU...
+    ...
     ```
 
     The scalingAction.sh script accepts a number of customizable parameters:
@@ -239,19 +237,23 @@ you can use a third party monitoring application like Prometheus.  Please read t
 details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5).
 
 ## Helpful Tips
-### Debugging scriptAction.sh
+### Debugging scalingAction.sh
 The [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) script was designed to be executed within the
-Administration Server pod because the associated diagnostic module is targed to the Administration Server.  The easiest way to verify and debug the `scriptAction.sh` script is
-to open a shell on the running Administration Server pod and execute the script on the command line.  The following example illustrates how to open a bash shell on a running
-Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script:
+Administration Server pod because the associated diagnostic module is targed to the Administration Server.
+
+The easiest way to verify and debug the `scalingAction.sh` script is to open a shell on the running Administration Server pod and execute the script on the command line.
+
+The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
+* the domain home is mounted into the pod as /u01/oracle/user-projects/domains/domain1 (i.e. the domain home is inside a docker image).
+* the Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```
 > kubectl exec -it domain1-admin-server /bin/bash
-# bash> cd /shared/domain/base_domain/bin/scripts
-# bash> ./scriptAction.sh
+# bash> cd /u01/oracle/user-projects/domains/domain1/bin/scripts
+# bash> ./scalingAction.sh
 ```
 
-A log, `scriptAction.log`, will be generated in the same directory as the script was executed in and can be examined for errors.
+A log, `scalingAction.log`, will be generated in the same directory as the script was executed in and can be examined for errors.
 
 ### Example on accessing the external REST endpoint
 The easiest way to test scaling using the external REST endpoint is to use a command-line tool like `curl`. Using `curl` to issue
@@ -263,7 +265,7 @@ an HTTPS scale request requires these mandatory header properties:
 The following shell script is an example of how to issue a scaling request, with the necessary HTTP request header values, using `curl`.
 This example assumes the operator and domain resource are configured with the following properties in Kubernetes:
 * Operator properties:
-  * externalRestOption: `SELF_SIGNED_CERT`
+  * externalRestEnabled: `true`
   * externalRestHttpsPort: `31001`
   * operator's namespace: `weblogic-operator`
   * operator's hostname is the same as the host shell script is executed on.
@@ -319,39 +321,3 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
 --stderr operator.rest.stderr
 
 ```
-
-### Example of how to mount scalingAction.sh into the Administration Server's pod
-One way to add scalingAction.sh to the Administration Server's pod is to put it into a config map then mount that config map into the pod.
-
-First, create a directory containing a copy of scalingAction.sh.
-```
-mkdir scaling-cm-dir
-cp weblogic-kubernetes-operator/src/scripts/scaling/scalingAction.sh scaling-cm-dir
-```
-
-Second, convert this directory into a config map in the domain's namespace.
-Replace `domain-namespace` with your domain's namespace (often 'default').
-```
-kubectl create cm -n domain-namespace --from-file scaling-cm-dir scaling-cm
-```
-
-Third, add the following lines to your domain resource.
-They will add `/scaling/scripts/scalingAction.sh` to the Administration Server's pod (and not the managed servers' pods).
-```
-spec:
-  ...
-  adminServer:
-    serverPod:
-      volumes:
-      - name: scaling-cm-volume
-        configMap:
-          defaultMode: 365
-          name: scaling-cm
-      volumeMounts:
-      - name: scaling-cm-volume
-        mountPath: /scaling/scripts
-        readOnly: true
-  ...
-
-```
-
