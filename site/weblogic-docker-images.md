@@ -1,6 +1,3 @@
-**TODO** write me
-
-
 # Creating or obtaining WebLogic Docker images
 
 You will need Docker images to run your WebLogic domains in Kubernetes.

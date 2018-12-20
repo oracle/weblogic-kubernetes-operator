@@ -12,13 +12,13 @@ Helm has two parts: a client (helm) and a server (tiller). Tiller runs inside of
 
 The operator Helm chart is pre-configured with default values for the configuration of the operator.
 
-The user can override these values by doing one of the following:
-- create a custom YAML file with the only values to be overridden, and specify the `--value` option on the Helm command line
-- override individual values directly on the helm command line, using the `--set` option 
+You can override these values by doing one of the following:
+- Create a custom YAML file with only the values to be overridden, and specify the `--value` option on the Helm command line
+- Override individual values directly on the Helm command line, using the `--set` option
 
-The user can find out the configuration values that the Helm chart supports, as well as the default values, using this command:
+You can find out the configuration values that the Helm chart supports, as well as the default values, using this command:
 ```
-helm inspect values kubernetes/charts/weblogic-operator
+$ helm inspect values kubernetes/charts/weblogic-operator
 ```
 
 The available configuration values are explained by category in [Operator Helm configuration values](#operator-helm-configuration-values) below.
@@ -41,9 +41,9 @@ More detailed information about configuration values can be found in [Operator H
 ### SSL certificate and private key for the REST interface
 
 For testing purposes, the WebLogic Kubernetes Operator project provides a sample script that generates a self-signed certificate and private key for the operator REST interface and outputs them out in YAML format. These values can be added to the user's custom YAML configuration file, for use when the operator's Helm chart is installed.
-   
+
 ___This script should not be used in a production environment (since self-signed certificates are normally not considered safe).___
-   
+
 The script takes the subject alternative names that should be added to the certificate - i.e. the list of hostnames that clients can use to access the external REST interface. In this example, the output is directly appended to the user's custom YAML configuration:
 ```
 kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> custom-values.yaml
@@ -71,7 +71,7 @@ The `helm install` command is used to install the operator Helm chart. As part o
 
 The user can override default configuration values in the operator Helm chart by doing one of the following:
 - create a custom YAML file containing the values to be overridden, and specify the `--value` option on the Helm command line
-- override individual values directly on the helm command line, using the `--set` option 
+- override individual values directly on the helm command line, using the `--set` option
 
 The user supplies the `–namespace` argument from the `helm install` command line to specify the namespace in which the operator should be installed.  If not specified, it defaults to `default`.  If the namespace does not already exist, Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is deleted.  If the namespace already exists, Helm will re-use it.  These are standard Helm behaviors.
 
@@ -170,7 +170,7 @@ Example:
 serviceAccount: "weblogic-operator"
 ```
 
-#### javaLoggingLevel 
+#### javaLoggingLevel
 
 Specifies the level of Java logging that should be enabled in the operator. Valid values are:  "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
 
@@ -183,7 +183,7 @@ javaLoggingLevel:  "FINE"
 
 ### Creating the operator pod
 
-#### image 
+#### image
 
 Specifies the Docker image containing the operator code.
 
@@ -249,7 +249,7 @@ Example:
 elkIntegrationEnabled:  true
 ```
 
-#### logStashImage 
+#### logStashImage
 
 Specifies the Docker image containing Logstash.  This parameter is ignored if `elkIntegrationEnabled` is false.
 
@@ -260,7 +260,7 @@ Example:
 logStashImage:  "logstash:6.2"
 ```
 
-#### elasticSearchHost 
+#### elasticSearchHost
 Specifies the hostname where Elasticsearch is running. This parameter is ignored if `elkIntegrationEnabled` is false.
 
 Defaults to `elasticsearch.default.svc.cluster.local`
@@ -270,7 +270,7 @@ Example:
 elasticSearchHost: "elasticsearch2.default.svc.cluster.local"
 ```
 
-#### elasticSearchPort 
+#### elasticSearchPort
 
 Specifies the port number where Elasticsearch is running. This parameter is ignored if `elkIntegrationEnabled` is false.
 
@@ -349,7 +349,7 @@ externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B
 
 #### remoteDebugNodePortEnabled
 
-Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached. 
+Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.
 
 Defaults to `false`
 
@@ -404,7 +404,7 @@ You can't fix it by rolling back this release since it is not in the 'DEPLOYED' 
 
 You can't fix it by deleting the previous release since it removes the operator's resources too
 
-All you can do is delete both operator releases and reinstall the original operator. 
+All you can do is delete both operator releases and reinstall the original operator.
 See https://github.com/helm/helm/issues/2349
 
 ### Install an operator and tell it to manage a domain namespace that another operator is already managing
