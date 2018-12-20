@@ -241,7 +241,7 @@ Administration Server pod because the associated diagnostic module is targed to 
 The easiest way to verify and debug the `scalingAction.sh` script is to open a shell on the running Administration Server pod and execute the script on the command line.
 
 The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
-* the domain home is in /u01/oracle/user-projects/domains/domain1 (i.e. the domain home is inside a docker image).
+* the domain home is in `/u01/oracle/user-projects/domains/domain1` (i.e. the domain home is inside a docker image).
 * the Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```
