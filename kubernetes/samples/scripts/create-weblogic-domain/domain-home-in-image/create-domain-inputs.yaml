@@ -43,7 +43,7 @@ productionModeEnabled: true
 # WebLogic Docker image that the domain resource will pull if needed.
 # You only need to specify this if you are going to push the generated image from the local Docker repository
 # to another Docker repository.
-# If not specified, will use the internally generated image name, say "domain-home-in-image-wlst:latest"
+# If not specified, will use the internally generated image name, say "domain-home-in-image:latest"
 # or "domain-home-in-image-wdt:latest".
 # image: 
 
