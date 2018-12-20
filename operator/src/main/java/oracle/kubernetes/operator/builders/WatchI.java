@@ -14,4 +14,6 @@ import java.util.Iterator;
  * @param <T> the generic object type
  */
 public interface WatchI<T>
-    extends Iterable<Watch.Response<T>>, Iterator<Watch.Response<T>>, java.io.Closeable {}
+    extends Iterable<Watch.Response<T>>, Iterator<Watch.Response<T>>, java.io.Closeable {
+  default void discardClient() {}
+}
