@@ -105,6 +105,7 @@ class ServerPod {
 
   /**
    * The labels to be attached to pods.
+   * The label names must not start with 'weblogic.'.
    *
    * @since 2.0
    */
@@ -121,6 +122,7 @@ class ServerPod {
 
   /**
    * The labels to be attached to Service.
+   * The label names must not start with 'weblogic.'.
    *
    * @since 2.0
    */
