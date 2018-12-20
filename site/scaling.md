@@ -127,7 +127,6 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
 
     Important notes about the configuration properties for the Script Action:
 
-    `Working Directory` and `Path to Script` configuration entries specify the volume mount path (`/shared`) to access the WebLogic domain home.
     The `scalingAction.sh` script requires access to the SSL certificate of the operator’s endpoint and this is provided through the environment variable `INTERNAL_OPERATOR_CERT`.  
     The operator’s SSL certificate can be found in the `internalOperatorCert` entry of the operator’s ConfigMap `weblogic-operator-cm`:
 
@@ -151,7 +150,7 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
 
     * `cluster_name` - WebLogic cluster name (Required)
 
-    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes
+    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes.  Note: set this to https://kubernetes.default.svc when invoking scalingAction.sh from the AdminisrationServer pod.
 
     * `access_token` - Service Account Bearer token for authentication and authorization for access to REST Resources
 
@@ -244,7 +243,7 @@ Administration Server pod because the associated diagnostic module is targed to 
 The easiest way to verify and debug the `scalingAction.sh` script is to open a shell on the running Administration Server pod and execute the script on the command line.
 
 The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
-* the domain home is mounted into the pod as /u01/oracle/user-projects/domains/domain1 (i.e. the domain home is inside a docker image).
+* the domain home is in /u01/oracle/user-projects/domains/domain1 (i.e. the domain home is inside a docker image).
 * the Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```
