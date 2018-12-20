@@ -24,6 +24,8 @@ The fastest way to experience the operator is to follow the [Quick start guide](
 + The current release of the operator is 2.0-rc1, a release candidate for our 2.0 release. 
 + This release candidate was published on Dec 20, 2018. 
 + We expect to publish the final 2.0 release in January 2019.
++ We expect that there will be some minor changes to documentation and samples in the final 2.0 release,
++ however, this release candidate is suitable for testing and early adopters.
 ```
 
 # About this documentation
