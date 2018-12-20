@@ -12,6 +12,7 @@
 * [Internal design flow](#internal-design-flow)
 * [Advanced situational configuration](#advanced-situational-configuration)
 * [References](#references)
+
 ---
 # Overview
 
@@ -108,7 +109,7 @@ The behavior when using an unsupported override is undefined.
 ---
 # Override template names and syntax
 
-Overrides leverage a built-in WebLogic feature called "Configuration Overriding" which is often informally called "Situational Configuration." (See [References](#References)). Situational configuration consists of XML formatted files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.  
+Overrides leverage a built-in WebLogic feature called "Configuration Overriding" which is often informally called "Situational Configuration." (See [References](#references)). Situational configuration consists of XML formatted files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.
 
 ## Override template names
 

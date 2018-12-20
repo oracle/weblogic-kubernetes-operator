@@ -8,7 +8,7 @@ $ kubectl create namespace apache-sample
 ```
 
 ## 2. Create WebLogic domains
-We need to prepare some backend domains for load balancing by the Apache webtier. Refer to the sample, https://github.com/oracle/weblogic-kubernetes-operator/tree/develop/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv, to create two WebLogic domains under the namespace `apache-sample`.
+We need to prepare some backend domains for load balancing by the Apache webtier. Refer to the [sample](/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md), to create two WebLogic domains under the namespace `apache-sample`.
 
 The first domain uses the following custom configuration parameters:
 - namespace: `apache-sample`
@@ -31,7 +31,7 @@ The second domain uses the following custom configuration parameters:
 After the domains are successfully created, deploy the sample web application, `testwebapp.war`, on each domain cluster using the WLS Administration Console. The sample web application is located in the `kubernetes/samples/charts/application` directory.
 
 ## 3. Build the Apache webtier Docker image
-Refer to the sample, https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache, to build the Apache webtier Docker image.
+Refer to the [sample](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache), to build the Apache webtier Docker image.
 
 ## 4. Provide the custom Apache plugin configuration
 In this sample, we will provide a custom Apache plugin configuration to fine tune the behavior of Apache.
