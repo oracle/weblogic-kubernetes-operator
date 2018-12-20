@@ -4,26 +4,14 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
+import static oracle.kubernetes.operator.logging.MessageKeys.*;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +25,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.Test;
 
-@SuppressWarnings({"ConstantConditions, unchecked", "SameParameterValue", "deprecation"})
+@SuppressWarnings("SameParameterValue")
 public class AdminPodHelperTest extends PodHelperTestBase {
   private static final String INTERNAL_OPERATOR_CERT_FILE_PARAM = "internalOperatorCert";
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
@@ -70,7 +58,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     return ADMIN_POD_REPLACED;
   }
 
-  private void verifyAdminPodReplacedWhen(PodMutator mutator) {
+  @Override
+  protected void verifyReplacePodWhen(PodMutator mutator) {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
@@ -85,6 +74,22 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getPodReplacedMessageKey()));
+  }
+
+  @Override
+  protected void verifyPodNotReplacedWhen(PodMutator mutator) {
+    testSupport.addComponent(
+        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+        PodAwaiterStepFactory.class,
+        (pod, next) -> terminalStep);
+
+    V1Pod existingPod = createPodModel();
+    mutator.mutate(existingPod);
+    initializeExistingPod(existingPod);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsFine(getPodExistsMessageKey()));
   }
 
   private CallTestSupport.CannedResponse expectDeletePod(String podName) {
@@ -147,19 +152,43 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenExistingAdminPodHasBadVersion_replaceIt() {
-    verifyAdminPodReplacedWhen(
-        pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
+  public void whenExistingAdminPodSpecHasUnknownCustomerAnnotation_replaceIt() {
+    verifyReplacePodWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecHasUnknownAddedVolumes_replaceIt() {
+    verifyReplacePodWhen((pod) -> pod.getSpec().addVolumesItem(new V1Volume().name("dummy")));
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecHasK8sVolume_ignoreIt() {
+    verifyPodNotReplacedWhen(
+        (pod) -> {
+          pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
+          getSpecContainer(pod)
+              .addVolumeMountsItem(
+                  new V1VolumeMount()
+                      .name("k8s")
+                      .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH));
+        });
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecHasUnusedImagePullSecret_replaceIt() {
+    verifyReplacePodWhen(
+        (pod) ->
+            pod.getSpec().addImagePullSecretsItem(new V1LocalObjectReference().name("secret")));
   }
 
   @Test
   public void whenExistingAdminPodSpecHasNoContainers_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> pod.getSpec().setContainers(null));
+    verifyReplacePodWhen((pod) -> pod.getSpec().setContainers(null));
   }
 
   @Test
   public void whenExistingAdminPodSpecHasNoContainersWithExpectedName_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setName("???"));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setName("???"));
   }
 
   private V1Container getSpecContainer(V1Pod pod) {
@@ -167,23 +196,40 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenExistingAdminPodSpecHasUnneededVolumeMount_replaceIt() {
+    verifyReplacePodWhen(
+        (pod) -> getSpecContainer(pod).addVolumeMountsItem(new V1VolumeMount().name("dummy")));
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecHasK8sVolumeMount_ignoreIt() {
+    verifyPodNotReplacedWhen(
+        (pod) ->
+            getSpecContainer(pod)
+                .addVolumeMountsItem(
+                    new V1VolumeMount()
+                        .name("dummy")
+                        .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH)));
+  }
+
+  @Test
   public void whenExistingAdminPodSpecContainerHasWrongImage_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongImagePullPolicy_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasNoPorts_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasExtraPort_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
   }
 
   private V1ContainerPort definePort(int port) {
@@ -192,23 +238,23 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingAdminPodSpecContainerHasIncorrectPort_replaceIt() {
-    verifyAdminPodReplacedWhen(
-        (pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongEnvVariable_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongEnvFrom_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).envFrom(Collections.emptyList()));
+    verifyReplacePodWhen(
+        (pod) -> getSpecContainer(pod).envFrom(Collections.singletonList(new V1EnvFromSource())));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasRestartVersion_replaceIt() {
-    verifyAdminPodReplacedWhen(
+    verifyReplacePodWhen(
         (pod) ->
             pod.getMetadata()
                 .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
