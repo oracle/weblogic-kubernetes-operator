@@ -23,20 +23,19 @@ kubectl edit domain domain1 -n [namespace]
 Here we are editing a domain resource named 'domain1'.  The `kubectl edit` command will open the domain resource definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
 ```
 spec:
-  adminSecret:
-    name: domain1-weblogic-credentials
-  asName: admin-server
-  asPort: 7001
-  clusterStartup:
-  - clusterName: cluster-1
-    desiredState: RUNNING
-    env:
-    - name: JAVA_OPTIONS
-      value: -Dweblogic.StdoutDebugEnabled=false
-    - name: USER_MEM_ARGS
-      value: '-Xms64m -Xmx256m '
-    replicas: 1
-...
+  ...
+  clusters:
+    - clusterName: cluster-1
+      replicas: 1
+  ...
+```
+
+Alternatively, you can specify a default `replicas` value for all the clusters.  If you do this, then you don't need to list the cluster in the domain resource (unless you want to customize another property of the cluster).
+```
+spec:
+  ...
+  replicas: 1
+  ...
 ```
 
 ## Calling the operator's REST scale API
@@ -90,55 +89,8 @@ The WebLogic Kubernetes Operator can expose both an internal and external REST H
 The internal REST endpoint is only accessible from within the Kubernetes cluster. The external REST endpoint
 is accessible from outside the Kubernetes cluster.
 The internal REST endpoint is enabled by default and thus always available, whereas the external REST endpoint
-is disabled by default and only exposed if explicitly configured.  The following values, defined in the `create-weblogic-operator-inputs.yaml`,
-are used to enable and configure the external REST endpoint:
-
-```
-# Options for externally exposing the operator REST HTTPS interface
-# (i.e. outside of the Kubernetes cluster). Valid values are:
-#
-# "NONE"
-#    The REST interface is not exposed outside the Kubernetes cluster.
-#
-# "SELF_SIGNED_CERT"
-#    The REST interface is exposed outside of the Kubernetes cluster on the
-#    port specified by the 'externalRestHttpsPort' property.
-#    A self-signed certificate and private key are generated for the REST interface.
-#    The certificate's subject alternative names are specified by the 'externalSans'
-#    property.
-#
-# "CUSTOM_CERT"
-#    The REST interface is exposed outside of the Kubernetes cluster on the
-#    port specified by the 'externalRestHttpsPort' property.
-#    The customer supplied certificate and private key are used for the REST
-#    interface.  They are specified by the 'externalOperatorCert' and
-#    'eternalOperatorKey' properties.
-externalRestOption: NONE
-
-# The node port that should be allocated for the external operator REST https interface.
-# This parameter is required if 'externalRestOption' is not 'NONE'.
-# Otherwise, it is ignored.
-externalRestHttpsPort: 31001
-
-# The subject alternative names to put into the generated self-signed certificate
-# for the external WebLogic Operator REST https interface, for example:
-#   DNS:myhost,DNS:localhost,IP:127.0.0.1
-# This parameter is required if 'externalRestOption' is 'SELF_SIGNED_CERT'.
-# Otherwise, it is ignored.
-externalSans:
-
-# The customer supplied certificate to use for the external operator REST
-# https interface.  The value must be a string containing a base64 encoded PEM certificate.
-# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
-# Otherwise, it is ignored.
-externalOperatorCert:
-
-# The customer supplied private key to use for the external operator REST
-# https interface.  The value must be a string containing a base64 encoded PEM key.
-# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
-# Otherwise, it is ignored.
-externalOperatorKey:
-```  
+is disabled by default and only exposed if explicitly configured.
+Detailed instructions for configuring the external REST endpoint are available [here](helm-charts.md).
 
 **NOTE**: Regardless of which endpoint is being invoked, the URL format for scaling is the same.
 
@@ -151,8 +103,8 @@ When the operator receives a scaling request, it will:
 *	Validate that the WebLogic cluster, identified by `clusterName`, exists.
 *	Verify that the specified WebLogic cluster has a sufficient number of configured servers to satisfy the scaling request.
 *	Initiate scaling by setting the `replicas` property within the corresponding domain resource, which can be done in either:
-  *	A `clusterStartup` entry, if defined within its cluster list.
-  *	At the domain level, if not defined in a `clusterStartup` entry and the `startupControl` property is set to `AUTO`.
+  *	A `cluster` entry, if defined within its cluster list.
+  *	At the domain level, if not defined in a `cluster` entry.
 
 In response to a change to either `replicas` property, in the domain resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count.
 
@@ -325,14 +277,14 @@ This example assumes the operator and domain resource are configured with the fo
 # Setup properties  
 ophost=`uname -n`
 opport=31001 #externalRestHttpsPort
-cluster=DockerCluster
+cluster=cluster-1
 size=3 #New cluster size
-domdir=${PWD}
 ns=weblogic-operator # Operator NameSpace
+sa=weblogic-operator # Operator ServiceAccount
 domainuid=domain1
 
 # Retrieve service account name for given namespace   
-sec=`kubectl get serviceaccount ${ns} -n ${ns} -o jsonpath='{.secrets[0].name}'`
+sec=`kubectl get serviceaccount ${sa} -n ${ns} -o jsonpath='{.secrets[0].name}'`
 #echo "Secret [${sec}]"
 
 # Retrieve base64 encoded secret for the given service account   
@@ -367,3 +319,39 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
 --stderr operator.rest.stderr
 
 ```
+
+### Example of how to use a config map to mount scalingAction.sh into the Administration Server's pod
+One way to make scalingAction.sh available to the Administration Server's pod is to put it into a config map then mount that config map into the Administration Server's pod.
+
+First, create a directory containing a copy of scalingAction.sh
+```
+mkdir scaling-cm-dir
+cp weblogic-kubernets-operator/scripts/scaling/scalingAction.sh scaling-cm-dir
+```
+
+Second, convert this directory into a config map in the domain's namespace.
+Replace <domain namespace> with your domain's namespace (often 'default').
+```
+kubectl create cm -n <domain namespace> --from-file scaling-cm-dir scaling-cm
+```
+
+Third, add the following lines, which mount this config map into the Administration Server's pod, to your domain resource.
+They will add `/scaling/scripts/scalingAction.sh` to the Administration Server's pod (and not the managed servers' pods).
+```
+spec:
+  ...
+  adminServer:
+    serverPod:
+      volumes:
+      - name: scaling-cm-volume
+        configMap:
+          defaultMode: 365
+          name: scaling-cm
+      volumeMounts:
+      - name: scaling-cm-volume
+        mountPath: /scaling/scripts
+        readOnly: true
+  ...
+
+```
+
