@@ -23,7 +23,6 @@ After you have written your YAML files, please use them to create your WLS domai
 
 ```
 $ kubectl apply -f domain-resource.yaml
-
 ```
 
 ## Verify the results
