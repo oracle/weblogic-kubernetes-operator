@@ -239,7 +239,7 @@ function createFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
 
-  domainHomeImageBuildPathDefault="./docker-images/OracleWebLogic/samples/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt"
+  domainHomeImageBuildPathDefault="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt"
   if [ -z $domainHomeImageBuildPath ]; then
     domainHomeImageBuildPath=${domainHomeImageBuildPathDefault}
   fi
