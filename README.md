@@ -28,6 +28,16 @@ The fastest way to experience the operator is to follow the [Quick start guide](
 + however, this release candidate is suitable for testing and early adopters.
 ```
 
+# Backward Compatibility Guidelines
+
+The 2.0 release introduces some breaking changes and does not maintain compatibility with previous releases.
+
+Starting with the 2.0 release, future operator releases are intended to be backwards-compatible with respect to the Domain 
+resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created 
+by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to 
+maintain compatibility for three releases, excepting a clearly communicated deprecated feature, which will be 
+maintained for one release after a replacement is available.
+
 # About this documentation
 
 This documentation includes sections aimed at different audiences.  To help you find what you are looking for more easily,
