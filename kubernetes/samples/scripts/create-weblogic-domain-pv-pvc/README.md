@@ -16,16 +16,16 @@ Prior to running the `create-pv-pvc.sh` script, make a copy of the `create-pv-pv
 Run the create script, pointing it at your inputs file and an output directory:
 
 ```
-  ./create-pv-pvc.sh \
+$ ./create-pv-pvc.sh \
   -i create-pv-pvc-inputs.yaml \
   -o /path/to/output-directory
 ```
 
-The `create-pv-pvc.sh` script will create a subdirectory `pv-pvcs` under the given `/path/to/output-directory` directory. By default, the script generates two YAML files, namely `weblogic-sample-pv.yaml` and `weblogic-sample-pvc.yaml`, in the `/path/to/output-directory` `directory/pv-pvcs`. These two YAML files can be used to create the Kubernetes resources using the `kubectl create -f` command.
+The `create-pv-pvc.sh` script will create a subdirectory `pv-pvcs` under the given `/path/to/output-directory` directory. By default, the script generates two YAML files, namely `weblogic-sample-pv.yaml` and `weblogic-sample-pvc.yaml`, in the `/path/to/output-directory/pv-pvcs`. These two YAML files can be used to create the Kubernetes resources using the `kubectl create -f` command.
 
 ```
-  kubectl create -f weblogic-sample-pv.yaml
-  kubectl create -f weblogic-sample-pvc.yaml
+$ kubectl create -f weblogic-sample-pv.yaml
+$ kubectl create -f weblogic-sample-pvc.yaml
 
 ```
 
@@ -173,6 +173,9 @@ spec:
 
 ### Verify the PV and PVC objects
 
+You can use this command to verify the persistent volume was created, note that the 'Status' field
+should have the value 'Bound', indicating the that persistent volume has been claimed:
+
 ```
 $ kubectl describe pv weblogic-sample-pv
 Name:            weblogic-sample-pv
@@ -192,6 +195,8 @@ Source:
 Events:            <none>
 
 ```
+
+You can use this command to verify the persistent volume claim was created:
 
 ```
 $ kubectl describe pvc weblogic-sample-pvc
