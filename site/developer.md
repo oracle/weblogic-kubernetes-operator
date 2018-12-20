@@ -197,7 +197,7 @@ In this sample, the caller creates an `Engine`, `Fiber`, linked set of `Step` in
 
 In this sample, the step uses asynchronous file IO and the suspend/resume `Fiber` pattern.
 
-```
+```java
     static class StepTwo extends Step {
       public StepTwo(Step next) {
         super(next);
@@ -244,7 +244,7 @@ The asynchronous call model is implemented by classes in the `oracle.kubernetes.
 
 In this sample, the developer is using the pattern to list pods from the default namespace that are labeled as part of `cluster-1`.
 
-```
+```java
     static class StepOne extends Step {
       public StepOne(Step next) {
         super(next);
