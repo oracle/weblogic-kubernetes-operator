@@ -6,12 +6,8 @@ The chart depends on the Docker image for the Apache HTTP Server with the 12.2.1
 
 ## Prerequisites
 
-- Kubernetes 1.8+
-
-```console
-$ docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
-$ docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
-```
+You will need to build a Docker image with the Apache webtier in it using the sample provided [here](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache)
+in order to use this load balancer.
 
 ## Installing the Chart
 To install the chart with the release name `my-release`:
