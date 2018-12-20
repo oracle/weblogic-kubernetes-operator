@@ -18,7 +18,7 @@ Next, choose and create a directory that generated operator-related files will b
 Then, execute the script, pointing it at your inputs file and output directory:
 
 ```
-$ ./create-weblogic-domain.sh –g \
+$ ./create-weblogic-domain.sh \
   –i create-weblogic-domain-inputs.yaml \
   -o /path/to/weblogic-operator-output-directory
 ```
