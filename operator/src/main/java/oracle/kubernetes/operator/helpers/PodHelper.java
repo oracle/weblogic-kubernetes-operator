@@ -4,21 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -28,7 +18,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 
-@SuppressWarnings("deprecation")
 public class PodHelper {
 
   private PodHelper() {}
@@ -95,16 +84,6 @@ public class PodHelper {
       overrideContainerWeblogicEnvVars(vars);
       doSubstitution(vars);
       return vars;
-    }
-
-    @Override
-    protected List<V1Volume> getAdditionalVolumes() {
-      return getServerSpec().getAdditionalVolumes();
-    }
-
-    @Override
-    protected List<V1VolumeMount> getAdditionalVolumeMounts() {
-      return getServerSpec().getAdditionalVolumeMounts();
     }
 
     @Override
@@ -265,8 +244,7 @@ public class PodHelper {
 
     @Override
     protected List<String> getContainerCommand() {
-      List<String> command = new ArrayList<>(super.getContainerCommand());
-      return command;
+      return new ArrayList<>(super.getContainerCommand());
     }
 
     @Override
@@ -281,16 +259,6 @@ public class PodHelper {
       overrideContainerWeblogicEnvVars(vars);
       doSubstitution(vars);
       return vars;
-    }
-
-    @Override
-    protected List<V1Volume> getAdditionalVolumes() {
-      return getServerSpec().getAdditionalVolumes();
-    }
-
-    @Override
-    protected List<V1VolumeMount> getAdditionalVolumeMounts() {
-      return getServerSpec().getAdditionalVolumeMounts();
     }
   }
 
