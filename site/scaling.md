@@ -1,5 +1,3 @@
-**TODO** review and update
-
 # Scaling a WebLogic cluster
 
 WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/middleware/1221/wls/CLUST/dynamic_clusters.htm#CLUST678).
@@ -150,7 +148,7 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
 
     * `cluster_name` - WebLogic cluster name (Required)
 
-    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes.  Note: set this to https://kubernetes.default.svc when invoking scalingAction.sh from the AdminisrationServer pod.
+    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes.  Note: set this to https://kubernetes.default.svc when invoking `scalingAction.sh` from the Administration Server pod.
 
     * `access_token` - Service Account Bearer token for authentication and authorization for access to REST Resources
 
