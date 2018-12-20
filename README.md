@@ -20,6 +20,24 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 
 The fastest way to experience the operator is to follow the [Quick start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](kubernetes/samples/README.md).
 
+```diff
++ The current release of the operator is 2.0-rc1, a release candidate for our 2.0 release. 
++ This release candidate was published on Dec 20, 2018. 
++ We expect to publish the final 2.0 release in January 2019.
++ We expect that there will be some minor changes to documentation and samples in the final 2.0 release,
++ however, this release candidate is suitable for testing and early adopters.
+```
+
+# Backward Compatibility Guidelines
+
+The 2.0 release introduces some breaking changes and does not maintain compatibility with previous releases.
+
+Starting with the 2.0 release, future operator releases are intended to be backwards-compatible with respect to the Domain 
+resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created 
+by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to 
+maintain compatibility for three releases, excepting a clearly communicated deprecated feature, which will be 
+maintained for one release after a replacement is available.
+
 # About this documentation
 
 This documentation includes sections aimed at different audiences.  To help you find what you are looking for more easily,
