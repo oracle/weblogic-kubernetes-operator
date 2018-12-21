@@ -149,7 +149,7 @@ Follow the directions in the [README](../kubernetes/samples/scripts/create-weblo
 including:
 
 * Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
-domain namespace (`sample-domain1-ns`) and the base image (`oracle/weblogic:12213-patch-wls-for-k8s`).
+domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/weblogic:12213-patch-wls-for-k8s`).
 
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials.
   By convention, the secret will be named`domainUID-weblogic-credentials` (where `domainUID` is replaced with the
