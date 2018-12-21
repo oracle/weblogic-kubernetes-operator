@@ -27,7 +27,7 @@ Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
    $ kubectl create namespace domain-namespace-1
    ```
 
-   Replace `domain-namespace-1` with name you want to use.  The name must follow standard Kubernetes naming conventions, for example, lower case,
+   Replace `domain-namespace-1` with name you want to use.  The name must follow standard Kubernetes naming conventions, that is, lower case,
    numbers and hyphens.
 
 1. Create a Kubernetes secret containing the Administration Server boot credentials.  You can do this manually or using
