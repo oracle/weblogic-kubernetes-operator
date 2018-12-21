@@ -2,12 +2,14 @@
 
 The WebLogic domain must be installed into the folder that will be mounted as `/shared/domain`. The recommended approach is to use the provided `create-weblogic-domain.sh` script; however, instructions are also provided for manually installing and configuring a WebLogic domain (see [Manually creating a domain](manually-creating-domain.md)).
 
+In this version of the operator, a WebLogic domain can be located either in a persistent volume (PV) or in a Docker image. To learn more about both approaches, see [Create and manage WebLogic domains](domains.md). For examples of each, see the [WebLogic operator samples](../kubernetes/samples/README.md).
+
 ## Important considerations and restrictions for WebLogic domains in Kubernetes
 
 When running a WebLogic domain in Kubernetes, there are some additional considerations that must be taken into account to ensure correct functioning:
 
 *	Multicast is not currently well supported in Kubernetes.  Some networking providers have some support for multicast, but it is generally considered of “beta” quality.  Oracle recommends configuring WebLogic clusters to use unicast.
-*	The `ListenAddress` for all servers must be set to the correct DNS name; it should not be set to `0.0.0.0` or left blank.  This is required for cluster discovery of servers to work correctly.
+*	The `ListenAddress` for all servers must be set to the correct DNS name or left blank.  This is required for cluster discovery of servers to work correctly.
 *	If there is a desire to expose a T3 channel outside of the Kubernetes cluster -- for example, to allow WLST or RMI connections from clients outside Kubernetes -- then the recommended approach is to define a dedicated channel (per server) and to expose that channel using a `NodePort` service.  It is required that the channel’s internal and external ports be set to the same value as the chosen `NodePort`; for example, they could all be `32000`.  If all three are not the same, WebLogic Server will reject T3 connection requests.
 
 ## Creating a domain namespace
@@ -147,8 +149,8 @@ $ ./create-weblogic-domain.sh -e -v \
   -o /path/to/weblogic-operator-output-directory
 ```
 
-The `-e` option tells the script that it should not only create the YAML files but also apply them to the Kubernetes environment. 
-If you omit this option, the YAML files will be generated in the output directory and you can inspect them and apply them manually. 
+The `-e` option tells the script that it should not only create the YAML files but also apply them to the Kubernetes environment.
+If you omit this option, the YAML files will be generated in the output directory and you can inspect them and apply them manually.
 
 ## What the script does
 
