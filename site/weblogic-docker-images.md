@@ -19,7 +19,9 @@ as described in [this section](#creating-a-custom-image-with-your-domain-inside-
 
 ## Setting up secrets to access the Docker Store
 
-In order to obtain the WebLogic Server Docker image from the Docker Store, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Docker Store credentials, issue the following command:
+**Note** This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 28076014, so pulling an unpatched image directly to the Kubernetes cluster is not particularly useful.  However, we have left this information in the documentation for reference purposes. 
+
+In order for Kubernetes to obtain the WebLogic Server Docker image from the Docker Store, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Docker Store credentials, issue the following command:
 
 ```
 $ kubectl create secret docker-registry SECRET_NAME
@@ -30,11 +32,10 @@ $ kubectl create secret docker-registry SECRET_NAME
   --docker-email=YOUR_EMAIL
 ```
 
-In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the first domain will be deployed, otherwise Kubernetes will not be able to find it.  It is generally easier to manually pull the image in advance, as described in the next section.
+In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the first domain will be deployed, otherwise Kubernetes will not be able to find it.  
 
-## Go to the Docker Store and accept the license agreement for the WebLogic Server image
-
-If you have never used the WebLogic Server image before, you will need to go to the [Docker Store web interface](https://store.docker.com/images/oracle-weblogic-server-12c) and accept the license agreement before Docker Store will allow you to pull this image.  This is a one-time requirement, you do not have to repeat it for each machine you want to use the image on.
+It may be preferable to manually pull the image in advance, on each Kubernetes worker node, as described in the next section. 
+If you choose this approach, you do not require the Kubernetes secret.
 
 ## Obtaining standard images from the Docker store 
 
