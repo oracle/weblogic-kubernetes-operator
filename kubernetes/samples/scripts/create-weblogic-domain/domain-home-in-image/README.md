@@ -5,6 +5,7 @@ The sample scripts demonstrate the creation of a WebLogic domain home in a Docke
 ## Prerequisites
 
 The following prerequisites must be handled prior to running the create domain script:
+* The WDT sample requires that JAVA_HOME is set to a java JDK version 1.8 or greater
 * Make sure the WebLogic operator is running.
 * The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
