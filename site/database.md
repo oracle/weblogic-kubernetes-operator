@@ -1,12 +1,13 @@
-**TODO** finish this page - make sure we tell people how to run 
-a db in a pod with persistent storage, and how to configure the 
-persistent store/leases etc in there
 
 # Running the Oracle Database in Kubernetes
 
 If you wish to run the Oracle Database inside your Kubernetes cluster, in order to place 
 your state store, leasing tables, etc., in that database, then you can use this 
 sample to install the database. 
+
+You must configure your database to store its DB files
+on persistent storage.  Refer to your cloud vendor's documentation for details of 
+available storage providers and how to create a persistent volume and attach it to a pod.
 
 First create a namespace for the database: 
 
@@ -43,6 +44,7 @@ spec:
       - name: dshm
         emptyDir:
           medium: Memory
+      # add your volume mount for your persistent storage here
       containers:
       - name: database
         command:
@@ -58,6 +60,7 @@ spec:
         volumeMounts:
           - mountPath: /dev/shm
             name: dshm
+          # add your persistent storage for DB files here
         env:
           - name: DB_SID
             value: OraDoc
