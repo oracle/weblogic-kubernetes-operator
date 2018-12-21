@@ -103,7 +103,7 @@ The `helm delete` command is used to remove an operator release and its associat
 $ helm delete --purge weblogic-operator
 ```
 
-**Note**: If the operator's namespace did not exist before the Helm chart was installed, then Helm will create it, however, `helm delete` will not remove it.
+**NOTE**: If the operator's namespace did not exist before the Helm chart was installed, then Helm will create it, however, `helm delete` will not remove it.
 
 ## Useful Helm operations
 
@@ -416,8 +416,9 @@ Error: release op2 failed: rolebindings.rbac.authorization.k8s.io "weblogic-oper
 ```
 
 To recover:
+
 - `helm delete --purge` the failed release.
-  - **Note**: This deletes the role binding in the domain namespace that was created by the first operator release to give the operator access to the domain namespace.
+  - **NOTE**: This deletes the role binding in the domain namespace that was created by the first operator release to give the operator access to the domain namespace.
 - `helm upgrade <old op release> kubernetes/charts/weblogic-operator --values <old op custom-values.yaml>`
   - This recreates the role binding.
   - There might be intermittent failures in the operator for the period of time when the role binding was deleted.
