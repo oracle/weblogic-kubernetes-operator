@@ -10,7 +10,7 @@ When running a WebLogic domain in Kubernetes, there are some additional consider
 
 *	Multicast is not currently well supported in Kubernetes.  Some networking providers have some support for multicast, but it is generally considered of “beta” quality.  Oracle recommends configuring WebLogic clusters to use unicast.
 *	The `ListenAddress` for all servers must be set to the correct DNS name or left blank.  This is required for cluster discovery of servers to work correctly.
-*	If there is a desire to expose a T3 channel outside of the Kubernetes cluster -- for example, to allow WLST or RMI connections from clients outside Kubernetes -- then the recommended approach is to define a dedicated channel (per server) and to expose that channel using a `NodePort` service.  It is required that the channel’s internal and external ports be set to the same value as the chosen `NodePort`; for example, they could all be `32000`.  If all three are not the same, WebLogic Server will reject T3 connection requests.
+*	If there is a desire to expose a T3 channel outside of the Kubernetes cluster -- for example, to allow WLST or RMI connections from clients outside Kubernetes -- then the recommended approach is to define a dedicated channel (per server) and to expose that channel using a `NodePort` service.  It is required that the channel’s internal and external ports be set to the same value as the chosen `NodePort`; for example, they could all be `32000`.  If all three are not the same, WebLogic Server will reject T3 connection requests. To add a `NodePort`, use the domain resource `serverService` or `clusterService` settings.
 
 ## Creating a domain namespace
 
