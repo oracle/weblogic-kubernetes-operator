@@ -21,11 +21,11 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 The fastest way to experience the operator is to follow the [Quick start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](kubernetes/samples/README.md).
 
 ```diff
-+ The current release of the operator is 2.0-rc1, a release candidate for our 2.0 release. 
-+ This release candidate was published on Dec 20, 2018. 
++ The current release of the operator is 2.0-rc1, a release candidate for our 2.0 release.
++ This release candidate was published on Dec 20, 2018.
 + We expect to publish the final 2.0 release in January 2019.
-+ We expect that there will be some minor changes to documentation and samples in the final 2.0 release,
-+ however, this release candidate is suitable for testing and early adopters.
++ We expect that there will be some minor changes to documentation and samples in the final 2.0 release.
++ However, this release candidate is suitable for testing and early adopters.
 ```
 
 ## Known issues
@@ -43,10 +43,10 @@ Documentation for the 1.1 release of the operator is available [here](site/v1.1/
 
 The 2.0 release introduces some breaking changes and does not maintain compatibility with previous releases.
 
-Starting with the 2.0 release, future operator releases are intended to be backwards-compatible with respect to the Domain 
-resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created 
-by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to 
-maintain compatibility for three releases, excepting a clearly communicated deprecated feature, which will be 
+Starting with the 2.0 release, future operator releases are intended to be backward compatible with respect to the domain
+resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created
+by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to
+maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
 maintained for one release after a replacement is available.
 
 # About this documentation
@@ -57,7 +57,7 @@ please consult this table of contents:
 * The [Quick start guide](site/quickstart.md) explains how to just get the operator running quickly, using all the defaults, nothing special.
 * The [User guide](site/user-guide.md) contains detailed information for users of the operator, including how to install and configure it,
   and how to use it to create and manage WebLogic domains.  
-* Our [samples](kubernetes/samples/README.md) provide detailed example code and instructions that show you how to perform
+* Our [Samples](kubernetes/samples/README.md) provide detailed example code and instructions that show you how to perform
   various tasks related to the operator.
 * The [Developer guide](site/developer.md) provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to contribute to the operator code will find useful information here.  This section also includes
   API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.
