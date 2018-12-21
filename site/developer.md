@@ -4,10 +4,10 @@ This guide provides information for developers who wish to understand or contrib
 
 ## Requirements
 
-In addition to the requirements listed in [User Guide](user-guide.md#prerequisites), the following software is also required to obtain and build the operator:
+In addition to the requirements listed in the [User Guide](user-guide.md#prerequisites), the following software is also required to obtain and build the operator:
 
 * Git (1.8 or later recommended)
-* Java Developer Kit (1.8u131 or later recommended, please use 1.8, tests will not work on 1.9 or later versions)
+* Java Developer Kit (1.8u131 or later recommended; please use 1.8, tests will not work on 1.9 or later versions)
 * Apache Maven (3.3 or later recommended)
 
 The operator is written primarily in Java, BASH shell scripts, and WLST scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 feature.
@@ -28,11 +28,11 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 The `master` branch is protected and contains source for the latest completed features and bug fixes.  While this branch contains active work, we expect to keep it always "ready to release."  Therefore, longer running feature work will be performed on specific branches, such as `feature/dynamic-clusters`.
 
-Since we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to `master` when these smaller work items are complete.
+Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to `master` when these smaller work items are completed.
 
 All commits to `master` must pass the [integration test suite](#running-integration-tests).  Please run these tests locally before submitting a pull request.  Additionally, each push to a branch in our GitHub repository triggers a run of a subset of the integration tests with the results visible [here](https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs).
 
-Please submit pull requests to the `master` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README] (README.md).
+Please submit pull requests to the `master` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README](../README.md).
 
 We will create git tags for each generally available (GA) release of the operator.
 
@@ -86,7 +86,7 @@ $ docker load < /some/path/operator.tar
 
 Use the Helm charts to [install the operator](helm-charts.md).
 
-If the operator's behavior or Pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options](helm-charts.md#debugging-options).
+If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options](helm-charts.md#debugging-options).
 
 ## Running integration tests
 
@@ -103,7 +103,7 @@ $ mvn clean verify -P java-integration-tests
 
 This project has adopted the following coding standards:
 
-* Code will be formated using Oracle / WebLogic standards, which are identical to the [Google Java Style](https://google.github.io/styleguide/javaguide.html)
+* Code will be formated using Oracle / WebLogic standards, which are identical to the [Google Java Style](https://google.github.io/styleguide/javaguide.html).
 * Javadoc must be provided for all public packages, classes, and methods, and must include all parameters and returns.  Javadoc is not required for methods that override or implement methods that are already documented.
 * All non-trivial methods should include `LOGGER.entering()` and `LOGGER.exiting()` calls.
 * The `LOGGER.exiting()` call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.
@@ -298,4 +298,4 @@ Finally, the operator periodically lists all Domains and rechecks them.  This is
 
 ## Backward Compatibility Guidelines
 
-Starting with the 2.0 release, future operator releases must be backwards-compatible with respect to the Domain resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface.  We will maintain compatibility for three releases, excepting a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.
+Starting with the 2.0 release, future operator releases must be backward compatible with respect to the domain resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface.  We will maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.
