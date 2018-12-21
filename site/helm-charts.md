@@ -232,9 +232,9 @@ Example 2: In the configuration below, the Helm installation will manage `namesp
 domainNamespaces: [ "namespace1", "namespace2" ]
 ```
 
-NOTE: one must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
+**NOTE**: one must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
 
-NOTE: these examples show two valid YAML syntax options for arrays.
+**NOTE**: these examples show two valid YAML syntax options for arrays.
 
 ### ELK integration
 
