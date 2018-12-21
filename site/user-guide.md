@@ -1,6 +1,6 @@
 # User guide
 
-This document provides detailed information that is targeted at the user of the Oracle WebLogic
+This document provides detailed information targeted to users of the Oracle WebLogic
 Server Kubernetes Operator.  It provides instructions on how to install the operator in your
 Kubernetes cluster and how to use it to manage WebLogic domains.  
 
