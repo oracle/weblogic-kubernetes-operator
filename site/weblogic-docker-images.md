@@ -17,6 +17,24 @@ If you want to use the second option, which includes the domain directory
 inside the Docker image, then you will need to build your own Docker images
 as described in [this section](#creating-a-custom-image-with-your-domain-inside-the-image).
 
+## Setting up secrets to access the Docker Store
+
+In order to obtain the WebLogic Server Docker image from the Docker Store, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Docker Store credentials, issue the following command:
+
+```
+$ kubectl create secret docker-registry SECRET_NAME
+  -n NAMESPACE
+  --docker-server=index.docker.io/v1/
+  --docker-username=YOUR_USERNAME
+  --docker-password=YOUR_PASSWORD
+  --docker-email=YOUR_EMAIL
+```
+
+In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the first domain will be deployed, otherwise Kubernetes will not be able to find it.  It is generally easier to manually pull the image in advance, as described in the next section.
+
+## Go to the Docker Store and accept the license agreement for the WebLogic Server image
+
+If you have never used the WebLogic Server image before, you will need to go to the [Docker Store web interface](https://store.docker.com/images/oracle-weblogic-server-12c) and accept the license agreement before Docker Store will allow you to pull this image.  This is a one-time requirement, you do not have to repeat it for each machine you want to use the image on.
 
 ## Obtaining standard images from the Docker store 
 

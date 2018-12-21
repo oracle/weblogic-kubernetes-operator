@@ -94,7 +94,13 @@ $ helm install kubernetes/charts/weblogic-operator \
   --set "domainNamespaces={}" \
   --wait
 ```
-d.  Verify that the operator is up and running by viewing the operator pod's log:
+
+d. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
+```
+$ kubectl get pods -n sample-weblogic-operator-ns
+```
+
+e.  Verify that the operator is up and running by viewing the operator pod's log:
 
 ```
 $ kubectl log -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
@@ -162,19 +168,19 @@ $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e -v
 ```
 
 c.	Confirm that the operator started the servers for the domain:
-```
-$ kubectl get pods -n sample-domain1-ns
-```
-
-After a short time, you will see the Administration Server and Managed Servers running.
-
 * Use `kubectl` to show that the domain resource was created:
 ```
 $ kubectl describe domain sample-domain1 -n sample-domain1-ns
 ```
-* Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
+
+After a short time, you will see the Administration Server and Managed Servers running.
 ```
-$ kubectl get pods -n sample-weblogic-operator-ns
+$ kubectl get pods -n sample-domain1-ns
+```
+
+You should also see all the Kubernetes services for the domain.
+```
+$ kubectl get services -n sample-domain1-ns
 ```
 
 d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
