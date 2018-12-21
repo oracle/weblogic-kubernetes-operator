@@ -9,6 +9,7 @@
 #  The domain creation inputs can be customized by editing create-domain-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
+#    * The WDT sample requires that JAVA_HOME is set to a java JDK version 1.8 or greater
 #    * The kubernetes namespace must already be created
 #    * The kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
 #
