@@ -37,7 +37,7 @@ The fastest way to experience the operator is to follow the [Quick start guide](
 
 ## Operator version 1.1
 
-Documentation for the 1.1 release of the operator is available [here](docs/v1.1/README.md).
+Documentation for the 1.1 release of the operator is available [here](site/v1.1/README.md).
 
 # Backward compatibility guidelines
 
