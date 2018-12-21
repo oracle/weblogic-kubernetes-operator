@@ -32,8 +32,8 @@ The fastest way to experience the operator is to follow the [Quick start guide](
 
 | Issue | Description |
 | --- | --- |
-| [#721](https://github.com/oracle/weblogic-kubernetes-operator/issues/721) | Incorrect default domainHome when domainHomeInImage is true |
-| [#722](https://github.com/oracle/weblogic-kubernetes-operator/issues/722) | Server services not recreated when labels/annotations changed |
+| [#721](https://github.com/oracle/weblogic-kubernetes-operator/issues/721) | Incorrect default `domainHome` when `domainHomeInImage` is true. |
+| [#722](https://github.com/oracle/weblogic-kubernetes-operator/issues/722) | Server services not recreated when labels/annotations changed. |
 
 ## Operator version 1.1
 
