@@ -21,20 +21,19 @@ $ kubectl edit domain domain1 -n [namespace]
 Here we are editing a domain resource named 'domain1'.  The `kubectl edit` command will open the domain resource definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
 ```
 spec:
-  adminSecret:
-    name: domain1-weblogic-credentials
-  asName: admin-server
-  asPort: 7001
-  clusterStartup:
-  - clusterName: cluster-1
-    desiredState: RUNNING
-    env:
-    - name: JAVA_OPTIONS
-      value: -Dweblogic.StdoutDebugEnabled=false
-    - name: USER_MEM_ARGS
-      value: '-Xms64m -Xmx256m '
-    replicas: 1
-...
+  ...
+  clusters:
+    - clusterName: cluster-1
+      replicas: 1
+  ...
+```
+
+Alternatively, you can specify a default `replicas` value for all the clusters.  If you do this, then you don't need to list the cluster in the domain resource (unless you want to customize another property of the cluster).
+```
+spec:
+  ...
+  replicas: 1
+  ...
 ```
 
 ## Calling the operator's REST scale API
@@ -88,55 +87,8 @@ The WebLogic Kubernetes Operator can expose both an internal and external REST H
 The internal REST endpoint is only accessible from within the Kubernetes cluster. The external REST endpoint
 is accessible from outside the Kubernetes cluster.
 The internal REST endpoint is enabled by default and thus always available, whereas the external REST endpoint
-is disabled by default and only exposed if explicitly configured.  The following values, defined in the `create-weblogic-operator-inputs.yaml`,
-are used to enable and configure the external REST endpoint:
-
-```
-# Options for externally exposing the operator REST HTTPS interface
-# (i.e. outside of the Kubernetes cluster). Valid values are:
-#
-# "NONE"
-#    The REST interface is not exposed outside the Kubernetes cluster.
-#
-# "SELF_SIGNED_CERT"
-#    The REST interface is exposed outside of the Kubernetes cluster on the
-#    port specified by the 'externalRestHttpsPort' property.
-#    A self-signed certificate and private key are generated for the REST interface.
-#    The certificate's subject alternative names are specified by the 'externalSans'
-#    property.
-#
-# "CUSTOM_CERT"
-#    The REST interface is exposed outside of the Kubernetes cluster on the
-#    port specified by the 'externalRestHttpsPort' property.
-#    The customer supplied certificate and private key are used for the REST
-#    interface.  They are specified by the 'externalOperatorCert' and
-#    'eternalOperatorKey' properties.
-externalRestOption: NONE
-
-# The node port that should be allocated for the external operator REST https interface.
-# This parameter is required if 'externalRestOption' is not 'NONE'.
-# Otherwise, it is ignored.
-externalRestHttpsPort: 31001
-
-# The subject alternative names to put into the generated self-signed certificate
-# for the external WebLogic Operator REST https interface, for example:
-#   DNS:myhost,DNS:localhost,IP:127.0.0.1
-# This parameter is required if 'externalRestOption' is 'SELF_SIGNED_CERT'.
-# Otherwise, it is ignored.
-externalSans:
-
-# The customer supplied certificate to use for the external operator REST
-# https interface.  The value must be a string containing a base64 encoded PEM certificate.
-# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
-# Otherwise, it is ignored.
-externalOperatorCert:
-
-# The customer supplied private key to use for the external operator REST
-# https interface.  The value must be a string containing a base64 encoded PEM key.
-# This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
-# Otherwise, it is ignored.
-externalOperatorKey:
-```  
+is disabled by default and only exposed if explicitly configured.
+Detailed instructions for configuring the external REST endpoint are available [here](helm-charts.md).
 
 **NOTE**: Regardless of which endpoint is being invoked, the URL format for scaling is the same.
 
@@ -149,8 +101,8 @@ When the operator receives a scaling request, it will:
 *	Validate that the WebLogic cluster, identified by `clusterName`, exists.
 *	Verify that the specified WebLogic cluster has a sufficient number of configured servers to satisfy the scaling request.
 *	Initiate scaling by setting the `replicas` property within the corresponding domain resource, which can be done in either:
-  *	A `clusterStartup` entry, if defined within its cluster list.
-  *	At the domain level, if not defined in a `clusterStartup` entry and the `startupControl` property is set to `AUTO`.
+  *	A `cluster` entry, if defined within its cluster list.
+  *	At the domain level, if not defined in a `cluster` entry.
 
 In response to a change to either `replicas` property, in the domain resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count.
 
@@ -158,12 +110,12 @@ In response to a change to either `replicas` property, in the domain resource, t
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
 operations on a cluster. These policies monitor one or more types of WebLogic Server metrics, such as memory, idle threads, and CPU load.  When the configured threshold
-in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh),
+in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh),
 for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.
 
 ### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
 The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests to the operator's REST endpoint:
-1. Copy the [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) script to a directory (such as `$DOMAIN_HOME/bin/scripts`) so that it's accessible within the Administration Server pod.
+1. Copy the [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) script to a directory (such as `$DOMAIN_HOME/bin/scripts`) so that it's accessible within the Administration Server pod.
 2. Configure a WLDF policy and action as part of a diagnostic module targeted to the Administration Server. For information about configuring the WLDF Policies and Actions component,
 see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/wls/WLDFC/config_watch_notif.htm#WLDFC188) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
 
@@ -173,22 +125,19 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
 
     Important notes about the configuration properties for the Script Action:
 
-    `Working Directory` and `Path to Script` configuration entries specify the volume mount path (`/shared`) to access the WebLogic domain home.
     The `scalingAction.sh` script requires access to the SSL certificate of the operator’s endpoint and this is provided through the environment variable `INTERNAL_OPERATOR_CERT`.  
     The operator’s SSL certificate can be found in the `internalOperatorCert` entry of the operator’s ConfigMap `weblogic-operator-cm`:
 
     For example:
     ```
     #> kubectl describe configmap weblogic-operator-cm -n weblogic-operator
-    Name:         `weblogic-operator-cm`
-    Namespace:    `weblogic-operator`
-    Labels:       `weblogic.operatorName=weblogic-operator`
-    Annotations:  `kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"v1","data":{"externalOperatorCert":"","internalOperatorCert":"LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t...`
+    ...
     Data
     ====
     internalOperatorCert:
     ----
     LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR3akNDQXFxZ0F3SUJBZ0lFRzhYT1N6QU...
+    ...
     ```
 
     The scalingAction.sh script accepts a number of customizable parameters:
@@ -199,7 +148,7 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
 
     * `cluster_name` - WebLogic cluster name (Required)
 
-    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes
+    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes.  **NOTE**: Set this to https://kubernetes.default.svc when invoking `scalingAction.sh` from the Administration Server pod.
 
     * `access_token` - Service Account Bearer token for authentication and authorization for access to REST Resources
 
@@ -285,19 +234,23 @@ you can use a third party monitoring application like Prometheus.  Please read t
 details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5).
 
 ## Helpful Tips
-### Debugging scriptAction.sh
-The [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) script was designed to be executed within the
-Administration Server pod because the associated diagnostic module is targed to the Administration Server.  The easiest way to verify and debug the `scriptAction.sh` script is
-to open a shell on the running Administration Server pod and execute the script on the command line.  The following example illustrates how to open a bash shell on a running
-Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script:
+### Debugging scalingAction.sh
+The [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) script was designed to be executed within the
+Administration Server pod because the associated diagnostic module is targed to the Administration Server.
+
+The easiest way to verify and debug the `scalingAction.sh` script is to open a shell on the running Administration Server pod and execute the script on the command line.
+
+The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
+* the domain home is in `/u01/oracle/user-projects/domains/domain1` (i.e. the domain home is inside a docker image).
+* the Dockerfile copied [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```
 > kubectl exec -it domain1-admin-server /bin/bash
-# bash> cd /shared/domain/base_domain/bin/scripts
-# bash> ./scriptAction.sh
+# bash> cd /u01/oracle/user-projects/domains/domain1/bin/scripts
+# bash> ./scalingAction.sh
 ```
 
-A log, `scriptAction.log`, will be generated in the same directory as the script was executed in and can be examined for errors.
+A log, `scalingAction.log`, will be generated in the same directory as the script was executed in and can be examined for errors.
 
 ### Example on accessing the external REST endpoint
 The easiest way to test scaling using the external REST endpoint is to use a command-line tool like `curl`. Using `curl` to issue
@@ -309,7 +262,7 @@ an HTTPS scale request requires these mandatory header properties:
 The following shell script is an example of how to issue a scaling request, with the necessary HTTP request header values, using `curl`.
 This example assumes the operator and domain resource are configured with the following properties in Kubernetes:
 * Operator properties:
-  * externalRestOption: `SELF_SIGNED_CERT`
+  * externalRestEnabled: `true`
   * externalRestHttpsPort: `31001`
   * operator's namespace: `weblogic-operator`
   * operator's hostname is the same as the host shell script is executed on.
@@ -323,14 +276,14 @@ This example assumes the operator and domain resource are configured with the fo
 # Setup properties  
 ophost=`uname -n`
 opport=31001 #externalRestHttpsPort
-cluster=DockerCluster
+cluster=cluster-1
 size=3 #New cluster size
-domdir=${PWD}
 ns=weblogic-operator # Operator NameSpace
+sa=weblogic-operator # Operator ServiceAccount
 domainuid=domain1
 
 # Retrieve service account name for given namespace   
-sec=`kubectl get serviceaccount ${ns} -n ${ns} -o jsonpath='{.secrets[0].name}'`
+sec=`kubectl get serviceaccount ${sa} -n ${ns} -o jsonpath='{.secrets[0].name}'`
 #echo "Secret [${sec}]"
 
 # Retrieve base64 encoded secret for the given service account   
