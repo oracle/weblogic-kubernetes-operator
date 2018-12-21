@@ -80,7 +80,7 @@ Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information abo
 
 ### Creating and managing WebLogic domains
 
-Please see [this page](creating-domain.md) for information about creating and managing domains.
+In this version of the operator, a WebLogic domain can be located either in a persistent volume (PV) or in a Docker image. For examples of each, see the [WebLogic operator samples](../kubernetes/samples/README.md).
 
 ### Modifying domain configurations
 
