@@ -60,7 +60,20 @@ public class ManagedServersUpStep extends Step {
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
         addToCluster(clusterName);
+      } else {
+        logIfReplicaExceeds(clusterConfig);
       }
+    }
+
+    boolean exceedsMaxConfiguredClusterSize(WlsClusterConfig clusterConfig) {
+      if (clusterConfig != null) {
+        String clusterName = clusterConfig.getClusterName();
+        int configClusterSize = clusterConfig.getMaxDynamicClusterSize();
+        return clusterConfig.hasDynamicServers()
+            && getReplicaCount(clusterName) == configClusterSize
+            && domain.getReplicaCount(clusterName) > configClusterSize;
+      }
+      return false;
     }
 
     private Step createNextStep(Step next) {
@@ -83,6 +96,17 @@ public class ManagedServersUpStep extends Step {
 
     private Integer getReplicaCount(String clusterName) {
       return Optional.ofNullable(replicas.get(clusterName)).orElse(0);
+    }
+
+    private void logIfReplicaExceeds(WlsClusterConfig clusterConfig) {
+      if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
+        String clusterName = clusterConfig.getClusterName();
+        LOGGER.warning(
+            "******* The replica count {1} exceeds the configured maximum dynamic cluster size {2} for cluster {0}",
+            clusterName,
+            domain.getReplicaCount(clusterName),
+            clusterConfig.getMaxDynamicClusterSize());
+      }
     }
   }
 
