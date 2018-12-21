@@ -153,7 +153,7 @@ function initialize {
 #
 function getDockerSample {
   rm -rf ${scriptDir}/docker-images
-  git clone https://github.com/oracle/docker-images.git
+  git clone https://github.com/oracle/docker-images.git ${scriptDir}/docker-images
 }
 
 #
@@ -173,6 +173,10 @@ function createFiles {
 
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
+
+  if [ -z "${image}" ]; then
+    fail "Please specify image in your input YAML"
+  fi
 
   domainName=${domainUID}
 
@@ -235,25 +239,10 @@ function createFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
  
-  # Remove any "...yaml-e" files left over from running sed
-  rm -f ${domainOutputDir}/*.yaml-e
-}
-
-#
-# Function to build docker image and create WebLogic domain home
-#
-function createDomainHome {
   if [ -z $imagePath ]; then
     imagePath="12213-domain-home-in-image-wdt"
   fi
-
-  cp ${domainPropertiesOutput} ./docker-images/OracleWebLogic/samples/${imagePath}/properties/docker_build
-
-  imageName="12213-domain-home-in-image"
-  # use the existence of build-archive.sh file to determine if we need to download WDT
-  if [ -f "./docker-images/OracleWebLogic/samples/${imagePath}/build-archive.sh" ]; then
-    imageName="12213-domain-wdt"
-  fi
+  imageName="${imagePath}:latest"
 
   # now we know which image to use, update the domain yaml file
   if [ -z $image ]; then
@@ -262,40 +251,41 @@ function createDomainHome {
     sed -i -e "s|%IMAGE_NAME%|${image}|g" ${dcrOutput}
   fi
 
-  cd docker-images/OracleWebLogic/samples/${imagePath}
+  # Remove any "...yaml-e" files left over from running sed
+  rm -f ${domainOutputDir}/*.yaml-e
+}
+
+#
+# Function to build docker image and create WebLogic domain home
+#
+function createDomainHome {
+  dockerDir=${scriptDir}/docker-images/OracleWebLogic/samples/${imagePath}
+  dockerPropsDir=${dockerDir}/properties
+  cp ${domainPropertiesOutput} ${dockerPropsDir}/docker-build
 
   # 12213-domain-home-in-image use one properties file for the credentials 
-  usernameFile="properties/docker_build/domain_security.properties"
-  passwordFile="properties/docker_build/domain_security.properties"
-
+  usernameFile="${dockerPropsDir}/docker-build/domain_security.properties"
+  passwordFile="${dockerPropsDir}/docker-build/domain_security.properties"
+ 
   # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
   if [ ! -f $usernameFile ]; then
-    usernameFile="properties/docker-build/adminuser.properties"
-    passwordFile="properties/docker-build/adminpass.properties"
-    sed -i -e "s|weblogic|${username}|g" $usernameFile
-    sed -i -e "s|welcome1|${password}|g" $passwordFile
-  else
-    sed -i -e "s|myuser|${username}|g" $usernameFile
-    sed -i -e "s|mypassword1|${password}|g" $passwordFile
+    usernameFile="${dockerPropsDir}/docker-build/adminuser.properties"
+    passwordFile="${dockerPropsDir}/docker-build/adminpass.properties"
   fi
+  
+  sed -i -e "s|myuser|${username}|g" $usernameFile
+  sed -i -e "s|mypassword1|${password}|g" $passwordFile
     
-  # use the existence of build-archive.sh file to determine if we need to download WDT
-  if [ -f "build-archive.sh" ]; then
-    sh ./build-archive.sh
-    wget https://github.com/oracle/weblogic-deploy-tooling/releases/download/weblogic-deploy-tooling-0.14/weblogic-deploy.zip
-  fi
-
   if [ ! -z $baseImage ]; then
-    sed -i -e "s|\(FROM \).*|\1 ${baseImage}|g" Dockerfile
+    sed -i -e "s|\(FROM \).*|\1 ${baseImage}|g" ${dockerDir}/Dockerfile
   fi
 
-  sh ./build.sh
+  sh ${dockerDir}/build.sh
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."
   fi
 
-  cd -
   echo ""
   echo "Create domain ${domainName} successfully."
 }

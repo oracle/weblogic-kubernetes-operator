@@ -6,6 +6,7 @@ The sample scripts demonstrate the creation of a WebLogic domain home in a Docke
 
 The following prerequisites must be handled prior to running the create domain script:
 * Make sure the WebLogic operator is running.
+* The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
 * Build the Oracle WebLogic image `oracle/weblogic:12.2.1.3-developer`. Refer to [Oracle WebLogic Server on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/dockerfiles/12.2.1.3). If a different `baseImage` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository.
@@ -15,7 +16,7 @@ The following prerequisites must be handled prior to running the create domain s
 Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at your inputs file and an output directory:
 
 ```
-  ./create-domain.sh \
+$ ./create-domain.sh \
   -u <username> \
   -p <password> \
   -i create-domain-inputs.yaml \
@@ -26,8 +27,8 @@ The script will perform the following steps:
 
 * Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/path/to/weblogic-operator-output-directory/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 * Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
-* Clone the weblogic docker-images project via the `git clone https://github.com/oracle/docker-images.git` into the current directory.
-* Replace the built-in username and password in the `properties/docker_build/domain_security.properties` file with the `username` and `password` that are supplied in the command line via the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
+* Clone the weblogic docker-images project into the current directory using `git clone https://github.com/oracle/docker-images.git`.
+* Replace the built-in user name and password in the `properties/docker-build/domain_security.properties` file with the `username` and `password` that are supplied on the command line using the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via the `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
 * Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt) and [Example Image with a WebLogic Server Domain using WLST](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain in the Docker image. Also, you can run the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image), manually with the generated `domain.properties` to create a domain home image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 
@@ -43,7 +44,7 @@ usage: create-domain.sh -o dir -i file -u username -p password [-k] [-e] [-h]
   -u Username used in building the Docker image for WebLogic domain in image.
   -p Password used in building the Docker image for WebLogic domain in image.
   -e Also create the resources in the generated YAML files, optional.
-  -k Keep what has been previously cloned from https://github.com/oracle/docker-images.git, optional. 
+  -k Keep what has been previously cloned from https://github.com/oracle/docker-images.git, optional.
      If not specified, this script will always remove existing project and clone again.
   -h Help
 
@@ -77,7 +78,7 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `image` | WebLogic Docker image that the domain resource will use. If not specified, the value is the name of the generated Docker image. | `12213-domain-wdt` |
+| `image` | WebLogic Docker image that the domain resource will use. If not specified, the value is the name of the generated Docker image. | `12213-domain-home-in-image-wdt` |
 | `imagePath` | The relative directory of the WebLogic domain home in image Docker image in `https://github.com/oracle/docker-images.git` project under the `docker-images/OracleWebLogic/samples` directory.  | `12213-domain-home-in-image-wdt` |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are "IfNotPresent", "Always", or "Never" | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified |  |
@@ -138,7 +139,7 @@ spec:
   includeServerOutInPodLog: true
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-  # - "NEVER" will not start any servers in the domain 
+  # - "NEVER" will not start any servers in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
@@ -176,7 +177,7 @@ spec:
 To confirm that the domain was created, use this command:
 
 ```
-kubectl describe domain DOMAINUID -n NAMESPACE
+$ kubectl describe domain DOMAINUID -n NAMESPACE
 ```
 
 Replace `DOMAINUID` with the `domainUID` and `NAMESPACE` with the actual namespace.
@@ -311,7 +312,7 @@ In the `Status` section of the output, the available servers and clusters are li
 Use the following command to see the pods running the servers:
 
 ```
-kubectl get pods -n NAMESPACE
+$ kubectl get pods -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
@@ -329,7 +330,7 @@ domain1-managed-server2                      1/1       Running   0          29m
 Use the following command to see the services for the domain:
 
 ```
-kubectl get services -n NAMESPACE
+$ kubectl get services -n NAMESPACE
 ```
 
 Here is an example of the output of this command:

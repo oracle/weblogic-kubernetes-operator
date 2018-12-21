@@ -798,7 +798,7 @@ class SitConfigGenerator(Generator):
     self.writeln("</d:security-configuration>")
 
   def customizeDomainLogPath(self):
-    self.customizeLog(self.env.getDomain().getName())
+    self.customizeLog(self.env.getDomain().getName(), self.env.getDomain(), true)
 
   def customizeClusters(self):
     for cluster in self.env.getDomain().getClusters():
@@ -841,7 +841,7 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
       self.undent()
       self.writeln("</d:network-access-point>")
-    self.customizeLog(name)
+    self.customizeLog(name, server, false)
     self.undent()
     self.writeln("</d:server>")
 
@@ -857,18 +857,33 @@ class SitConfigGenerator(Generator):
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
     self.writeln("<d:listen-address f:combine-mode=\"replace\">" + listen_address + "</d:listen-address>")
-    self.customizeLog(server_name_prefix + "${id}")
+    self.customizeLog(server_name_prefix + "${id}", template, false)
     self.undent()
     self.writeln("</d:server-template>")
 
-  def customizeLog(self, name):
+  def customizeLog(self, name, bean, isDomainBean):
     logs_dir = self.env.getDomainLogHome()
-    if logs_dir is not None:
-      self.writeln("<d:log f:combine-mode=\"replace\">")
-      self.indent()
-      self.writeln("<d:file-name>" + logs_dir + "/" + name + ".log</d:file-name>")
-      self.undent()
-      self.writeln("</d:log>")
+    if logs_dir is None or len(logs_dir) == 0:
+      return
+
+    logaction=''
+    fileaction=''
+    if bean.getLog() is None:
+      if not isDomainBean:
+        # don't know why, but don't need to "add" a missing domain log bean, and adding it causes trouble
+        logaction=' f:combine-mode="add"'
+      fileaction=' f:combine-mode="add"'
+    else:
+      if bean.getLog().getFileName() is None:
+        fileaction=' f:combine-mode="add"'
+      else:
+        fileaction=' f:combine-mode="replace"'
+
+    self.writeln("<d:log" + logaction + ">")
+    self.indent()
+    self.writeln("<d:file-name" + fileaction + ">" + logs_dir + "/" + name + ".log</d:file-name>")
+    self.undent()
+    self.writeln("</d:log>")
 
 class CustomSitConfigIntrospector(SecretManager):
 
