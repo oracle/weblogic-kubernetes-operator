@@ -36,6 +36,7 @@ presented in the correct order.
   * [Managing lifecycle operations](domains.md#managing-lifecycle-operations-including-shutting-down-and-deleting-domains)
   * [Using WLST](wlst.md)
   * [Scaling clusters](scaling.md)
+  * [Information about load balancing with Ingresses](ingress.md)
 
 ## Important terms
 
