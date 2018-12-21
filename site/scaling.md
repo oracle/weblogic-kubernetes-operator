@@ -110,12 +110,12 @@ In response to a change to either `replicas` property, in the domain resource, t
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
 operations on a cluster. These policies monitor one or more types of WebLogic Server metrics, such as memory, idle threads, and CPU load.  When the configured threshold
-in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh),
+in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh),
 for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.
 
 ### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
 The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests to the operator's REST endpoint:
-1. Copy the [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) script to a directory (such as `$DOMAIN_HOME/bin/scripts`) so that it's accessible within the Administration Server pod.
+1. Copy the [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) script to a directory (such as `$DOMAIN_HOME/bin/scripts`) so that it's accessible within the Administration Server pod.
 2. Configure a WLDF policy and action as part of a diagnostic module targeted to the Administration Server. For information about configuring the WLDF Policies and Actions component,
 see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/wls/WLDFC/config_watch_notif.htm#WLDFC188) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
 
@@ -235,14 +235,14 @@ details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kube
 
 ## Helpful Tips
 ### Debugging scalingAction.sh
-The [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) script was designed to be executed within the
+The [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) script was designed to be executed within the
 Administration Server pod because the associated diagnostic module is targed to the Administration Server.
 
 The easiest way to verify and debug the `scalingAction.sh` script is to open a shell on the running Administration Server pod and execute the script on the command line.
 
 The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
 * the domain home is in `/u01/oracle/user-projects/domains/domain1` (i.e. the domain home is inside a docker image).
-* the Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
+* the Dockerfile copied [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```
 > kubectl exec -it domain1-admin-server /bin/bash
