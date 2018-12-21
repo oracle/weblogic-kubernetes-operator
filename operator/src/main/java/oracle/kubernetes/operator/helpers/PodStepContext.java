@@ -434,6 +434,7 @@ public abstract class PodStepContext implements StepContextConstants {
         logPodExists();
         return doNext(packet);
       } else {
+        LOGGER.info(MessageKeys.CYCLING_POD, currentPod, getPodModel());
         return doNext(replaceCurrentPod(getNext()), packet);
       }
     }
