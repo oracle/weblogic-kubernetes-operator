@@ -326,7 +326,7 @@ public abstract class PodHelperTestBase {
             hasEnvVar("DOMAIN_UID", UID),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
             hasEnvVar("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)),
-            hasEnvVar("LOG_HOME", ""),
+            hasEnvVar("LOG_HOME", null),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
             hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
   }
@@ -622,7 +622,7 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
         .addEnvItem(
             envItem("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)))
-        .addEnvItem(envItem("LOG_HOME", ""))
+        .addEnvItem(envItem("LOG_HOME", null))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
         .livenessProbe(createLivenessProbe())
