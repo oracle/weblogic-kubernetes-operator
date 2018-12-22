@@ -5,26 +5,16 @@
 ---
 apiVersion: "v1"
 data:
-  internalOperatorCert: {{ .internalOperatorCert | quote }}
-  {{- if not (eq .externalRestOption "NONE") }}
+  {{- if .externalRestEnabled }}
   externalOperatorCert: {{ .externalOperatorCert | quote }}
   {{- end }}
-  serviceaccount: {{ .operatorServiceAccount | quote }}
-{{- $scope := . -}}
-{{- $args := merge (dict) $scope -}}
-{{- $domainsNamespaces := .domainsNamespaces -}}
-{{- $len := len $domainsNamespaces -}}
-{{- if eq $len 0 -}}
-{{-   $ignore := set $args "domainsNamespacesList" (list "default") -}}
-{{- else -}}
-{{-   $ignore := set $args "domainsNamespacesList" $domainsNamespaces -}}
-{{- end }}
-  targetNamespaces: {{ $domainsNamespaces | uniq | sortAlpha | join "," | quote }}
+  serviceaccount: {{ .serviceAccount | quote }}
+  targetNamespaces: {{ .domainNamespaces | uniq | sortAlpha | join "," | quote }}
 kind: "ConfigMap"
 metadata:
   labels:
-    weblogic.operatorName: {{ .operatorNamespace | quote }}
-    weblogic.resourceVersion: "operator-v1"
+    weblogic.operatorName: {{ .Release.Namespace | quote }}
+    weblogic.resourceVersion: "operator-v2"
   name: "weblogic-operator-cm"
-  namespace: {{ .operatorNamespace | quote }}
+  namespace: {{ .Release.Namespace | quote }}
 {{- end }}

@@ -1,3 +1,5 @@
+> WARNING: This page has not been updated for the 2.0 release yet.  There are some minor changes we need to make, but overall the content is still relevant.
+
 # Architectural overview
 
 The operator consists of the following two main parts:

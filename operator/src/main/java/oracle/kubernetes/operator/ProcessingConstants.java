@@ -14,7 +14,6 @@ public interface ProcessingConstants {
 
   public static final String PRINCIPAL = "principal";
   public static final String SERVER_SCAN = "serverScan";
-  public static final String CLUSTER_SCAN = "clusterScan";
   public static final String ENVVARS = "envVars";
 
   public static final String SERVER_NAME = "serverName";
@@ -30,4 +29,10 @@ public interface ProcessingConstants {
   public static final String SERVER_HEALTH_MAP = "serverHealthMap";
 
   public static final String STATUS_UNCHANGED = "statusUnchanged";
+
+  public static final String DOMAIN_TOPOLOGY = "domainTopology";
+  public static final String JOB_POD_NAME = "jobPodName";
+  public static final String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
+  public static final String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
+  public static final String SIT_CONFIG_MAP = "sitConfigMap";
 }

@@ -26,11 +26,11 @@ import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
+import oracle.kubernetes.operator.steps.ReadHealthStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ServerHealth;
+import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
 
 /** Creates an asynchronous step to read the WebLogic server state from a particular pod */
 public class ServerStatusReader {
@@ -193,7 +193,7 @@ public class ServerStatusReader {
 
       if (WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
-        return doNext(WlsRetriever.readHealthStep(getNext()), packet);
+        return doNext(ReadHealthStep.createReadHealthStep(getNext()), packet);
       }
 
       return doNext(packet);

@@ -4,38 +4,28 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import static oracle.kubernetes.operator.logging.MessageKeys.*;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Status;
-import java.util.ArrayList;
-import java.util.Arrays;
+import io.kubernetes.client.models.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.work.AsyncCallTestSupport;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.Test;
 
-@SuppressWarnings({"ConstantConditions, unchecked", "SameParameterValue", "deprecation"})
+@SuppressWarnings("SameParameterValue")
 public class AdminPodHelperTest extends PodHelperTestBase {
   private static final String INTERNAL_OPERATOR_CERT_FILE_PARAM = "internalOperatorCert";
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
@@ -68,7 +58,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     return ADMIN_POD_REPLACED;
   }
 
-  private void verifyAdminPodReplacedWhen(PodMutator mutator) {
+  @Override
+  protected void verifyReplacePodWhen(PodMutator mutator) {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
@@ -85,7 +76,23 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(logRecords, containsInfo(getPodReplacedMessageKey()));
   }
 
-  private AsyncCallTestSupport.CannedResponse<V1Status> expectDeletePod(String podName) {
+  @Override
+  protected void verifyPodNotReplacedWhen(PodMutator mutator) {
+    testSupport.addComponent(
+        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+        PodAwaiterStepFactory.class,
+        (pod, next) -> terminalStep);
+
+    V1Pod existingPod = createPodModel();
+    mutator.mutate(existingPod);
+    initializeExistingPod(existingPod);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsFine(getPodExistsMessageKey()));
+  }
+
+  private CallTestSupport.CannedResponse expectDeletePod(String podName) {
     return testSupport
         .createCannedResponse("deletePod")
         .withNamespace(NS)
@@ -145,19 +152,43 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenExistingAdminPodHasBadVersion_replaceIt() {
-    verifyAdminPodReplacedWhen(
-        pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
+  public void whenExistingAdminPodSpecHasUnknownCustomerAnnotation_replaceIt() {
+    verifyReplacePodWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecHasUnknownAddedVolumes_replaceIt() {
+    verifyReplacePodWhen((pod) -> pod.getSpec().addVolumesItem(new V1Volume().name("dummy")));
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecHasK8sVolume_ignoreIt() {
+    verifyPodNotReplacedWhen(
+        (pod) -> {
+          pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
+          getSpecContainer(pod)
+              .addVolumeMountsItem(
+                  new V1VolumeMount()
+                      .name("k8s")
+                      .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH));
+        });
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecHasUnusedImagePullSecret_replaceIt() {
+    verifyReplacePodWhen(
+        (pod) ->
+            pod.getSpec().addImagePullSecretsItem(new V1LocalObjectReference().name("secret")));
   }
 
   @Test
   public void whenExistingAdminPodSpecHasNoContainers_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> pod.getSpec().setContainers(null));
+    verifyReplacePodWhen((pod) -> pod.getSpec().setContainers(null));
   }
 
   @Test
   public void whenExistingAdminPodSpecHasNoContainersWithExpectedName_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setName("???"));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setName("???"));
   }
 
   private V1Container getSpecContainer(V1Pod pod) {
@@ -165,23 +196,40 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenExistingAdminPodSpecHasUnneededVolumeMount_replaceIt() {
+    verifyReplacePodWhen(
+        (pod) -> getSpecContainer(pod).addVolumeMountsItem(new V1VolumeMount().name("dummy")));
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecHasK8sVolumeMount_ignoreIt() {
+    verifyPodNotReplacedWhen(
+        (pod) ->
+            getSpecContainer(pod)
+                .addVolumeMountsItem(
+                    new V1VolumeMount()
+                        .name("dummy")
+                        .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH)));
+  }
+
+  @Test
   public void whenExistingAdminPodSpecContainerHasWrongImage_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongImagePullPolicy_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasNoPorts_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasExtraPort_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
   }
 
   private V1ContainerPort definePort(int port) {
@@ -190,18 +238,26 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenExistingAdminPodSpecContainerHasIncorrectPort_replaceIt() {
-    verifyAdminPodReplacedWhen(
-        (pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongEnvVariable_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
+    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
   }
 
   @Test
   public void whenExistingAdminPodSpecContainerHasWrongEnvFrom_replaceIt() {
-    verifyAdminPodReplacedWhen((pod) -> getSpecContainer(pod).envFrom(Collections.emptyList()));
+    verifyReplacePodWhen(
+        (pod) -> getSpecContainer(pod).envFrom(Collections.singletonList(new V1EnvFromSource())));
+  }
+
+  @Test
+  public void whenExistingAdminPodSpecContainerHasRestartVersion_replaceIt() {
+    verifyReplacePodWhen(
+        (pod) ->
+            pod.getMetadata()
+                .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
   }
 
   @Test
@@ -213,7 +269,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenAdminPodCreated_containerHasStartServerCommand() {
     assertThat(
         getCreatedPodSpecContainer().getCommand(),
-        contains("/weblogic-operator/scripts/startServer.sh", UID, getServerName(), DOMAIN_NAME));
+        contains("/weblogic-operator/scripts/startServer.sh"));
   }
 
   @Test
@@ -225,63 +281,208 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainPresenceHasNullEnvironmentItems_createAdminPodStartupWithDefaultItems() {
-    domainPresenceInfo.getDomain().getSpec().setServerStartup(null);
-
+  public void whenDomainPresenceHasNoEnvironmentItems_createAdminPodStartupWithDefaultItems() {
     assertThat(getCreatedPodSpecContainer().getEnv(), not(empty()));
   }
 
   @Test
-  public void whenDomainPresenceHasEnvironmentItems_createAdminPodStartupWithThem() {
-    domainPresenceInfo
-        .getDomain()
-        .getSpec()
-        .setServerStartup(
-            new ServerStartupListBuilder(ADMIN_SERVER)
-                .withVar("item1", "value1")
-                .withVar("item2", "value2")
-                .build());
+  public void whenDomainHasEnvironmentItems_createAdminPodStartupWithThem() {
+    configureAdminServer()
+        .withEnvironmentVariable("item1", "value1")
+        .withEnvironmentVariable("item2", "value2");
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(hasEnvVar("item1", "value1"), hasEnvVar("item2", "value2")));
   }
 
+  private ServerConfigurator configureAdminServer() {
+    return getConfigurator().configureAdminServer();
+  }
+
   @Test
-  public void whenDomainPresenceHasEnvironmentItemsWithVariables_createAdminPodStartupWithThem() {
-    domainPresenceInfo
-        .getDomain()
-        .getSpec()
-        .setServerStartup(
-            new ServerStartupListBuilder(ADMIN_SERVER)
-                .withVar("item1", "find $(DOMAIN_NAME) at $(DOMAIN_HOME)")
-                .withVar("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)")
-                .build());
+  public void whenDomainHasEnvironmentItemsWithVariables_createAdminPodStartupWithThem() {
+    configureAdminServer()
+        .withEnvironmentVariable("item1", "find uid1 at $(DOMAIN_HOME)")
+        .withEnvironmentVariable("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)");
 
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(
-            hasEnvVar("item1", "find domain1 at /shared/domain/domain1"),
+            hasEnvVar("item1", "find uid1 at /shared/domain"),
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
   }
 
-  static class ServerStartupListBuilder {
-    private String serverName;
-    private List<V1EnvVar> vars = new ArrayList<>();
+  @Test
+  public void whenDomainHasAdditionalVolumes_createAdminPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolume("volume1", "/source-path1")
+        .withAdditionalVolume("volume2", "/source-path2");
 
-    ServerStartupListBuilder(String serverName) {
-      this.serverName = serverName;
-    }
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+  }
 
-    ServerStartupListBuilder withVar(String name, String value) {
-      vars.add(new V1EnvVar().name(name).value(value));
-      return this;
-    }
+  @Test
+  public void whenDomainHasAdditionalVolumeMounts_createAdminPodWithThem() {
+    getConfigurator()
+        .withAdditionalVolumeMount("volume1", "/destination-path1")
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/destination-path1"),
+            hasVolumeMount("volume2", "/destination-path2")));
+  }
 
-    List<ServerStartup> build() {
-      return Collections.singletonList(
-          new ServerStartup().withServerName(serverName).withEnv(vars));
-    }
+  @Test
+  public void whenServerHasAdditionalVolumes_createAdminPodWithThem() {
+    configureAdminServer()
+        .withAdditionalVolume("volume1", "/source-path1")
+        .withAdditionalVolume("volume2", "/source-path2");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/source-path1"), hasVolume("volume2", "/source-path2")));
+  }
+
+  @Test
+  public void whenServerHasAdditionalVolumeMounts_createAdminPodWithThem() {
+    configureAdminServer()
+        .withAdditionalVolumeMount("volume1", "/destination-path1")
+        .withAdditionalVolumeMount("volume2", "/destination-path2");
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/destination-path1"),
+            hasVolumeMount("volume2", "/destination-path2")));
+  }
+
+  @Test
+  public void whenPodHasDuplicateVolumes_createAdminPodWithCombination() {
+    getConfigurator()
+        .withAdditionalVolume("volume1", "/domain-path1")
+        .withAdditionalVolume("volume2", "/domain-path2")
+        .configureAdminServer()
+        .withAdditionalVolume("volume2", "/server-path");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(hasVolume("volume1", "/domain-path1"), hasVolume("volume2", "/server-path")));
+  }
+
+  @Test
+  public void whenPodHasDuplicateVolumeMounts_createAdminPodWithCombination() {
+    getConfigurator()
+        .withAdditionalVolumeMount("volume1", "/domain-path1")
+        .withAdditionalVolumeMount("volume2", "/domain-path2")
+        .configureAdminServer()
+        .withAdditionalVolumeMount("volume2", "/server-path");
+
+    assertThat(
+        getCreatedPodSpecContainer().getVolumeMounts(),
+        allOf(
+            hasVolumeMount("volume1", "/domain-path1"), hasVolumeMount("volume2", "/server-path")));
+  }
+
+  @Test
+  public void whenDomainHasLabels_createAdminPodWithThem() {
+    getConfigurator()
+        .withPodLabel("label1", "domain-label-value1")
+        .withPodLabel("label2", "domain-label-value2");
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry("label1", "domain-label-value1"));
+    assertThat(podLabels, hasEntry("label2", "domain-label-value2"));
+  }
+
+  @Test
+  public void whenDomainHasAnnotations_createAdminPodWithThem() {
+    getConfigurator()
+        .withPodAnnotation("annotation1", "domain-annotation-value1")
+        .withPodAnnotation("annotation2", "domain-annotation-value2");
+    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+
+    assertThat(podAnnotations, hasEntry("annotation1", "domain-annotation-value1"));
+    assertThat(podAnnotations, hasEntry("annotation2", "domain-annotation-value2"));
+  }
+
+  @Test
+  public void whenServerHasLabels_createAdminPodWithThem() {
+    configureAdminServer()
+        .withPodLabel("label1", "server-label-value1")
+        .withPodLabel("label2", "server-label-value2");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry("label1", "server-label-value1"));
+    assertThat(podLabels, hasEntry("label2", "server-label-value2"));
+  }
+
+  @Test
+  public void whenServerHasAnnotations_createAdminPodWithThem() {
+    configureAdminServer()
+        .withPodAnnotation("annotation1", "server-annotation-value1")
+        .withPodAnnotation("annotation2", "server-annotation-value2");
+
+    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    assertThat(podAnnotations, hasEntry("annotation1", "server-annotation-value1"));
+    assertThat(podAnnotations, hasEntry("annotation2", "server-annotation-value2"));
+  }
+
+  @Test
+  public void whenPodHasDuplicateLabels_createAdminPodWithCombination() {
+    getConfigurator()
+        .withPodLabel("label1", "domain-label-value1")
+        .withPodLabel("label2", "domain-label-value2")
+        .configureAdminServer()
+        .withPodLabel("label2", "server-label-value1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry("label1", "domain-label-value1"));
+    assertThat(podLabels, hasEntry("label2", "server-label-value1"));
+  }
+
+  @Test
+  public void whenPodHasDuplicateAnnotations_createAdminPodWithCombination() {
+    getConfigurator()
+        .withPodAnnotation("annotation1", "domain-annotation-value1")
+        .withPodAnnotation("annotation2", "domain-annotation-value2")
+        .configureAdminServer()
+        .withPodAnnotation("annotation2", "server-annotation-value1");
+
+    Map<String, String> podAnnotations = getCreatedPod().getMetadata().getAnnotations();
+    assertThat(podAnnotations, hasEntry("annotation1", "domain-annotation-value1"));
+    assertThat(podAnnotations, hasEntry("annotation2", "server-annotation-value1"));
+  }
+
+  @Test
+  public void whenPodHasCustomLabelConflictWithInternal_createAdminPodWithInternal() {
+    getConfigurator()
+        .withPodLabel(LabelConstants.RESOURCE_VERSION_LABEL, "domain-label-value1")
+        .configureAdminServer()
+        .withPodLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "server-label-value1")
+        .withPodLabel("label1", "server-label-value1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(
+        podLabels,
+        hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION));
+    assertThat(podLabels, hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
+    assertThat(podLabels, hasEntry("label1", "server-label-value1"));
+  }
+
+  @Test
+  public void whenDomainAndAdminHasRestartVersion_createAdminPodWithRestartVersionLabel() {
+    getConfigurator()
+        .withRestartVersion("domainRestartV1")
+        .configureAdminServer()
+        .withRestartVersion("adminRestartV1");
+
+    Map<String, String> podLabels = getCreatedPod().getMetadata().getLabels();
+    assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
+    assertThat(podLabels, hasEntry(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
+    assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
   }
 
   @Override
@@ -307,7 +508,12 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Override
   List<String> createStartCommand() {
-    return Arrays.asList(
-        "/weblogic-operator/scripts/startServer.sh", UID, getServerName(), DOMAIN_NAME);
+    return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
+  }
+
+  @Override
+  protected ServerConfigurator getServerConfigurator(
+      DomainConfigurator configurator, String serverName) {
+    return configurator.configureAdminServer();
   }
 }

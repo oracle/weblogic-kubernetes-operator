@@ -6,13 +6,13 @@ package oracle.kubernetes.operator;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ScheduledExecutorService;
 
 public interface TuningParameters extends Map<String, String> {
 
-  static TuningParameters initializeInstance(ThreadFactory factory, String mountPoint)
-      throws IOException {
-    return TuningParametersImpl.initializeInstance(factory, mountPoint);
+  static TuningParameters initializeInstance(
+      ScheduledExecutorService executorService, String mountPoint) throws IOException {
+    return TuningParametersImpl.initializeInstance(executorService, mountPoint);
   }
 
   public static TuningParameters getInstance() {
@@ -21,7 +21,9 @@ public interface TuningParameters extends Map<String, String> {
 
   public static class MainTuning {
     public final int domainPresenceFailureRetrySeconds;
+    public final int domainPresenceFailureRetryMaxCount;
     public final int domainPresenceRecheckIntervalSeconds;
+    public final int targetNamespaceRecheckIntervalSeconds;
     public final int statusUpdateTimeoutSeconds;
     public final int unchangedCountToDelayStatusRecheck;
     public final long initialShortDelay;
@@ -29,13 +31,17 @@ public interface TuningParameters extends Map<String, String> {
 
     public MainTuning(
         int domainPresenceFailureRetrySeconds,
+        int domainPresenceFailureRetryMaxCount,
         int domainPresenceRecheckIntervalSeconds,
+        int targetNamespaceRecheckIntervalSeconds,
         int statusUpdateTimeoutSeconds,
         int unchangedCountToDelayStatusRecheck,
         long initialShortDelay,
         long eventualLongDelay) {
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
+      this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
       this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;
+      this.targetNamespaceRecheckIntervalSeconds = targetNamespaceRecheckIntervalSeconds;
       this.statusUpdateTimeoutSeconds = statusUpdateTimeoutSeconds;
       this.unchangedCountToDelayStatusRecheck = unchangedCountToDelayStatusRecheck;
       this.initialShortDelay = initialShortDelay;

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import org.junit.After;
@@ -39,6 +40,8 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   private List<Watch.Response<?>> callBacks = new ArrayList<>();
 
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
+
+  protected WatchTuning tuning = new WatchTuning(30);
 
   private V1ObjectMeta createMetaData() {
     return createMetaData("test", NAMESPACE);
@@ -70,7 +73,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
   @SuppressWarnings("unchecked")
   void sendInitialRequest(int initialResourceVersion) {
-    StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
+    scheduleAddResponse(createObjectWithMetaData());
 
     createAndRunWatcher(NAMESPACE, stopping, initialResourceVersion);
   }
@@ -107,12 +110,13 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void receivedEvents_areSentToListeners() {
-    Object object = createObjectWithMetaData();
-    StubWatchFactory.addCallResponses(createAddResponse(object), createModifyResponse(object));
+    Object object1 = createObjectWithMetaData();
+    Object object2 = createObjectWithMetaData();
+    StubWatchFactory.addCallResponses(createAddResponse(object1), createModifyResponse(object2));
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
-    assertThat(callBacks, contains(addEvent(object), modifyEvent(object)));
+    assertThat(callBacks, contains(addEvent(object1), modifyEvent(object2)));
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -121,15 +125,14 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     Object object1 = createObjectWithMetaData();
     Object object2 = createObjectWithMetaData();
     Watch.Response[] firstSet = {createAddResponse(object1), createModifyResponse(object2)};
-    int resourceAfterFirstSet = resourceVersion - 1;
     StubWatchFactory.addCallResponses(firstSet);
-    StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
+    scheduleAddResponse(createObjectWithMetaData());
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
     assertThat(
         StubWatchFactory.getRequestParameters().get(1),
-        hasEntry("resourceVersion", Integer.toString(resourceAfterFirstSet)));
+        hasEntry("resourceVersion", String.valueOf(resourceVersion - 2)));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -137,7 +140,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() {
     try {
       StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
-      StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
+      scheduleDeleteResponse(createObjectWithMetaData());
 
       createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
@@ -152,8 +155,8 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterDelete_nextRequestSendsIncrementedResourceVersion() {
-    StubWatchFactory.addCallResponses(createDeleteResponse(createObjectWithMetaData()));
-    StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
+    scheduleDeleteResponse(createObjectWithMetaData());
+    scheduleAddResponse(createObjectWithMetaData());
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
@@ -166,11 +169,23 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   @Test
   public void afterExceptionDuringNext_closeWatchAndTryAgain() {
     StubWatchFactory.throwExceptionOnNext(hasNextException);
-    StubWatchFactory.addCallResponses(createAddResponse(createObjectWithMetaData()));
+    scheduleAddResponse(createObjectWithMetaData());
 
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
     assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(2));
+  }
+
+  protected void scheduleAddResponse(Object object) {
+    StubWatchFactory.addCallResponses(createAddResponse(object));
+  }
+
+  protected void scheduleModifyResponse(Object object) {
+    StubWatchFactory.addCallResponses(createModifyResponse(object));
+  }
+
+  protected void scheduleDeleteResponse(Object object) {
+    StubWatchFactory.addCallResponses(createDeleteResponse(object));
   }
 
   @SuppressWarnings("SameParameterValue")

@@ -20,6 +20,9 @@ public class RestConfigImpl implements RestConfig {
   private final String principal;
   private final Collection<String> targetNamespaces;
 
+  private static final String OPERATOR_DIR = "/operator/";
+  private static final String INTERNAL_REST_IDENTITY_DIR = OPERATOR_DIR + "internal-identity/";
+
   /**
    * Constructs a RestConfigImpl.
    *
@@ -55,13 +58,13 @@ public class RestConfigImpl implements RestConfig {
   /** {@inheritDoc} */
   @Override
   public String getOperatorExternalCertificateData() {
-    return getCertificate("externalOperatorCert");
+    return getCertificate(OPERATOR_DIR + "config/externalOperatorCert");
   }
 
   /** {@inheritDoc} */
   @Override
   public String getOperatorInternalCertificateData() {
-    return getCertificate("internalOperatorCert");
+    return getCertificate(INTERNAL_REST_IDENTITY_DIR + "internalOperatorCert");
   }
 
   /** {@inheritDoc} */
@@ -91,13 +94,13 @@ public class RestConfigImpl implements RestConfig {
   /** {@inheritDoc} */
   @Override
   public String getOperatorExternalKeyFile() {
-    return getKey("externalOperatorKey");
+    return getKey(OPERATOR_DIR + "secrets/externalOperatorKey");
   }
 
   /** {@inheritDoc} */
   @Override
   public String getOperatorInternalKeyFile() {
-    return getKey("internalOperatorKey");
+    return getKey(INTERNAL_REST_IDENTITY_DIR + "internalOperatorKey");
   }
 
   /** {@inheritDoc} */
@@ -109,11 +112,9 @@ public class RestConfigImpl implements RestConfig {
     return result;
   }
 
-  private String getCertificate(String property) {
-    LOGGER.entering(property);
-    String path =
-        "config/"
-            + property; // a file containing a base64 encoded string containing the operator's cert
+  // path - a file containing a base64 encoded string containing the operator's cert in pem format
+  private String getCertificate(String path) {
+    LOGGER.entering(path);
     // in pem format
     String result = null;
     if (checkFileExists(path)) {
@@ -128,9 +129,9 @@ public class RestConfigImpl implements RestConfig {
     return result;
   }
 
-  private String getKey(String property) {
-    LOGGER.entering(property);
-    String path = "secrets/" + property; // a pem file containing the operator's private key
+  // path - a file containing the operator's private key in pem format (cleartext)
+  private String getKey(String path) {
+    LOGGER.entering(path);
     if (!checkFileExists(path)) {
       path = null;
     }

@@ -21,26 +21,20 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
-import oracle.kubernetes.operator.StartupControlConstants;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
-import oracle.kubernetes.operator.helpers.CallBuilderFactory;
-import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsRetriever;
-import oracle.kubernetes.operator.work.ContainerResolver;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainList;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainList;
 
 /**
  * RestBackendImpl implements the backend of the WebLogic operator REST api by making calls to
@@ -68,8 +62,7 @@ public class RestBackendImpl implements RestBackend {
    * @param targetNamespaces a list of Kubernetes namepaces that contain domains that the WebLogic
    *     operator manages.
    */
-  public RestBackendImpl(
-      String principal, String accessToken, Collection<String> targetNamespaces) {
+  RestBackendImpl(String principal, String accessToken, Collection<String> targetNamespaces) {
     LOGGER.entering(principal, targetNamespaces);
     this.principal = principal;
     userInfo = authenticate(accessToken);
@@ -84,7 +77,7 @@ public class RestBackendImpl implements RestBackend {
 
   private void authorize(String domainUID, Operation operation) {
     LOGGER.entering(domainUID, operation);
-    boolean authorized = false;
+    boolean authorized;
     if (domainUID == null) {
       authorized =
           atz.check(
@@ -166,19 +159,17 @@ public class RestBackendImpl implements RestBackend {
     Set<String> result = new TreeSet<>();
     List<Domain> domains = getDomainsList();
     for (Domain domain : domains) {
-      result.add(domain.getSpec().getDomainUID());
+      result.add(domain.getDomainUID());
     }
     LOGGER.exiting(result);
     return result;
   }
 
   private List<Domain> getDomainsList() {
-    CallBuilderFactory factory =
-        ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-    Collection<List<Domain>> c = new ArrayList<List<Domain>>();
+    Collection<List<Domain>> c = new ArrayList<>();
     try {
       for (String ns : targetNamespaces) {
-        DomainList dl = factory.create().listDomain(ns);
+        DomainList dl = new CallBuilder().listDomain(ns);
 
         if (dl != null) {
           c.add(dl.getItems());
@@ -194,9 +185,8 @@ public class RestBackendImpl implements RestBackend {
   @Override
   public boolean isDomainUID(String domainUID) {
     LOGGER.entering(domainUID);
-    boolean result = false;
     authorize(null, Operation.list);
-    result = getDomainUIDs().contains(domainUID);
+    boolean result = getDomainUIDs().contains(domainUID);
     LOGGER.exiting(result);
     return result;
   }
@@ -212,19 +202,10 @@ public class RestBackendImpl implements RestBackend {
 
     // Get list of WLS Configured Clusters defined for the corresponding WLS Domain identified by
     // Domain UID
-    Domain domain = findDomain(domainUID);
-    String namespace = getNamespace(domainUID);
-    String adminServerServiceName = getAdminServerServiceName(domain.getSpec());
-    String adminSecretName = getAdminServiceSecretName(domain);
-    Map<String, WlsClusterConfig> wlsClusterConfigs =
-        getWLSConfiguredClusters(namespace, adminServerServiceName, adminSecretName);
+    Map<String, WlsClusterConfig> wlsClusterConfigs = getWLSConfiguredClusters(domainUID);
     Set<String> result = wlsClusterConfigs.keySet();
     LOGGER.exiting(result);
     return result;
-  }
-
-  private static String getAdminServerServiceName(DomainSpec domainSpec) {
-    return LegalNames.toServerServiceName(domainSpec.getDomainUID(), domainSpec.getAsName());
   }
 
   /** {@inheritDoc} */
@@ -254,125 +235,91 @@ public class RestBackendImpl implements RestBackend {
 
     String namespace = getNamespace(domainUID, domains);
 
-    verifyWLSConfiguredClusterCapacity(namespace, domain, cluster, managedServerCount);
+    verifyWLSConfiguredClusterCapacity(domain, cluster, managedServerCount);
 
     updateReplicasForDomain(namespace, domain, cluster, managedServerCount);
     LOGGER.exiting();
   }
 
   private void updateReplicasForDomain(
-      String namespace, Domain domain, String cluster, int managedServerCount) {
-    // Capacity of configured cluster is valid for scaling
-    // Set replicas value on corresponding ClusterStartup (if defined)
-    // or on the Domain level replicas value for cluster not defined in a ClusterStartup
-    String domainUID = domain.getSpec().getDomainUID();
-    boolean domainModified = false;
-    ClusterStartup clusterStartup = getClusterStartup(domain, cluster);
-    int currentReplicasCount =
-        clusterStartup != null ? clusterStartup.getReplicas() : domain.getSpec().getReplicas();
-
-    if (managedServerCount != currentReplicasCount) {
-      if (clusterStartup != null) {
-        // set replica value on corresponding ClusterStartup
-        clusterStartup.setReplicas(managedServerCount);
-        domainModified = true;
-      } else if (StartupControlConstants.AUTO_STARTUPCONTROL.equals(
-          domain.getSpec().getStartupControl())) {
-        // set replica on Domain for cluster not defined in ClusterStartup
-        domain.getSpec().setReplicas(managedServerCount);
-        domainModified = true;
-      } else {
-        // WebLogic Cluster is not defined in ClusterStartup AND Startup Control is not spec'd as
-        // AUTO
-        // so scaling will not occur since Domain.spec.Replicas property will be ignored.
-        throw createWebApplicationException(
-            Status.BAD_REQUEST, MessageKeys.SCALING_AUTO_CONTROL_AUTO, cluster);
-      }
+      String namespace, Domain domain, String cluster, int newReplicaCount) {
+    if (newReplicaCount != domain.getReplicaCount(cluster)) {
+      domain.setReplicaCount(cluster, newReplicaCount);
+      overwriteDomain(namespace, domain);
     }
+  }
 
-    if (domainModified) {
-      try {
-        CallBuilderFactory factory =
-            ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-        // Write out the Domain with updated replica values
-        // TODO: Can we patch instead of replace?
-        factory.create().replaceDomain(domainUID, namespace, domain);
-      } catch (ApiException e) {
-        LOGGER.finer(
-            "Unexpected exception when updating Domain " + domainUID + " in namespace " + namespace,
-            e);
-        throw new WebApplicationException(e.getMessage());
-      }
+  private void overwriteDomain(String namespace, Domain domain) {
+    try {
+      // Write out the Domain with updated replica values
+      // TODO: Can we patch instead of replace?
+      new CallBuilder().replaceDomain(domain.getDomainUID(), namespace, domain);
+    } catch (ApiException e) {
+      LOGGER.finer(
+          String.format(
+              "Unexpected exception when updating Domain %s in namespace %s",
+              domain.getDomainUID(), namespace),
+          e);
+      throw new WebApplicationException(e.getMessage());
     }
   }
 
   private void verifyWLSConfiguredClusterCapacity(
-      String namespace, Domain domain, String cluster, int managedServerCount) {
+      Domain domain, String cluster, int requestedSize) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
-    String adminServerServiceName = getAdminServerServiceName(domain.getSpec());
-    String adminSecretName = getAdminServiceSecretName(domain);
-    WlsClusterConfig wlsClusterConfig =
-        getWlsClusterConfig(namespace, cluster, adminServerServiceName, adminSecretName);
+    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domain.getDomainUID(), cluster);
 
     // Verify the current configured cluster size
-    int clusterSize = wlsClusterConfig.getClusterSize();
-    if (wlsClusterConfig.hasDynamicServers()) {
-      clusterSize += wlsClusterConfig.getMaxDynamicClusterSize();
-    }
-    if (managedServerCount > clusterSize) {
+    int MaxClusterSize = wlsClusterConfig.getMaxClusterSize();
+    if (requestedSize > MaxClusterSize) {
       throw createWebApplicationException(
           Status.BAD_REQUEST,
           MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED,
-          managedServerCount,
-          clusterSize,
+          requestedSize,
+          MaxClusterSize,
           cluster,
           cluster);
     }
   }
 
-  private static String getAdminServiceSecretName(Domain domain) {
-    return domain.getSpec().getAdminSecret() == null
-        ? null
-        : domain.getSpec().getAdminSecret().getName();
+  private WlsClusterConfig getWlsClusterConfig(String domainUID, String cluster) {
+    return getWlsDomainConfig(domainUID).getClusterConfig(cluster);
   }
 
-  private ClusterStartup getClusterStartup(Domain domain, String cluster) {
-    List<ClusterStartup> clusterStartups = domain.getSpec().getClusterStartup();
-    for (ClusterStartup clusterStartup : clusterStartups) {
-      String clusterName = clusterStartup.getClusterName();
-      if (cluster.equals(clusterName)) {
-        return clusterStartup;
-      }
+  private Map<String, WlsClusterConfig> getWLSConfiguredClusters(String domainUID) {
+    return getWlsDomainConfig(domainUID).getClusterConfigs();
+  }
+
+  static interface TopologyRetriever {
+    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUID);
+  }
+
+  static final TopologyRetriever INSTANCE =
+      (String ns, String domainUID) -> {
+        Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUID);
+        if (s != null) return s.getWlsDomainConfig();
+        return null;
+      };
+
+  /**
+   * Find the WlsDomainConfig corresponding to the given domain UID.
+   *
+   * @param domainUID The domain UID
+   * @return The WlsDomainConfig containing the WebLogic configuration corresponding to the given
+   *     domain UID. This method returns an empty configuration object if no configuration is found.
+   */
+  WlsDomainConfig getWlsDomainConfig(String domainUID) {
+    for (String ns : targetNamespaces) {
+      WlsDomainConfig config = INSTANCE.getWlsDomainConfig(ns, domainUID);
+      if (config != null) return config;
     }
-
-    return null;
-  }
-
-  private WlsClusterConfig getWlsClusterConfig(
-      String namespace, String cluster, String adminServerServiceName, String adminSecretName) {
-    WlsRetriever wlsConfigRetriever =
-        WlsRetriever.create(namespace, adminServerServiceName, adminSecretName);
-    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
-    return wlsDomainConfig.getClusterConfig(cluster);
-  }
-
-  private Map<String, WlsClusterConfig> getWLSConfiguredClusters(
-      String namespace, String adminServerServiceName, String adminSecretName) {
-    WlsRetriever wlsConfigRetriever =
-        WlsRetriever.create(namespace, adminServerServiceName, adminSecretName);
-    WlsDomainConfig wlsDomainConfig = wlsConfigRetriever.readConfig();
-    return wlsDomainConfig.getClusterConfigs();
-  }
-
-  private Domain findDomain(String domainUID) {
-    List<Domain> domains = getDomainsList();
-    return findDomain(domainUID, domains);
+    return new WlsDomainConfig(null);
   }
 
   private Domain findDomain(String domainUID, List<Domain> domains) {
     for (Domain domain : domains) {
-      if (domainUID.equals(domain.getSpec().getDomainUID())) {
+      if (domainUID.equals(domain.getDomainUID())) {
         return domain;
       }
     }

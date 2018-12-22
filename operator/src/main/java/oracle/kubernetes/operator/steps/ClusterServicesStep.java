@@ -9,7 +9,6 @@ import java.util.Collection;
 import java.util.Map;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.IngressHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -31,21 +30,18 @@ public class ClusterServicesStep extends Step {
     Collection<StepAndPacket> startDetails = new ArrayList<>();
 
     // Add cluster services
-    WlsDomainConfig scan = info.getScan();
-    if (scan != null) {
-      for (Map.Entry<String, WlsClusterConfig> entry : scan.getClusterConfigs().entrySet()) {
+    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    if (config != null) {
+      for (Map.Entry<String, WlsClusterConfig> entry : config.getClusterConfigs().entrySet()) {
         Packet p = packet.clone();
         WlsClusterConfig clusterConfig = entry.getValue();
-        p.put(ProcessingConstants.CLUSTER_SCAN, clusterConfig);
         p.put(ProcessingConstants.CLUSTER_NAME, clusterConfig.getClusterName());
         for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
           p.put(ProcessingConstants.PORT, serverConfig.getListenPort());
           break;
         }
 
-        startDetails.add(
-            new StepAndPacket(
-                ServiceHelper.createForClusterStep(IngressHelper.createClusterStep(null)), p));
+        startDetails.add(new StepAndPacket(ServiceHelper.createForClusterStep(null), p));
       }
     }
 
