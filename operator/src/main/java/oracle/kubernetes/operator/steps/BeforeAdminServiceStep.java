@@ -4,15 +4,14 @@
 
 package oracle.kubernetes.operator.steps;
 
-import java.util.List;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 
 public class BeforeAdminServiceStep extends Step {
   public BeforeAdminServiceStep(Step next) {
@@ -24,19 +23,16 @@ public class BeforeAdminServiceStep extends Step {
     DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
     Domain dom = info.getDomain();
-    DomainSpec spec = dom.getSpec();
 
-    packet.put(ProcessingConstants.SERVER_NAME, spec.getAsName());
-    packet.put(ProcessingConstants.PORT, spec.getAsPort());
-    List<ServerStartup> ssl = spec.getServerStartup();
-    if (ssl != null) {
-      for (ServerStartup ss : ssl) {
-        if (ss.getServerName().equals(spec.getAsName())) {
-          packet.put(ProcessingConstants.NODE_PORT, ss.getNodePort());
-          break;
-        }
-      }
+    WlsDomainConfig domainTopology =
+        (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    packet.put(ProcessingConstants.SERVER_NAME, domainTopology.getAdminServerName());
+    WlsServerConfig server = domainTopology.getServerConfig(domainTopology.getAdminServerName());
+    if (server != null) {
+      packet.put(ProcessingConstants.PORT, server.getListenPort());
     }
+    packet.put(ProcessingConstants.NODE_PORT, dom.getAdminServerSpec().getNodePort());
+
     return doNext(packet);
   }
 }

@@ -11,7 +11,6 @@ import io.kubernetes.client.models.V1TokenReviewStatus;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.ContainerResolver;
 
 /** Delegate authentication decisions to Kubernetes. */
 public class AuthenticationProxy {
@@ -42,9 +41,7 @@ public class AuthenticationProxy {
               AuthorizationProxy.Scope.cluster,
               null);
       if (allowed) {
-        CallBuilderFactory factory =
-            ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-        result = factory.create().createTokenReview(prepareTokenReview(token));
+        result = new CallBuilder().createTokenReview(prepareTokenReview(token));
       } else {
         LOGGER.info(MessageKeys.CANNOT_CREATE_TOKEN_REVIEW);
       }

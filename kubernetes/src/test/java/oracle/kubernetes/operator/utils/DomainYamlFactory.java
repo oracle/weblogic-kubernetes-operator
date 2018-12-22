@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.util.Map;
+
 public abstract class DomainYamlFactory {
   public DomainValues newDomainValues() throws Exception {
     return createDefaultValues().withTestDefaults();
@@ -12,4 +14,14 @@ public abstract class DomainYamlFactory {
   public abstract DomainValues createDefaultValues() throws Exception;
 
   public abstract GeneratedDomainYamlFiles generate(DomainValues values) throws Exception;
+
+  public abstract String getWeblogicDomainPersistentVolumeClaimName(DomainValues inputs);
+
+  public Map<String, String> getExpectedDomainJobAnnotations() {
+    return null;
+  }
+
+  public Map<String, String> getExpectedConfigMapAnnotations() {
+    return null;
+  }
 }

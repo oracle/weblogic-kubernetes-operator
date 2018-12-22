@@ -21,7 +21,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.NETWORK_ACCESS_POIN
 import static oracle.kubernetes.operator.ProcessingConstants.NODE_PORT;
 import static oracle.kubernetes.operator.ProcessingConstants.PORT;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
-import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V1;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
@@ -31,7 +31,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REP
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -52,13 +51,17 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
-import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -112,10 +115,15 @@ public class ServiceHelperTest {
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.installRequestStepFactory());
 
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
+    configSupport.addWlsServer(ADMIN_SERVER);
+    configSupport.setAdminServerName(ADMIN_SERVER);
+
     testSupport
         .addToPacket(CLUSTER_NAME, TEST_CLUSTER)
         .addToPacket(SERVER_NAME, TEST_SERVER_NAME)
         .addToPacket(PORT, TEST_PORT)
+        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig())
         .addDomainPresenceInfo(domainPresenceInfo);
   }
 
@@ -133,7 +141,7 @@ public class ServiceHelperTest {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainName(DOMAIN_NAME).withDomainUID(UID).withAsName(ADMIN_SERVER);
+    return new DomainSpec().withDomainUID(UID);
   }
 
   // ------ service deletion --------
@@ -143,12 +151,12 @@ public class ServiceHelperTest {
     expectDeleteServiceCall().returning(new V1Status());
     ServerKubernetesObjects sko = createSko(createMinimalService());
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(sko.getService().get(), nullValue());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectDeleteServiceCall() {
+  private CallTestSupport.CannedResponse expectDeleteServiceCall() {
     return testSupport
         .createCannedResponse("deleteService")
         .withName(SERVICE_NAME)
@@ -171,7 +179,7 @@ public class ServiceHelperTest {
     expectDeleteServiceCall().failingWithStatus(HttpURLConnection.HTTP_NOT_FOUND);
     ServerKubernetesObjects sko = createSko(createMinimalService());
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(sko.getService().get(), nullValue());
   }
@@ -181,7 +189,7 @@ public class ServiceHelperTest {
     expectDeleteServiceCall().failingWithStatus(HTTP_BAD_REQUEST);
     ServerKubernetesObjects sko = createSko(createMinimalService());
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     testSupport.verifyCompletionThrowable(ApiException.class);
   }
@@ -190,7 +198,7 @@ public class ServiceHelperTest {
   public void whenDeleteServiceStepRunWithNoService_doNotSendDeleteCall() {
     ServerKubernetesObjects sko = createSko(null);
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(sko.getService().get(), nullValue());
   }
@@ -199,7 +207,7 @@ public class ServiceHelperTest {
   public void afterDeleteServiceStepRun_runSpecifiedNextStep() {
     ServerKubernetesObjects sko = createSko(null);
 
-    testSupport.runSteps(ServiceHelper.deleteServiceStep(sko, terminalStep));
+    testSupport.runSteps(ServiceHelper.deleteServicesStep(sko, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(true));
   }
@@ -234,7 +242,8 @@ public class ServiceHelperTest {
     V1Service service =
         new V1Service()
             .spec(createClusterServiceSpec())
-            .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+            .metadata(
+                new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
     initializeClusterServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
@@ -248,7 +257,8 @@ public class ServiceHelperTest {
     V1Service service =
         new V1Service()
             .spec(createUntypedClusterServiceSpec())
-            .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+            .metadata(
+                new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
     initializeClusterServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForClusterStep(terminalStep));
@@ -317,7 +327,7 @@ public class ServiceHelperTest {
     assertThat(logRecords, containsInfo(CLUSTER_SERVICE_REPLACED));
   }
 
-  private AsyncCallTestSupport.CannedResponse expectReadClusterService() {
+  private CallTestSupport.CannedResponse expectReadClusterService() {
     return expectReadService(getClusterServiceName());
   }
 
@@ -349,7 +359,7 @@ public class ServiceHelperTest {
     expectCreateClusterService().returning(createClusterService());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectCreateClusterService() {
+  private CallTestSupport.CannedResponse expectCreateClusterService() {
     return expectCreateService(createClusterService());
   }
 
@@ -360,7 +370,7 @@ public class ServiceHelperTest {
             new V1ObjectMeta()
                 .name(getClusterServiceName())
                 .namespace(NS)
-                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
                 .putLabelsItem(DOMAINUID_LABEL, UID)
                 .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
                 .putLabelsItem(CLUSTERNAME_LABEL, TEST_CLUSTER)
@@ -371,7 +381,7 @@ public class ServiceHelperTest {
     expectDeleteService(serviceName).returning(new V1Status());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectDeleteService(String serviceName) {
+  private CallTestSupport.CannedResponse expectDeleteService(String serviceName) {
     return testSupport
         .createCannedResponse("deleteService")
         .withNamespace(NS)
@@ -388,13 +398,13 @@ public class ServiceHelperTest {
   private V1Service createClusterServiceWithBadSpecType() {
     return new V1Service()
         .spec(new V1ServiceSpec().type("BadType"))
-        .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+        .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
   }
 
   private V1Service createClusterServiceWithBadPort() {
     return new V1Service()
         .spec(createSpecWithBadPort())
-        .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+        .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
   }
 
   private V1ServiceSpec createSpecWithBadPort() {
@@ -416,13 +426,12 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getService().get(), equalTo(newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_CREATED));
   }
 
   @Test
   public void whenSupported_createServerServiceWithPublishNotReadyAddresses() {
-    testSupport.addVersion(new HealthCheckHelper.KubernetesVersion(1, 8));
+    testSupport.addVersion(new KubernetesVersion(1, 8));
 
     verifyMissingServerServiceCreated(withPublishNotReadyAddresses(createServerService()));
   }
@@ -467,12 +476,12 @@ public class ServiceHelperTest {
     V1Service service =
         new V1Service()
             .spec(createServerServiceSpec())
-            .metadata(new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V1));
+            .metadata(
+                new V1ObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION));
     initializeServiceFromRecord(service);
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getService().get(), equalTo(service));
     assertThat(logRecords, containsFine(MANAGED_SERVICE_EXISTS));
   }
 
@@ -488,7 +497,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForServerStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getService().get(), equalTo(newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_REPLACED));
   }
 
@@ -511,10 +519,6 @@ public class ServiceHelperTest {
     verifyServerServiceReplaced(
         withNodePort(createServerService(), BAD_PORT),
         withNodePort(createServerService(), TEST_NODE_PORT));
-  }
-
-  private ServerKubernetesObjects getServerKubernetesObjects() {
-    return ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, TEST_SERVER_NAME);
   }
 
   private V1ServiceSpec createServerServiceSpec() {
@@ -541,11 +545,11 @@ public class ServiceHelperTest {
     expectCreateService(service).returning(service);
   }
 
-  private AsyncCallTestSupport.CannedResponse expectCreateServerService() {
+  private CallTestSupport.CannedResponse expectCreateServerService() {
     return expectCreateService(createServerService());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectCreateService(V1Service service) {
+  private CallTestSupport.CannedResponse expectCreateService(V1Service service) {
     return testSupport.createCannedResponse("createService").withNamespace(NS).withBody(service);
   }
 
@@ -561,7 +565,7 @@ public class ServiceHelperTest {
                 .name(getServerServiceName())
                 .namespace(NS)
                 .putAnnotationsItem(UNREADY_ENDPOINTS_ANNOTATION, "true")
-                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V2)
                 .putLabelsItem(DOMAINUID_LABEL, UID)
                 .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
                 .putLabelsItem(SERVERNAME_LABEL, TEST_SERVER_NAME)
@@ -581,8 +585,28 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_CREATED));
+  }
+
+  @Test
+  public void onExternalChannelStepWithChannelLabelsAndAnnotations_createIt() {
+    configureAdminServer()
+        .configureExportedNetworkAccessPoint(NAP_NAME)
+        .addLabel("label1", "value1")
+        .addAnnotation("annotation1", "value2");
+    V1Service externalChannelService = createExternalChannelService();
+    externalChannelService.getMetadata().putLabelsItem("label1", "value1");
+    externalChannelService.getMetadata().putAnnotationsItem("annotation1", "value2");
+
+    verifyMissingExternalChannelServiceCreated(externalChannelService);
+  }
+
+  private AdminServerConfigurator configureAdminServer() {
+    return configureDomain().configureAdminServer();
+  }
+
+  private DomainConfigurator configureDomain() {
+    return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
 
   @Test
@@ -592,7 +616,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, service));
     assertThat(logRecords, containsFine(MANAGED_SERVICE_EXISTS));
   }
 
@@ -613,7 +636,6 @@ public class ServiceHelperTest {
 
     testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
 
-    assertThat(getServerKubernetesObjects().getChannels(), hasEntry(NAP_NAME, newService));
     assertThat(logRecords, containsInfo(MANAGED_SERVICE_REPLACED));
   }
 
@@ -622,7 +644,7 @@ public class ServiceHelperTest {
     return service;
   }
 
-  private AsyncCallTestSupport.CannedResponse expectReadExternalChannelService() {
+  private CallTestSupport.CannedResponse expectReadExternalChannelService() {
     return expectReadService(getExternalChannelServiceName());
   }
 
@@ -651,7 +673,7 @@ public class ServiceHelperTest {
             new V1ObjectMeta()
                 .name(getExternalChannelServiceName())
                 .namespace(NS)
-                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V2)
                 .putLabelsItem(DOMAINUID_LABEL, UID)
                 .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
                 .putLabelsItem(SERVERNAME_LABEL, TEST_SERVER_NAME)
@@ -674,7 +696,7 @@ public class ServiceHelperTest {
                 new V1ServicePort().port(TEST_PORT).nodePort(TEST_NODE_PORT)));
   }
 
-  private AsyncCallTestSupport.CannedResponse expectReadService(String serviceName) {
+  private CallTestSupport.CannedResponse expectReadService(String serviceName) {
     return testSupport.createCannedResponse("readService").withNamespace(NS).withName(serviceName);
   }
 }

@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: traefik-hostrouting-1
+  namespace: default
+spec:
+  rules:
+  - host: domain1.org
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: domain1-cluster-cluster-1
+          servicePort: 8001
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: traefik-hostrouting-2
+  namespace: test1
+spec:
+  rules:
+  - host: domain2.org
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: domain2-cluster-cluster-1
+          servicePort: 8001
+

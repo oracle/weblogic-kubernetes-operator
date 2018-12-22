@@ -3,28 +3,28 @@
 
 {{- define "operator.operatorDeployment" }}
 ---
-apiVersion: "apps/v1beta1" # for versions before 1.6.0 use extensions/v1beta1
+apiVersion: "apps/v1beta1"
 kind: "Deployment"
 metadata:
   name: "weblogic-operator"
-  namespace: {{ .operatorNamespace | quote }}
+  namespace: {{ .Release.Namespace | quote }}
   labels:
-    weblogic.resourceVersion: "operator-v1"
-    weblogic.operatorName: {{ .operatorNamespace | quote }}
+    weblogic.resourceVersion: "operator-v2"
+    weblogic.operatorName: {{ .Release.Namespace | quote }}
 spec:
   replicas: 1
   template:
     metadata:
      labels:
-        weblogic.resourceVersion: "operator-v1"
-        weblogic.operatorName: {{ .operatorNamespace | quote }}
+        weblogic.resourceVersion: "operator-v2"
+        weblogic.operatorName: {{ .Release.Namespace | quote }}
         app: "weblogic-operator"
     spec:
-      serviceAccountName: {{ .operatorServiceAccount | quote }}
+      serviceAccountName: {{ .serviceAccount | quote }}
       containers:
       - name: "weblogic-operator"
-        image: {{ .operatorImage | quote }}
-        imagePullPolicy: {{ .operatorImagePullPolicy | quote }}
+        image: {{ .image | quote }}
+        imagePullPolicy: {{ .imagePullPolicy | quote }}
         command: ["bash"]
         args: ["/operator/operator.sh"]
         env:
@@ -40,9 +40,15 @@ spec:
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
         {{- end }}
+        {{- if .mockWLS }}
+        - name: "MOCK_WLS"
+          value: "true"
+        {{- end }}
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/operator/config"
+        - name: "weblogic-operator-debug-cm-volume"
+          mountPath: "/operator/debug-config"
         - name: "weblogic-operator-secrets-volume"
           mountPath: "/operator/secrets"
           readOnly: true
@@ -60,21 +66,29 @@ spec:
           periodSeconds: 5
       {{- if .elkIntegrationEnabled }}
       - name: "logstash"
-        image: "logstash:5"
+        image: {{ .logStashImage | quote }}
         args: [ "-f", "/logs/logstash.conf" ]
         volumeMounts:
         - name: "log-dir"
           mountPath: "/logs"
         env:
         - name: "ELASTICSEARCH_HOST"
-          value: "elasticsearch.default.svc.cluster.local"
+          value: {{ .elasticSearchHost | quote }}
         - name: "ELASTICSEARCH_PORT"
-          value: "9200"
+          value: {{ .elasticSearchPort | quote }}
+      {{- end }}
+      {{- if .imagePullSecrets }}
+      imagePullSecrets:
+      {{ .imagePullSecrets | toYaml }}
       {{- end }}
       volumes:
       - name: "weblogic-operator-cm-volume"
         configMap:
           name: "weblogic-operator-cm"
+      - name: "weblogic-operator-debug-cm-volume"
+        configMap:
+          name: "weblogic-operator-debug-cm"
+          optional: true
       - name: "weblogic-operator-secrets-volume"
         secret:
           secretName: "weblogic-operator-secrets"

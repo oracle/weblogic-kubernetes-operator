@@ -20,7 +20,11 @@ The X-Requested-By header is not needed for requests that only read, for example
 
 If using `curl`, you can use the `-k` option to bypass the check to verify that the operator's certificate is trusted (instead of `curl --cacert`).
 
-Here is a small BASH script that may help to prepare the necessary token, certificates, and such, to call the operator's REST services:
+Here is a small sample BASH script that may help to prepare the necessary token, certificates, and such, to call the operator's REST services:
+
+Before using this script it would be necessary to update it to ensure it has the correct 
+service account, namespaces, etc., and it points to your `values.yaml` that you used to install
+the operator (so that it can get the certificates). 
 
 ```
 #!/bin/bash
@@ -40,14 +44,14 @@ cat ${OPERATOR_CERT_FILE}
 echo "Ready to call operator REST APIs"
 
 STATUS_CODE=`curl \
--v -k \
---cacert ${OPERATOR_CERT_FILE} \
--H "Authorization: Bearer ${TOKEN}" \
--H Accept:application/json \
--X GET ${REST_ADDR}/${URL_TAIL} \
--o curl.out \
---stderr curl.err \
--w "%{http_code}"`
+  -v -k \
+  --cacert ${OPERATOR_CERT_FILE} \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H Accept:application/json \
+  -X GET ${REST_ADDR}/${URL_TAIL} \
+  -o curl.out \
+  --stderr curl.err \
+  -w "%{http_code}"`
 
 cat curl.err
 cat curl.out | jq .

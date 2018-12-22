@@ -11,16 +11,17 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
 
 /** Contains configuration of a WLS cluster */
 public class WlsClusterConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final String clusterName;
-  private List<WlsServerConfig> serverConfigs = new ArrayList<>();
-  private final WlsDynamicServersConfig dynamicServersConfig;
+  private String name;
+  private List<WlsServerConfig> servers = new ArrayList<>();
+  private WlsDynamicServersConfig dynamicServersConfig;
   private WlsDomainConfig wlsDomainConfig;
+
+  public WlsClusterConfig() {}
 
   /**
    * Constructor for a static cluster when Json result is not available
@@ -28,7 +29,7 @@ public class WlsClusterConfig {
    * @param clusterName Name of the WLS cluster
    */
   public WlsClusterConfig(String clusterName) {
-    this.clusterName = clusterName;
+    this.name = clusterName;
     this.dynamicServersConfig = null;
   }
 
@@ -40,7 +41,7 @@ public class WlsClusterConfig {
    *     configuration for this cluster
    */
   public WlsClusterConfig(String clusterName, WlsDynamicServersConfig dynamicServersConfig) {
-    this.clusterName = clusterName;
+    this.name = clusterName;
     this.dynamicServersConfig = dynamicServersConfig;
   }
 
@@ -82,8 +83,8 @@ public class WlsClusterConfig {
    * @param wlsServerConfig A WlsServerConfig object containing the configuration of the statically
    *     configured WLS server that belongs to this cluster
    */
-  synchronized void addServerConfig(WlsServerConfig wlsServerConfig) {
-    serverConfigs.add(wlsServerConfig);
+  public synchronized void addServerConfig(WlsServerConfig wlsServerConfig) {
+    servers.add(wlsServerConfig);
   }
 
   /**
@@ -92,7 +93,11 @@ public class WlsClusterConfig {
    * @return The number of servers that are statically configured in this cluster
    */
   public synchronized int getClusterSize() {
-    return serverConfigs.size();
+    return servers.size();
+  }
+
+  public synchronized int getMaxClusterSize() {
+    return hasDynamicServers() ? getClusterSize() + getMaxDynamicClusterSize() : getClusterSize();
   }
 
   /**
@@ -101,7 +106,28 @@ public class WlsClusterConfig {
    * @return the name of the cluster that this WlsClusterConfig is created for
    */
   public String getClusterName() {
-    return clusterName;
+    return name;
+  }
+
+  /**
+   * Returns the name of the cluster that this WlsClusterConfig is created for
+   *
+   * @return the name of the cluster that this WlsClusterConfig is created for
+   */
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public WlsDynamicServersConfig getDynamicServersConfig() {
+    return this.dynamicServersConfig;
+  }
+
+  public void setDynamicServersConfig(WlsDynamicServersConfig dynamicServersConfig) {
+    this.dynamicServersConfig = dynamicServersConfig;
   }
 
   /**
@@ -134,12 +160,20 @@ public class WlsClusterConfig {
   public synchronized List<WlsServerConfig> getServerConfigs() {
     if (dynamicServersConfig != null) {
       List<WlsServerConfig> result =
-          new ArrayList<>(dynamicServersConfig.getDynamicClusterSize() + serverConfigs.size());
+          new ArrayList<>(dynamicServersConfig.getDynamicClusterSize() + servers.size());
       result.addAll(dynamicServersConfig.getServerConfigs());
-      result.addAll(serverConfigs);
+      result.addAll(servers);
       return result;
     }
-    return serverConfigs;
+    return servers;
+  }
+
+  public List<WlsServerConfig> getServers() {
+    return this.servers;
+  }
+
+  public void setServers(List<WlsServerConfig> servers) {
+    this.servers = servers;
   }
 
   /**
@@ -148,7 +182,7 @@ public class WlsClusterConfig {
    * @return True if the cluster contains any statically configured servers
    */
   public synchronized boolean hasStaticServers() {
-    return !serverConfigs.isEmpty();
+    return !servers.isEmpty();
   }
 
   /**
@@ -182,68 +216,34 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Validate the clusterStartup configured should be consistent with this configured WLS cluster.
-   * The method also logs warning if inconsistent WLS configurations are found.
+   * Validate the proposed number of replicas to be applied to this configured WLS cluster. The
+   * method also logs warning if inconsistent WLS configurations are found.
    *
    * <p>In the future this method may also attempt to fix the configuration inconsistencies by
-   * updating the ClusterStartup. It is the responsibility of the caller to persist the changes to
-   * ClusterStartup to kubernetes.
+   * updating the replica setting. It is the responsibility of the caller to persist the changes to
+   * kubernetes.
    *
-   * @param clusterStartup The ClusterStartup to be validated against the WLS configuration
+   * @param replicas the proposed number of replicas
    * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be
    *     filled in by this method. Optional.
-   * @return true if the DomainSpec has been updated, false otherwise
    */
-  public boolean validateClusterStartup(
-      ClusterStartup clusterStartup, List<ConfigUpdate> suggestedConfigUpdates) {
-    LOGGER.entering();
-
-    boolean modified = false;
-
+  void validateCluster(int replicas, List<ConfigUpdate> suggestedConfigUpdates) {
     // log warning if no servers are configured in the cluster
-    if (getClusterSize() == 0 && !hasDynamicServers()) {
-      LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, clusterName);
+    if (getMaxClusterSize() == 0) {
+      LOGGER.warning(MessageKeys.NO_WLS_SERVER_IN_CLUSTER, getClusterName());
     }
 
-    // Warns if replicas is larger than the number of servers configured in the cluster
-    validateReplicas(clusterStartup.getReplicas(), "clusterStartup", suggestedConfigUpdates);
-
-    LOGGER.exiting(modified);
-
-    return modified;
+    // make recommendations if config can be updated
+    suggestConfigUpdates(replicas, suggestedConfigUpdates);
   }
 
-  /**
-   * Validate the configured replicas value in the kubernetes WebLogic domain spec against the
-   * configured size of this cluster. Log warning if any inconsistencies are found.
-   *
-   * @param replicas The configured replicas value for this cluster in the kubernetes weblogic
-   *     domain spec for this cluster
-   * @param source The name of the section in the domain spec where the replicas is specified, for
-   *     logging purposes
-   * @param suggestedConfigUpdates A List containing suggested WebLogic configuration update to be
-   *     filled in by this method. Optional.
-   */
-  public void validateReplicas(
-      Integer replicas, String source, List<ConfigUpdate> suggestedConfigUpdates) {
-    if (replicas == null) {
-      return;
-    }
-    // log warning if replicas is too large and cluster
-    int maxClusterSize = getClusterSize();
-    if (hasDynamicServers()) {
-      maxClusterSize += getMaxDynamicClusterSize();
-    }
-    if (replicas > maxClusterSize) {
-      LOGGER.warning(
-          MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS, source, clusterName, replicas, maxClusterSize);
-    }
+  private void suggestConfigUpdates(Integer replicas, List<ConfigUpdate> suggestedConfigUpdates) {
     // recommend updating WLS dynamic cluster size and machines if requested to recommend
     // updates, ie, suggestedConfigUpdates is not null, and if replicas value is larger than
     // the current dynamic cluster size.
     //
     // Note: Never reduce the value of dynamicClusterSize even during scale down
-    if (suggestedConfigUpdates != null && hasDynamicServers()) {
+    if (suggestedConfigUpdates != null && this.hasDynamicServers()) {
       if (replicas > getDynamicClusterSize()
           && getDynamicClusterSize() < getMaxDynamicClusterSize()) {
         // increase dynamic cluster size to satisfy replicas, but only up to the configured max
@@ -348,7 +348,7 @@ public class WlsClusterConfig {
    * @return The REST URL path for updating cluster size of dynamic servers for this cluster
    */
   public String getUpdateDynamicClusterSizeUrl() {
-    return "/management/weblogic/latest/edit/clusters/" + clusterName + "/dynamicServers";
+    return "/management/weblogic/latest/edit/clusters/" + name + "/dynamicServers";
   }
 
   /**
@@ -366,11 +366,11 @@ public class WlsClusterConfig {
   @Override
   public String toString() {
     return "WlsClusterConfig{"
-        + "clusterName='"
-        + clusterName
+        + "name='"
+        + name
         + '\''
-        + ", serverConfigs="
-        + serverConfigs
+        + ", servers="
+        + servers
         + ", dynamicServersConfig="
         + dynamicServersConfig
         + '}';
@@ -412,7 +412,7 @@ public class WlsClusterConfig {
      */
     @Override
     public Step createStep(Step next) {
-      return new WlsRetriever.UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
+      return new UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
     }
   }
 }

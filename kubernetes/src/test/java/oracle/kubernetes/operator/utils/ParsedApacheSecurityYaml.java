@@ -4,8 +4,8 @@
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.models.V1beta1ClusterRole;
-import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
+import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
 import java.nio.file.Path;
 
 /**
@@ -25,11 +25,11 @@ public class ParsedApacheSecurityYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
-  public V1beta1ClusterRole getApacheClusterRole() {
+  public V1ClusterRole getApacheClusterRole() {
     return getClusterRoles().find(getApacheName());
   }
 
-  public V1beta1ClusterRoleBinding getApacheClusterRoleBinding() {
+  public V1ClusterRoleBinding getApacheClusterRoleBinding() {
     return getClusterRoleBindings().find(getApacheName());
   }
 
