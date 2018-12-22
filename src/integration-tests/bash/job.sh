@@ -44,6 +44,17 @@ PROJECT_ROOT="$SCRIPTPATH/../../.."
 RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
 TMP_DIR="$RESULT_DIR"
 
+# Handle '--show-all' deprecation for 'kubectl get jobs' and 'kubectl get pods'.
+# --show-all yields a deprecation warning in stderr in 1.10 in later, since
+# it isn't needed in 1.10 and later.
+
+k8s_minor=`kubectl version | grep Client | sed 's/.*Minor:"\([0-9]*\)".*/\1/'`
+k8s_major=`kubectl version | grep Client | sed 's/.*Major:"\([0-9]*\)".*/\1/'`
+show_all="--show-all"
+if [ $k8s_major -gt 1 ] || [ $k8s_minor -gt 9 ]; then
+  show_all=""
+fi
+
 function launchCommandJob {
   command="$*"
 
@@ -103,7 +114,7 @@ function launchCommandJob {
       break
     fi
 
-    local pod_status=`kubectl get pods --show-all --selector=job-name=$JOB_NAME | grep "$JOB_NAME" | awk '{ print $3 }'`
+    local pod_status=`kubectl get pods $show_all --selector=job-name=$JOB_NAME | grep "$JOB_NAME" | awk '{ print $3 }'`
 
     if [ "$pod_status" = "Completed" ]; then
       echo "@@ Success.  job_status=$job_status pod_status=$pod_status"
@@ -127,7 +138,7 @@ function launchCommandJob {
     sleep 3
   done
 
-  local pods=$(kubectl get pods  --show-all --selector=job-name=$JOB_NAME --output=jsonpath={.items..metadata.name})
+  local pods=$(kubectl get pods $show_all --selector=job-name=$JOB_NAME --output=jsonpath={.items..metadata.name})
   local pod
   for pod in $pods; do
     echo @@

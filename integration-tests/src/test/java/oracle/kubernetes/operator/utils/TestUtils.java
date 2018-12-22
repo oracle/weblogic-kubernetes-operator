@@ -4,16 +4,13 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.io.InputStream;
 import java.security.KeyStore;
-import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
@@ -26,9 +23,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import oracle.kubernetes.operator.BaseTest;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
 public class TestUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+
+  private static K8sTestUtils k8sTestUtils = new K8sTestUtils();
 
   /**
    * @param cmd - kubectl get pod <podname> -n namespace
@@ -92,53 +93,30 @@ public class TestUtils {
   }
 
   /**
-   * @param propsFile - input props file
-   * @param inputFileTemplate - operator/domain inputs template file
+   * @param map - map with attributes
    * @param generatedInputYamlFile - output file with replaced values
    * @throws Exception
    */
-  public static void createInputFile(
-      Properties props, String inputFileTemplate, String generatedInputYamlFile) throws Exception {
+  public static void createInputFile(Map<String, Object> map, String generatedInputYamlFile)
+      throws Exception {
     logger.info("Creating input yaml file at " + generatedInputYamlFile);
 
-    // copy input template file and modify it
-    Files.copy(
-        new File(inputFileTemplate).toPath(),
-        Paths.get(generatedInputYamlFile),
-        StandardCopyOption.REPLACE_EXISTING);
+    DumperOptions options = new DumperOptions();
+    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+    options.setPrettyFlow(true);
 
-    // read each line in input template file and replace only customized props
-    BufferedReader reader = new BufferedReader(new FileReader(generatedInputYamlFile));
-    String line = "";
-    StringBuffer changedLines = new StringBuffer();
-    boolean isLineChanged = false;
-    while ((line = reader.readLine()) != null) {
-      Enumeration enuKeys = props.keys();
-      while (enuKeys.hasMoreElements()) {
-        String key = (String) enuKeys.nextElement();
-        // if a line starts with the props key then replace
-        // the line with key:value in the file
-        if (line.startsWith(key + ":") || line.startsWith("#" + key + ":")) {
-          changedLines.append(key).append(":").append(props.getProperty(key)).append("\n");
-          isLineChanged = true;
-          break;
-        }
-      }
-      if (!isLineChanged) {
-        changedLines.append(line).append("\n");
-      }
-      isLineChanged = false;
-    }
-    reader.close();
-    // writing to the file
-    Files.write(Paths.get(generatedInputYamlFile), changedLines.toString().getBytes());
+    Yaml yaml = new Yaml(options);
+    java.io.FileWriter writer = new java.io.FileWriter(generatedInputYamlFile);
+    yaml.dump(map, writer);
+    writer.close();
   }
 
   public static String getHostName() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
     } else {
-      ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
+      // ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
+      ExecResult result = ExecCommand.exec("hostname");
       return result.stdout().trim();
     }
   }
@@ -150,7 +128,7 @@ public class TestUtils {
         .append(domainUid)
         .append(" -n ")
         .append(domainNS)
-        .append(" -o jsonpath='{.spec.clusterStartup[?(@.clusterName == \"")
+        .append(" -o jsonpath='{.spec.clusters[?(@.clusterName == \"")
         .append(clusterName)
         .append("\")].replicas }'");
     logger.fine("getClusterReplicas cmd =" + cmd);
@@ -199,23 +177,27 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer("kubectl delete pvc ");
     cmd.append(pvcName).append(" -n ").append(namespace);
     logger.info("Deleting PVC " + cmd);
-    ExecCommand.exec(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: delete PVC failed with " + result.stderr() + " \n " + result.stdout());
+    }
   }
 
-  public static boolean checkPVReleased(String domainUid, String namespace) throws Exception {
+  public static boolean checkPVReleased(String pvBaseName, String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
-    cmd.append(domainUid).append("-weblogic-domain-pv -n ").append(namespace);
+    cmd.append(pvBaseName).append("-pv -n ").append(namespace);
 
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
-      logger.info("Checking if PV is Released " + cmd);
+      logger.info("Iteration " + i + " Checking if PV is Released " + cmd);
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0
           || result.exitValue() == 0 && !result.stdout().contains("Released")) {
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException("FAILURE: PV is not in Released status, exiting!");
         }
-        logger.info("PV is not in Released status," + result.stdout());
+        logger.info("PV is not in Released status," + result.stdout() + "\n " + result.stderr());
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
 
@@ -254,7 +236,10 @@ public class TestUtils {
 
     // kill server process 3 times
     for (int i = 0; i < 3; i++) {
-      kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      ExecResult result = kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      logger.info("kill server process command exitValue " + result.exitValue());
+      logger.info(
+          "kill server process command result " + result.stdout() + " stderr " + result.stderr());
       Thread.sleep(2 * 1000);
     }
     // one more time so that liveness probe restarts
@@ -265,6 +250,7 @@ public class TestUtils {
     while (true) {
       long currentTime = System.currentTimeMillis();
       int finalRestartCnt = getPodRestartCount(podName, namespace);
+      logger.info("initialRestartCnt " + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
       if ((finalRestartCnt - initialRestartCnt) == 1) {
         logger.info("WLS liveness probe test is successful.");
         break;
@@ -325,6 +311,8 @@ public class TestUtils {
         .append(" ")
         .append(scriptPath);
 
+    ExecResult result = ExecCommand.exec("kubectl get pods -n " + namespace);
+    logger.info("get pods before killing the server " + result.stdout() + "\n " + result.stderr());
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     return ExecCommand.exec(cmdKubectlSh.toString());
   }
@@ -359,13 +347,32 @@ public class TestUtils {
     Builder request = createRESTRequest(myKeyStore, url, token);
 
     Response response = null;
-    // Post scaling request to Operator
-    if (jsonObjStr != null) {
-      response = request.post(Entity.json(jsonObjStr));
-    } else {
-      response = request.get();
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      try {
+        // Post scaling request to Operator
+        if (jsonObjStr != null) {
+          response = request.post(Entity.json(jsonObjStr));
+        } else {
+          response = request.get();
+        }
+      } catch (Exception ex) {
+        logger.info("Got exception, iteration " + i + " " + ex.getMessage());
+        i++;
+        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
+          if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+            throw ex;
+          }
+          logger.info("Sleeping 5 more seconds and try again");
+          Thread.sleep(5 * 1000);
+          continue;
+        } else {
+          throw ex;
+        }
+      }
+      break;
     }
-    logger.info("response: " + response.toString());
+    logger.info("response: " + response);
 
     int returnCode = response.getStatus();
     // Verify
@@ -375,10 +382,8 @@ public class TestUtils {
     } else {
       throw new RuntimeException("Response " + response.readEntity(String.class));
     }
-
     response.close();
     // javaClient.close();
-
     return returnCode;
   }
 
@@ -414,12 +419,10 @@ public class TestUtils {
     File certFile =
         new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.cert.pem");
 
-    StringBuffer opCertCmd = new StringBuffer("grep externalOperatorCert ");
+    StringBuffer opCertCmd = new StringBuffer("kubectl get cm -n ");
     opCertCmd
-        .append(userProjectsDir)
-        .append("/weblogic-operators/")
         .append(operatorNS)
-        .append("/weblogic-operator.yaml | awk '{ print $2 }'");
+        .append(" weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'");
 
     ExecResult result = ExecCommand.exec(opCertCmd.toString());
     if (result.exitValue() != 0) {
@@ -446,12 +449,12 @@ public class TestUtils {
     File keyFile =
         new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.key.pem");
 
-    StringBuffer opKeyCmd = new StringBuffer("grep externalOperatorKey ");
+    StringBuffer opKeyCmd = new StringBuffer("grep externalOperatorKey: ");
     opKeyCmd
         .append(userProjectsDir)
         .append("/weblogic-operators/")
         .append(operatorNS)
-        .append("/weblogic-operator.yaml | awk '{ print $2 }'");
+        .append("/weblogic-operator-values.yaml | awk '{ print $2 }'");
 
     ExecResult result = ExecCommand.exec(opKeyCmd.toString());
     if (result.exitValue() != 0) {
@@ -477,11 +480,9 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
-  public static Operator createOperator(String opPropsFile) throws Exception {
-    // load operator props defined
-    Properties operatorProps = loadProps(opPropsFile);
+  public static Operator createOperator(String opYamlFile) throws Exception {
     // create op
-    Operator operator = new Operator(operatorProps);
+    Operator operator = new Operator(opYamlFile);
 
     logger.info("Check Operator status");
     operator.verifyPodCreated();
@@ -491,16 +492,21 @@ public class TestUtils {
     return operator;
   }
 
-  public static Domain createDomain(String domainPropsFile) throws Exception {
-    Properties domainProps = loadProps(domainPropsFile);
-    return createDomain(domainProps);
+  public static Domain createDomain(String inputYaml) throws Exception {
+    logger.info("Creating domain with yaml, waiting for the script to complete execution");
+    return new Domain(inputYaml);
+    /* domain.verifyDomainCreated();
+    return domain; */
   }
 
-  public static Domain createDomain(Properties domainProps) throws Exception {
-    logger.info("Creating domain, waiting for the script to complete execution");
-    Domain domain = new Domain(domainProps);
-    domain.verifyDomainCreated();
-    return domain;
+  public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
+    // read input domain yaml to test
+    Map<String, Object> map = new HashMap<String, Object>();
+    Yaml yaml = new Yaml();
+    InputStream is = TestUtils.class.getClassLoader().getResourceAsStream(yamlFile);
+    map = yaml.load(is);
+    is.close();
+    return map;
   }
 
   public static Properties loadProps(String propsFile) throws Exception {
@@ -535,11 +541,11 @@ public class TestUtils {
                 + " to try renew the lease. "
                 + "Some of the potential reasons for this failure are that another run"
                 + "may have obtained the lease, the lease may have been externally "
-                + "deleted, or the caller of run.sh may have forgotten to obtain the"
-                + "lease before calling run.sh (using 'lease.sh -o \"$LEASE_ID\"'). "
+                + "deleted, or the caller of the test may have forgotten to obtain the "
+                + "lease before calling the test (using 'lease.sh -o \"$LEASE_ID\"'). "
                 + "To force delete a lease no matter who owns the lease,"
                 + "call 'lease.sh -f' or 'kubernetes delete cm acceptance-test-lease'"
-                + "(this should only be done when sure there's no current run.sh "
+                + "(this should only be done when sure there's no current java tests "
                 + "that owns the lease).  To view the current lease holder,"
                 + "use 'lease.sh -s'.  To disable this lease check, do not set"
                 + "the LEASE_ID environment variable.");
@@ -610,11 +616,195 @@ public class TestUtils {
             + dockerEmail
             + " -n "
             + namespace;
-    logger.info("Running command " + command);
+
+    String commandToLog =
+        "kubectl create secret docker-registry "
+            + secretName
+            + " --docker-server="
+            + dockerServer
+            + " --docker-username="
+            + "********"
+            + " --docker-password=\""
+            + "********"
+            + "\" --docker-email="
+            + "********"
+            + " -n "
+            + namespace;
+
+    logger.info("Running command " + commandToLog);
     ExecResult result = ExecCommand.exec(command);
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create secret " + result.stderr());
     }
+  }
+
+  public static String callShellScriptByExecToPod(
+      String scriptPath, String arguments, String podName, String namespace) throws Exception {
+
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(namespace)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" ")
+        .append(scriptPath)
+        .append(" ")
+        .append(arguments);
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
+    }
+    return result.stdout().trim();
+  }
+
+  public static void createDirUnderDomainPV(String dirPath) throws Exception {
+
+    String crdCmd =
+        BaseTest.getProjectRoot()
+            + "/src/integration-tests/bash/job.sh \"mkdir -p "
+            + dirPath
+            + "\"";
+    ExecResult result = ExecCommand.exec(crdCmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to create domain scripts directory "
+              + crdCmd
+              + " failed, returned "
+              + result.stdout()
+              + result.stderr());
+    }
+    logger.info("command result " + result.stdout().trim());
+  }
+
+  public static void createWLDFModule(String adminPodName, String domainNS, int t3ChannelPort)
+      throws Exception {
+
+    // copy wldf.py script tp pod
+    TestUtils.kubectlcp(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
+        "/shared/wldf.py",
+        adminPodName,
+        domainNS);
+
+    // copy callpyscript.sh to pod
+    TestUtils.kubectlcp(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
+        "/shared/callpyscript.sh",
+        adminPodName,
+        domainNS);
+
+    // arguments to shell script to call py script
+    String arguments =
+        "/shared/wldf.py "
+            + BaseTest.getUsername()
+            + " "
+            + BaseTest.getPassword()
+            + " t3://"
+            + adminPodName
+            + ":"
+            + t3ChannelPort;
+
+    // call callpyscript.sh in pod to deploy wldf module
+    TestUtils.callShellScriptByExecToPod(
+        "/shared/callpyscript.sh", arguments, adminPodName, domainNS);
+  }
+
+  public static void createRBACPoliciesForWLDFScaling() throws Exception {
+    // create rbac policies
+    StringBuffer cmd = new StringBuffer("kubectl apply -f ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append("/integration-tests/src/test/resources/wldf/wldf-policy.yaml");
+    logger.info("Running " + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
+  public static void deleteWeblogicDomainResources(String domainUid) throws Exception {
+    StringBuilder cmd =
+        new StringBuilder(BaseTest.getProjectRoot())
+            .append(
+                "/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh ")
+            .append("-d ")
+            .append(domainUid);
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
+  public static void verifyBeforeDeletion(Domain domain) throws Exception {
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+
+    logger.info("Before deletion of domain: " + domainUid);
+
+    k8sTestUtils.verifyDomainCrd();
+    k8sTestUtils.verifyDomain(domainNs, domainUid, true);
+    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 4);
+    k8sTestUtils.verifyJobs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    k8sTestUtils.verifyServices(domain1LabelSelector, 5);
+    k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    k8sTestUtils.verifySecrets(credentialsName, 1);
+    k8sTestUtils.verifyPvs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+  }
+
+  public static void verifyAfterDeletion(Domain domain) throws Exception {
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+
+    logger.info("After deletion of domain: " + domainUid);
+    k8sTestUtils.verifyDomainCrd();
+    k8sTestUtils.verifyDomain(domainNs, domainUid, false);
+    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 0);
+    k8sTestUtils.verifyJobs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    k8sTestUtils.verifyServices(domain1LabelSelector, 0);
+    k8sTestUtils.verifyPvcs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    k8sTestUtils.verifySecrets(credentialsName, 0);
+    k8sTestUtils.verifyPvs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
   }
 
   private static KeyStore createKeyStore(String operatorNS, String userProjectsDir)

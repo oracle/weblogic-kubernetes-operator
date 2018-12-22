@@ -15,14 +15,12 @@ import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
-import org.junit.Ignore;
 
 /**
  * Tests that the artifacts in the yaml files that create-weblogic-operator.sh creates are correct
  * when all optional features are enabled: external rest self signed cert remote debug port enabled
  * elk enabled haveimage pull secret
  */
-@Ignore("3 tests failing")
 public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBase
     extends CreateOperatorGeneratedFilesTestBase {
 
@@ -31,7 +29,7 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
         factory,
         factory
             .newOperatorValues()
-            .setupExternalRestSelfSignedCert()
+            .setupExternalRestEnabled()
             .enableDebugging()
             .elkIntegrationEnabled("true")
             .weblogicOperatorImagePullSecretName("test-operator-image-pull-secret-name"));
@@ -39,12 +37,12 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
 
   @Override
   protected String getExpectedExternalWeblogicOperatorCert() {
-    return getInputs().externalOperatorSelfSignedCertPem();
+    return getInputs().externalOperatorCustomCertPem();
   }
 
   @Override
   protected String getExpectedExternalWeblogicOperatorKey() {
-    return getInputs().externalOperatorSelfSignedKeyPem();
+    return getInputs().externalOperatorCustomKeyPem();
   }
 
   @Override
@@ -68,14 +66,17 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
         .addContainersItem(
             newContainer()
                 .name("logstash")
-                .image("logstash:5")
+                .image(getInputs().getLogStashImage())
                 .addArgsItem("-f")
                 .addArgsItem("/logs/logstash.conf")
                 .addEnvItem(
                     newEnvVar()
                         .name("ELASTICSEARCH_HOST")
-                        .value("elasticsearch.default.svc.cluster.local"))
-                .addEnvItem(newEnvVar().name("ELASTICSEARCH_PORT").value("9200"))
+                        .value(getInputs().getElasticSearchHost()))
+                .addEnvItem(
+                    newEnvVar()
+                        .name("ELASTICSEARCH_PORT")
+                        .value(getInputs().getElasticSearchPort()))
                 .addVolumeMountsItem(newVolumeMount().name("log-dir").mountPath("/logs")))
         .addVolumesItem(
             newVolume().name("log-dir").emptyDir(newEmptyDirVolumeSource().medium("Memory")))

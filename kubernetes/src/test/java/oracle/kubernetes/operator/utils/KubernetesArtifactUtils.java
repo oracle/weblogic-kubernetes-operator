@@ -15,6 +15,8 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.ApiregistrationV1beta1ServiceReference;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.ExtensionsV1beta1DeploymentSpec;
+import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
@@ -44,8 +46,12 @@ import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodTemplateSpec;
+import io.kubernetes.client.models.V1PolicyRule;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1Role;
+import io.kubernetes.client.models.V1RoleBinding;
+import io.kubernetes.client.models.V1RoleRef;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1SecretVolumeSource;
@@ -53,30 +59,18 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
+import io.kubernetes.client.models.V1Subject;
 import io.kubernetes.client.models.V1TCPSocketAction;
 import io.kubernetes.client.models.V1Toleration;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import io.kubernetes.client.models.V1beta1APIService;
 import io.kubernetes.client.models.V1beta1APIServiceSpec;
-import io.kubernetes.client.models.V1beta1ClusterRole;
-import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
-import io.kubernetes.client.models.V1beta1PolicyRule;
-import io.kubernetes.client.models.V1beta1RoleBinding;
-import io.kubernetes.client.models.V1beta1RoleRef;
-import io.kubernetes.client.models.V1beta1Subject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.weblogic.domain.v1.Cluster;
-import oracle.kubernetes.weblogic.domain.v1.ClusterParams;
-import oracle.kubernetes.weblogic.domain.v1.ClusterStartup;
-import oracle.kubernetes.weblogic.domain.v1.ClusteredServer;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.NonClusteredServer;
-import oracle.kubernetes.weblogic.domain.v1.Server;
-import oracle.kubernetes.weblogic.domain.v1.ServerStartup;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
@@ -91,7 +85,7 @@ public class KubernetesArtifactUtils {
   public static final String API_VERSION_REGISTRATION_V1BETA1 = "apiregistration.k8s.io/v1beta1";
   public static final String API_VERSION_RBAC_V1 = API_GROUP_RBAC + "/v1";
   public static final String API_VERSION_RBAC_V1BETA1 = API_GROUP_RBAC + "/v1beta1";
-  public static final String API_VERSION_ORACLE_V1 = "weblogic.oracle/v1";
+  public static final String API_VERSION_ORACLE_V2 = "weblogic.oracle/v2";
   public static final String API_VERSION_V1 = "v1";
   public static final String API_VERSION_VOYAGER_V1BETA1 = "voyager.appscode.com/v1beta1";
 
@@ -121,7 +115,7 @@ public class KubernetesArtifactUtils {
   }
 
   public static Domain newDomain() {
-    return (new Domain()).withApiVersion(API_VERSION_ORACLE_V1).withKind(KIND_DOMAIN);
+    return (new Domain()).withApiVersion(API_VERSION_ORACLE_V2).withKind(KIND_DOMAIN);
   }
 
   public static ExtensionsV1beta1Deployment newDeployment() {
@@ -202,26 +196,34 @@ public class KubernetesArtifactUtils {
     return new V1beta1IngressSpec();
   }
 
-  public static V1beta1ClusterRole newClusterRole() {
-    return (new V1beta1ClusterRole()).apiVersion(API_VERSION_RBAC_V1BETA1).kind(KIND_CLUSTER_ROLE);
+  public static V1Role newRole() {
+    return (new V1Role()).apiVersion(API_VERSION_RBAC_V1).kind(KIND_ROLE);
   }
 
-  public static V1beta1ClusterRoleBinding newClusterRoleBinding() {
-    return (new V1beta1ClusterRoleBinding())
-        .apiVersion(API_VERSION_RBAC_V1BETA1)
+  public static V1ClusterRole newClusterRole() {
+    return (new V1ClusterRole()).apiVersion(API_VERSION_RBAC_V1).kind(KIND_CLUSTER_ROLE);
+  }
+
+  public static V1ClusterRoleBinding newClusterRoleBinding() {
+    return (new V1ClusterRoleBinding())
+        .apiVersion(API_VERSION_RBAC_V1)
         .kind(KIND_CLUSTER_ROLE_BINDING);
   }
 
-  public static V1beta1RoleBinding newRoleBinding() {
-    return (new V1beta1RoleBinding()).apiVersion(API_VERSION_RBAC_V1BETA1).kind(KIND_ROLE_BINDING);
+  public static V1RoleBinding newRoleBinding() {
+    return (new V1RoleBinding()).apiVersion(API_VERSION_RBAC_V1).kind(KIND_ROLE_BINDING);
   }
 
-  public static V1beta1RoleRef newRoleRef() {
-    return (new V1beta1RoleRef()).kind(KIND_CLUSTER_ROLE);
+  public static V1RoleRef newRoleRef() {
+    return (new V1RoleRef()).apiGroup(API_GROUP_RBAC).kind(KIND_ROLE);
   }
 
-  public static V1beta1Subject newSubject() {
-    return new V1beta1Subject();
+  public static V1RoleRef newClusterRoleRef() {
+    return (new V1RoleRef()).apiGroup(API_GROUP_RBAC).kind(KIND_CLUSTER_ROLE);
+  }
+
+  public static V1Subject newSubject() {
+    return new V1Subject();
   }
 
   public static V1ObjectMeta newObjectMeta() {
@@ -308,8 +310,8 @@ public class KubernetesArtifactUtils {
     return new V1LocalObjectReference();
   }
 
-  public static V1beta1PolicyRule newPolicyRule() {
-    return new V1beta1PolicyRule();
+  public static V1PolicyRule newPolicyRule() {
+    return new V1PolicyRule();
   }
 
   public static V1ResourceRequirements newResourceRequirements() {
@@ -344,26 +346,6 @@ public class KubernetesArtifactUtils {
     return new DomainSpec();
   }
 
-  public static Cluster newCluster() {
-    return new Cluster();
-  }
-
-  public static ClusterParams newClusterParams() {
-    return new ClusterParams();
-  }
-
-  public static ClusteredServer newClusteredServer() {
-    return new ClusteredServer();
-  }
-
-  public static NonClusteredServer newNonClusteredServer() {
-    return new NonClusteredServer();
-  }
-
-  public static Server newServer() {
-    return new Server();
-  }
-
   public static V1ServiceSpec newServiceSpec() {
     return new V1ServiceSpec();
   }
@@ -374,18 +356,6 @@ public class KubernetesArtifactUtils {
 
   public static V1PersistentVolumeClaimSpec newPersistentVolumeClaimSpec() {
     return new V1PersistentVolumeClaimSpec();
-  }
-
-  public static ServerStartup newServerStartup() {
-    return new ServerStartup();
-  }
-
-  public static FluentArrayList<ServerStartup> newServerStartupList() {
-    return newFluentArrayList(ServerStartup.class);
-  }
-
-  public static ClusterStartup newClusterStartup() {
-    return new ClusterStartup();
   }
 
   public static V1LabelSelector newLabelSelector() {
@@ -414,10 +384,6 @@ public class KubernetesArtifactUtils {
 
   public static FluentArrayList<String> newStringList() {
     return newFluentArrayList(String.class);
-  }
-
-  public static FluentArrayList<ClusterStartup> newClusterStartupList() {
-    return newFluentArrayList(ClusterStartup.class);
   }
 
   public static FluentArrayList<V1LocalObjectReference> newLocalObjectReferenceList() {

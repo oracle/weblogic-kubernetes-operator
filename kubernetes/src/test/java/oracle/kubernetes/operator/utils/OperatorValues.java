@@ -8,9 +8,6 @@ import java.util.Objects;
 import org.apache.commons.codec.binary.Base64;
 
 public class OperatorValues {
-  public static final String EXTERNAL_REST_OPTION_NONE = "NONE";
-  public static final String EXTERNAL_REST_OPTION_CUSTOM_CERT = "CUSTOM_CERT";
-  public static final String EXTERNAL_REST_OPTION_SELF_SIGNED_CERT = "SELF_SIGNED_CERT";
   public static final String JAVA_LOGGING_LEVEL_SEVERE = "SEVERE";
   public static final String JAVA_LOGGING_LEVEL_WARNING = "WARNING";
   public static final String JAVA_LOGGING_LEVEL_INFO = "INFO";
@@ -21,8 +18,8 @@ public class OperatorValues {
   public static final String IMAGE_PULL_POLICY_IF_NOT_PRESENT = "IfNotPresent";
   public static final String IMAGE_PULL_POLICY_ALWAYS = "Always";
   public static final String IMAGE_PULL_POLICY_NEVER = "Never";
-  private static final String CUSTOM_CERT_PEM = "test-custom-certificate-pem";
-  private static final String CUSTOM_KEY_PEM = "test-custom-private-key-pem";
+  private static final String EXTERNAL_CUSTOM_CERT_PEM = "test-external-custom-certificate-pem";
+  private static final String EXTERNAL_CUSTOM_KEY_PEM = "test-external-custom-private-key-pem";
   private String version = "";
   private String serviceAccount = "";
   private String namespace = "";
@@ -30,9 +27,8 @@ public class OperatorValues {
   private String weblogicOperatorImage = "";
   private String weblogicOperatorImagePullPolicy = "";
   private String weblogicOperatorImagePullSecretName = "";
-  private String externalRestOption = "";
+  private String externalRestEnabled = "";
   private String externalRestHttpsPort = "";
-  private String externalSans = "";
   private String externalOperatorCert = "";
   private String externalOperatorKey = "";
   private String remoteDebugNodePortEnabled = "";
@@ -40,6 +36,9 @@ public class OperatorValues {
   private String externalDebugHttpPort = "";
   private String javaLoggingLevel = "";
   private String elkIntegrationEnabled = "";
+  private String logStashImage = "";
+  private String elasticSearchHost = "";
+  private String elasticSearchPort = "";
 
   public OperatorValues withTestDefaults() {
     return this.namespace("test-operator-namespace")
@@ -47,7 +46,10 @@ public class OperatorValues {
         .targetNamespaces("test-target-namespace1,test-target-namespace2")
         .weblogicOperatorImage("test-operator-image")
         .weblogicOperatorImagePullPolicy("Never")
-        .javaLoggingLevel("FINEST");
+        .javaLoggingLevel("FINEST")
+        .logStashImage("test-logstash-image")
+        .elasticSearchHost("test-elastic-search_host")
+        .elasticSearchPort("9200");
   }
 
   public OperatorValues enableDebugging() {
@@ -56,75 +58,19 @@ public class OperatorValues {
         .externalDebugHttpPort("30090");
   }
 
-  public OperatorValues setupExternalRestSelfSignedCert() {
+  public OperatorValues setupExternalRestEnabled() {
     return this.externalRestHttpsPort("30070")
-        .externalRestOption(EXTERNAL_REST_OPTION_SELF_SIGNED_CERT)
-        .externalSans("DNS:localhost");
-  }
-
-  public OperatorValues setupExternalRestCustomCert() {
-    return this.externalRestHttpsPort("30070")
-        .externalRestOption(EXTERNAL_REST_OPTION_CUSTOM_CERT)
-        .externalOperatorCert(Base64.encodeBase64String(CUSTOM_CERT_PEM.getBytes()))
-        .externalOperatorKey(Base64.encodeBase64String(CUSTOM_KEY_PEM.getBytes()));
+        .externalRestEnabled("true")
+        .externalOperatorCert(toBase64(externalOperatorCustomCertPem()))
+        .externalOperatorKey(toBase64(externalOperatorCustomKeyPem()));
   }
 
   public String externalOperatorCustomCertPem() {
-    return CUSTOM_CERT_PEM;
+    return EXTERNAL_CUSTOM_CERT_PEM;
   }
 
   public String externalOperatorCustomKeyPem() {
-    return CUSTOM_KEY_PEM;
-  }
-
-  public String externalOperatorSelfSignedCertPem() {
-    return selfSignedCertPem(getExternalSans());
-  }
-
-  public String externalOperatorSelfSignedKeyPem() {
-    return selfSignedKeyPem(getExternalSans());
-  }
-
-  public String internalOperatorSelfSignedCertPem() {
-    return selfSignedCertPem(internalSans());
-  }
-
-  public String internalOperatorSelfSignedKeyPem() {
-    return selfSignedKeyPem(internalSans());
-  }
-
-  private String selfSignedCertPem(String sans) {
-    // Must match computation in src/tests/scripts/unit-test-generate-weblogic-operator-cert.sh
-    return "unit test mock cert pem for sans:" + sans + "\n";
-  }
-
-  private String selfSignedKeyPem(String sans) {
-    // Must match computation in src/tests/scripts/unit-test-generate-weblogic-operator-cert.sh
-    return "unit test mock key pem for sans:" + sans + "\n";
-  }
-
-  private String internalSans() {
-    // Must match internal sans computation in kubernetes/internal/create-weblogic-operator.sh
-    String host = "internal-weblogic-operator-svc";
-    String ns = getNamespace();
-    StringBuilder sb = new StringBuilder();
-    sb.append("DNS:")
-        .append(host)
-        .append(",DNS:")
-        .append(host)
-        .append(".")
-        .append(ns)
-        .append(",DNS:")
-        .append(host)
-        .append(".")
-        .append(ns)
-        .append(".svc")
-        .append(",DNS:")
-        .append(host)
-        .append(".")
-        .append(ns)
-        .append(".svc.cluster.local");
-    return sb.toString();
+    return EXTERNAL_CUSTOM_KEY_PEM;
   }
 
   public String getVersion() {
@@ -218,16 +164,16 @@ public class OperatorValues {
     return this;
   }
 
-  public String getExternalRestOption() {
-    return externalRestOption;
+  public String getExternalRestEnabled() {
+    return externalRestEnabled;
   }
 
-  public void setExternalRestOption(String val) {
-    externalRestOption = convertNullToEmptyString(val);
+  public void setExternalRestEnabled(String val) {
+    externalRestEnabled = convertNullToEmptyString(val);
   }
 
-  public OperatorValues externalRestOption(String val) {
-    setExternalRestOption(val);
+  public OperatorValues externalRestEnabled(String val) {
+    setExternalRestEnabled(val);
     return this;
   }
 
@@ -241,19 +187,6 @@ public class OperatorValues {
 
   public OperatorValues externalRestHttpsPort(String val) {
     setExternalRestHttpsPort(val);
-    return this;
-  }
-
-  public String getExternalSans() {
-    return externalSans;
-  }
-
-  public void setExternalSans(String val) {
-    externalSans = convertNullToEmptyString(val);
-  }
-
-  public OperatorValues externalSans(String val) {
-    setExternalSans(val);
     return this;
   }
 
@@ -348,9 +281,52 @@ public class OperatorValues {
     return this;
   }
 
+  public String getLogStashImage() {
+    return logStashImage;
+  }
+
+  public void setLogStashImage(String val) {
+    logStashImage = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues logStashImage(String val) {
+    setLogStashImage(val);
+    return this;
+  }
+
+  public String getElasticSearchHost() {
+    return elasticSearchHost;
+  }
+
+  public void setElasticSearchHost(String val) {
+    elasticSearchHost = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues elasticSearchHost(String val) {
+    setElasticSearchHost(val);
+    return this;
+  }
+
+  public String getElasticSearchPort() {
+    return elasticSearchPort;
+  }
+
+  public void setElasticSearchPort(String val) {
+    elasticSearchPort = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues elasticSearchPort(String val) {
+    setElasticSearchPort(val);
+    return this;
+  }
+
   // Note: don't allow null strings since, if you use snakeyaml to write out the instance
   // to a yaml file, the nulls are written out as "null".  Use "" instead.
   private String convertNullToEmptyString(String val) {
     return Objects.toString(val, "");
+  }
+
+  protected String toBase64(String val) {
+    return Base64.encodeBase64String(val.getBytes());
   }
 }

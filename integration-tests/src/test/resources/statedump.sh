@@ -37,8 +37,8 @@ function state_dump {
   #   get domains is in its own command since this can fail if domain CRD undefined
 
   echo Dumping kubectl gets to kgetmany.out and kgetdomains.out in ${DUMP_DIR}
-  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true 2>&1 | tee ${DUMP_DIR}/kgetmany.out
-  kubectl get domains --show-labels=true --all-namespaces=true 2>&1 | tee ${DUMP_DIR}/kgetdomains.out
+  kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetmany.out
+  kubectl get domains --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetdomains.out
 
   # Get all pod logs and redirect/copy to files 
 
@@ -56,8 +56,8 @@ function state_dump {
     for pod in $pods; do
       local logfile=${DUMP_DIR}/pod-log.${namespace}.${pod}
       local descfile=${DUMP_DIR}/pod-describe.${namespace}.${pod}
-      kubectl log $pod -n $namespace 2>&1 | tee $logfile
-      kubectl describe pod $pod -n $namespace 2>&1 | tee $descfile
+      kubectl log $pod -n $namespace > $logfile
+      kubectl describe pod $pod -n $namespace > $descfile
     done
   done
 
