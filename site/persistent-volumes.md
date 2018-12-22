@@ -14,6 +14,15 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 ## Storage locations
 Persistent volumes can point to different storage locations, for example NFS servers or a local directory path. The list of available options is listed in the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
 
+**Note regarding HostPath**:
+In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, `HOST_PATH` provides the simplest configuration.  In a multinode Kubernetes cluster, a `HOST_PATH` that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely available option.  There are other options listed in the referenced table.
+
+The persistent volume for the domain must be created using the appropriate tools before running the script to create the domain.  In the simplest case, namely the `HOST_PATH` provider, this means creating a directory on the Kubernetes master and ensuring that it has the correct permissions:
+
+```
+$ mkdir -m 777 -p /path/to/domain1PersistentVolume
+```
+
 **Note regarding NFS**:
 In the current GA version, the OCI Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). At this time, the WebLogic on Kubernetes domain created by the WebLogic Server Kubernetes Operator, requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, you need to install an NFS server on one node and share the file system across all the nodes.
 
