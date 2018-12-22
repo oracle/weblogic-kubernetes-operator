@@ -145,4 +145,5 @@ public class MessageKeys {
   public static final String CANNOT_PARSE_INTROSPECTOR_RESULT = "WLSKO-0142";
   public static final String CANNOT_PARSE_INTROSPECTOR_FILE = "WLSKO-0143";
   public static final String CANNOT_START_DOMAIN_AFTER_MAX_RETRIES = "WLSKO-0144";
+  public static final String CYCLING_POD = "WLSKO-0145";
 }
