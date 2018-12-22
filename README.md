@@ -34,6 +34,8 @@ The fastest way to experience the operator is to follow the [Quick start guide](
 | --- | --- |
 | [#721](https://github.com/oracle/weblogic-kubernetes-operator/issues/721) | Incorrect default `domainHome` when `domainHomeInImage` is true. |
 | [#722](https://github.com/oracle/weblogic-kubernetes-operator/issues/722) | Server services not recreated when labels/annotations changed. |
+| [#726](https://github.com/oracle/weblogic-kubernetes-operator/issues/726) | Clusters only support default channel. |
+| [#727](https://github.com/oracle/weblogic-kubernetes-operator/issues/727) | The `listen-address` and log directories may be incorrect (pods may not start). |
 
 ## Operator version 1.1
 
