@@ -4,10 +4,10 @@
 
 package oracle.kubernetes.operator.utils;
 
+import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1beta1ClusterRole;
-import io.kubernetes.client.models.V1beta1ClusterRoleBinding;
-import io.kubernetes.client.models.V1beta1RoleBinding;
 import java.nio.file.Path;
 
 /** Parses a generated voyager-operator-security.yaml file into a set of typed k8s java objects */
@@ -25,27 +25,27 @@ public class ParsedVoyagerOperatorSecurityYaml extends ParsedKubernetesYaml {
     return getServiceAccounts().find(getVoyagerOperatorName());
   }
 
-  public V1beta1ClusterRole getVoyagerClusterRole() {
+  public V1ClusterRole getVoyagerClusterRole() {
     return getClusterRoles().find(getVoyagerOperatorName());
   }
 
-  public V1beta1ClusterRoleBinding getVoyagerClusterRoleBinding() {
+  public V1ClusterRoleBinding getVoyagerClusterRoleBinding() {
     return getClusterRoleBindings().find(getVoyagerOperatorName());
   }
 
-  public V1beta1RoleBinding getVoyagerAuthenticationReaderRoleBinding() {
+  public V1RoleBinding getVoyagerAuthenticationReaderRoleBinding() {
     return getRoleBindings().find("voyager-apiserver-extension-server-authentication-reader");
   }
 
-  public V1beta1ClusterRoleBinding getVoyagerAuthDelegatorClusterRoleBinding() {
+  public V1ClusterRoleBinding getVoyagerAuthDelegatorClusterRoleBinding() {
     return getClusterRoleBindings().find("voyager-apiserver-auth-delegator");
   }
 
-  public V1beta1ClusterRole getVoyagerAppsCodeEditClusterRole() {
+  public V1ClusterRole getVoyagerAppsCodeEditClusterRole() {
     return getClusterRoles().find("appscode:voyager:edit");
   }
 
-  public V1beta1ClusterRole getVoyagerAppsCodeViewClusterRole() {
+  public V1ClusterRole getVoyagerAppsCodeViewClusterRole() {
     return getClusterRoles().find("appscode:voyager:view");
   }
 

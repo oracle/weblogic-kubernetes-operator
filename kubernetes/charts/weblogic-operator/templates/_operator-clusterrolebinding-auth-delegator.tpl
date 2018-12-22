@@ -3,13 +3,13 @@
 
 {{- define "operator.clusterRoleBindingAuthDelegator" }}
 ---
-apiVersion: "rbac.authorization.k8s.io/v1beta1"
+apiVersion: "rbac.authorization.k8s.io/v1"
 kind: "ClusterRoleBinding"
 metadata:
   labels:
-    weblogic.operatorName: {{ .operatorNamespace | quote}}
-    weblogic.resourceVersion: "operator-v1"
-  name: {{ list .operatorNamespace "operator-rolebinding-auth-delegator" | join "-" | quote }}
+    weblogic.operatorName: {{ .Release.Namespace | quote}}
+    weblogic.resourceVersion: "operator-v2"
+  name: {{ list .Release.Namespace "weblogic-operator-clusterrolebinding-auth-delegator" | join "-" | quote }}
 roleRef:
   apiGroup: "rbac.authorization.k8s.io"
   kind: "ClusterRole"
@@ -17,6 +17,6 @@ roleRef:
 subjects:
 - kind: "ServiceAccount"
   apiGroup: ""
-  name: {{ .operatorServiceAccount | quote }}
-  namespace: {{ .operatorNamespace | quote }}
+  name: {{ .serviceAccount | quote }}
+  namespace: {{ .Release.Namespace | quote }}
 {{- end }}

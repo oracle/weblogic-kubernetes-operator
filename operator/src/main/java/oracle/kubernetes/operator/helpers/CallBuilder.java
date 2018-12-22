@@ -13,13 +13,14 @@ import io.kubernetes.client.apis.AuthenticationV1Api;
 import io.kubernetes.client.apis.AuthorizationV1Api;
 import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.apis.VersionApi;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
@@ -33,8 +34,6 @@ import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import io.kubernetes.client.models.V1beta1Ingress;
-import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.models.VersionInfo;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -45,10 +44,12 @@ import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallWrapper;
 import oracle.kubernetes.operator.calls.CancellableCall;
 import oracle.kubernetes.operator.calls.RequestParams;
+import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
+import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainList;
-import oracle.kubernetes.weblogic.domain.v1.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainList;
+import oracle.kubernetes.weblogic.domain.v2.api.WeblogicApi;
 
 /** Simplifies synchronous and asynchronous call patterns to the Kubernetes API Server. */
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
@@ -56,6 +57,21 @@ public class CallBuilder {
 
   /** HTTP status code for "Not Found" */
   public static final int NOT_FOUND = 404;
+
+  private static SynchronousCallDispatcher DISPATCHER =
+      new SynchronousCallDispatcher() {
+        @Override
+        public <T> T execute(
+            SynchronousCallFactory<T> factory, RequestParams params, Pool<ApiClient> pool)
+            throws ApiException {
+          ApiClient client = pool.take();
+          try {
+            return factory.execute(client, params);
+          } finally {
+            pool.recycle(client);
+          }
+        }
+      };
 
   private String pretty = "false";
   private String fieldSelector;
@@ -138,15 +154,15 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public VersionInfo readVersionCode() throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return CALL_FACTORY.getVersionCode(client);
-    } finally {
-      helper.recycle(client);
-    }
+    RequestParams requestParams = new RequestParams("getVersion", null, null, null);
+    return executeSynchronousCall(
+        requestParams, ((client, params) -> new VersionApi(client).getCode()));
   }
 
-  private static SynchronousCallFactory CALL_FACTORY = new SynchronousCallFactoryImpl();
+  private <T> T executeSynchronousCall(
+      RequestParams requestParams, SynchronousCallFactory<T> factory) throws ApiException {
+    return DISPATCHER.execute(factory, requestParams, helper);
+  }
 
   /* Namespaces */
 
@@ -184,6 +200,20 @@ public class CallBuilder {
 
   /* Domains */
 
+  private SynchronousCallFactory<DomainList> LIST_DOMAIN_CALL =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .listWebLogicOracleV2NamespacedDomain(
+                  requestParams.namespace,
+                  pretty,
+                  "",
+                  fieldSelector,
+                  includeUninitialized,
+                  labelSelector,
+                  limit,
+                  resourceVersion,
+                  timeoutSeconds,
+                  watch);
   /**
    * List domains
    *
@@ -192,31 +222,15 @@ public class CallBuilder {
    * @throws ApiException API exception
    */
   public DomainList listDomain(String namespace) throws ApiException {
-    String _continue = "";
-    ApiClient client = helper.take();
-    try {
-      return CALL_FACTORY.getDomainList(
-          client,
-          namespace,
-          pretty,
-          _continue,
-          fieldSelector,
-          includeUninitialized,
-          labelSelector,
-          limit,
-          resourceVersion,
-          timeoutSeconds,
-          watch);
-    } finally {
-      helper.recycle(client);
-    }
+    RequestParams requestParams = new RequestParams("listDomain", namespace, null, null);
+    return executeSynchronousCall(requestParams, LIST_DOMAIN_CALL);
   }
 
   private com.squareup.okhttp.Call listDomainAsync(
       ApiClient client, String namespace, String _continue, ApiCallback<DomainList> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .listWebLogicOracleV1NamespacedDomainAsync(
+        .listWebLogicOracleV2NamespacedDomainAsync(
             namespace,
             pretty,
             _continue,
@@ -254,7 +268,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .readWebLogicOracleV1NamespacedDomainAsync(
+        .readWebLogicOracleV2NamespacedDomainAsync(
             name, namespace, pretty, exact, export, callback);
   }
 
@@ -275,30 +289,31 @@ public class CallBuilder {
         responseStep, new RequestParams("readDomain", namespace, name, null), READ_DOMAIN);
   }
 
+  private SynchronousCallFactory<Domain> REPLACE_DOMAIN_CALL =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .replaceWebLogicOracleV2NamespacedDomain(
+                  requestParams.name, requestParams.namespace, (Domain) requestParams.body, pretty);
+
   /**
    * Replace domain
    *
-   * @param name Name
+   * @param uid the domain uid (unique within the k8s cluster)
    * @param namespace Namespace
    * @param body Body
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public Domain replaceDomain(String name, String namespace, Domain body) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new WeblogicApi(client)
-          .replaceWebLogicOracleV1NamespacedDomain(name, namespace, body, pretty);
-    } finally {
-      helper.recycle(client);
-    }
+  public Domain replaceDomain(String uid, String namespace, Domain body) throws ApiException {
+    RequestParams requestParams = new RequestParams("replaceDomain", namespace, uid, body);
+    return executeSynchronousCall(requestParams, REPLACE_DOMAIN_CALL);
   }
 
   private com.squareup.okhttp.Call replaceDomainAsync(
       ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .replaceWebLogicOracleV1NamespacedDomainAsync(name, namespace, body, pretty, callback);
+        .replaceWebLogicOracleV2NamespacedDomainAsync(name, namespace, body, pretty, callback);
   }
 
   private final CallFactory<Domain> REPLACE_DOMAIN =
@@ -328,38 +343,92 @@ public class CallBuilder {
 
   /* Custom Resource Definitions */
 
-  /**
-   * Read custom resource definition
-   *
-   * @param name Name
-   * @return CustomResourceDefinition
-   * @throws ApiException API Exception
-   */
-  public V1beta1CustomResourceDefinition readCustomResourceDefinition(String name)
+  private com.squareup.okhttp.Call readCustomResourceDefinitionAsync(
+      ApiClient client, String name, ApiCallback<V1beta1CustomResourceDefinition> callback)
       throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return CALL_FACTORY.readCustomResourceDefinition(client, name, pretty, exact, export);
-    } finally {
-      helper.recycle(client);
-    }
+    return new ApiextensionsV1beta1Api(client)
+        .readCustomResourceDefinitionAsync(name, pretty, exact, export, callback);
   }
 
+  private final CallFactory<V1beta1CustomResourceDefinition> READ_CRD =
+      (requestParams, usage, cont, callback) ->
+          wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
+
   /**
-   * Create custom resource definition
+   * Asynchronous step for reading CRD
+   *
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readCustomResourceDefinitionAsync(
+      String name, ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readCRD", null, name, null), READ_CRD);
+  }
+
+  private com.squareup.okhttp.Call createCustomResourceDefinitionAsync(
+      ApiClient client,
+      V1beta1CustomResourceDefinition body,
+      ApiCallback<V1beta1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1beta1Api(client)
+        .createCustomResourceDefinitionAsync(body, pretty, callback);
+  }
+
+  private final CallFactory<V1beta1CustomResourceDefinition> CREATE_CRD =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createCustomResourceDefinitionAsync(
+                  usage, (V1beta1CustomResourceDefinition) requestParams.body, callback));
+
+  /**
+   * Asynchronous step for creating CRD
    *
    * @param body Body
-   * @return Created custom resource definition
-   * @throws ApiException API Exception
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
    */
-  public V1beta1CustomResourceDefinition createCustomResourceDefinition(
-      V1beta1CustomResourceDefinition body) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return CALL_FACTORY.createCustomResourceDefinition(client, body, pretty);
-    } finally {
-      helper.recycle(client);
-    }
+  public Step createCustomResourceDefinitionAsync(
+      V1beta1CustomResourceDefinition body,
+      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("createCRD", null, null, body), CREATE_CRD);
+  }
+
+  private com.squareup.okhttp.Call replaceCustomResourceDefinitionAsync(
+      ApiClient client,
+      String name,
+      V1beta1CustomResourceDefinition body,
+      ApiCallback<V1beta1CustomResourceDefinition> callback)
+      throws ApiException {
+    return new ApiextensionsV1beta1Api(client)
+        .replaceCustomResourceDefinitionAsync(name, body, pretty, callback);
+  }
+
+  private final CallFactory<V1beta1CustomResourceDefinition> REPLACE_CRD =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceCustomResourceDefinitionAsync(
+                  usage,
+                  requestParams.name,
+                  (V1beta1CustomResourceDefinition) requestParams.body,
+                  callback));
+
+  /**
+   * Asynchronous step for replacing CRD
+   *
+   * @param name Name
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceCustomResourceDefinitionAsync(
+      String name,
+      V1beta1CustomResourceDefinition body,
+      ResponseStep<V1beta1CustomResourceDefinition> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("replaceCRD", null, name, body), REPLACE_CRD);
   }
 
   /* Config Maps */
@@ -415,6 +484,55 @@ public class CallBuilder {
         responseStep,
         new RequestParams("createConfigMap", namespace, null, body),
         CREATE_CONFIGMAP);
+  }
+
+  private com.squareup.okhttp.Call deleteConfigMapAsync(
+      ApiClient client,
+      String name,
+      String namespace,
+      V1DeleteOptions body,
+      ApiCallback<V1Status> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .deleteNamespacedConfigMapAsync(
+            name,
+            namespace,
+            body,
+            pretty,
+            gracePeriodSeconds,
+            orphanDependents,
+            propagationPolicy,
+            callback);
+  }
+
+  private final CallFactory<V1Status> DELETE_CONFIG_MAP =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              deleteConfigMapAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1DeleteOptions) requestParams.body,
+                  callback));
+
+  /**
+   * Asynchronous step for deleting config map
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param deleteOptions Delete options
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deleteConfigMapAsync(
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("deleteConfigMap", namespace, name, deleteOptions),
+        DELETE_CONFIG_MAP);
   }
 
   private com.squareup.okhttp.Call replaceConfigMapAsync(
@@ -648,6 +766,30 @@ public class CallBuilder {
         responseStep, new RequestParams("createJob", namespace, null, body), CREATE_JOB);
   }
 
+  private final CallFactory<V1Job> READ_JOB =
+      (requestParams, usage, cont, callback) ->
+          wrap(readJobAsync(usage, requestParams.name, requestParams.namespace, callback));
+
+  private com.squareup.okhttp.Call readJobAsync(
+      ApiClient client, String name, String namespace, ApiCallback<V1Job> callback)
+      throws ApiException {
+    return new BatchV1Api(client)
+        .readNamespacedJobAsync(name, namespace, pretty, exact, export, callback);
+  }
+
+  /**
+   * Asynchronous step for reading job
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readJobAsync(String name, String namespace, ResponseStep<V1Job> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readJob", namespace, name, null), READ_JOB);
+  }
+
   private com.squareup.okhttp.Call deleteJobAsync(
       ApiClient client,
       String name,
@@ -682,12 +824,17 @@ public class CallBuilder {
    *
    * @param name Name
    * @param namespace Namespace
+   * @param deleteOptions Delete options
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step deleteJobAsync(String name, String namespace, ResponseStep<V1Status> responseStep) {
+  public Step deleteJobAsync(
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("deleteJob", namespace, name, null), DELETE_JOB);
+        responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions), DELETE_JOB);
   }
 
   /* Services */
@@ -970,6 +1117,85 @@ public class CallBuilder {
         LIST_PERSISTENTVOLUME);
   }
 
+  private SynchronousCallFactory<V1PersistentVolume> CREATE_PV_CALL =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .createPersistentVolume((V1PersistentVolume) requestParams.body, pretty);
+
+  public V1PersistentVolume createPersistentVolume(V1PersistentVolume volume) throws ApiException {
+    RequestParams requestParams = new RequestParams("createPV", null, null, volume);
+    return executeSynchronousCall(requestParams, CREATE_PV_CALL);
+  }
+
+  private final CallFactory<V1PersistentVolume> CREATE_PERSISTENTVOLUME =
+      ((requestParams, client, cont, callback) ->
+          wrap(
+              new CoreV1Api(client)
+                  .createPersistentVolumeAsync(
+                      (V1PersistentVolume) requestParams.body, pretty, callback)));
+
+  /**
+   * Asynchronous step for creating persistent volumes.
+   *
+   * @param persistentVolume a resource describing the volume to create
+   * @param responseStep the step to invoke when the call completes
+   * @return a new asynchronous step
+   */
+  public Step createPersistentVolumeAsync(
+      V1PersistentVolume persistentVolume, ResponseStep<V1PersistentVolume> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("createPersistentVolume", null, null, persistentVolume),
+        CREATE_PERSISTENTVOLUME);
+  }
+
+  private SynchronousCallFactory<V1Status> DELETE_PV_CALL =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .deletePersistentVolume(
+                  requestParams.name,
+                  (V1DeleteOptions) requestParams.body,
+                  pretty,
+                  gracePeriodSeconds,
+                  orphanDependents,
+                  propagationPolicy);
+
+  public V1Status deletePersistentVolume(String name, V1DeleteOptions deleteOptions)
+      throws ApiException {
+    RequestParams requestParams =
+        new RequestParams("deletePersistentVolume", null, name, deleteOptions);
+    return executeSynchronousCall(requestParams, DELETE_PV_CALL);
+  }
+
+  private final CallFactory<V1Status> DELETE_PERSISTENTVOLUME =
+      (requestParams, client, cont, callback) ->
+          wrap(
+              new CoreV1Api(client)
+                  .deletePersistentVolumeAsync(
+                      requestParams.name,
+                      (V1DeleteOptions) requestParams.body,
+                      pretty,
+                      gracePeriodSeconds,
+                      orphanDependents,
+                      propagationPolicy,
+                      callback));
+
+  /**
+   * Asynchronous step for deleting persistent volumes.
+   *
+   * @param name the name of the volume to delete
+   * @param deleteOptions options to control deletion
+   * @param responseStep the step to invoke when the call completes
+   * @return a new asynchronous step
+   */
+  public Step deletePersistentVolumeAsync(
+      String name, V1DeleteOptions deleteOptions, ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("deletePersistentVolume", null, name, deleteOptions),
+        DELETE_PERSISTENTVOLUME);
+  }
+
   /* Persistent Volume Claims */
 
   private com.squareup.okhttp.Call listPersistentVolumeClaimAsync(
@@ -1010,6 +1236,83 @@ public class CallBuilder {
         responseStep,
         new RequestParams("listPersistentVolumeClaim", namespace, null, null),
         LIST_PERSISTENTVOLUMECLAIM);
+  }
+
+  private SynchronousCallFactory<V1PersistentVolumeClaim> CREATE_PVC_CALL =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .createNamespacedPersistentVolumeClaim(
+                  requestParams.namespace, (V1PersistentVolumeClaim) requestParams.body, pretty);
+
+  public V1PersistentVolumeClaim createPersistentVolumeClaim(V1PersistentVolumeClaim claim)
+      throws ApiException {
+    RequestParams requestParams = new RequestParams("createPVC", getNamespace(claim), null, claim);
+    return executeSynchronousCall(requestParams, CREATE_PVC_CALL);
+  }
+
+  protected String getNamespace(V1PersistentVolumeClaim claim) {
+    return claim.getMetadata().getNamespace();
+  }
+
+  private final CallFactory<V1PersistentVolumeClaim> CREATE_PERSISTENTVOLUMECLAIM =
+      (requestParams, client, cont, callback) ->
+          wrap(
+              new CoreV1Api(client)
+                  .createNamespacedPersistentVolumeClaimAsync(
+                      requestParams.namespace,
+                      (V1PersistentVolumeClaim) requestParams.body,
+                      pretty,
+                      callback));
+
+  public Step createPersistentVolumeClaimAsync(
+      V1PersistentVolumeClaim claim, ResponseStep<V1PersistentVolumeClaim> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("createPersistentVolumeClaim", getNamespace(claim), null, claim),
+        CREATE_PERSISTENTVOLUMECLAIM);
+  }
+
+  private SynchronousCallFactory<V1Status> DELETE_PVC_CALL =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .deleteNamespacedPersistentVolumeClaim(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1DeleteOptions) requestParams.body,
+                  pretty,
+                  gracePeriodSeconds,
+                  orphanDependents,
+                  propagationPolicy);
+
+  public V1Status deletePersistentVolumeClaim(
+      String name, String namespace, V1DeleteOptions deleteOptions) throws ApiException {
+    return executeSynchronousCall(
+        new RequestParams("deletePVC", namespace, name, deleteOptions), DELETE_PVC_CALL);
+  }
+
+  private final CallFactory<V1Status> DELETE_PERSISTENTVOLUMECLAIM =
+      (requestParams, client, cont, callback) ->
+          wrap(
+              new CoreV1Api(client)
+                  .deleteNamespacedPersistentVolumeClaimAsync(
+                      requestParams.name,
+                      requestParams.namespace,
+                      (V1DeleteOptions) requestParams.body,
+                      pretty,
+                      gracePeriodSeconds,
+                      orphanDependents,
+                      propagationPolicy,
+                      callback));
+
+  public Step deletePersistentVolumeClaimAsync(
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("deletePersistentVolumeClaim", namespace, name, deleteOptions),
+        DELETE_PERSISTENTVOLUMECLAIM);
   }
 
   /* Secrets */
@@ -1101,6 +1404,11 @@ public class CallBuilder {
 
   /* Subject Access Review */
 
+  private SynchronousCallFactory<V1SubjectAccessReview> CREATE_SUBJECTACCESSREVIEW_CALL =
+      ((client, requestParams) ->
+          new AuthorizationV1Api(client)
+              .createSubjectAccessReview((V1SubjectAccessReview) requestParams.body, pretty));
+
   /**
    * Create subject access review
    *
@@ -1110,12 +1418,8 @@ public class CallBuilder {
    */
   public V1SubjectAccessReview createSubjectAccessReview(V1SubjectAccessReview body)
       throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new AuthorizationV1Api(client).createSubjectAccessReview(body, pretty);
-    } finally {
-      helper.recycle(client);
-    }
+    RequestParams params = new RequestParams("createSubjectAccessReview", null, null, body);
+    return executeSynchronousCall(params, CREATE_SUBJECTACCESSREVIEW_CALL);
   }
 
   private com.squareup.okhttp.Call createSubjectAccessReviewAsync(
@@ -1147,6 +1451,12 @@ public class CallBuilder {
 
   /* Self Subject Access Review */
 
+  private SynchronousCallFactory<V1SelfSubjectAccessReview> CREATE_SELFSUBJECTACESSREVIEW_CALL =
+      (client, requestParams) ->
+          new AuthorizationV1Api(client)
+              .createSelfSubjectAccessReview(
+                  (V1SelfSubjectAccessReview) requestParams.body, pretty);
+
   /**
    * Create self subject access review
    *
@@ -1156,12 +1466,8 @@ public class CallBuilder {
    */
   public V1SelfSubjectAccessReview createSelfSubjectAccessReview(V1SelfSubjectAccessReview body)
       throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return CALL_FACTORY.createSelfSubjectAccessReview(client, body, pretty);
-    } finally {
-      helper.recycle(client);
-    }
+    RequestParams requestParams = new RequestParams("selfSubjectAccessReview", null, null, body);
+    return executeSynchronousCall(requestParams, CREATE_SELFSUBJECTACESSREVIEW_CALL);
   }
 
   private com.squareup.okhttp.Call createSelfSubjectAccessReviewAsync(
@@ -1196,6 +1502,11 @@ public class CallBuilder {
 
   /* Self Subject Rules Review */
 
+  private SynchronousCallFactory<V1SelfSubjectRulesReview> CREATE_SELFSUBJECTRULESREVIEW_CALL =
+      (client, requestParams) ->
+          new AuthorizationV1Api(client)
+              .createSelfSubjectRulesReview((V1SelfSubjectRulesReview) requestParams.body, pretty);
+
   /**
    * Create self subject rules review
    *
@@ -1205,12 +1516,8 @@ public class CallBuilder {
    */
   public V1SelfSubjectRulesReview createSelfSubjectRulesReview(V1SelfSubjectRulesReview body)
       throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return CALL_FACTORY.createSelfSubjectRulesReview(client, body, pretty);
-    } finally {
-      helper.recycle(client);
-    }
+    RequestParams params = new RequestParams("selfSubjectRulesReview", null, null, body);
+    return executeSynchronousCall(params, CREATE_SELFSUBJECTRULESREVIEW_CALL);
   }
 
   private com.squareup.okhttp.Call createSelfSubjectRulesReviewAsync(
@@ -1244,6 +1551,11 @@ public class CallBuilder {
 
   /* Token Review */
 
+  private SynchronousCallFactory<V1TokenReview> CREATE_TOKEN_REVIEW_CALL =
+      (client, requestParams) ->
+          new AuthenticationV1Api(client)
+              .createTokenReview((V1TokenReview) requestParams.body, pretty);
+
   /**
    * Create token review
    *
@@ -1252,239 +1564,74 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1TokenReview createTokenReview(V1TokenReview body) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new AuthenticationV1Api(client).createTokenReview(body, pretty);
-    } finally {
-      helper.recycle(client);
-    }
+    RequestParams requestParams = new RequestParams("createTokenReview", null, null, body);
+    return executeSynchronousCall(requestParams, CREATE_TOKEN_REVIEW_CALL);
   }
 
-  /* Ingress */
-
-  private com.squareup.okhttp.Call listIngressAsync(
-      ApiClient client,
-      String namespace,
-      String _continue,
-      ApiCallback<V1beta1IngressList> callback)
-      throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .listNamespacedIngressAsync(
-            namespace,
-            pretty,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            callback);
-  }
-
-  private final CallFactory<V1beta1IngressList> LIST_INGRESS =
-      (requestParams, usage, cont, callback) ->
-          wrap(listIngressAsync(usage, requestParams.namespace, cont, callback));
-
-  /**
-   * Asynchronous step for listing ingress
-   *
-   * @param namespace Namespace
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step listIngressAsync(String namespace, ResponseStep<V1beta1IngressList> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("listIngress", namespace, null, null), LIST_INGRESS);
-  }
-
-  /**
-   * Read ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @return Read ingress
-   * @throws ApiException API Exception
-   */
-  public V1beta1Ingress readIngress(String name, String namespace) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new ExtensionsV1beta1Api(client)
-          .readNamespacedIngress(name, namespace, pretty, exact, export);
-    } finally {
-      helper.recycle(client);
-    }
-  }
-
-  private com.squareup.okhttp.Call readIngressAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1beta1Ingress> callback)
-      throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .readNamespacedIngressAsync(name, namespace, pretty, exact, export, callback);
-  }
-
-  private final CallFactory<V1beta1Ingress> READ_INGRESS =
-      (requestParams, usage, cont, callback) ->
-          wrap(readIngressAsync(usage, requestParams.name, requestParams.namespace, callback));
-
-  /**
-   * Asynchronous step for reading ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step readIngressAsync(
-      String name, String namespace, ResponseStep<V1beta1Ingress> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("readIngress", namespace, name, null), READ_INGRESS);
-  }
-
-  private com.squareup.okhttp.Call createIngressAsync(
-      ApiClient client, String namespace, V1beta1Ingress body, ApiCallback<V1beta1Ingress> callback)
-      throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .createNamespacedIngressAsync(namespace, body, pretty, callback);
-  }
-
-  private final CallFactory<V1beta1Ingress> CREATE_INGRESS =
+  private final CallFactory<String> READ_POD_LOG =
       (requestParams, usage, cont, callback) ->
           wrap(
-              createIngressAsync(
-                  usage, requestParams.namespace, (V1beta1Ingress) requestParams.body, callback));
-
-  /**
-   * Asynchronous step for creating ingress
-   *
-   * @param namespace Namespace
-   * @param body Body
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step createIngressAsync(
-      String namespace, V1beta1Ingress body, ResponseStep<V1beta1Ingress> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("createIngress", namespace, null, body), CREATE_INGRESS);
-  }
-
-  private com.squareup.okhttp.Call replaceIngressAsync(
-      ApiClient client,
-      String name,
-      String namespace,
-      V1beta1Ingress body,
-      ApiCallback<V1beta1Ingress> callback)
-      throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .replaceNamespacedIngressAsync(name, namespace, body, pretty, callback);
-  }
-
-  private final CallFactory<V1beta1Ingress> REPLACE_INGRESS =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              replaceIngressAsync(
+              readPodLogAsync(
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  (V1beta1Ingress) requestParams.body,
+                  null,
+                  null,
+                  null,
+                  pretty,
+                  null,
+                  null,
+                  null,
+                  null,
                   callback));
 
-  /**
-   * Asynchronous step for replacing ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param body Body
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step replaceIngressAsync(
-      String name,
-      String namespace,
-      V1beta1Ingress body,
-      ResponseStep<V1beta1Ingress> responseStep) {
+  public Step readPodLogAsync(String name, String namespace, ResponseStep<String> responseStep) {
     return createRequestAsync(
-        responseStep, new RequestParams("replaceIngress", namespace, name, body), REPLACE_INGRESS);
+        responseStep, new RequestParams("readPodLog", namespace, name, null), READ_POD_LOG);
   }
 
-  /**
-   * Delete ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param deleteOptions Delete options
-   * @return Status of deletion
-   * @throws ApiException API Exception
-   */
-  public V1Status deleteIngress(String name, String namespace, V1DeleteOptions deleteOptions)
-      throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new ExtensionsV1beta1Api(client)
-          .deleteNamespacedIngress(
-              name,
-              namespace,
-              deleteOptions,
-              pretty,
-              gracePeriodSeconds,
-              orphanDependents,
-              propagationPolicy);
-    } finally {
-      helper.recycle(client);
-    }
-  }
-
-  private com.squareup.okhttp.Call deleteIngressAsync(
+  private com.squareup.okhttp.Call readPodLogAsync(
       ApiClient client,
       String name,
       String namespace,
-      V1DeleteOptions deleteOptions,
-      ApiCallback<V1Status> callback)
+      String container,
+      Boolean follow,
+      Integer limitBytes,
+      String pretty,
+      Boolean previous,
+      Integer sinceSeconds,
+      Integer tailLines,
+      Boolean timestamps,
+      ApiCallback<String> callback)
       throws ApiException {
-    return new ExtensionsV1beta1Api(client)
-        .deleteNamespacedIngressAsync(
+    return new CoreV1Api(client)
+        .readNamespacedPodLogAsync(
             name,
             namespace,
-            deleteOptions,
+            container,
+            follow,
+            limitBytes,
             pretty,
-            gracePeriodSeconds,
-            orphanDependents,
-            propagationPolicy,
+            previous,
+            sinceSeconds,
+            tailLines,
+            timestamps,
             callback);
   }
 
-  private final CallFactory<V1Status> DELETE_INGRESS =
-      (requestParams, usage, cont, callback) ->
-          wrap(
-              deleteIngressAsync(
-                  usage,
-                  requestParams.name,
-                  requestParams.namespace,
-                  (V1DeleteOptions) requestParams.body,
-                  callback));
-
-  /**
-   * Asynchronous step for deleting ingress
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param deleteOptions Delete options
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step deleteIngressAsync(
-      String name,
-      String namespace,
-      V1DeleteOptions deleteOptions,
-      ResponseStep<V1Status> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("deleteIngress", namespace, name, deleteOptions),
-        DELETE_INGRESS);
+  static AsyncRequestStepFactory setStepFactory(AsyncRequestStepFactory newFactory) {
+    AsyncRequestStepFactory oldFactory = STEP_FACTORY;
+    STEP_FACTORY = newFactory;
+    return oldFactory;
   }
 
-  private static final AsyncRequestStepFactory STEP_FACTORY = AsyncRequestStep::new;
+  static void resetStepFactory() {
+    STEP_FACTORY = DEFAULT_STEP_FACTORY;
+  }
+
+  private static AsyncRequestStepFactory DEFAULT_STEP_FACTORY = AsyncRequestStep::new;
+
+  private static AsyncRequestStepFactory STEP_FACTORY = DEFAULT_STEP_FACTORY;
 
   private <T> Step createRequestAsync(
       ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory) {
@@ -1498,92 +1645,5 @@ public class CallBuilder {
         fieldSelector,
         labelSelector,
         resourceVersion);
-  }
-
-  public static class SynchronousCallFactoryImpl implements SynchronousCallFactory {
-    @Override
-    public V1beta1CustomResourceDefinition readCustomResourceDefinition(
-        ApiClient client, String name, String pretty, Boolean exact, Boolean export)
-        throws ApiException {
-      return new ApiextensionsV1beta1Api(client)
-          .readCustomResourceDefinition(name, pretty, exact, export);
-    }
-
-    @Override
-    public V1beta1CustomResourceDefinition createCustomResourceDefinition(
-        ApiClient client, V1beta1CustomResourceDefinition body, String pretty) throws ApiException {
-      return new ApiextensionsV1beta1Api(client).createCustomResourceDefinition(body, pretty);
-    }
-
-    @Override
-    public V1SelfSubjectRulesReview createSelfSubjectRulesReview(
-        ApiClient client, V1SelfSubjectRulesReview body, String pretty) throws ApiException {
-      return new AuthorizationV1Api(client).createSelfSubjectRulesReview(body, pretty);
-    }
-
-    @Override
-    public V1SelfSubjectAccessReview createSelfSubjectAccessReview(
-        ApiClient client, V1SelfSubjectAccessReview body, String pretty) throws ApiException {
-      return new AuthorizationV1Api(client).createSelfSubjectAccessReview(body, pretty);
-    }
-
-    @Override
-    public V1PersistentVolumeList listPersistentVolumes(
-        ApiClient client,
-        String pretty,
-        String _continue,
-        String fieldSelector,
-        Boolean includeUninitialized,
-        String labelSelector,
-        Integer limit,
-        String resourceVersion,
-        Integer timeoutSeconds,
-        Boolean watch)
-        throws ApiException {
-      return new CoreV1Api(client)
-          .listPersistentVolume(
-              pretty,
-              _continue,
-              fieldSelector,
-              includeUninitialized,
-              labelSelector,
-              limit,
-              resourceVersion,
-              timeoutSeconds,
-              watch);
-    }
-
-    @Override
-    public VersionInfo getVersionCode(ApiClient client) throws ApiException {
-      return new VersionApi(client).getCode();
-    }
-
-    @Override
-    public DomainList getDomainList(
-        ApiClient client,
-        String namespace,
-        String pretty,
-        String _continue,
-        String fieldSelector,
-        Boolean includeUninitialized,
-        String labelSelector,
-        Integer limit,
-        String resourceVersion,
-        Integer timeoutSeconds,
-        Boolean watch)
-        throws ApiException {
-      return new WeblogicApi(client)
-          .listWebLogicOracleV1NamespacedDomain(
-              namespace,
-              pretty,
-              _continue,
-              fieldSelector,
-              includeUninitialized,
-              labelSelector,
-              limit,
-              resourceVersion,
-              timeoutSeconds,
-              watch);
-    }
   }
 }

@@ -2,6 +2,8 @@
 # Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+set -x
+
 export PATH=$PATH:/operator
 
 echo "Launching Oracle WebLogic Server Kubernetes Operator..."
@@ -14,6 +16,8 @@ function relay_SIGTERM {
 }
 
 trap relay_SIGTERM SIGTERM
+
+/operator/initialize-internal-operator-identity.sh
 
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
   DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=$HOSTNAME:$REMOTE_DEBUG_PORT"
@@ -50,6 +54,10 @@ if [[ ! -z "$JAVA_LOGGING_LEVEL" ]]; then
   fi
 fi
 
+if [ "${MOCK_WLS}" == 'true' ]; then
+  MOCKING_WLS="-DmockWLS=true"
+fi
+
 LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
 mkdir -m 777 -p /logs
 cp /operator/logstash.conf /logs/logstash.conf
@@ -57,6 +65,6 @@ cp /operator/logstash.conf /logs/logstash.conf
 # the logstash container/pod.
 
 # Start operator
-java $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
+java $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
 PID=$!
 wait $PID

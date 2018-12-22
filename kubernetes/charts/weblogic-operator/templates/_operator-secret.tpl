@@ -6,15 +6,14 @@
 apiVersion: "v1"
 kind: "Secret"
 data:
-  internalOperatorKey: {{ .internalOperatorKey | quote }}
-  {{- if not (eq .externalRestOption "NONE") }}
+  {{- if .externalRestEnabled }}
   externalOperatorKey: {{ .externalOperatorKey | quote }}
   {{- end }}
 metadata:
   labels:
-    weblogic.operatorName: {{ .operatorNamespace | quote }}
-    weblogic.resourceVersion: "operator-v1"
+    weblogic.operatorName: {{ .Release.Namespace | quote }}
+    weblogic.resourceVersion: "operator-v2"
   name: "weblogic-operator-secrets"
-  namespace:  {{ .operatorNamespace | quote }}
+  namespace:  {{ .Release.Namespace | quote }}
 type: "Opaque"
 {{- end }}

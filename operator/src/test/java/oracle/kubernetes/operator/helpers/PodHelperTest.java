@@ -20,11 +20,11 @@ import io.kubernetes.client.models.V1Status;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.work.AsyncCallTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.After;
 import org.junit.Before;
@@ -46,6 +46,7 @@ public class PodHelperTest {
 
   @Before
   public void setUp() throws NoSuchFieldException {
+    mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.installRequestStepFactory());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
@@ -81,7 +82,7 @@ public class PodHelperTest {
     MatcherAssert.assertThat(sko.getPod().get(), nullValue());
   }
 
-  private AsyncCallTestSupport.CannedResponse expectDeletePodCall() {
+  private CallTestSupport.CannedResponse expectDeletePodCall() {
     return testSupport
         .createCannedResponse("deletePod")
         .withName(POD_NAME)

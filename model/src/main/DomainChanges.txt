@@ -1,0 +1,21 @@
+Startup
+
+V1:
+
+configure at domain only
+
+NONE - shut down all servers
+ADMIN - start admin server only
+ALL - start all servers
+SPECIFIED - start any configured servers; if they are part of a cluster, don't start if not needed
+AUTO (default) - start any configured servers *and* any clustered servers, if needed
+
+V2:
+
+can configure at domain, server, or cluster
+
+NEVER - shut down all servers
+ALWAYS - start all servers
+IF_NEEDED - start if needed*
+
+** if needed means that the cluster replica count has not been reached

@@ -7,16 +7,24 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains configuration of a WebLogic server */
 public class WlsServerConfig {
-  final String name;
-  final Integer listenPort;
-  final String listenAddress;
-  final Integer sslListenPort;
-  final boolean sslPortEnabled;
-  final String machineName;
-  final List<NetworkAccessPoint> networkAccessPoints;
+  String name;
+  Integer listenPort;
+  String listenAddress;
+  String clusterName;
+  Integer sslListenPort;
+  boolean sslPortEnabled;
+  String machineName;
+  Integer adminPort;
+  boolean adminPortEnabled;
+  List<NetworkAccessPoint> networkAccessPoints;
+
+  public WlsServerConfig() {}
 
   /**
    * Return the name of this WLS server
@@ -60,7 +68,7 @@ public class WlsServerConfig {
    * @return True if the SSL listen port should be enabled, false otherwise
    */
   public boolean isSslPortEnabled() {
-    return sslPortEnabled;
+    return sslListenPort != null;
   }
 
   /**
@@ -81,6 +89,26 @@ public class WlsServerConfig {
    */
   public List<NetworkAccessPoint> getNetworkAccessPoints() {
     return networkAccessPoints;
+  }
+
+  public String getClusterName() {
+    return this.clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
+  }
+
+  public Integer getAdminPort() {
+    return adminPort;
+  }
+
+  public void setAdminPort(Integer adminPort) {
+    this.adminPort = adminPort;
+  }
+
+  public boolean isAdminPortEnabled() {
+    return adminPort != null;
   }
 
   /**
@@ -111,7 +139,11 @@ public class WlsServerConfig {
     // parse the SSL configuration
     Map<String, Object> sslMap = (Map<String, Object>) serverConfigMap.get("SSL");
     Integer sslListenPort = (sslMap == null) ? null : (Integer) sslMap.get("listenPort");
-    boolean sslPortEnabled = (sslMap == null) ? false : (boolean) sslMap.get("enabled");
+    boolean sslPortEnabled = (sslMap != null && sslMap.get("listenPort") != null) ? true : false;
+
+    // parse the administration port
+    Integer adminPort = (Integer) serverConfigMap.get("adminPort");
+    boolean adminPortEnabled = (adminPort != null);
 
     return new WlsServerConfig(
         (String) serverConfigMap.get("name"),
@@ -120,7 +152,9 @@ public class WlsServerConfig {
         sslListenPort,
         sslPortEnabled,
         getMachineNameFromJsonMap(serverConfigMap),
-        networkAccessPoints);
+        networkAccessPoints,
+        adminPort,
+        adminPortEnabled);
   }
 
   /**
@@ -133,7 +167,8 @@ public class WlsServerConfig {
    * @param sslPortEnabled boolean indicating whether the SSL listen port should be enabled
    * @param machineName Configured machine name for this WLS server
    * @param networkAccessPoints List of NetworkAccessPoint containing channels configured for this
-   *     WLS server
+   * @param adminPort Configured domain wide administration port
+   * @param adminPortEnabled boolean indicating whether administration port should be enabled
    */
   public WlsServerConfig(
       String name,
@@ -142,13 +177,17 @@ public class WlsServerConfig {
       Integer sslListenPort,
       boolean sslPortEnabled,
       String machineName,
-      List<NetworkAccessPoint> networkAccessPoints) {
+      List<NetworkAccessPoint> networkAccessPoints,
+      Integer adminPort,
+      boolean adminPortEnabled) {
     this.name = name;
     this.listenPort = listenPort;
     this.listenAddress = listenAddress;
     this.networkAccessPoints = networkAccessPoints;
     this.sslListenPort = sslListenPort;
     this.sslPortEnabled = sslPortEnabled;
+    this.adminPort = adminPort;
+    this.adminPortEnabled = adminPortEnabled;
     this.machineName = machineName;
   }
 
@@ -257,25 +296,53 @@ public class WlsServerConfig {
   }
 
   @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    WlsServerConfig that = (WlsServerConfig) o;
+
+    return new EqualsBuilder()
+        .append(sslPortEnabled, that.sslPortEnabled)
+        .append(name, that.name)
+        .append(listenPort, that.listenPort)
+        .append(listenAddress, that.listenAddress)
+        .append(sslListenPort, that.sslListenPort)
+        .append(adminPort, that.adminPort)
+        .append(adminPortEnabled, that.adminPortEnabled)
+        .append(machineName, that.machineName)
+        .append(networkAccessPoints, that.networkAccessPoints)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37)
+        .append(name)
+        .append(listenPort)
+        .append(listenAddress)
+        .append(sslListenPort)
+        .append(sslPortEnabled)
+        .append(adminPort)
+        .append(adminPortEnabled)
+        .append(machineName)
+        .append(networkAccessPoints)
+        .toHashCode();
+  }
+
+  @Override
   public String toString() {
-    return "WlsServerConfig{"
-        + "name='"
-        + name
-        + '\''
-        + ", listenPort="
-        + listenPort
-        + ", listenAddress='"
-        + listenAddress
-        + '\''
-        + ", sslListenPort="
-        + sslListenPort
-        + ", sslPortEnabled="
-        + sslPortEnabled
-        + ", machineName='"
-        + machineName
-        + '\''
-        + ", networkAccessPoints="
-        + networkAccessPoints
-        + '}';
+    return new ToStringBuilder(this)
+        .append("name", name)
+        .append("listenPort", listenPort)
+        .append("listenAddress", listenAddress)
+        .append("sslListenPort", sslListenPort)
+        .append("sslPortEnabled", sslPortEnabled)
+        .append("adminPort", adminPort)
+        .append("adminPortEnabled", adminPortEnabled)
+        .append("machineName", machineName)
+        .append("networkAccessPoints", networkAccessPoints)
+        .toString();
   }
 }

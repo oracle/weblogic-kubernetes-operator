@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
@@ -82,10 +83,10 @@ public class BaseTest {
 
       // delete k8s artifacts created if any, delete PV directories
       ExecResult clnResult = cleanup();
-      if (clnResult.exitValue() != 0) {
+      /* if (clnResult.exitValue() != 0) {
         throw new RuntimeException(
             "FAILED: Command to call cleanup script failed " + clnResult.stderr());
-      }
+      } */
       logger.info(
           "Command to call cleanup script returned "
               + clnResult.stdout()
@@ -141,14 +142,15 @@ public class BaseTest {
   }
 
   /**
-   * Access Operator REST endpoint using admin node host and node port
+   * Access Admin REST endpoint using admin node host and node port
    *
    * @throws Exception
    */
   public void testAdminServerExternalService(Domain domain) throws Exception {
-    logTestBegin("testAdminServerExternalService");
+    logger.info("Inside testAdminServerExternalService");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
-    logger.info("SUCCESS");
+    logger.info("Done - testAdminServerExternalService");
   }
 
   /**
@@ -157,10 +159,11 @@ public class BaseTest {
    * @throws Exception
    */
   public void testAdminT3Channel(Domain domain) throws Exception {
-    logTestBegin("testAdminT3Channel");
-    Properties domainProps = domain.getDomainProps();
+    logger.info("Inside testAdminT3Channel");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    Map<String, Object> domainMap = domain.getDomainMap();
     // check if the property is set to true
-    Boolean exposeAdmint3Channel = new Boolean(domainProps.getProperty("exposeAdminT3Channel"));
+    Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
 
     if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
       domain.deployWebAppViaWLST(
@@ -168,11 +171,12 @@ public class BaseTest {
           getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
           getUsername(),
           getPassword());
+      domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     } else {
-      throw new RuntimeException("FAILURE: exposeAdminT3Channel is not set or false");
+      logger.info("exposeAdminT3Channel is false, can not test t3ChannelPort");
     }
-    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
-    logger.info("SUCCESS");
+
+    logger.info("Done - testAdminT3Channel");
   }
 
   /**
@@ -182,7 +186,7 @@ public class BaseTest {
    * @throws Exception
    */
   public void testDomainLifecyle(Operator operator, Domain domain) throws Exception {
-    logTestBegin("testDomainLifecyle");
+    logger.info("Inside testDomainLifecyle");
     domain.destroy();
     domain.create();
     operator.verifyExternalRESTService();
@@ -190,7 +194,7 @@ public class BaseTest {
     domain.verifyDomainCreated();
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
-    logger.info("SUCCESS");
+    logger.info("Done - testDomainLifecyle");
   }
 
   /**
@@ -200,18 +204,19 @@ public class BaseTest {
    * @throws Exception
    */
   public void testClusterScaling(Operator operator, Domain domain) throws Exception {
-    logTestBegin("testClusterScaling");
-    Properties domainProps = domain.getDomainProps();
+    logger.info("Inside testClusterScaling");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
-    String domainNS = domainProps.getProperty("namespace");
-    String managedServerNameBase = domainProps.getProperty("managedServerNameBase");
+    String domainNS = domainMap.get("namespace").toString();
+    String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
     int replicas = 3;
     String podName = domain.getDomainUid() + "-" + managedServerNameBase + replicas;
-    String clusterName = domainProps.getProperty("clusterName");
+    String clusterName = domainMap.get("clusterName").toString();
 
     logger.info(
         "Scale domain " + domain.getDomainUid() + " Up to " + replicas + " managed servers");
-    operator.scale(domainUid, domainProps.getProperty("clusterName"), replicas);
+    operator.scale(domainUid, domainMap.get("clusterName").toString(), replicas);
 
     logger.info("Checking if managed pod(" + podName + ") is Running");
     TestUtils.checkPodCreated(podName, domainNS);
@@ -251,7 +256,64 @@ public class BaseTest {
     }
 
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
-    logger.info("SUCCESS");
+    logger.info("Done - testClusterScaling");
+  }
+
+  /**
+   * Scale the cluster up using Weblogic WLDF scaling,
+   *
+   * @throws Exception
+   */
+  public void testWLDFScaling(Operator operator, Domain domain) throws Exception {
+    logger.info("Inside testWLDFScaling");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+
+    Map<String, Object> domainMap = domain.getDomainMap();
+    String domainUid = domain.getDomainUid();
+    String domainNS = (String) domainMap.get("namespace");
+    String adminServerName = (String) domainMap.get("adminServerName");
+    String adminPodName = domainUid + "-" + adminServerName;
+    String domainName = (String) domainMap.get("domainName");
+
+    String scriptsDir =
+        "/scratch/acceptance_test_pv/persistentVolume-"
+            + domainUid
+            + "/domains/"
+            + domainUid
+            + "/bin/scripts";
+
+    copyScalingScriptToPod(scriptsDir, domainUid, adminPodName, domainNS);
+    TestUtils.createRBACPoliciesForWLDFScaling();
+
+    // deploy opensessionapp
+    domain.deployWebAppViaWLST(
+        "opensessionapp",
+        getProjectRoot() + "/src/integration-tests/apps/opensessionapp.war",
+        getUsername(),
+        getPassword());
+
+    TestUtils.createWLDFModule(
+        adminPodName, domainNS, ((Integer) domainMap.get("t3ChannelPort")).intValue());
+
+    String clusterName = domainMap.get("clusterName").toString();
+    int replicaCntBeforeScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    logger.info("replica count before scaleup " + replicaCntBeforeScaleup);
+
+    logger.info("Scale domain " + domainUid + " by calling the webapp");
+
+    int replicas = 3;
+    callWebAppAndVerifyScaling(domain, replicas);
+
+    int replicaCntAfterScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    if (replicaCntAfterScaleup <= replicaCntBeforeScaleup) {
+      throw new RuntimeException(
+          "FAILURE: Cluster replica count has not increased after scaling up, replicaCntBeforeScaleup/replicaCntAfterScaleup "
+              + replicaCntBeforeScaleup
+              + "/"
+              + replicaCntAfterScaleup);
+    }
+
+    logger.info("Done - testWLDFScaling");
   }
 
   /**
@@ -260,13 +322,33 @@ public class BaseTest {
    * @throws Exception
    */
   public void testOperatorLifecycle(Operator operator, Domain domain) throws Exception {
-    logTestBegin("testOperatorLifecycle");
+    logger.info("Inside testOperatorLifecycle");
     operator.destroy();
     operator.create();
     operator.verifyExternalRESTService();
     operator.verifyDomainExists(domain.getDomainUid());
     domain.verifyDomainCreated();
-    logger.info("SUCCESS");
+    logger.info("Done - testOperatorLifecycle");
+  }
+
+  public static ExecResult cleanup() throws Exception {
+    String cmd =
+        "export RESULT_ROOT="
+            + getResultRoot()
+            + " export PV_ROOT="
+            + getPvRoot()
+            + " && "
+            + getProjectRoot()
+            + "/src/integration-tests/bash/cleanup.sh";
+    logger.info("Command to call cleanup script " + cmd);
+    return ExecCommand.exec(cmd);
+  }
+
+  protected void logTestBegin(String testName) throws Exception {
+    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    logger.info("BEGIN " + testName);
+    // renew lease at the beginning for every test method, leaseId is set only for Wercker
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
 
   public static String getResultRoot() {
@@ -313,23 +395,45 @@ public class BaseTest {
     return branchName;
   }
 
-  public static ExecResult cleanup() throws Exception {
-    String cmd =
-        "export RESULT_ROOT="
-            + getResultRoot()
-            + " export PV_ROOT="
-            + getPvRoot()
-            + " && "
-            + getProjectRoot()
-            + "/src/integration-tests/bash/cleanup.sh";
-    logger.info("Command to call cleanup script " + cmd);
-    return ExecCommand.exec(cmd);
+  private void copyScalingScriptToPod(
+      String dirPathToCreate, String domainUID, String podName, String domainNS) throws Exception {
+
+    // create scripts dir under domain pv
+    TestUtils.createDirUnderDomainPV(dirPathToCreate);
+
+    // copy script to pod
+    TestUtils.kubectlcp(
+        getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
+        "/shared/domains/" + domainUID + "/bin/scripts/scalingAction.sh",
+        // "/shared/scalingAction.sh",
+        podName,
+        domainNS);
   }
 
-  protected void logTestBegin(String testName) throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN " + testName);
-    // renew lease at the beginning for every test method, leaseId is set only for Wercker
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+  private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
+    Map<String, Object> domainMap = domain.getDomainMap();
+    String domainNS = domainMap.get("namespace").toString();
+    String domainUid = domain.getDomainUid();
+    String clusterName = domainMap.get("clusterName").toString();
+
+    // call opensessionapp
+    domain.callWebAppAndVerifyLoadBalancing("opensessionapp", false);
+    logger.info("Sleeping for 30 seconds for scaleup");
+    Thread.sleep(30 * 1000);
+
+    int replicaCntAfterScaleup = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+    String managedServerNameBase = (String) domainMap.get("managedServerNameBase");
+    for (int i = replicas; i <= replicaCntAfterScaleup; i++) {
+      String podName = domain.getDomainUid() + "-" + managedServerNameBase + i;
+
+      logger.info("Checking if managed pod(" + podName + ") is Running");
+      TestUtils.checkPodCreated(podName, domainNS);
+
+      logger.info("Checking if managed server (" + podName + ") is Running");
+      TestUtils.checkPodReady(podName, domainNS);
+
+      logger.info("Checking if managed service(" + podName + ") is created");
+      TestUtils.checkServiceCreated(podName, domainNS);
+    }
   }
 }
