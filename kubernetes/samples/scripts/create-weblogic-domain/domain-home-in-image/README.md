@@ -5,11 +5,11 @@ The sample scripts demonstrate the creation of a WebLogic domain home in a Docke
 ## Prerequisites
 
 The following prerequisites must be handled prior to running the create domain script:
+* The WDT sample requires that JAVA_HOME is set to a java JDK version 1.8 or greater
 * Make sure the WebLogic operator is running.
-* The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one.
+* The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
-* Build the Oracle WebLogic image `oracle/weblogic:12.2.1.3-developer`. Refer to [Oracle WebLogic Server on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/dockerfiles/12.2.1.3). If a different `baseImage` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository.
 
 ## Use the script to create a domain
 
@@ -31,8 +31,13 @@ The script will perform the following steps:
 * Replace the built-in user name and password in the `properties/docker-build/domain_security.properties` file with the `username` and `password` that are supplied on the command line using the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via the `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
 * Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt) and [Example Image with a WebLogic Server Domain using WLST](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain in the Docker image. Also, you can run the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image), manually with the generated `domain.properties` to create a domain home image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
+```
+kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
+```
 
-As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services.
+As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services. This option should only be used in a single node Kubernetes cluster.
+
+For a multi-node Kubernetes cluster, make sure that the generated image is available on all nodes before creating the domain resource using the kubectl apply -f command.
 
 The usage of the create script is as follows:
 
@@ -71,15 +76,15 @@ The following parameters can be provided in the inputs file.
 | `adminPort` | Port number for the Administration Server inside the Kubernetes cluster. | `7001` |
 | `adminNodePort` | Port number of the Administration Server outside the Kubernetes cluster. | `30701` |
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
-| `baseImage` | The image that is used to build the domain-home-in-image Docker image. If not specified, use the built-in base image `oracle/weblogic:12.2.1.3-developer`. The image specified here needs to be built locally or pulled from a repository before the `create-domain.sh` script is executed. | `oracle/weblogic:12.2.1.3-developer` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `clusterType` | Type of the WebLogic Cluster. Legal values are `CONFIGURED` or `DYNAMIC`. | `DYNAMIC` |
-| `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `2` |
+| `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `5` |
+| `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository before the `create-domain.sh` script is executed. | |
+| `domainHomeImageBuildPath` | Location of the WebLogic "domain home in image" Docker image in `https://github.com/oracle/docker-images.git` project. If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt". Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image" which uses WLST scripts, instead of WDT, to generate the domain configuration. | `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `image` | WebLogic Docker image that the domain resource will use. If not specified, the value is the name of the generated Docker image. | `12213-domain-home-in-image-wdt` |
-| `imagePath` | The relative directory of the WebLogic domain home in image Docker image in `https://github.com/oracle/docker-images.git` project under the `docker-images/OracleWebLogic/samples` directory.  | `12213-domain-home-in-image-wdt` |
+| `image` | WebLogic Docker image that the domain resource will pull if needed. You only need to specify this if you are going to push the generated image from the local Docker repository to another Docker repository. If not specified, the sample uses the internally generated image name, either "domain-home-in-image:latest" or "domain-home-in-image-wdt:latest". | |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are "IfNotPresent", "Always", or "Never" | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
@@ -89,7 +94,7 @@ The following parameters can be provided in the inputs file.
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
-| `serverStartPolicy` | Determines which WebLogic Servers will be started up. Legal values are `NEVER`, `ALWAYS`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
+| `serverStartPolicy` | Determines which WebLogic Servers will be started up. Legal values are `NEVER`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
 | `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
 | `t3PublicAddress` | Public address for the T3 channel. | `kubernetes` |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes secret for the Administration Server's username and password. | `domain1-weblogic-credentials` |
@@ -171,6 +176,7 @@ spec:
   # replicas: 1
 
 ```
+### 
 
 ### Verify the domain
 
