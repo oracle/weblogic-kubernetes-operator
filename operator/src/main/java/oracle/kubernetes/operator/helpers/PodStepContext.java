@@ -143,7 +143,7 @@ public abstract class PodStepContext implements StepContextConstants {
   }
 
   String getEffectiveLogHome() {
-    if (!getDomain().getLogHomeEnabled()) return "";
+    if (!getDomain().getLogHomeEnabled()) return null;
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
       // logHome not specified, use default value
@@ -434,6 +434,7 @@ public abstract class PodStepContext implements StepContextConstants {
         logPodExists();
         return doNext(packet);
       } else {
+        LOGGER.info(MessageKeys.CYCLING_POD, currentPod, getPodModel());
         return doNext(replaceCurrentPod(getNext()), packet);
       }
     }
