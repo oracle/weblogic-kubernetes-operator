@@ -13,6 +13,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -60,18 +61,16 @@ public class ManagedServersUpStep extends Step {
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
         addToCluster(clusterName);
-      } else {
-        logIfReplicaExceeds(clusterConfig);
       }
     }
 
     boolean exceedsMaxConfiguredClusterSize(WlsClusterConfig clusterConfig) {
       if (clusterConfig != null) {
         String clusterName = clusterConfig.getClusterName();
-        int configClusterSize = clusterConfig.getMaxDynamicClusterSize();
+        int configMaxClusterSize = clusterConfig.getMaxDynamicClusterSize();
         return clusterConfig.hasDynamicServers()
-            && getReplicaCount(clusterName) == configClusterSize
-            && domain.getReplicaCount(clusterName) > configClusterSize;
+            && clusterConfig.getServerConfigs().size() == configMaxClusterSize
+            && domain.getReplicaCount(clusterName) > configMaxClusterSize;
       }
       return false;
     }
@@ -98,14 +97,14 @@ public class ManagedServersUpStep extends Step {
       return Optional.ofNullable(replicas.get(clusterName)).orElse(0);
     }
 
-    private void logIfReplicaExceeds(WlsClusterConfig clusterConfig) {
+    private void logIfReplicasExceedsClusterServersMax(WlsClusterConfig clusterConfig) {
       if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
         LOGGER.warning(
-            "******* The replica count {1} exceeds the configured maximum dynamic cluster size {2} for cluster {0}",
-            clusterName,
+            MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT,
             domain.getReplicaCount(clusterName),
-            clusterConfig.getMaxDynamicClusterSize());
+            clusterConfig.getMaxDynamicClusterSize(),
+            clusterName);
       }
     }
   }
@@ -129,6 +128,7 @@ public class ManagedServersUpStep extends Step {
     Set<String> clusteredServers = new HashSet<>();
 
     for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
+      factory.logIfReplicasExceedsClusterServersMax(clusterConfig);
       for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
         factory.addServerIfNeeded(serverConfig, clusterConfig);
         clusteredServers.add(serverConfig.getName());
