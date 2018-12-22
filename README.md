@@ -95,10 +95,6 @@ details of how to access our Slack workspace.  After you are logged in, please c
 
 See [Recent changes](site/recent-changes.md) for changes to the operator, including any backward incompatible changes.
 
-## Need more help?
-
-We have a public Slack channel where you can get in touch with us to ask questions about using the operator.  To join our channel, please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include details of how to access our Slack workspace.  After you are logged in, please come to #operator and say, "hello!"
-
 # Developer guide
 
 Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.
