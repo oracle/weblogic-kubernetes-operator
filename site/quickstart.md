@@ -172,8 +172,13 @@ domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/we
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
 $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e
+$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u username -p password -e
 ```
+
+You need to provide the WebLogic administration username and password in the `-u` and `-p` options
+respectively, as shown in the example.  If you specify the `-e` option, the script will generate the 
+Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the 
+script will jsut generate the YAML files, but will not take any action on your cluster.
 
 c.	Confirm that the operator started the servers for the domain:
 * Use `kubectl` to show that the domain resource was created:
