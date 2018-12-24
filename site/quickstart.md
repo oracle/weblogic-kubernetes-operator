@@ -178,7 +178,7 @@ $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u username -p 
 You need to provide the WebLogic administration username and password in the `-u` and `-p` options
 respectively, as shown in the example.  If you specify the `-e` option, the script will generate the 
 Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the 
-script will jsut generate the YAML files, but will not take any action on your cluster.
+script will just generate the YAML files, but will not take any action on your cluster.
 
 c.	Confirm that the operator started the servers for the domain:
 * Use `kubectl` to show that the domain resource was created:
