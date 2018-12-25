@@ -86,19 +86,6 @@ function initOutputDir {
 }
 
 #
-#
-# Function to validate the domain's persistent volume claim has been created
-#
-function validateDomainPVC {
-  # Check if the persistent volume claim is already available
-  checkPvcExists ${persistentVolumeClaimName} ${namespace}
-  if [ "${PVC_EXISTS}" = "false" ]; then
-    validationError "The domain persistent volume claim ${persistentVolumeClaimName} does not exist in namespace ${namespace}"
-  fi
-  failIfValidationErrors
-}
-
-#
 # Function to setup the environment to run the create domain job
 #
 function initialize {
@@ -130,7 +117,7 @@ function initialize {
     validationError "The template file ${deleteJobInput} for deleting a WebLogic domain_home folder was not found"
   fi
 
-  dcrInput="${scriptDir}/domain-template.yaml"
+  dcrInput="${scriptDir}/../../common/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
@@ -159,30 +146,14 @@ function createFiles {
   deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
   dcrOutput="${domainOutputDir}/domain.yaml"
 
-  enabledPrefix=""     # uncomment the feature
-  disabledPrefix="# "  # comment out the feature
+  initializeInput
 
   if [ -z "${image}" ]; then
     fail "Please specify image in your input YAML"
   fi
 
-  domainName=${domainUID}
-
-  # Use the default value if not defined.
-  if [ -z "${domainPVMountPath}" ]; then
-    domainPVMountPath="/shared"
-  fi
-
   if [ -z "${domainHome}" ]; then
     domainHome="${domainPVMountPath}/domains/${domainUID}"
-  fi
-
-  if [ -z "${logHome}" ]; then
-    logHome="${domainPVMountPath}/logs/${domainUID}"
-  fi
-
-  if [ -z "${weblogicCredentialsSecretName}" ]; then
-    weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
   fi
 
   # Use the default value if not defined.
@@ -193,11 +164,6 @@ function createFiles {
   # Use the default value if not defined.
   if [ -z "${createDomainScriptName}" ]; then
     createDomainScriptName="create-domain-job.sh"
-  fi
-
-  # Use the default value if not defined.
-  if [ -z "${persistentVolumeClaimName}" ]; then
-    persistentVolumeClaimName=${domainUID}-weblogic-sample-pvc
   fi
 
   # Must escape the ':' value in image for sed to properly parse and replace
@@ -249,44 +215,7 @@ function createFiles {
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${deleteJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
 
-  # Generate the yaml to create the domain resource
-  echo Generating ${dcrOutput}
-
-  if [ "${exposeAdminT3Channel}" = true ]; then
-    exposeAdminT3ChannelPrefix="${enabledPrefix}"
-  else
-    exposeAdminT3ChannelPrefix="${disabledPrefix}"
-  fi
-
-  if [ "${exposeAdminNodePort}" = true ]; then
-    exposeAdminNodePortPrefix="${enabledPrefix}"
-  else
-    exposeAdminNodePortPrefix="${disabledPrefix}"
-  fi
-
-  cp ${dcrInput} ${dcrOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
-  sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
-  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
-  sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
-  sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
-  sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
- 
-  # Remove any "...yaml-e" files left over from running sed
-  rm -f ${domainOutputDir}/*.yaml-e
+  generateDomainYaml false
 }
 
 # create domain configmap using what is in the createDomainFilesDir
@@ -410,7 +339,6 @@ function printSummary {
   fi
   echo "The following files were generated:"
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"
-  echo "  ${domainPVCOutput}"
   echo "  ${createJobOutput}"
   echo "  ${dcrOutput}"
   echo ""
