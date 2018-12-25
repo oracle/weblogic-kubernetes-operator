@@ -213,6 +213,102 @@ function getKubernetesClusterIP {
 }
 
 #
+# Function to initialize the input parameters.
+# For some parameters, use the default value if not defined.
+#
+function initializeInput {
+  domainName=${domainUID}
+
+  enabledPrefix=""     # uncomment the feature
+  disabledPrefix="# "  # comment out the feature
+
+  if [ "${exposeAdminT3Channel}" = true ]; then
+    exposeAdminT3ChannelPrefix="${enabledPrefix}"
+  else
+    exposeAdminT3ChannelPrefix="${disabledPrefix}"
+  fi
+
+  if [ "${exposeAdminNodePort}" = true ]; then
+    exposeAdminNodePortPrefix="${enabledPrefix}"
+  else
+    exposeAdminNodePortPrefix="${disabledPrefix}"
+  fi
+
+  if [ -z "${domainPVMountPath}" ]; then
+    domainPVMountPath="/shared"
+  fi
+
+  if [ -z "${logHome}" ]; then
+    logHome="${domainPVMountPath}/logs/${domainUID}"
+  fi
+
+  if [ -z "${persistentVolumeClaimName}" ]; then
+    persistentVolumeClaimName="${domainUID}-weblogic-sample-pvc"
+  fi
+
+  if [ -z "${weblogicCredentialsSecretName}" ]; then
+    weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
+  fi
+}
+
+#
+# Function to generate the yaml file for creating the domain resource
+# $1 - domain home in image
+#
+function generateDomainYaml {
+  if [ "$#" != 1 ]; then
+    fail "The function must be called with domainHomeInImage parameter."
+  fi
+
+  domainHomeInImage="${1}"
+  if [ "true" != "${domainHomeInImage}" ] && [ "false" != "${domainHomeInImage}" ]; then
+    fail "The value of domainHomeInImage must be true or false: ${domainHomeInImage}"
+  fi
+
+  echo Generating ${dcrOutput}
+
+  cp ${dcrInput} ${dcrOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_HOME_IN_IMAGE%:${domainHomeInImage}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
+  sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
+  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
+  sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
+
+  if [ "${domainHomeInImage}" == "true" ]; then
+    if [ -z $domainHomeImageBuildPath ]; then
+      domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt"
+    fi
+    imageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
+
+    # now we know which image to use, update the domain yaml file
+    if [ -z $image ]; then
+      sed -i -e "s|%WEBLOGIC_IMAGE%|${imageName}|g" ${dcrOutput}
+    else
+      sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
+    fi
+  else
+    sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
+  fi
+
+  # Remove any "...yaml-e" files left over from running sed
+  rm -f ${domainOutputDir}/*.yaml-e
+}
+
+#
 # Function to create the domain recource
 #
 function createDomainResource {

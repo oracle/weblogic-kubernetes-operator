@@ -16,7 +16,7 @@ spec:
   # The WebLogic Domain Home
   domainHome: %DOMAIN_HOME%
   # If the domain home is in the image
-  domainHomeInImage: false
+  domainHomeInImage: %DOMAIN_HOME_IN_IMAGE%
   # The Operator currently does not support other images
   image: "%WEBLOGIC_IMAGE%"
   # imagePullPolicy defaults to "Always" if image version is :latest
