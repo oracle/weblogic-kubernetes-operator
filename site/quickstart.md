@@ -4,8 +4,18 @@ Use this quick start guide to create a WebLogic deployment in a Kubernetes clust
 These instructions assume that you are already familiar with Kubernetes.  If you need more detailed instructions, please
 refer to the [User guide](user-guide.md).
 
+> If you have an old version of the operator installed on your cluster you must remove
+  it before installing this version.  You should remove the deployment (for example `kubectl delete deploy weblogic-operator -n your-namespace`) and the custom
+  resource definition (for example `kubectl delete crd domain`).  If you do not remove
+  the custom resource definition you may see errors like this: 
+  
+    `Error from server (BadRequest): error when creating "/scratch/output/uidomain/weblogic-domains/uidomain/domain.yaml": 
+    the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1`
+
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
+
+The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Using operator Helm charts](helm-charts.md).
 
 You should clone this repository to your local machine so that you have access to the
 various sample files mentioned throughout this guide:
@@ -92,7 +102,13 @@ $ helm install kubernetes/charts/weblogic-operator \
   --set "domainNamespaces={}" \
   --wait
 ```
-d.  Verify that the operator is up and running by viewing the operator pod's log:
+
+d. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
+```
+$ kubectl get pods -n sample-weblogic-operator-ns
+```
+
+e.  Verify that the operator is up and running by viewing the operator pod's log:
 
 ```
 $ kubectl log -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
@@ -147,7 +163,7 @@ Follow the directions in the [README](../kubernetes/samples/scripts/create-weblo
 including:
 
 * Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
-domain namespace (`sample-domain1-ns`) and the base image (`oracle/weblogic:12213-patch-wls-for-k8s`).
+domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/weblogic:12213-patch-wls-for-k8s`).
 
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials.
   By convention, the secret will be named`domainUID-weblogic-credentials` (where `domainUID` is replaced with the
@@ -156,23 +172,28 @@ domain namespace (`sample-domain1-ns`) and the base image (`oracle/weblogic:1221
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
 $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e -v
+$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u username -p password -e
 ```
+
+You need to provide the WebLogic administration username and password in the `-u` and `-p` options
+respectively, as shown in the example.  If you specify the `-e` option, the script will generate the 
+Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the 
+script will just generate the YAML files, but will not take any action on your cluster.
 
 c.	Confirm that the operator started the servers for the domain:
-```
-$ kubectl get pods -n sample-domain1-ns
-```
-
-After a short time, you will see the Administration Server and Managed Servers running.
-
 * Use `kubectl` to show that the domain resource was created:
 ```
 $ kubectl describe domain sample-domain1 -n sample-domain1-ns
 ```
-* Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
+
+After a short time, you will see the Administration Server and Managed Servers running.
 ```
-$ kubectl get pods -n sample-weblogic-operator-ns
+$ kubectl get pods -n sample-domain1-ns
+```
+
+You should also see all the Kubernetes services for the domain.
+```
+$ kubectl get services -n sample-domain1-ns
 ```
 
 d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
@@ -180,27 +201,27 @@ d.	Create an Ingress for the domain, in the domain namespace, by using the [samp
 ```
 $ cd kubernetes/samples/charts
 $ helm install ingress-per-domain --name domain1-ingress --values ingress-per-domain/values.yaml
-``` 
+```
 
 e.	To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods
     you can hit the URL for the "WebLogic Ready App" which will return a HTTP 200 status code as
-    shown in the example below.  If you used the host-based routing ingress sample you will need to 
+    shown in the example below.  If you used the host-based routing ingress sample you will need to
     provide the hostname in the `-H` option:
 ```
 $ curl -v -H 'host: domain1.org' http://your.server.com:30305/weblogic/ 
-*  About to connect() to your.server.com port 30305 (#0) 
+* About to connect() to your.server.com port 30305 (#0) 
 *   Trying 10.196.1.64... 
 * Connected to your.server.com (10.196.1.64) port 30305 (#0)
  > GET /weblogic/ HTTP/1.1 
 > User-Agent: curl/7.29.0 
 > Accept: */* 
 > host: domain1.org 
-> 
+>
  < HTTP/1.1 200 OK 
 < Content-Length: 0 
 < Date: Thu, 20 Dec 2018 14:52:22 GMT
  < Vary: Accept-Encoding 
-<  * Connection #0 to host your.server.com left intact 
+< * Connection #0 to host your.server.com left intact 
 ```
 **Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
 update security lists to allow ingress to this port.

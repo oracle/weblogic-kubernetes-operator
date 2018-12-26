@@ -1,6 +1,6 @@
 # User guide
 
-This document provides detailed information that is targeted at the user of the Oracle WebLogic
+This document provides detailed information targeted to users of the Oracle WebLogic
 Server Kubernetes Operator.  It provides instructions on how to install the operator in your
 Kubernetes cluster and how to use it to manage WebLogic domains.  
 
@@ -31,11 +31,12 @@ presented in the correct order.
 * [Create and manage WebLogic domains](domains.md)
   * [Preparing the Kubernetes cluster to run WebLogic domains](domains.md#preparing-the-kubernetes-cluster-to-run-weblogic-domains)
   * [Important considerations for WebLogic domains in Kubernetes](domains.md#important-considerations-for-weblogic-domains-in-kubernetes)
-  * [Creating and managing WebLogic domains](creating-domain.md)
+  * [Creating and managing WebLogic domains](domains.md#creating-and-managing-weblogic-domains)
   * [Modifying domain configurations](domains.md#modifying-domain-configurations)
-  * [Managing lifecycle operations](domains.md#managing-lifecycle-operations)
+  * [Managing lifecycle operations](domains.md#managing-lifecycle-operations-including-shutting-down-and-deleting-domains)
   * [Using WLST](wlst.md)
   * [Scaling clusters](scaling.md)
+  * [Information about load balancing with Ingresses](ingress.md)
 
 ## Important terms
 
