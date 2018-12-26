@@ -20,6 +20,7 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.steps.ReadHealthStep.ReadHealthWithHttpClientStep;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -76,6 +77,12 @@ public class ReadHealthStepTest {
 
     PacketStub withServerName(String serverName) {
       this.serverName = serverName;
+      return this;
+    }
+
+    PacketStub addSpi(Class clazz, Object spiObject) {
+      Component component = Component.createFor(spiObject);
+      this.getComponents().put(clazz.getName(), component);
       return this;
     }
 
