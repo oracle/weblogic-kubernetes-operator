@@ -16,10 +16,10 @@
 #
 
 box:
-  id: store/oracle/serverjre
+  id: oraclelinux
   username: $DOCKER_USERNAME
   password: $DOCKER_PASSWORD
-  tag: 8
+  tag: 7
 
 # This is the main build pipeline that builds the codebase and runs unit tests.
 build:
@@ -50,6 +50,10 @@ build:
       rm -rf /tmp/helm
       helm version
       echo @@ "Helm is installed."
+  - script:
+    name: Docker login
+    code: |
+      docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
   - wercker/maven:
     goals: clean install
     version: 3.5.2
@@ -59,15 +63,10 @@ build:
     name: Tag operator image
     code: |
       docker tag oracle/weblogic-kubernetes-operator:$JAR_VERSION $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
-  # push the image to Docker using the GIT branch as the tag
-  # this image needs to be available to the integration-test pipeline for testing
-  - internal/docker-push:
-    image-name: $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
-    username: $REPO_USERNAME
-    password: $REPO_PASSWORD
-    repository: $REPO_REPOSITORY
-    registry: $REPO_REGISTRY
-    tag: $IMAGE_TAG_OPERATOR
+      # push the image to Docker using the GIT branch as the tag
+      # this image needs to be available to the integration-test pipeline for testing
+      docker login --username $REPO_USERNAME --password $REPO_PASSWORD $REPO_REGISTRY
+      docker push $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
 
 # This pipeline runs integration tests against a K8s cluster on OCI.
 command-timeout: 60
