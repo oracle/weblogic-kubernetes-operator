@@ -56,7 +56,9 @@ build:
     profiles: helm-installation-test
     cache_repo: true
   - script:
-    docker tag oracle/weblogic-kubernetes-operator:$JAR_VERSION $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
+    name: Tag operator image
+    code: |
+      docker tag oracle/weblogic-kubernetes-operator:$JAR_VERSION $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
   # push the image to Docker using the GIT branch as the tag
   # this image needs to be available to the integration-test pipeline for testing
   - internal/docker-push:
