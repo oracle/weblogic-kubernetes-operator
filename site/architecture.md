@@ -11,7 +11,7 @@ The operator is packaged in a [Docker image](https://hub.docker.com/r/oracle/web
 
 ```
 
-docker pull oracle/weblogic-kubernetes-operator:1.1
+docker pull oracle/weblogic-kubernetes-operator:2.0-rc1
 
 ```
 

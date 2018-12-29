@@ -23,6 +23,7 @@ box:
 
 # This is the main build pipeline that builds the codebase and runs unit tests.
 build:
+  docker: true
   steps:
   - script:
     name: Hello
@@ -54,18 +55,8 @@ build:
     version: 3.5.2
     profiles: helm-installation-test
     cache_repo: true
-  - internal/docker-build:
-    dockerfile: Dockerfile
-    image-name: $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
-    no-cache: true
-    build-args: VERSION=$JAR_VERSION
-    registry-auth-config: |
-      {
-        "https://index.docker.io/v1/": {
-          "username": "${DOCKER_USERNAME}",
-          "password": "${DOCKER_PASSWORD}"
-        }
-      }
+  - script:
+    docker tag oracle/weblogic-kubernetes-operator:$JAR_VERSION $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
   # push the image to Docker using the GIT branch as the tag
   # this image needs to be available to the integration-test pipeline for testing
   - internal/docker-push:

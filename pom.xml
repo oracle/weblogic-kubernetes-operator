@@ -86,6 +86,32 @@
         </executions>
       </plugin>
 
+      <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <version>${dockerfile-maven-version}</version>
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>default</id>
+            <goals>
+              <goal>build</goal>
+              <goal>push</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <repository>oracle/weblogic-kubernetes-operator</repository>
+          <tag>${project.version}</tag>
+          <buildArgs>
+            <http_proxy>${env.http_proxy}</http_proxy>
+            <https_proxy>${env.https_proxy}</https_proxy>
+            <no_proxy>${env.no_proxy}</no_proxy>
+            <VERSION>${project.version}</VERSION>
+          </buildArgs>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
@@ -310,6 +336,7 @@
     <jackson-version>2.9.7</jackson-version>
     <snakeyaml-version>1.23</snakeyaml-version>
     <guava-version>27.0.1-jre</guava-version>
+    <dockerfile-maven-version>1.4.9</dockerfile-maven-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
