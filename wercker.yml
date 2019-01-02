@@ -16,10 +16,10 @@
 #
 
 box:
-  id: oraclelinux
+  id: store/oracle/serverjre
   username: $DOCKER_USERNAME
   password: $DOCKER_PASSWORD
-  tag: 7
+  tag: 8
 
 # This is the main build pipeline that builds the codebase and runs unit tests.
 build:
