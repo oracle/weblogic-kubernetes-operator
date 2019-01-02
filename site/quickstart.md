@@ -4,6 +4,14 @@ Use this quick start guide to create a WebLogic deployment in a Kubernetes clust
 These instructions assume that you are already familiar with Kubernetes.  If you need more detailed instructions, please
 refer to the [User guide](user-guide.md).
 
+> If you have an old version of the operator installed on your cluster you must remove
+  it before installing this version.  You should remove the deployment (for example `kubectl delete deploy weblogic-operator -n your-namespace`) and the custom
+  resource definition (for example `kubectl delete crd domain`).  If you do not remove
+  the custom resource definition you may see errors like this: 
+  
+    `Error from server (BadRequest): error when creating "/scratch/output/uidomain/weblogic-domains/uidomain/domain.yaml": 
+    the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1`
+
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
 
@@ -164,8 +172,13 @@ domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/we
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
 $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e -v
+$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u username -p password -e
 ```
+
+You need to provide the WebLogic administration username and password in the `-u` and `-p` options
+respectively, as shown in the example.  If you specify the `-e` option, the script will generate the 
+Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the 
+script will just generate the YAML files, but will not take any action on your cluster.
 
 c.	Confirm that the operator started the servers for the domain:
 * Use `kubectl` to show that the domain resource was created:

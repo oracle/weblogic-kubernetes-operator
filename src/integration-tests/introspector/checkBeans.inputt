@@ -1,4 +1,7 @@
+/Log/base_domain,FileName,logs/base_domain.log,/shared/logs/base_domain.log
+
 /Servers/${ADMIN_NAME},ListenAddress,,${DOMAIN_UID}-${ADMIN_NAME}
+
 /Servers/${ADMIN_NAME}/Log/${ADMIN_NAME},FileName,logs/${ADMIN_NAME}.log,/shared/logs/${ADMIN_NAME}.log
 
 /Servers/${ADMIN_NAME}/NetworkAccessPoints/T3Channel1,ListenAddress,unresolvable-dns-name,${DOMAIN_UID}-${ADMIN_NAME}
@@ -16,6 +19,9 @@
 /Servers/${ADMIN_NAME},MaxMessageSize,999999,78787878
 /Servers/standalone1,MaxMessageSize,7777777,1111111
 /Servers/standalone2,MaxMessageSize,10000000,2222222
+
+/ServerTemplates/mycluster-template/Log/mycluster-template,FileName,logs/mycluster-template.log,/shared/logs/managed-server${id}.log
+/ServerTemplates/mycluster-template,ListenAddress,None,domain1-managed-server${id}
 
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,Url,jdbc:oracle:thin:@myoriginalhostname:1521:myoriginalsid,jdbc:oracle:thin:@mynewhost:1521:mynewsid
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,PasswordEncrypted,*,!
