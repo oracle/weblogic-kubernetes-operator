@@ -68,6 +68,7 @@ build:
       # this image needs to be available to the integration-test pipeline for testing
       echo "TEST: Running: docker login --username $REPO_USERNAME --password-stdin $REPO_SERVER"
       echo $REPO_PASSWORD | docker login --username $REPO_USERNAME --password-stdin $REPO_SERVER
+      echo "TEST: Running: docker push $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR"
       docker push $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
 
 # This pipeline runs integration tests against a K8s cluster on OCI.
