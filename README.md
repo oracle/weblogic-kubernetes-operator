@@ -63,7 +63,7 @@ please consult this table of contents:
   various tasks related to the operator.
 * The [Developer guide](site/developer.md) provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to contribute to the operator code will find useful information here.  This section also includes
   API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.
-* The [Contributing](#contributing-to-the-operator) section provides information about conribution requirements.
+* The [Contributing](#contributing-to-the-operator) section provides information about contribution requirements.
 
 
 # User guide

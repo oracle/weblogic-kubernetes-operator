@@ -4,6 +4,15 @@
 
 The WebLogic Kubernetes Operator uses Helm to create and deploy any necessary resources and then run the operator in a Kubernetes cluster. Helm helps you manage Kubernetes applications. Helm charts help you define and install applications into the Kubernetes cluster. The operator's Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
 
+> If you have an old version of the operator installed on your cluster you must remove
+  it before installing this version.  You should remove the deployment (for example `kubectl delete deploy weblogic-operator -n your-namespace`) and the custom
+  resource definition (for example `kubectl delete crd domain`).  If you do not remove
+  the custom resource definition you may see errors like this: 
+  
+    `Error from server (BadRequest): error when creating "/scratch/output/uidomain/weblogic-domains/uidomain/domain.yaml": 
+    the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1`
+
+
 ## Install Helm and Tiller
 
 Helm has two parts: a client (helm) and a server (tiller). Tiller runs inside of your Kubernetes cluster, and manages releases (installations) of your charts.  See https://github.com/kubernetes/helm/blob/master/docs/install.md for detailed instructions on installing helm and tiller.
