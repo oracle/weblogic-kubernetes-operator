@@ -16,9 +16,9 @@ RUN mkdir /operator/lib
 ENV PATH=$PATH:/operator
 
 ARG VERSION
-COPY src/scripts/* /operator/
-COPY operator/target/weblogic-kubernetes-operator-$VERSION.jar /operator/weblogic-kubernetes-operator.jar
-COPY operator/target/lib/*.jar /operator/lib/
+COPY scripts/* /operator/
+COPY target/weblogic-kubernetes-operator-$VERSION.jar /operator/weblogic-kubernetes-operator.jar
+COPY target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
   CMD /operator/livenessProbe.sh

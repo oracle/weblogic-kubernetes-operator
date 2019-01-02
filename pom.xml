@@ -86,32 +86,6 @@
         </executions>
       </plugin>
 
-      <plugin>
-        <groupId>com.spotify</groupId>
-        <artifactId>dockerfile-maven-plugin</artifactId>
-        <version>${dockerfile-maven-version}</version>
-        <inherited>false</inherited>
-        <executions>
-          <execution>
-            <id>default</id>
-            <goals>
-              <goal>build</goal>
-              <goal>push</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <repository>oracle/weblogic-kubernetes-operator</repository>
-          <tag>${project.version}</tag>
-          <buildArgs>
-            <http_proxy>${env.http_proxy}</http_proxy>
-            <https_proxy>${env.https_proxy}</https_proxy>
-            <no_proxy>${env.no_proxy}</no_proxy>
-            <VERSION>${project.version}</VERSION>
-          </buildArgs>
-        </configuration>
-      </plugin>
-
     </plugins>
   </build>
 
