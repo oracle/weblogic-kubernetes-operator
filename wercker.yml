@@ -66,7 +66,7 @@ build:
       docker tag oracle/weblogic-kubernetes-operator:$JAR_VERSION $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
       # push the image to Docker using the GIT branch as the tag
       # this image needs to be available to the integration-test pipeline for testing
-      docker login --username $REPO_USERNAME --password $REPO_PASSWORD $REPO_REGISTRY
+      docker login --username $REPO_USERNAME --password $REPO_PASSWORD $REPO_SERVER
       docker push $REPO_REPOSITORY:$IMAGE_TAG_OPERATOR
 
 # This pipeline runs integration tests against a K8s cluster on OCI.
