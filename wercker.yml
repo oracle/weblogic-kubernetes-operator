@@ -35,6 +35,7 @@ build:
   - script:
     name: Install pre-reqs
     code: |
+      yum-config-manager --enable *addons
       yum -y install tar gzip procps docker-engine
   - script:
     name: Install helm
