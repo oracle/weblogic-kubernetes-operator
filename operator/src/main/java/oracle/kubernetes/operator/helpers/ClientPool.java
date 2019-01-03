@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final ClientPool SINGLETON = new ClientPool();
+  private static ClientPool SINGLETON = new ClientPool();
 
   private static final ClientFactory FACTORY = new DefaultClientFactory();
 
