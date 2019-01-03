@@ -1,4 +1,4 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final ClientPool SINGLETON = new ClientPool();
+  private static ClientPool SINGLETON = new ClientPool();
 
   private static final ClientFactory FACTORY = new DefaultClientFactory();
 
@@ -26,8 +26,6 @@ public class ClientPool extends Pool<ApiClient> {
   }
 
   private final AtomicBoolean isFirst = new AtomicBoolean(true);
-
-  private ClientPool() {}
 
   @Override
   protected ApiClient create() {

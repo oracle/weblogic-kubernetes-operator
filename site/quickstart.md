@@ -4,6 +4,14 @@ Use this quick start guide to create a WebLogic deployment in a Kubernetes clust
 These instructions assume that you are already familiar with Kubernetes.  If you need more detailed instructions, please
 refer to the [User guide](user-guide.md).
 
+> If you have an older version of the operator installed on your cluster, you must remove
+  it before installing this version.  You should remove the deployment (for example, `kubectl delete deploy weblogic-operator -n your-namespace`) and the custom
+  resource definition (for example, `kubectl delete crd domain`).  If you do not remove
+  the custom resource definition you may see errors like this:
+
+    `Error from server (BadRequest): error when creating "/scratch/output/uidomain/weblogic-domains/uidomain/domain.yaml":
+    the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1`
+
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
 
@@ -24,9 +32,10 @@ b.  Log in to the Docker Store from your docker client:
 ```
 $ docker login
 ```
-c.	Pull the operator image:
+c.	Pull the operator image and tag it with the default image value of the operator:
 ```
-$ docker pull oracle/weblogic-kubernetes-operator:2.0
+$ docker pull oracle/weblogic-kubernetes-operator:2.0-rc1
+$ docker tag oracle/weblogic-kubernetes-operator:2.0-rc1 weblogic-kubernetes-operator:2.0
 ```
 d.	Pull the Traefik load balancer image:
 ```
@@ -62,17 +71,14 @@ EOF
 
 Use `helm` to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](../kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 ```
-$ helm install \
+$ helm install stable/traefik \
 --name traefik-operator \
 --namespace traefik \
---values <path>/values.yaml  \
+--values kubernetes/samples/charts/traefik/values.yaml  \
 --set "kubernetes.namespaces={traefik}" \
-stable/traefik
+--wait
 ```
-Wait until the Traefik operator pod is running and ready.
-```
-$ kubectl -n traefik get pod -w
-```
+
 ## 3. Install the operator.
 
 a.  Create a namespace for the operator:
@@ -129,12 +135,9 @@ c.  Configure Traefik to manage Ingresses created in this namespace:
 $ helm upgrade \
   --reuse-values \
   --set "kubernetes.namespaces={traefik,sample-domain1-ns}" \
+  --wait \
   traefik-operator \
   stable/traefik
-```
-d. Wait until the Traefik operator pod finishes restarting.
-```
-$ kubectl -n traefik get pod -w
 ```
 
 ## 5. Create a domain in the domain namespace.
@@ -142,8 +145,8 @@ $ kubectl -n traefik get pod -w
 a. Create a Kubernetes secret containing the `username` and `password` for the domain using the [`create-weblogic-credentials`](../kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 
 ```
-$ cd kubernetes/samples/scripts/create-weblogic-domain-credentials
-$ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -n sample-domain1-ns -d sample-domain1
+$ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \
+  -u weblogic -p welcome1 -n sample-domain1-ns -d sample-domain1
 ```
 
 The sample will create a secret named `domainUID-weblogic-credentials` where the `domainUID` is replaced
@@ -164,8 +167,13 @@ domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/we
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
 $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -e -v
+$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u username -p password -e
 ```
+
+You need to provide the WebLogic administration user name and password in the `-u` and `-p` options
+respectively, as shown in the example.  If you specify the `-e` option, the script will generate the
+Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the
+script will just generate the YAML files, but will not take any action on your cluster.
 
 c.	Confirm that the operator started the servers for the domain:
 * Use `kubectl` to show that the domain resource was created:
@@ -186,16 +194,19 @@ $ kubectl get services -n sample-domain1-ns
 d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
 * Use `helm install`, specifying the `domainUID` (`sample-domain1`) and domain namespace (`sample-domain1-ns`) in the `values.yaml` file.
 ```
-$ cd kubernetes/samples/charts
-$ helm install ingress-per-domain --name domain1-ingress --values ingress-per-domain/values.yaml
+$ helm install kubernetes/samples/charts/ingress-per-domain \
+  --name sample-domain1-ingress \
+  --set wlsDomain.namespace=sample-domain1-ns \
+  --set wlsDomain.domainUID=sample-domain1 \
+  --set traefik.hostname=sample-domain1.org
 ```
 
-e.	To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods
-    you can hit the URL for the "WebLogic Ready App" which will return a HTTP 200 status code as
-    shown in the example below.  If you used the host-based routing ingress sample you will need to
+e.	To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods,
+    you can hit the URL for the "WebLogic Ready App" which will return a HTTP 200 status code, as
+    shown in the example below.  If you used the host-based routing Ingress sample, you will need to
     provide the hostname in the `-H` option:
 ```
-$ curl -v -H 'host: domain1.org' http://your.server.com:30305/weblogic/ 
+$ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/ 
 * About to connect() to your.server.com port 30305 (#0) 
 *   Trying 10.196.1.64... 
 * Connected to your.server.com (10.196.1.64) port 30305 (#0)
@@ -217,11 +228,13 @@ update security lists to allow ingress to this port.
 
 a.	Remove the domain's Ingress by using `helm`:
 ```
-$ helm delete --purge domain1-ingress
+$ helm delete --purge sample-domain1-ingress
 ```
 b.	Remove the domain resources by using the sample [`delete-weblogic-domain-resources`](../kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script.
-
-c.	Use `kubectl` to confirm that the server pods and domain resource are gone.
+```
+$ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
+```
+c.	Use `kubectl` to confirm that the server pods and domain resource are gone:
 ```
 $ kubectl get pods -n sample-domain1-ns
 $ kubectl get domains -n sample-domain1-ns
@@ -234,11 +247,12 @@ a.	Configure the Traefik load balancer to stop managing the Ingresses in the dom
 $ helm upgrade \
   --reuse-values \
   --set "kubernetes.namespaces={traefik}" \
+  --wait \
   traefik-operator \
   stable/traefik
 ```
 
-b.	Configure the operator to stop managing the domain.
+b.	Configure the operator to stop managing the domain:
 
 ```
 $ helm upgrade \

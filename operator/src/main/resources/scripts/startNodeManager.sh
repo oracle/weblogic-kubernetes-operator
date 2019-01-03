@@ -111,6 +111,12 @@ createFolder ${NODEMGR_HOME}
 
 NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}/${DOMAIN_UID}}}
 
+trace "Info: NODEMGR_HOME='${NODEMGR_HOME}'"
+trace "Info: LOG_HOME='${LOG_HOME}'"
+trace "Info: SERVER_NAME='${SERVER_NAME}'"
+trace "Info: DOMAIN_UID='${DOMAIN_UID}'"
+trace "Info: NODEMGR_LOG_HOME='${NODEMGR_LOG_HOME}'"
+
 createFolder ${NODEMGR_LOG_HOME}
 
 nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
