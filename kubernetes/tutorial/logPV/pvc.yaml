@@ -1,0 +1,13 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: weblogic-domain-logs-pvc
+  namespace: test1 
+
+spec:
+  storageClassName: weblogic-domain-logs-storage-class
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi

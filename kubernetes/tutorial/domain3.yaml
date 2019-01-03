@@ -1,0 +1,35 @@
+# Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+# This is an sample domain resource which has domainHome in a PV.
+#
+
+apiVersion: "weblogic.oracle/v2"
+kind: Domain
+metadata:
+  name: domain3
+  namespace: test1
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: domain3
+spec:
+  domainHome: /shared/domains/domain3
+  domainHomeInImage: false
+  image: store/oracle/weblogic:19.1.0.0
+  imagePullPolicy: "IfNotPresent"
+  webLogicCredentialsSecret:
+    name: domain3-weblogic-credentials
+  includeServerOutInPodLog: true
+  serverStartPolicy: "IF_NEEDED"
+  replicas: 2
+  serverPod:
+    volumes:
+    - name: weblogic-domain-storage-volume
+      persistentVolumeClaim:
+        claimName: weblogic-domain-home-pvc
+    volumeMounts:
+    - mountPath: /shared
+      name: weblogic-domain-storage-volume
+  adminServer:
+    serverStartState: "RUNNING"
+    nodePort: 30705
