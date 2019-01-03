@@ -44,7 +44,11 @@ function delOpt() {
   kubectl delete namespace test1
 }
 
-function setPVPath() {
+function setupPV() {
+  mkdir -p pv/logs
+  mkdir -p pv/shared
+  chmod -R 777 pv/*
+
   sed -i 's@%PATH%@'"$PWD"/pv/logs'@' logPV/pv.yaml
   sed -i 's@%PATH%@'"$PWD"/pv/shared'@' domainHomePV/pv.yaml 
 }
@@ -153,8 +157,8 @@ function usage() {
   echo "  image cmd: pullImages"
   echo "  This is to pull required images."
   echo
-  echo "  PV cmd: setPVPath"
-  echo "  This is to set right host path in the pv yamls."
+  echo "  PV cmd: setupPV"
+  echo "  This is to create PV folders and set right host path in the pv yamls."
   echo
   echo "  operator cmd: createOpt | delOpt"
   echo "  These are to create or delete wls operator and Traefik operator."
