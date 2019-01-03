@@ -35,10 +35,12 @@ function delOpt() {
   kubectl delete namespace test1
 }
 
-function setupPV() {
-  mkdir -p pv/logs
-  mkdir -p pv/shared
-  chmod -R 777 pv/*
+function setupPV() { 
+  if [ ! -e pv/logs ]; then
+    mkdir -p pv/logs
+    mkdir -p pv/shared
+    chmod -R 777 pv/*
+  fi
 
   sed -i 's@%PATH%@'"$PWD"/pv/logs'@' logPV/pv.yaml
   sed -i 's@%PATH%@'"$PWD"/pv/shared'@' domainHomePV/pv.yaml 
