@@ -23,14 +23,14 @@ domainHome: /shared/domains/domain1
 clusterType: DYNAMIC
 
 # Determines which WebLogic Servers the Operator will start up
-# Legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
+# Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
 serverStartPolicy: IF_NEEDED
 
 # Cluster name
 clusterName: cluster-1
 
 # Number of managed servers to generate for the domain
-configuredManagedServerCount: 2
+configuredManagedServerCount: 5
 
 # Number of managed servers to initially start for the domain
 initialManagedServerReplicas: 2

@@ -1,6 +1,6 @@
 # User guide
 
-This document provides detailed information targeted to users of the Oracle WebLogic
+This document provides detailed user information for the Oracle WebLogic
 Server Kubernetes Operator.  It provides instructions on how to install the operator in your
 Kubernetes cluster and how to use it to manage WebLogic domains.  
 
@@ -18,9 +18,9 @@ presented in the correct order.
 * [Getting started](#getting-started)
 * [Prerequisites](#prerequisites)
 * [Preparing your Kubernetes environment to run the operator](prepare-k8s.md)
-  * [Set up your Kubernetes cluster](prepare-k8s.md#set-up-your-kubernetes-cluster)
-  * [Set up load balancers](prepare-k8s.md#load-balancing-with-an-ingress-controller-or-a-web-server)
-  * [Configuring Kibana and Elasticsearch](prepare-k8s.md#configuring-kibana-and-elasticsearch)
+  * [Set up your Kubernetes cluster](k8s_setup.md)
+  * [Set up load balancers](../kubernetes/samples/charts/README.md)
+  * [Configuring Kibana and Elasticsearch](../kubernetes/samples/scripts/elasticsearch-and-kibana/README.md)
 * [Install and manage the operator](install.md)
   * [Using the Helm charts](helm-charts.md)
 * [Using the operator's REST interface](rest.md)
@@ -31,11 +31,12 @@ presented in the correct order.
 * [Create and manage WebLogic domains](domains.md)
   * [Preparing the Kubernetes cluster to run WebLogic domains](domains.md#preparing-the-kubernetes-cluster-to-run-weblogic-domains)
   * [Important considerations for WebLogic domains in Kubernetes](domains.md#important-considerations-for-weblogic-domains-in-kubernetes)
-  * [Creating and managing WebLogic domains](creating-domain.md)
+  * [Creating and managing WebLogic domains](domains.md#creating-and-managing-weblogic-domains)
   * [Modifying domain configurations](domains.md#modifying-domain-configurations)
   * [Managing lifecycle operations](domains.md#managing-lifecycle-operations-including-shutting-down-and-deleting-domains)
   * [Using WLST](wlst.md)
   * [Scaling clusters](scaling.md)
+  * [Information about load balancing with Ingresses](ingress.md)
 
 ## Important terms
 
