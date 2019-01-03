@@ -15,13 +15,6 @@ function createOpt() {
   echo "create namespace test1 to run wls domains"
   kubectl create namespace test1
 
-  echo "install Treafik operator to namespace traefik"
-  helm install stable/traefik \
-    --name traefik-operator \
-    --namespace traefik \
-    --values $PRJ_ROOT/kubernetes/samples/charts/traefik/values.yaml  \
-    --wait
-
   echo "install WebLogic operator to namespace weblogic-operator1"
   kubectl create namespace weblogic-operator1
   kubectl create serviceaccount -n weblogic-operator1 sample-weblogic-operator-sa
@@ -39,8 +32,6 @@ function delOpt() {
   helm delete --purge sample-weblogic-operator
   kubectl delete namespace weblogic-operator1
 
-  helm delete --purge traefik-operator
-  kubectl delete namespace traefik
   kubectl delete namespace test1
 }
 
@@ -65,12 +56,6 @@ function createDomain1() {
     --from-literal=password=welcome1
 
   kubectl create -f domain1.yaml
-
-  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
-    --name domain1-ingress \
-    --set wlsDomain.namespace=default \
-    --set wlsDomain.domainUID=domain1 \
-    --set traefik.hostname=domain1.org
 }
 
 function createDomain2() {
@@ -87,12 +72,6 @@ function createDomain2() {
   kubectl create -f logPV/pv.yaml
   kubectl create -f logPV/pvc.yaml
   kubectl create -f domain2.yaml
-
-  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
-    --name domain2-ingress \
-    --set wlsDomain.namespace=test1 \
-    --set wlsDomain.domainUID=domain2 \
-    --set traefik.hostname=domain2.org
 }
 
 function createDomain3() {
@@ -109,12 +88,6 @@ function createDomain3() {
   kubectl create -f domainHomePV/pv.yaml
   kubectl create -f domainHomePV/pvc.yaml
   kubectl create -f domain3.yaml
-
-  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
-    --name domain3-ingress \
-    --set wlsDomain.namespace=test1 \
-    --set wlsDomain.domainUID=domain3 \
-    --set traefik.hostname=domain3.org
 }
 
 function createDomains() {
@@ -125,13 +98,11 @@ function createDomains() {
 }
 
 function delDomain1() {
-  helm delete --purge domain1-ingress
   kubectl delete -f domain1.yaml
   kubectl delete secret domain1-weblogic-credentials
 }
 
 function delDomain2() {
-  helm delete --purge domain2-ingress
   kubectl delete -f domain2.yaml
   kubectl delete -f logPV/pvc.yaml
   kubectl delete -f logPV/pv.yaml
@@ -139,7 +110,6 @@ function delDomain2() {
 }
 
 function delDomain3() {
-  helm delete --purge domain3-ingress
   kubectl delete -f domain3.yaml
   kubectl delete -f domainHomePV/pvc.yaml
   kubectl delete -f domainHomePV/pv.yaml
@@ -152,22 +122,65 @@ function delDomains() {
   delDomain3
 }
 
+function setupLB() {
+  echo "install Treafik operator to namespace traefik"
+  helm install stable/traefik \
+    --name traefik-operator \
+    --namespace traefik \
+    --values $PRJ_ROOT/kubernetes/samples/charts/traefik/values.yaml  \
+    --wait
+
+  echo "install Ingress for domains"
+  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
+    --name domain1-ingress \
+    --set wlsDomain.namespace=default \
+    --set wlsDomain.domainUID=domain1 \
+    --set traefik.hostname=domain1.org
+
+  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
+    --name domain2-ingress \
+    --set wlsDomain.namespace=test1 \
+    --set wlsDomain.domainUID=domain2 \
+    --set traefik.hostname=domain2.org
+
+  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
+    --name domain3-ingress \
+    --set wlsDomain.namespace=test1 \
+    --set wlsDomain.domainUID=domain3 \
+    --set traefik.hostname=domain3.org
+
+}
+
+function delLB() {
+  echo "delete Ingress"
+  helm delete --purge domain1-ingress
+  helm delete --purge domain2-ingress
+  helm delete --purge domain3-ingress
+
+  echo "delete Traefik operator"
+  helm delete --purge traefik-operator
+  kubectl delete namespace traefik
+}
+
 function usage() {
   echo "usage: $0 <cmd>"
   echo "  image cmd: pullImages"
   echo "  This is to pull required images."
   echo
+  echo "  operator cmd: createOpt | delOpt"
+  echo "  These are to create or delete wls operator."
+  echo
   echo "  PV cmd: setupPV"
   echo "  This is to create PV folders and set right host path in the pv yamls."
-  echo
-  echo "  operator cmd: createOpt | delOpt"
-  echo "  These are to create or delete wls operator and Traefik operator."
   echo
   echo "  domains cmd: createDomains | delDomains"
   echo "  These are to create or delete all the demo domains."
   echo
   echo "  one domain cmd: createDomain1 | createDomain2 | createDomain3 | delDomain1 | delDomain2 | delDomain3"
   echo "  These are to create or delete one indivisual domain."
+  echo
+  echo "  LB cmd: setupLB | delLB"
+  echo "  These are to create or delete LB operator and Ingress."
   echo
   exit 1
 }
