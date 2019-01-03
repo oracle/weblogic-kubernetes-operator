@@ -162,7 +162,9 @@ domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/we
 
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials.
   By convention, the secret will be named`domainUID-weblogic-credentials` (where `domainUID` is replaced with the
-  actual `domainUID` value).
+  actual `domainUID` value). 
+
+* Leaving the `image` empty unless you need to tag the new image that the script builds to a different name.
 
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
@@ -175,6 +177,15 @@ respectively, as shown in the example.  If you specify the `-e` option, the scri
 Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the 
 script will just generate the YAML files, but will not take any action on your cluster.
 
+If you are running the sample from a machine that is remote to the Kubernetes cluster where the domain will be running, you need to push the new image to a registry that is local to the cluster. In this case, you need to do the following:
+* Set the `image` property in the inputs file to the target image name (including the tag if needed).
+* run the `create-domain.sh` script without the `-e` option.
+* Push the generated image domain-home-in-image-wdti:lastest (or domain-home-in-image-wlst:latest) to the target image name.
+* Run the following command to create the domain.
+
+```
+kubectl create -f /some/output/directory/weblogic-domains/sample-domain1/domain.yaml
+```
 c.	Confirm that the operator started the servers for the domain:
 * Use `kubectl` to show that the domain resource was created:
 ```
