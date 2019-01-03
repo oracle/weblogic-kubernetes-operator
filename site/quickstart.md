@@ -179,7 +179,7 @@ script will just generate the YAML files, but will not take any action on your c
 
 If you are running the sample from a machine that is remote to the Kubernetes cluster where the domain will be running, you need to push the new image to a registry that is local to the cluster. In this case, you need to do the following:
 * Set the `image` property in the inputs file to the target image name (including the tag if needed).
-* run the `create-domain.sh` script without the `-e` option.
+* Run the `create-domain.sh` script without the `-e` option.
 * Push the generated image domain-home-in-image-wdti:lastest (or domain-home-in-image-wlst:latest) to the target image name.
 * Run the following command to create the domain.
 
