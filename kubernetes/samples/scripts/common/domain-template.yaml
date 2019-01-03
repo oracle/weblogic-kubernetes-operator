@@ -30,11 +30,13 @@ spec:
     name: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
+  # Whether to enable log home 
+  %LOG_HOME_ON_PV_PREFIX%logHomeEnabled: %LOG_HOME_ENABLED%
   # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
   # files in.
   # If not specified or empty, domain log file, server logs, server out, and node manager log files 
   # will be stored in the default logHome location of /shared/logs/<domainUID>/.
-  logHome: %LOG_HOME%
+  %LOG_HOME_ON_PV_PREFIX%logHome: %LOG_HOME%
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain
@@ -48,13 +50,13 @@ spec:
       value: "%JAVA_OPTIONS%"
     - name: USER_MEM_ARGS
       value: "-Xms64m -Xmx256m "
-    volumes:
-    - name: weblogic-domain-storage-volume
-      persistentVolumeClaim:
-        claimName: %DOMAIN_PVC_NAME%
-    volumeMounts:
-    - mountPath: %DOMAIN_ROOT_DIR%
-      name: weblogic-domain-storage-volume
+    %LOG_HOME_ON_PV_PREFIX%volumes:
+    %LOG_HOME_ON_PV_PREFIX%- name: weblogic-domain-storage-volume
+    %LOG_HOME_ON_PV_PREFIX%  persistentVolumeClaim:
+    %LOG_HOME_ON_PV_PREFIX%    claimName: %DOMAIN_PVC_NAME%
+    %LOG_HOME_ON_PV_PREFIX%volumeMounts:
+    %LOG_HOME_ON_PV_PREFIX%- mountPath: %DOMAIN_ROOT_DIR%
+    %LOG_HOME_ON_PV_PREFIX%  name: weblogic-domain-storage-volume
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
     # serverStartState legal values are "RUNNING" or "ADMIN"

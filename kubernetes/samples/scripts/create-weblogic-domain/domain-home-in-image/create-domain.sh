@@ -150,6 +150,9 @@ function initialize {
 
   validateCommonInputs
 
+  validateBooleanInputParamsSpecified logHomeOnPV
+  failIfValidationErrors
+
   initOutputDir
 
   if [ "${cloneIt}" = true ]; then
