@@ -265,6 +265,17 @@ function generateDomainYaml {
     fail "The value of domainHomeInImage must be true or false: ${domainHomeInImage}"
   fi
 
+  if [ "${domainHomeInImage}" == "true" ]; then
+    if [ "${logHomeOnPV}" == "true" ]; then
+      logHomeOnPVPrefix="${enabledPrefix}"
+    else
+      logHomeOnPVPrefix="${disabledPrefix}"
+    fi
+  else
+    logHomeOnPVPrefix="${enabledPrefix}"
+    logHomeOnPV=true
+  fi
+
   echo Generating ${dcrOutput}
 
   cp ${dcrInput} ${dcrOutput}
@@ -277,6 +288,8 @@ function generateDomainYaml {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
   sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
+  sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
