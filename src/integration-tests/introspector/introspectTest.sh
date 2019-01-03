@@ -179,14 +179,20 @@ function cleanupMajor() {
 function cleanupMinor() {
   trace "Info: RERUN_INTROSPECT_ONLY==true, skipping cleanup.sh and domain home setup, and only deleting wl pods + introspector job."
 
-  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}-${ADMIN_NAME} > /dev/null 2>&1
-  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}1 > /dev/null 2>&1
-  kubectl -n $NAMESPACE delete job ${DOMAIN_UID}-introspect-domain-job > /dev/null 2>&1
+  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}-${ADMIN_NAME}                --grace-period=2 > /dev/null 2>&1
+  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}1 --grace-period=2 > /dev/null 2>&1
+  kubectl -n $NAMESPACE delete job ${DOMAIN_UID}-introspect-domain-job        --grace-period=2 > /dev/null 2>&1
+  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}--introspect-domain-pod       --grace-period=2 > /dev/null 2>&1
   rm -fr ${test_home}/jobfiles
   tracen "Info: Waiting for wl pods to completely go away before continuing."
   while [ 1 -eq 1 ]; do
     echo -n "."
-    [ "`kubectl -n ${NAMESPACE} get pods | grep '${DOMAIN_UID}.*server'`" = "" ] && break
+    # echo
+    # echo "Waiting for: '`kubectl -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*server\"`'"
+    # echo "Waiting for: '`kubectl -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*introspect\"`'"
+    [ "`kubectl -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*server\"`" = "" ] \
+     && [ "`kubectl -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*introspect\"`" = "" ] \
+     && break
     sleep 1
   done
   echo
@@ -339,7 +345,7 @@ function deployTestScriptConfigMap() {
   cp ${SCRIPTPATH}/introspectDomainProxy.sh ${test_home}/test-scripts || exit 1
 
   if [ "$CREATE_DOMAIN" = "true" ]; then
-    rm -f ${test_home}/scripts/createDomain.py
+    rm -f ${test_home}/test-scripts/createDomain.py
     ${SCRIPTPATH}/util_subst.sh -g createDomain.pyt ${test_home}/test-scripts/createDomain.py || exit 1
   fi
   
@@ -498,18 +504,14 @@ function deployIntrospectJobPod() {
 
   trace "Info: Run introspection job, parse its output to files, and put files in configmap '$introspect_output_cm_name'."
 
-  # delete anything left over from a previous invocation of this function
+  # delete anything left over from a previous invocation of this function, assume all pods
+  # have already been cleaned up
+
+  rm -f ${target_yaml}
 
   kubectl -n $NAMESPACE delete cm $introspect_output_cm_name \
     --ignore-not-found  \
     2>&1 | tracePipe "Info: kubectl output: "
-
-  if [ -f "${target_yaml}" ]; then
-    kubectl -n $NAMESPACE delete -f ${target_yaml} \
-      --ignore-not-found \
-      2>&1 | tracePipe "Info: kubectl output: "
-    rm -f ${target_yaml}
-  fi
 
   trace "Info: Deploying job pod '$pod_name' and waiting for it to be ready."
 
@@ -755,10 +757,12 @@ function checkOverrides() {
 #     matches
 #
 
+
 kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
 kubectl -n $NAMESPACE create secret generic my-secret \
         --from-literal=key1=supersecret  \
         --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
+
 
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
 
@@ -785,9 +789,13 @@ else
 
   cleanupMinor
 
+  deployDomainConfigMap
+  deployTestScriptConfigMap
   deployCustomOverridesConfigMap
-  deployIntrospectJob
+  #deployIntrospectJob
+  deployIntrospectJobPod
   deployPod ${ADMIN_NAME?}
+  deployPod ${MANAGED_SERVER_NAME_BASE?}1
 
 fi
 

@@ -35,9 +35,9 @@ spec:
   # If not specified or empty, domain log file, server logs, server out, and node manager log files 
   # will be stored in the default logHome location of /shared/logs/<domainUID>/.
   logHome: %LOG_HOME%
-  # serverStartPolicy legal values are "NEVER", "ALWAYS", "IF_NEEDED", or "ADMIN_ONLY"
+  # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-  # - "ALWAYS" will start up all defined servers
+  # - "NEVER" will not start any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "%SERVER_START_POLICY%"
@@ -70,6 +70,7 @@ spec:
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
     - clusterName: %CLUSTER_NAME%
+      serverStartState: "RUNNING"
       replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
