@@ -1,4 +1,4 @@
-// Copyright 2017, 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -126,13 +126,7 @@ abstract class Watcher<T> {
                 .withResourceVersion(resourceVersion.toString())
                 .withTimeoutSeconds(tuning.watchLifetime))) {
       while (watch.hasNext()) {
-        Watch.Response<T> item;
-        try {
-          item = watch.next();
-        } catch (Throwable e) {
-          watch.discardClient();
-          throw e;
-        }
+        Watch.Response<T> item = watch.next();
 
         if (isStopping()) setIsDraining(true);
         if (isDraining()) continue;
