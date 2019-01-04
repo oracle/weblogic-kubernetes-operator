@@ -1,5 +1,6 @@
 export WLS_BASE_IMAGE=store/oracle/weblogic:19.1.0.0
 export PRJ_ROOT=../../
+export PV_ROOT=/scratch/lihhe/pv
 
 function pullImages() {
   echo "pull docker images"
@@ -36,14 +37,14 @@ function delOpt() {
 }
 
 function setupPV() { 
-  if [ ! -e pv/logs ]; then
-    mkdir -p pv/logs
-    mkdir -p pv/shared
-    chmod -R 777 pv/*
+  if [ ! -e $PV_ROOT/logs ]; then
+    mkdir -p $PV_ROOT/logs
+    mkdir -p $PV_ROOT/shared
+    chmod -R 777 $PV_ROOT/*
   fi
 
-  sed -i 's@%PATH%@'"$PWD"/pv/logs'@' logPV/pv.yaml
-  sed -i 's@%PATH%@'"$PWD"/pv/shared'@' domainHomePV/pv.yaml 
+  sed -i 's@%PATH%@'"$PV_ROOT"/logs'@' logPV/pv.yaml
+  sed -i 's@%PATH%@'"$PV_ROOT"/shared'@' domainHomePV/pv.yaml 
 }
 
 function createDomain1() {

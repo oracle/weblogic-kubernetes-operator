@@ -7,7 +7,7 @@ MYDIR="$(dirname "$(readlink -f "$0")")"
 
 docker run --rm  \
   -v $MYDIR/scripts:/scripts \
-  -v $MYDIR/../pv/shared:/u01/oracle/user-projects \
+  -v $PV_ROOT/shared:/u01/oracle/user-projects \
   -e "DOMAIN_HOME=/u01/oracle/user-projects/domains/$1" \
   -e "DOMAIN_NAME=$1" \
   -e "ADMIN_USER=$2" \
