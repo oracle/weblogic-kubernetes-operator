@@ -32,7 +32,7 @@ The script will perform the following steps:
 * Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt) and [Example Image with a WebLogic Server Domain using WLST](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain in the Docker image. Also, you can run the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image), manually with the generated `domain.properties` to create a domain home image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 ```
-kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
+$ kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
 ```
 
 As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services. This option should only be used in a single node Kubernetes cluster.
@@ -72,7 +72,7 @@ If you run the sample from a machine that is remote to the Kubernetes cluster, a
 * Run the following command to create the domain.
 
 ```
-kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
+$ kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
 ```
 
 The domain creation inputs can be customized by editing `create-domain-inputs.yaml`.
