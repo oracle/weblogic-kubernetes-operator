@@ -184,7 +184,7 @@ If you run the sample from a machine that is remote to the Kubernetes cluster, a
 * Run the following command to create the domain.
 
 ```
-kubectl apply -f /some/output/directory/weblogic-domains/sample-domain1/domain.yaml
+$ kubectl apply -f /some/output/directory/weblogic-domains/sample-domain1/domain.yaml
 ```
 
 c.	Confirm that the operator started the servers for the domain:
