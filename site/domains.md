@@ -74,6 +74,10 @@ running in Kubernetes.
   the WebLogic server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`. 
   Since the WebLogic console does not show the new override values, it is recommended, but, not required, to leave listen addresses
   in a configuration completely unset, or set to the exact required value (for clarity). 
+* _Domain, Cluster, Server, and Network-Access-Point Names:_ WebLogic domain, cluster, server, and network-access-point (channel)
+  names must be contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`.  This ensures they can be converted to 
+  meet kubernetes resource and DNS1123 naming requirements.  (When generating pod and service names, the operator will convert
+  configured names to lower case and substitute `-` for each `_`.)
 * _Node Ports:_ If you choose to expose any WebLogic channels outside the Kubernetes cluster via a `NodePort`, for example, the
   administration port or a T3 channel to allow WLST access, you need to ensure that you allocate each channel a
   unique port number across the entire Kubernetes cluster.  If you expose the administration port in each WebLogic domain in
