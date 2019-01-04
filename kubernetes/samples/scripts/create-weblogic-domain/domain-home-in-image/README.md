@@ -68,7 +68,7 @@ The default domain created by the script has the following characteristics:
 If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following:
 * Set the `image` property in the inputs file to the target image name (including the tag if needed).
 * Run the `create-domain.sh` script without the `-e` option.
-* Push the generated image `domain-home-in-image-wdt:lastest` (or `domain-home-in-image:latest`) to the target image name.
+* Push the generated image `domain-home-in-image-wdt:lastest` (or `domain-home-in-image:latest`) to the registry.
 * Run the following command to create the domain.
 
 ```
