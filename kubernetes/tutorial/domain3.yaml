@@ -13,10 +13,12 @@ metadata:
     weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain3
 spec:
-  domainHome: /shared/domains/domain3
+  domainHome: /u01/oracle/user-projects/domains/domain3/ 
   domainHomeInImage: false
   image: store/oracle/weblogic:19.1.0.0
   imagePullPolicy: "IfNotPresent"
+  logHomeEnabled: true
+  logHome: /u01/oracle/user-projects/logs/domain3/
   webLogicCredentialsSecret:
     name: domain3-weblogic-credentials
   includeServerOutInPodLog: true
@@ -28,7 +30,7 @@ spec:
       persistentVolumeClaim:
         claimName: weblogic-domain-home-pvc
     volumeMounts:
-    - mountPath: /shared
+    - mountPath: /u01/oracle/user-projects 
       name: weblogic-domain-storage-volume
   adminServer:
     serverStartState: "RUNNING"

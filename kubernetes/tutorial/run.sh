@@ -48,10 +48,8 @@ function setupPV() {
 
 function createDomain1() {
   echo "create domain1"
-  cd domain_builder/
   # create image 'domain1-image' with domainHome in the image
-  ./build.sh domain1 weblogic welcome1
-  cd ..
+  ./domain_builder/build.sh domain1 weblogic welcome1
 
   kubectl -n default create secret generic domain1-weblogic-credentials \
     --from-literal=username=weblogic \
@@ -62,10 +60,8 @@ function createDomain1() {
 
 function createDomain2() {
   echo "create domain2"
-  cd domain_builder/
   # create image 'domain2-image' with domainHome in the image
-  ./build.sh domain2 weblogic welcome2
-  cd ..
+  ./domain_builder/build.sh domain2 weblogic welcome2
 
   kubectl -n test1 create secret generic domain2-weblogic-credentials \
     --from-literal=username=weblogic \
@@ -79,9 +75,7 @@ function createDomain2() {
 function createDomain3() {
   echo "create domain3"
   # generate the domain3 configuration to a host folder
-  cd domain_builder/
-  ./generate.sh domain3 weblogic welcome3
-  cd ..
+  ./domain_builder/generate.sh domain3 weblogic welcome3
 
   kubectl -n test1 create secret generic domain3-weblogic-credentials \
     --from-literal=username=weblogic \
