@@ -22,7 +22,6 @@ server_port                  = 8001
 number_of_ms                 = 3
 production_mode_enabled      = "true"
 
-
 print('domain_path        : [%s]' % domain_path);
 print('domain_name        : [%s]' % domain_name);
 print('admin_server_name  : [%s]' % admin_server_name);
@@ -30,6 +29,7 @@ print('admin_username     : [%s]' % admin_username);
 print('admin_port         : [%s]' % admin_port);
 print('cluster_name       : [%s]' % cluster_name);
 print('server_port        : [%s]' % server_port);
+
 # Open default domain template
 # ============================
 readTemplate("/u01/oracle/wlserver/common/templates/wls/wls.jar")

@@ -1,10 +1,12 @@
 #!/bin/bash
-if [ "$#" != 1 ] ; then
-  echo "usage: $0 domainName"
-  exit 1 
-fi
+set -exu
 
-mkdir -p /shared/domains/$1
-cp -rf /u01/oracle/user-projects/domains/* /shared/domains/$1
-chown -R oracle:oracle /shared
+echo "DOMAIN_HOME=$DOMAIN_HOME"
+echo "DOMAIN_NAME=$DOMAIN_NAME"
+echo "PV_ROOT=$PV_ROOT"
+
+mkdir -p $PV_ROOT/domains/$DOMAIN_NAME
+cp -rf $DOMAIN_HOME/* $PV_ROOT/domains/$DOMAIN_NAME
+chown -R oracle:oracle $PV_ROOT
+
 
