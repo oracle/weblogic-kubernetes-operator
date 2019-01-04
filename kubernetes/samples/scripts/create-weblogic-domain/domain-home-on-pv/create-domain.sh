@@ -305,7 +305,7 @@ function createDomainConfigmap {
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
- 
+
   # Set the domainName in the inputs file that is contained in the configmap.
   # this inputs file can be used by the scripts, such as WDT, that creates the WebLogic
   # domain in the job.
