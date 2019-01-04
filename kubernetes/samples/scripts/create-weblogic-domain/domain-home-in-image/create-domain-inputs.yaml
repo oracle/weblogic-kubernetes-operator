@@ -15,10 +15,6 @@ adminServerName: admin-server
 # in a Kubernetes cluster.
 domainUID: domain1
 
-# Type of WebLogic Cluster
-# Legal values are "CONFIGURED" or "DYNAMIC" 
-clusterType: DYNAMIC
-
 # Determines which WebLogic Servers the Operator will start up
 # Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
 serverStartPolicy: IF_NEEDED
