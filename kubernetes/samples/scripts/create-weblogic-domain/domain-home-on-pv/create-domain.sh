@@ -152,10 +152,6 @@ function createDomainConfigmap {
   # domain in the job.
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
-  if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
-   sh ${externalFilesTmpDir}/prepare.sh -t ${clusterType} -i ${externalFilesTmpDir}
-  fi
- 
   # create the configmap and label it properly
   local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
   kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir
