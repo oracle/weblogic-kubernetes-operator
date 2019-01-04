@@ -14,8 +14,8 @@
 #    * The kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
 #    * The host directory that will be used as the persistent volume must already exist
 #      and have the appropriate file permissions set.
-#    * The kubernetes persisitent volume must already be created
-#    * The kubernetes persisitent volume claim must already be created
+#    * If logHomeOnPV is enabled, the kubernetes persisitent volume must already be created
+#    * If logHomeOnPV is enabled, the kubernetes persisitent volume claim must already be created
 #
 
 # Initialize
@@ -169,49 +169,6 @@ function getDockerSample {
 }
 
 #
-# Function to generate the properties and yaml files for creating a domain
-#
-function createFiles {
-
-  # Make sure the output directory has a copy of the inputs file.
-  # The user can either pre-create the output directory, put the inputs
-  # file there, and create the domain from it, or the user can put the
-  # inputs file some place else and let this script create the output directory
-  # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-domain-inputs.yaml"
-
-  domainPropertiesOutput="${domainOutputDir}/domain.properties"
-  dcrOutput="${domainOutputDir}/domain.yaml"
-
-  initializeInput
-
-  if [ -z "${domainHomeImageBase}" ]; then
-    fail "Please specify domainHomeImageBase in your input YAML"
-  fi
-
-  domainHome="/u01/oracle/user_projects/domains/${domainName}"
-
-  # Generate the properties file that will be used when creating the weblogic domain
-  echo Generating ${domainPropertiesOutput}
-
-  cp ${domainPropertiesInput} ${domainPropertiesOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
-
-  generateDomainYaml true
-}
-
-#
 # Function to build docker image and create WebLogic domain home
 #
 function createDomainHome {
@@ -278,5 +235,5 @@ function printSummary {
 }
 
 # Perform the sequence of steps to create a domain
-createDomain
+createDomain true
 
