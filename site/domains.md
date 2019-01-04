@@ -72,8 +72,6 @@ running in Kubernetes.
   SSL, admin, or custom channel listen addresses (using situational config overrides).  These will become `domainUID` followed by a
   hyphen and then the server name, all lower case, and underscores converted to dashes.  For example, if `domainUID=domain1` and
   the WebLogic server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`. 
-  Since the WebLogic console does not show the new override values, it is recommended, but, not required, to leave listen addresses
-  in a configuration completely unset, or set to the exact required value (for clarity). 
 * _Domain, Cluster, Server, and Network-Access-Point Names:_ WebLogic domain, cluster, server, and network-access-point (channel)
   names must be contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`.  This ensures they can be converted to 
   meet kubernetes resource and DNS1123 naming requirements.  (When generating pod and service names, the operator will convert
