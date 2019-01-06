@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -33,7 +33,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   private static final String VALUE1 = "value1";
   private static final String VALUE2 = "value2";
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
-  private static final String END_VALUE_1 = "find uid1 at /shared/domain";
+  private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
   private static final String RAW_VALUE_2 = "$(SERVER_NAME) is not $(ADMIN_NAME):$(ADMIN_PORT)";
   private static final String END_VALUE_2 = "ms1 is not ADMIN_SERVER:7001";
   private static final String CLUSTER_NAME = "test-cluster";
