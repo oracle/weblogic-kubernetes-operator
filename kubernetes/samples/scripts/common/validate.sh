@@ -376,3 +376,15 @@ function validateCommonInputs {
   failIfValidationErrors
 }
 
+#
+# Function to validate the domain's persistent volume claim has been created
+#
+function validateDomainPVC {
+  # Check if the persistent volume claim is already available
+  checkPvcExists ${persistentVolumeClaimName} ${namespace}
+  if [ "${PVC_EXISTS}" = "false" ]; then
+    validationError "The domain persistent volume claim ${persistentVolumeClaimName} does not exist in namespace ${namespace}"
+  fi
+  failIfValidationErrors
+}
+
