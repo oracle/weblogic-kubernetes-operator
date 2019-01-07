@@ -57,32 +57,32 @@ Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
 Please be aware of the following important considerations for WebLogic domains
 running in Kubernetes.
 
-* _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource 'domainHome' if set,
-  and otherwise a default location is determined by the `domainHomeInImage` setting. If a domain resource 'domainHome' field is not set
+* _Domain Home Location:_ The WebLogic domain home location is determined by the domain resource `domainHome` if set,
+  and otherwise a default location is determined by the `domainHomeInImage` setting. If a domain resource `domainHome` field is not set
   and `domainHomeInImage` is `true` (the default), the operator will
-  assume the domain home is a directory under `/u01/oracle/user_projects/domains/` and report an error if no domain is found
-  or more than one domain is found.  If a domain resource 'domainHome' field is not set and `domainHomeInImage` is `false`, the operator will
-  assume the domain home is `/shared/domains/DOMAIN_UID`.
+  assume that the domain home is a directory under `/u01/oracle/user_projects/domains/` and report an error if no domain is found
+  or more than one domain is found.  If a domain resource `domainHome` field is not set and `domainHomeInImage` is `false`, the operator will
+  assume that the domain home is `/shared/domains/DOMAIN_UID`.
 * _Log File Locations:_ The operator can automatically override Weblogic domain and server log locations using situational
-  configuration overrides.  This occurs if the Domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set 
+  configuration overrides.  This occurs if the domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set 
   and `domainHomeInImage` is explicitly set to `false`.   When overriding, the log location will be the location specified by the `logHome` setting.
 * _Listen Address Configuration:_  Channel listen addresses in a configuration either must be left completely unset (for example, not set to anything), or must be set to the exact required value, which will be in the form of the `domainUID`
   followed by a hyphen and then the server name (with all lower case, underscores converted to dashes).  For example `domain1-admin-server`. This includes default, SSL, admin, and custom channels.
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default, 
-  SSL, admin, or custom channel listen addresses (using situational config overrides).  These will become `domainUID` followed by a
+  SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
   hyphen and then the server name, all lower case, and underscores converted to dashes.  For example, if `domainUID=domain1` and
   the WebLogic server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`. 
 * _Domain, Cluster, Server, and Network-Access-Point Names:_ WebLogic domain, cluster, server, and network-access-point (channel)
-  names must be contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`.  This ensures they can be converted to 
-  meet kubernetes resource and DNS1123 naming requirements.  (When generating pod and service names, the operator will convert
+  names must contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`.  This ensures they can be converted to 
+  meet Kubernetes resource and DNS1123 naming requirements.  (When generating pod and service names, the operator will convert
   configured names to lower case and substitute `-` for each `_`.)
 * _Node Ports:_ If you choose to expose any WebLogic channels outside the Kubernetes cluster via a `NodePort`, for example, the
   administration port or a T3 channel to allow WLST access, you need to ensure that you allocate each channel a
   unique port number across the entire Kubernetes cluster.  If you expose the administration port in each WebLogic domain in
   the Kubernetes cluster, then each one must have a different port.  This is required because `NodePorts` are used to
-  expose channels outside the Kubernetes cluster.   IMPORTANT:  Exposing admin, RMI, or t3 capable channels via a node port
-  can create an insecure configuration, in general only http protocols should be made available externally and this exposure
-  is usually accomplished by setting up external load balancer that can access internal (non-nodeport) services.
+  expose channels outside the Kubernetes cluster.  *IMPORTANT:* Exposing admin, RMI, or t3 capable channels via a node port
+  can create an insecure configuration; in general only http protocols should be made available externally and this exposure
+  is usually accomplished by setting up an external load balancer that can access internal (non-nodeport) services.
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
   that many cloud provider's volume providers may not support volumes across availability zones.  You may want to use NFS or a clustered file system to work around this limitation.
 
