@@ -32,6 +32,9 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Range(minimum = 1)
   private Integer maxUnavailable;
 
+  // FIXME
+  private KubernetesResource clusterService;
+
   protected Cluster getConfiguration() {
     Cluster configuration = new Cluster();
     configuration.fillInFrom(this);
