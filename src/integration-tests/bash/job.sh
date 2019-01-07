@@ -1,15 +1,15 @@
 #!/bin/bash
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
 # job.sh <command> [<optarg1>] [<optarg2>] ...
 #
-#    This is a helper script called by run.sh & cleanup.sh.  It runs the given bash
+#    This is a helper script called by cleanup.sh.  It runs the given bash
 #    command in a kubernetes job.  It also embeds the 'archive.sh' script
 #    internally in its /scripts volume.
 #
-#    There are two configurable env vars - PV_ROOT and  RESULT_ROOT.  See run.sh for
+#    There are two configurable env vars - PV_ROOT and  RESULT_ROOT.  See cleanup.sh for
 #    a description.
 #
 #    The command and each optarg argument must have no internal spaces.
@@ -24,7 +24,7 @@
 
 JOB_NAME="weblogic-command-job"
 
-# Customizable env vars.  See run.sh for an explanation.
+# Customizable env vars.  See cleanup.sh for an explanation.
 
 echo "@@ Begin kubernetes job to run a command.  Job name='$JOB_NAME'.  Command='$*'."
 
