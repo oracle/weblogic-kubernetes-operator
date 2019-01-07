@@ -44,7 +44,7 @@ spec:
             - name: CLUSTER_NAME
               value: "%CLUSTER_NAME%"
             - name: CLUSTER_TYPE
-              value: "%CLUSTER_TYPE%"
+              value: "DYNAMIC"
             - name: T3_CHANNEL_PORT
               value: "%T3_CHANNEL_PORT%"
             - name: T3_PUBLIC_ADDRESS
