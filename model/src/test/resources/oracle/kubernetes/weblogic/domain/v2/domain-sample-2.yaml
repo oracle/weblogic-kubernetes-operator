@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
@@ -53,70 +53,64 @@ spec:
         role: admin
         user: weblogic
   
-  # Configured storage using host-path style
-  storage:
-    generated:
-      reclaimPolicy: Delete
-      hostPath:
-        path: /other/path
-
   clusters:
-    - clusterName: cluster1
-      serverPod:
-        readinessProbe:
-          initialDelaySeconds: 10
-          timeoutSeconds: 15
-          periodSeconds: 20
-        livenessProbe:
-          initialDelaySeconds: 20
-          timeoutSeconds: 5
-          periodSeconds: 20
-        nodeSelector:
-          os: linux
-        serviceLabels:
-          testKey1: testValue1
-          testKey2: testValue2
-        podSecurityContext:
-          runAsGroup: 421
-          runAsNonRoot: true
-          seLinuxOptions:
-            level: cluster
-            role: admin
-            type: admin
-            user: weblogic
-          sysctls:
-          - name: kernel.shm_rmid_forced
-            value: '0'
-        containerSecurityContext:
-          capabilities:
-            add:
-            - SYS_TIME
-          runAsGroup: 421
-          runAsNonRoot: true
-          seLinuxOptions:
-            level: cluster
-            role: admin
-            type: admin
-            user: weblogic
+  - clusterName: cluster1
+    serverPod:
+      readinessProbe:
+        initialDelaySeconds: 10
+        timeoutSeconds: 15
+        periodSeconds: 20
+      livenessProbe:
+        initialDelaySeconds: 20
+        timeoutSeconds: 5
+        periodSeconds: 20
+      nodeSelector:
+        os: linux
+      podSecurityContext:
+        runAsGroup: 421
+        runAsNonRoot: true
+        seLinuxOptions:
+          level: cluster
+          role: admin
+          type: admin
+          user: weblogic
+        sysctls:
+        - name: kernel.shm_rmid_forced
+          value: '0'
+      containerSecurityContext:
+        capabilities:
+          add:
+          - SYS_TIME
+        runAsGroup: 421
+        runAsNonRoot: true
+        seLinuxOptions:
+          level: cluster
+          role: admin
+          type: admin
+          user: weblogic
+    serverService:
+      labels:
+        testKey1: testValue1
+        testKey2: testValue2
 
   managedServers:
-    - serverName: server2
-      serverPod:
-        livenessProbe:
-          periodSeconds: 18
-        nodeSelector:
-          os_type: oel7
-        serviceAnnotations:
-          testKey3: testValue3
-          testKey4: testValue4
-        podSecurityContext:
-          runAsGroup: 422
-          seLinuxOptions:
-            level: server
-            role: slave
-        containerSecurityContext:
-          runAsGroup: 422
-          seLinuxOptions:
-            level: server
-            role: slave
-
+  - serverName: server2
+    serverPod:
+      livenessProbe:
+        periodSeconds: 18
+      nodeSelector:
+        os_type: oel7
+      podSecurityContext:
+        runAsGroup: 422
+        seLinuxOptions:
+          level: server
+          role: slave
+      containerSecurityContext:
+        runAsGroup: 422
+        seLinuxOptions:
+          level: server
+          role: slave
+    serverService:
+      annotations:
+        testKey3: testValue3
+        testKey4: testValue4

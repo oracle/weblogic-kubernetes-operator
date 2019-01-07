@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
@@ -43,14 +43,6 @@ spec:
         memory: "128Mi"
         cpu: "500m"
 
-  # Configured storage using nfs style
-  storage:
-    generated:
-      storageSize: 8Gi
-      nfs:
-        server: thatServer
-        path: /local/path
-
   # configured wls configuration overrides configmap name
   configOverrides: overrides-config-map
 
@@ -62,7 +54,10 @@ spec:
 
   adminServer:
     # The Admin Server's NodePort (optional)
-    nodePort: 7001
+    adminService:
+      channels:
+      - channelName: default
+        nodePort: 7001
     serverPod:
       env:
       - name: var1
@@ -77,35 +72,34 @@ spec:
 
   # list of configurations per named server.
   managedServers:
-    - serverName: server1
-      # an (optional) list of environment variable to be set on the server
-      serverPod:
-        env:
-        - name: JAVA_OPTIONS
-          value: "-server"
-        - name: USER_MEM_ARGS
-          value: "-Xms64m -Xmx256m "
-        nodeSelector:
-          os_arch: arm64
-        resources:
-          requests:
-            memory: "32Mi"
-          limits:
-            memory: "256Mi"
-    - serverName: server2
-      serverStartState: ADMIN
-      restartVersion: "3"
+  - serverName: server1
+    # an (optional) list of environment variable to be set on the server
+    serverPod:
+      env:
+      - name: JAVA_OPTIONS
+        value: "-server"
+      - name: USER_MEM_ARGS
+        value: "-Xms64m -Xmx256m "
+      nodeSelector:
+        os_arch: arm64
+      resources:
+        requests:
+          memory: "32Mi"
+        limits:
+          memory: "256Mi"
+  - serverName: server2
+    serverStartState: ADMIN
+    restartVersion: "3"
       
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
-    - clusterName: cluster2
-      desiredState: "RUNNING"
-      replicas: 5
-      serverPod:
-        env:
-        - name: JAVA_OPTIONS
-          value: "-verbose"
-        - name: USER_MEM_ARGS
-          value: "-Xms64m -Xmx256m "
-      restartVersion: "2"
-      
+  - clusterName: cluster2
+    desiredState: "RUNNING"
+    replicas: 5
+    serverPod:
+      env:
+      - name: JAVA_OPTIONS
+        value: "-verbose"
+      - name: USER_MEM_ARGS
+        value: "-Xms64m -Xmx256m "
+    restartVersion: "2"

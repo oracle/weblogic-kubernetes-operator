@@ -1,9 +1,11 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.v2;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.*;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +27,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public abstract class BaseConfiguration {
 
-  @Description("Configuration affecting the server pod")
+  @Description("Configuration affecting server pods")
   private ServerPod serverPod = new ServerPod();
+
+  @Description("Customization affecting ClusterIP Kubernetes services for WebLogic channels.")
+  @SerializedName("serverService")
+  @Expose
+  private KubernetesResource serverService = new KubernetesResource();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @EnumClass(ServerStartState.class)
@@ -74,6 +81,7 @@ public abstract class BaseConfiguration {
     if (overrideStartPolicyFrom(other)) serverStartPolicy = other.getServerStartPolicy();
 
     serverPod.fillInFrom(other.serverPod);
+    serverService.fillInFrom(other.serverService);
   }
 
   private boolean overrideStartPolicyFrom(BaseConfiguration other) {
@@ -188,35 +196,43 @@ public abstract class BaseConfiguration {
   }
 
   Map<String, String> getPodLabels() {
-    return serverPod.getPodLabels();
+    return serverPod.getLabels();
   }
 
-  void addPodLabels(String name, String value) {
-    serverPod.addPodLabel(name, value);
+  void addPodLabel(String name, String value) {
+    serverPod.addLabel(name, value);
   }
 
   Map<String, String> getPodAnnotations() {
-    return serverPod.getPodAnnotations();
+    return serverPod.getAnnotations();
   }
 
-  void addPodAnnotations(String name, String value) {
-    serverPod.addPodAnnotations(name, value);
+  void addPodAnnotation(String name, String value) {
+    serverPod.addAnnotations(name, value);
+  }
+
+  public void setServerService(KubernetesResource serverService) {
+    this.serverService = serverService;
+  }
+
+  public KubernetesResource getServerService() {
+    return serverService;
   }
 
   public Map<String, String> getServiceLabels() {
-    return serverPod.getServiceLabels();
+    return serverService.getLabels();
   }
 
-  void addServiceLabels(String name, String value) {
-    serverPod.addServiceLabel(name, value);
+  void addServiceLabel(String name, String value) {
+    serverService.addLabel(name, value);
   }
 
   public Map<String, String> getServiceAnnotations() {
-    return serverPod.getServiceAnnotations();
+    return serverService.getAnnotations();
   }
 
-  void addServiceAnnotations(String name, String value) {
-    serverPod.addServiceAnnotations(name, value);
+  void addServiceAnnotation(String name, String value) {
+    serverService.addAnnotations(name, value);
   }
 
   String getRestartVersion() {
@@ -233,6 +249,7 @@ public abstract class BaseConfiguration {
         .append("serverStartState", serverStartState)
         .append("serverStartPolicy", serverStartPolicy)
         .append("serverPod", serverPod)
+        .append("serverService", serverService)
         .append("restartVersion", restartVersion)
         .toString();
   }
@@ -247,6 +264,7 @@ public abstract class BaseConfiguration {
 
     return new EqualsBuilder()
         .append(serverPod, that.serverPod)
+        .append(serverService, that.serverService)
         .append(serverStartState, that.serverStartState)
         .append(serverStartPolicy, that.serverStartPolicy)
         .append(restartVersion, that.restartVersion)
@@ -257,6 +275,7 @@ public abstract class BaseConfiguration {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .append(serverPod)
+        .append(serverService)
         .append(serverStartState)
         .append(serverStartPolicy)
         .append(restartVersion)

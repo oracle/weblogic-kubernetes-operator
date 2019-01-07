@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -201,14 +201,17 @@ function createFiles {
   # Generate the yaml to create the domain resource
   echo Generating ${dcrOutput}
 
+  exposeAnyChannelPrefix="${disabledPrefix}"
   if [ "${exposeAdminT3Channel}" = true ]; then
     exposeAdminT3ChannelPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
   else
     exposeAdminT3ChannelPrefix="${disabledPrefix}"
   fi
 
   if [ "${exposeAdminNodePort}" = true ]; then
     exposeAdminNodePortPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
   else
     exposeAdminNodePortPrefix="${disabledPrefix}"
   fi
@@ -229,6 +232,7 @@ function createFiles {
   sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${dcrOutput}
   sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}

@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -86,11 +86,6 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
 
   private String getConfiguredDesiredState() {
     return server.getServerStartState();
-  }
-
-  @Override
-  public Integer getNodePort() {
-    return server.getNodePort();
   }
 
   @Override
