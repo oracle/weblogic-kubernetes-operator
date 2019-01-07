@@ -1,10 +1,10 @@
 #!/bin/bash
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
 # archive.sh <source_dir> <target_dir>
-#   - internal helper method called by run.sh
+#   - internal helper method
 #   - archives directory ${1} into ${2}/IntSuite.TIMESTAMP.tar.gz
 #   - deletes all but the 10 newest archives
 #   - this method doesn't have any configurable env vars
