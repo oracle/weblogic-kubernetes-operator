@@ -45,7 +45,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
-  @Description("The type of resource. Should be 'Domain'")
+  @Description("The type of resource. Must be 'Domain'")
   private String kind;
   /**
    * Standard object's metadata. More info:

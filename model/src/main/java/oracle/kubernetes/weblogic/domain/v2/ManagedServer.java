@@ -7,6 +7,7 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import javax.annotation.Nonnull;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -15,6 +16,8 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
   /** The name of the managed server. Required. */
   @SerializedName("serverName")
   @Expose
+  @Description("The name of the server. Required.")
+  @Nonnull
   private String serverName;
 
   public String getServerName() {

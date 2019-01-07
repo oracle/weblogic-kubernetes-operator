@@ -849,7 +849,7 @@ window.onload = function() {
           "type": "string"
         },
         "kind": {
-          "description": "The type of resource. Should be \u0027Domain\u0027",
+          "description": "The type of resource. Must be \u0027Domain\u0027",
           "type": "string"
         },
         "spec": {
@@ -965,6 +965,7 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "channels": {
+          "description": "Specifies which of the admin server\u0027s WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server\u0027s node port service will not be created.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/Channel"
@@ -976,12 +977,17 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "channelName": {
+          "description": "Name of channel. default\u0027 refers to the admin server\u0027s default channel (configured via the ServerMBean\u0027s ListenPort) \u0027default-secure\u0027 refers to the admin server\u0027s default secure channel (configured via the ServerMBean\u0027s SSLMBean\u0027s ListenPort) \u0027default-admin\u0027 refers to the admin server\u0027s default administrative channel (configured via the DomainMBean\u0027s AdministrationPort) Otherwise, the name is the name of one of the admin server\u0027s network access points (configured via the ServerMBean\u0027s NetworkAccessMBeans).",
           "type": "string"
         },
         "nodePort": {
+          "description": "Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel.",
           "type": "number"
         }
-      }
+      },
+      "required": [
+        "channelName"
+      ]
     },
     "Chronology": {
       "type": "object",
@@ -1019,6 +1025,9 @@ window.onload = function() {
         "serverPod": {
           "description": "Configuration affecting server pods",
           "$ref": "#/definitions/ServerPod"
+        },
+        "clusterService": {
+          "$ref": "#/definitions/KubernetesResource"
         },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
@@ -1159,6 +1168,7 @@ window.onload = function() {
           "type": "boolean"
         },
         "webLogicCredentialsSecret": {
+          "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namepace, that holds the username and password needed to boot WebLogic under the \u0027username\u0027 and \u0027password\u0027 fields.",
           "$ref": "#/definitions/V1SecretReference"
         },
         "adminServer": {
@@ -1227,11 +1237,11 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "annotations": {
-          "description": "Annotations applied to pods",
+          "description": "The annotations to be attached to generated resources.",
           "$ref": "#/definitions/Map"
         },
         "labels": {
-          "description": "Labels applied to pods",
+          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
           "$ref": "#/definitions/Map"
         }
       }
@@ -1256,6 +1266,7 @@ window.onload = function() {
           "$ref": "#/definitions/ServerPod"
         },
         "serverName": {
+          "description": "The name of the server. Required.",
           "type": "string"
         },
         "serverStartPolicy": {
@@ -1272,7 +1283,10 @@ window.onload = function() {
           "description": "If present, every time this value is updated the operator will restart the required servers",
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "serverName"
+      ]
     },
     "Map": {
       "type": "object",
@@ -1331,7 +1345,7 @@ window.onload = function() {
           }
         },
         "annotations": {
-          "description": "Annotations applied to pods",
+          "description": "The annotations to be attached to generated resources.",
           "$ref": "#/definitions/Map"
         },
         "resources": {
@@ -1354,7 +1368,7 @@ window.onload = function() {
           }
         },
         "labels": {
-          "description": "Labels applied to pods",
+          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
           "$ref": "#/definitions/Map"
         },
         "nodeSelector": {
