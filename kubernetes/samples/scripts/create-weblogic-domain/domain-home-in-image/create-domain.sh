@@ -12,6 +12,10 @@
 #    * The WDT sample requires that JAVA_HOME is set to a java JDK version 1.8 or greater
 #    * The kubernetes namespace must already be created
 #    * The kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
+#    * The host directory that will be used as the persistent volume must already exist
+#      and have the appropriate file permissions set.
+#    * If logHomeOnPV is enabled, the kubernetes persisitent volume must already be created
+#    * If logHomeOnPV is enabled, the kubernetes persisitent volume claim must already be created
 #
 
 # Initialize
@@ -21,12 +25,13 @@ source ${scriptDir}/../../common/utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the Docker image for WebLogic domain in image."
   echo "  -p Password used in building the Docker image for WebLogic domain in image."
   echo "  -e Also create the resources in the generated YAML files, optional."
+  echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -k Keep what has been previously from cloned https://github.com/oracle/docker-images.git, optional. "
   echo "     If not specified, this script will always remove existing project directory and clone again."
   echo "  -h Help"
@@ -36,6 +41,7 @@ function usage {
 #
 # Parse the command line options
 #
+doValidation=false
 executeIt=false
 cloneIt=true
 while getopts "evhki:o:u:p:" opt; do
@@ -43,6 +49,8 @@ while getopts "evhki:o:u:p:" opt; do
     i) valuesInputFile="${OPTARG}"
     ;;
     o) outputDir="${OPTARG}"
+    ;;
+    v) doValidation=true
     ;;
     e) executeIt=true
     ;;
@@ -133,7 +141,7 @@ function initialize {
     validationError "The template file ${domainPropertiesInput} for creating a WebLogic domain was not found"
   fi
 
-  dcrInput="${scriptDir}/domain-template.yaml"
+  dcrInput="${scriptDir}/../../common/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
@@ -141,6 +149,9 @@ function initialize {
   failIfValidationErrors
 
   validateCommonInputs
+
+  validateBooleanInputParamsSpecified logHomeOnPV
+  failIfValidationErrors
 
   initOutputDir
 
@@ -155,111 +166,6 @@ function initialize {
 function getDockerSample {
   rm -rf ${scriptDir}/docker-images
   git clone https://github.com/oracle/docker-images.git ${scriptDir}/docker-images
-}
-
-#
-# Function to generate the properties and yaml files for creating a domain
-#
-function createFiles {
-
-  # Make sure the output directory has a copy of the inputs file.
-  # The user can either pre-create the output directory, put the inputs
-  # file there, and create the domain from it, or the user can put the
-  # inputs file some place else and let this script create the output directory
-  # (if needed) and copy the inputs file there.
-  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-domain-inputs.yaml"
-
-  domainPropertiesOutput="${domainOutputDir}/domain.properties"
-  dcrOutput="${domainOutputDir}/domain.yaml"
-
-  enabledPrefix=""     # uncomment the feature
-  disabledPrefix="# "  # comment out the feature
-
-  if [ -z "${domainHomeImageBase}" ]; then
-    fail "Please specify domainHomeImageBase in your input YAML"
-  fi
-
-  domainName=${domainUID}
-
-  # Generate the properties file that will be used when creating the weblogic domain
-  echo Generating ${domainPropertiesOutput}
-
-  cp ${domainPropertiesInput} ${domainPropertiesOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
-  sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
-
-  # Generate the yaml to create the domain resource
-  echo Generating ${dcrOutput}
-
-  exposeAnyChannelPrefix="${disabledPrefix}"
-  if [ "${exposeAdminT3Channel}" = true ]; then
-    exposeAdminT3ChannelPrefix="${enabledPrefix}"
-    exposeAnyChannelPrefix="${enabledPrefix}"
-  else
-    exposeAdminT3ChannelPrefix="${disabledPrefix}"
-  fi
-
-  if [ "${exposeAdminNodePort}" = true ]; then
-    exposeAdminNodePortPrefix="${enabledPrefix}"
-    exposeAnyChannelPrefix="${enabledPrefix}"
-  else
-    exposeAdminNodePortPrefix="${disabledPrefix}"
-  fi
-
-  domainHome="/u01/oracle/user_projects/domains/${domainName}"
-
-  if [ -z "${weblogicCredentialsSecretName}" ]; then
-    weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
-  fi
-
-  cp ${dcrInput} ${dcrOutput}
-  sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${dcrOutput}
-  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
-  sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${dcrOutput}
-  sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${dcrOutput}
-  sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
-  sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
-  sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
-  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
-
-  domainHomeImageBuildPathDefault="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt"
-  if [ -z $domainHomeImageBuildPath ]; then
-    domainHomeImageBuildPath=${domainHomeImageBuildPathDefault}
-  fi
-
-  imageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
-
-  # now we know which image to use, update the domain yaml file
-  if [ -z $image ]; then
-    sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${dcrOutput}
-  else
-    sed -i -e "s|%IMAGE_NAME%|${image}|g" ${dcrOutput}
-  fi
-
-  # Remove any "...yaml-e" files left over from running sed
-  rm -f ${domainOutputDir}/*.yaml-e
 }
 
 #
@@ -293,6 +199,8 @@ function createDomainHome {
   # if use the default images, we tag it to a more generic name (without the release version numbers)
   if [ -z $image ]; then
     docker tag $imageNameOrigin:latest $imageName:latest
+  else
+    docker tag $imageNameOrigin:latest $image
   fi
 
   if [ "$?" != "0" ]; then
@@ -329,5 +237,5 @@ function printSummary {
 }
 
 # Perform the sequence of steps to create a domain
-createDomain
+createDomain true
 
