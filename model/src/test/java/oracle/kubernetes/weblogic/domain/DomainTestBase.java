@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -13,7 +13,6 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -318,21 +317,6 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenServerNotConfigured_nodePortIsNull() {
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getNodePort(), nullValue());
-  }
-
-  @Test
-  public void whenServerConfiguredWithoutNodePort_nodePortIsNull() {
-    configureServer(SERVER1);
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(spec.getNodePort(), nullValue());
-  }
-
-  @Test
   public void whenBothClusterAndServerStateSpecified_managedServerUsesServerState() {
     configureServer(SERVER1).withDesiredState("STAND-BY");
     configureCluster(CLUSTER_NAME).withDesiredState("NEVER");
@@ -400,7 +384,6 @@ public abstract class DomainTestBase {
     assertThat(serverSpec.getImagePullPolicy(), equalTo(IFNOTPRESENT_IMAGEPULLPOLICY));
     assertThat(serverSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret"));
     assertThat(serverSpec.getEnvironmentVariables(), empty());
-    assertThat(serverSpec.getNodePort(), nullValue());
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
   }
 
@@ -424,7 +407,6 @@ public abstract class DomainTestBase {
     assertThat(
         serverSpec.getEnvironmentVariables(),
         hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN")));
-    assertThat(serverSpec.getNodePort(), nullValue());
     assertThat(serverSpec.getDesiredState(), equalTo("ADMIN"));
   }
 

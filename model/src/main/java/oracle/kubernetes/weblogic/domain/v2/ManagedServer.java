@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -11,7 +11,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class ManagedServer extends Server {
+public class ManagedServer extends Server implements Comparable<ManagedServer> {
   /** The name of the managed server. Required. */
   @SerializedName("serverName")
   @Expose
@@ -60,5 +60,10 @@ public class ManagedServer extends Server {
         .appendSuper(super.hashCode())
         .append(serverName)
         .toHashCode();
+  }
+
+  @Override
+  public int compareTo(ManagedServer o) {
+    return serverName.compareTo(o.serverName);
   }
 }

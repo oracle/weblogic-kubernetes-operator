@@ -3,13 +3,13 @@
 You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.  If the domain was configured to expose a T3 channel using the `exposeAdminT3Channel` setting when creating the domain, then the matching T3 service can be used to connect.  For example, if the `domainUID` is `domain1`, and the Administration Server name is `admin-server`, then the service would be called:
 
 ```
-domain1-admin-server-extchannel-t3channel  
+domain1-admin-server-admin  
 ```
 
 This service will be in the same namespace as the domain.  The external port number can be obtained by checking this service’s `nodePort`:
 
 ```
-$ kubectl get service domain1-admin-server-extchannel-t3channel -n domain1 -o jsonpath='{.spec.ports[0].nodePort}'
+$ kubectl get service domain1-admin-server-admin -n domain1 -o jsonpath='{.spec.ports[0].nodePort}'
 30012
 ```
 
