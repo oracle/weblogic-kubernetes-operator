@@ -3,9 +3,10 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 SECONDS=0
-./loadBalancer.sh delete
+./loadBalancer.sh delIngress
 ./domain.sh delAll
 ./domain.sh waitUntilAllStopped
+./loadBalancer.sh delOpt
 ./opt.sh delete
 ./opt.sh delImages
 

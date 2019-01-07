@@ -5,9 +5,10 @@
 SECONDS=0
 ./opt.sh pullImages
 ./opt.sh create
+./loadBalancer.sh createOpt
 ./domain.sh createPV
 ./domain.sh createAll
 ./domain.sh waitUntilAllReady
-./loadBalancer.sh create
+./loadBalancer.sh createIngress
 
 echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finsh."

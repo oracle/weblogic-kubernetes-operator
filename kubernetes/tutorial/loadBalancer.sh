@@ -4,14 +4,22 @@
 
 export PRJ_ROOT=../../
 
-function create() {
+function createOpt() {
   echo "install Treafik operator to namespace traefik"
   helm install stable/traefik \
     --name traefik-operator \
     --namespace traefik \
     --values $PRJ_ROOT/kubernetes/samples/charts/traefik/values.yaml  \
     --wait
+}
 
+function delOpt() {
+  echo "delete Traefik operator"
+  helm delete --purge traefik-operator
+  kubectl delete namespace traefik
+}
+
+function createIngress() {
   echo "install Ingress for domains"
   helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
     --name domain1-ingress \
@@ -30,25 +38,25 @@ function create() {
     --set wlsDomain.namespace=test1 \
     --set wlsDomain.domainUID=domain3 \
     --set traefik.hostname=domain3.org
-
 }
 
-function delete() {
+function delIngress() {
   echo "delete Ingress"
   helm delete --purge domain1-ingress
   helm delete --purge domain2-ingress
   helm delete --purge domain3-ingress
-
-  echo "delete Traefik operator"
-  helm delete --purge traefik-operator
-  kubectl delete namespace traefik
 }
 
 function usage() {
   echo "usage: $0 <cmd>"
   echo "Commands:"
-  echo "  create: to ceate LB operator and Ingress"
-  echo "  delete: to delete LB operator and Ingress"
+  echo "  createOpt: to create the LB operator"
+  echo
+  echo "  delOpt: to delete the LB operator"
+  echo
+  echo "  createIngress: to create Ingress of domains"
+  echo
+  echo "  delIngress: to delete Ingress of domains"
   echo
   exit 1
 }

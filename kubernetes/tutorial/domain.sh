@@ -4,10 +4,10 @@
 
 export WLS_BASE_IMAGE=store/oracle/weblogic:19.1.0.0
 export PRJ_ROOT=../../
-export PV_ROOT=/scratch/lihhe/pv
+export PV_ROOT=
 
 function createPV() {
-  if [ ! -e $PV_ROOT ]; then
+  if [ -z $PV_ROOT || ! -e $PV_ROOT ]; then
     echo "pls setup the PV_ROOT correctly."
     exit 1
   fi
@@ -20,10 +20,6 @@ function createPV() {
 
   sed -i 's@%PATH%@'"$PV_ROOT"/logs'@' domain2/pv.yaml
   sed -i 's@%PATH%@'"$PV_ROOT"/shared'@' domain3/pv.yaml
-}
-
-function delPV() {
-  rm -rf $PV_ROOT/*
 }
 
 function createDomain1() {
@@ -110,7 +106,7 @@ function waitUntilReady() {
   ready=false
   while test $ready != true; do
     if test "$(kubectl -n $namespace get pods  -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true \
-        -o jsonpath='{range .items[*]}{.status.containerStatuses[0].ready}{"\n"}{end}' | wc -l)" != $serverNum; then
+        -o jsonpath='{range .items[*]}{.status.containerStatuses[0].ready}{"\n"}{end}' | grep true | wc -l)" != $serverNum; then
       kubectl -n $namespace get pods -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true
       sleep 5
       continue
@@ -126,7 +122,7 @@ function waitUntilStopped() {
   echo "wait until domain $domainName stopped"
   while : ; do
     if test "$(kubectl -n $namespace get pods  -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true \
-        -o jsonpath='{range .items[*]}{.status.containerStatuses[0].ready}{"\n"}{end}' | wc -l)" != 0; then
+        | wc -l)" != 0; then
       echo "wait domain shutdown"
       kubectl -n $namespace get pods -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true
       sleep 5
@@ -137,21 +133,21 @@ function waitUntilStopped() {
 }
 
 function waitUntilAllReady() {
-  waitDomainReady default domain1
-  waitDomainReady test1 domain2
-  waitDomainReady test1 domain3
+  waitUntilReady default domain1
+  waitUntilReady test1 domain2
+  waitUntilReady test1 domain3
 }
 
 function waitUntilAllStopped() {
-  waitDomainStopped default domain1
-  waitDomainStopped test1 domain2
-  waitDomainStopped test1 domain3
+  waitUntilStopped default domain1
+  waitUntilStopped test1 domain2
+  waitUntilStopped test1 domain3
 }
 
 function usage() {
   echo "usage: $0 <cmd>"
-  echo "  PV cmd: createPV | delPV"
-  echo "  This is to create or delete PV folders"
+  echo "  PV cmd: createPV"
+  echo "  This is to create PV folders"
   echo
   echo "  domains cmd: createAll | delAll"
   echo "  These are to create or delete all the sample domains."
