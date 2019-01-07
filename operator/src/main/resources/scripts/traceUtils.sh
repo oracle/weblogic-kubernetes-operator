@@ -107,9 +107,11 @@ function checkEnv() {
 
 #
 # exportEffectiveDomainHome
-#   1) Look for a config.xml in DOMAIN_HOME/config and DOMAIN_HOME/*/config
-#   2) Export DOMAIN_HOME to reflect the actual location 
-#   3) Trace an Error and return non-zero if not found or more than 1 found
+#   if DOMAIN_HOME='/u01/oracle/user_projects/domains':
+#     1) look for a config.xml in DOMAIN_HOME/config and
+#        and in DOMAIN_HOME/*/config
+#     2) Export DOMAIN_HOME to reflect the actual location 
+#     3) Trace an Error and return non-zero if not found or more than 1 found
 #
 function exportEffectiveDomainHome() {
   local count=0
@@ -117,7 +119,17 @@ function exportEffectiveDomainHome() {
   local eff_domain_home=""
   local found_configs=""
 
-  for cur_domain_home in "${DOMAIN_HOME?}" "${DOMAIN_HOME}"/*; do
+  if [ ! "${DOMAIN_HOME?}" = "/u01/oracle/user_projects/domains" ]; then
+    # nothing to do
+    return 0
+  fi
+
+  local tfile=$(mktemp /tmp/homes.`basename $0`.XXXXXXXXX)
+  rm -f $tfile
+  ls -d ${DOMAIN_HOME} ${DOMAIN_HOME}/* > $tfile
+  exec 22<> $tfile
+
+  while read -u 22 cur_domain_home; do
 
     config_path="${cur_domain_home}/config/config.xml"
 
@@ -127,19 +139,16 @@ function exportEffectiveDomainHome() {
 
     count=$((count + 1))
 
-    if [ $count -gt 1 ]; then
+    if [ $count -eq 1 ]; then
+      eff_domain_home="${cur_domain_home}"
+      found_configs="'${config_path}'"
+    else
       found_configs="${found_configs}, '${config_path}'"
-      continue
     fi
 
-    eff_domain_home="${cur_domain_home}"
-    found_configs="'${config_path}'"
-    if [ "${cur_domain_home}" = "${DOMAIN_HOME}" ]; then
-      # when a config.xml is found right away at ${DOMAIN_HOME}/config
-      # then don't bother looking a level deeper in "${DOMAIN_HOME}"/*/config
-      break
-    fi
   done
+
+  rm -f $tfile
 
   if [ $count -eq 1 ]; then
     export DOMAIN_HOME="${eff_domain_home}"
@@ -150,7 +159,8 @@ function exportEffectiveDomainHome() {
     trace "Error: No config.xml found at DOMAIN_HOME/config/config.xml or DOMAIN_HOME/*/config/config.xml, DOMAIN_HOME='$DOMAIN_HOME'. Check your 'domainHome' setting in your WebLogic Operator Domain resource, and your pv/pvc mount location (if any)."
     return 1
   fi
-
+    
+  # if we get this far, count is > 1 
   trace "Error: More than one config.xml found at DOMAIN_HOME/config/config.xml and DOMAIN_HOME/*/config/config.xml, DOMAIN_HOME='$DOMAIN_HOME': ${found_configs}. Configure your 'domainHome' setting in your WebLogic Operator Domain resource to reference a single WebLogic domain."
   return 1
 }
