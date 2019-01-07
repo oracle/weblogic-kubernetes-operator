@@ -1,14 +1,17 @@
 # WebLogic sample domain home in Docker image
 
-The sample scripts demonstrate the creation of a WebLogic domain home in a Docker image. The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
+The sample scripts demonstrate the creation of a WebLogic domain home in a Docker image. If logHomeOnPV is enabled, then the log home resides on an existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
 
 ## Prerequisites
+
+Before you begin, read this guide, [Domain Resource](../../../../../site/domain-resource.md)
 
 The following prerequisites must be handled prior to running the create domain script:
 * The WDT sample requires that `JAVA_HOME` is set to a Java JDK version 1.8 or later.
 * Make sure that the WebLogic operator is running.
 * The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
+* If logHomeOnPV is enabled, create the Kubernetes persistent volume where the log home will be hosted, and the Kubernetes persistent volume claim for the domain in the same Kubernates namespace. For samples to create a PV and PVC, see [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
 * Create a Kubernetes secret for the WebLogic administrator credentials that contains the fields `username` and `password`, and make sure that the secret name matches the value specified for `weblogicCredentialsSecretName` (see Configuration table below). For example:
 
 ```
@@ -61,6 +64,7 @@ usage: create-domain.sh -o dir -i file -u username -p password [-k] [-e] [-h]
   -u User name used in building the Docker image for WebLogic domain in image.
   -p Password used in building the Docker image for WebLogic domain in image.
   -e Also create the resources in the generated YAML files, optional.
+  -v Validate the existence of persistentVolumeClaim, optional.
   -k Keep what has been previously cloned from https://github.com/oracle/docker-images.git, optional.
      If not specified, this script will always remove the existing project and clone again.
   -h Help
@@ -102,6 +106,7 @@ The following parameters can be provided in the inputs file.
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `5` |
 | `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` is specified, the specified image needs to be built locally or pulled from a repository before the `create-domain.sh` script is executed. | |
 | `domainHomeImageBuildPath` | Location of the WebLogic "domain home in image" Docker image in `https://github.com/oracle/docker-images.git` project. If not specified, use `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt`. Another possible value is `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image` which uses WLST scripts, instead of WDT, to generate the domain configuration. | `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt` |
+| `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
@@ -111,9 +116,12 @@ The following parameters can be provided in the inputs file.
 | `includeServerOutInPodLog` | Boolean indicating whether to include `server.out` to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
+| `logHomeOnPV` | Specifies whether the log home is stored on the persistent volume. | `false` |
+| `logHome` | The in-pod name of the directory to store the domain, node manager, server logs, and server .out files in. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
+| `persistentVolumeClaimName` | Name of the persistent volume claim. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc` | `domain1-weblogic-sample-pvc` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
 | `serverStartPolicy` | Determines which WebLogic Servers will be started up. Legal values are `NEVER`, `IF_NEEDED`, `ADMIN_ONLY`. | `IF_NEEDED` |
 | `t3ChannelPort` | Port for the T3 channel of the NetworkAccessPoint. | `30012` |
