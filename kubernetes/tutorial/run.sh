@@ -43,48 +43,48 @@ function setupPV() {
     chmod -R 777 $PV_ROOT/*
   fi
 
-  sed -i 's@%PATH%@'"$PV_ROOT"/logs'@' logPV/pv.yaml
-  sed -i 's@%PATH%@'"$PV_ROOT"/shared'@' domainHomePV/pv.yaml 
+  sed -i 's@%PATH%@'"$PV_ROOT"/logs'@' domain2/pv.yaml
+  sed -i 's@%PATH%@'"$PV_ROOT"/shared'@' domain3/pv.yaml 
 }
 
 function createDomain1() {
   echo "create domain1"
   # create image 'domain1-image' with domainHome in the image
-  ./domain_builder/build.sh domain1 weblogic welcome1
+  ./domainHomeBuilder/build.sh domain1 weblogic welcome1
 
   kubectl -n default create secret generic domain1-weblogic-credentials \
     --from-literal=username=weblogic \
     --from-literal=password=welcome1
 
-  kubectl create -f domain1.yaml
+  kubectl create -f domain1/domain1.yaml
 }
 
 function createDomain2() {
   echo "create domain2"
   # create image 'domain2-image' with domainHome in the image
-  ./domain_builder/build.sh domain2 weblogic welcome2
+  ./domainHomeBuilder/build.sh domain2 weblogic welcome2
 
   kubectl -n test1 create secret generic domain2-weblogic-credentials \
     --from-literal=username=weblogic \
     --from-literal=password=welcome2
 
-  kubectl create -f logPV/pv.yaml
-  kubectl create -f logPV/pvc.yaml
-  kubectl create -f domain2.yaml
+  kubectl create -f domain2/pv.yaml
+  kubectl create -f domain2/pvc.yaml
+  kubectl create -f domain2/domain2.yaml
 }
 
 function createDomain3() {
   echo "create domain3"
   # generate the domain3 configuration to a host folder
-  ./domain_builder/generate.sh domain3 weblogic welcome3
+  ./domainHomeBuilder/generate.sh domain3 weblogic welcome3
 
   kubectl -n test1 create secret generic domain3-weblogic-credentials \
     --from-literal=username=weblogic \
     --from-literal=password=welcome3
 
-  kubectl create -f domainHomePV/pv.yaml
-  kubectl create -f domainHomePV/pvc.yaml
-  kubectl create -f domain3.yaml
+  kubectl create -f domain3/pv.yaml
+  kubectl create -f domain3/pvc.yaml
+  kubectl create -f domain3/domain3.yaml
 }
 
 function createDomains() {
@@ -95,21 +95,21 @@ function createDomains() {
 }
 
 function delDomain1() {
-  kubectl delete -f domain1.yaml
+  kubectl delete -f domain1/domain1.yaml
   kubectl delete secret domain1-weblogic-credentials
 }
 
 function delDomain2() {
-  kubectl delete -f domain2.yaml
-  kubectl delete -f logPV/pvc.yaml
-  kubectl delete -f logPV/pv.yaml
+  kubectl delete -f domain2/domain2.yaml
+  kubectl delete -f domain2/pvc.yaml
+  kubectl delete -f domain2/pv.yaml
   kubectl -n test1 delete secret domain2-weblogic-credentials
 }
 
 function delDomain3() {
-  kubectl delete -f domain3.yaml
-  kubectl delete -f domainHomePV/pvc.yaml
-  kubectl delete -f domainHomePV/pv.yaml
+  kubectl delete -f domain3/domain3.yaml
+  kubectl delete -f domain3/pvc.yaml
+  kubectl delete -f domain3/pv.yaml
   kubectl -n test1 delete secret domain3-weblogic-credentials
 }
 
