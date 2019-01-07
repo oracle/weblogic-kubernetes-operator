@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -39,7 +39,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
-import oracle.kubernetes.operator.steps.ExternalAdminChannelsStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
 import oracle.kubernetes.operator.work.Component;
@@ -51,6 +50,9 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
+import oracle.kubernetes.weblogic.domain.v2.AdminServer;
+import oracle.kubernetes.weblogic.domain.v2.AdminService;
+import oracle.kubernetes.weblogic.domain.v2.Channel;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.joda.time.DateTime;
@@ -1007,13 +1009,15 @@ public class DomainProcessorImpl implements DomainProcessor {
     resources.add(new BeforeAdminServiceStep(null));
 
     Domain dom = info.getDomain();
-    if (dom.getSpec().getAdminServer().getAdminService() != null) {
+    AdminServer adminServer = dom.getSpec().getAdminServer();
+    AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
+    List<Channel> channels = adminService != null ? adminService.getChannels() : null;
+    if (channels != null && !channels.isEmpty()) {
       resources.add(ServiceHelper.createForAdminServiceStep(null));
     }
 
     resources.add(ServiceHelper.createForServerStep(null));
-    resources.add(new WatchPodReadyAdminStep(Main.podWatchers, null));
-    resources.add(new ExternalAdminChannelsStep(next));
+    resources.add(new WatchPodReadyAdminStep(Main.podWatchers, next));
     return resources.toArray(new Step[resources.size()]);
   }
 

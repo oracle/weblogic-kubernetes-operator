@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -18,7 +18,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-class ServerPod {
+class ServerPod extends KubernetesResource {
 
   /**
    * Environment variables to pass while starting a server.
@@ -103,38 +103,6 @@ class ServerPod {
   @Description("Additional volume mounts for the server pod")
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
-  /**
-   * The labels to be attached to pods. The label names must not start with 'weblogic.'.
-   *
-   * @since 2.0
-   */
-  @Description("Labels applied to pods")
-  private Map<String, String> podLabels = new HashMap<>();
-
-  /**
-   * The annotations to be attached to pods.
-   *
-   * @since 2.0
-   */
-  @Description("Annotations applied to pods")
-  private Map<String, String> podAnnotations = new HashMap<>();
-
-  /**
-   * The labels to be attached to Service. The label names must not start with 'weblogic.'.
-   *
-   * @since 2.0
-   */
-  @Description("Labels applied to services")
-  private Map<String, String> serviceLabels = new HashMap<>();
-
-  /**
-   * The annotations to be attached to Service.
-   *
-   * @since 2.0
-   */
-  @Description("Annotations applied to services")
-  private Map<String, String> serviceAnnotations = new HashMap<>();
-
   ProbeTuning getReadinessProbeTuning() {
     return this.readinessProbe;
   }
@@ -163,10 +131,7 @@ class ServerPod {
     readinessProbe.copyValues(serverPod1.readinessProbe);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) addIfMissing(var);
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) addIfMissing(var);
-    serverPod1.getPodLabels().forEach(this::addPodLabelIfMissing);
-    serverPod1.getPodAnnotations().forEach(this::addPodAnnotationIfMissing);
-    serverPod1.getServiceAnnotations().forEach(this::addServiceAnnotationIfMissing);
-    serverPod1.getServiceLabels().forEach(this::addServiceLabelIfMissing);
+    fillInFrom((KubernetesResource) serverPod1);
     serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
     copyValues(resources, serverPod1.resources);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
@@ -269,22 +234,6 @@ class ServerPod {
     if (!hasVolumeMountName(var.getName())) addAdditionalVolumeMount(var);
   }
 
-  private void addPodLabelIfMissing(String name, String value) {
-    if (!podLabels.containsKey(name)) podLabels.put(name, value);
-  }
-
-  private void addPodAnnotationIfMissing(String name, String value) {
-    if (!podAnnotations.containsKey(name)) podAnnotations.put(name, value);
-  }
-
-  private void addServiceLabelIfMissing(String name, String value) {
-    if (!serviceLabels.containsKey(name)) serviceLabels.put(name, value);
-  }
-
-  private void addServiceAnnotationIfMissing(String name, String value) {
-    if (!serviceAnnotations.containsKey(name)) serviceAnnotations.put(name, value);
-  }
-
   List<V1EnvVar> getEnv() {
     return this.env;
   }
@@ -359,50 +308,15 @@ class ServerPod {
     return volumeMounts;
   }
 
-  void addPodLabel(String name, String value) {
-    podLabels.put(name, value);
-  }
-
-  void addPodAnnotations(String name, String value) {
-    podAnnotations.put(name, value);
-  }
-
-  Map<String, String> getPodLabels() {
-    return podLabels;
-  }
-
-  Map<String, String> getPodAnnotations() {
-    return podAnnotations;
-  }
-
-  void addServiceLabel(String name, String value) {
-    serviceLabels.put(name, value);
-  }
-
-  void addServiceAnnotations(String name, String value) {
-    serviceAnnotations.put(name, value);
-  }
-
-  Map<String, String> getServiceLabels() {
-    return serviceLabels;
-  }
-
-  Map<String, String> getServiceAnnotations() {
-    return serviceAnnotations;
-  }
-
   @Override
   public String toString() {
     return new ToStringBuilder(this)
+        .appendSuper(super.toString())
         .append("env", env)
         .append("livenessProbe", livenessProbe)
         .append("readinessProbe", readinessProbe)
         .append("additionalVolumes", volumes)
         .append("additionalVolumeMounts", volumeMounts)
-        .append("podLabels", podLabels)
-        .append("podAnnotations", podAnnotations)
-        .append("serviceLabels", serviceLabels)
-        .append("serviceAnnotations", serviceAnnotations)
         .append("nodeSelector", nodeSelector)
         .append("resourceRequirements", resources)
         .append("podSecurityContext", podSecurityContext)
@@ -419,15 +333,18 @@ class ServerPod {
     ServerPod that = (ServerPod) o;
 
     return new EqualsBuilder()
-        .append(env, that.env)
+        .appendSuper(super.equals(o))
+        .append(
+            Domain.sortOrNull(env, ENV_VAR_COMPARATOR),
+            Domain.sortOrNull(that.env, ENV_VAR_COMPARATOR))
         .append(livenessProbe, that.livenessProbe)
         .append(readinessProbe, that.readinessProbe)
-        .append(volumes, that.volumes)
-        .append(volumeMounts, that.volumeMounts)
-        .append(podLabels, that.podLabels)
-        .append(podAnnotations, that.podAnnotations)
-        .append(serviceLabels, that.serviceLabels)
-        .append(serviceAnnotations, that.serviceAnnotations)
+        .append(
+            Domain.sortOrNull(volumes, VOLUME_COMPARATOR),
+            Domain.sortOrNull(that.volumes, VOLUME_COMPARATOR))
+        .append(
+            Domain.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR),
+            Domain.sortOrNull(that.volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector, that.nodeSelector)
         .append(resources, that.resources)
         .append(podSecurityContext, that.podSecurityContext)
@@ -438,19 +355,31 @@ class ServerPod {
   @Override
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
-        .append(env)
+        .appendSuper(super.hashCode())
+        .append(Domain.sortOrNull(env, ENV_VAR_COMPARATOR))
         .append(livenessProbe)
         .append(readinessProbe)
-        .append(volumes)
-        .append(volumeMounts)
-        .append(podLabels)
-        .append(podAnnotations)
-        .append(serviceLabels)
-        .append(serviceAnnotations)
+        .append(Domain.sortOrNull(volumes, VOLUME_COMPARATOR))
+        .append(Domain.sortOrNull(volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector)
         .append(resources)
         .append(podSecurityContext)
         .append(containerSecurityContext)
         .toHashCode();
   }
+
+  private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
+      (a, b) -> {
+        return a.getName().compareTo(b.getName());
+      };
+
+  private static final Comparator<V1Volume> VOLUME_COMPARATOR =
+      (a, b) -> {
+        return a.getName().compareTo(b.getName());
+      };
+
+  private static final Comparator<V1VolumeMount> VOLUME_MOUNT_COMPARATOR =
+      (a, b) -> {
+        return a.getName().compareTo(b.getName());
+      };
 }

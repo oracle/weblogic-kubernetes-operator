@@ -2440,7 +2440,7 @@ function verify_service_and_pod_created {
     fi
 
     if [ "${IS_ADMIN_SERVER}" == "true" ]; then
-      local EXTCHANNEL_T3CHANNEL_SERVICE_NAME=${SERVICE_NAME}-extchannel-t3channel
+      local EXTCHANNEL_T3CHANNEL_SERVICE_NAME=${SERVICE_NAME}-admin
       trace "checking if service ${EXTCHANNEL_T3CHANNEL_SERVICE_NAME} is created"
       count=0
       srv_count=0

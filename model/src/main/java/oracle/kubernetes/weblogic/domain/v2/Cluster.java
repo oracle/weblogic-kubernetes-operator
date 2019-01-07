@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -16,7 +16,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * @since 2.0
  */
-public class Cluster extends BaseConfiguration {
+public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   /** The name of the cluster. Required. */
   @Description("The name of this cluster. Required")
   @Nonnull
@@ -31,6 +31,13 @@ public class Cluster extends BaseConfiguration {
       "The maximum number of cluster membrers that can be temporarily unavailable. Defaults to 1.")
   @Range(minimum = 1)
   private Integer maxUnavailable;
+
+  protected Cluster getConfiguration() {
+    Cluster configuration = new Cluster();
+    configuration.fillInFrom(this);
+    configuration.setRestartVersion(this.getRestartVersion());
+    return configuration;
+  }
 
   public String getClusterName() {
     return clusterName;
@@ -95,5 +102,10 @@ public class Cluster extends BaseConfiguration {
         .append(replicas)
         .append(maxUnavailable)
         .toHashCode();
+  }
+
+  @Override
+  public int compareTo(Cluster o) {
+    return clusterName.compareTo(o.clusterName);
   }
 }

@@ -1,15 +1,11 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.operator.ProcessingConstants.NODE_PORT;
-import static oracle.kubernetes.operator.ProcessingConstants.PORT;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
@@ -75,7 +71,10 @@ public class BeforeAdminServiceStepTest {
     testSupport
         .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig())
         .addDomainPresenceInfo(domainPresenceInfo);
-    configurator.configureAdminServer();
+    configurator
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default", NODE_PORT_NUM);
   }
 
   @After
@@ -90,22 +89,6 @@ public class BeforeAdminServiceStepTest {
     Packet packet = invokeStep();
 
     assertThat(packet, hasEntry(SERVER_NAME, ADMIN_NAME));
-    assertThat(packet, hasEntry(PORT, ADMIN_PORT_NUM));
-  }
-
-  @Test
-  public void whenAdminServerNodePortDefined_packetContainsItAfterProcessing() {
-    configurator.configureAdminServer().withNodePort(NODE_PORT_NUM);
-    Packet packet = invokeStep();
-
-    assertThat(packet, hasEntry(NODE_PORT, NODE_PORT_NUM));
-  }
-
-  @Test
-  public void whenAdminServerNodePortNotDefined_packetDoesNotContainItAfterProcessing() {
-    Packet packet = invokeStep();
-
-    assertThat(packet, not(hasKey(NODE_PORT)));
   }
 
   private Packet invokeStep() {

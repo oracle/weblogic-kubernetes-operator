@@ -13,22 +13,13 @@
             "ADMIN"
           ]
         },
-        "nodePortAnnotations": {
-          "$ref": "#/definitions/Map"
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic channels.",
+          "$ref": "#/definitions/KubernetesResource"
         },
         "serverPod": {
-          "description": "Configuration affecting the server pod",
+          "description": "Configuration affecting server pods",
           "$ref": "#/definitions/ServerPod"
-        },
-        "exportedNetworkAccessPoints": {
-          "description": "T3 network access points to export",
-          "$ref": "#/definitions/Map"
-        },
-        "nodePortLabels": {
-          "$ref": "#/definitions/Map"
-        },
-        "nodePort": {
-          "type": "number"
         },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
@@ -54,13 +45,21 @@
       "type": "object",
       "properties": {
         "channels": {
-          "$ref": "#/definitions/Map"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Channel"
+          }
+        }
+      }
+    },
+    "Channel": {
+      "type": "object",
+      "properties": {
+        "channelName": {
+          "type": "string"
         },
-        "annotations": {
-          "$ref": "#/definitions/Map"
-        },
-        "labels": {
-          "$ref": "#/definitions/Map"
+        "nodePort": {
+          "type": "number"
         }
       }
     },
@@ -79,6 +78,10 @@
             "ADMIN"
           ]
         },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic channels.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
         "maxUnavailable": {
           "description": "The maximum number of cluster membrers that can be temporarily unavailable. Defaults to 1.",
           "type": "number",
@@ -94,7 +97,7 @@
           "type": "string"
         },
         "serverPod": {
-          "description": "Configuration affecting the server pod",
+          "description": "Configuration affecting server pods",
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {
@@ -223,6 +226,10 @@
           "description": "The name of the configmap for optional WebLogic configuration overrides.",
           "type": "string"
         },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic channels.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
         "domainHome": {
           "description": "The folder for the Weblogic Domain. (Not required)Defaults to /shared/domains/domains/domainUID if domainHomeInImage is falseDefaults to /shared/domains/domain if domainHomeInImage is true",
           "type": "string"
@@ -239,7 +246,7 @@
           "$ref": "#/definitions/AdminServer"
         },
         "serverPod": {
-          "description": "Configuration affecting the server pod",
+          "description": "Configuration affecting server pods",
           "$ref": "#/definitions/ServerPod"
         },
         "logHome": {
@@ -296,6 +303,19 @@
         }
       }
     },
+    "KubernetesResource": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations applied to pods",
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "Labels applied to pods",
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
     "ManagedServer": {
       "type": "object",
       "properties": {
@@ -307,15 +327,16 @@
             "ADMIN"
           ]
         },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic channels.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
         "serverPod": {
-          "description": "Configuration affecting the server pod",
+          "description": "Configuration affecting server pods",
           "$ref": "#/definitions/ServerPod"
         },
         "serverName": {
           "type": "string"
-        },
-        "nodePort": {
-          "type": "number"
         },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
@@ -374,10 +395,6 @@
     "ServerPod": {
       "type": "object",
       "properties": {
-        "serviceLabels": {
-          "description": "Labels applied to services",
-          "$ref": "#/definitions/Map"
-        },
         "livenessProbe": {
           "description": "Settings for the liveness probe associated with a server",
           "$ref": "#/definitions/ProbeTuning"
@@ -393,9 +410,21 @@
             "$ref": "#/definitions/V1Volume"
           }
         },
+        "annotations": {
+          "description": "Annotations applied to pods",
+          "$ref": "#/definitions/Map"
+        },
         "resources": {
           "description": "Memory and cpu minimum requirements and limits for the server",
           "$ref": "#/definitions/V1ResourceRequirements"
+        },
+        "readinessProbe": {
+          "description": "Settings for the readiness probe associated with a server",
+          "$ref": "#/definitions/ProbeTuning"
+        },
+        "containerSecurityContext": {
+          "description": "Container-level security attributes. Will override any matching pod-level attributes",
+          "$ref": "#/definitions/V1SecurityContext"
         },
         "env": {
           "description": "A list of environment variables to add to a server",
@@ -404,8 +433,8 @@
             "$ref": "#/definitions/V1EnvVar"
           }
         },
-        "podAnnotations": {
-          "description": "Annotations applied to pods",
+        "labels": {
+          "description": "Labels applied to pods",
           "$ref": "#/definitions/Map"
         },
         "nodeSelector": {
@@ -418,22 +447,6 @@
           "items": {
             "$ref": "#/definitions/V1VolumeMount"
           }
-        },
-        "podLabels": {
-          "description": "Labels applied to pods",
-          "$ref": "#/definitions/Map"
-        },
-        "readinessProbe": {
-          "description": "Settings for the readiness probe associated with a server",
-          "$ref": "#/definitions/ProbeTuning"
-        },
-        "serviceAnnotations": {
-          "description": "Annotations applied to services",
-          "$ref": "#/definitions/Map"
-        },
-        "containerSecurityContext": {
-          "description": "Container-level security attributes. Will override any matching pod-level attributes",
-          "$ref": "#/definitions/V1SecurityContext"
         }
       }
     },

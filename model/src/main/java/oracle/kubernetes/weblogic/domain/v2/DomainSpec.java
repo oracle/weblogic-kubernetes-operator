@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -570,7 +570,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   public AdminServer getAdminServer() {
-    return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
+    return adminServer;
   }
 
   private void setAdminServer(AdminServer adminServer) {
@@ -600,6 +600,11 @@ public class DomainSpec extends BaseConfiguration {
           getClusterLimit(clusterName));
     }
 
+    @Override
+    public ClusterSpec getClusterSpec(String clusterName) {
+      return new ClusterSpecV2Impl(DomainSpec.this, getCluster(clusterName));
+    }
+
     private Integer getClusterLimit(String clusterName) {
       return clusterName == null ? null : getReplicaCount(clusterName);
     }
@@ -625,26 +630,13 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public List<String> getExportedNetworkAccessPointNames() {
-      return getAdminServer().getExportedNetworkAccessPointNames();
+    public List<String> getAdminServerChannelNames() {
+      return adminServer != null ? adminServer.getChannelNames() : Collections.emptyList();
     }
 
     @Override
-    public Map<String, String> getChannelServiceLabels(String napName) {
-      ExportedNetworkAccessPoint accessPoint = getExportedNetworkAccessPoint(napName);
-
-      return accessPoint == null ? Collections.emptyMap() : accessPoint.getLabels();
-    }
-
-    private ExportedNetworkAccessPoint getExportedNetworkAccessPoint(String napName) {
-      return getAdminServer().getExportedNetworkAccessPoint(napName);
-    }
-
-    @Override
-    public Map<String, String> getChannelServiceAnnotations(String napName) {
-      ExportedNetworkAccessPoint accessPoint = getExportedNetworkAccessPoint(napName);
-
-      return accessPoint == null ? Collections.emptyMap() : accessPoint.getAnnotations();
+    public List<Channel> getAdminServerChannels() {
+      return adminServer != null ? adminServer.getChannels() : Collections.emptyList();
     }
 
     @Override

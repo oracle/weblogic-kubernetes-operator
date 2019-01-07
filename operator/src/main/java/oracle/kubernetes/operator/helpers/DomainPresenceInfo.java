@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -216,15 +216,6 @@ public class DomainPresenceInfo {
 
     public String getClusterName() {
       return clusterName;
-    }
-
-    /**
-     * Returns the node port to use when starting up the configured server.
-     *
-     * @return a port number, or null.
-     */
-    public Integer getNodePort() {
-      return serverSpec == null ? null : serverSpec.getNodePort();
     }
 
     /**
