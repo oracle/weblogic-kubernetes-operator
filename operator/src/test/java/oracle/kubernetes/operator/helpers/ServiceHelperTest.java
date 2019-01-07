@@ -347,7 +347,9 @@ public class ServiceHelperTest {
         .putSelectorItem(DOMAINUID_LABEL, UID)
         .putSelectorItem(CLUSTERNAME_LABEL, TEST_CLUSTER)
         .putSelectorItem(CREATEDBYOPERATOR_LABEL, "true")
-        .ports(Collections.singletonList(new V1ServicePort().port(TEST_PORT).name("default")));
+        .ports(
+            Collections.singletonList(
+                new V1ServicePort().port(TEST_PORT).name("default").protocol("TCP")));
   }
 
   private void expectSuccessfulCreateClusterService() {
@@ -501,7 +503,9 @@ public class ServiceHelperTest {
         .putSelectorItem(DOMAINUID_LABEL, UID)
         .putSelectorItem(SERVERNAME_LABEL, TEST_SERVER_NAME)
         .putSelectorItem(CREATEDBYOPERATOR_LABEL, "true")
-        .ports(Collections.singletonList(new V1ServicePort().port(TEST_PORT).name("default")));
+        .ports(
+            Collections.singletonList(
+                new V1ServicePort().port(TEST_PORT).name("default").protocol("TCP")));
   }
 
   private void initializeServiceFromRecord(V1Service service) {
