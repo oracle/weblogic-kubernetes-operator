@@ -11,7 +11,8 @@ adminPort: 7001
 adminServerName: admin-server
 
 # Unique ID identifying a domain.
-# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
+# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains 
+# in a Kubernetes cluster.
 domainUID: domain1
 
 # Type of WebLogic Cluster
@@ -41,11 +42,18 @@ managedServerPort: 8001
 productionModeEnabled: true
 
 # WebLogic Docker image that the domain resource will pull if needed.
-# You only need to specify this if you are going to push the generated image from the local Docker repository
-# to another Docker repository.
-# If not specified, the sample uses the internally generated image name, either "domain-home-in-image:latest"
-# or "domain-home-in-image-wdt:latest".
-# image: 
+#
+# You only need to specify this if you want to tag the generated image to a different name.
+#
+# If you are running the sample script from a machine that is remote to the Kubernetes cluster,
+# you need to specify this to point to an image in a registry local to the cluster. You
+# then need to push the generate image to that registry before starting the domain.
+#
+# If not specified, the sample uses the internally generated image name, 
+# either "domain-home-in-image-wdt:latest" or "domain-home-in-image-wlst:latest".
+#
+# See README.md for more help.
+#image: 
 
 # Image pull policy
 # Legal values are "IfNotPresent", "Always", or "Never"
@@ -89,13 +97,14 @@ namespace: default
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Base WebLogic binary image used to build the WebLogic domain image
-# The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. See README.md for more help.
-# domainHomeImageBase: 
+# The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. 
+# See README.md for more help.
+#domainHomeImageBase: 
 
 # Location of the WebLogic "domain home in image" Docker image sample in the 
 # `https://github.com/oracle/docker-images.git` project.
 # If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt".
-# Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image" which 
-# uses WLST script, instead of WDT, to generate the domain configuration.
+# Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image",
+# which uses a WLST script, instead of WDT, to generate the domain configuration.
 domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt
 

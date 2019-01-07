@@ -30,9 +30,10 @@ The script will perform the following steps:
 * Clone the weblogic docker-images project into the current directory using `git clone https://github.com/oracle/docker-images.git`.
 * Replace the built-in user name and password in the `properties/docker-build/domain_security.properties` file with the `username` and `password` that are supplied on the command line using the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via the `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
 * Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt) and [Example Image with a WebLogic Server Domain using WLST](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain in the Docker image. Also, you can run the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image), manually with the generated `domain.properties` to create a domain home image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
+* Create a tag that refers to the generated Docker image.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 ```
-kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
+$ kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
 ```
 
 As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services. This option should only be used in a single node Kubernetes cluster.
@@ -60,11 +61,20 @@ If you copy the sample scripts to a different location, make sure that you copy 
 The default domain created by the script has the following characteristics:
 
 * An Administration Server named `admin-server` listening on port `7001`.
-* A dynamic cluster named `cluster-1` of size 2.
+* A dynamic cluster named `cluster-1` of size 5.
 * Two Managed Servers, named `managed-server1` and `managed-server2`, listening on port `8001`.
 * No applications deployed.
-* A Derby data source.
 * A T3 channel.
+
+If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following (also see the `image` property in the table in the next section):
+* Set the `image` property in the inputs file to the target image name (including the registry hostname/port and the tag if needed).
+* Run the `create-domain.sh` script without the `-e` option.
+* Push the `image` to the target registry.
+* Run the following command to create the domain.
+
+```
+$ kubectl apply -f /path/to/output-directory/weblogic-domains/<domainUID>/domain.yaml
+```
 
 The domain creation inputs can be customized by editing `create-domain-inputs.yaml`.
 
@@ -84,7 +94,7 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `image` | WebLogic Docker image that the domain resource will pull if needed. You only need to specify this if you are going to push the generated image from the local Docker repository to another Docker repository. If not specified, the sample uses the internally generated image name, either "domain-home-in-image:latest" or "domain-home-in-image-wdt:latest". | |
+| `image` | WebLogic Docker image that the domain resource will pull if needed. You only need to specify this if you are going to tag the generated image to a different name. If you run the sample script from a machine that is remote to the Kubernetes cluster, you need to specify this to point to an image in a registry local to the cluster, and then push the generate image to that registry before starting the domain. If not specified, the sample uses the internally generated image name, either "domain-home-in-image:latest" or "domain-home-in-image-wdt:latest". | |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are "IfNotPresent", "Always", or "Never" | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
