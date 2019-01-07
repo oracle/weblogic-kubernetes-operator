@@ -289,6 +289,8 @@ function createDomainHome {
   # if use the default images, we tag it to a more generic name (without the release version numbers)
   if [ -z $image ]; then
     docker tag $imageNameOrigin:latest $imageName:latest
+  else
+    docker tag $imageNameOrigin:latest $image
   fi
 
   if [ "$?" != "0" ]; then
