@@ -252,14 +252,17 @@ function createFiles {
   # Generate the yaml to create the domain resource
   echo Generating ${dcrOutput}
 
+  exposeAnyChannelPrefix="${disabledPrefix}"
   if [ "${exposeAdminT3Channel}" = true ]; then
     exposeAdminT3ChannelPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
   else
     exposeAdminT3ChannelPrefix="${disabledPrefix}"
   fi
 
   if [ "${exposeAdminNodePort}" = true ]; then
     exposeAdminNodePortPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
   else
     exposeAdminNodePortPrefix="${disabledPrefix}"
   fi
@@ -274,10 +277,11 @@ function createFiles {
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
   sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
-  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
-  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
