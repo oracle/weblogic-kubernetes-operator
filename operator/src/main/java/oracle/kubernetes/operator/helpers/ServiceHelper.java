@@ -118,7 +118,10 @@ public class ServiceHelper {
         List<V1ServicePort> ports = new ArrayList<>();
         if (scan.getNetworkAccessPoints() != null) {
           for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
-            V1ServicePort port = new V1ServicePort().name(nap.getName()).port(nap.getListenPort());
+            V1ServicePort port =
+                new V1ServicePort()
+                    .name(LegalNames.toDNS1123LegalName(nap.getName()))
+                    .port(nap.getListenPort());
             ports.add(port);
           }
         }
@@ -126,10 +129,10 @@ public class ServiceHelper {
           ports.add(new V1ServicePort().name("default").port(scan.getListenPort()));
         }
         if (scan.getSslListenPort() != null) {
-          ports.add(new V1ServicePort().name("defaultSecure").port(scan.getSslListenPort()));
+          ports.add(new V1ServicePort().name("default-secure").port(scan.getSslListenPort()));
         }
         if (scan.getAdminPort() != null) {
-          ports.add(new V1ServicePort().name("defaultAdmin").port(scan.getAdminPort()));
+          ports.add(new V1ServicePort().name("default-admin").port(scan.getAdminPort()));
         }
         return ports;
       }
@@ -614,7 +617,9 @@ public class ServiceHelper {
           if (server.getNetworkAccessPoints() != null) {
             for (NetworkAccessPoint nap : server.getNetworkAccessPoints()) {
               V1ServicePort port =
-                  new V1ServicePort().name(nap.getName()).port(nap.getListenPort());
+                  new V1ServicePort()
+                      .name(LegalNames.toDNS1123LegalName(nap.getName()))
+                      .port(nap.getListenPort());
               ports.putIfAbsent(nap.getName(), port);
             }
           }
@@ -625,12 +630,12 @@ public class ServiceHelper {
           if (server.getSslListenPort() != null) {
             ports.putIfAbsent(
                 "defaultSecure",
-                new V1ServicePort().name("defaultSecure").port(server.getSslListenPort()));
+                new V1ServicePort().name("default-secure").port(server.getSslListenPort()));
           }
           if (server.getAdminPort() != null) {
             ports.putIfAbsent(
                 "defaultAdmin",
-                new V1ServicePort().name("defaultAdmin").port(server.getAdminPort()));
+                new V1ServicePort().name("default-admin").port(server.getAdminPort()));
           }
         }
         if (!ports.isEmpty()) {
@@ -824,7 +829,7 @@ public class ServiceHelper {
               Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(nap.getListenPort());
               V1ServicePort port =
                   new V1ServicePort()
-                      .name(nap.getName())
+                      .name(LegalNames.toDNS1123LegalName(nap.getName()))
                       .port(nap.getListenPort())
                       .nodePort(nodePort);
               ports.add(port);
@@ -840,23 +845,23 @@ public class ServiceHelper {
           }
         }
         if (scan.getSslListenPort() != null) {
-          Channel c = getChannel("defaultSecure");
+          Channel c = getChannel("default-secure");
           if (c != null) {
             Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(scan.getSslListenPort());
             ports.add(
                 new V1ServicePort()
-                    .name("defaultSecure")
+                    .name("default-secure")
                     .port(scan.getSslListenPort())
                     .nodePort(nodePort));
           }
         }
         if (scan.getAdminPort() != null) {
-          Channel c = getChannel("defaultSecure");
+          Channel c = getChannel("default-admin");
           if (c != null) {
             Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(scan.getAdminPort());
             ports.add(
                 new V1ServicePort()
-                    .name("defaultAdmin")
+                    .name("default-admin")
                     .port(scan.getAdminPort())
                     .nodePort(nodePort));
           }
