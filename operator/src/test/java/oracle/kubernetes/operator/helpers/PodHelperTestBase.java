@@ -611,7 +611,8 @@ public abstract class PodHelperTestBase {
         .image(LATEST_IMAGE)
         .imagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
         .securityContext(new V1SecurityContext())
-        .addPortsItem(new V1ContainerPort().name("default").containerPort(listenPort))
+        .addPortsItem(
+            new V1ContainerPort().name("default").containerPort(listenPort).protocol("TCP"))
         .lifecycle(createLifecycle())
         .volumeMounts(PodDefaults.getStandardVolumeMounts(UID))
         .command(createStartCommand())
