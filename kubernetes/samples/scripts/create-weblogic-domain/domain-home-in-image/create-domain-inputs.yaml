@@ -99,8 +99,7 @@ javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Location of the WebLogic "domain home in image" Docker image sample in the 
 # `https://github.com/oracle/docker-images.git` project.
-# If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt".
-# Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image",
-# which uses a WLST script, instead of WDT, to generate the domain configuration.
-domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt
-
+# If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image".
+# Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt",
+# which uses a WDT script, instead of WLST, to generate the domain configuration.
+domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image
