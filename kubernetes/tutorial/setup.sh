@@ -3,11 +3,11 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 SECONDS=0
-./run.sh pullImages
-./run.sh createOpt
-./run.sh createPV 
-./run.sh createDomains
-./run.sh waitDomainsReady
-./run.sh createLB
+./opt.sh pullImages
+./opt.sh create
+./domain.sh createPV
+./domain.sh createAll
+./domain.sh waitUntilAllReady
+./loadBalancer.sh create
 
 echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finsh."
