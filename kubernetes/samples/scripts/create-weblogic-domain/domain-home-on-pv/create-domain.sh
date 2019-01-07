@@ -227,7 +227,6 @@ function createFiles {
   sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${createJobOutput}
   sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${createJobOutput}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${createJobOutput}
-  sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${createJobOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${createJobOutput}
   sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptsMountPath}:g" ${createJobOutput}
@@ -313,7 +312,7 @@ function createDomainConfigmap {
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
-   sh ${externalFilesTmpDir}/prepare.sh -t ${clusterType} -i ${externalFilesTmpDir}
+   sh ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
   fi
  
   # create the configmap and label it properly
