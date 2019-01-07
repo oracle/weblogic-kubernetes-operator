@@ -1,4 +1,4 @@
-// Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -28,12 +28,7 @@ public class WatchImpl<T> implements WatchI<T> {
   @Override
   public void close() throws IOException {
     impl.close();
-    pool.recycle(client);
-  }
-
-  @Override
-  public void discardClient() {
-    client = pool.take();
+    if (client != null) pool.recycle(client);
   }
 
   @Override
@@ -49,6 +44,11 @@ public class WatchImpl<T> implements WatchI<T> {
 
   @Override
   public Watch.Response<T> next() {
-    return impl.next();
+    try {
+      return impl.next();
+    } catch (Exception e) {
+      client = null;
+      throw e;
+    }
   }
 }
