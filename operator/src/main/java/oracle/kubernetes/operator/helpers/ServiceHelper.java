@@ -121,18 +121,24 @@ public class ServiceHelper {
             V1ServicePort port =
                 new V1ServicePort()
                     .name(LegalNames.toDNS1123LegalName(nap.getName()))
-                    .port(nap.getListenPort());
+                    .port(nap.getListenPort())
+                    .protocol("TCP");
             ports.add(port);
           }
         }
         if (scan.getListenPort() != null) {
-          ports.add(new V1ServicePort().name("default").port(scan.getListenPort()));
+          ports.add(new V1ServicePort().name("default").port(scan.getListenPort()).protocol("TCP"));
         }
         if (scan.getSslListenPort() != null) {
-          ports.add(new V1ServicePort().name("default-secure").port(scan.getSslListenPort()));
+          ports.add(
+              new V1ServicePort()
+                  .name("default-secure")
+                  .port(scan.getSslListenPort())
+                  .protocol("TCP"));
         }
         if (scan.getAdminPort() != null) {
-          ports.add(new V1ServicePort().name("default-admin").port(scan.getAdminPort()));
+          ports.add(
+              new V1ServicePort().name("default-admin").port(scan.getAdminPort()).protocol("TCP"));
         }
         return ports;
       }
@@ -619,23 +625,31 @@ public class ServiceHelper {
               V1ServicePort port =
                   new V1ServicePort()
                       .name(LegalNames.toDNS1123LegalName(nap.getName()))
-                      .port(nap.getListenPort());
+                      .port(nap.getListenPort())
+                      .protocol("TCP");
               ports.putIfAbsent(nap.getName(), port);
             }
           }
           if (server.getListenPort() != null) {
             ports.putIfAbsent(
-                "default", new V1ServicePort().name("default").port(server.getListenPort()));
+                "default",
+                new V1ServicePort().name("default").port(server.getListenPort()).protocol("TCP"));
           }
           if (server.getSslListenPort() != null) {
             ports.putIfAbsent(
                 "defaultSecure",
-                new V1ServicePort().name("default-secure").port(server.getSslListenPort()));
+                new V1ServicePort()
+                    .name("default-secure")
+                    .port(server.getSslListenPort())
+                    .protocol("TCP"));
           }
           if (server.getAdminPort() != null) {
             ports.putIfAbsent(
                 "defaultAdmin",
-                new V1ServicePort().name("default-admin").port(server.getAdminPort()));
+                new V1ServicePort()
+                    .name("default-admin")
+                    .port(server.getAdminPort())
+                    .protocol("TCP"));
           }
         }
         if (!ports.isEmpty()) {
@@ -831,7 +845,8 @@ public class ServiceHelper {
                   new V1ServicePort()
                       .name(LegalNames.toDNS1123LegalName(nap.getName()))
                       .port(nap.getListenPort())
-                      .nodePort(nodePort);
+                      .nodePort(nodePort)
+                      .protocol("TCP");
               ports.add(port);
             }
           }
@@ -841,7 +856,11 @@ public class ServiceHelper {
           if (c != null) {
             Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(scan.getListenPort());
             ports.add(
-                new V1ServicePort().name("default").port(scan.getListenPort()).nodePort(nodePort));
+                new V1ServicePort()
+                    .name("default")
+                    .port(scan.getListenPort())
+                    .nodePort(nodePort)
+                    .protocol("TCP"));
           }
         }
         if (scan.getSslListenPort() != null) {
@@ -852,7 +871,8 @@ public class ServiceHelper {
                 new V1ServicePort()
                     .name("default-secure")
                     .port(scan.getSslListenPort())
-                    .nodePort(nodePort));
+                    .nodePort(nodePort)
+                    .protocol("TCP"));
           }
         }
         if (scan.getAdminPort() != null) {
@@ -863,7 +883,8 @@ public class ServiceHelper {
                 new V1ServicePort()
                     .name("default-admin")
                     .port(scan.getAdminPort())
-                    .nodePort(nodePort));
+                    .nodePort(nodePort)
+                    .protocol("TCP"));
           }
         }
         return ports;

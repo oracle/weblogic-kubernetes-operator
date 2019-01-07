@@ -168,19 +168,31 @@ public abstract class PodStepContext implements StepContextConstants {
           V1ContainerPort port =
               new V1ContainerPort()
                   .name(LegalNames.toDNS1123LegalName(nap.getName()))
-                  .containerPort(nap.getListenPort());
+                  .containerPort(nap.getListenPort())
+                  .protocol("TCP");
           ports.add(port);
         }
       }
       if (scan.getListenPort() != null) {
-        ports.add(new V1ContainerPort().name("default").containerPort(scan.getListenPort()));
+        ports.add(
+            new V1ContainerPort()
+                .name("default")
+                .containerPort(scan.getListenPort())
+                .protocol("TCP"));
       }
       if (scan.getSslListenPort() != null) {
         ports.add(
-            new V1ContainerPort().name("default-secure").containerPort(scan.getSslListenPort()));
+            new V1ContainerPort()
+                .name("default-secure")
+                .containerPort(scan.getSslListenPort())
+                .protocol("TCP"));
       }
       if (scan.getAdminPort() != null) {
-        ports.add(new V1ContainerPort().name("default-admin").containerPort(scan.getAdminPort()));
+        ports.add(
+            new V1ContainerPort()
+                .name("default-admin")
+                .containerPort(scan.getAdminPort())
+                .protocol("TCP"));
       }
       return ports;
     }
