@@ -7,7 +7,7 @@ export PRJ_ROOT=../../
 export PV_ROOT=
 
 function createPV() {
-  if [ -z $PV_ROOT || ! -e $PV_ROOT ]; then
+  if [ -z "$PV_ROOT" ] || [ ! -e "$PV_ROOT" ]; then
     echo "pls setup the PV_ROOT correctly."
     exit 1
   fi
