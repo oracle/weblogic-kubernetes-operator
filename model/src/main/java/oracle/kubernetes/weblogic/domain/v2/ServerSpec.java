@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -123,13 +123,6 @@ public abstract class ServerSpec {
    * @return desired state
    */
   public abstract String getDesiredState();
-
-  /**
-   * Returns the port on which this server will be exposed.
-   *
-   * @return the port number. May be null.
-   */
-  public abstract Integer getNodePort();
 
   /**
    * Returns true if the specified server should be started, based on the current domain spec.

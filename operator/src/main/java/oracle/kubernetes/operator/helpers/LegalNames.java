@@ -1,17 +1,14 @@
-// Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
-
-import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 
 /** A class to create DNS-1123 legal names for Kubernetes objects. */
 public class LegalNames {
 
   private static final String SERVER_PATTERN = "%s-%s";
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";
-  private static final String NAP_PATTERN = "%s-%s-extchannel-%s";
   private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s-introspect-domain-job";
   private static final String ADMIN_SERVICE_PATTERN = "%s-%s-admin";
 
@@ -29,10 +26,6 @@ public class LegalNames {
 
   public static String toClusterServiceName(String domainUID, String clusterName) {
     return toDNS1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUID, clusterName));
-  }
-
-  static String toNAPName(String domainUID, String serverName, NetworkAccessPoint nap) {
-    return toDNS1123LegalName(String.format(NAP_PATTERN, domainUID, serverName, nap.getName()));
   }
 
   static String toJobIntrospectorName(String domainUID) {
