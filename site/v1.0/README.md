@@ -165,7 +165,7 @@ For information about how to shut down a domain running in Kubernetes, see [Shut
 
 To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](/kubernetes/delete-weblogic-domain-resources.sh) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
 
-The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](/kubernetes/create-weblogic-domain.sh) script or the [integration tests](/src/integration-tests/bash/run.sh).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
+The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](/kubernetes/create-weblogic-domain.sh) script.  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
 
 ```
 kubectl -n <Namespace> label <ResourceType> <ResourceName> domainUID=<domainUID>
