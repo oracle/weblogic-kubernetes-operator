@@ -232,24 +232,6 @@ function validateServerStartPolicy {
 }
 
 #
-# Function to validate the cluster type value
-#
-function validateClusterType {
-  validateInputParamsSpecified clusterType
-  if [ ! -z "${clusterType}" ]; then
-    case ${clusterType} in
-      "CONFIGURED")
-      ;;
-      "DYNAMIC")
-      ;;
-      *)
-        validationError "Invalid value for clusterType: ${clusterType}. Valid values are 'CONFIGURED' and 'DYNAMIC'."
-      ;;
-    esac
-  fi
-}
-
-#
 # Function to validate the weblogic domain storage reclaim policy
 #
 function validateWeblogicDomainStorageReclaimPolicy {
@@ -388,7 +370,6 @@ function validateCommonInputs {
   validateClusterName
   validateWeblogicCredentialsSecretName
   validateServerStartPolicy
-  validateClusterType
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
 
