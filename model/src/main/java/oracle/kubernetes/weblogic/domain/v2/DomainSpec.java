@@ -48,7 +48,12 @@ public class DomainSpec extends BaseConfiguration {
    * Reference to secret containing WebLogic startup credentials username and password. Secret must
    * contain keys names 'username' and 'password' (Required)
    */
-  @Valid @NotNull private V1SecretReference webLogicCredentialsSecret;
+  @Description(
+      "The name of a pre-created Kubernetes secret, in the domain's namepace, that holds"
+          + " the username and password needed to boot WebLogic under the 'username' and 'password' fields.")
+  @Valid
+  @NotNull
+  private V1SecretReference webLogicCredentialsSecret;
 
   /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
