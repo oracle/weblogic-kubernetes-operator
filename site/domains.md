@@ -80,7 +80,7 @@ running in Kubernetes.
   administration port or a T3 channel to allow WLST access, you need to ensure that you allocate each channel a
   unique port number across the entire Kubernetes cluster.  If you expose the administration port in each WebLogic domain in
   the Kubernetes cluster, then each one must have a different port.  This is required because `NodePorts` are used to
-  expose channels outside the Kubernetes cluster.  *IMPORTANT:* Exposing admin, RMI, or t3 capable channels via a node port
+  expose channels outside the Kubernetes cluster.  **IMPORTANT:** Exposing admin, RMI, or t3 capable channels via a node port
   can create an insecure configuration; in general only http protocols should be made available externally and this exposure
   is usually accomplished by setting up an external load balancer that can access internal (non-nodeport) services.
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
