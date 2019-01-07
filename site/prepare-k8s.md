@@ -4,7 +4,7 @@
 
 ## Set up your Kubernetes cluster
 
-If you need help setting up a Kubernetes environment, check our [cheat sheet](site/k8s_setup.md).
+If you need help setting up a Kubernetes environment, check our [cheat sheet](k8s_setup.md).
 
 After creating Kubernetes clusters, you can optionally:
 * Create load balancers to direct traffic to backend domains.
