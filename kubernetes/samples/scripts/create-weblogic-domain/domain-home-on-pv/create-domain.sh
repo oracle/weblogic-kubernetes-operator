@@ -146,12 +146,16 @@ function createDomainConfigmap {
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
-
+ 
   # Set the domainName in the inputs file that is contained in the configmap.
   # this inputs file can be used by the scripts, such as WDT, that creates the WebLogic
   # domain in the job.
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
+  if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
+   sh ${externalFilesTmpDir}/prepare.sh -t ${clusterType} -i ${externalFilesTmpDir}
+  fi
+ 
   # create the configmap and label it properly
   local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
   kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir
