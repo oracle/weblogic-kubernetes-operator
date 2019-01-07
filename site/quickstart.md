@@ -178,9 +178,9 @@ Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` op
 script will just generate the YAML files, but will not take any action on your cluster.
 
 If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following:
-* Set the `image` property in the inputs file to the target image name (including the tag if needed).
+* Set the `image` property in the inputs file to the target image name (including the registry hostname/port, and the tag if needed).
 * Run the `create-domain.sh` script without the `-e` option.
-* Push the generated image `domain-home-in-image-wdt:lastest` (or `domain-home-in-image:latest`) to the registry.
+* Push the `image` to the registry.
 * Run the following command to create the domain.
 
 ```
