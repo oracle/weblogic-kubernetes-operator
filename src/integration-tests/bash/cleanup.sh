@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 # -----------------
@@ -19,13 +19,10 @@
 #   LEASE_ID     Set this if you want cleanup to release the 
 #                given lease on a failure.
 #
-#   WERCKER      Set this to true if you want cleanup to delete
-#                tiller (the WERCKER path in run.sh sets up tiller).
+#   WERCKER      Set this to true if you want cleanup to delete tiller
 #
 #   DELETE_FILES Delete local test files, and launch a job to delete PV 
 #                hosted test files (default true).
-#
-# See the acceptance test 'run.sh' for more details on most of the above.
 #
 # --------------------
 # Detailed Description
@@ -321,7 +318,7 @@ if [ -x "$(command -v helm)" ]; then
      helm delete --purge  $helm_name
   done
 
-  # cleanup tiller artifacts that are created in run.sh
+  # cleanup tiller artifacts
   if [ "$WERCKER" = "true" ]; then
     cleanup_tiller
   fi
