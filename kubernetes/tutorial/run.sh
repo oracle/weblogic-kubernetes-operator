@@ -1,3 +1,7 @@
+#!/bin/bash
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 export WLS_BASE_IMAGE=store/oracle/weblogic:19.1.0.0
 export PRJ_ROOT=../../
 export PV_ROOT=/scratch/lihhe/pv
@@ -10,6 +14,16 @@ function pullImages() {
   # TODO: until we has a public site for the image
   docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
   docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 $WLS_BASE_IMAGE
+}
+
+function delImages() {
+  docker rmi domain1-image
+  docker rmi domain2-image
+  docker rmi wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
+  docker rmi $WLS_BASE_IMAGE
+  docker rmi traefik:latest
+  docker rmi oracle/weblogic-kubernetes-operator:2.0-rc1
+  docker rmi weblogic-kubernetes-operator:2.0
 }
 
 function createOpt() {
@@ -36,7 +50,7 @@ function delOpt() {
   kubectl delete namespace test1
 }
 
-function setupPV() { 
+function createPV() { 
   if [ ! -e $PV_ROOT/logs ]; then
     mkdir -p $PV_ROOT/logs
     mkdir -p $PV_ROOT/shared
@@ -45,6 +59,10 @@ function setupPV() {
 
   sed -i 's@%PATH%@'"$PV_ROOT"/logs'@' domain2/pv.yaml
   sed -i 's@%PATH%@'"$PV_ROOT"/shared'@' domain3/pv.yaml 
+}
+
+function delPV() {
+  rm -rf $PV_ROOT/*
 }
 
 function createDomain1() {
@@ -119,7 +137,7 @@ function delDomains() {
   delDomain3
 }
 
-function setupLB() {
+function createLB() {
   echo "install Treafik operator to namespace traefik"
   helm install stable/traefik \
     --name traefik-operator \
@@ -159,6 +177,56 @@ function delLB() {
   kubectl delete namespace traefik
 }
 
+## Usage: waitDomainReady namespace domainUID
+function waitDomainReady() {
+  local namespace=$1
+  local domainUID=$2
+  echo "wait until domain $domainUID is ready"
+
+  # get server number
+  serverNum="$(kubectl -n $namespace get domain $domainUID -o=jsonpath='{.spec.replicas}')"
+  serverNum=$(expr $serverNum + 1)
+  ready=false
+  while test $ready != true; do
+    if test "$(kubectl -n $namespace get pods  -l weblogic.domainUID=${domainUID},weblogic.createdByOperator=true \
+        -o jsonpath='{range .items[*]}{.status.containerStatuses[0].ready}{"\n"}{end}' | wc -l)" != $serverNum; then
+      kubectl -n $namespace get pods -l weblogic.domainUID=${domainUID},weblogic.createdByOperator=true
+      sleep 5
+      continue
+    fi
+    ready=true
+  done
+}
+
+## Usage: waitDomainStopped namespace domainUID
+function waitDomainStopped() {
+  local namespace=$1
+  local domainUID=$2
+  echo "wait until domain $domainUID stopped"
+  while : ; do
+    if test "$(kubectl -n $namespace get pods  -l weblogic.domainUID=${domainUID},weblogic.createdByOperator=true \
+        -o jsonpath='{range .items[*]}{.status.containerStatuses[0].ready}{"\n"}{end}' | wc -l)" != 0; then
+      echo "wait domain shutdown"
+      kubectl -n $namespace get pods -l weblogic.domainUID=${domainUID},weblogic.createdByOperator=true
+      sleep 5
+      continue
+    fi
+    break
+  done
+}
+
+function waitDomainsReady() {
+  waitDomainReady default domain1
+  waitDomainReady test1 domain2
+  waitDomainReady test1 domain3
+}
+
+function waitDomainsStopped() {
+  waitDomainStopped default domain1
+  waitDomainStopped test1 domain2
+  waitDomainStopped test1 domain3
+}
+
 function usage() {
   echo "usage: $0 <cmd>"
   echo "  image cmd: pullImages"
@@ -167,8 +235,8 @@ function usage() {
   echo "  operator cmd: createOpt | delOpt"
   echo "  These are to create or delete wls operator."
   echo
-  echo "  PV cmd: setupPV"
-  echo "  This is to create PV folders and set right host path in the pv yamls."
+  echo "  PV cmd: createPV | delPV"
+  echo "  This is to create or delete PV folders and set right host path in the pv yamls."
   echo
   echo "  domains cmd: createDomains | delDomains"
   echo "  These are to create or delete all the demo domains."
@@ -176,7 +244,7 @@ function usage() {
   echo "  one domain cmd: createDomain1 | createDomain2 | createDomain3 | delDomain1 | delDomain2 | delDomain3"
   echo "  These are to create or delete one indivisual domain."
   echo
-  echo "  LB cmd: setupLB | delLB"
+  echo "  LB cmd: createLB | delLB"
   echo "  These are to create or delete LB operator and Ingress."
   echo
   exit 1

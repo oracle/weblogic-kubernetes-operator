@@ -3,11 +3,10 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 SECONDS=0
-./run.sh pullImages
-./run.sh createOpt
-./run.sh createPV 
-./run.sh createDomains
-./run.sh waitDomainsReady
-./run.sh createLB
-
+./run.sh delLB
+./run.sh delDomains
+./run.sh waitDomainsStopped
+./run.sh delOpt
+./run.sh delImages
+#sudo ./run.sh delPV
 echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finsh."
