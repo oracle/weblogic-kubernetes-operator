@@ -47,7 +47,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   private String serverStartPolicy;
 
   @Description(
-      "The maximum number of cluster membrers that can be temporarily unavailable. Defaults to 1.")
+      "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.")
   @Range(minimum = 1)
   private Integer maxUnavailable;
 

@@ -38,7 +38,7 @@ public abstract class BaseConfiguration {
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @EnumClass(ServerStartState.class)
   @Description(
-      "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.")
+      "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.")
   private String serverStartState;
 
   /**
