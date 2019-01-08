@@ -131,8 +131,8 @@ public class Domain {
               + domainUid
               + "-"
               + adminServerName
-              + "-admin) is created");
-      TestUtils.checkServiceCreated(domainUid + "-" + adminServerName + "-admin", domainNS);
+              + "-external) is created");
+      TestUtils.checkServiceCreated(domainUid + "-" + adminServerName + "-external", domainNS);
     }
     if (domainMap.get("serverStartPolicy") == null
         || (domainMap.get("serverStartPolicy") != null

@@ -767,35 +767,35 @@ public class ServiceHelper {
   }
 
   /**
-   * Create asynchronous step for admin service
+   * Create asynchronous step for external, NodePort service
    *
    * @param next Next processing step
-   * @return Step for creating admin service
+   * @return Step for creating external service
    */
-  public static Step createForAdminServiceStep(Step next) {
-    return new ForAdminServiceStep(next);
+  public static Step createForExternalServiceStep(Step next) {
+    return new ForExternalServiceStep(next);
   }
 
-  private static class ForAdminServiceStep extends ServiceHelperStep {
-    ForAdminServiceStep(Step next) {
+  private static class ForExternalServiceStep extends ServiceHelperStep {
+    ForExternalServiceStep(Step next) {
       super(next);
     }
 
     @Override
     protected ServiceStepContext createContext(Packet packet) {
-      return new ForAdminServiceStepContext(this, packet);
+      return new ForExternalServiceStepContext(this, packet);
     }
   }
 
-  private static class ForAdminServiceStepContext extends ServerServiceStepContext {
+  private static class ForExternalServiceStepContext extends ServerServiceStepContext {
 
-    ForAdminServiceStepContext(Step conflictStep, Packet packet) {
+    ForExternalServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
     }
 
     @Override
     protected String createServiceName() {
-      return LegalNames.toAdminServiceName(getDomainUID(), getServerName());
+      return LegalNames.toExternalServiceName(getDomainUID(), getServerName());
     }
 
     @Override
