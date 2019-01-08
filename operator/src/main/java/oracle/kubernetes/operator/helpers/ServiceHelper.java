@@ -719,12 +719,12 @@ public class ServiceHelper {
 
     @Override
     Map<String, String> getServiceLabels() {
-      return getClusterSpec().getServiceLabels();
+      return getClusterSpec().getClusterLabels();
     }
 
     @Override
     Map<String, String> getServiceAnnotations() {
-      return getClusterSpec().getServiceAnnotations();
+      return getClusterSpec().getClusterAnnotations();
     }
   }
 
