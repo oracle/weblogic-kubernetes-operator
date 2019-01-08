@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -27,6 +27,7 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.ConflictRetry;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -237,23 +238,30 @@ public class RestBackendImpl implements RestBackend {
 
     verifyWLSConfiguredClusterCapacity(domain, cluster, managedServerCount);
 
-    updateReplicasForDomain(namespace, domain, cluster, managedServerCount);
+    if (updateReplicasForDomain(domain, cluster, managedServerCount)) {
+      overwriteDomain(
+          namespace,
+          domain,
+          () -> getDomainForConflictRetry(domainUID, cluster, managedServerCount));
+    }
     LOGGER.exiting();
   }
 
-  private void updateReplicasForDomain(
-      String namespace, Domain domain, String cluster, int newReplicaCount) {
+  private boolean updateReplicasForDomain(Domain domain, String cluster, int newReplicaCount) {
     if (newReplicaCount != domain.getReplicaCount(cluster)) {
       domain.setReplicaCount(cluster, newReplicaCount);
-      overwriteDomain(namespace, domain);
+      return true;
     }
+    return false;
   }
 
-  private void overwriteDomain(String namespace, Domain domain) {
+  private void overwriteDomain(
+      String namespace, final Domain domain, ConflictRetry<Domain> conflictRetry) {
     try {
       // Write out the Domain with updated replica values
       // TODO: Can we patch instead of replace?
-      new CallBuilder().replaceDomain(domain.getDomainUID(), namespace, domain);
+      new CallBuilder()
+          .replaceDomainWithConflictRetry(domain.getDomainUID(), namespace, domain, conflictRetry);
     } catch (ApiException e) {
       LOGGER.finer(
           String.format(
@@ -262,6 +270,14 @@ public class RestBackendImpl implements RestBackend {
           e);
       throw new WebApplicationException(e.getMessage());
     }
+  }
+
+  Domain getDomainForConflictRetry(String domainUid, String cluster, int newReplicaCount) {
+    Domain domain = findDomain(domainUid, getDomainsList());
+    if (updateReplicasForDomain(domain, cluster, newReplicaCount)) {
+      return domain;
+    }
+    return null;
   }
 
   private void verifyWLSConfiguredClusterCapacity(
