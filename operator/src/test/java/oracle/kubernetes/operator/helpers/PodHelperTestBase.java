@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -317,7 +317,7 @@ public abstract class PodHelperTestBase {
         getCreatedPodSpecContainer().getEnv(),
         allOf(
             hasEnvVar("DOMAIN_NAME", DOMAIN_NAME),
-            hasEnvVar("DOMAIN_HOME", "/shared/domain"),
+            hasEnvVar("DOMAIN_HOME", "/u01/oracle/user_projects/domains"),
             hasEnvVar("ADMIN_NAME", ADMIN_SERVER),
             hasEnvVar("ADMIN_PORT", Integer.toString(ADMIN_PORT)),
             hasEnvVar("SERVER_NAME", getServerName()),
@@ -594,7 +594,7 @@ public abstract class PodHelperTestBase {
             .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
             .putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID)
             .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME)
-            .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/shared/domain")
+            .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/u01/oracle/user_projects/domains")
             .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
             .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     AnnotationHelper.annotateForPrometheus(meta, listenPort);
@@ -612,7 +612,7 @@ public abstract class PodHelperTestBase {
         .volumeMounts(PodDefaults.getStandardVolumeMounts(UID))
         .command(createStartCommand())
         .addEnvItem(envItem("DOMAIN_NAME", DOMAIN_NAME))
-        .addEnvItem(envItem("DOMAIN_HOME", "/shared/domain"))
+        .addEnvItem(envItem("DOMAIN_HOME", "/u01/oracle/user_projects/domains"))
         .addEnvItem(envItem("ADMIN_NAME", ADMIN_SERVER))
         .addEnvItem(envItem("ADMIN_PORT", Integer.toString(ADMIN_PORT)))
         .addEnvItem(envItem("SERVER_NAME", getServerName()))
