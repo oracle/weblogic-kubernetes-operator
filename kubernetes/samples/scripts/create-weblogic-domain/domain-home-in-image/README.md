@@ -42,7 +42,7 @@ The script will perform the following steps:
 * Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
 * Clone the WebLogic docker-images project into the current directory using `git clone https://github.com/oracle/docker-images.git`.
 * Replace the built-in user name and password in the `properties/docker-build/domain_security.properties` file with the `username` and `password` that are supplied on the command line using the `-u` and `-p` options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via the `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
-* Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt) and [Example Image with a WebLogic Server Domain using WLST](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image). It will create a sample WebLogic Server domain in the Docker image. Also, you can run the Docker sample, [Example Image with a WebLogic Server Domain](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image), manually with the generated `domain.properties` to create a domain home image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
+* Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain using the Oracle WebLogic Scripting Tooling (WLST)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image) or [Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt). It will create a sample WebLogic Server domain in the Docker image. **Note**: Oracle recommends keeping the domain home image private in the local repository.
 * Create a tag that refers to the generated Docker image.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 ```
@@ -101,10 +101,9 @@ The following parameters can be provided in the inputs file.
 | `adminNodePort` | Port number of the Administration Server outside the Kubernetes cluster. | `30701` |
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
-| `clusterType` | Type of the WebLogic Cluster. Legal values are `CONFIGURED` or `DYNAMIC`. | `DYNAMIC` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `5` |
-| `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. | |
-| `domainHomeImageBuildPath` | Location of the WebLogic "domain home in image" Docker image in `https://github.com/oracle/docker-images.git` project. If not specified, use `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt`. Another possible value is `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image` which uses WLST scripts, instead of WDT, to generate the domain configuration. | `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt` |
+| `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [Weblogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` is specified, the specified image needs to be built locally or pulled from a repository before the `create-domain.sh` script is executed. | |
+| `domainHomeImageBuildPath` | Location of the WebLogic "domain home in image" Docker image in `https://github.com/oracle/docker-images.git` project. If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image". Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt" which uses WDT, instead of WLST, to generate the domain configuration. | `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
@@ -161,7 +160,7 @@ spec:
   # If the domain home is in the image
   domainHomeInImage: true
   # The Operator currently does not support other images
-  image: "12213-domain-home-in-image:latest"
+  image: "domain-home-in-image:latest"
   # imagePullPolicy defaults to "Never"
   imagePullPolicy: "Never"
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
@@ -278,7 +277,7 @@ Spec:
     Server Start State:           RUNNING
   Domain Home:                    /u01/oracle/user_projects/domains/domain1
   Domain Home In Image:           true
-  Image:                          12213-domain-home-in-image:latest
+  Image:                          domain-home-in-image:latest
   Image Pull Policy:              Never
   Include Server Out In Pod Log:  true
   Managed Servers:
