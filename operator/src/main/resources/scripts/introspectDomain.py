@@ -488,7 +488,7 @@ class TopologyGenerator(Generator):
       self.addError("The dynamic cluster " + self.name(cluster) + "'s dynamic servers use calculated listen ports.")
 
   def validateServerCustomChannelName(self):
-    reservedNames = ['default','defaultSecure','defaultAdmin']
+    reservedNames = ['default','default-secure','default-admin']
     for server in self.env.getDomain().getServers():
       naps = server.getNetworkAccessPoints()
       for nap in naps:

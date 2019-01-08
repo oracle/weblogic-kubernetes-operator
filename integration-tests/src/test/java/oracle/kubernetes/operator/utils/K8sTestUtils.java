@@ -163,7 +163,7 @@ public class K8sTestUtils {
             null,
             Boolean.FALSE);
     /**
-     * TODO verify name pattern {domainUID}-admin-server {domainUID}-admin-server-admin
+     * TODO verify name pattern {domainUID}-admin-server {domainUID}-admin-server-external
      * {domainUID}-cluster-cluster-1 {domainUID}-managed-server1 {domainUID}-managed-server2
      */
     assertEquals("Number of services", v1ServiceList.getItems().size(), expected);
