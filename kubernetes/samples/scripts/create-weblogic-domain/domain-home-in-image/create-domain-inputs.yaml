@@ -15,10 +15,6 @@ adminServerName: admin-server
 # in a Kubernetes cluster.
 domainUID: domain1
 
-# Type of WebLogic Cluster
-# Legal values are "CONFIGURED" or "DYNAMIC" 
-clusterType: DYNAMIC
-
 # Determines which WebLogic Servers the Operator will start up
 # Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
 serverStartPolicy: IF_NEEDED
@@ -119,8 +115,7 @@ domainPVMountPath: /shared
 
 # Location of the WebLogic "domain home in image" Docker image sample in the 
 # `https://github.com/oracle/docker-images.git` project.
-# If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt".
-# Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image",
-# which uses a WLST script, instead of WDT, to generate the domain configuration.
-domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt
-
+# If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image".
+# Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt",
+# which uses WDT, instead of WLST, to generate the domain configuration.
+domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image
