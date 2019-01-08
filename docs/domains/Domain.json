@@ -224,7 +224,7 @@
           "type": "string"
         },
         "domainHome": {
-          "description": "The folder for the Weblogic Domain. (Not required)Defaults to /shared/domains/domains/domainUID if domainHomeInImage is falseDefaults to /shared/domains/domain if domainHomeInImage is true",
+          "description": "The folder for the Weblogic Domain. (Not required)Defaults to /shared/domains/domains/domainUID if domainHomeInImage is falseDefaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true",
           "type": "string"
         },
         "logHomeEnabled": {
