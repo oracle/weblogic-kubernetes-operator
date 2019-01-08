@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -41,7 +41,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "The folder for the Weblogic Domain. (Not required)"
           + "Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
-          + "Defaults to /shared/domains/domain if domainHomeInImage is true")
+          + "Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
   private String domainHome;
 
   /**
