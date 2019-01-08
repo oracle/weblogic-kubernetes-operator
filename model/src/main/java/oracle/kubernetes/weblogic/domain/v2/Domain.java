@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -321,13 +321,13 @@ public class Domain {
   /**
    * Returns the domain home
    *
-   * <p>Defaults to either /shared/domain/ or /shared/domains/domainUID
+   * <p>Defaults to either /u01/oracle/user_projects/domains or /shared/domains/domainUID
    *
    * @return domain home
    */
   public String getDomainHome() {
     if (spec.getDomainHome() != null) return spec.getDomainHome();
-    if (spec.isDomainHomeInImage()) return "/shared/domain";
+    if (spec.isDomainHomeInImage()) return "/u01/oracle/user_projects/domains";
     return "/shared/domains/" + getDomainUID();
   }
 
