@@ -67,15 +67,15 @@ running in Kubernetes.
   configuration overrides.  This occurs if the domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeInImage` is explicitly set to `false`.   When overriding, the log location will be the location specified by the `logHome` setting.
 * _Listen Address Configuration:_  Channel listen addresses in a configuration either must be left completely unset (for example, not set to anything), or must be set to the exact required value, which will be in the form of the `domainUID`
-  followed by a hyphen and then the server name (with all lower case, underscores converted to dashes).  For example `domain1-admin-server`. This includes default, SSL, admin, and custom channels.
+  followed by a hyphen and then the server name (with all lower case, underscores converted to hyphens).  For example `domain1-admin-server`. This includes default, SSL, admin, and custom channels.
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
   SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
-  hyphen and then the server name, all lower case, and underscores converted to dashes.  For example, if `domainUID=domain1` and
+  hyphen and then the server name, all lower case, and underscores converted to hyphens.  For example, if `domainUID=domain1` and
   the WebLogic server name is `Admin_Server`, then its listen address becomes `domain1-admin-server`.
 * _Domain, Cluster, Server, and Network-Access-Point Names:_ WebLogic domain, cluster, server, and network-access-point (channel)
   names must contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`.  This ensures that they can be converted to
   meet Kubernetes resource and DNS1123 naming requirements.  (When generating pod and service names, the operator will convert
-  configured names to lower case and substitute a dash (`-`) for each underscore (`_`).)
+  configured names to lower case and substitute a hyphen (`-`) for each underscore (`_`).)
 * _Node Ports:_ If you choose to expose any WebLogic channels outside the Kubernetes cluster via a `NodePort`, for example, the
   administration port or a T3 channel to allow WLST access, you need to ensure that you allocate each channel a
   unique port number across the entire Kubernetes cluster.  If you expose the administration port in each WebLogic domain in

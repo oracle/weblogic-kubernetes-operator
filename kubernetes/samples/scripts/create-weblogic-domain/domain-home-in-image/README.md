@@ -8,8 +8,7 @@ Before you begin, read this guide, [Domain Resource](../../../../../site/domain-
 
 The following prerequisites must be handled prior to running the create domain script:
 * The WDT sample requires that `JAVA_HOME` is set to a Java JDK version 1.8 or later.
-* Make sure that the WebLogic operator is running.
-* The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` (see Configuration table below) is specified, the specified image needs to be built locally or pulled from a repository.
+* The operator requires WebLogic Server 12.2.1.3.0 with patch 28076014 applied. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
 * If logHomeOnPV is enabled, create the Kubernetes persistent volume where the log home will be hosted, and the Kubernetes persistent volume claim for the domain in the same Kubernates namespace. For samples to create a PV and PVC, see [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
 * Create a Kubernetes secret for the WebLogic administrator credentials that contains the fields `username` and `password`, and make sure that the secret name matches the value specified for `weblogicCredentialsSecretName` (see Configuration table below). For example:

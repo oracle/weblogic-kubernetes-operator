@@ -266,7 +266,11 @@ public abstract class JobStepContext implements StepContextConstants {
   }
 
   String getImagePullPolicy() {
-    return KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+    String imagePullPolicy = getDomain().getSpec().getImagePullPolicy();
+    if (imagePullPolicy == null) {
+      imagePullPolicy = KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+    }
+    return imagePullPolicy;
   }
 
   protected List<String> getContainerCommand() {
