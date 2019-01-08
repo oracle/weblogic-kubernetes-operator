@@ -4,11 +4,27 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
+import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Server extends BaseConfiguration {
+
+  /**
+   * Tells the operator whether the customer wants the server to be running. For clustered servers -
+   * the operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server
+   * needs to be started to get to the cluster's replica count..
+   *
+   * @since 2.0
+   */
+  @EnumClass(value = ServerStartPolicy.class, qualifier = "forServer")
+  @Description(
+      "The strategy for deciding whether to start a server. "
+          + "Legal values are ALWAYS, NEVER, or IF_NEEDED.")
+  private String serverStartPolicy;
 
   protected Server getConfiguration() {
     Server configuration = new Server();
@@ -19,7 +35,10 @@ public class Server extends BaseConfiguration {
 
   @Override
   public String toString() {
-    return new ToStringBuilder(this).appendSuper(super.toString()).toString();
+    return new ToStringBuilder(this)
+        .appendSuper(super.toString())
+        .append(serverStartPolicy)
+        .toString();
   }
 
   @Override
@@ -32,11 +51,27 @@ public class Server extends BaseConfiguration {
 
     Server that = (Server) o;
 
-    return new EqualsBuilder().appendSuper(super.equals(o)).isEquals();
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(serverStartPolicy, that.serverStartPolicy)
+        .isEquals();
   }
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder(17, 37).appendSuper(super.hashCode()).toHashCode();
+    return new HashCodeBuilder(17, 37)
+        .appendSuper(super.hashCode())
+        .append(serverStartPolicy)
+        .toHashCode();
+  }
+
+  @Override
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  @Override
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
   }
 }
