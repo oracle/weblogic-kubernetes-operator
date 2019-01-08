@@ -27,4 +27,14 @@ public class ClusterSpecV2Impl extends ClusterSpec {
   public Map<String, String> getServiceAnnotations() {
     return cluster.getServiceAnnotations();
   }
+
+  @Override
+  public Map<String, String> getClusterLabels() {
+    return cluster.getClusterLabels();
+  }
+
+  @Override
+  public Map<String, String> getClusterAnnotations() {
+    return cluster.getClusterAnnotations();
+  }
 }
