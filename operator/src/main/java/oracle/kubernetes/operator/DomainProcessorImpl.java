@@ -1013,7 +1013,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
     List<Channel> channels = adminService != null ? adminService.getChannels() : null;
     if (channels != null && !channels.isEmpty()) {
-      resources.add(ServiceHelper.createForAdminServiceStep(null));
+      resources.add(ServiceHelper.createForExternalServiceStep(null));
     }
 
     resources.add(ServiceHelper.createForServerStep(null));
