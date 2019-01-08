@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
@@ -12,24 +12,18 @@ spec:
   webLogicCredentialsSecret:
     name: admin-secret
   adminServer:
-  # the T3 endpoints to export. Each entry is an endpoint name,
-  # optionally with labels and annotations to be added to the generated external channel service.
-  # An endpoint without any labels or endpoints must have the empty value: a pair of braces.
-    exportedNetworkAccessPoints:
-      channelA: {}
-      channelB:
-        labels:
-          age: 23
-          color: red
-        annotations:
-          time: midnight
+    adminService:
+      channels:
+      - channelName: channelA
+      - channelName: channelB
     serverPod:
       nodeSelector:
         os: linux
-      serviceLabels:
+    serverService:
+      labels:
         testKey1: testValue1
         testKey2: testValue2
-      serviceAnnotations:
+      annotations:
         testKey3: testValue3
         longer: shorter
     restartVersion: "1"
@@ -38,10 +32,4 @@ spec:
   # to have multiple Domains with the same Domain Name, but they MUST have different domainUID's.
   # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
   domainUID: test-domain-3
-
-
-  # Configured storage using externally defined persistent volume claim
-  storage:
-    predefined:
-      claim: magic-drive
 

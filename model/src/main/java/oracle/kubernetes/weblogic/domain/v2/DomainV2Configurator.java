@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -81,9 +81,10 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   @Override
   /**
-   * Sets the WebLogic configuration overrides configmap name for the domain
+   * Sets the WebLogic configuration overrides config map name for the domain
    *
-   * @param configMapName Name of the Kubernetes configmap that contains the config overrides
+   * @param configMapName Name of the Kubernetes config map that contains the configuration
+   *     overrides
    * @return this object
    */
   public DomainConfigurator withConfigOverrides(String configMapName) {
@@ -105,13 +106,13 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator withPodLabel(String name, String value) {
-    ((BaseConfiguration) getDomainSpec()).addPodLabels(name, value);
+    ((BaseConfiguration) getDomainSpec()).addPodLabel(name, value);
     return this;
   }
 
   @Override
   public DomainConfigurator withPodAnnotation(String name, String value) {
-    ((BaseConfiguration) getDomainSpec()).addPodAnnotations(name, value);
+    ((BaseConfiguration) getDomainSpec()).addPodAnnotation(name, value);
     return this;
   }
 
@@ -122,37 +123,6 @@ public class DomainV2Configurator extends DomainConfigurator {
     AdminServerConfiguratorImpl(AdminServer adminServer) {
       super(adminServer);
       this.adminServer = adminServer;
-    }
-
-    @Override
-    public AdminServerConfigurator withNodePort(int nodePort) {
-      adminServer.setNodePort(nodePort);
-      return this;
-    }
-
-    @Override
-    public AdminServerConfigurator withNodePortLabel(String name, String value) {
-      adminServer.addNodePortLabels(name, value);
-      return this;
-    }
-
-    @Override
-    public AdminServerConfigurator withNodePortAnnotation(String name, String value) {
-      adminServer.addNodePortAnnotations(name, value);
-      return this;
-    }
-
-    @Override
-    public AdminServerConfigurator withExportedNetworkAccessPoints(String... names) {
-      for (String name : names) {
-        adminServer.addExportedNetworkAccessPoint(name);
-      }
-      return this;
-    }
-
-    @Override
-    public ExportedNetworkAccessPoint configureExportedNetworkAccessPoint(String channelName) {
-      return adminServer.addExportedNetworkAccessPoint(channelName);
     }
 
     @Override
@@ -314,25 +284,25 @@ public class DomainV2Configurator extends DomainConfigurator {
 
     @Override
     public ServerConfigurator withPodLabel(String name, String value) {
-      server.addPodLabels(name, value);
+      server.addPodLabel(name, value);
       return this;
     }
 
     @Override
     public ServerConfigurator withPodAnnotation(String name, String value) {
-      server.addPodAnnotations(name, value);
+      server.addPodAnnotation(name, value);
       return this;
     }
 
     @Override
     public ServerConfigurator withServiceLabel(String name, String value) {
-      server.addServiceLabels(name, value);
+      server.addServiceLabel(name, value);
       return this;
     }
 
     @Override
     public ServerConfigurator withServiceAnnotation(String name, String value) {
-      server.addServiceAnnotations(name, value);
+      server.addServiceAnnotation(name, value);
       return this;
     }
 
@@ -469,25 +439,25 @@ public class DomainV2Configurator extends DomainConfigurator {
 
     @Override
     public ClusterConfigurator withPodLabel(String name, String value) {
-      cluster.addPodLabels(name, value);
+      cluster.addPodLabel(name, value);
       return this;
     }
 
     @Override
     public ClusterConfigurator withPodAnnotation(String name, String value) {
-      cluster.addPodAnnotations(name, value);
+      cluster.addPodAnnotation(name, value);
       return this;
     }
 
     @Override
     public ClusterConfigurator withServiceLabel(String name, String value) {
-      cluster.addServiceLabels(name, value);
+      cluster.addServiceLabel(name, value);
       return this;
     }
 
     @Override
     public ClusterConfigurator withServiceAnnotation(String name, String value) {
-      cluster.addServiceAnnotations(name, value);
+      cluster.addServiceAnnotation(name, value);
       return this;
     }
 
