@@ -13,6 +13,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -63,6 +64,17 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
+    boolean exceedsMaxConfiguredClusterSize(WlsClusterConfig clusterConfig) {
+      if (clusterConfig != null) {
+        String clusterName = clusterConfig.getClusterName();
+        int configMaxClusterSize = clusterConfig.getMaxDynamicClusterSize();
+        return clusterConfig.hasDynamicServers()
+            && clusterConfig.getServerConfigs().size() == configMaxClusterSize
+            && domain.getReplicaCount(clusterName) > configMaxClusterSize;
+      }
+      return false;
+    }
+
     private Step createNextStep(Step next) {
       if (servers.isEmpty()) return next;
       else return new ManagedServerUpIteratorStep(getStartupInfos(), next);
@@ -83,6 +95,17 @@ public class ManagedServersUpStep extends Step {
 
     private Integer getReplicaCount(String clusterName) {
       return Optional.ofNullable(replicas.get(clusterName)).orElse(0);
+    }
+
+    private void logIfReplicasExceedsClusterServersMax(WlsClusterConfig clusterConfig) {
+      if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
+        String clusterName = clusterConfig.getClusterName();
+        LOGGER.warning(
+            MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT,
+            domain.getReplicaCount(clusterName),
+            clusterConfig.getMaxDynamicClusterSize(),
+            clusterName);
+      }
     }
   }
 
@@ -105,6 +128,7 @@ public class ManagedServersUpStep extends Step {
     Set<String> clusteredServers = new HashSet<>();
 
     for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
+      factory.logIfReplicasExceedsClusterServersMax(clusterConfig);
       for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
         factory.addServerIfNeeded(serverConfig, clusterConfig);
         clusteredServers.add(serverConfig.getName());

@@ -35,7 +35,6 @@ The fastest way to experience the operator is to follow the [Quick start guide](
 | [#721](https://github.com/oracle/weblogic-kubernetes-operator/issues/721) | Incorrect default `domainHome` when `domainHomeInImage` is true. |
 | [#722](https://github.com/oracle/weblogic-kubernetes-operator/issues/722) | Server services not recreated when labels/annotations changed. |
 | [#726](https://github.com/oracle/weblogic-kubernetes-operator/issues/726) | Clusters only support default channel. |
-| [#727](https://github.com/oracle/weblogic-kubernetes-operator/issues/727) | The `listen-address` and log directories may be incorrect (pods may not start). |
 
 ## Operator version 1.1
 
@@ -53,13 +52,13 @@ maintained for one release after a replacement is available.
 
 # About this documentation
 
-This documentation includes sections aimed at different audiences.  To help you find what you are looking for more easily,
+This documentation includes sections targeted to different audiences.  To help you find what you are looking for more easily,
 please consult this table of contents:
 
-* The [Quick start guide](site/quickstart.md) explains how to just get the operator running quickly, using all the defaults, nothing special.
-* The [User guide](site/user-guide.md) contains detailed information for users of the operator, including how to install and configure it,
+* The [Quick start guide](site/quickstart.md) explains how to quickly get the operator running, using the defaults, nothing special.
+* The [User guide](site/user-guide.md) contains detailed usage information, including how to install and configure the operator,
   and how to use it to create and manage WebLogic domains.  
-* Our [Samples](kubernetes/samples/README.md) provide detailed example code and instructions that show you how to perform
+* The [Samples](kubernetes/samples/README.md) provide detailed example code and instructions that show you how to perform
   various tasks related to the operator.
 * The [Developer guide](site/developer.md) provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to contribute to the operator code will find useful information here.  This section also includes
   API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.
@@ -82,7 +81,7 @@ The [User guide](site/user-guide.md) provides detailed information about all asp
 
 # Samples
 
-Please refer to our [samples](kubernetes/samples/README.md) for information about the available sample code we provide.
+Please refer to our [samples](kubernetes/samples/README.md) for information about the available sample code.
 
 # Need more help? Have a suggestion? Come and say "Hello!"
 
@@ -99,17 +98,17 @@ See [Recent changes](site/recent-changes.md) for changes to the operator, includ
 
 Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.
 
-Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something you would like to contribute to!
+Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something to which you would like to contribute!
 
 ## API documentation
 
 Documentation for APIs is provided here:
 
-* The operator provides a REST API that you can use to obtain information about the configuration and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md).
+* The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md).
 
 * See the [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
 
-* [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
+* See the [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
 
 # Contributing to the operator
 
