@@ -22,13 +22,12 @@
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "description": "The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED.",
           "type": "string",
           "enum": [
-            "NEVER",
             "ALWAYS",
-            "IF_NEEDED",
-            "ADMIN_ONLY"
+            "NEVER",
+            "IF_NEEDED"
           ]
         },
         "restartVersion": {
@@ -110,13 +109,11 @@
           "$ref": "#/definitions/KubernetesResource"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "description": "The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED.",
           "type": "string",
           "enum": [
             "NEVER",
-            "ALWAYS",
-            "IF_NEEDED",
-            "ADMIN_ONLY"
+            "IF_NEEDED"
           ]
         },
         "restartVersion": {
@@ -218,11 +215,10 @@
           "type": "string"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
           "type": "string",
           "enum": [
             "NEVER",
-            "ALWAYS",
             "IF_NEEDED",
             "ADMIN_ONLY"
           ]
@@ -350,13 +346,12 @@
           "type": "string"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "description": "The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED.",
           "type": "string",
           "enum": [
-            "NEVER",
             "ALWAYS",
-            "IF_NEEDED",
-            "ADMIN_ONLY"
+            "NEVER",
+            "IF_NEEDED"
           ]
         },
         "restartVersion": {
