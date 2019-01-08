@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -18,7 +18,9 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -39,6 +41,7 @@ public abstract class PodStepContext implements StepContextConstants {
 
   private final DomainPresenceInfo info;
   private final WlsDomainConfig domainTopology;
+  protected final WlsServerConfig scan;
   private final Step conflictStep;
   private V1Pod podModel;
   private Map<String, String> substitutionVariables = new HashMap<>();
@@ -47,6 +50,7 @@ public abstract class PodStepContext implements StepContextConstants {
     this.conflictStep = conflictStep;
     info = packet.getSPI(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
 
   void init() {
@@ -156,7 +160,46 @@ public abstract class PodStepContext implements StepContextConstants {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
 
-  abstract Integer getPort();
+  protected List<V1ContainerPort> getContainerPorts() {
+    if (scan != null) {
+      List<V1ContainerPort> ports = new ArrayList<>();
+      if (scan.getNetworkAccessPoints() != null) {
+        for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
+          V1ContainerPort port =
+              new V1ContainerPort()
+                  .name(LegalNames.toDNS1123LegalName(nap.getName()))
+                  .containerPort(nap.getListenPort())
+                  .protocol("TCP");
+          ports.add(port);
+        }
+      }
+      if (scan.getListenPort() != null) {
+        ports.add(
+            new V1ContainerPort()
+                .name("default")
+                .containerPort(scan.getListenPort())
+                .protocol("TCP"));
+      }
+      if (scan.getSslListenPort() != null) {
+        ports.add(
+            new V1ContainerPort()
+                .name("default-secure")
+                .containerPort(scan.getSslListenPort())
+                .protocol("TCP"));
+      }
+      if (scan.getAdminPort() != null) {
+        ports.add(
+            new V1ContainerPort()
+                .name("default-admin")
+                .containerPort(scan.getAdminPort())
+                .protocol("TCP"));
+      }
+      return ports;
+    }
+    return null;
+  }
+
+  abstract Integer getDefaultPort();
 
   abstract String getServerName();
 
@@ -607,7 +650,7 @@ public abstract class PodStepContext implements StepContextConstants {
     getPodAnnotations().forEach(metadata::putAnnotationsItem);
 
     // Add prometheus annotations. This will overwrite any custom annotations with same name.
-    AnnotationHelper.annotateForPrometheus(metadata, getPort());
+    AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort());
     return metadata;
   }
 
@@ -644,7 +687,7 @@ public abstract class PodStepContext implements StepContextConstants {
             .imagePullPolicy(getImagePullPolicy())
             .command(getContainerCommand())
             .env(getEnvironmentVariables(tuningParameters))
-            .addPortsItem(new V1ContainerPort().containerPort(getPort()).protocol("TCP"))
+            .ports(getContainerPorts())
             .lifecycle(createLifecycle())
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
 
@@ -754,7 +797,7 @@ public abstract class PodStepContext implements StepContextConstants {
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD)
-        .httpGet(httpGetAction(READINESS_PATH, getPort()));
+        .httpGet(httpGetAction(READINESS_PATH, getDefaultPort()));
     return readinessProbe;
   }
 
