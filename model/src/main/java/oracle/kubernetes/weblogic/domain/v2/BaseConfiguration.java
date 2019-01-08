@@ -112,6 +112,7 @@ public abstract class BaseConfiguration {
    * to be started to get to the cluster's replica count..
    *
    * @since 2.0
+   * @param serverStartPolicy start policy
    */
   public abstract void setServerStartPolicy(String serverStartPolicy);
 
