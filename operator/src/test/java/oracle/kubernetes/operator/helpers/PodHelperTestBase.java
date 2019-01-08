@@ -9,6 +9,7 @@ import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.ProbeMatcher.hasExpectedTuning;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.writableVolumeMount;
@@ -35,6 +36,7 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -122,8 +124,10 @@ public abstract class PodHelperTestBase {
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
     configSupport.setAdminServerName(ADMIN_SERVER);
 
+    WlsDomainConfig domainConfig = configSupport.createDomainConfig();
     testSupport
-        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig())
+        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
+        .addToPacket(SERVER_SCAN, domainConfig.getServerConfig(ADMIN_SERVER))
         .addDomainPresenceInfo(domainPresenceInfo);
     onAdminExpectListPersistentVolume();
   }
@@ -607,7 +611,8 @@ public abstract class PodHelperTestBase {
         .image(LATEST_IMAGE)
         .imagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
         .securityContext(new V1SecurityContext())
-        .addPortsItem(new V1ContainerPort().protocol("TCP").containerPort(listenPort))
+        .addPortsItem(
+            new V1ContainerPort().name("default").containerPort(listenPort).protocol("TCP"))
         .lifecycle(createLifecycle())
         .volumeMounts(PodDefaults.getStandardVolumeMounts(UID))
         .command(createStartCommand())

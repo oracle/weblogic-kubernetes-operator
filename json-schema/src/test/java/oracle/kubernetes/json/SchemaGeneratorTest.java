@@ -102,8 +102,17 @@ public class SchemaGeneratorTest {
   @SuppressWarnings("unused")
   private enum TrafficLightColors {
     RED,
-    YELLOW,
-    GREEN
+    YELLOW {
+      @Override
+      boolean forSmallLight() {
+        return false;
+      }
+    },
+    GREEN;
+
+    boolean forSmallLight() {
+      return true;
+    }
   }
 
   @SuppressWarnings("unused")
@@ -122,6 +131,19 @@ public class SchemaGeneratorTest {
   @SuppressWarnings("unused")
   @EnumClass(TrafficLightColors.class)
   private String colorString;
+
+  @Test
+  public void generateSchemaForEnumAnnotatedStringWithQualifier() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("twoColorString"));
+
+    assertThat(schema, hasJsonPath("$.twoColorString.type", equalTo("string")));
+    assertThat(
+        schema, hasJsonPath("$.twoColorString.enum", arrayContainingInAnyOrder("RED", "GREEN")));
+  }
+
+  @SuppressWarnings("unused")
+  @EnumClass(value = TrafficLightColors.class, qualifier = "forSmallLight")
+  private String twoColorString;
 
   @Test
   public void whenIntegerAnnotatedWithMinimumOnly_addToSchema() throws NoSuchFieldException {

@@ -241,14 +241,17 @@ function createFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
+  exposeAnyChannelPrefix="${disabledPrefix}"
   if [ "${exposeAdminT3Channel}" = true ]; then
     exposeAdminT3ChannelPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
   else
     exposeAdminT3ChannelPrefix="${disabledPrefix}"
   fi
 
   if [ "${exposeAdminNodePort}" = true ]; then
     exposeAdminNodePortPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
   else
     exposeAdminNodePortPrefix="${disabledPrefix}"
   fi
@@ -390,6 +393,7 @@ function createFiles {
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}

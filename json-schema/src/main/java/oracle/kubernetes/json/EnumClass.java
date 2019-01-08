@@ -15,4 +15,6 @@ import java.lang.annotation.Target;
 @Target(FIELD)
 public @interface EnumClass {
   Class<? extends java.lang.Enum> value();
+
+  String qualifier() default "";
 }
