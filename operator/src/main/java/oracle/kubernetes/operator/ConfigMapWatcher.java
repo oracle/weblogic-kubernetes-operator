@@ -12,6 +12,7 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import org.joda.time.DateTime;
 
 /**
  * This class handles ConfigMap watching. It receives config map change events and sends them into
@@ -45,6 +46,10 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
 
   @Override
   public WatchI<V1ConfigMap> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+    // TEST
+    System.out.println(
+        "****3: ConfigMapWatcher.initiateWatch, ns=" + ns + ", time=" + DateTime.now());
+
     return watchBuilder
         .withLabelSelector(LabelConstants.CREATEDBYOPERATOR_LABEL)
         .createConfigMapWatch(ns);
