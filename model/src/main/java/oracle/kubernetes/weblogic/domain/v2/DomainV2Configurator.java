@@ -81,9 +81,10 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   @Override
   /**
-   * Sets the WebLogic configuration overrides configmap name for the domain
+   * Sets the WebLogic configuration overrides config map name for the domain
    *
-   * @param configMapName Name of the Kubernetes configmap that contains the config overrides
+   * @param configMapName Name of the Kubernetes config map that contains the configuration
+   *     overrides
    * @return this object
    */
   public DomainConfigurator withConfigOverrides(String configMapName) {

@@ -357,9 +357,9 @@ public class Domain {
   }
 
   /**
-   * Returns the name of the Kubernetes configmap that contains optional configuration overrides.
+   * Returns the name of the Kubernetes config map that contains optional configuration overrides.
    *
-   * @return name of the configmap
+   * @return name of the config map
    */
   public String getConfigOverrides() {
     return spec.getConfigOverrides();
