@@ -14,7 +14,7 @@
           ]
         },
         "serverService": {
-          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic channels.",
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
           "$ref": "#/definitions/KubernetesResource"
         },
         "serverPod": {
@@ -84,7 +84,7 @@
           ]
         },
         "serverService": {
-          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic channels.",
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
           "$ref": "#/definitions/KubernetesResource"
         },
         "maxUnavailable": {
@@ -106,6 +106,7 @@
           "$ref": "#/definitions/ServerPod"
         },
         "clusterService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic cluster.",
           "$ref": "#/definitions/KubernetesResource"
         },
         "serverStartPolicy": {
@@ -232,7 +233,7 @@
           "type": "string"
         },
         "serverService": {
-          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic channels.",
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
           "$ref": "#/definitions/KubernetesResource"
         },
         "domainHome": {
@@ -334,7 +335,7 @@
           ]
         },
         "serverService": {
-          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic channels.",
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
           "$ref": "#/definitions/KubernetesResource"
         },
         "serverPod": {

@@ -29,7 +29,8 @@ public abstract class BaseConfiguration {
   @Description("Configuration affecting server pods")
   private ServerPod serverPod = new ServerPod();
 
-  @Description("Customization affecting ClusterIP Kubernetes services for WebLogic channels.")
+  @Description(
+      "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.")
   @SerializedName("serverService")
   @Expose
   private KubernetesResource serverService = new KubernetesResource();

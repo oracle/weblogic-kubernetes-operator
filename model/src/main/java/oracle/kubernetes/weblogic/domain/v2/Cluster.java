@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
@@ -48,8 +51,10 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Range(minimum = 1)
   private Integer maxUnavailable;
 
-  // FIXME
-  private KubernetesResource clusterService;
+  @Description("Customization affecting ClusterIP Kubernetes services for WebLogic cluster.")
+  @SerializedName("clusterService")
+  @Expose
+  private KubernetesResource clusterService = new KubernetesResource();
 
   protected Cluster getConfiguration() {
     Cluster configuration = new Cluster();
@@ -90,6 +95,30 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     return serverStartPolicy;
   }
 
+  public void setClusterService(KubernetesResource clusterService) {
+    this.clusterService = clusterService;
+  }
+
+  public KubernetesResource getClusterService() {
+    return clusterService;
+  }
+
+  public Map<String, String> getClusterLabels() {
+    return clusterService.getLabels();
+  }
+
+  void addClusterLabel(String name, String value) {
+    clusterService.addLabel(name, value);
+  }
+
+  public Map<String, String> getClusterAnnotations() {
+    return clusterService.getAnnotations();
+  }
+
+  void addClusterAnnotation(String name, String value) {
+    clusterService.addAnnotations(name, value);
+  }
+
   Integer getMaxUnavailable() {
     return maxUnavailable;
   }
@@ -105,6 +134,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append("clusterName", clusterName)
         .append("replicas", replicas)
         .append("serverStartPolicy", serverStartPolicy)
+        .append("clusterService", clusterService)
         .append("maxUnavailable", maxUnavailable)
         .toString();
   }
@@ -122,6 +152,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(clusterName, cluster.clusterName)
         .append(replicas, cluster.replicas)
         .append(serverStartPolicy, cluster.serverStartPolicy)
+        .append(clusterService, cluster.clusterService)
         .append(maxUnavailable, cluster.maxUnavailable)
         .isEquals();
   }
@@ -133,6 +164,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .append(clusterName)
         .append(replicas)
         .append(serverStartPolicy)
+        .append(clusterService)
         .append(maxUnavailable)
         .toHashCode();
   }
