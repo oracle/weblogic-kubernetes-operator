@@ -11,6 +11,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -218,7 +220,7 @@ public class SchemaGenerator {
 
   private void addStringRestrictions(Map<String, Object> result, Field field) {
     Class<? extends Enum> enumClass = getEnumClass(field);
-    if (enumClass != null) addEnumValues(result, enumClass);
+    if (enumClass != null) addEnumValues(result, enumClass, getEnumQualifier(field));
 
     String pattern = getPattern(field);
     if (pattern != null) result.put("pattern", pattern);
@@ -229,9 +231,14 @@ public class SchemaGenerator {
     return annotation != null ? annotation.value() : null;
   }
 
+  private String getEnumQualifier(Field field) {
+    EnumClass annotation = field.getAnnotation(EnumClass.class);
+    return annotation != null ? annotation.qualifier() : "";
+  }
+
   private void addEnumValues(
-      Map<String, Object> result, Class<? extends java.lang.Enum> enumClass) {
-    result.put("enum", getEnumValues(enumClass));
+      Map<String, Object> result, Class<? extends Enum> enumClass, String qualifier) {
+    result.put("enum", getEnumValues(enumClass, qualifier));
   }
 
   private String getPattern(Field field) {
@@ -254,11 +261,12 @@ public class SchemaGenerator {
       this.field = field;
     }
 
+    @SuppressWarnings("unchecked")
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
       if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) result.put("type", "boolean");
       else if (isNumeric(type)) result.put("type", "number");
       else if (isString(type)) result.put("type", "string");
-      else if (type.isEnum()) generateEnumTypeIn(result, type);
+      else if (type.isEnum()) generateEnumTypeIn(result, (Class<? extends Enum>) type);
       else if (type.isArray()) this.generateArrayTypeIn(result, type);
       else if (Collection.class.isAssignableFrom(type)) generateCollectionTypeIn(result);
       else generateObjectFieldIn(result, type);
@@ -335,19 +343,43 @@ public class SchemaGenerator {
     return type.getSimpleName();
   }
 
-  private void generateEnumTypeIn(Map<String, Object> result, Class<?> enumType) {
+  private void generateEnumTypeIn(Map<String, Object> result, Class<? extends Enum> enumType) {
     result.put("type", "string");
-    result.put("enum", getEnumValues(enumType));
+    addEnumValues(result, enumType, "");
   }
 
-  private String[] getEnumValues(Class<?> enumType) {
+  private String[] getEnumValues(Class<?> enumType, String qualifier) {
     List<String> values = new ArrayList<>();
+    Method qualifierMethod = getQualifierMethod(enumType, qualifier);
 
     for (Object enumConstant : enumType.getEnumConstants()) {
-      values.add(enumConstant.toString());
+      if (satisfiesQualifier(enumConstant, qualifierMethod)) values.add(enumConstant.toString());
     }
 
     return values.toArray(new String[0]);
+  }
+
+  private Method getQualifierMethod(Class<?> enumType, String methodName) {
+    try {
+      Method method = enumType.getDeclaredMethod(methodName);
+      if (!isBooleanMethod(method)) return null;
+      return method;
+    } catch (NoSuchMethodException e) {
+      return null;
+    }
+  }
+
+  private boolean isBooleanMethod(Method method) {
+    return method.getReturnType().equals(Boolean.class)
+        || method.getReturnType().equals(boolean.class);
+  }
+
+  private boolean satisfiesQualifier(Object enumConstant, Method qualifier) {
+    try {
+      return qualifier == null || (Boolean) qualifier.invoke(enumConstant);
+    } catch (IllegalAccessException | InvocationTargetException e) {
+      return true;
+    }
   }
 
   private void generateObjectTypeIn(Map<String, Object> result, Class<?> type) {

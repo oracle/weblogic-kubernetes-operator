@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -254,8 +254,8 @@ public class DomainStatus {
     return new HashCodeBuilder()
         .append(reason)
         .append(startTime)
-        .append(servers)
-        .append(conditions)
+        .append(Domain.sortOrNull(servers))
+        .append(Domain.sortOrNull(conditions))
         .append(message)
         .toHashCode();
   }
@@ -272,8 +272,8 @@ public class DomainStatus {
     return new EqualsBuilder()
         .append(reason, rhs.reason)
         .append(startTime, rhs.startTime)
-        .append(servers, rhs.servers)
-        .append(conditions, rhs.conditions)
+        .append(Domain.sortOrNull(servers), Domain.sortOrNull(rhs.servers))
+        .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
         .isEquals();
   }

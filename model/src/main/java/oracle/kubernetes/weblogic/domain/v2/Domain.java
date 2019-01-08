@@ -8,6 +8,8 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -43,7 +45,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
-  @Description("The type of resource. Should be 'Domain'")
+  @Description("The type of resource. Must be 'Domain'")
   private String kind;
   /**
    * Standard object's metadata. More info:
@@ -201,6 +203,16 @@ public class Domain {
   }
 
   /**
+   * Returns the specification applicable to a particular cluster
+   *
+   * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
+   * @return the effective configuration for the cluster
+   */
+  public ClusterSpec getCluster(String clusterName) {
+    return getEffectiveConfigurationFactory().getClusterSpec(clusterName);
+  }
+
+  /**
    * Returns the number of replicas to start for the specified cluster.
    *
    * @param clusterName the name of the cluster
@@ -340,22 +352,14 @@ public class Domain {
    *
    * @return a list of names; may be empty
    */
-  public List<String> getExportedNetworkAccessPointNames() {
-    return getEffectiveConfigurationFactory().getExportedNetworkAccessPointNames();
-  }
-
-  public Map<String, String> getChannelServiceLabels(String channel) {
-    return getEffectiveConfigurationFactory().getChannelServiceLabels(channel);
-  }
-
-  public Map<String, String> getChannelServiceAnnotations(String channel) {
-    return getEffectiveConfigurationFactory().getChannelServiceAnnotations(channel);
+  public List<String> getAdminServerChannelNames() {
+    return getEffectiveConfigurationFactory().getAdminServerChannelNames();
   }
 
   /**
-   * Returns the name of the Kubernetes configmap that contains optional configuration overrides.
+   * Returns the name of the Kubernetes config map that contains optional configuration overrides.
    *
-   * @return name of the configmap
+   * @return name of the config map
    */
   public String getConfigOverrides() {
     return spec.getConfigOverrides();
@@ -408,5 +412,20 @@ public class Domain {
         .append(spec, rhs.spec)
         .append(status, rhs.status)
         .isEquals();
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  static List sortOrNull(List list) {
+    return sortOrNull(list, null);
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  static List sortOrNull(List list, Comparator c) {
+    if (list != null) {
+      Object[] a = list.toArray(new Object[list.size()]);
+      Arrays.sort(a, c);
+      return Arrays.asList(a);
+    }
+    return null;
   }
 }

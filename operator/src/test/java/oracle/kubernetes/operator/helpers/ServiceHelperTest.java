@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -9,7 +9,6 @@ import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
@@ -17,10 +16,8 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.NETWORK_ACCESS_POINT;
-import static oracle.kubernetes.operator.ProcessingConstants.NODE_PORT;
-import static oracle.kubernetes.operator.ProcessingConstants.PORT;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
@@ -54,7 +51,7 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
@@ -80,9 +77,6 @@ public class ServiceHelperTest {
   private static final String BAD_VERSION = "bad-version";
   private static final String UNREADY_ENDPOINTS_ANNOTATION =
       "service.alpha.kubernetes.io/tolerate-unready-endpoints";
-  private static final int TEST_NODE_PORT = 1234;
-  private static final String NAP_NAME = "test-nap";
-  private static final String PROTOCOL = "http";
   private static final String ADMIN_SERVER = "ADMIN_SERVER";
   private static final String[] MESSAGE_KEYS = {
     CLUSTER_SERVICE_CREATED,
@@ -101,8 +95,6 @@ public class ServiceHelperTest {
   private List<Memento> mementos = new ArrayList<>();
   private final TerminalStep terminalStep = new TerminalStep();
   private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
-  private NetworkAccessPoint networkAccessPoint =
-      new NetworkAccessPoint(NAP_NAME, PROTOCOL, TEST_PORT, TEST_NODE_PORT);
   private List<LogRecord> logRecords = new ArrayList<>();
 
   public ServiceHelperTest() {}
@@ -117,13 +109,16 @@ public class ServiceHelperTest {
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER);
+    configSupport.addWlsServer(TEST_SERVER_NAME, TEST_PORT);
+    configSupport.addWlsCluster(TEST_CLUSTER, TEST_SERVER_NAME);
     configSupport.setAdminServerName(ADMIN_SERVER);
 
+    WlsDomainConfig domainConfig = configSupport.createDomainConfig();
     testSupport
         .addToPacket(CLUSTER_NAME, TEST_CLUSTER)
         .addToPacket(SERVER_NAME, TEST_SERVER_NAME)
-        .addToPacket(PORT, TEST_PORT)
-        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig())
+        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
+        .addToPacket(SERVER_SCAN, domainConfig.getServerConfig(TEST_SERVER_NAME))
         .addDomainPresenceInfo(domainPresenceInfo);
   }
 
@@ -352,7 +347,9 @@ public class ServiceHelperTest {
         .putSelectorItem(DOMAINUID_LABEL, UID)
         .putSelectorItem(CLUSTERNAME_LABEL, TEST_CLUSTER)
         .putSelectorItem(CREATEDBYOPERATOR_LABEL, "true")
-        .ports(Collections.singletonList(new V1ServicePort().port(TEST_PORT)));
+        .ports(
+            Collections.singletonList(
+                new V1ServicePort().port(TEST_PORT).name("default").protocol("TCP")));
   }
 
   private void expectSuccessfulCreateClusterService() {
@@ -441,13 +438,6 @@ public class ServiceHelperTest {
     return service;
   }
 
-  @Test
-  public void whenNodePortSpecified_createServerServiceWithNodePort() {
-    testSupport.addToPacket(NODE_PORT, TEST_NODE_PORT);
-
-    verifyMissingServerServiceCreated(withNodePort(createServerService(), TEST_NODE_PORT));
-  }
-
   private V1Service withNodePort(V1Service service, int nodePort) {
     service.getSpec().type("NodePort").clusterIP(null);
     service
@@ -504,23 +494,6 @@ public class ServiceHelperTest {
     verifyServerServiceReplaced(mutator.change(createServerService()), createServerService());
   }
 
-  @Test
-  public void onServerStepRunWithServiceWithoutNodePort_replaceIt() {
-    testSupport.addToPacket(NODE_PORT, TEST_NODE_PORT);
-
-    verifyServerServiceReplaced(
-        createServerService(), withNodePort(createServerService(), TEST_NODE_PORT));
-  }
-
-  @Test
-  public void onServerStepRunWithServiceWithWrongNodePort_replaceIt() {
-    testSupport.addToPacket(NODE_PORT, TEST_NODE_PORT);
-
-    verifyServerServiceReplaced(
-        withNodePort(createServerService(), BAD_PORT),
-        withNodePort(createServerService(), TEST_NODE_PORT));
-  }
-
   private V1ServiceSpec createServerServiceSpec() {
     return createUntypedServerServiceSpec().type("ClusterIP").clusterIP("None");
   }
@@ -530,7 +503,9 @@ public class ServiceHelperTest {
         .putSelectorItem(DOMAINUID_LABEL, UID)
         .putSelectorItem(SERVERNAME_LABEL, TEST_SERVER_NAME)
         .putSelectorItem(CREATEDBYOPERATOR_LABEL, "true")
-        .ports(Collections.singletonList(new V1ServicePort().port(TEST_PORT)));
+        .ports(
+            Collections.singletonList(
+                new V1ServicePort().port(TEST_PORT).name("default").protocol("TCP")));
   }
 
   private void initializeServiceFromRecord(V1Service service) {
@@ -572,35 +547,6 @@ public class ServiceHelperTest {
                 .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true"));
   }
 
-  // ------ external channel service creation --------
-
-  @Test
-  public void onExternalChannelStepRunWithNoService_createIt() {
-    verifyMissingExternalChannelServiceCreated(createExternalChannelService());
-  }
-
-  private void verifyMissingExternalChannelServiceCreated(V1Service newService) {
-    initializeExternalChannelServiceFromRecord(null);
-    expectCreateService(newService).returning(newService);
-
-    testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
-
-    assertThat(logRecords, containsInfo(MANAGED_SERVICE_CREATED));
-  }
-
-  @Test
-  public void onExternalChannelStepWithChannelLabelsAndAnnotations_createIt() {
-    configureAdminServer()
-        .configureExportedNetworkAccessPoint(NAP_NAME)
-        .addLabel("label1", "value1")
-        .addAnnotation("annotation1", "value2");
-    V1Service externalChannelService = createExternalChannelService();
-    externalChannelService.getMetadata().putLabelsItem("label1", "value1");
-    externalChannelService.getMetadata().putAnnotationsItem("annotation1", "value2");
-
-    verifyMissingExternalChannelServiceCreated(externalChannelService);
-  }
-
   private AdminServerConfigurator configureAdminServer() {
     return configureDomain().configureAdminServer();
   }
@@ -609,91 +555,13 @@ public class ServiceHelperTest {
     return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
 
-  @Test
-  public void onExternalChannelStepRunWithMatchingService_addToSko() {
-    V1Service service = createExternalChannelService();
-    initializeExternalChannelServiceFromRecord(service);
-
-    testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
-
-    assertThat(logRecords, containsFine(MANAGED_SERVICE_EXISTS));
-  }
-
-  @Test
-  public void onExternalChannelStepRunWithServiceWithBadVersion_replaceIt() {
-    verifyExternalChannelServiceReplaced(this::withBadVersion);
-  }
-
   interface ServiceMutator {
     V1Service change(V1Service original);
-  }
-
-  private void verifyExternalChannelServiceReplaced(ServiceMutator mutator) {
-    V1Service newService = createExternalChannelService();
-    initializeExternalChannelServiceFromRecord(mutator.change(createExternalChannelService()));
-    expectDeleteServiceSuccessful(getExternalChannelServiceName());
-    expectSuccessfulCreateService(newService);
-
-    testSupport.runSteps(ServiceHelper.createForExternalChannelStep(terminalStep));
-
-    assertThat(logRecords, containsInfo(MANAGED_SERVICE_REPLACED));
   }
 
   private V1Service withBadVersion(V1Service service) {
     service.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, BAD_VERSION);
     return service;
-  }
-
-  private CallTestSupport.CannedResponse expectReadExternalChannelService() {
-    return expectReadService(getExternalChannelServiceName());
-  }
-
-  private void initializeExternalChannelServiceFromRecord(V1Service service) {
-    testSupport.addToPacket(NETWORK_ACCESS_POINT, networkAccessPoint);
-    ServerKubernetesObjects sko = domainPresenceInfo.getServers().get(TEST_SERVER_NAME);
-    if (sko == null) {
-      sko = createSko(null);
-      domainPresenceInfo.getServers().put(TEST_SERVER_NAME, sko);
-    }
-    if (service == null) {
-      sko.getChannels().remove(NAP_NAME);
-    } else {
-      sko.getChannels().put(NAP_NAME, service);
-    }
-  }
-
-  private V1Service createExternalChannelService() {
-    return createExternalChannelService(createExternalChannelServiceSpec());
-  }
-
-  private V1Service createExternalChannelService(V1ServiceSpec serviceSpec) {
-    return new V1Service()
-        .spec(serviceSpec)
-        .metadata(
-            new V1ObjectMeta()
-                .name(getExternalChannelServiceName())
-                .namespace(NS)
-                .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V2)
-                .putLabelsItem(DOMAINUID_LABEL, UID)
-                .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
-                .putLabelsItem(SERVERNAME_LABEL, TEST_SERVER_NAME)
-                .putLabelsItem(CHANNELNAME_LABEL, NAP_NAME)
-                .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true"));
-  }
-
-  private String getExternalChannelServiceName() {
-    return LegalNames.toNAPName(UID, TEST_SERVER_NAME, networkAccessPoint);
-  }
-
-  private V1ServiceSpec createExternalChannelServiceSpec() {
-    return new V1ServiceSpec()
-        .putSelectorItem(DOMAINUID_LABEL, UID)
-        .putSelectorItem(SERVERNAME_LABEL, TEST_SERVER_NAME)
-        .putSelectorItem(CREATEDBYOPERATOR_LABEL, "true")
-        .type("NodePort")
-        .ports(
-            Collections.singletonList(
-                new V1ServicePort().port(TEST_PORT).nodePort(TEST_NODE_PORT)));
   }
 
   private CallTestSupport.CannedResponse expectReadService(String serviceName) {
