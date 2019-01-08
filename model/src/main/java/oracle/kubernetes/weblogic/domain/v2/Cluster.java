@@ -5,8 +5,11 @@
 package oracle.kubernetes.weblogic.domain.v2;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -26,6 +29,19 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Description("The number of managed servers to run in this cluster")
   @Range(minimum = 0)
   private Integer replicas;
+
+  /**
+   * Tells the operator whether the customer wants the server to be running. For clustered servers -
+   * the operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server
+   * needs to be started to get to the cluster's replica count..
+   *
+   * @since 2.0
+   */
+  @EnumClass(value = ServerStartPolicy.class, qualifier = "forCluster")
+  @Description(
+      "The strategy for deciding whether to start a server. "
+          + "Legal values are NEVER, or IF_NEEDED.")
+  private String serverStartPolicy;
 
   @Description(
       "The maximum number of cluster membrers that can be temporarily unavailable. Defaults to 1.")
@@ -63,11 +79,22 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.replicas = replicas;
   }
 
-  public Integer getMaxUnavailable() {
+  @Override
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  @Nullable
+  @Override
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
+  }
+
+  Integer getMaxUnavailable() {
     return maxUnavailable;
   }
 
-  public void setMaxUnavailable(Integer maxUnavailable) {
+  void setMaxUnavailable(Integer maxUnavailable) {
     this.maxUnavailable = maxUnavailable;
   }
 
@@ -77,6 +104,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .appendSuper(super.toString())
         .append("clusterName", clusterName)
         .append("replicas", replicas)
+        .append("serverStartPolicy", serverStartPolicy)
         .append("maxUnavailable", maxUnavailable)
         .toString();
   }
@@ -93,6 +121,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .appendSuper(super.equals(o))
         .append(clusterName, cluster.clusterName)
         .append(replicas, cluster.replicas)
+        .append(serverStartPolicy, cluster.serverStartPolicy)
         .append(maxUnavailable, cluster.maxUnavailable)
         .isEquals();
   }
@@ -103,12 +132,13 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
         .appendSuper(super.hashCode())
         .append(clusterName)
         .append(replicas)
+        .append(serverStartPolicy)
         .append(maxUnavailable)
         .toHashCode();
   }
 
   @Override
-  public int compareTo(Cluster o) {
+  public int compareTo(@Nonnull Cluster o) {
     return clusterName.compareTo(o.clusterName);
   }
 }
