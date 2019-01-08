@@ -8,7 +8,10 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -18,6 +21,7 @@ import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -43,6 +47,20 @@ public class DomainSpec extends BaseConfiguration {
           + "Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
           + "Defaults to /shared/domains/domain if domainHomeInImage is true")
   private String domainHome;
+
+  /**
+   * Tells the operator whether the customer wants the server to be running. For non-clustered
+   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
+   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * to be started to get to the cluster's replica count..
+   *
+   * @since 2.0
+   */
+  @EnumClass(value = ServerStartPolicy.class, qualifier = "forDomain")
+  @Description(
+      "The strategy for deciding whether to start a server. "
+          + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
+  private String serverStartPolicy;
 
   /**
    * Reference to secret containing WebLogic startup credentials username and password. Secret must
@@ -251,6 +269,17 @@ public class DomainSpec extends BaseConfiguration {
     this.domainHome = domainHome;
   }
 
+  @Override
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  @Nullable
+  @Override
+  public String getServerStartPolicy() {
+    return Optional.ofNullable(serverStartPolicy).orElse(START_IF_NEEDED);
+  }
+
   /*
    * Fluent api for setting the image.
    *
@@ -453,12 +482,6 @@ public class DomainSpec extends BaseConfiguration {
     this.configOverrideSecrets = overridesSecretNames;
   }
 
-  @Nullable
-  @Override
-  public String getServerStartPolicy() {
-    return Optional.ofNullable(super.getServerStartPolicy()).orElse(START_IF_NEEDED);
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -467,6 +490,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("domainUID", domainUID)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
+            .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
@@ -492,6 +516,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUID)
             .append(domainHome)
             .append(domainHomeInImage)
+            .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
             .append(image)
             .append(imagePullPolicy)
@@ -521,6 +546,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUID, rhs.domainUID)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
+            .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(image, rhs.image)
             .append(imagePullPolicy, rhs.imagePullPolicy)

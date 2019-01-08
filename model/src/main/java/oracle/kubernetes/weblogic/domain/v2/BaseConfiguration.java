@@ -13,7 +13,6 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -42,20 +41,6 @@ public abstract class BaseConfiguration {
   private String serverStartState;
 
   /**
-   * Tells the operator whether the customer wants the server to be running. For non-clustered
-   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
-   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
-   * to be started to get to the cluster's replica count..
-   *
-   * @since 2.0
-   */
-  @EnumClass(ServerStartPolicy.class)
-  @Description(
-      "The strategy for deciding whether to start a server. "
-          + "Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.")
-  private String serverStartPolicy;
-
-  /**
    * Tells the operator whether the customer wants to restart the server pods. The value can be any
    * String and it can be defined on domain, cluster or server to restart the different pods. After
    * the value is added, the corresponding pods will be terminated and created again. If customer
@@ -78,7 +63,7 @@ public abstract class BaseConfiguration {
     if (other == null) return;
 
     if (serverStartState == null) serverStartState = other.getServerStartState();
-    if (overrideStartPolicyFrom(other)) serverStartPolicy = other.getServerStartPolicy();
+    if (overrideStartPolicyFrom(other)) setServerStartPolicy(other.getServerStartPolicy());
 
     serverPod.fillInFrom(other.serverPod);
     serverService.fillInFrom(other.serverService);
@@ -86,7 +71,7 @@ public abstract class BaseConfiguration {
 
   private boolean overrideStartPolicyFrom(BaseConfiguration other) {
     if (other.isStartAdminServerOnly()) return false;
-    return serverStartPolicy == null || other.isStartNever();
+    return getServerStartPolicy() == null || other.isStartNever();
   }
 
   boolean isStartAdminServerOnly() {
@@ -119,13 +104,17 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
 
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
+  /**
+   * Tells the operator whether the customer wants the server to be running. For non-clustered
+   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
+   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * to be started to get to the cluster's replica count..
+   *
+   * @since 2.0
+   */
+  public abstract void setServerStartPolicy(String serverStartPolicy);
 
-  public String getServerStartPolicy() {
-    return serverStartPolicy;
-  }
+  public abstract String getServerStartPolicy();
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
@@ -247,7 +236,6 @@ public abstract class BaseConfiguration {
   public String toString() {
     return new ToStringBuilder(this)
         .append("serverStartState", serverStartState)
-        .append("serverStartPolicy", serverStartPolicy)
         .append("serverPod", serverPod)
         .append("serverService", serverService)
         .append("restartVersion", restartVersion)
@@ -266,7 +254,6 @@ public abstract class BaseConfiguration {
         .append(serverPod, that.serverPod)
         .append(serverService, that.serverService)
         .append(serverStartState, that.serverStartState)
-        .append(serverStartPolicy, that.serverStartPolicy)
         .append(restartVersion, that.restartVersion)
         .isEquals();
   }
@@ -277,7 +264,6 @@ public abstract class BaseConfiguration {
         .append(serverPod)
         .append(serverService)
         .append(serverStartState)
-        .append(serverStartPolicy)
         .append(restartVersion)
         .toHashCode();
   }
