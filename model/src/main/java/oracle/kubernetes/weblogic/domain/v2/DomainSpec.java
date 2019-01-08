@@ -68,7 +68,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The name of a pre-created Kubernetes secret, in the domain's namepace, that holds"
-          + " the username and password needed to boot WebLogic under the 'username' and 'password' fields.")
+          + " the username and password needed to boot WebLogic Server under the 'username' and 'password' fields.")
   @Valid
   @NotNull
   private V1SecretReference webLogicCredentialsSecret;
@@ -151,11 +151,11 @@ public class DomainSpec extends BaseConfiguration {
   private Boolean domainHomeInImage;
 
   /**
-   * The name of the Kubernetes configmap used for optional WebLogic configuration overrides.
+   * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
    *
    * @since 2.0
    */
-  @Description("The name of the configmap for optional WebLogic configuration overrides.")
+  @Description("The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   /**
