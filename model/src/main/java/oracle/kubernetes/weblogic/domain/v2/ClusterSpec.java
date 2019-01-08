@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 
 public abstract class ClusterSpec {
   /**
-   * Returns the labels applied to the service.
+   * Returns the labels applied to server instance services.
    *
    * @return a map of labels
    */
@@ -17,10 +17,26 @@ public abstract class ClusterSpec {
   public abstract Map<String, String> getServiceLabels();
 
   /**
-   * Returns the annotations applied to the service.
+   * Returns the annotations applied to service instance services.
    *
    * @return a map of annotations
    */
   @Nonnull
   public abstract Map<String, String> getServiceAnnotations();
+
+  /**
+   * Returns the labels applied to the cluster service.
+   *
+   * @return a map of labels
+   */
+  @Nonnull
+  public abstract Map<String, String> getClusterLabels();
+
+  /**
+   * Returns the annotations applied to the cluster service.
+   *
+   * @return a map of annotations
+   */
+  @Nonnull
+  public abstract Map<String, String> getClusterAnnotations();
 }
