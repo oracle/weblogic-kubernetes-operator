@@ -10,4 +10,4 @@ SECONDS=0
 ./opt.sh delete
 ./opt.sh delImages
 
-echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finsh."
+echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finish."

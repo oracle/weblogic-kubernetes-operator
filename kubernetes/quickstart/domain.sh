@@ -4,13 +4,15 @@
 
 export WLS_BASE_IMAGE=store/oracle/weblogic:19.1.0.0
 export PRJ_ROOT=../../
-export PV_ROOT=
 
-function createPV() {
+function checkPV() {
   if [ -z "$PV_ROOT" ] || [ ! -e "$PV_ROOT" ]; then
-    echo "pls setup the PV_ROOT correctly."
+    echo "PV_ROOT is not set correctly. It needs to point to an existing folder. Currently PV_ROOT is '$PV_ROOT'."
     exit 1
   fi
+}
+function createPV() {
+  checkPV
 
   if [ ! -e $PV_ROOT/logs ]; then
     mkdir -p $PV_ROOT/logs
@@ -121,7 +123,7 @@ function waitUntilStopped() {
   local domainName=$2
   echo "wait until domain $domainName stopped"
   while : ; do
-    if test "$(kubectl -n $namespace get pods  -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true \
+    if test "$(kubectl -n $namespace get all -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true \
         | wc -l)" != 0; then
       echo "wait domain shutdown"
       kubectl -n $namespace get pods -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true
@@ -168,6 +170,7 @@ function main() {
   if [ "$#" == 0 ] ; then
     usage
   fi
+  checkPV
   $1
 }
 

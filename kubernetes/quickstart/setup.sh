@@ -4,6 +4,7 @@
 set -e
 
 SECONDS=0
+./domain.sh checkPV
 ./opt.sh pullImages
 ./opt.sh create
 ./loadBalancer.sh createOpt
@@ -12,4 +13,4 @@ SECONDS=0
 ./domain.sh waitUntilAllReady
 ./loadBalancer.sh createIngress
 
-echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finsh."
+echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finish."
