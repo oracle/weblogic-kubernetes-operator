@@ -1,8 +1,10 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
+
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiCallback;
@@ -46,6 +48,9 @@ import oracle.kubernetes.operator.calls.CancellableCall;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
@@ -57,6 +62,8 @@ public class CallBuilder {
 
   /** HTTP status code for "Not Found" */
   public static final int NOT_FOUND = 404;
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static SynchronousCallDispatcher DISPATCHER =
       new SynchronousCallDispatcher() {
@@ -294,6 +301,51 @@ public class CallBuilder {
           new WeblogicApi(client)
               .replaceWebLogicOracleV2NamespacedDomain(
                   requestParams.name, requestParams.namespace, (Domain) requestParams.body, pretty);
+
+  /**
+   * Replace domain
+   *
+   * @param uid the domain uid (unique within the k8s cluster)
+   * @param namespace Namespace
+   * @param body Body
+   * @param conflictRetry ConflictRetry implementation to be called to obtain the latest version of
+   *     the Domain for retrying the replaceDomain synchronous call if previous call failed with
+   *     Conflict response code (409)
+   * @return Replaced domain
+   * @throws ApiException APIException
+   */
+  public Domain replaceDomainWithConflictRetry(
+      String uid, String namespace, Domain body, ConflictRetry<Domain> conflictRetry)
+      throws ApiException {
+    int retryCount = 0;
+    while (retryCount == 0 || retryCount < maxRetryCount) {
+      retryCount++;
+      try {
+        return replaceDomain(uid, namespace, body);
+      } catch (ApiException apiException) {
+        boolean retry = false;
+        if (apiException.getCode() == HTTP_CONFLICT
+            && conflictRetry != null
+            && retryCount < maxRetryCount) {
+          body = conflictRetry.getUpdatedObject();
+          if (body != null) {
+            retry = true;
+            LOGGER.fine(
+                MessageKeys.SYNC_RETRY,
+                "replaceDomain",
+                apiException.getCode(),
+                apiException.getMessage(),
+                retryCount,
+                maxRetryCount);
+          }
+        }
+        if (!retry) {
+          throw apiException;
+        }
+      }
+    }
+    return null;
+  }
 
   /**
    * Replace domain
