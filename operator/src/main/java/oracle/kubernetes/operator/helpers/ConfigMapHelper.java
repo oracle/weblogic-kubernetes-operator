@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -96,7 +96,7 @@ public class ConfigMapHelper {
 
     private synchronized Map<String, String> loadScriptsFromClasspath() {
       Map<String, String> scripts = scriptReader.loadFilesFromClasspath();
-      LOGGER.info(MessageKeys.SCRIPT_LOADED, this.domainNamespace);
+      LOGGER.fine(MessageKeys.SCRIPT_LOADED, this.domainNamespace);
       return scripts;
     }
 
