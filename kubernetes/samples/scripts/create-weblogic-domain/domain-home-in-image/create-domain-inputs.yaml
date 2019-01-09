@@ -69,12 +69,16 @@ weblogicCredentialsSecretName: domain1-weblogic-credentials
 includeServerOutInPodLog: true
 
 # Specifies whether the log home is stored on the persistent volume.
+# If set to true, then the customer must specify the 'logHome', 'persistentVolumeClaimName'
+# and 'domainPVMountPath' properties.
 # The default is false.
 logHomeOnPV: false
 
 # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
 # files in.
 # If not specified, the value is derived from the domainUID as /shared/logs/<domainUID>
+# This parameter is required if 'logHomeOnPV' is true.
+# Otherwise, it is ignored.
 logHome: /shared/logs/domain1
 
 # Port for the T3Channel of the NetworkAccessPoint
@@ -103,9 +107,13 @@ javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim 
 # If not specified, the value is derived from the domainUID as <domainUID>-weblogic-sample-pvc
+# This parameter is required if 'logHomeOnPV' is true.
+# Otherwise, it is ignored.
 persistentVolumeClaimName: domain1-weblogic-sample-pvc
 
 # Mount path of the domain persistent volume. 
+# This parameter is required if 'logHomeOnPV' is true.
+# Otherwise, it is ignored.
 domainPVMountPath: /shared
 
 # Base WebLogic binary image used to build the WebLogic domain image
