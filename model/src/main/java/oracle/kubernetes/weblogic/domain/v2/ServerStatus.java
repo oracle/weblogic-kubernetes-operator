@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -13,7 +13,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** ServerStatus describes the current status of a specific WebLogic server. */
-public class ServerStatus {
+public class ServerStatus implements Comparable<ServerStatus> {
 
   /** WebLogic server name. (Required) */
   @SerializedName("serverName")
@@ -222,5 +222,10 @@ public class ServerStatus {
         .append(state, rhs.state)
         .append(clusterName, rhs.clusterName)
         .isEquals();
+  }
+
+  @Override
+  public int compareTo(ServerStatus o) {
+    return serverName.compareTo(o.serverName);
   }
 }
