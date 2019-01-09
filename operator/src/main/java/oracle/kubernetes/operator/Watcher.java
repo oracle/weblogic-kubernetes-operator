@@ -122,14 +122,16 @@ abstract class Watcher<T> {
 
   private void watchForEvents() {
     long now = System.currentTimeMillis();
-    long delta = now - lastInitialize;
-    if (lastInitialize != 0 && delta > (tuning.watchMinimumDelay * 1000)) {
+    long delay = (tuning.watchMinimumDelay * 1000) - (now - lastInitialize);
+    if (lastInitialize != 0 && delay > 0) {
       try {
-        Thread.sleep(delta);
+        Thread.sleep(delay);
       } catch (InterruptedException ex) {
         LOGGER.warning(MessageKeys.EXCEPTION, ex);
       }
       lastInitialize = System.currentTimeMillis();
+    } else {
+      lastInitialize = now;
     }
     try (WatchI<T> watch =
         initiateWatch(
