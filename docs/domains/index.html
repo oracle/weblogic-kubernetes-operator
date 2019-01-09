@@ -849,7 +849,7 @@ window.onload = function() {
           "type": "string"
         },
         "kind": {
-          "description": "The type of resource. Should be \u0027Domain\u0027",
+          "description": "The type of resource. Must be \u0027Domain\u0027",
           "type": "string"
         },
         "spec": {
@@ -926,38 +926,28 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "serverStartState": {
-          "description": "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.",
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
           "type": "string",
           "enum": [
             "RUNNING",
             "ADMIN"
           ]
         },
-        "nodePortAnnotations": {
-          "$ref": "#/definitions/Map"
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
+          "$ref": "#/definitions/KubernetesResource"
         },
         "serverPod": {
-          "description": "Configuration affecting the server pod",
+          "description": "Configuration affecting server pods",
           "$ref": "#/definitions/ServerPod"
         },
-        "exportedNetworkAccessPoints": {
-          "description": "T3 network access points to export",
-          "$ref": "#/definitions/Map"
-        },
-        "nodePortLabels": {
-          "$ref": "#/definitions/Map"
-        },
-        "nodePort": {
-          "type": "number"
-        },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "description": "The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED.",
           "type": "string",
           "enum": [
-            "NEVER",
             "ALWAYS",
-            "IF_NEEDED",
-            "ADMIN_ONLY"
+            "NEVER",
+            "IF_NEEDED"
           ]
         },
         "restartVersion": {
@@ -974,15 +964,29 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "channels": {
-          "$ref": "#/definitions/Map"
-        },
-        "annotations": {
-          "$ref": "#/definitions/Map"
-        },
-        "labels": {
-          "$ref": "#/definitions/Map"
+          "description": "Specifies which of the admin server\u0027s WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server\u0027s node port service will not be created.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Channel"
+          }
         }
       }
+    },
+    "Channel": {
+      "type": "object",
+      "properties": {
+        "channelName": {
+          "description": "Name of channel. default\u0027 refers to the admin server\u0027s default channel (configured via the ServerMBean\u0027s ListenPort) \u0027default-secure\u0027 refers to the admin server\u0027s default secure channel (configured via the ServerMBean\u0027s SSLMBean\u0027s ListenPort) \u0027default-admin\u0027 refers to the admin server\u0027s default administrative channel (configured via the DomainMBean\u0027s AdministrationPort) Otherwise, the name is the name of one of the admin server\u0027s network access points (configured via the ServerMBean\u0027s NetworkAccessMBeans).",
+          "type": "string"
+        },
+        "nodePort": {
+          "description": "Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "channelName"
+      ]
     },
     "Chronology": {
       "type": "object",
@@ -992,15 +996,19 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "serverStartState": {
-          "description": "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.",
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
           "type": "string",
           "enum": [
             "RUNNING",
             "ADMIN"
           ]
         },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
         "maxUnavailable": {
-          "description": "The maximum number of cluster membrers that can be temporarily unavailable. Defaults to 1.",
+          "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
           "type": "number",
           "minimum": 1.0
         },
@@ -1014,17 +1022,19 @@ window.onload = function() {
           "type": "string"
         },
         "serverPod": {
-          "description": "Configuration affecting the server pod",
+          "description": "Configuration affecting server pods",
           "$ref": "#/definitions/ServerPod"
         },
+        "clusterService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic cluster.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "description": "The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED.",
           "type": "string",
           "enum": [
             "NEVER",
-            "ALWAYS",
-            "IF_NEEDED",
-            "ADMIN_ONLY"
+            "IF_NEEDED"
           ]
         },
         "restartVersion": {
@@ -1077,7 +1087,7 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "serverStartState": {
-          "description": "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.",
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
           "type": "string",
           "enum": [
             "RUNNING",
@@ -1126,11 +1136,10 @@ window.onload = function() {
           "type": "string"
         },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
           "type": "string",
           "enum": [
             "NEVER",
-            "ALWAYS",
             "IF_NEEDED",
             "ADMIN_ONLY"
           ]
@@ -1140,11 +1149,15 @@ window.onload = function() {
           "type": "string"
         },
         "configOverrides": {
-          "description": "The name of the configmap for optional WebLogic configuration overrides.",
+          "description": "The name of the config map for optional WebLogic configuration overrides.",
           "type": "string"
         },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
         "domainHome": {
-          "description": "The folder for the Weblogic Domain. (Not required)Defaults to /shared/domains/domains/domainUID if domainHomeInImage is falseDefaults to /shared/domains/domain if domainHomeInImage is true",
+          "description": "The folder for the Weblogic Domain. (Not required)Defaults to /shared/domains/domains/domainUID if domainHomeInImage is falseDefaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true",
           "type": "string"
         },
         "logHomeEnabled": {
@@ -1152,6 +1165,7 @@ window.onload = function() {
           "type": "boolean"
         },
         "webLogicCredentialsSecret": {
+          "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namepace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
           "$ref": "#/definitions/V1SecretReference"
         },
         "adminServer": {
@@ -1159,7 +1173,7 @@ window.onload = function() {
           "$ref": "#/definitions/AdminServer"
         },
         "serverPod": {
-          "description": "Configuration affecting the server pod",
+          "description": "Configuration affecting server pods",
           "$ref": "#/definitions/ServerPod"
         },
         "logHome": {
@@ -1216,42 +1230,59 @@ window.onload = function() {
         }
       }
     },
+    "KubernetesResource": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "The annotations to be attached to generated resources.",
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
     "ManagedServer": {
       "type": "object",
       "properties": {
         "serverStartState": {
-          "description": "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.",
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
           "type": "string",
           "enum": [
             "RUNNING",
             "ADMIN"
           ]
         },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
         "serverPod": {
-          "description": "Configuration affecting the server pod",
+          "description": "Configuration affecting server pods",
           "$ref": "#/definitions/ServerPod"
         },
         "serverName": {
+          "description": "The name of the server. Required.",
           "type": "string"
         },
-        "nodePort": {
-          "type": "number"
-        },
         "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.",
+          "description": "The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED.",
           "type": "string",
           "enum": [
-            "NEVER",
             "ALWAYS",
-            "IF_NEEDED",
-            "ADMIN_ONLY"
+            "NEVER",
+            "IF_NEEDED"
           ]
         },
         "restartVersion": {
           "description": "If present, every time this value is updated the operator will restart the required servers",
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "serverName"
+      ]
     },
     "Map": {
       "type": "object",
@@ -1294,10 +1325,6 @@ window.onload = function() {
     "ServerPod": {
       "type": "object",
       "properties": {
-        "serviceLabels": {
-          "description": "Labels applied to services",
-          "$ref": "#/definitions/Map"
-        },
         "livenessProbe": {
           "description": "Settings for the liveness probe associated with a server",
           "$ref": "#/definitions/ProbeTuning"
@@ -1313,9 +1340,21 @@ window.onload = function() {
             "$ref": "#/definitions/V1Volume"
           }
         },
+        "annotations": {
+          "description": "The annotations to be attached to generated resources.",
+          "$ref": "#/definitions/Map"
+        },
         "resources": {
           "description": "Memory and cpu minimum requirements and limits for the server",
           "$ref": "#/definitions/V1ResourceRequirements"
+        },
+        "readinessProbe": {
+          "description": "Settings for the readiness probe associated with a server",
+          "$ref": "#/definitions/ProbeTuning"
+        },
+        "containerSecurityContext": {
+          "description": "Container-level security attributes. Will override any matching pod-level attributes",
+          "$ref": "#/definitions/V1SecurityContext"
         },
         "env": {
           "description": "A list of environment variables to add to a server",
@@ -1324,8 +1363,8 @@ window.onload = function() {
             "$ref": "#/definitions/V1EnvVar"
           }
         },
-        "podAnnotations": {
-          "description": "Annotations applied to pods",
+        "labels": {
+          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
           "$ref": "#/definitions/Map"
         },
         "nodeSelector": {
@@ -1338,22 +1377,6 @@ window.onload = function() {
           "items": {
             "$ref": "#/definitions/V1VolumeMount"
           }
-        },
-        "podLabels": {
-          "description": "Labels applied to pods",
-          "$ref": "#/definitions/Map"
-        },
-        "readinessProbe": {
-          "description": "Settings for the readiness probe associated with a server",
-          "$ref": "#/definitions/ProbeTuning"
-        },
-        "serviceAnnotations": {
-          "description": "Annotations applied to services",
-          "$ref": "#/definitions/Map"
-        },
-        "containerSecurityContext": {
-          "description": "Container-level security attributes. Will override any matching pod-level attributes",
-          "$ref": "#/definitions/V1SecurityContext"
         }
       }
     },

@@ -1,67 +1,45 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.v2;
 
 import com.google.gson.annotations.SerializedName;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class AdminService {
   /** */
-  @SerializedName("labels")
-  private Map<String, String> labels = new HashMap<>();
-  /** */
-  @SerializedName("annotations")
-  private Map<String, String> annotations = new HashMap<>();
-  /** */
   @SerializedName("channels")
-  private Map<String, Channel> channels = new HashMap<>();
+  @Description(
+      "Specifies which of the admin server's WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server's node port service will not be created.")
+  private List<Channel> channels = new ArrayList<>();
 
-  public AdminService addLabel(String name, String value) {
-    labels.put(name, value);
+  public AdminService withChannel(Channel port) {
+    channels.add(port);
     return this;
   }
 
-  public Map<String, String> getLabels() {
-    return Collections.unmodifiableMap(labels);
+  public AdminService withChannel(String channelName, int nodePort) {
+    return withChannel(new Channel().withChannelName(channelName).withNodePort(nodePort));
   }
 
-  public AdminService addAnnotation(String name, String value) {
-    annotations.put(name, value);
-    return this;
-  }
-
-  public Map<String, String> getAnnotations() {
-    return Collections.unmodifiableMap(annotations);
-  }
-
-  public AdminService addChannel(String name, Channel port) {
-    channels.put(name, port);
-    return this;
-  }
-
-  public Map<String, Channel> getChannels() {
+  public List<Channel> getChannels() {
     return channels;
   }
 
   @Override
   public String toString() {
-    return new ToStringBuilder(this)
-        .append("labels", labels)
-        .append("annotations", annotations)
-        .append("channles", channels)
-        .toString();
+    return new ToStringBuilder(this).append("channles", channels).toString();
   }
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder().append(labels).append(annotations).append(channels).toHashCode();
+    return new HashCodeBuilder().append(Domain.sortOrNull(channels)).toHashCode();
   }
 
   @Override
@@ -74,9 +52,7 @@ public class AdminService {
     }
     AdminService as = (AdminService) o;
     return new EqualsBuilder()
-        .append(labels, as.labels)
-        .append(annotations, as.annotations)
-        .append(channels, as.channels)
+        .append(Domain.sortOrNull(channels), Domain.sortOrNull(as.channels))
         .isEquals();
   }
 }
