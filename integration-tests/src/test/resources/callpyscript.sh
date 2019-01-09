@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 ARG="$*"
-ENVSCRIPT=`find /shared -name setDomainEnv.sh -print`
+ENVSCRIPT=`find /shared . -name setDomainEnv.sh -print`
 echo Sourcing $ENVSCRIPT
 . $ENVSCRIPT || exit 1
 echo "$@"
