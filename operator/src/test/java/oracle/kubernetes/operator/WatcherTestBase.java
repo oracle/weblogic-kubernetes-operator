@@ -41,7 +41,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
 
-  protected WatchTuning tuning = new WatchTuning(30);
+  protected WatchTuning tuning = new WatchTuning(30, 5);
 
   private V1ObjectMeta createMetaData() {
     return createMetaData("test", NAMESPACE);
