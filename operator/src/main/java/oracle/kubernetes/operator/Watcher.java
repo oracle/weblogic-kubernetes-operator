@@ -38,6 +38,7 @@ abstract class Watcher<T> {
   private AtomicBoolean stopping;
   private WatchListener<T> listener;
   private Thread thread = null;
+  private long lastInitialize = 0;
 
   /**
    * Constructs a watcher without specifying a listener. Needed when the listener is the watch
@@ -120,6 +121,16 @@ abstract class Watcher<T> {
   }
 
   private void watchForEvents() {
+    long now = System.currentTimeMillis();
+    long delta = now - lastInitialize;
+    if (lastInitialize != 0 && delta > (tuning.watchMinimumDelay * 1000)) {
+      try {
+        Thread.sleep(delta);
+      } catch (InterruptedException ex) {
+        LOGGER.warning(MessageKeys.EXCEPTION, ex);
+      }
+      lastInitialize = System.currentTimeMillis();
+    }
     try (WatchI<T> watch =
         initiateWatch(
             new WatchBuilder()
