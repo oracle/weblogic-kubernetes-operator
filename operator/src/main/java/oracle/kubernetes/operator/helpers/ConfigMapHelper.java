@@ -90,7 +90,7 @@ public class ConfigMapHelper {
 
     private synchronized Map<String, String> loadScriptsFromClasspath() {
       Map<String, String> scripts = scriptReader.loadFilesFromClasspath();
-      LOGGER.info(MessageKeys.SCRIPT_LOADED, this.domainNamespace);
+      LOGGER.fine(MessageKeys.SCRIPT_LOADED, this.domainNamespace);
       return scripts;
     }
 
