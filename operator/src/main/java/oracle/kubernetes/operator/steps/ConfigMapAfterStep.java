@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -16,7 +16,6 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import org.joda.time.DateTime;
 
 public class ConfigMapAfterStep extends Step {
   private final String ns;
@@ -41,15 +40,7 @@ public class ConfigMapAfterStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     V1ConfigMap result = (V1ConfigMap) packet.get(ProcessingConstants.SCRIPT_CONFIG_MAP);
-
-    // TEST
-    System.out.println("****1: ConfigMapAfterStep.apply, ns=" + ns + ", time=" + DateTime.now());
-
     if (!configMapWatchers.containsKey(ns)) {
-
-      // TEST
-      System.out.println("****2: ConfigMapAfterStep.apply, ns=" + ns + ", time=" + DateTime.now());
-
       configMapWatchers.put(
           ns,
           createConfigMapWatcher(
