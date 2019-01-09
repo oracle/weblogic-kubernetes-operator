@@ -180,6 +180,16 @@ public class BaseTest {
   }
 
   /**
+   * Verify t3channel port by a JMS connection.
+   *
+   * @throws Exception
+   */
+  public void testAdminT3ChannelWithJMS(Domain domain) throws Exception {
+    domain.verifyJMST3Connection();
+    domain.restartUsingServerStartPolicy();
+    domain.verifyJMST3Connection();
+  }
+  /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
    * balancing and node port service
    *
