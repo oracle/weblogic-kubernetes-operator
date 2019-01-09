@@ -410,7 +410,7 @@ function createFiles {
     if [ -z $image ]; then
       sed -i -e "s|%WEBLOGIC_IMAGE%|${imageName}|g" ${dcrOutput}
     else
-      sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
+      sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${dcrOutput}
     fi
   else
     sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
