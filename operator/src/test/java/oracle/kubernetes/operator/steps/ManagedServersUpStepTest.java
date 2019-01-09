@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -425,7 +425,6 @@ public class ManagedServersUpStepTest {
     assertThat(getServerStartupInfo("ms1").serverConfig, equalTo(getWlsServer("cluster1", "ms1")));
     assertThat(getServerStartupInfo("ms1").getClusterName(), equalTo("cluster1"));
     assertThat(getServerStartupInfo("ms1").getEnvironment(), empty());
-    assertThat(getServerStartupInfo("ms1").getNodePort(), nullValue());
   }
 
   @Test
@@ -591,7 +590,10 @@ public class ManagedServersUpStepTest {
 
   static class TestStepFactory implements ManagedServersUpStep.NextStepFactory {
     private static DomainPresenceInfo info;
+
+    @SuppressWarnings("unused")
     private static WlsDomainConfig config;
+
     private static Collection<String> servers;
     private static Step next;
     private static TestStepFactory factory = new TestStepFactory();

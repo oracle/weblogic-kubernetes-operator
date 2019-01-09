@@ -1,3 +1,7 @@
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.utils;
 
 import static org.junit.Assert.assertEquals;
@@ -159,9 +163,8 @@ public class K8sTestUtils {
             null,
             Boolean.FALSE);
     /**
-     * TODO verify name pattern {domainUID}-admin-server
-     * {domainUID}-admin-server-extchannel-t3channel {domainUID}-cluster-cluster-1
-     * {domainUID}-managed-server1 {domainUID}-managed-server2
+     * TODO verify name pattern {domainUID}-admin-server {domainUID}-admin-server-external
+     * {domainUID}-cluster-cluster-1 {domainUID}-managed-server1 {domainUID}-managed-server2
      */
     assertEquals("Number of services", v1ServiceList.getItems().size(), expected);
   }
