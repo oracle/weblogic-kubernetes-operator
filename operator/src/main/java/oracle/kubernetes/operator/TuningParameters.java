@@ -63,9 +63,11 @@ public interface TuningParameters extends Map<String, String> {
 
   public static class WatchTuning {
     public final int watchLifetime;
+    public final int watchMinimumDelay;
 
-    public WatchTuning(int watchLifetime) {
+    public WatchTuning(int watchLifetime, int watchMinimumDelay) {
       this.watchLifetime = watchLifetime;
+      this.watchMinimumDelay = watchMinimumDelay;
     }
   }
 
