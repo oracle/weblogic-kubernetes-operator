@@ -1,10 +1,15 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,11 +91,6 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
 
   private String getConfiguredDesiredState() {
     return server.getServerStartState();
-  }
-
-  @Override
-  public Integer getNodePort() {
-    return server.getNodePort();
   }
 
   @Override
