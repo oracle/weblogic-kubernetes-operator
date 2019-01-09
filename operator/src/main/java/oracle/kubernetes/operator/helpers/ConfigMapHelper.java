@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -80,23 +80,17 @@ public class ConfigMapHelper {
     }
 
     private V1ConfigMap createModel(Map<String, String> data) {
-      return new V1ConfigMap()
-          .metadata(createMetadata(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME))
-          .data(data);
+      return new V1ConfigMap().metadata(createMetadata()).data(data);
     }
 
     private V1ObjectMeta createMetadata() {
-      return new V1ObjectMeta()
-          .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
-          .namespace(this.domainNamespace)
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
-          .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, operatorNamespace)
-          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+      return super.createMetadata(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
+          .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, operatorNamespace);
     }
 
     private synchronized Map<String, String> loadScriptsFromClasspath() {
       Map<String, String> scripts = scriptReader.loadFilesFromClasspath();
-      LOGGER.info(MessageKeys.SCRIPT_LOADED, this.domainNamespace);
+      LOGGER.fine(MessageKeys.SCRIPT_LOADED, this.domainNamespace);
       return scripts;
     }
 
@@ -201,7 +195,6 @@ public class ConfigMapHelper {
           .name(configMapName)
           .namespace(this.domainNamespace)
           .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
-          .putLabelsItem(LabelConstants.OPERATORNAME_LABEL, operatorNamespace)
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
 
@@ -312,6 +305,7 @@ public class ConfigMapHelper {
 
   public static class SitConfigMapContext extends ConfigMapContext {
     Map<String, String> data;
+    String domainUID;
     String cmName;
 
     SitConfigMapContext(
@@ -322,6 +316,7 @@ public class ConfigMapHelper {
         Map<String, String> data) {
       super(conflictStep, operatorNamespace, domainNamespace);
 
+      this.domainUID = domainUID;
       this.cmName = getConfigMapName(domainUID);
       this.data = data;
       this.model = createModel(data);
@@ -331,7 +326,7 @@ public class ConfigMapHelper {
       return new V1ConfigMap()
           .apiVersion("v1")
           .kind("ConfigMap")
-          .metadata(createMetadata(cmName))
+          .metadata(createMetadata())
           .data(data);
     }
 
@@ -341,6 +336,10 @@ public class ConfigMapHelper {
 
     ResponseStep<V1ConfigMap> createReadResponseStep(Step next) {
       return new ReadResponseStep(next);
+    }
+
+    private V1ObjectMeta createMetadata() {
+      return super.createMetadata(cmName).putLabelsItem(LabelConstants.DOMAINUID_LABEL, domainUID);
     }
 
     class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {

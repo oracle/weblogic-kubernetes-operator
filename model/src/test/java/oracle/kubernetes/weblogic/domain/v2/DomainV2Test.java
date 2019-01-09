@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -99,62 +99,18 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  public void whenExportT3ChannelsNotDefined_exportedNamesIsEmpty() {
-    assertThat(domain.getExportedNetworkAccessPointNames(), empty());
+  public void whenAdminServerChannelsNotDefined_exportedNamesIsEmpty() {
+    assertThat(domain.getAdminServerChannelNames(), empty());
   }
 
   @Test
-  public void whenExportT3ChannelsDefined_returnChannelNames() {
+  public void whenAdminServerChannelsDefined_returnChannelNames() {
     AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
-    configurator.withExportedNetworkAccessPoints("channel1", "channel2");
+    AdminService adminService = configurator.configureAdminService();
+    adminService.withChannel("channel1", 0);
+    adminService.withChannel("channel2", 1);
 
-    assertThat(
-        domain.getExportedNetworkAccessPointNames(), containsInAnyOrder("channel1", "channel2"));
-  }
-
-  @Test
-  public void whenAdminServerConfiguredWithNodePort_returnNodePort() {
-    configureAdminServer().withNodePort(31);
-
-    assertThat(domain.getAdminServerSpec().getNodePort(), equalTo(31));
-  }
-
-  @Test
-  public void whenExportT3ChannelsDefinedWithLabels_returnChannelNames() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
-    configurator
-        .configureExportedNetworkAccessPoint("channel1")
-        .addLabel("label1", "value1")
-        .addLabel("label2", "value2");
-    configurator
-        .configureExportedNetworkAccessPoint("channel2")
-        .addLabel("label3", "value3")
-        .addLabel("label4", "value4");
-
-    assertThat(
-        domain.getExportedNetworkAccessPointNames(), containsInAnyOrder("channel1", "channel2"));
-  }
-
-  @Test
-  public void whenExportT3ChannelsDefinedWithLabels_returnLabels() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
-    configurator
-        .configureExportedNetworkAccessPoint("channel1")
-        .addLabel("label1", "value1")
-        .addLabel("label2", "value2");
-
-    assertThat(domain.getChannelServiceLabels("channel1"), hasEntry("label1", "value1"));
-  }
-
-  @Test
-  public void whenExportT3ChannelsDefinedWithAnnotations_returnAnnotations() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
-    configurator
-        .configureExportedNetworkAccessPoint("channel1")
-        .addAnnotation("annotation1", "value1")
-        .addAnnotation("annotation2", "value2");
-
-    assertThat(domain.getChannelServiceAnnotations("channel1"), hasEntry("annotation1", "value1"));
+    assertThat(domain.getAdminServerChannelNames(), containsInAnyOrder("channel1", "channel2"));
   }
 
   @Test
@@ -728,7 +684,6 @@ public class DomainV2Test extends DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getAdminServerSpec();
 
-    assertThat(serverSpec.getNodePort(), equalTo(7001));
     assertThat(serverSpec.getEnvironmentVariables(), contains(envVar("var1", "value1")));
   }
 
@@ -985,22 +940,7 @@ public class DomainV2Test extends DomainTestBase {
   public void whenDomain3ReadFromYaml_hasExportedNaps() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
 
-    assertThat(
-        domain.getExportedNetworkAccessPointNames(), containsInAnyOrder("channelA", "channelB"));
-  }
-
-  @Test
-  public void whenDomain3ReadFromYaml_channelHasLabels() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
-
-    assertThat(domain.getChannelServiceLabels("channelB"), hasEntry("color", "red"));
-  }
-
-  @Test
-  public void whenDomain3ReadFromYaml_channelHasAnnotations() throws IOException {
-    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
-
-    assertThat(domain.getChannelServiceAnnotations("channelB"), hasEntry("time", "midnight"));
+    assertThat(domain.getAdminServerChannelNames(), containsInAnyOrder("channelA", "channelB"));
   }
 
   @Test
@@ -1207,7 +1147,7 @@ public class DomainV2Test extends DomainTestBase {
   public void domainHomeTest_standardHome3() {
     configureDomain(domain).withDomainHomeInImage(true);
 
-    assertThat(domain.getDomainHome(), equalTo("/shared/domain"));
+    assertThat(domain.getDomainHome(), equalTo("/u01/oracle/user_projects/domains"));
   }
 
   @Test
