@@ -60,7 +60,9 @@ public class Domain {
   public Domain(String inputYaml) throws Exception {
 
     initialize(inputYaml);
-    createPV();
+    if (!domainMap.containsKey("domainHomeImageBase")) {
+      createPV();
+    }
     createSecret();
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
@@ -709,13 +711,22 @@ public class Domain {
   private void callCreateDomainScript(String outputDir) throws Exception {
     StringBuffer cmd = new StringBuffer(BaseTest.getProjectRoot());
 
-    cmd.append(
-            "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -i ")
-        .append(generatedInputYamlFile);
+    if (domainMap.containsKey("domainHomeImageBase")) {
+      cmd.append(
+              "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
+          .append(BaseTest.getUsername())
+          .append(" -p ")
+          .append(BaseTest.getPassword())
+          .append(" -i ");
+    } else {
+      cmd.append(
+          "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
+    }
+    cmd.append(generatedInputYamlFile);
     if (!domainMap.containsKey("configOverrides")) {
       cmd.append(" -e ");
     }
-    cmd.append(" -v -o ").append(outputDir);
+    cmd.append(" -o ").append(outputDir);
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString(), true);
     if (result.exitValue() != 0) {
@@ -905,16 +916,19 @@ public class Domain {
     domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
+    String sampleDomainInputsFile =
+        "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
+    if (domainMap.containsKey("domainHomeImageBase")) {
+      sampleDomainInputsFile =
+          "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
+    }
     Yaml dyaml = new Yaml();
     InputStream sampleDomainInputStream =
-        new FileInputStream(
-            new File(
-                BaseTest.getProjectRoot()
-                    + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml"));
+        new FileInputStream(new File(BaseTest.getProjectRoot() + sampleDomainInputsFile));
     logger.info(
         "loading domain inputs template file "
             + BaseTest.getProjectRoot()
-            + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml");
+            + sampleDomainInputsFile);
     Map<String, Object> sampleDomainMap = dyaml.load(sampleDomainInputStream);
     sampleDomainInputStream.close();
 
@@ -941,11 +955,6 @@ public class Domain {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
 
-    domainMap.put("domainHome", "/shared/domains/" + domainUid);
-    domainMap.put("logHome", "/shared/logs/" + domainUid);
-    domainMap.put(
-        "createDomainFilesDir",
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
@@ -954,7 +963,14 @@ public class Domain {
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
     }
-    domainMap.put("image", imageName + ":" + imageTag);
+    if (!domainMap.containsKey("domainHomeImageBase")) {
+      domainMap.put("domainHome", "/shared/domains/" + domainUid);
+      domainMap.put("logHome", "/shared/logs/" + domainUid);
+      domainMap.put(
+          "createDomainFilesDir",
+          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
+      domainMap.put("image", imageName + ":" + imageTag);
+    }
 
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
