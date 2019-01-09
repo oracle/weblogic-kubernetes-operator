@@ -203,7 +203,12 @@ public class ServiceHelper {
 
     @Override
     protected V1ObjectMeta createMetadata() {
-      return super.createMetadata().putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName());
+      V1ObjectMeta metadata =
+          super.createMetadata().putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName());
+      if (getClusterName() != null) {
+        metadata.putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, getClusterName());
+      }
+      return metadata;
     }
 
     @Override
