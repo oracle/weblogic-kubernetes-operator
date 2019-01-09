@@ -170,7 +170,6 @@ function main() {
   if [ "$#" == 0 ] ; then
     usage
   fi
-  checkPV
   $1
 }
 
