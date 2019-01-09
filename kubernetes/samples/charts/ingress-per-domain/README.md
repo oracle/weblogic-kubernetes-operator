@@ -13,7 +13,9 @@ To install the chart with the release name, `my-ingress`, with the given `values
 ```
 # Change directory to the cloned git weblogic-kubernetes-operator repo.
 $ cd kubernetes/samples/charts
-$ helm install ingress-per-domain --name my-ingress --values values.yaml
+
+# Use helm to install the chart.  Use `--namespace` to specify the name of the WebLogic domain's namespace.
+$ helm install ingress-per-domain --name my-ingress --namespace my-domain-namespace --values values.yaml
 ```
 The Ingress resource will be created in the same namespace as the WebLogic domain cluster.
 
@@ -23,10 +25,9 @@ type: TRAEFIK
 
 # WLS domain as backend to the load balancer
 wlsDomain:
-  namespace: default
   domainUID: domain1
   clusterName: cluster1
-  svcPort: 8001
+  managedServerPort: 8001
 
 # Traefik specific values
 traefik:
@@ -40,10 +41,9 @@ type: VOYAGER
 
 # WLS domain as backend to the load balancer
 wlsDomain:
-  namespace: default
   domainUID: domain1
   clusterName: cluster1  
-  svcPort: 8001
+  managedServerPort: 8001
 
 # Voyager specific values
 voyager:
@@ -60,15 +60,14 @@ $ helm delete --purge my-ingress
 ## Configuration
 The following table lists the configurable parameters of this chart and their default values.
 
-| Parameter                              | Description                                                                                                                  | Default                                           |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `type`                     | Type of Ingress controller. Legal values are `TRAEFIK` or `VOYAGER`.                                                                                            | `TRAEFIK` |
-| `wlsDomain.namespace`                     | Namespace of the WLS domain cluster.                                                                                            | `default` |
-| `wlsDomain.domainUID`                     | DomainUID of the WLS domain.                                                                                            | `domain1` |
-| `wlsDomain.clusterName`                     | Cluster name in the WLS domain.                                                                                            | `cluster-1` |
-| `wlsDomain.svcPort`                     | Service port of the WLS domain cluster.                                                                                            | `8001` |
-| `traefik.hostname`                     | Hostname to route to the WLS domain cluster.                                                                                            | `domain1.org` |
-| `voyager.webPort`                     | Web port to access the Voyager load balancer.                                                                                         | `30305` |
-| `voyager.statsPort`                     | Port to access the Voyager/HAProxy stats page.                                                                                            | `30315` |
+| Parameter | Description | Default |
+| --- | --- | --- |
+| `type` | Type of Ingress controller. Legal values are `TRAEFIK` or `VOYAGER`. | `TRAEFIK` |
+| `wlsDomain.domainUID` | DomainUID of the WLS domain. | `domain1` |
+| `wlsDomain.clusterName` | Cluster name in the WLS domain. | `cluster-1` |
+| `wlsDomain.managedServerPort` | Port number of the managed servers in the WLS domain cluster. | `8001` |
+| `traefik.hostname` | Hostname to route to the WLS domain cluster. | `domain1.org` |
+| `voyager.webPort` | Web port to access the Voyager load balancer. | `30305` |
+| `voyager.statsPort` | Port to access the Voyager/HAProxy stats page. | `30315` |
 
 **Note:** The input values `domainUID` and `clusterName` will be used to generate the Kubernetes `serviceName` of the WLS cluster with the format `domainUID-cluster-clusterName`.
