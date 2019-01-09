@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
@@ -241,14 +241,17 @@ function createFiles {
   enabledPrefix=""     # uncomment the feature
   disabledPrefix="# "  # comment out the feature
 
+  exposeAnyChannelPrefix="${disabledPrefix}"
   if [ "${exposeAdminT3Channel}" = true ]; then
     exposeAdminT3ChannelPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
   else
     exposeAdminT3ChannelPrefix="${disabledPrefix}"
   fi
 
   if [ "${exposeAdminNodePort}" = true ]; then
     exposeAdminNodePortPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
   else
     exposeAdminNodePortPrefix="${disabledPrefix}"
   fi
@@ -390,6 +393,7 @@ function createFiles {
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
@@ -406,7 +410,7 @@ function createFiles {
     if [ -z $image ]; then
       sed -i -e "s|%WEBLOGIC_IMAGE%|${imageName}|g" ${dcrOutput}
     else
-      sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
+      sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${dcrOutput}
     fi
   else
     sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
@@ -459,7 +463,7 @@ function createDomain {
   validateDomainSecret
 
   # Validate the domain's persistent volume claim
-  if [ "$doValidation" == true ]; then
+  if [ "${doValidation}" == true ] && [ "${domainHomeInImage}" == false -o "${logHomeOnPV}" == true ]; then
     validateDomainPVC
   fi
 

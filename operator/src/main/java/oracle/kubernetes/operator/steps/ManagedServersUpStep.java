@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -29,7 +29,7 @@ public class ManagedServersUpStep extends Step {
       "Running servers for domain with UID: {0}, running list: {1}";
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, config, servers, next) ->
-          scaleDownIfNecessary(info, config, servers, new ClusterServicesStep(info, next));
+          scaleDownIfNecessary(info, config, servers, new ClusterServicesStep(next));
 
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {

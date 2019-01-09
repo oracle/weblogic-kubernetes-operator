@@ -1,4 +1,4 @@
-// Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -41,7 +41,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
 
-  protected WatchTuning tuning = new WatchTuning(30);
+  protected WatchTuning tuning = new WatchTuning(30, 0);
 
   private V1ObjectMeta createMetaData() {
     return createMetaData("test", NAMESPACE);
