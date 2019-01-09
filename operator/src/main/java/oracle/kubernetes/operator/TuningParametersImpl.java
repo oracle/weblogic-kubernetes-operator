@@ -66,7 +66,10 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
             (int) readTuningParameter("callMaxRetryCount", 5),
             (int) readTuningParameter("callTimeoutSeconds", 10));
 
-    WatchTuning watch = new WatchTuning((int) readTuningParameter("watchLifetime", 300));
+    WatchTuning watch =
+        new WatchTuning(
+            (int) readTuningParameter("watchLifetime", 300),
+            (int) readTuningParameter("watchMinimumDelay", 5));
 
     PodTuning pod =
         new PodTuning(

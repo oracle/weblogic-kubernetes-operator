@@ -290,7 +290,7 @@ public class DomainIntrospectorJobTest {
   }
 
   FiberTestSupport.StepFactory getStepFactory() {
-    return next -> JobHelper.createDomainIntrospectorJobStep(new WatchTuning(30), next);
+    return next -> JobHelper.createDomainIntrospectorJobStep(new WatchTuning(30, 5), next);
   }
 
   V1PodList createListPods() {
