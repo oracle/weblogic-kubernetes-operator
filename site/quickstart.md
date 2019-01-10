@@ -40,7 +40,7 @@ $ docker tag oracle/weblogic-kubernetes-operator:2.0-rc2 weblogic-kubernetes-ope
 ```
 d.	Pull the Traefik load balancer image:
 ```
-$ docker pull traefik:latest
+$ docker pull traefik:1.7.4
 ```
 e.	Pull the WebLogic 12.2.1.3 install image:
 ```
@@ -205,11 +205,10 @@ $ kubectl get services -n sample-domain1-ns
 ```
 
 d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
-* Use `helm install`, specifying the `domainUID` (`sample-domain1`) and domain namespace (`sample-domain1-ns`) in the `values.yaml` file.
 ```
 $ helm install kubernetes/samples/charts/ingress-per-domain \
   --name sample-domain1-ingress \
-  --set wlsDomain.namespace=sample-domain1-ns \
+  --namespace sample-domain1-ns \
   --set wlsDomain.domainUID=sample-domain1 \
   --set traefik.hostname=sample-domain1.org
 ```
