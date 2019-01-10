@@ -24,8 +24,9 @@ Use configuration overrides (also called _situational configuration_) to customi
 You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site.
 
 ## How do you specify overrides?
+
 * Create a Kubernetes configuration map that contains:
-  * Override templates (also known as situational configuration templates).
+  * Override templates (also known as situational configuration templates), with names and syntax as described in [Override template names and syntax](#override-template-names-and-syntax).
   * A file named `version.txt` that contains the string `2.0`.
 * Set your domain resource `configOverrides` to the name of this configuration map.
 * Create Kubernetes secrets that contain template macro values.
@@ -33,15 +34,18 @@ You can use overrides to customize domains as they are moved from QA to producti
 * Stop all running WebLogic server pods in your domain. (See [Server Lifecycle](server-lifecycle.md).)
 * Start or restart your domain. (See [Server Lifecycle](server-lifecycle.md).)
 
-For a detailed walk-through of these steps, [Step-by-step guide](#step-by-step-guide).
+For a detailed walk-through of these steps, see [Step-by-step guide](#step-by-step-guide).
 
 ## How do overrides work during runtime?
+
 * When a domain is first deployed, or is restarted after shutting down all WebLogic server pods, the operator will:
   * Resolve any macros in your override templates.
   * Place expanded override templates in the `optconfig` directory located in each WebLogic domain home directory.  
 * When the WebLogic Servers start, they will:
   * Automatically load the override files from the `optconfig` directory.
   * Use the override values in the override files instead of the values specified in their `config.xml` or system resource XML files.
+
+For a detailed walk-through of the runtime flow, see [Internal design flow](#internal-design-flow).
 
 ---
 # Prerequisites
