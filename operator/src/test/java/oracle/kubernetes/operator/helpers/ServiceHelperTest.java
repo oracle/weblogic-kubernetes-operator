@@ -685,6 +685,7 @@ public class ServiceHelperTest {
                 .putLabelsItem(DOMAINUID_LABEL, UID)
                 .putLabelsItem(DOMAINNAME_LABEL, DOMAIN_NAME)
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_SERVER)
+                .putLabelsItem(CLUSTERNAME_LABEL, TEST_CLUSTER)
                 .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true"));
   }
 
