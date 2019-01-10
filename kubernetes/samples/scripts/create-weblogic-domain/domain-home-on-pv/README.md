@@ -149,8 +149,6 @@ spec:
   # Whether to enable log home
   logHomeEnabled: true
   # The in-pod name location for domain log, server logs, server out, and node manager log files
-  # If not specified or empty, domain log file, server logs, server out, and node manager log files
-  # will be stored in the default logHome location of /shared/logs/<domainUID>/.
   logHome: /shared/logs/domain1
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
