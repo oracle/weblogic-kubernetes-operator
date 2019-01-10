@@ -216,22 +216,25 @@ $ helm install kubernetes/samples/charts/ingress-per-domain \
 e.	To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods,
     you can hit the URL for the "WebLogic Ready App" which will return a HTTP 200 status code, as
     shown in the example below.  If you used the host-based routing Ingress sample, you will need to
-    provide the hostname in the `-H` option:
+    provide the hostname in the `-H` option.
+
+**NOTE**: Be sure to include the trailing forward slash on the URL, otherwise the command won't work.
+
 ```
-$ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/ 
-* About to connect() to your.server.com port 30305 (#0) 
-*   Trying 10.196.1.64... 
+$ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/
+* About to connect() to your.server.com port 30305 (#0)
+*   Trying 10.196.1.64...
 * Connected to your.server.com (10.196.1.64) port 30305 (#0)
- > GET /weblogic/ HTTP/1.1 
-> User-Agent: curl/7.29.0 
-> Accept: */* 
-> host: domain1.org 
+ > GET /weblogic/ HTTP/1.1
+> User-Agent: curl/7.29.0
+> Accept: */*
+> host: domain1.org
 >
- < HTTP/1.1 200 OK 
-< Content-Length: 0 
+ < HTTP/1.1 200 OK
+< Content-Length: 0
 < Date: Thu, 20 Dec 2018 14:52:22 GMT
- < Vary: Accept-Encoding 
-< * Connection #0 to host your.server.com left intact 
+ < Vary: Accept-Encoding
+< * Connection #0 to host your.server.com left intact
 ```
 **Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
 update security lists to allow ingress to this port.
