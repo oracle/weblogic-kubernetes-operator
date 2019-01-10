@@ -25,7 +25,6 @@ function createVoyager() {
     helm install appscode/voyager --name voyager-operator --version 7.4.0 \
       --namespace voyager \
       --set cloudProvider=baremetal \
-      --set apiserver.ca="$(${MYDIR}/onessl get kube-ca)" \
       --set apiserver.enableValidatingWebhook=false
   else
     echo "Voyager operator is already installed."
