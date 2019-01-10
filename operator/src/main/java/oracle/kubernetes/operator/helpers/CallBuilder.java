@@ -166,6 +166,65 @@ public class CallBuilder {
         requestParams, ((client, params) -> new VersionApi(client).getCode()));
   }
 
+  /**
+   * Class extended by callers to {@link
+   * #executeSynchronousCallWithConflictRetry(RequestParamsBuilder, SynchronousCallFactory,
+   * ConflictRetry)} for building the RequestParams to be passed to {@link
+   * #executeSynchronousCall(RequestParams, SynchronousCallFactory)}.
+   *
+   * @param <T> Type of kubernetes object to be passed to the API
+   */
+  abstract static class RequestParamsBuilder<T> {
+    T body;
+
+    public RequestParamsBuilder(T body) {
+      this.body = body;
+    }
+
+    abstract RequestParams buildRequestParams();
+
+    void setBody(T body) {
+      this.body = body;
+    }
+  }
+
+  private <T> T executeSynchronousCallWithConflictRetry(
+      RequestParamsBuilder requestParamsBuilder,
+      SynchronousCallFactory<T> factory,
+      ConflictRetry<T> conflictRetry)
+      throws ApiException {
+    int retryCount = 0;
+    while (retryCount == 0 || retryCount < maxRetryCount) {
+      retryCount++;
+      RequestParams requestParams = requestParamsBuilder.buildRequestParams();
+      try {
+        return executeSynchronousCall(requestParams, factory);
+      } catch (ApiException apiException) {
+        boolean retry = false;
+        if (apiException.getCode() == HTTP_CONFLICT
+            && conflictRetry != null
+            && retryCount < maxRetryCount) {
+          T body = conflictRetry.getUpdatedObject();
+          if (body != null) {
+            requestParamsBuilder.setBody(body);
+            retry = true;
+            LOGGER.fine(
+                MessageKeys.SYNC_RETRY,
+                requestParams.call,
+                apiException.getCode(),
+                apiException.getMessage(),
+                retryCount,
+                maxRetryCount);
+          }
+        }
+        if (!retry) {
+          throw apiException;
+        }
+      }
+    }
+    return null;
+  }
+
   private <T> T executeSynchronousCall(
       RequestParams requestParams, SynchronousCallFactory<T> factory) throws ApiException {
     return DISPATCHER.execute(factory, requestParams, helper);
@@ -317,34 +376,16 @@ public class CallBuilder {
   public Domain replaceDomainWithConflictRetry(
       String uid, String namespace, Domain body, ConflictRetry<Domain> conflictRetry)
       throws ApiException {
-    int retryCount = 0;
-    while (retryCount == 0 || retryCount < maxRetryCount) {
-      retryCount++;
-      try {
-        return replaceDomain(uid, namespace, body);
-      } catch (ApiException apiException) {
-        boolean retry = false;
-        if (apiException.getCode() == HTTP_CONFLICT
-            && conflictRetry != null
-            && retryCount < maxRetryCount) {
-          body = conflictRetry.getUpdatedObject();
-          if (body != null) {
-            retry = true;
-            LOGGER.fine(
-                MessageKeys.SYNC_RETRY,
-                "replaceDomain",
-                apiException.getCode(),
-                apiException.getMessage(),
-                retryCount,
-                maxRetryCount);
+    return executeSynchronousCallWithConflictRetry(
+        new RequestParamsBuilder<Domain>(body) {
+
+          @Override
+          RequestParams buildRequestParams() {
+            return new RequestParams("replaceDomain", namespace, uid, body);
           }
-        }
-        if (!retry) {
-          throw apiException;
-        }
-      }
-    }
-    return null;
+        },
+        REPLACE_DOMAIN_CALL,
+        conflictRetry);
   }
 
   /**
