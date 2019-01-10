@@ -5,30 +5,20 @@ AppsCode has provided a Helm chart to install Voyager. See the official installa
 
 As a demonstration, the following are the detailed steps to install the Voyager operator by using a Helm chart on a Linux OS.
 
-### 1. Install Onessl
-Onessl is a utility provided by AppsCode. We'll use it to get a CA certificate for the Kubernetes cluster.
-```
-# The assumption is that you have added ~/bin to your PATH env.
-$ curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-amd64 \
-  && chmod +x onessl \
-  && mv onessl ~/bin
-```
-
-### 2. Add the AppsCode chart repository
+### 1. Add the AppsCode chart repository
 ```
 $ helm repo add appscode https://charts.appscode.com/stable/
 $ helm repo update
 $ helm search appscode/voyager
 ```
 
-### 3. Install the Voyager operator
+### 2. Install the Voyager operator
 ```
 # Kubernetes 1.9.x - 1.10.x
 $ kubectl create ns voyager
 $ helm install appscode/voyager --name voyager-operator --version 7.4.0 \
   --namespace voyager \
   --set cloudProvider=baremetal \
-  --set apiserver.ca="$(onessl get kube-ca)" \
   --set apiserver.enableValidatingWebhook=false
 ```
 ## Optionally, download the Voyager Helm chart
