@@ -25,6 +25,8 @@ You can use overrides to customize domains as they are moved from QA to producti
 
 ## How do you specify overrides?
 
+* Make sure your domain home meets the prerequisites. See [Prerequisites](#prerequisites).
+* Make sure your overrides are supported. See [Typical overrides](#typical-overrides) and [Unsupported overrides](#unsupported-overrides).
 * Create a Kubernetes configuration map that contains:
   * Override templates (also known as situational configuration templates), with names and syntax as described in [Override template names and syntax](#override-template-names-and-syntax).
   * A file named `version.txt` that contains the string `2.0`.
@@ -228,6 +230,8 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 ---
 # Step-by-step guide
 
+* Make sure your domain home meets the prerequisites. See [Prerequisites](#prerequisites).
+* Make sure your overrides are supported. See [Typical overrides](#typical-overrides) and [Unsupported overrides](#unsupported-overrides).
 * Create a directory containing (A) a set of situational configuration templates for overriding the MBean properties you want to replace and (B) a `version.txt` file.
   * This directory must not contain any other files.
   * The `version.txt` file must contain only the string `2.0`.
@@ -282,7 +286,6 @@ spec:
   configOverrideSecrets: [my-secret, my-other-secret]
   [ ... ]
 ```
-
 
 ---
 # Debugging
