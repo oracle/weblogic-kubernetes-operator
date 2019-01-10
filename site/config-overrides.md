@@ -7,6 +7,9 @@
 * [Typical overrides](#typical-overrides)
 * [Unsupported overrides](#unsupported-overrides)
 * [Override template names and syntax](#override-template-names-and-syntax)
+  * [Override template names](##override-template-names)
+  * [Override template macros](##override-template-macros)
+  * [Override template samples](##override-template-samples)
 * [Step-by-step guide](#step-by-step-guide)
 * [Debugging](#debugging)
 * [Internal design flow](#internal-design-flow)
@@ -18,43 +21,27 @@
 
 Use configuration overrides (also called _situational configuration_) to customize a WebLogic domain home configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC datasource XML module user name, password, and URL so that it references a local database.
 
+You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site.
+
 ## How do you specify overrides?
 * Create a Kubernetes configuration map that contains:
   * Override templates (also known as situational configuration templates).
   * A file named `version.txt` that contains the string `2.0`.
 * Set your domain resource `configOverrides` to the name of this configuration map.
 * Create Kubernetes secrets that contain template macro values.
-* Set your domain `configOverrideSecrets` to reference the aforementioned secrets. See the example below.
-* Start or restart your domain.
+* Set your domain `configOverrideSecrets` to reference the aforementioned secrets.
+* Stop all running WebLogic server pods in your domain. (See [Server Lifecycle](server-lifecycle.md).)
+* Start or restart your domain. (See [Server Lifecycle](server-lifecycle.md).)
 
-Example:
-```
-apiVersion: "weblogic.oracle/v2"
-kind: Domain
-metadata:
-  name: domain1
-  namespace: default
-  labels:
-    weblogic.resourceVersion: domain-v2
-    weblogic.domainUID: domain1
-spec:
-  [ ... ]
-  webLogicCredentialsSecret:
-    name: domain1-wl-credentials-secret
-  configOverrides: domain1-overrides-config-map
-  configOverrideSecrets: [domain1-overrides-db1-secret, domain1-config-jms1-secret]
-  [ ... ]
-```
+For a detailed walk-through of these steps, [Step-by-step guide](#step-by-step-guide).
 
 ## How do overrides work during runtime?
-* When a domain is first deployed, or is restarted, the operator will:
+* When a domain is first deployed, or is restarted after shutting down all WebLogic server pods, the operator will:
   * Resolve any macros in your override templates.
   * Place expanded override templates in the `optconfig` directory located in each WebLogic domain home directory.  
 * When the WebLogic Servers start, they will:
   * Automatically load the override files from the `optconfig` directory.
   * Use the override values in the override files instead of the values specified in their `config.xml` or system resource XML files.
-
-You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site.
 
 ---
 # Prerequisites
@@ -264,7 +251,34 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 * Configure the names of each secret in domain CR.
   * If the secret contains the WebLogic admin `username` and `password` keys, set the domain CR `webLogicCredentialsSecret` field.
   * For all other secrets, add them to domain CR `configOverrideSecrets` field.
+* Stop all running WebLogic server pods in your domain.  (See [Server Lifecycle](server-lifecycle.md).)
+* Start or restart your domain. (See [Server Lifecycle](server-lifecycle.md).)
 * See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
+
+**IMPORTANT: Custom override changes, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted.**
+
+**IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings when they detect an incorrectly formatted configuration override template file, but will still boot, and will skip overriding. So it is important to make sure template files are correct in a QA environment by checking your WebLogic pod logs for situational configuration errors and warnings, before attempting to use them in production.**
+
+
+Example domain resource yaml:
+```
+apiVersion: "weblogic.oracle/v2"
+kind: Domain
+metadata:
+  name: domain1
+  namespace: default
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: domain1
+spec:
+  [ ... ]
+  webLogicCredentialsSecret:
+    name: domain1-wl-credentials-secret
+  configOverrides: domain1-overrides-config-map
+  configOverrideSecrets: [my-secret, my-other-secret]
+  [ ... ]
+```
+
 
 ---
 # Debugging
@@ -307,9 +321,9 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 -Dweblogic.debug.DebugSituationalConfigDumpXml=true
 ```
 
-**IMPORTANT: Custom override changes, such as updating an override configuration map, a secret, or a domain resource, will not take effect until your domain is restarted.**
+**IMPORTANT: Custom override changes, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted.**
 
-**IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings, but will still boot, and will skip overriding, when they detect an incorrectly formatted configuration override template file. So it is important to make sure template files are correct in a QA environment by checking your WebLogic pod logs for situational configuration errors and warnings, before attempting to use them in production.**
+**IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings when they detect an incorrectly formatted configuration override template file, but will still boot, and will skip overriding. So it is important to make sure template files are correct in a QA environment by checking your WebLogic pod logs for situational configuration errors and warnings, before attempting to use them in production.**
 
 ---
 # Internal design flow
