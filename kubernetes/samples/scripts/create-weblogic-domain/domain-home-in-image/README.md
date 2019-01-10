@@ -141,7 +141,8 @@ Note that the example results below use the `default` Kubernetes namespace. If y
 The content of the generated `domain.yaml`:
 
 ```
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -160,18 +161,28 @@ spec:
   # If the domain home is in the image
   domainHomeInImage: true
   # The Operator currently does not support other images
-  image: "domain-home-in-image:latest"
-  # imagePullPolicy defaults to "Never"
-  imagePullPolicy: "Never"
+  image: "domain-home-in-image"
+  # imagePullPolicy defaults to "Always" if image version is :latest
+  imagePullPolicy: "IfNotPresent"
+  # Identify which Secret contains the credentials for pulling an image
+  #imagePullSecrets:
+  #- name:
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
   webLogicCredentialsSecret:
     name: domain1-weblogic-credentials
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
+  # Whether to enable log home
+  # logHomeEnabled: false
+  # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
+  # files in.
+  # If not specified or empty, domain log file, server logs, server out, and node manager log files
+  # will be stored in the default logHome location of /shared/logs/<domainUID>/.
+  # logHome: /shared/logs/domain1
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
-  # - "NEVER" will not start any servers in the domain
+  # - "NEVER" will not start any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
@@ -182,26 +193,34 @@ spec:
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
       value: "-Xms64m -Xmx256m "
+    # volumes:
+    # - name: weblogic-domain-storage-volume
+    #   persistentVolumeClaim:
+    #     claimName: domain1-weblogic-sample-pvc
+    # volumeMounts:
+    # - mountPath: /shared
+    #   name: weblogic-domain-storage-volume
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
-  # serverStartState legal values are "RUNNING" or "ADMIN"
-  # "RUNNING" means the listed server will be started up to "RUNNING" mode
-  # "ADMIN" means the listed server will be start up to "ADMIN" mode
+    # serverStartState legal values are "RUNNING" or "ADMIN"
+    # "RUNNING" means the listed server will be started up to "RUNNING" mode
+    # "ADMIN" means the listed server will be start up to "ADMIN" mode
     serverStartState: "RUNNING"
+    # adminService:
+    #   channels:
     # The Admin Server's NodePort
-    # nodePort: 30701
+    #    - channelName: default
+    #      nodePort: 30701
     # Uncomment to export the T3Channel as a service
-    # exportedNetworkAccessPoints:
-    #   T3Channel: {}
-  # clusters is used to configure the desired behavior for starting member servers of a cluster.  
+    #    - channelName: T3Channel
+  # clusters is used to configure the desired behavior for starting member servers of a cluster.
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
-    cluster-1:
-      desiredState: "RUNNING"
-      replicas: 2
+  - clusterName: cluster-1
+    serverStartState: "RUNNING"
+    replicas: 2
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
-
 ```
 ###
 
@@ -223,119 +242,122 @@ Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
               weblogic.resourceVersion=domain-v2
-Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"weblogic.oracle/v2","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"domain1","weblogic.resourceVersion":"do...
+Annotations:  <none>
 API Version:  weblogic.oracle/v2
 Kind:         Domain
 Metadata:
   Cluster Name:        
-  Creation Timestamp:  2018-12-17T05:58:12Z
+  Creation Timestamp:  2019-01-10T14:29:37Z
   Generation:          1
-  Resource Version:    15193
+  Resource Version:    3698533
   Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
-  UID:                 bce25779-01c0-11e9-baf4-0021f6985fb7
+  UID:                 28655979-14e4-11e9-b751-fa163e855ac8
 Spec:
   Admin Server:
-    Exported Network Access Points:
-    Node Port Annotations:
-    Node Port Labels:
     Server Pod:
+      Annotations:
       Container Security Context:
       Env:
+      Labels:
       Liveness Probe:
       Node Selector:
-      Pod Annotations:
-      Pod Labels:
       Pod Security Context:
       Readiness Probe:
       Resources:
         Limits:
         Requests:
-      Service Annotations:
-      Service Labels:
       Volume Mounts:
       Volumes:
+    Server Service:
+      Annotations:
+      Labels:
     Server Start State:  RUNNING
   Clusters:
     Cluster Name:  cluster-1
-    Replicas:      2
+    Cluster Service:
+      Annotations:
+      Labels:
+    Replicas:  2
     Server Pod:
+      Annotations:
       Container Security Context:
       Env:
+      Labels:
       Liveness Probe:
       Node Selector:
-      Pod Annotations:
-      Pod Labels:
       Pod Security Context:
       Readiness Probe:
       Resources:
         Limits:
         Requests:
-      Service Annotations:
-      Service Labels:
       Volume Mounts:
       Volumes:
+    Server Service:
+      Annotations:
+      Labels:
     Server Start State:           RUNNING
   Domain Home:                    /u01/oracle/user_projects/domains/domain1
   Domain Home In Image:           true
-  Image:                          domain-home-in-image:latest
-  Image Pull Policy:              Never
+  Image:                          domain-home-in-image
+  Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Managed Servers:
   Server Pod:
+    Annotations:
     Container Security Context:
     Env:
       Name:   JAVA_OPTIONS
       Value:  -Dweblogic.StdoutDebugEnabled=false
       Name:   USER_MEM_ARGS
-      Value:  -Xms64m -Xmx256m
+      Value:  -Xms64m -Xmx256m 
+    Labels:
     Liveness Probe:
     Node Selector:
-    Pod Annotations:
-    Pod Labels:
     Pod Security Context:
     Readiness Probe:
     Resources:
       Limits:
       Requests:
-    Service Annotations:
-    Service Labels:
     Volume Mounts:
     Volumes:
+  Server Service:
+    Annotations:
+    Labels:
   Server Start Policy:  IF_NEEDED
   Web Logic Credentials Secret:
     Name:  domain1-weblogic-credentials
 Status:
   Conditions:
-    Last Transition Time:  2018-12-17T05:59:55.227Z
+    Last Transition Time:  2019-01-10T14:31:10.681Z
     Reason:                ServersReady
     Status:                True
     Type:                  Available
   Servers:
     Health:
-      Activation Time:  2018-12-17T05:59:37.977Z
+      Activation Time:  2019-01-10T14:30:47.432Z
       Overall Health:   ok
       Subsystems:
-    Node Name:     xxxxxxxx
+    Node Name:     slc16ffk
     Server Name:   admin-server
     State:         RUNNING
     Cluster Name:  cluster-1
     Health:
-      Activation Time:  2018-12-17T06:01:23.764Z
+      Activation Time:  2019-01-10T14:32:01.467Z
       Overall Health:   ok
       Subsystems:
-    Node Name:     xxxxxxxx
+    Node Name:     slc16ffk
     Server Name:   managed-server1
     State:         RUNNING
     Cluster Name:  cluster-1
     Health:
-      Activation Time:  2018-12-17T06:01:25.393Z
+      Activation Time:  2019-01-10T14:32:04.532Z
       Overall Health:   ok
       Subsystems:
-    Node Name:     xxxxxxxx
-    Server Name:   managed-server2
+    Node Name:    slc16ffk
+    Server Name:  managed-server2
     State:        RUNNING
-  Start Time:     2018-12-17T05:58:12.615Z
-Events:            <none>
+  Start Time:     2019-01-10T14:29:37.455Z
+Events:           <none>
 ```
 
 In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
