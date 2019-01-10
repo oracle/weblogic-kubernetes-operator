@@ -291,12 +291,43 @@ public class ServiceHelperTest {
     verifyClusterServiceReplaced(this::withBadPort);
   }
 
-  // TODO: oracle.kubernetes.weblogic.domain.v2.Cluster.getConfiguration is broken. Doesn't fill in
-  // Cluster#clusterService.
-  // @Test
+  @Test
   public void onClusterStepRunWithServiceWithLabelAdded_replaceIt() {
     configureClusterWithLabel("anyLabel", "anyValue");
     verifyClusterServiceReplaced(createClusterService(), withLabel(createClusterService()));
+  }
+
+  @Test
+  public void onClusterStepRunWithServiceWithLabelValueChanged_replaceIt() {
+    final String newLabelValue = "newValue";
+    configureClusterWithLabel("anyLabel", newLabelValue);
+    verifyClusterServiceReplaced(
+        withLabel(createClusterService()), withLabel(createClusterService(), newLabelValue));
+  }
+
+  @Test
+  public void onClusterStepRunWithServiceWithLabelRemoved_replaceIt() {
+    verifyClusterServiceReplaced(this::withLabel);
+  }
+
+  @Test
+  public void onClusterStepRunWithServiceWithAnnotationAdded_replaceIt() {
+    configureClusterWithAnnotation("anyAnnotation", "anyValue");
+    verifyClusterServiceReplaced(createClusterService(), withAnnotation(createClusterService()));
+  }
+
+  @Test
+  public void onClusterStepRunWithServiceWithAnnotationValueChanged_replaceIt() {
+    final String newAnnotationValue = "newValue";
+    configureClusterWithAnnotation("anyAnnotation", newAnnotationValue);
+    verifyClusterServiceReplaced(
+        withAnnotation(createClusterService()),
+        withAnnotation(createClusterService(), newAnnotationValue));
+  }
+
+  @Test
+  public void onClusterStepRunWithServiceWithAnnotationRemoved_replaceIt() {
+    verifyClusterServiceReplaced(this::withAnnotation);
   }
 
   @Test
@@ -757,6 +788,10 @@ public class ServiceHelperTest {
 
   private void configureClusterWithLabel(String label, String value) {
     configureDomain().configureCluster(TEST_CLUSTER).withServiceLabel(label, value);
+  }
+
+  private void configureClusterWithAnnotation(String annotation, String value) {
+    configureDomain().configureCluster(TEST_CLUSTER).withServiceAnnotation(annotation, value);
   }
 
   private void configureManagedServerWithLabel(String label, String value) {
