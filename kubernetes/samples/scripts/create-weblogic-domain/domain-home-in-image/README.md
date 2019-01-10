@@ -175,8 +175,8 @@ spec:
   includeServerOutInPodLog: true
   # Whether to enable log home
   # logHomeEnabled: false
-  # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
-  # files in.
+  # The in-pod name of the directory in which to store the domain, node manager, server logs, and server .out
+  # files.
   # If not specified or empty, domain log file, server logs, server out, and node manager log files
   # will be stored in the default logHome location of /shared/logs/<domainUID>/.
   # logHome: /shared/logs/domain1
