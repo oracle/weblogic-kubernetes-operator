@@ -5,12 +5,12 @@ set -e
 
 SECONDS=0
 ./domain.sh checkPV
-./opt.sh pullImages
-./opt.sh create
-./loadBalancer.sh createOpt
+./operator.sh pullImages
+./operator.sh create
+./traefik.sh createCon
 ./domain.sh createPV
 ./domain.sh createAll
 ./domain.sh waitUntilAllReady
-./loadBalancer.sh createIngress
+./traefik.sh createIng
 
 echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finish."

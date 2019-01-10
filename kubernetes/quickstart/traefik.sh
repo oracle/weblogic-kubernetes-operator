@@ -4,59 +4,59 @@
 
 export PRJ_ROOT=../../
 
-function createOpt() {
-  echo "install Treafik operator to namespace traefik"
+function createCon() {
+  echo "install Treafik controller to namespace traefik"
   helm install stable/traefik \
-    --name traefik-operator \
+    --name traefik-controller \
     --namespace traefik \
     --values $PRJ_ROOT/kubernetes/samples/charts/traefik/values.yaml  \
     --wait
 }
 
-function delOpt() {
-  echo "delete Traefik operator"
-  helm delete --purge traefik-operator
+function delCon() {
+  echo "delete Traefik controller"
+  helm delete --purge traefik-controller
   kubectl delete namespace traefik
 }
 
-function createIngress() {
+function createIng() {
   echo "install Ingress for domains"
   helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
-    --name domain1-ingress \
-    --set wlsDomain.namespace=default \
+    --name domain1-ing-t \
+    --namespace default \
     --set wlsDomain.domainUID=domain1 \
     --set traefik.hostname=domain1.org
 
-  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
-    --name domain2-ingress \
-    --set wlsDomain.namespace=test1 \
+ helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
+    --name domain2-ing-t \
+    --namespace test1 \
     --set wlsDomain.domainUID=domain2 \
     --set traefik.hostname=domain2.org
 
-  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
-    --name domain3-ingress \
-    --set wlsDomain.namespace=test1 \
+ helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
+    --name domain3-ing-t \
+    --namespace test1 \
     --set wlsDomain.domainUID=domain3 \
     --set traefik.hostname=domain3.org
 }
 
-function delIngress() {
+function delIng() {
   echo "delete Ingress"
-  helm delete --purge domain1-ingress
-  helm delete --purge domain2-ingress
-  helm delete --purge domain3-ingress
+  helm delete --purge domain1-ing-t 
+  helm delete --purge domain2-ing-t
+  helm delete --purge domain3-ing-t
 }
 
 function usage() {
   echo "usage: $0 <cmd>"
   echo "Commands:"
-  echo "  createOpt: to create the LB operator"
+  echo "  createCon: to create the Treafik controller"
   echo
-  echo "  delOpt: to delete the LB operator"
+  echo "  delCon: to delete the Treafik controller"
   echo
-  echo "  createIngress: to create Ingress of domains"
+  echo "  createIng: to create Ingress of domains"
   echo
-  echo "  delIngress: to delete Ingress of domains"
+  echo "  delIng: to delete Ingress of domains"
   echo
   exit 1
 }

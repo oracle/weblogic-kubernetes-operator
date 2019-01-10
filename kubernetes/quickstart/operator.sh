@@ -9,7 +9,8 @@ function pullImages() {
   echo "pull docker images"
   docker pull oracle/weblogic-kubernetes-operator:2.0-rc1
   docker tag oracle/weblogic-kubernetes-operator:2.0-rc1 weblogic-kubernetes-operator:2.0
-  docker pull traefik:latest
+  docker pull traefik:1.7.4
+  docker pull appscode/voyager:7.4.0 
   # TODO: until we has a public site for the image
   docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
   docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 $WLS_BASE_IMAGE
@@ -20,7 +21,8 @@ function delImages() {
   docker rmi domain2-image
   docker rmi wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
   docker rmi $WLS_BASE_IMAGE
-  docker rmi traefik:latest
+  docker rmi traefik:1.7.4
+  docker rmi appscode/voyager:7.4.0
   docker rmi oracle/weblogic-kubernetes-operator:2.0-rc1
   docker rmi weblogic-kubernetes-operator:2.0
 }
