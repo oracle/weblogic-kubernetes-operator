@@ -7,7 +7,6 @@ package oracle.kubernetes.operator;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.Map;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -52,6 +51,7 @@ public class ITOperator extends BaseTest {
   private static String domain11YamlFile = "domain11.yaml";
   private static String domain12YamlFile = "domain12.yaml";
   private static String domain13YamlFile = "domain13.yaml";
+  private static String domain14YamlFile = "domain14.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -637,9 +637,9 @@ public class ITOperator extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testDomainInImage() throws Exception {
+  public void testDomainInImageUsing19cAndWLST() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    logTestBegin("testDomainInImage");
+    logTestBegin("testDomainInImageUsing19cAndWLST");
 
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
@@ -652,26 +652,45 @@ public class ITOperator extends BaseTest {
     try {
       domain13 = testDomainCreation(domain13YamlFile);
       domain13.verifyDomainCreated();
-      Map<String, Object> domainMap = domain13.getDomainMap();
-      ExecResult result =
-          TestUtils.kubectlexecNoCheck(
-              domain13.getDomainUid() + ("-") + domainMap.get("adminServerName"),
-              "" + domainMap.get("namespace"),
-              " -- mkdir -p /shared/applications");
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command to create directory /shared/applications in the pod failed, returned "
-                + result.stderr()
-                + " "
-                + result.stdout());
-      }
+
       testBasicUseCases(domain13);
       testAdvancedUseCasesForADomain(operator1, domain13);
       testCompletedSuccessfully = false;
     } finally {
       if (domain13 != null && (JENKINS || testCompletedSuccessfully)) domain13.destroy();
     }
-    logger.info("SUCCESS - testDomainInImage");
+    logger.info("SUCCESS - testDomainInImageUsing19cAndWLST");
+  }
+  /**
+   * Create Operator and create domain using domain-in-image option. Verify the domain is started
+   * successfully and web application can be deployed and accessed.
+   *
+   * @throws Exception
+   */
+  // @Test
+  public void testDomainInImageUsing19cAndWDT() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    logTestBegin("testDomainInImageUsing19cAndWDT");
+
+    logger.info("Checking if operator1 is running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1YamlFile);
+    }
+    logger.info("Creating Domain domain14 & verifing the domain creation");
+    // create domain14
+    Domain domain14 = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      domain14 = testDomainCreation(domain14YamlFile);
+      domain14.verifyDomainCreated();
+
+      testBasicUseCases(domain14);
+      testAdvancedUseCasesForADomain(operator1, domain14);
+      testCompletedSuccessfully = false;
+    } finally {
+      if (domain14 != null && (JENKINS || testCompletedSuccessfully)) domain14.destroy();
+    }
+    logger.info("SUCCESS - testDomainInImageUsing19cAndWDT");
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
