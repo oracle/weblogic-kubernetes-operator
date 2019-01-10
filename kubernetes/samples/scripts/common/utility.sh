@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
@@ -410,7 +410,7 @@ function createFiles {
     if [ -z $image ]; then
       sed -i -e "s|%WEBLOGIC_IMAGE%|${imageName}|g" ${dcrOutput}
     else
-      sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
+      sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${dcrOutput}
     fi
   else
     sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
@@ -463,7 +463,7 @@ function createDomain {
   validateDomainSecret
 
   # Validate the domain's persistent volume claim
-  if [ "$doValidation" == true ]; then
+  if [ "${doValidation}" == true ] && [ "${domainHomeInImage}" == false -o "${logHomeOnPV}" == true ]; then
     validateDomainPVC
   fi
 
