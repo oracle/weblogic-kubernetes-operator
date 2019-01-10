@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -771,7 +771,7 @@ public class TestUtils {
     k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
     k8sTestUtils.verifyServices(domain1LabelSelector, 5);
     k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
-    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 1);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 2);
     k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
     k8sTestUtils.verifyNoRoles(domain1LabelSelector);
     k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
