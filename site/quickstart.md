@@ -205,11 +205,10 @@ $ kubectl get services -n sample-domain1-ns
 ```
 
 d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
-* Use `helm install`, specifying the `domainUID` (`sample-domain1`) and domain namespace (`sample-domain1-ns`) in the `values.yaml` file.
 ```
 $ helm install kubernetes/samples/charts/ingress-per-domain \
   --name sample-domain1-ingress \
-  --set wlsDomain.namespace=sample-domain1-ns \
+  --namespace sample-domain1-ns \
   --set wlsDomain.domainUID=sample-domain1 \
   --set traefik.hostname=sample-domain1.org
 ```
