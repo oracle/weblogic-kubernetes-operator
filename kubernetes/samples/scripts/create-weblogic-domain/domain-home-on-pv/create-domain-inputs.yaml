@@ -102,7 +102,7 @@ domainPVMountPath: /shared
 # The `create-domain.sh` script creates a Kubernetes job to run the script (specified in the
 # `createDomainScriptName` property) in a Kubernetes pod to create a WebLogic home. Files
 # in the `createDomainFilesDir` directory are mounted to this location in the pod, so that
-# a Kubernetes pod can use the scripts and supporting files to creates a domain home.
+# a Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainScriptsMountPath: /u01/weblogic
 
 # Script that the create domain script uses to create a WebLogic domain
@@ -111,9 +111,9 @@ createDomainScriptsMountPath: /u01/weblogic
 # domain home. The script is located in the in-pod directory that is specified in the
 # `createDomainScriptsMountPath` property.
 #
-# If you need to provide your own scripts, instead of using the built-it scripts, to create
-# the domain home, you need to set here the name of the script that you want the create
-# domain job to run.
+# If you need to provide your own scripts to create the domain home, instead of using the 
+# built-it scripts, you must use this property to set the name of the script that you want
+# the create domain job to run.
 createDomainScriptName: create-domain-job.sh
 
 # Directory on the host machine to locate all the files to create a WebLogic domain
@@ -129,5 +129,5 @@ createDomainScriptName: create-domain-job.sh
 # The built-in scripts can be replaced by the user-provided scripts or model files as long
 # as those files are in the specified directory. Files in this directory are put into a
 # Kubernetes config map, which in turn is mounted to the `createDomainScriptsMountPath`,
-# so that the Kubernetes pod can use the scripts and supporting files to creates a domain home.
+# so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainFilesDir: wlst
