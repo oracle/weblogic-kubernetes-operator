@@ -88,7 +88,7 @@ The following parameters can be provided in the inputs file.
 | `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `logHome` | The in-pod name of the directory to store the domain, node manager, server logs, and server .out files in. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
+| `logHome` | The in-pod name of the directory in which to store the domain, node manager, server logs, and server .out files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
@@ -148,8 +148,8 @@ spec:
   includeServerOutInPodLog: true
   # Whether to enable log home
   logHomeEnabled: true
-  # The in-pod name of the directory to store the domain, node manager, server logs, and server .out
-  # files in.
+  # The in-pod name of the directory in which to store the domain, node manager, server logs, and server .out
+  # files.
   # If not specified or empty, domain log file, server logs, server out, and node manager log files
   # will be stored in the default logHome location of /shared/logs/<domainUID>/.
   logHome: /shared/logs/domain1
