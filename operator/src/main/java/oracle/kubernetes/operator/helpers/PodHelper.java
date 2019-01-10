@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -11,7 +11,6 @@ import java.util.Map;
 import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -38,7 +37,7 @@ public class PodHelper {
     }
 
     @Override
-    Integer getPort() {
+    Integer getDefaultPort() {
       return getAsPort();
     }
 
@@ -149,14 +148,12 @@ public class PodHelper {
 
   static class ManagedPodStepContext extends PodStepContext {
 
-    private final WlsServerConfig scan;
     private final String clusterName;
     private final Packet packet;
 
     ManagedPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       this.packet = packet;
-      scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
 
       init();
@@ -178,7 +175,7 @@ public class PodHelper {
     }
 
     @Override
-    Integer getPort() {
+    Integer getDefaultPort() {
       return scan.getListenPort();
     }
 

@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -8,7 +8,10 @@ import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_
 
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -18,6 +21,7 @@ import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -41,14 +45,33 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "The folder for the Weblogic Domain. (Not required)"
           + "Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
-          + "Defaults to /shared/domains/domain if domainHomeInImage is true")
+          + "Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
   private String domainHome;
+
+  /**
+   * Tells the operator whether the customer wants the server to be running. For non-clustered
+   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
+   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * to be started to get to the cluster's replica count..
+   *
+   * @since 2.0
+   */
+  @EnumClass(value = ServerStartPolicy.class, qualifier = "forDomain")
+  @Description(
+      "The strategy for deciding whether to start a server. "
+          + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
+  private String serverStartPolicy;
 
   /**
    * Reference to secret containing WebLogic startup credentials username and password. Secret must
    * contain keys names 'username' and 'password' (Required)
    */
-  @Valid @NotNull private V1SecretReference webLogicCredentialsSecret;
+  @Description(
+      "The name of a pre-created Kubernetes secret, in the domain's namepace, that holds"
+          + " the username and password needed to boot WebLogic Server under the 'username' and 'password' fields.")
+  @Valid
+  @NotNull
+  private V1SecretReference webLogicCredentialsSecret;
 
   /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
@@ -128,11 +151,11 @@ public class DomainSpec extends BaseConfiguration {
   private Boolean domainHomeInImage;
 
   /**
-   * The name of the Kubernetes configmap used for optional WebLogic configuration overrides.
+   * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
    *
    * @since 2.0
    */
-  @Description("The name of the configmap for optional WebLogic configuration overrides.")
+  @Description("The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
 
   /**
@@ -244,6 +267,17 @@ public class DomainSpec extends BaseConfiguration {
    */
   public void setDomainHome(String domainHome) {
     this.domainHome = domainHome;
+  }
+
+  @Override
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
+  }
+
+  @Nullable
+  @Override
+  public String getServerStartPolicy() {
+    return Optional.ofNullable(serverStartPolicy).orElse(START_IF_NEEDED);
   }
 
   /*
@@ -448,12 +482,6 @@ public class DomainSpec extends BaseConfiguration {
     this.configOverrideSecrets = overridesSecretNames;
   }
 
-  @Nullable
-  @Override
-  public String getServerStartPolicy() {
-    return Optional.ofNullable(super.getServerStartPolicy()).orElse(START_IF_NEEDED);
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -462,6 +490,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("domainUID", domainUID)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
+            .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
@@ -487,6 +516,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUID)
             .append(domainHome)
             .append(domainHomeInImage)
+            .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
             .append(image)
             .append(imagePullPolicy)
@@ -516,6 +546,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(domainUID, rhs.domainUID)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
+            .append(serverStartPolicy, rhs.serverStartPolicy)
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(image, rhs.image)
             .append(imagePullPolicy, rhs.imagePullPolicy)
@@ -570,7 +601,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   public AdminServer getAdminServer() {
-    return Optional.ofNullable(adminServer).orElse(AdminServer.NULL_ADMIN_SERVER);
+    return adminServer;
   }
 
   private void setAdminServer(AdminServer adminServer) {
@@ -600,6 +631,11 @@ public class DomainSpec extends BaseConfiguration {
           getClusterLimit(clusterName));
     }
 
+    @Override
+    public ClusterSpec getClusterSpec(String clusterName) {
+      return new ClusterSpecV2Impl(DomainSpec.this, getCluster(clusterName));
+    }
+
     private Integer getClusterLimit(String clusterName) {
       return clusterName == null ? null : getReplicaCount(clusterName);
     }
@@ -625,26 +661,13 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public List<String> getExportedNetworkAccessPointNames() {
-      return getAdminServer().getExportedNetworkAccessPointNames();
+    public List<String> getAdminServerChannelNames() {
+      return adminServer != null ? adminServer.getChannelNames() : Collections.emptyList();
     }
 
     @Override
-    public Map<String, String> getChannelServiceLabels(String napName) {
-      ExportedNetworkAccessPoint accessPoint = getExportedNetworkAccessPoint(napName);
-
-      return accessPoint == null ? Collections.emptyMap() : accessPoint.getLabels();
-    }
-
-    private ExportedNetworkAccessPoint getExportedNetworkAccessPoint(String napName) {
-      return getAdminServer().getExportedNetworkAccessPoint(napName);
-    }
-
-    @Override
-    public Map<String, String> getChannelServiceAnnotations(String napName) {
-      ExportedNetworkAccessPoint accessPoint = getExportedNetworkAccessPoint(napName);
-
-      return accessPoint == null ? Collections.emptyMap() : accessPoint.getAnnotations();
+    public List<Channel> getAdminServerChannels() {
+      return adminServer != null ? adminServer.getChannels() : Collections.emptyList();
     }
 
     @Override

@@ -1,17 +1,23 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import io.kubernetes.client.models.*;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -25,28 +31,20 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public abstract class BaseConfiguration {
 
-  @Description("Configuration affecting the server pod")
+  @Description("Configuration affecting server pods")
   private ServerPod serverPod = new ServerPod();
+
+  @Description(
+      "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.")
+  @SerializedName("serverService")
+  @Expose
+  private KubernetesResource serverService = new KubernetesResource();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @EnumClass(ServerStartState.class)
   @Description(
-      "The state in which the server is to be started. Use ADMIN if server should start in admin state. Defaults to RUNNING.")
+      "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.")
   private String serverStartState;
-
-  /**
-   * Tells the operator whether the customer wants the server to be running. For non-clustered
-   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
-   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
-   * to be started to get to the cluster's replica count..
-   *
-   * @since 2.0
-   */
-  @EnumClass(ServerStartPolicy.class)
-  @Description(
-      "The strategy for deciding whether to start a server. "
-          + "Legal values are ADMIN_ONLY, NEVER, ALWAYS, or IF_NEEDED.")
-  private String serverStartPolicy;
 
   /**
    * Tells the operator whether the customer wants to restart the server pods. The value can be any
@@ -71,14 +69,15 @@ public abstract class BaseConfiguration {
     if (other == null) return;
 
     if (serverStartState == null) serverStartState = other.getServerStartState();
-    if (overrideStartPolicyFrom(other)) serverStartPolicy = other.getServerStartPolicy();
+    if (overrideStartPolicyFrom(other)) setServerStartPolicy(other.getServerStartPolicy());
 
     serverPod.fillInFrom(other.serverPod);
+    serverService.fillInFrom(other.serverService);
   }
 
   private boolean overrideStartPolicyFrom(BaseConfiguration other) {
     if (other.isStartAdminServerOnly()) return false;
-    return serverStartPolicy == null || other.isStartNever();
+    return getServerStartPolicy() == null || other.isStartNever();
   }
 
   boolean isStartAdminServerOnly() {
@@ -111,13 +110,18 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
 
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
+  /**
+   * Tells the operator whether the customer wants the server to be running. For non-clustered
+   * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
+   * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+   * to be started to get to the cluster's replica count..
+   *
+   * @since 2.0
+   * @param serverStartPolicy start policy
+   */
+  public abstract void setServerStartPolicy(String serverStartPolicy);
 
-  public String getServerStartPolicy() {
-    return serverStartPolicy;
-  }
+  public abstract String getServerStartPolicy();
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
@@ -188,35 +192,43 @@ public abstract class BaseConfiguration {
   }
 
   Map<String, String> getPodLabels() {
-    return serverPod.getPodLabels();
+    return serverPod.getLabels();
   }
 
-  void addPodLabels(String name, String value) {
-    serverPod.addPodLabel(name, value);
+  void addPodLabel(String name, String value) {
+    serverPod.addLabel(name, value);
   }
 
   Map<String, String> getPodAnnotations() {
-    return serverPod.getPodAnnotations();
+    return serverPod.getAnnotations();
   }
 
-  void addPodAnnotations(String name, String value) {
-    serverPod.addPodAnnotations(name, value);
+  void addPodAnnotation(String name, String value) {
+    serverPod.addAnnotations(name, value);
+  }
+
+  public void setServerService(KubernetesResource serverService) {
+    this.serverService = serverService;
+  }
+
+  public KubernetesResource getServerService() {
+    return serverService;
   }
 
   public Map<String, String> getServiceLabels() {
-    return serverPod.getServiceLabels();
+    return serverService.getLabels();
   }
 
-  void addServiceLabels(String name, String value) {
-    serverPod.addServiceLabel(name, value);
+  void addServiceLabel(String name, String value) {
+    serverService.addLabel(name, value);
   }
 
   public Map<String, String> getServiceAnnotations() {
-    return serverPod.getServiceAnnotations();
+    return serverService.getAnnotations();
   }
 
-  void addServiceAnnotations(String name, String value) {
-    serverPod.addServiceAnnotations(name, value);
+  void addServiceAnnotation(String name, String value) {
+    serverService.addAnnotations(name, value);
   }
 
   String getRestartVersion() {
@@ -231,8 +243,8 @@ public abstract class BaseConfiguration {
   public String toString() {
     return new ToStringBuilder(this)
         .append("serverStartState", serverStartState)
-        .append("serverStartPolicy", serverStartPolicy)
         .append("serverPod", serverPod)
+        .append("serverService", serverService)
         .append("restartVersion", restartVersion)
         .toString();
   }
@@ -247,8 +259,8 @@ public abstract class BaseConfiguration {
 
     return new EqualsBuilder()
         .append(serverPod, that.serverPod)
+        .append(serverService, that.serverService)
         .append(serverStartState, that.serverStartState)
-        .append(serverStartPolicy, that.serverStartPolicy)
         .append(restartVersion, that.restartVersion)
         .isEquals();
   }
@@ -257,8 +269,8 @@ public abstract class BaseConfiguration {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .append(serverPod)
+        .append(serverService)
         .append(serverStartState)
-        .append(serverStartPolicy)
         .append(restartVersion)
         .toHashCode();
   }

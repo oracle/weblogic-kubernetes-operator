@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -13,7 +13,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
 /** DomainCondition contains details for the current condition of this domain. */
-public class DomainCondition {
+public class DomainCondition implements Comparable<DomainCondition> {
 
   /** Last time we probed the condition. */
   @SerializedName("lastProbeTime")
@@ -263,5 +263,10 @@ public class DomainCondition {
         .append(lastProbeTime, rhs.lastProbeTime)
         .append(status, rhs.status)
         .isEquals();
+  }
+
+  @Override
+  public int compareTo(DomainCondition o) {
+    return type.compareTo(o.type);
   }
 }

@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -87,27 +87,27 @@ public abstract class BaseConfigurationTestBase {
 
   @Test
   public void whenServiceLabelsDiffer_objectsAreNotEqual() {
-    instance1.addServiceLabels("key", "value");
+    instance1.addServiceLabel("key", "value");
     assertThat(instance1, not(equalTo(instance2)));
   }
 
   @Test
   public void whenServiceLabelsDoNotDiffer_objectsAreEqual() {
-    instance1.addServiceLabels("key", "value");
-    instance2.addServiceLabels("key", "value");
+    instance1.addServiceLabel("key", "value");
+    instance2.addServiceLabel("key", "value");
     assertThat(instance1, equalTo(instance2));
   }
 
   @Test
   public void whenserviceAnnotationsDiffer_hashCodesAreNotEqual() {
-    instance1.addServiceAnnotations("key", "value");
+    instance1.addServiceAnnotation("key", "value");
     assertThat(instance1.hashCode(), not(equalTo(instance2.hashCode())));
   }
 
   @Test
   public void whenserviceAnnotationsDoNotDiffer_hashCodesAreEqual() {
-    instance1.addServiceAnnotations("key", "value");
-    instance2.addServiceAnnotations("key", "value");
+    instance1.addServiceAnnotation("key", "value");
+    instance2.addServiceAnnotation("key", "value");
     assertThat(instance1.hashCode(), equalTo(instance2.hashCode()));
   }
 }

@@ -5,7 +5,8 @@ These instructions assume that you are already familiar with Kubernetes.  If you
 refer to the [User guide](user-guide.md).
 
 > If you have an older version of the operator installed on your cluster, you must remove
-  it before installing this version.  You should remove the deployment (for example, `kubectl delete deploy weblogic-operator -n your-namespace`) and the custom
+  it before installing this version.  This includes the 2.0-rc1 version; it must be completely removed.
+  You should remove the deployment (for example, `kubectl delete deploy weblogic-operator -n your-namespace`) and the custom
   resource definition (for example, `kubectl delete crd domain`).  If you do not remove
   the custom resource definition you may see errors like this:
 
@@ -34,8 +35,8 @@ $ docker login
 ```
 c.	Pull the operator image and tag it with the default image value of the operator:
 ```
-$ docker pull oracle/weblogic-kubernetes-operator:2.0-rc1
-$ docker tag oracle/weblogic-kubernetes-operator:2.0-rc1 weblogic-kubernetes-operator:2.0
+$ docker pull oracle/weblogic-kubernetes-operator:2.0-rc2
+$ docker tag oracle/weblogic-kubernetes-operator:2.0-rc2 weblogic-kubernetes-operator:2.0
 ```
 d.	Pull the Traefik load balancer image:
 ```
@@ -164,6 +165,8 @@ domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/we
   By convention, the secret will be named`domainUID-weblogic-credentials` (where `domainUID` is replaced with the
   actual `domainUID` value).
 
+* Leaving the `image` empty unless you need to tag the new image that the script builds to a different name.
+
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
 $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
@@ -174,6 +177,16 @@ You need to provide the WebLogic administration user name and password in the `-
 respectively, as shown in the example.  If you specify the `-e` option, the script will generate the
 Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the
 script will just generate the YAML files, but will not take any action on your cluster.
+
+If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following:
+* Set the `image` property in the inputs file to the target image name (including the registry hostname/port, and the tag if needed).
+* Run the `create-domain.sh` script without the `-e` option.
+* Push the `image` to the registry.
+* Run the following command to create the domain.
+
+```
+$ kubectl apply -f /some/output/directory/weblogic-domains/sample-domain1/domain.yaml
+```
 
 c.	Confirm that the operator started the servers for the domain:
 * Use `kubectl` to show that the domain resource was created:
