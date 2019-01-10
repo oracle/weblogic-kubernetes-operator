@@ -166,6 +166,19 @@ public class BaseTest {
     Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
 
     if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
+      ExecResult result =
+          TestUtils.kubectlexecNoCheck(
+              domain.getDomainUid() + ("-") + domainMap.get("adminServerName"),
+              "" + domainMap.get("namespace"),
+              " -- mkdir -p /shared/applications");
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command to create directory /shared/applications in the pod failed, returned "
+                + result.stderr()
+                + " "
+                + result.stdout());
+      }
+
       domain.deployWebAppViaWLST(
           TESTWEBAPP,
           getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
@@ -192,7 +205,12 @@ public class BaseTest {
     operator.verifyExternalRESTService();
     operator.verifyDomainExists(domain.getDomainUid());
     domain.verifyDomainCreated();
-    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+    // if domain created with domain home in image, re-deploy the webapp and verify load balancing
+    if (domain.getDomainMap().containsKey("domainHomeImageBase")) {
+      testAdminT3Channel(domain);
+    } else {
+      domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+    }
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     logger.info("Done - testDomainLifecyle");
   }
