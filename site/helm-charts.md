@@ -16,6 +16,27 @@ The WebLogic Kubernetes Operator uses Helm to create and deploy any necessary re
 
 Helm has two parts: a client (Helm) and a server (Tiller). Tiller runs inside of your Kubernetes cluster, and manages releases (installations) of your charts.  See https://github.com/kubernetes/helm/blob/master/docs/install.md for detailed instructions on installing Helm and Tiller.
 
+In order to use Helm to install and manage the operator, you need to ensure that the Service Account that Tiller uses
+has the `cluster-admin` role.  The default would be `default` in namespace `kube-system`.  You can give that Service
+Account the necessary permissions with this command:
+
+```
+cat << EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: tiller-cluster-admin
+roleRef:
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+userNames:
+- system:serviceaccount:kube-system:default
+EOF
+```
+
 ## Operator's Helm chart configuration
 
 The operator Helm chart is pre-configured with default values for the configuration of the operator.
