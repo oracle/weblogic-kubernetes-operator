@@ -29,7 +29,7 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator
 a.  If you don't already have one, obtain a Docker Store account, log in to the Docker Store
     and accept the license agreement for the [WebLogic Server image](https://hub.docker.com/_/oracle-weblogic-server-12c).
 
-b.  Log in to the Docker Store from your docker client:
+b.  Log in to the Docker Store from your Docker client:
 ```
 $ docker login
 ```
@@ -48,25 +48,6 @@ $ docker pull store/oracle/weblogic:12.2.1.3
 f.	**TODO** remove this item when Monica has published the new image with the patch in it **TODO**
     Then patch the WebLogic image according to these [instructions](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s),
     and copy the image to all nodes in your cluster, or put it in a Docker registry that your cluster can access.
-
-g.  Grant the Helm service account the `cluster-admin` role:
-
-```
-$ cat <<EOF | kubectl apply -f -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: helm-user-cluster-admin-role
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: kube-system
-EOF
-```
 
 ## 2. Create a Traefik (Ingress-based) load balancer.
 
@@ -90,8 +71,26 @@ b.	Create a service account for the operator in the operator's namespace:
 ```
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
+c.  Grant the Helm service account the `cluster-admin` role:
 
-c.  Use `helm` to install and start the operator from the directory you just cloned:	 
+```
+$ cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: helm-user-cluster-admin-role
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+EOF
+```
+
+d.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
 ```
 $ helm install kubernetes/charts/weblogic-operator \
@@ -103,12 +102,12 @@ $ helm install kubernetes/charts/weblogic-operator \
   --wait
 ```
 
-d. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
+e. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
 ```
 $ kubectl get pods -n sample-weblogic-operator-ns
 ```
 
-e.  Verify that the operator is up and running by viewing the operator pod's log:
+f.  Verify that the operator is up and running by viewing the operator pod's log:
 
 ```
 $ kubectl log -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
