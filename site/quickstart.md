@@ -98,6 +98,7 @@ c.  Use `helm` to install and start the operator from the directory you just clo
 $ helm install kubernetes/charts/weblogic-operator \
   --name sample-weblogic-operator \
   --namespace sample-weblogic-operator-ns \
+  --set image=oracle/weblogic-kubernetes-operator:2.0-rc2 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "domainNamespaces={}" \
   --wait
