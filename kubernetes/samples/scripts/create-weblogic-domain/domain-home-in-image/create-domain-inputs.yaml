@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file.  Do not modify.
@@ -74,8 +74,7 @@ includeServerOutInPodLog: true
 # The default is false.
 logHomeOnPV: false
 
-# The in-pod name of the directory in which to store the domain, node manager, server logs,
-# and server .out files.
+# The in-pod location for domain log, server logs, server out, and node manager log files
 # If not specified, the value is derived from the domainUID as /shared/logs/<domainUID>
 # This parameter is required if 'logHomeOnPV' is true.
 # Otherwise, it is ignored.
