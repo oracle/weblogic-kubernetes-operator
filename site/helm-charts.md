@@ -95,7 +95,7 @@ or:
 ```
 $ helm install kubernetes/charts/weblogic-operator \
   --name weblogic-operator --namespace weblogic-operator-namespace \
-  --set "javaLoggingLevel:FINE" --wait
+  --set "javaLoggingLevel=FINE" --wait
 ```
 
 This creates a Helm release, named `weblogic-operator` in the `weblogic-operator-namespace` namespace, and configures a deployment and supporting resources for the operator.
@@ -155,7 +155,7 @@ Change one or more values in the operator Helm release. In this example, the `--
 $ helm upgrade \
   --reuse-values \
   --set "domainNamespaces={sample-domains-ns1}" \
-  --set "javaLoggingLevel:FINE" \
+  --set "javaLoggingLevel=FINE" \
   --wait \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
