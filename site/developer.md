@@ -189,24 +189,31 @@ Each `Step` has a reference to the next `Step` in the processing flow; however, 
 In this sample, the caller creates an `Engine`, `Fiber`, linked set of `Step` instances, and `Packet`.  The `Fiber` is then started.  The `Engine` would typically be a singleton, since it's backed by a `ScheduledExecutorService`.  The `Packet` would also typically be pre-loaded with values that the `Steps` would use in their `apply()` methods.
 
 ```java
+static class Test {
+  public static void main(String[] args) {
     Engine engine = new Engine("worker-pool");
-
+  
     Fiber fiber = engine.createFiber();
-
+  
     Step step = new StepOne(new StepTwo(new StepThree(null)));
-    Packet packet = new Packet();
+      Packet packet = new Packet();
+  
+    fiber.start(
+        step,
+        packet,
+        new CompletionCallback() {
+          @Override
+          public void onCompletion(Packet packet) {
+            // Fiber has completed successfully
+          }
 
-    fiber.start(step, packet, new CompletionCallback() {
-      @Override
-      public void onCompletion(Packet packet) {
-        // Fiber has completed successfully
-      }
-
-      @Override
-      public void onThrowable(Packet packet, Throwable throwable) {
-        // Fiber processing was terminated with an exception
-      }
-    });
+          @Override
+          public void onThrowable(Packet packet, Throwable throwable) {
+            // Fiber processing was terminated with an exception
+          }
+        });
+  }
+}
 ```
 
 `Steps` must not invoke sleep or blocking calls from within `apply()`.  This prevents the worker threads from serving other `Fibers`.  Instead, use asynchronous calls and the `Fiber` suspend/resume pattern.  `Step` provides a method, `doDelay()`, which creates a `NextAction` to drive `Fiber` suspend/resume that is a better option than sleep precisely because the worker thread can serve other `Fibers` during the delay.  For asynchronous IO or similar patterns, suspend the `Fiber`.  In the callback as the `Fiber` suspends, initiate the asynchronous call.  Finally, when the call completes, resume the `Fiber`.  The suspend/resume functionality handles the case where resumed before the suspending callback completes.
@@ -232,7 +239,7 @@ In this sample, the step uses asynchronous file IO and the suspend/resume `Fiber
             ByteBuffer buffer = ByteBuffer.allocate(1024);
             fileChannel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
               @Override
-              public void completed(Integer result, ByteBuffer attachment) {
+              void completed(Integer result, ByteBuffer attachment) {
                 // Store data in Packet and resume Fiber
                 packet.put("DATA_SIZE_READ", result);
                 packet.put("DATA_FROM_SOMEFILE", attachment);
@@ -284,7 +291,7 @@ In this sample, the developer is using the pattern to list pods from the default
           }
 
           @Override
-          public NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
+          NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
               Map<String, List<String>> responseHeaders) {
             // do something with the result Pod, if not null
             return doNext(packet);
