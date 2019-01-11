@@ -111,6 +111,10 @@ You can modify the WebLogic domain configuration for both the "domain in persist
 
 Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and also support parameterizing overrides so that you can inject values into them from Kubernetes secrets.   For example, you can inject database user names, passwords, and URLs that are stored in a secret.
 
+### About the Domain resource
+
+More information about the Domain resource can be found [here](domain-resource.md).
+
 ### Managing lifecycle operations including shutting down and deleting domains
 
 In Operator 2.0, you can perform lifecycle operations on WebLogic servers, clusters, or domains.
