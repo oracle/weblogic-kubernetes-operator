@@ -46,7 +46,8 @@ e.	Pull the WebLogic 12.2.1.3 install image:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```
-f.	Then patch the WebLogic image according to these [instructions](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s),
+f.	**TODO** remove this item when Monica has published the new image with the patch in it **TODO**
+    Then patch the WebLogic image according to these [instructions](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s),
     and copy the image to all nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
 g.  Grant the Helm service account the `cluster-admin` role:
