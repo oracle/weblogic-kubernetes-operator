@@ -64,12 +64,6 @@ public class ReadHealthStepTest {
     assertThat(logRecords, containsFine(WLS_HEALTH_READ_FAILED, SERVER_NAME));
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void WithHttpClientStep_const_throws_with_null_service() {
-    Step next = new MockStep(null);
-    new ReadHealthWithHttpClientStep(null, next);
-  }
-
   abstract static class PacketStub extends Packet {
 
     Integer retryCount;
