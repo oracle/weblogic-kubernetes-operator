@@ -685,7 +685,7 @@ public class DomainStatusUpdater {
     NextAction na = new NextAction();
     na.invoke(
         new CallBuilder()
-            .replaceDomainAsync(
+            .replaceDomainStatusAsync(
                 meta.getName(),
                 meta.getNamespace(),
                 dom,
