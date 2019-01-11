@@ -33,10 +33,9 @@ b.  Log in to the Docker Store from your docker client:
 ```
 $ docker login
 ```
-c.	Pull the operator image and tag it with the default image value of the operator:
+c.	Pull the operator image:
 ```
 $ docker pull oracle/weblogic-kubernetes-operator:2.0-rc2
-$ docker tag oracle/weblogic-kubernetes-operator:2.0-rc2 weblogic-kubernetes-operator:2.0
 ```
 d.	Pull the Traefik load balancer image:
 ```
