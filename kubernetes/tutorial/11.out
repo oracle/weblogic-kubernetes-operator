@@ -1,0 +1,651 @@
+pull docker images
+2.0-rc1: Pulling from oracle/weblogic-kubernetes-operator
+f25d82609194: Pulling fs layer
+529f30ff461e: Pulling fs layer
+f3624ea9ad6f: Pulling fs layer
+9587f02732b5: Pulling fs layer
+46fdefece4af: Pulling fs layer
+76f9ab18d134: Pulling fs layer
+226e65933ac4: Pulling fs layer
+dfee839827c4: Pulling fs layer
+9587f02732b5: Waiting
+46fdefece4af: Waiting
+76f9ab18d134: Waiting
+226e65933ac4: Waiting
+dfee839827c4: Waiting
+f3624ea9ad6f: Verifying Checksum
+f3624ea9ad6f: Download complete
+9587f02732b5: Download complete
+46fdefece4af: Verifying Checksum
+46fdefece4af: Download complete
+f25d82609194: Verifying Checksum
+f25d82609194: Download complete
+76f9ab18d134: Verifying Checksum
+76f9ab18d134: Download complete
+529f30ff461e: Verifying Checksum
+529f30ff461e: Download complete
+226e65933ac4: Verifying Checksum
+226e65933ac4: Download complete
+dfee839827c4: Verifying Checksum
+dfee839827c4: Download complete
+f25d82609194: Pull complete
+529f30ff461e: Pull complete
+f3624ea9ad6f: Pull complete
+9587f02732b5: Pull complete
+46fdefece4af: Pull complete
+76f9ab18d134: Pull complete
+226e65933ac4: Pull complete
+dfee839827c4: Pull complete
+Digest: sha256:5844d51caca8d37a9064500f1a92d35885a3b439667ea1157528ac005a3927ca
+Status: Downloaded newer image for oracle/weblogic-kubernetes-operator:2.0-rc1
+1.7.4: Pulling from library/traefik
+c6e5aced14a2: Pulling fs layer
+ea4512f4e41a: Pulling fs layer
+c6e5aced14a2: Verifying Checksum
+c6e5aced14a2: Download complete
+c6e5aced14a2: Pull complete
+ea4512f4e41a: Verifying Checksum
+ea4512f4e41a: Download complete
+ea4512f4e41a: Pull complete
+Digest: sha256:79452ce773b11a63bcd12bfedbbd50f46feb6676431a8c90f6f7265e9ceca432
+Status: Downloaded newer image for traefik:1.7.4
+7.4.0: Pulling from appscode/voyager
+ff3a5c916c92: Pulling fs layer
+40d639ec10e7: Pulling fs layer
+c91be23ac082: Pulling fs layer
+ebebc7593331: Pulling fs layer
+c23f320fc8b9: Pulling fs layer
+e69bfeea6226: Pulling fs layer
+6c2985d5180b: Pulling fs layer
+755fd664071f: Pulling fs layer
+05c48a52db94: Pulling fs layer
+ebebc7593331: Waiting
+c23f320fc8b9: Waiting
+e69bfeea6226: Waiting
+6c2985d5180b: Waiting
+755fd664071f: Waiting
+05c48a52db94: Waiting
+c91be23ac082: Download complete
+ff3a5c916c92: Verifying Checksum
+ff3a5c916c92: Download complete
+40d639ec10e7: Verifying Checksum
+40d639ec10e7: Download complete
+ff3a5c916c92: Pull complete
+ebebc7593331: Verifying Checksum
+ebebc7593331: Download complete
+c23f320fc8b9: Verifying Checksum
+c23f320fc8b9: Download complete
+40d639ec10e7: Pull complete
+e69bfeea6226: Download complete
+c91be23ac082: Pull complete
+ebebc7593331: Pull complete
+c23f320fc8b9: Pull complete
+e69bfeea6226: Pull complete
+755fd664071f: Verifying Checksum
+755fd664071f: Download complete
+05c48a52db94: Verifying Checksum
+05c48a52db94: Download complete
+6c2985d5180b: Verifying Checksum
+6c2985d5180b: Download complete
+6c2985d5180b: Pull complete
+755fd664071f: Pull complete
+05c48a52db94: Pull complete
+Digest: sha256:d255fa0d691fff7bc803a6308ca94158ee18e32834b460780e1b6a315c080e19
+Status: Downloaded newer image for appscode/voyager:7.4.0
+19.1.0.0: Pulling from weblogic
+9b7bbe25a4d5: Pulling fs layer
+3c1ec8b4f315: Pulling fs layer
+0d56fbb0cd24: Pulling fs layer
+7b02bee2bbdf: Pulling fs layer
+2d9d06515956: Pulling fs layer
+be54c6cb9374: Pulling fs layer
+e5c80a5ce7b6: Pulling fs layer
+6b6b57acd374: Pulling fs layer
+2d9d06515956: Waiting
+e5c80a5ce7b6: Waiting
+6b6b57acd374: Waiting
+be54c6cb9374: Waiting
+7b02bee2bbdf: Waiting
+0d56fbb0cd24: Verifying Checksum
+0d56fbb0cd24: Download complete
+7b02bee2bbdf: Verifying Checksum
+7b02bee2bbdf: Download complete
+2d9d06515956: Download complete
+be54c6cb9374: Verifying Checksum
+be54c6cb9374: Download complete
+e5c80a5ce7b6: Verifying Checksum
+e5c80a5ce7b6: Download complete
+3c1ec8b4f315: Verifying Checksum
+3c1ec8b4f315: Download complete
+9b7bbe25a4d5: Verifying Checksum
+9b7bbe25a4d5: Download complete
+9b7bbe25a4d5: Pull complete
+3c1ec8b4f315: Pull complete
+0d56fbb0cd24: Pull complete
+7b02bee2bbdf: Pull complete
+2d9d06515956: Pull complete
+be54c6cb9374: Pull complete
+e5c80a5ce7b6: Pull complete
+6b6b57acd374: Verifying Checksum
+6b6b57acd374: Download complete
+6b6b57acd374: Pull complete
+Digest: sha256:f4176a349b9b01fa4f6a5ead6d86768f3bdc3f173efd017c3a9dfdb549a56595
+Status: Downloaded newer image for wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
+create namespace test1 to run wls domains
+namespace "test1" created
+install WebLogic operator to namespace weblogic-operator1
+namespace "weblogic-operator1" created
+serviceaccount "sample-weblogic-operator-sa" created
+NAME:   sample-weblogic-operator
+LAST DEPLOYED: Thu Jan 10 05:12:20 2019
+NAMESPACE: weblogic-operator1
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1beta1/Deployment
+NAME               DESIRED  CURRENT  UP-TO-DATE  AVAILABLE  AGE
+weblogic-operator  1        1        1           1          12s
+
+==> v1/Secret
+NAME                       TYPE    DATA  AGE
+weblogic-operator-secrets  Opaque  0     12s
+
+==> v1/ConfigMap
+NAME                  DATA  AGE
+weblogic-operator-cm  2     12s
+
+==> v1/ClusterRole
+NAME                                                             AGE
+weblogic-operator1-weblogic-operator-clusterrole-general         12s
+weblogic-operator1-weblogic-operator-clusterrole-nonresource     12s
+weblogic-operator1-weblogic-operator-clusterrole-namespace       12s
+weblogic-operator1-weblogic-operator-clusterrole-operator-admin  12s
+weblogic-operator1-weblogic-operator-clusterrole-domain-admin    12s
+
+==> v1/Role
+weblogic-operator-role  12s
+
+==> v1/RoleBinding
+NAME                                     AGE
+weblogic-operator-rolebinding-namespace  12s
+weblogic-operator-rolebinding            12s
+weblogic-operator-rolebinding-namespace  12s
+
+==> v1/Service
+NAME                            TYPE       CLUSTER-IP   EXTERNAL-IP  PORT(S)   AGE
+internal-weblogic-operator-svc  ClusterIP  10.99.23.46  <none>       8082/TCP  12s
+
+==> v1/ClusterRoleBinding
+NAME                                                                    AGE
+weblogic-operator1-weblogic-operator-clusterrolebinding-discovery       12s
+weblogic-operator1-weblogic-operator-clusterrolebinding-auth-delegator  12s
+weblogic-operator1-weblogic-operator-clusterrolebinding-nonresource     12s
+weblogic-operator1-weblogic-operator-clusterrolebinding-general         12s
+
+==> v1/Pod(related)
+NAME                               READY  STATUS   RESTARTS  AGE
+weblogic-operator-5fb9558ff-x5qz8  1/1    Running  0         12s
+
+
+install Treafik controller to namespace traefik
+NAME:   traefik-controller
+LAST DEPLOYED: Thu Jan 10 05:12:34 2019
+NAMESPACE: traefik
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/ConfigMap
+NAME                DATA  AGE
+traefik-controller  1     27s
+
+==> v1/ServiceAccount
+NAME                SECRETS  AGE
+traefik-controller  1        27s
+
+==> v1/ClusterRoleBinding
+NAME                AGE
+traefik-controller  27s
+
+==> v1beta1/Ingress
+NAME                          HOSTS                ADDRESS  PORTS  AGE
+traefik-controller-dashboard  traefik.example.com  80       27s
+
+==> v1/Pod(related)
+NAME                                 READY  STATUS   RESTARTS  AGE
+traefik-controller-59b65c465b-5jmbv  1/1    Running  0         27s
+
+==> v1/Secret
+NAME                             TYPE    DATA  AGE
+traefik-controller-default-cert  Opaque  2     27s
+
+==> v1/ClusterRole
+NAME                AGE
+traefik-controller  27s
+
+==> v1/Service
+NAME                          TYPE       CLUSTER-IP     EXTERNAL-IP  PORT(S)                     AGE
+traefik-controller-dashboard  ClusterIP  10.101.49.249  <none>       80/TCP                      27s
+traefik-controller            NodePort   10.104.99.138  <none>       80:30305/TCP,443:30443/TCP  27s
+
+==> v1/Deployment
+NAME                DESIRED  CURRENT  UP-TO-DATE  AVAILABLE  AGE
+traefik-controller  1        1        1           1          27s
+
+
+NOTES:
+
+1. Traefik is listening on the following ports on the host machine:
+
+     http - 30305
+     https - 30443
+
+2. Configure DNS records corresponding to Kubernetes ingress resources to point to the NODE_IP/NODE_HOST
+
+create domain1
+build image domain1-image
+Sending build context to Docker daemon 11.78 kB
+Step 1/9 : FROM store/oracle/weblogic:19.1.0.0
+ ---> ce167345b498
+Step 2/9 : ARG ARG_DOMAIN_NAME="${ARG_DOMAIN_NAME}"
+ ---> Running in 175cb90ac35c
+ ---> c8d0c009246e
+Removing intermediate container 175cb90ac35c
+Step 3/9 : ARG ADMIN_USER="${ADMIN_USER}"
+ ---> Running in 2719d39c1202
+ ---> 8a84f0f1cb37
+Removing intermediate container 2719d39c1202
+Step 4/9 : ARG ADMIN_PWD="${ADMIN_PWD}"
+ ---> Running in dae222c9035d
+ ---> 36d64e03e951
+Removing intermediate container dae222c9035d
+Step 5/9 : ENV DOMAIN_NAME "${ARG_DOMAIN_NAME}" ADMIN_USER "${ADMIN_USER}" ADMIN_PWD "${ADMIN_PWD}"
+ ---> Running in 2f603b7070f2
+ ---> 5f4e33a087be
+Removing intermediate container 2f603b7070f2
+Step 6/9 : ENV DOMAIN_HOME "/u01/oracle/user-projects/domains/${DOMAIN_NAME}"
+ ---> Running in cf57a9fab5da
+ ---> 802f148d7520
+Removing intermediate container cf57a9fab5da
+Step 7/9 : COPY scripts/create-domain.py /tmp/
+ ---> 3ff24dbec177
+Removing intermediate container c3e315ca1e59
+Step 8/9 : RUN wlst.sh -skipWLSModuleScanning /tmp/create-domain.py
+ ---> Running in 845b9080c165
+
+Initializing WebLogic Scripting Tool (WLST) ...
+
+Welcome to WebLogic Server Administration Scripting Shell
+
+Type help() for help on available commands
+
+domain_path        : [/u01/oracle/user-projects/domains/domain1]
+domain_name        : [domain1]
+admin_server_name  : [admin-server]
+admin_username     : [weblogic]
+admin_port         : [7001]
+cluster_name       : [cluster-1]
+server_port        : [8001]
+Configuring Dynamic Cluster cluster-1
+Creating Server Template: cluster-1-template
+Done creating Server Template: cluster-1-template
+Done setting attributes for Server Template: cluster-1-template
+Done setting attributes for Dynamic Cluster: cluster-1
+Domain Created
+Domain Updated
+Done
+
+
+Exiting WebLogic Scripting Tool.
+
+ ---> 9c8066432ca7
+Removing intermediate container 845b9080c165
+Step 9/9 : CMD /bin/bash
+ ---> Running in 7585ab3da9bc
+ ---> 897386b988a8
+Removing intermediate container 7585ab3da9bc
+Successfully built 897386b988a8
+secret "domain1-weblogic-credentials" created
+domain.weblogic.oracle "domain1" created
+create domain2
+build image domain2-image
+Sending build context to Docker daemon 11.78 kB
+Step 1/9 : FROM store/oracle/weblogic:19.1.0.0
+ ---> ce167345b498
+Step 2/9 : ARG ARG_DOMAIN_NAME="${ARG_DOMAIN_NAME}"
+ ---> Using cache
+ ---> c8d0c009246e
+Step 3/9 : ARG ADMIN_USER="${ADMIN_USER}"
+ ---> Using cache
+ ---> 8a84f0f1cb37
+Step 4/9 : ARG ADMIN_PWD="${ADMIN_PWD}"
+ ---> Using cache
+ ---> 36d64e03e951
+Step 5/9 : ENV DOMAIN_NAME "${ARG_DOMAIN_NAME}" ADMIN_USER "${ADMIN_USER}" ADMIN_PWD "${ADMIN_PWD}"
+ ---> Running in 0a46ba83904f
+ ---> a7918a3b6018
+Removing intermediate container 0a46ba83904f
+Step 6/9 : ENV DOMAIN_HOME "/u01/oracle/user-projects/domains/${DOMAIN_NAME}"
+ ---> Running in 3477df574fb9
+ ---> 806a460525c4
+Removing intermediate container 3477df574fb9
+Step 7/9 : COPY scripts/create-domain.py /tmp/
+ ---> 6ff8ec6cb770
+Removing intermediate container 0db5407844ed
+Step 8/9 : RUN wlst.sh -skipWLSModuleScanning /tmp/create-domain.py
+ ---> Running in ea6108b4a4d6
+
+Initializing WebLogic Scripting Tool (WLST) ...
+
+Welcome to WebLogic Server Administration Scripting Shell
+
+Type help() for help on available commands
+
+domain_path        : [/u01/oracle/user-projects/domains/domain2]
+domain_name        : [domain2]
+admin_server_name  : [admin-server]
+admin_username     : [weblogic]
+admin_port         : [7001]
+cluster_name       : [cluster-1]
+server_port        : [8001]
+Configuring Dynamic Cluster cluster-1
+Creating Server Template: cluster-1-template
+Done creating Server Template: cluster-1-template
+Done setting attributes for Server Template: cluster-1-template
+Done setting attributes for Dynamic Cluster: cluster-1
+Domain Created
+Domain Updated
+Done
+
+
+Exiting WebLogic Scripting Tool.
+
+ ---> 4ff7f3424b50
+Removing intermediate container ea6108b4a4d6
+Step 9/9 : CMD /bin/bash
+ ---> Running in 08d9c5eb1516
+ ---> 0537fe661d2f
+Removing intermediate container 08d9c5eb1516
+Successfully built 0537fe661d2f
+secret "domain2-weblogic-credentials" created
+persistentvolume "weblogic-domain-logs-pv" created
+persistentvolumeclaim "weblogic-domain-logs-pvc" created
+domain.weblogic.oracle "domain2" created
+create domain3
+
+Initializing WebLogic Scripting Tool (WLST) ...
+
+Welcome to WebLogic Server Administration Scripting Shell
+
+Type help() for help on available commands
+
+domain_path        : [/u01/oracle/user-projects/domains/domain3]
+domain_name        : [domain3]
+admin_server_name  : [admin-server]
+admin_username     : [weblogic]
+admin_port         : [7001]
+cluster_name       : [cluster-1]
+server_port        : [8001]
+Configuring Dynamic Cluster cluster-1
+Creating Server Template: cluster-1-template
+Done creating Server Template: cluster-1-template
+Done setting attributes for Server Template: cluster-1-template
+Done setting attributes for Dynamic Cluster: cluster-1
+Domain Created
+Domain Updated
+Done
+
+
+Exiting WebLogic Scripting Tool.
+
+secret "domain3-weblogic-credentials" created
+persistentvolume "weblogic-domain-home-pv" created
+persistentvolumeclaim "weblogic-domain-home-pvc" created
+domain.weblogic.oracle "domain3" created
+wait until domain domain1 is ready
+NAME                   READY     STATUS    RESTARTS   AGE
+domain1-admin-server   0/1       Running   0          21s
+NAME                   READY     STATUS    RESTARTS   AGE
+domain1-admin-server   0/1       Running   0          27s
+NAME                   READY     STATUS    RESTARTS   AGE
+domain1-admin-server   0/1       Running   0          33s
+NAME                   READY     STATUS    RESTARTS   AGE
+domain1-admin-server   0/1       Running   0          39s
+NAME                   READY     STATUS    RESTARTS   AGE
+domain1-admin-server   0/1       Running   0          44s
+NAME                   READY     STATUS    RESTARTS   AGE
+domain1-admin-server   0/1       Running   0          50s
+NAME                   READY     STATUS    RESTARTS   AGE
+domain1-admin-server   0/1       Running   0          56s
+NAME                   READY     STATUS    RESTARTS   AGE
+domain1-admin-server   0/1       Running   0          1m
+NAME                   READY     STATUS    RESTARTS   AGE
+domain1-admin-server   0/1       Running   0          1m
+NAME                      READY     STATUS              RESTARTS   AGE
+domain1-admin-server      1/1       Running             0          1m
+domain1-managed-server1   0/1       ContainerCreating   0          1s
+domain1-managed-server2   0/1       ContainerCreating   0          1s
+NAME                      READY     STATUS              RESTARTS   AGE
+domain1-admin-server      1/1       Running             0          1m
+domain1-managed-server1   0/1       ContainerCreating   0          7s
+domain1-managed-server2   0/1       ContainerCreating   0          7s
+NAME                      READY     STATUS              RESTARTS   AGE
+domain1-admin-server      1/1       Running             0          1m
+domain1-managed-server1   0/1       ContainerCreating   0          13s
+domain1-managed-server2   0/1       Running             0          13s
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          1m
+domain1-managed-server1   0/1       Running   0          19s
+domain1-managed-server2   0/1       Running   0          19s
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          1m
+domain1-managed-server1   0/1       Running   0          25s
+domain1-managed-server2   0/1       Running   0          25s
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          1m
+domain1-managed-server1   0/1       Running   0          31s
+domain1-managed-server2   0/1       Running   0          31s
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          1m
+domain1-managed-server1   0/1       Running   0          37s
+domain1-managed-server2   0/1       Running   0          37s
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          1m
+domain1-managed-server1   0/1       Running   0          43s
+domain1-managed-server2   0/1       Running   0          43s
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          49s
+domain1-managed-server2   0/1       Running   0          49s
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          55s
+domain1-managed-server2   0/1       Running   0          55s
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          2m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          3m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          3m
+domain1-managed-server1   0/1       Running   0          1m
+domain1-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          3m
+domain1-managed-server1   0/1       Running   0          2m
+domain1-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          3m
+domain1-managed-server1   0/1       Running   0          2m
+domain1-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          3m
+domain1-managed-server1   0/1       Running   0          2m
+domain1-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          3m
+domain1-managed-server1   0/1       Running   0          2m
+domain1-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          3m
+domain1-managed-server1   0/1       Running   0          2m
+domain1-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain1-admin-server      1/1       Running   0          3m
+domain1-managed-server1   0/1       Running   0          2m
+domain1-managed-server2   1/1       Running   0          2m
+wait until domain domain2 is ready
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          3m
+domain2-managed-server1   0/1       Running   0          1m
+domain2-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          3m
+domain2-managed-server1   0/1       Running   0          1m
+domain2-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          3m
+domain2-managed-server1   0/1       Running   0          1m
+domain2-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          3m
+domain2-managed-server1   0/1       Running   0          1m
+domain2-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          3m
+domain2-managed-server1   0/1       Running   0          1m
+domain2-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          3m
+domain2-managed-server1   0/1       Running   0          1m
+domain2-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          3m
+domain2-managed-server1   0/1       Running   0          1m
+domain2-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          3m
+domain2-managed-server1   0/1       Running   0          2m
+domain2-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          3m
+domain2-managed-server1   0/1       Running   0          2m
+domain2-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          4m
+domain2-managed-server1   0/1       Running   0          2m
+domain2-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          4m
+domain2-managed-server1   0/1       Running   0          2m
+domain2-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          4m
+domain2-managed-server1   0/1       Running   0          2m
+domain2-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          4m
+domain2-managed-server1   0/1       Running   0          2m
+domain2-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain2-admin-server      1/1       Running   0          4m
+domain2-managed-server1   0/1       Running   0          2m
+domain2-managed-server2   0/1       Running   0          2m
+wait until domain domain3 is ready
+NAME                      READY     STATUS    RESTARTS   AGE
+domain3-admin-server      1/1       Running   0          4m
+domain3-managed-server1   0/1       Running   0          1m
+domain3-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain3-admin-server      1/1       Running   0          4m
+domain3-managed-server1   0/1       Running   0          1m
+domain3-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain3-admin-server      1/1       Running   0          4m
+domain3-managed-server1   0/1       Running   0          1m
+domain3-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain3-admin-server      1/1       Running   0          4m
+domain3-managed-server1   0/1       Running   0          1m
+domain3-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain3-admin-server      1/1       Running   0          4m
+domain3-managed-server1   0/1       Running   0          1m
+domain3-managed-server2   0/1       Running   0          1m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain3-admin-server      1/1       Running   0          4m
+domain3-managed-server1   0/1       Running   0          2m
+domain3-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain3-admin-server      1/1       Running   0          4m
+domain3-managed-server1   0/1       Running   0          2m
+domain3-managed-server2   0/1       Running   0          2m
+NAME                      READY     STATUS    RESTARTS   AGE
+domain3-admin-server      1/1       Running   0          4m
+domain3-managed-server1   1/1       Running   0          2m
+domain3-managed-server2   0/1       Running   0          2m
+install Ingress for domains
+NAME:   domain1-ing-t
+LAST DEPLOYED: Thu Jan 10 05:20:30 2019
+NAMESPACE: default
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1beta1/Ingress
+NAME             HOSTS        ADDRESS  PORTS  AGE
+domain1-traefik  domain1.org  80       0s
+
+
+NAME:   domain2-ing-t
+LAST DEPLOYED: Thu Jan 10 05:20:31 2019
+NAMESPACE: test1
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1beta1/Ingress
+NAME             HOSTS        ADDRESS  PORTS  AGE
+domain2-traefik  domain2.org  80       0s
+
+
+NAME:   domain3-ing-t
+LAST DEPLOYED: Thu Jan 10 05:20:31 2019
+NAMESPACE: test1
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1beta1/Ingress
+NAME             HOSTS        ADDRESS  PORTS  AGE
+domain3-traefik  domain3.org  80       0s
+
+
+./setup.sh took 9 minutes and 14 seconds to finish.
