@@ -16,24 +16,24 @@ The WebLogic Kubernetes Operator uses Helm to create and deploy any necessary re
 
 Helm has two parts: a client (Helm) and a server (Tiller). Tiller runs inside of your Kubernetes cluster, and manages releases (installations) of your charts.  See https://github.com/kubernetes/helm/blob/master/docs/install.md for detailed instructions on installing Helm and Tiller.
 
-In order to use Helm to install and manage the operator, you need to ensure that the Service Account that Tiller uses
-has the `cluster-admin` role.  The default would be `default` in namespace `kube-system`.  You can give that Service
-Account the necessary permissions with this command:
+In order to use Helm to install and manage the operator, you need to ensure that the service account that Tiller uses
+has the `cluster-admin` role.  The default would be `default` in namespace `kube-system`.  You can give that service
+account the necessary permissions with this command:
 
 ```
 cat << EOF | kubectl apply -f -
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: tiller-cluster-admin
+  name: helm-user-cluster-admin-role
 roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
   name: cluster-admin
 subjects:
 - kind: ServiceAccount
   name: default
   namespace: kube-system
-userNames:
-- system:serviceaccount:kube-system:default
 EOF
 ```
 
@@ -119,7 +119,7 @@ or:
 ```
 $ helm install kubernetes/charts/weblogic-operator \
   --name weblogic-operator --namespace weblogic-operator-namespace \
-  --set "javaLoggingLevel:FINE" --wait
+  --set "javaLoggingLevel=FINE" --wait
 ```
 
 This creates a Helm release, named `weblogic-operator` in the `weblogic-operator-namespace` namespace, and configures a deployment and supporting resources for the operator.
@@ -179,7 +179,7 @@ Change one or more values in the operator Helm release. In this example, the `--
 $ helm upgrade \
   --reuse-values \
   --set "domainNamespaces={sample-domains-ns1}" \
-  --set "javaLoggingLevel:FINE" \
+  --set "javaLoggingLevel=FINE" \
   --wait \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
