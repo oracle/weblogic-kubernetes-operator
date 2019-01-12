@@ -45,9 +45,12 @@ e.	Pull the WebLogic 12.2.1.3 install image:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```
-f.	**TODO** remove this item when Monica has published the new image with the patch in it **TODO**
-    Then patch the WebLogic image according to these [instructions](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s),
-    and copy the image to all nodes in your cluster, or put it in a Docker registry that your cluster can access.
+f.	Then patch the WebLogic image according to the instructions [here](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s), with these modifications:
+
+* Change the `FROM` clause to extend the `store/oracle/weblogic:12.2.1.3` image from `Dockerfile.patch-ontop-12213`.
+* Comment out commands that apply patch 27117282.   
+
+g. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
 ## 2. Create a Traefik (Ingress-based) load balancer.
 
