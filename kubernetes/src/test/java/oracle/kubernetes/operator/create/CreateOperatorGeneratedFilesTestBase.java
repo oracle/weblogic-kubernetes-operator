@@ -421,12 +421,8 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
             newPolicyRule()
                 .addApiGroupsItem("weblogic.oracle")
                 .addResourcesItem("domains")
-                .verbs(asList("get", "list", "watch", "update", "patch")))
-        .addRulesItem(
-            newPolicyRule()
-                .addApiGroupsItem("weblogic.oracle")
                 .addResourcesItem("domains/status")
-                .addVerbsItem("update"))
+                .verbs(asList("get", "list", "watch", "update", "patch")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("extensions")
