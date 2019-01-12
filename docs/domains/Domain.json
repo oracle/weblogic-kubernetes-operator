@@ -68,10 +68,6 @@
         "channelName"
       ]
     },
-    "Chronology": {
-      "type": "object",
-      "properties": {}
-    },
     "Cluster": {
       "type": "object",
       "properties": {
@@ -126,20 +122,6 @@
         "clusterName"
       ]
     },
-    "DateTime": {
-      "type": "object",
-      "properties": {
-        "iChronology": {
-          "$ref": "#/definitions/Chronology"
-        },
-        "iMillis": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "iMillis"
-      ]
-    },
     "DomainCondition": {
       "type": "object",
       "properties": {
@@ -147,7 +129,8 @@
           "type": "string"
         },
         "lastTransitionTime": {
-          "$ref": "#/definitions/DateTime"
+          "format": "date-time",
+          "type": "string"
         },
         "message": {
           "type": "string"
@@ -156,7 +139,8 @@
           "type": "string"
         },
         "lastProbeTime": {
-          "$ref": "#/definitions/DateTime"
+          "format": "date-time",
+          "type": "string"
         },
         "status": {
           "type": "string"
@@ -297,7 +281,8 @@
           "minimum": 0
         },
         "startTime": {
-          "$ref": "#/definitions/DateTime"
+          "format": "date-time",
+          "type": "string"
         },
         "conditions": {
           "type": "array",
@@ -392,7 +377,8 @@
           "type": "string"
         },
         "activationTime": {
-          "$ref": "#/definitions/DateTime"
+          "format": "date-time",
+          "type": "string"
         },
         "subsystems": {
           "type": "array",
@@ -1005,7 +991,8 @@
           "type": "string"
         },
         "deletionTimestamp": {
-          "$ref": "#/definitions/DateTime"
+          "format": "date-time",
+          "type": "string"
         },
         "labels": {
           "$ref": "#/definitions/Map"
@@ -1032,7 +1019,8 @@
           "type": "string"
         },
         "creationTimestamp": {
-          "$ref": "#/definitions/DateTime"
+          "format": "date-time",
+          "type": "string"
         },
         "name": {
           "type": "string"

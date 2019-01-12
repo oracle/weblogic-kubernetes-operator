@@ -18,6 +18,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import javax.annotation.Nonnull;
+import org.joda.time.DateTime;
 
 @SuppressWarnings("WeakerAccess")
 public class SchemaGenerator {
@@ -200,6 +201,7 @@ public class SchemaGenerator {
     String description = getDescription(field);
     if (description != null) result.put("description", description);
     if (isString(field.getType())) addStringRestrictions(result, field);
+    if (isDateTime(field.getType())) result.put("format", "date-time");
     if (isNumeric(field.getType())) addRange(result, field);
 
     return result;
@@ -207,6 +209,10 @@ public class SchemaGenerator {
 
   private boolean isString(Class<?> type) {
     return type.equals(String.class);
+  }
+
+  private boolean isDateTime(Class<?> type) {
+    return type.equals(DateTime.class);
   }
 
   private boolean isNumeric(Class<?> type) {
@@ -265,7 +271,7 @@ public class SchemaGenerator {
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
       if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) result.put("type", "boolean");
       else if (isNumeric(type)) result.put("type", "number");
-      else if (isString(type)) result.put("type", "string");
+      else if (isString(type) || isDateTime(type)) result.put("type", "string");
       else if (type.isEnum()) generateEnumTypeIn(result, (Class<? extends Enum>) type);
       else if (type.isArray()) this.generateArrayTypeIn(result, type);
       else if (Collection.class.isAssignableFrom(type)) generateCollectionTypeIn(result);
