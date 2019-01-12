@@ -682,6 +682,10 @@ public class DomainStatusUpdater {
   private static NextAction doDomainUpdate(
       Domain dom, DomainPresenceInfo info, Packet packet, Step conflictStep, Step next) {
     V1ObjectMeta meta = dom.getMetadata();
+
+    // remove spec
+    dom.setSpec(null);
+
     NextAction na = new NextAction();
     na.invoke(
         new CallBuilder()
@@ -703,7 +707,8 @@ public class DomainStatusUpdater {
 
                   @Override
                   public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
-                    info.setDomain(callResponse.getResult());
+                    // Do not set domain on info since status update is a PUT
+                    // info.setDomain(callResponse.getResult());
                     return doNext(packet);
                   }
                 }),
