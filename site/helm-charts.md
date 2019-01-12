@@ -37,6 +37,9 @@ userNames:
 EOF
 ```
 
+**Note** Oracle strongly recommends that you create a new service account to be used exclusively by tiller and grant
+`cluster-admin` to that service account, rather than using the `default` one.
+
 ## Operator's Helm chart configuration
 
 The operator Helm chart is pre-configured with default values for the configuration of the operator.
