@@ -17,7 +17,6 @@ import io.kubernetes.client.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
 import java.util.Collections;
-import java.util.HashMap;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -104,8 +103,9 @@ public class CRDHelper {
                 .scale(
                     new V1beta1CustomResourceSubresourceScale()
                         .specReplicasPath(".spec.replicas")
-                        .statusReplicasPath(".status.replicas"))
-                .status(new HashMap<String, Object>()));
+                        .statusReplicasPath(".status.replicas")));
+        // Remove status for now because seeing status not updated on some k8s environments
+        // .status(new HashMap<String, Object>()));
       }
       return spec;
     }
@@ -251,7 +251,8 @@ public class CRDHelper {
       return actual.getSpec().getVersion().equals("v1")
           || (actual.getSpec().getVersion().equals("v2")
               && (getSchemaValidation(actual) == null
-                  || !getSchemaValidation(expected).equals(getSchemaValidation(actual))));
+                  || !getSchemaValidation(expected).equals(getSchemaValidation(actual))
+                  || !getSchemaSubresources(expected).equals(getSchemaSubresources(actual))));
       // Similarly, we will later want to check:
       // VersionHelper.matchesResourceVersion(existingCRD.getMetadata(), DEFAULT_OPERATOR_VERSION)
     }
@@ -259,6 +260,14 @@ public class CRDHelper {
     private V1beta1JSONSchemaProps getSchemaValidation(V1beta1CustomResourceDefinition crd) {
       if (crd != null && crd.getSpec() != null && crd.getSpec().getValidation() != null) {
         return crd.getSpec().getValidation().getOpenAPIV3Schema();
+      }
+      return null;
+    }
+
+    private V1beta1CustomResourceSubresources getSchemaSubresources(
+        V1beta1CustomResourceDefinition crd) {
+      if (crd != null && crd.getSpec() != null) {
+        return crd.getSpec().getSubresources();
       }
       return null;
     }
