@@ -683,6 +683,12 @@ public class DomainStatusUpdater {
       Domain dom, DomainPresenceInfo info, Packet packet, Step conflictStep, Step next) {
     V1ObjectMeta meta = dom.getMetadata();
     NextAction na = new NextAction();
+
+    // *NOTE* See the note in KubernetesVersion
+    // If we update the CRDHelper to include the status subresource, then this code
+    // needs to be modified to use replaceDomainStatusAsync.  Then, validate if onSuccess
+    // should update info.
+
     na.invoke(
         new CallBuilder()
             .replaceDomainAsync(
