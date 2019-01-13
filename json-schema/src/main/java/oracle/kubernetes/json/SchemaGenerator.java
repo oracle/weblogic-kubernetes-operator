@@ -52,6 +52,9 @@ public class SchemaGenerator {
   // if true, the object fields are implemented as references to definitions
   private boolean supportObjectReferences = true;
 
+  // if true, generate the top-level schema version reference
+  private boolean includeSchemaReference = true;
+
   /**
    * Returns a pretty-printed string corresponding to a generated schema
    *
@@ -146,6 +149,15 @@ public class SchemaGenerator {
   }
 
   /**
+   * Specifies whether top-level schema reference is included
+   *
+   * @param includeSchemaReference true to include schema reference
+   */
+  public void setIncludeSchemaReference(boolean includeSchemaReference) {
+    this.includeSchemaReference = includeSchemaReference;
+  }
+
+  /**
    * Generates an object representing a JSON schema for the specified class.
    *
    * @param aClass the class for which the schema should be generated
@@ -154,7 +166,9 @@ public class SchemaGenerator {
   public Object generate(Class aClass) {
     Map<String, Object> result = new HashMap<>();
 
-    result.put("$schema", JSON_SCHEMA_REFERENCE);
+    if (includeSchemaReference) {
+      result.put("$schema", JSON_SCHEMA_REFERENCE);
+    }
     generateObjectTypeIn(result, aClass);
     if (!definedObjects.isEmpty()) {
       Map<String, Object> definitions = new TreeMap<>();

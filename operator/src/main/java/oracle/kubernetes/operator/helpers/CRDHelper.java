@@ -105,6 +105,8 @@ public class CRDHelper {
                         .specReplicasPath(".spec.replicas")
                         .statusReplicasPath(".status.replicas")));
         // Remove status for now because seeing status not updated on some k8s environments
+        // Consider adding this only for K8s version 1.13+
+        // See the note in KubernetesVersion
         // .status(new HashMap<String, Object>()));
       }
       return spec;
@@ -141,6 +143,7 @@ public class CRDHelper {
       generator.setIncludeAdditionalProperties(false);
       generator.setSupportObjectReferences(false);
       generator.setIncludeDeprecated(true);
+      generator.setIncludeSchemaReference(false);
       return generator;
     }
 
