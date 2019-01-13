@@ -69,7 +69,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Override
   void expectStepsAfterCreation() {
-    expectReplaceDomainStatus();
+    expectReplaceDomain();
   }
 
   @Override
@@ -80,6 +80,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   private void expectReplaceDomainStatus() {
     testSupport
         .createCannedResponse("replaceDomainStatus")
+        .withNamespace(NS)
+        .ignoringBody()
+        .returning(new Domain());
+  }
+
+  private void expectReplaceDomain() {
+    testSupport
+        .createCannedResponse("replaceDomain")
         .withNamespace(NS)
         .ignoringBody()
         .returning(new Domain());

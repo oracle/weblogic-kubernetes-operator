@@ -682,14 +682,10 @@ public class DomainStatusUpdater {
   private static NextAction doDomainUpdate(
       Domain dom, DomainPresenceInfo info, Packet packet, Step conflictStep, Step next) {
     V1ObjectMeta meta = dom.getMetadata();
-
-    // remove spec
-    dom.setSpec(null);
-
     NextAction na = new NextAction();
     na.invoke(
         new CallBuilder()
-            .replaceDomainStatusAsync(
+            .replaceDomainAsync(
                 meta.getName(),
                 meta.getNamespace(),
                 dom,
@@ -707,8 +703,9 @@ public class DomainStatusUpdater {
 
                   @Override
                   public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
-                    // Do not set domain on info since status update is a PUT
-                    // info.setDomain(callResponse.getResult());
+                    // Update info only if using replaceDomain
+                    // Skip, if we switch to using replaceDomainStatus
+                    info.setDomain(callResponse.getResult());
                     return doNext(packet);
                   }
                 }),
