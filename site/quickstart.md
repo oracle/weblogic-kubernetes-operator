@@ -178,7 +178,15 @@ $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u weblogic -p 
 ```
 
 You need to provide the WebLogic administration user name and password in the `-u` and `-p` options
-respectively, as shown in the example.  If you specify the `-e` option, the script will generate the
+respectively, as shown in the example.
+
+**NOTE**: When using this sample, the WebLogic Server credentials that you specify, in three separate places, must be consistent:
+
+1. The secret that you create for the credentials.
+2. The properties files in the sample project you choose to create the Docker image from.
+3. The parameters you supply to the `createDomain.sh` script.
+
+If you specify the `-e` option, the script will generate the
 Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the
 script will just generate the YAML files, but will not take any action on your cluster.
 
