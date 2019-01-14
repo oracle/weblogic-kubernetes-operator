@@ -41,6 +41,21 @@ function create() {
     --set serviceAccount=sample-weblogic-operator-sa \
     --set "domainNamespaces={default,test1}" \
     --wait
+  
+  waitUntilCRDReady 
+}
+
+# wait until domain CRD is ready
+function waitUntilCRDReady() {
+  ready=false
+  while test $ready != true; do
+    if test "$(kubectl get crd  domains.weblogic.oracle  -oyaml | grep 'version: v2' | wc -l)" != '1'; then
+      echo "waint until domain CRD is ready"
+      sleep 5
+      continue
+    fi
+    ready=true
+  done
 }
 
 function delete() {

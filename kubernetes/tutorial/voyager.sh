@@ -16,37 +16,12 @@ function delCon() {
 
 function createIng() {
   echo "install Ingress for domains"
-  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
-    --name domain1-ing-v \
-    --namespace default \
-    --set wlsDomain.domainUID=domain1 \
-    --set type=VOYAGER \
-    --set voyager.webPort=30307 \
-    --set voyager.statsPort=30309
-
-
-  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
-    --name domain2-ing-v \
-    --namespace test1 \
-    --set wlsDomain.domainUID=domain2 \
-    --set type=VOYAGER \
-    --set voyager.webPort=30311 \
-    --set voyager.statsPort=30313
-
-  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
-    --name domain3-ing-v \
-    --namespace test1 \
-    --set wlsDomain.domainUID=domain3 \
-    --set type=VOYAGER \
-    --set voyager.webPort=30315 \
-    --set voyager.statsPort=30317
+  kubectl create -f ings/voyager-ings.yaml
 }
 
 function delIng() {
   echo "delete Ingress"
-  helm delete --purge domain1-ing-v
-  helm delete --purge domain2-ing-v
-  helm delete --purge domain3-ing-v
+  kubectl delete -f ings/voyager-ings.yaml
 }
 
 function usage() {
