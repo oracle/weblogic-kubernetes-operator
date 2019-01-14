@@ -1,6 +1,6 @@
 # WebLogic sample domain home in Docker image
 
-The sample scripts demonstrate the creation of a WebLogic domain home in a Docker image. If logHomeOnPV is enabled, then the log home resides on an existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
+The sample scripts demonstrate the creation of a WebLogic domain home in a Docker image using one of the domain home in image samples in the [WebLogic Server Domain Docker image samples GitHub project](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples). The sample scripts provide an option to put the WebLogic domain log, server logs, server output files, and the Node Manager logs on an existing Kubernetes persistent volume (PV) and persistent volume claim (PVC). The scripts also generate the domain YAML file, which can then be used by the scripts or manually to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
 
 ## Prerequisites
 
@@ -102,20 +102,20 @@ The following parameters can be provided in the inputs file.
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `5` |
-| `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. Refer to [Weblogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. If a different `domainHomeImageBase` is specified, the specified image needs to be built locally or pulled from a repository before the `create-domain.sh` script is executed. | |
+| `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. | |
 | `domainHomeImageBuildPath` | Location of the WebLogic "domain home in image" Docker image in `https://github.com/oracle/docker-images.git` project. If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image". Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt" which uses WDT, instead of WLST, to generate the domain configuration. | `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. This parameter is required if `logHomeOnPV` is true. Otherwise, it is ignored. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `image` | WebLogic Docker image that the domain resource will pull if needed. You need to specify this only if you are going to tag the generated image to a different name. If you run the sample script from a machine that is remote to the Kubernetes cluster, you need to specify this to point to an image in a registry local to the cluster, and then push the generated image to that registry before starting the domain. If not specified, the sample uses the internally generated image name, either `domain-home-in-image:latest` or `domain-home-in-image-wdt:latest`. | |
+| `image` | WebLogic Server Docker image that the operator uses to start the domain. The create domain scripts generate a WebLogic Server Docker image with a domain home in it. By default, the scripts tag the generated WebLogic server Docker image as either `domain-home-in-image` or `domain-home-in-image-wdt` based on the `domainHomeImageBuildPath` property, and use it to set the `image` element in the generated domain YAML file. If this property is set, the create domain scripts will use the value specified, instead of the default value, to tag the generated image and set the `image` in the domain YAML file. If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where the domain is going to be running, you need to set this property to the image name that is intended to be used in a registry local to that Kubernetes cluster. You also need to push the `image` to that registry before starting the domain using the `kubectl create -f` or `kubectl apply -f` command. | |
 | `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include `server.out` to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
 | `logHomeOnPV` | Specifies whether the log home is stored on the persistent volume. If set to true, then you must specify the `logHome`, `persistentVolumeClaimName` and `domainPVMountPath` parameters.| `false` |
-| `logHome` | The in-pod location for domain log, server logs, server out, and node manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. This parameter is required if `logHomeOnPV` is true. Otherwise, it is ignored. | `/shared/logs/domain1` |
+| `logHome` | The in-pod location for domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. This parameter is required if `logHomeOnPV` is true. Otherwise, it is ignored. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
@@ -160,7 +160,7 @@ spec:
   domainHome: /u01/oracle/user_projects/domains/domain1
   # If the domain home is in the image
   domainHomeInImage: true
-  # The Operator currently does not support other images
+  # The WebLogic Server Docker image that the operator uses to start the domain
   image: "domain-home-in-image"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
@@ -175,10 +175,10 @@ spec:
   includeServerOutInPodLog: true
   # Whether to enable log home
   # logHomeEnabled: false
-  # The in-pod location for domain log, server logs, server out, and node manager log files
+  # The in-pod location for domain log, server logs, server out, and Node Manager log files
   # logHome: /shared/logs/domain1
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
-  # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
+  # This determines which WebLogic Servers the operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
