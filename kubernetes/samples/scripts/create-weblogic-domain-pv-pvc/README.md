@@ -6,8 +6,7 @@ A PV and PVC can be shared by multiple WebLogic domains or dedicated to a partic
 
 ## Prerequisites
 
-Please read this guide before proceeding.
-* [Persistent Volumes](../../../../site/persistent-volumes.md)
+Please read the [Persistent Volumes](../../../../site/persistent-volumes.md) guide before proceeding.
 
 ## Using the scripts to create a PV and PVC  
 
