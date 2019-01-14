@@ -45,9 +45,12 @@ e.	Pull the WebLogic 12.2.1.3 install image:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```
-f.	**TODO** remove this item when Monica has published the new image with the patch in it **TODO**
-    Then patch the WebLogic image according to these [instructions](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s),
-    and copy the image to all nodes in your cluster, or put it in a Docker registry that your cluster can access.
+f.	Then patch the WebLogic image according to the instructions [here](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s), with these modifications:
+
+* Change the `FROM` clause to extend the `store/oracle/weblogic:12.2.1.3` image from `Dockerfile.patch-ontop-12213`.
+* Comment out commands that apply patch 27117282.   
+
+g. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
 ## 2. Create a Traefik (Ingress-based) load balancer.
 
@@ -159,9 +162,10 @@ Follow the directions in the [README](../kubernetes/samples/scripts/create-weblo
 including:
 
 * Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
-domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/weblogic:12213-patch-wls-for-k8s`).
+domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`oracle/weblogic:12213-patch-wls-for-k8s`).
 
-* Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials.
+* Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials, in this case, `sample-domain1-weblogic-credentials`.
+
   By convention, the secret will be named`domainUID-weblogic-credentials` (where `domainUID` is replaced with the
   actual `domainUID` value).
 
@@ -170,11 +174,19 @@ domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/we
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
 $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u username -p password -e
+$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u weblogic -p welcome1 -e
 ```
 
 You need to provide the WebLogic administration user name and password in the `-u` and `-p` options
-respectively, as shown in the example.  If you specify the `-e` option, the script will generate the
+respectively, as shown in the example.
+
+**NOTE**: When using this sample, the WebLogic Server credentials that you specify, in three separate places, must be consistent:
+
+1. The secret that you create for the credentials.
+2. The properties files in the sample project you choose to create the Docker image from.
+3. The parameters you supply to the `createDomain.sh` script.
+
+If you specify the `-e` option, the script will generate the
 Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the
 script will just generate the YAML files, but will not take any action on your cluster.
 
