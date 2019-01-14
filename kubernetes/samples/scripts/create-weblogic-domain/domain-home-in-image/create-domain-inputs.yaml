@@ -77,7 +77,7 @@ includeServerOutInPodLog: true
 # The default is false.
 logHomeOnPV: false
 
-# The in-pod location for domain log, server logs, server out, and node manager log files
+# The in-pod location for domain log, server logs, server out, and Node Manager log files
 # If not specified, the value is derived from the domainUID as /shared/logs/<domainUID>
 # This parameter is required if 'logHomeOnPV' is true.
 # Otherwise, it is ignored.
