@@ -285,27 +285,32 @@ public class Domain {
    * @throws Exception
    */
   public void deployWebAppViaWLST(
-      String webappName, String webappLocation, String username, String password) throws Exception {
+      String webappName,
+      String webappLocation,
+      String appLocationInPod,
+      String username,
+      String password)
+      throws Exception {
 
     TestUtils.kubectlcp(
         webappLocation,
-        "/shared/applications/" + webappName + ".war",
+        appLocationInPod + "/" + webappName + ".war",
         domainUid + "-" + adminServerName,
         domainNS);
 
     TestUtils.kubectlcp(
         projectRoot + "/integration-tests/src/test/resources/deploywebapp.py",
-        "/shared/deploywebapp.py",
+        appLocationInPod + "/deploywebapp.py",
         domainUid + "-" + adminServerName,
         domainNS);
 
     TestUtils.kubectlcp(
         projectRoot + "/integration-tests/src/test/resources/callpyscript.sh",
-        "/shared/callpyscript.sh",
+        appLocationInPod + "/callpyscript.sh",
         domainUid + "-" + adminServerName,
         domainNS);
 
-    callShellScriptByExecToPod(username, password, webappName);
+    callShellScriptByExecToPod(username, password, webappName, appLocationInPod);
   }
 
   /**
@@ -791,7 +796,8 @@ public class Domain {
     new LoadBalancer(lbMap);
   }
 
-  private void callShellScriptByExecToPod(String username, String password, String webappName)
+  private void callShellScriptByExecToPod(
+      String username, String password, String webappName, String appLocationInPod)
       throws Exception {
 
     StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
@@ -801,7 +807,11 @@ public class Domain {
         .append(domainUid)
         .append("-")
         .append(adminServerName)
-        .append(" /shared/callpyscript.sh /shared/deploywebapp.py ")
+        .append(" ")
+        .append(appLocationInPod)
+        .append("/callpyscript.sh ")
+        .append(appLocationInPod)
+        .append("/deploywebapp.py ")
         .append(username)
         .append(" ")
         .append(password)
@@ -814,7 +824,9 @@ public class Domain {
         .append(t3ChannelPort)
         .append(" ")
         .append(webappName)
-        .append(" /shared/applications/")
+        .append(" ")
+        .append(appLocationInPod)
+        .append("/")
         .append(webappName)
         .append(".war ")
         .append(clusterName);
