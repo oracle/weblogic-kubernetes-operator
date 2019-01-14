@@ -133,7 +133,7 @@ spec:
   domainHome: /shared/domains/domain1
   # If the domain home is in the image
   domainHomeInImage: false
-  # The WebLogic Server Docker image that the Operator uses to start the domain
+  # The WebLogic Server Docker image that the operator uses to start the domain
   image: "oracle/weblogic:12213-patch-wls-for-k8s"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
@@ -151,7 +151,7 @@ spec:
   # The in-pod name location for domain log, server logs, server out, and node manager log files
   logHome: /shared/logs/domain1
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
-  # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
+  # This determines which WebLogic Servers the operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
