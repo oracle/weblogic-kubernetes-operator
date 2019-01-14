@@ -4,7 +4,7 @@ The sample scripts demonstrate the creation of a WebLogic domain home in a Docke
 
 ## Prerequisites
 
-Before you begin, read this guide, [Domain Resource](../../../../../site/domain-resource.md)
+Before you begin, read this guide, [Domain Resource](../../../../../site/domain-resource.md).
 
 The following prerequisites must be handled prior to running the create domain script:
 * The WDT sample requires that `JAVA_HOME` is set to a Java JDK version 1.8 or later.
@@ -306,7 +306,7 @@ Spec:
       Name:   JAVA_OPTIONS
       Value:  -Dweblogic.StdoutDebugEnabled=false
       Name:   USER_MEM_ARGS
-      Value:  -Xms64m -Xmx256m 
+      Value:  -Xms64m -Xmx256m
     Labels:
     Liveness Probe:
     Node Selector:
