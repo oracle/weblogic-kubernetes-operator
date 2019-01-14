@@ -10,7 +10,7 @@ There are two main options available:
 
 If you want to use the first option, you will need to obtain the standard
 WebLogic Server image from the Docker Store, [see here](#obtaining-standard-images-from-the-docker-store),
-and then create a new image with the mandatory patches applied as described in [this section](#creating-a-custom-images-with-patches-applied).
+and then create a new image with the mandatory patches applied as described in [this section](#creating-a-custom-image-with-patches-applied).
 If you want to use additional patches, you can customize that process to include additional patches.
 
 If you want to use the second option, which includes the domain directory
