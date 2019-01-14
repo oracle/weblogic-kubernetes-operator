@@ -104,7 +104,7 @@ exposeAdminNodePort: false
 # Name of the domain namespace
 namespace: default
 
-# Java Option for Weblogic Server
+# Java Option for WebLogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
 # Name of the persistent volume claim 
