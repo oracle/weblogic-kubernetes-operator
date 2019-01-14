@@ -15,7 +15,7 @@ adminServerName: admin-server
 # in a Kubernetes cluster.
 domainUID: domain1
 
-# Determines which WebLogic Servers the Operator will start up
+# Determines which WebLogic Servers the operator will start up
 # Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
 serverStartPolicy: IF_NEEDED
 
@@ -37,12 +37,12 @@ managedServerPort: 8001
 # Boolean indicating if production mode is enabled for the domain
 productionModeEnabled: true
 
-# WebLogic Server Docker image that the Operator uses to start the domain.
+# WebLogic Server Docker image that the operator uses to start the domain.
 #
 # The create domain scripts generate a WebLogic Server Docker image with a domain home in it.
 # By default, the scripts tag the generated WebLogic server Docker image as either
 # `domain-home-in-image` or `domain-home-in-image-wdt` based on the `domainHomeImageBuildPath`
-# property, and use it to set the `image` in the generated domain YAML file.
+# property, and use it to set the `image` element in the generated domain YAML file.
 #
 # If this property is set, the create domain scripts will use the value specified, instead of the
 # default value, to tag the generated image and set the `image` in the domain YAML file.
