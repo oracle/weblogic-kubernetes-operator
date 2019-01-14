@@ -166,9 +166,6 @@ domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`oracle/w
 
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials, in this case, `sample-domain1-weblogic-credentials`.
 
-  By convention, the secret will be named`domainUID-weblogic-credentials` (where `domainUID` is replaced with the
-  actual `domainUID` value).
-
 * Leaving the `image` empty unless you need to tag the new image that the script builds to a different name.
 
 For example, assuming you named your copy `my-inputs.yaml`:
