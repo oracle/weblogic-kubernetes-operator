@@ -667,7 +667,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testDomainInImageUsing19cAndWDT() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     logTestBegin("testDomainInImageUsing19cAndWDT");
