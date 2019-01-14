@@ -14,7 +14,7 @@ refer to the [User guide](user-guide.md).
     the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1`
 
 ## Prerequisites
-For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
+For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md). This guide assumes a single node cluster.
 
 The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Using operator Helm charts](helm-charts.md).
 
@@ -52,29 +52,7 @@ f.	Then patch the WebLogic image according to the instructions [here](https://gi
 
 g. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
-## 2. Create a Traefik (Ingress-based) load balancer.
-
-Use `helm` to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](../kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
-```
-$ helm install stable/traefik \
---name traefik-operator \
---namespace traefik \
---values kubernetes/samples/charts/traefik/values.yaml  \
---set "kubernetes.namespaces={traefik}" \
---wait
-```
-
-## 3. Install the operator.
-
-a.  Create a namespace for the operator:
-```
-$ kubectl create namespace sample-weblogic-operator-ns
-```
-b.	Create a service account for the operator in the operator's namespace:
-```
-$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
-```
-c.  Grant the Helm service account the `cluster-admin` role:
+## 2. Grant the Helm service account the `cluster-admin` role.
 
 ```
 $ cat <<EOF | kubectl apply -f -
@@ -93,7 +71,29 @@ subjects:
 EOF
 ```
 
-d.  Use `helm` to install and start the operator from the directory you just cloned:	 
+## 3. Create a Traefik (Ingress-based) load balancer.
+
+Use `helm` to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](../kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
+```
+$ helm install stable/traefik \
+--name traefik-operator \
+--namespace traefik \
+--values kubernetes/samples/charts/traefik/values.yaml  \
+--set "kubernetes.namespaces={traefik}" \
+--wait
+```
+
+## 4. Install the operator.
+
+a.  Create a namespace for the operator:
+```
+$ kubectl create namespace sample-weblogic-operator-ns
+```
+b.	Create a service account for the operator in the operator's namespace:
+```
+$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
+```
+c.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
 ```
 $ helm install kubernetes/charts/weblogic-operator \
@@ -105,18 +105,18 @@ $ helm install kubernetes/charts/weblogic-operator \
   --wait
 ```
 
-e. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
+d. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one for the operator.
 ```
 $ kubectl get pods -n sample-weblogic-operator-ns
 ```
 
-f.  Verify that the operator is up and running by viewing the operator pod's log:
+e.  Verify that the operator is up and running by viewing the operator pod's log:
 
 ```
-$ kubectl log -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
+$ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
 ```
 
-## 4. Prepare your environment for a domain.
+## 5. Prepare your environment for a domain.
 
 a.  Create a namespace that can host one or more domains:
 
@@ -144,7 +144,7 @@ $ helm upgrade \
   stable/traefik
 ```
 
-## 5. Create a domain in the domain namespace.
+## 6. Create a domain in the domain namespace.
 
 a. Create a Kubernetes secret containing the `username` and `password` for the domain using the [`create-weblogic-credentials`](../kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 
@@ -161,7 +161,7 @@ b.	Create a new image with a domain home by running the [`create-domain`](../kub
 Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file,
 including:
 
-* Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
+* Copying the sample `kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
 domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`oracle/weblogic:12213-patch-wls-for-k8s`).
 
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials, in this case, `sample-domain1-weblogic-credentials`.
@@ -251,7 +251,7 @@ $ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/
 **Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
 update security lists to allow ingress to this port.
 
-## 6. Remove the domain.
+## 7. Remove the domain.
 
 a.	Remove the domain's Ingress by using `helm`:
 ```
@@ -267,7 +267,7 @@ $ kubectl get pods -n sample-domain1-ns
 $ kubectl get domains -n sample-domain1-ns
 ```
 
-## 7. Remove the domain namespace.
+## 8. Remove the domain namespace.
 a.	Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:
 
 ```
@@ -295,7 +295,7 @@ c.	Delete the domain namespace:
 $ kubectl delete namespace sample-domain1-ns
 ```
 
-## 8. Remove the operator.
+## 9. Remove the operator.
 
 a.	Remove the operator:
 ```
@@ -306,7 +306,7 @@ b.	Remove the operator's namespace:
 ```
 $ kubectl delete namespace sample-weblogic-operator-ns
 ```
-## 9. Remove the load balancer.
+## 10. Remove the load balancer.
 a.	Remove the Traefik load balancer:
 ```
 $ helm delete --purge traefik-operator
