@@ -17,6 +17,19 @@ function delCon() {
   echo "delete Traefik controller"
   helm delete --purge traefik-controller
   kubectl delete namespace traefik
+  waitUntilNSTerm
+}
+
+function waitUntilNSTerm() {
+  ready=false
+  while test $ready != true; do
+    if test "$(kubectl get ns traefik  --ignore-not-found | wc -l)" != 0; then
+      echo "wait until namespace traefik termiated..."
+      sleep 5
+      continue
+    fi
+    ready=true
+  done
 }
 
 function createIng() {

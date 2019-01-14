@@ -49,8 +49,8 @@ function create() {
 function waitUntilCRDReady() {
   ready=false
   while test $ready != true; do
-    if test "$(kubectl get crd  domains.weblogic.oracle  -oyaml | grep 'version: v2' | wc -l)" != '1'; then
-      echo "waint until domain CRD is ready"
+    if test "$(kubectl get crd  domains.weblogic.oracle  -oyaml  --ignore-not-found | grep 'version: v2' | wc -l)" != '1'; then
+      echo "wait until domain CRD is ready"
       sleep 5
       continue
     fi
@@ -61,9 +61,24 @@ function waitUntilCRDReady() {
 function delete() {
   echo "delete operators"
   helm delete --purge sample-weblogic-operator
+  kubectl delete crd domains.weblogic.oracle
   kubectl delete namespace weblogic-operator1
-
   kubectl delete namespace test1
+  waitUntilNSTerm weblogic-operator1 
+  waitUntilNSTerm test1
+}
+
+# usage: waitUntilNSTerm ns_name 
+function waitUntilNSTerm() {
+  ready=false
+  while test $ready != true; do
+    if test "$(kubectl get ns $1  --ignore-not-found | wc -l)" != 0; then
+      echo "wait until namespace $1 termiated..."
+      sleep 5
+      continue
+    fi
+    ready=true
+  done
 }
 
 function usage() {

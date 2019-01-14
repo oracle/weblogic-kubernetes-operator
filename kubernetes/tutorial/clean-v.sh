@@ -8,6 +8,6 @@ SECONDS=0
 ./domain.sh waitUntilAllStopped
 ./traefik.sh delCon
 ./operator.sh delete
-#./operator.sh delImages
+./operator.sh delImages
 
 echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finish."
