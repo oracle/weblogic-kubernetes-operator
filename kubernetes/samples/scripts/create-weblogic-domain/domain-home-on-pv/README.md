@@ -55,7 +55,7 @@ If you copy the sample scripts to a different location, make sure that you copy 
 The default domain created by the script has the following characteristics:
 
 * An Administration Server named `admin-server` listening on port `7001`.
-* A dynamic cluster named `cluster-1` of size 2.
+* A dynamic cluster named `cluster-1` of size 5.
 * Two Managed Servers, named `managed-server1` and `managed-server2`, listening on port `8001`.
 * Log files that are located in `/shared/logs/<domainUID>`.
 * No applications deployed.
