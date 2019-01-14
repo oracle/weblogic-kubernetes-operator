@@ -210,7 +210,7 @@ public class CRDHelperTest {
       if (validation == null) return false;
 
       V1beta1JSONSchemaProps openAPIV3Schema = validation.getOpenAPIV3Schema();
-      if (openAPIV3Schema == null || openAPIV3Schema.getProperties().size() != 1) return false;
+      if (openAPIV3Schema == null || openAPIV3Schema.getProperties().size() != 2) return false;
 
       V1beta1JSONSchemaProps spec = openAPIV3Schema.getProperties().get("spec");
       if (spec == null || spec.getProperties().isEmpty()) return false;
