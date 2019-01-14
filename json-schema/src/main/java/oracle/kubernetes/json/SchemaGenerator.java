@@ -215,7 +215,6 @@ public class SchemaGenerator {
     String description = getDescription(field);
     if (description != null) result.put("description", description);
     if (isString(field.getType())) addStringRestrictions(result, field);
-    if (isDateTime(field.getType())) result.put("format", "date-time");
     if (isNumeric(field.getType())) addRange(result, field);
 
     return result;
@@ -285,7 +284,7 @@ public class SchemaGenerator {
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
       if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) result.put("type", "boolean");
       else if (isNumeric(type)) result.put("type", "number");
-      else if (isString(type) || isDateTime(type)) result.put("type", "string");
+      else if (isString(type)) result.put("type", "string");
       else if (type.isEnum()) generateEnumTypeIn(result, (Class<? extends Enum>) type);
       else if (type.isArray()) this.generateArrayTypeIn(result, type);
       else if (Collection.class.isAssignableFrom(type)) generateCollectionTypeIn(result);
@@ -403,20 +402,25 @@ public class SchemaGenerator {
   }
 
   private void generateObjectTypeIn(Map<String, Object> result, Class<?> type) {
-    Map<String, Object> properties = new HashMap<>();
-    List<String> requiredFields = new ArrayList<>();
-    result.put("type", "object");
-    if (includeAdditionalProperties) result.put("additionalProperties", "false");
-    result.put("properties", properties);
+    if (isDateTime(type)) {
+      result.put("type", "string");
+      result.put("format", "date-time");
+    } else {
+      Map<String, Object> properties = new HashMap<>();
+      List<String> requiredFields = new ArrayList<>();
+      result.put("type", "object");
+      if (includeAdditionalProperties) result.put("additionalProperties", "false");
+      result.put("properties", properties);
 
-    for (Field field : getPropertyFields(type)) {
-      if (!isSelfReference(field)) generateFieldIn(properties, field);
-      if (isRequired(field) && includeInSchema(field)) {
-        requiredFields.add(getPropertyName(field));
+      for (Field field : getPropertyFields(type)) {
+        if (!isSelfReference(field)) generateFieldIn(properties, field);
+        if (isRequired(field) && includeInSchema(field)) {
+          requiredFields.add(getPropertyName(field));
+        }
       }
-    }
 
-    if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+      if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+    }
   }
 
   private Collection<Field> getPropertyFields(Class<?> type) {
