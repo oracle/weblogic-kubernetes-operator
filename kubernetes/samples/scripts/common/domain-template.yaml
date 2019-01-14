@@ -17,7 +17,7 @@ spec:
   domainHome: %DOMAIN_HOME%
   # If the domain home is in the image
   domainHomeInImage: %DOMAIN_HOME_IN_IMAGE%
-  # The Operator currently does not support other images
+  # The WebLogic Server Docker image that the Operator uses to start the domain
   image: "%WEBLOGIC_IMAGE%"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
