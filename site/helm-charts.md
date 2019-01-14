@@ -81,15 +81,15 @@ The script takes the subject alternative names that should be added to the certi
 $ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> custom-values.yaml
 ```
 
-## Optional: ELK (Elasticsearch, Logstash and Kibana) integration
+## Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration
 
-The operator Helm chart includes the option of installing the necessary Kubernetes resources for ELK integration.
+The operator Helm chart includes the option of installing the necessary Kubernetes resources for Elastic Stack integration.
 
 You are responsible for configuring Kibana and Elasticsearch, then configuring the operator Helm chart to send events to Elasticsearch. In turn, the operator Helm chart configures Logstash in the operator deployment to send the operator's log contents to that Elasticsearch location.
 
-### ELK per-operator configuration
+### Elastic Stack per-operator configuration
 
-As part of the ELK integration, Logstash configuration occurs for each deployed operator instance.  You can use the following configuration values to configure the integration:
+As part of the Elastic Stack integration, Logstash configuration occurs for each deployed operator instance.  You can use the following configuration values to configure the integration:
 
 * Set `elkIntegrationEnabled` is `true` to enable the integration.
 * Set `logStashImage` to override the default version of Logstash to be used (`logstash:6.2`).
@@ -268,11 +268,11 @@ domainNamespaces: [ "namespace1", "namespace2" ]
 
 **NOTE**: These examples show two valid YAML syntax options for arrays.
 
-### ELK integration
+### Elastic Stack integration
 
 #### `elkIntegrationEnabled`
 
-Specifies whether or not ELK integration is enabled.
+Specifies whether or not Elastic Stack integration is enabled.
 
 Defaults to `false`.
 
