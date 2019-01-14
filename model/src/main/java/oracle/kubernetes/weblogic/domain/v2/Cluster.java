@@ -127,6 +127,14 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.maxUnavailable = maxUnavailable;
   }
 
+  void fillInFrom(Cluster other) {
+    if (other == null) {
+      return;
+    }
+    super.fillInFrom(other);
+    clusterService.fillInFrom(other.clusterService);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
