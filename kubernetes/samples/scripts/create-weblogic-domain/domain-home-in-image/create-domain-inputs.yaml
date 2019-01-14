@@ -119,7 +119,6 @@ persistentVolumeClaimName: domain1-weblogic-sample-pvc
 domainPVMountPath: /shared
 
 # Base WebLogic binary image used to build the WebLogic domain image
-# WebLogic Server Docker image.
 # The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied.
 # Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how
 # to create a custom Docker image with the required patch.
