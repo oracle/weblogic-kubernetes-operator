@@ -100,7 +100,13 @@ Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information abo
 
 ### Creating and managing WebLogic domains
 
-In this version of the operator, a WebLogic domain can be located either in a persistent volume (PV) or in a Docker image. For examples of each, see the [WebLogic operator samples](../kubernetes/samples/README.md).
+In this version of the operator, a WebLogic domain can be located either in a persistent volume (PV) or in a Docker image.
+For examples of each, see the [WebLogic operator samples](../kubernetes/samples/README.md).
+
+If you wish to create your own Docker images, for example to choose a specific set of patches, or to create a domain
+with a specific configuration and/or applications deployed, then you can create the domain custom resource
+manually to deploy your domain.  This process is documented in [this
+sample](../kubernetes/samples/scripts/create-weblogic-domain/manually-create-domain/README.md).
 
 ### Modifying domain configurations
 
