@@ -1043,6 +1043,10 @@ window.onload = function() {
         "clusterName"
       ]
     },
+    "DateTime": {
+      "format": "date-time",
+      "type": "string"
+    },
     "DomainCondition": {
       "type": "object",
       "properties": {
@@ -1051,9 +1055,8 @@ window.onload = function() {
           "type": "string"
         },
         "lastTransitionTime": {
-          "format": "date-time",
           "description": "Last time the condition transitioned from one status to another.",
-          "type": "string"
+          "$ref": "#/definitions/DateTime"
         },
         "message": {
           "description": "Human-readable message indicating details about last transition.",
@@ -1064,9 +1067,8 @@ window.onload = function() {
           "type": "string"
         },
         "lastProbeTime": {
-          "format": "date-time",
           "description": "Last time we probed the condition.",
-          "type": "string"
+          "$ref": "#/definitions/DateTime"
         },
         "status": {
           "description": "Status is the status of the condition. Can be True, False, Unknown. Required",
@@ -1211,9 +1213,8 @@ window.onload = function() {
           "minimum": 0.0
         },
         "startTime": {
-          "format": "date-time",
           "description": "RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available.",
-          "type": "string"
+          "$ref": "#/definitions/DateTime"
         },
         "conditions": {
           "description": "Current service state of domain.",
@@ -1311,9 +1312,8 @@ window.onload = function() {
           "type": "string"
         },
         "activationTime": {
-          "format": "date-time",
           "description": "RFC 3339 date and time at which the server started.",
-          "type": "string"
+          "$ref": "#/definitions/DateTime"
         },
         "subsystems": {
           "description": "Status of unhealthy subsystems, if any.",
@@ -1935,8 +1935,7 @@ window.onload = function() {
           "type": "string"
         },
         "deletionTimestamp": {
-          "format": "date-time",
-          "type": "string"
+          "$ref": "#/definitions/DateTime"
         },
         "labels": {
           "$ref": "#/definitions/Map"
@@ -1963,8 +1962,7 @@ window.onload = function() {
           "type": "string"
         },
         "creationTimestamp": {
-          "format": "date-time",
-          "type": "string"
+          "$ref": "#/definitions/DateTime"
         },
         "name": {
           "type": "string"
