@@ -133,7 +133,7 @@ spec:
   domainHome: /shared/domains/domain1
   # If the domain home is in the image
   domainHomeInImage: false
-  # The Operator currently does not support other images
+  # The WebLogic Server Docker image that the Operator uses to start the domain
   image: "oracle/weblogic:12213-patch-wls-for-k8s"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
