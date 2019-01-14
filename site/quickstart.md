@@ -177,8 +177,6 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
 $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u weblogic -p welcome1 -e
 ```
 
-**NOTE**: The username and password need to match the values that you put in the WebLogic credentials.
-
 You need to provide the WebLogic administration user name and password in the `-u` and `-p` options
 respectively, as shown in the example.  If you specify the `-e` option, the script will generate the
 Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the
