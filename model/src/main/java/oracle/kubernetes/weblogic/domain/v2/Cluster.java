@@ -29,7 +29,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   private String clusterName;
 
   /** The number of replicas to run in the cluster, if specified. */
-  @Description("The number of managed servers to run in this cluster")
+  @Description("The number of managed servers to run in this cluster.")
   @Range(minimum = 0)
   private Integer replicas;
 
