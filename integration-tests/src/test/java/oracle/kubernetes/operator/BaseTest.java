@@ -164,16 +164,18 @@ public class BaseTest {
     Map<String, Object> domainMap = domain.getDomainMap();
     // check if the property is set to true
     Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
-
+    String appLocationInPod = "/u01/oracle/apps";
     if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
       ExecResult result =
           TestUtils.kubectlexecNoCheck(
               domain.getDomainUid() + ("-") + domainMap.get("adminServerName"),
               "" + domainMap.get("namespace"),
-              " -- mkdir -p /shared/applications");
+              " -- mkdir -p " + appLocationInPod);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
-            "FAILURE: command to create directory /shared/applications in the pod failed, returned "
+            "FAILURE: command to create directory "
+                + appLocationInPod
+                + " in the pod failed, returned "
                 + result.stderr()
                 + " "
                 + result.stdout());
@@ -182,6 +184,7 @@ public class BaseTest {
       domain.deployWebAppViaWLST(
           TESTWEBAPP,
           getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
+          appLocationInPod,
           getUsername(),
           getPassword());
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
@@ -307,6 +310,7 @@ public class BaseTest {
     domain.deployWebAppViaWLST(
         "opensessionapp",
         getProjectRoot() + "/src/integration-tests/apps/opensessionapp.war",
+        "/u01/oracle/apps/",
         getUsername(),
         getPassword());
 
