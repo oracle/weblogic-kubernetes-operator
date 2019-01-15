@@ -77,7 +77,7 @@ When you POST to the `/scale` REST endpoint, you must send the following headers
 For example, when using `curl`:
 
 ```
-curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d { "managedServerCount": 3 } https:/.../scaling
+curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d '{ "managedServerCount": 3 }' https://.../scaling
 ```
 
 If you omit the header, you'll get a `400 (bad request)` response without any details explaining why the request was bad.  If you omit the Bearer Authentication header, then you'll get a `401 (Unauthorized)` response.
