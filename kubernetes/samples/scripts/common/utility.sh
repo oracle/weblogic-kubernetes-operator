@@ -277,6 +277,16 @@ function createFiles {
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
 
+    if [ -z $domainHomeImageBuildPath ]; then
+      domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt"
+    fi
+
+    # calculate the internal name to tag the generated image
+    imageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
+    baseTag=${domainHomeImageBase#*:}
+   
+    imageName=${imageName}:${baseTag:-"latest"}
+
     # Generate the properties file that will be used when creating the weblogic domain
     echo Generating ${domainPropertiesOutput}
 
@@ -293,6 +303,7 @@ function createFiles {
     sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
+    sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${domainPropertiesOutput}
 
   else
 
@@ -401,11 +412,7 @@ function createFiles {
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
 
   if [ "${domainHomeInImage}" == "true" ]; then
-    if [ -z $domainHomeImageBuildPath ]; then
-      domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt"
-    fi
-    imageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
-
+ 
     # now we know which image to use, update the domain yaml file
     if [ -z $image ]; then
       sed -i -e "s|%WEBLOGIC_IMAGE%|${imageName}|g" ${dcrOutput}
@@ -416,8 +423,9 @@ function createFiles {
     sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
   fi
 
-  # Remove any "...yaml-e" files left over from running sed
+  # Remove any "...yaml-e" and "...properties-e" files left over from running sed
   rm -f ${domainOutputDir}/*.yaml-e
+  rm -f ${domainOutputDir}/*.properties-e
 }
 
 #
