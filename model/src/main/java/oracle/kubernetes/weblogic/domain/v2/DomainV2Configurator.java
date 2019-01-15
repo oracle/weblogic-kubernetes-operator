@@ -451,13 +451,13 @@ public class DomainV2Configurator extends DomainConfigurator {
 
     @Override
     public ClusterConfigurator withServiceLabel(String name, String value) {
-      cluster.addServiceLabel(name, value);
+      cluster.addClusterLabel(name, value);
       return this;
     }
 
     @Override
     public ClusterConfigurator withServiceAnnotation(String name, String value) {
-      cluster.addServiceAnnotation(name, value);
+      cluster.addClusterAnnotation(name, value);
       return this;
     }
 
