@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
@@ -782,6 +783,7 @@ public class Domain {
 
   private void callShellScriptByExecToPod(String username, String password, String webappName)
       throws Exception {
+    String asn = adminServerName.toLowerCase(Locale.ENGLISH).replace('_', '-').replace('.', '-');
 
     StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
     cmdKubectlSh
@@ -789,7 +791,7 @@ public class Domain {
         .append(" exec -it ")
         .append(domainUid)
         .append("-")
-        .append(adminServerName)
+        .append(asn)
         .append(" /shared/callpyscript.sh /shared/deploywebapp.py ")
         .append(username)
         .append(" ")
@@ -798,7 +800,7 @@ public class Domain {
         // .append(TestUtils.getHostName())
         .append(domainUid)
         .append("-")
-        .append(adminServerName)
+        .append(asn)
         .append(":")
         .append(t3ChannelPort)
         .append(" ")
@@ -855,7 +857,9 @@ public class Domain {
     // map with server names and boolean values
     HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
     for (int i = 1; i <= TestUtils.getClusterReplicas(domainUid, clusterName, domainNS); i++) {
-      managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
+      String msnb =
+          managedServerNameBase.toLowerCase(Locale.ENGLISH).replace('_', '-').replace('.', '-');
+      managedServers.put(domainUid + "-" + msnb + i, new Boolean(false));
     }
     logger.info("Calling webapp 20 times " + curlCmd);
     // number of times to call webapp

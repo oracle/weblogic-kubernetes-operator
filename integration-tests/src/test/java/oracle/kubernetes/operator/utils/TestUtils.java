@@ -10,6 +10,7 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
@@ -37,6 +38,7 @@ public class TestUtils {
    */
   public static void checkPodReady(String podName, String domainNS) throws Exception {
     StringBuffer cmd = new StringBuffer();
+    podName = podName.toLowerCase(Locale.ENGLISH).replace('_', '-').replace('.', '-');
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
     // check for admin pod
@@ -47,6 +49,7 @@ public class TestUtils {
   public static void checkPodCreated(String podName, String domainNS) throws Exception {
 
     StringBuffer cmd = new StringBuffer();
+    podName = podName.toLowerCase(Locale.ENGLISH).replace('_', '-').replace('.', '-');
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
     // check for admin pod
@@ -58,6 +61,7 @@ public class TestUtils {
    * @throws Exception
    */
   public static void checkServiceCreated(String serviceName, String domainNS) throws Exception {
+    serviceName = serviceName.toLowerCase(Locale.ENGLISH).replace('_', '-').replace('.', '-');
     int i = 0;
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get service ").append(serviceName).append(" -n ").append(domainNS);
@@ -221,6 +225,7 @@ public class TestUtils {
   public static void testWlsLivenessProbe(String domainUid, String serverName, String namespace)
       throws Exception {
     String podName = domainUid + "-" + serverName;
+    podName = podName.toLowerCase(Locale.ENGLISH).replace('_', '-').replace('.', '-');
     int initialRestartCnt = getPodRestartCount(podName, namespace);
     String filePath =
         BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/killserver.sh";
@@ -282,6 +287,7 @@ public class TestUtils {
   public static void kubectlcp(
       String srcFileOnHost, String destLocationInPod, String podName, String namespace)
       throws Exception {
+    podName = podName.toLowerCase(Locale.ENGLISH).replace('_', '-').replace('.', '-');
     StringBuffer cmdTocp = new StringBuffer("kubectl cp ");
     cmdTocp
         .append(srcFileOnHost)
