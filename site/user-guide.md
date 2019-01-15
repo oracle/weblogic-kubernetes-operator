@@ -22,8 +22,8 @@ presented in the correct order.
   * [Set up load balancers](../kubernetes/samples/charts/README.md)
   * [Configuring Kibana and Elasticsearch](../kubernetes/samples/scripts/elasticsearch-and-kibana/README.md)
 * [Install and manage the operator](install.md)
-  * [Using the Helm charts](helm-charts.md)
-* [Using the operator's REST interface](rest.md)
+  * [Using the Helm charts](install.md#install-helm-and-tiller)
+  * [Using the operator's REST interface](rest.md)
 * [Creating or obtaining WebLogic Docker images](weblogic-docker-images.md)
   * [Obtaining standard images from the Docker store](weblogic-docker-images.md#obtaining-standard-images-from-the-docker-store)
   * [Creating a custom images with patches applied](weblogic-docker-images.md#creating-a-custom-images-with-patches-applied)
@@ -57,6 +57,19 @@ This documentation uses several important terms which are intended to have a spe
 ## Getting started
 
 Before using the operator, you might want to read the [design philosophy](design.md) to develop an understanding of the operator's design, and the [architectural overview](architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator. Also, worth reading are the details of the [Kubernetes RBAC definitions](rbac.md) required by the operator.
+
+An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances
+of complex applications. The Oracle WebLogic Server Kubernetes Operator follows the standard Kubernetes operator pattern, and
+simplifies the management and operation of WebLogic domains and deployments.
+
+You can have one or more operators in your Kubernetes cluster that manage one or more WebLogic domains each.
+We provide a Helm chart to manage the installation and configuration of the operator.
+Detailed instructions are available [here](install.md).
+
+## Operator Docker image
+
+You can find the operator image in
+[Docker Hub](https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/).
 
 ## Prerequisites
 
