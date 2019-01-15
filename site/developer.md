@@ -84,9 +84,9 @@ $ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 $ docker load < /some/path/operator.tar
 ```
 
-Use the Helm charts to [install the operator](helm-charts.md).
+Use the Helm charts to [install the operator](install.md).
 
-If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options](helm-charts.md#debugging-options).
+If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options](install.md#debugging-options).
 
 ## Running integration tests
 
