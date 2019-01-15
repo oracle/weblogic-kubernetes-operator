@@ -28,3 +28,4 @@ spec:
       - channelName: default
         nodePort: 30701
       - channelName: T3Channel
+        nodePort: 30712
