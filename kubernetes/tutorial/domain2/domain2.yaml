@@ -33,6 +33,8 @@ spec:
     - mountPath: /domain_logs
       name: weblogic-domain-storage-volume
   adminServer:
-    serverStartState: "RUNNING"
-    nodePort: 30703
-
+    adminService:
+      channels:
+      - channelName: default
+        nodePort: 30703
+      - channelName: T3Channel

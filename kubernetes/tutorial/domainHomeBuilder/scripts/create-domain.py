@@ -8,14 +8,14 @@ domain_path                  = os.environ.get("DOMAIN_HOME")
 admin_username               = os.environ.get("ADMIN_USER")
 admin_password               = os.environ.get("ADMIN_PWD")
 
-host_name                    = "localhost"    #TODO
+host_name                    = "localhost"    
 cluster_type                 = "DYNAMIC"
 
 cluster_name                 = "cluster-1"
 admin_server_name            = "admin-server"
 admin_port                   = 7001
 t3_channel_port              = 30012
-t3_public_address            = host_name   # TODO
+t3_public_address            = host_name   
 
 managed_server_name_base     = "managed-server"
 server_port                  = 8001
@@ -27,6 +27,7 @@ print('domain_name        : [%s]' % domain_name);
 print('admin_server_name  : [%s]' % admin_server_name);
 print('admin_username     : [%s]' % admin_username);
 print('admin_port         : [%s]' % admin_port);
+print('t3_channel_port    : [%s]' % t3_channel_port);
 print('cluster_name       : [%s]' % cluster_name);
 print('server_port        : [%s]' % server_port);
 

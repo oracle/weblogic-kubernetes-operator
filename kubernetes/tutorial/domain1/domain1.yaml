@@ -23,5 +23,8 @@ spec:
   serverStartPolicy: "IF_NEEDED"
   replicas: 2
   adminServer:
-    serverStartState: "RUNNING"
-    nodePort: 30701
+    adminService:
+      channels:
+      - channelName: default
+        nodePort: 30701
+      - channelName: T3Channel

@@ -33,5 +33,7 @@ spec:
     - mountPath: /u01/oracle/user-projects 
       name: weblogic-domain-storage-volume
   adminServer:
-    serverStartState: "RUNNING"
-    nodePort: 30705
+    adminService:
+      channels:
+      - channelName: default
+        nodePort: 30705
