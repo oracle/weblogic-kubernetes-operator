@@ -73,7 +73,7 @@ docker login
 docker build --build-arg VERSION=<version> -t weblogic-kubernetes-operator:some-tag --no-cache=true .
 ```
 
-Replace <version> with the version of the project found in the `pom.xml` file in the project root directory.
+Replace `<version>` with the version of the project found in the `pom.xml` file in the project root directory.
 
 **Note**: If you have not used the base image (`store/oracle/serverjre:8`) before, you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before the Docker Store will give you permission to pull that image.
 
