@@ -16,7 +16,7 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
   /** The name of the managed server. Required. */
   @SerializedName("serverName")
   @Expose
-  @Description("The name of the server. Required.")
+  @Description("The name of the server. Required")
   @Nonnull
   private String serverName;
 

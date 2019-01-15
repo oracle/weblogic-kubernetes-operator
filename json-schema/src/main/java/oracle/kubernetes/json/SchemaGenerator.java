@@ -18,6 +18,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import javax.annotation.Nonnull;
+import org.joda.time.DateTime;
 
 @SuppressWarnings("WeakerAccess")
 public class SchemaGenerator {
@@ -50,6 +51,9 @@ public class SchemaGenerator {
 
   // if true, the object fields are implemented as references to definitions
   private boolean supportObjectReferences = true;
+
+  // if true, generate the top-level schema version reference
+  private boolean includeSchemaReference = true;
 
   /**
    * Returns a pretty-printed string corresponding to a generated schema
@@ -145,6 +149,15 @@ public class SchemaGenerator {
   }
 
   /**
+   * Specifies whether top-level schema reference is included
+   *
+   * @param includeSchemaReference true to include schema reference
+   */
+  public void setIncludeSchemaReference(boolean includeSchemaReference) {
+    this.includeSchemaReference = includeSchemaReference;
+  }
+
+  /**
    * Generates an object representing a JSON schema for the specified class.
    *
    * @param aClass the class for which the schema should be generated
@@ -153,7 +166,9 @@ public class SchemaGenerator {
   public Object generate(Class aClass) {
     Map<String, Object> result = new HashMap<>();
 
-    result.put("$schema", JSON_SCHEMA_REFERENCE);
+    if (includeSchemaReference) {
+      result.put("$schema", JSON_SCHEMA_REFERENCE);
+    }
     generateObjectTypeIn(result, aClass);
     if (!definedObjects.isEmpty()) {
       Map<String, Object> definitions = new TreeMap<>();
@@ -207,6 +222,10 @@ public class SchemaGenerator {
 
   private boolean isString(Class<?> type) {
     return type.equals(String.class);
+  }
+
+  private boolean isDateTime(Class<?> type) {
+    return type.equals(DateTime.class);
   }
 
   private boolean isNumeric(Class<?> type) {
@@ -383,20 +402,25 @@ public class SchemaGenerator {
   }
 
   private void generateObjectTypeIn(Map<String, Object> result, Class<?> type) {
-    Map<String, Object> properties = new HashMap<>();
-    List<String> requiredFields = new ArrayList<>();
-    result.put("type", "object");
-    if (includeAdditionalProperties) result.put("additionalProperties", "false");
-    result.put("properties", properties);
+    if (isDateTime(type)) {
+      result.put("type", "string");
+      result.put("format", "date-time");
+    } else {
+      Map<String, Object> properties = new HashMap<>();
+      List<String> requiredFields = new ArrayList<>();
+      result.put("type", "object");
+      if (includeAdditionalProperties) result.put("additionalProperties", "false");
+      result.put("properties", properties);
 
-    for (Field field : getPropertyFields(type)) {
-      if (!isSelfReference(field)) generateFieldIn(properties, field);
-      if (isRequired(field) && includeInSchema(field)) {
-        requiredFields.add(getPropertyName(field));
+      for (Field field : getPropertyFields(type)) {
+        if (!isSelfReference(field)) generateFieldIn(properties, field);
+        if (isRequired(field) && includeInSchema(field)) {
+          requiredFields.add(getPropertyName(field));
+        }
       }
-    }
 
-    if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+      if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+    }
   }
 
   private Collection<Field> getPropertyFields(Class<?> type) {
