@@ -69,8 +69,8 @@ The Javadoc is also available in the GitHub repository [here](https://oracle.git
 Log in to the Docker Store so that you will be able to pull the base image and create the Docker image as follows.  These commands should be executed in the project root directory:
 
 ```
-docker login
-docker build --build-arg VERSION=<version> -t weblogic-kubernetes-operator:some-tag --no-cache=true .
+$ docker login
+$ docker build --build-arg VERSION=<version> -t weblogic-kubernetes-operator:some-tag --no-cache=true .
 ```
 
 Replace `<version>` with the version of the project found in the `pom.xml` file in the project root directory.
