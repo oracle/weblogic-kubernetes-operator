@@ -88,7 +88,7 @@ The internal REST endpoint is only accessible from within the Kubernetes cluster
 is accessible from outside the Kubernetes cluster.
 The internal REST endpoint is enabled by default and thus always available, whereas the external REST endpoint
 is disabled by default and only exposed if explicitly configured.
-Detailed instructions for configuring the external REST endpoint are available [here](helm-charts.md).
+Detailed instructions for configuring the external REST endpoint are available [here](install.md).
 
 **NOTE**: Regardless of which endpoint is being invoked, the URL format for scaling is the same.
 
