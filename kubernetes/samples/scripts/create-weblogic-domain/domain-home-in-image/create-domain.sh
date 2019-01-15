@@ -165,14 +165,14 @@ function initialize {
 #
 function getDockerSample {
   rm -rf ${scriptDir}/docker-images
-  git clone https://github.com/oracle/docker-images.git ${scriptDir}/docker-images
+  git clone https://github.com/mriccell/docker-images.git ${scriptDir}/docker-images
 }
 
 #
 # Function to build docker image and create WebLogic domain home
 #
 function createDomainHome {
-  dockerDir=${scriptDir}/${domainHomeImageBuildPath}
+  dockerDir=${domainHomeImageBuildPath}
   dockerPropsDir=${dockerDir}/properties
   cp ${domainPropertiesOutput} ${dockerPropsDir}/docker-build
 
@@ -194,18 +194,16 @@ function createDomainHome {
   fi
 
   sh ${dockerDir}/build.sh
-  imageNameOrigin="`basename ${domainHomeImageBuildPath}`"
-
-  # if use the default images, we tag it to a more generic name (without the release version numbers)
-  if [ -z $image ]; then
-    docker tag $imageNameOrigin:latest $imageName:latest
-  else
-    docker tag $imageNameOrigin:latest $image
+  if [ ! -z $image ]; then
+    docker tag $imageName $image
   fi
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."
   fi
+
+  # clean up the generated domain.properties file
+  rm -rf ${domainPropertiesOutput}/domain.properties
 
   echo ""
   echo "Create domain ${domainName} successfully."
@@ -230,7 +228,6 @@ function printSummary {
   fi
   echo "The following files were generated:"
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"
-  echo "  ${domainPropertiesOutput}"
   echo "  ${dcrOutput}"
   echo ""
   echo "Completed"
