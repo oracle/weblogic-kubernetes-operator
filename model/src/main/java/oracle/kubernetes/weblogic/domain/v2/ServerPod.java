@@ -47,7 +47,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Settings for the liveness probe associated with a server")
+  @Description("Settings for the liveness probe associated with a server.")
   private ProbeTuning livenessProbe = new ProbeTuning();
 
   /**
@@ -56,7 +56,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Settings for the readiness probe associated with a server")
+  @Description("Settings for the readiness probe associated with a server.")
   private ProbeTuning readinessProbe = new ProbeTuning();
 
   /**
@@ -74,7 +74,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Memory and cpu minimum requirements and limits for the server")
+  @Description("Memory and cpu minimum requirements and limits for the server.")
   private V1ResourceRequirements resources =
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
 
@@ -85,7 +85,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Pod-level security attributes")
+  @Description("Pod-level security attributes.")
   private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
 
   /**
@@ -96,7 +96,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Description(
-      "Container-level security attributes. Will override any matching pod-level attributes")
+      "Container-level security attributes. Will override any matching pod-level attributes.")
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
 
   /**
@@ -104,7 +104,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Additional volumes to be created in the server pod")
+  @Description("Additional volumes to be created in the server pod.")
   private List<V1Volume> volumes = new ArrayList<>();
 
   /**
@@ -112,7 +112,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Additional volume mounts for the server pod")
+  @Description("Additional volume mounts for the server pod.")
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
   ProbeTuning getReadinessProbeTuning() {

@@ -1,6 +1,6 @@
-# Quick start guide
+# Quick Start guide
 
-Use this quick start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production.
+Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production.
 These instructions assume that you are already familiar with Kubernetes.  If you need more detailed instructions, please
 refer to the [User guide](user-guide.md).
 
@@ -14,7 +14,7 @@ refer to the [User guide](user-guide.md).
     the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1`
 
 ## Prerequisites
-For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
+For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md). This guide assumes a single node cluster.
 
 The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Using operator Helm charts](helm-charts.md).
 
@@ -29,14 +29,13 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator
 a.  If you don't already have one, obtain a Docker Store account, log in to the Docker Store
     and accept the license agreement for the [WebLogic Server image](https://hub.docker.com/_/oracle-weblogic-server-12c).
 
-b.  Log in to the Docker Store from your docker client:
+b.  Log in to the Docker Store from your Docker client:
 ```
 $ docker login
 ```
-c.	Pull the operator image and tag it with the default image value of the operator:
+c.	Pull the operator image:
 ```
 $ docker pull oracle/weblogic-kubernetes-operator:2.0-rc2
-$ docker tag oracle/weblogic-kubernetes-operator:2.0-rc2 weblogic-kubernetes-operator:2.0
 ```
 d.	Pull the Traefik load balancer image:
 ```
@@ -46,10 +45,14 @@ e.	Pull the WebLogic 12.2.1.3 install image:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```
-f.	Then patch the WebLogic image according to these [instructions](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s),
-    and copy the image to all nodes in your cluster, or put it in a Docker registry that your cluster can access.
+f.	Then patch the WebLogic image according to the instructions [here](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s), with these modifications:
 
-g.  Grant the Helm service account the `cluster-admin` role:
+* Change the `FROM` clause to extend the `store/oracle/weblogic:12.2.1.3` image from `Dockerfile.patch-ontop-12213`.
+* Comment out commands that apply patch 27117282.   
+
+g. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
+
+## 2. Grant the Helm service account the `cluster-admin` role.
 
 ```
 $ cat <<EOF | kubectl apply -f -
@@ -68,7 +71,7 @@ subjects:
 EOF
 ```
 
-## 2. Create a Traefik (Ingress-based) load balancer.
+## 3. Create a Traefik (Ingress-based) load balancer.
 
 Use `helm` to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](../kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 ```
@@ -80,7 +83,7 @@ $ helm install stable/traefik \
 --wait
 ```
 
-## 3. Install the operator.
+## 4. Install the operator.
 
 a.  Create a namespace for the operator:
 ```
@@ -90,13 +93,13 @@ b.	Create a service account for the operator in the operator's namespace:
 ```
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
-
 c.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
 ```
 $ helm install kubernetes/charts/weblogic-operator \
   --name sample-weblogic-operator \
   --namespace sample-weblogic-operator-ns \
+  --set image=oracle/weblogic-kubernetes-operator:2.0-rc2 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "domainNamespaces={}" \
   --wait
@@ -110,10 +113,10 @@ $ kubectl get pods -n sample-weblogic-operator-ns
 e.  Verify that the operator is up and running by viewing the operator pod's log:
 
 ```
-$ kubectl log -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
+$ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
 ```
 
-## 4. Prepare your environment for a domain.
+## 5. Prepare your environment for a domain.
 
 a.  Create a namespace that can host one or more domains:
 
@@ -141,7 +144,7 @@ $ helm upgrade \
   stable/traefik
 ```
 
-## 5. Create a domain in the domain namespace.
+## 6. Create a domain in the domain namespace.
 
 a. Create a Kubernetes secret containing the `username` and `password` for the domain using the [`create-weblogic-credentials`](../kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 
@@ -158,23 +161,29 @@ b.	Create a new image with a domain home by running the [`create-domain`](../kub
 Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file,
 including:
 
-* Copying the sample `create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
-domain namespace (`sample-domain1-ns`) and the `domainHomeImageBase` (`oracle/weblogic:12213-patch-wls-for-k8s`).
+* Copying the sample `kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
+domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`oracle/weblogic:12213-patch-wls-for-k8s`).
 
-* Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials.
-  By convention, the secret will be named`domainUID-weblogic-credentials` (where `domainUID` is replaced with the
-  actual `domainUID` value).
+* Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials, in this case, `sample-domain1-weblogic-credentials`.
 
 * Leaving the `image` empty unless you need to tag the new image that the script builds to a different name.
 
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
 $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u username -p password -e
+$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u weblogic -p welcome1 -e
 ```
 
 You need to provide the WebLogic administration user name and password in the `-u` and `-p` options
-respectively, as shown in the example.  If you specify the `-e` option, the script will generate the
+respectively, as shown in the example.
+
+**NOTE**: When using this sample, the WebLogic Server credentials that you specify, in three separate places, must be consistent:
+
+1. The secret that you create for the credentials.
+2. The properties files in the sample project you choose to create the Docker image from.
+3. The parameters you supply to the `createDomain.sh` script.
+
+If you specify the `-e` option, the script will generate the
 Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the
 script will just generate the YAML files, but will not take any action on your cluster.
 
@@ -239,7 +248,7 @@ $ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/
 **Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
 update security lists to allow ingress to this port.
 
-## 6. Remove the domain.
+## 7. Remove the domain.
 
 a.	Remove the domain's Ingress by using `helm`:
 ```
@@ -255,7 +264,7 @@ $ kubectl get pods -n sample-domain1-ns
 $ kubectl get domains -n sample-domain1-ns
 ```
 
-## 7. Remove the domain namespace.
+## 8. Remove the domain namespace.
 a.	Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:
 
 ```
@@ -283,7 +292,7 @@ c.	Delete the domain namespace:
 $ kubectl delete namespace sample-domain1-ns
 ```
 
-## 8. Remove the operator.
+## 9. Remove the operator.
 
 a.	Remove the operator:
 ```
@@ -294,7 +303,7 @@ b.	Remove the operator's namespace:
 ```
 $ kubectl delete namespace sample-weblogic-operator-ns
 ```
-## 9. Remove the load balancer.
+## 10. Remove the load balancer.
 a.	Remove the Traefik load balancer:
 ```
 $ helm delete --purge traefik-operator

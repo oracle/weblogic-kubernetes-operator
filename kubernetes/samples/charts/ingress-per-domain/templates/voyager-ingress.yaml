@@ -42,5 +42,5 @@ spec:
       nodePort: {{ .Values.voyager.statsPort }}
   selector:
     origin: voyager
-    origin-name: {{ .Release.Name }}-voyager
+    origin-name: {{ .Values.wlsDomain.domainUID }}-voyager
 {{- end }}

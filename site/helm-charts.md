@@ -16,6 +16,30 @@ The WebLogic Kubernetes Operator uses Helm to create and deploy any necessary re
 
 Helm has two parts: a client (Helm) and a server (Tiller). Tiller runs inside of your Kubernetes cluster, and manages releases (installations) of your charts.  See https://github.com/kubernetes/helm/blob/master/docs/install.md for detailed instructions on installing Helm and Tiller.
 
+In order to use Helm to install and manage the operator, you need to ensure that the service account that Tiller uses
+has the `cluster-admin` role.  The default would be `default` in namespace `kube-system`.  You can give that service
+account the necessary permissions with this command:
+
+```
+cat << EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: helm-user-cluster-admin-role
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+EOF
+```
+
+**Note** Oracle strongly recommends that you create a new service account to be used exclusively by tiller and grant
+`cluster-admin` to that service account, rather than using the `default` one.
+
 ## Operator's Helm chart configuration
 
 The operator Helm chart is pre-configured with default values for the configuration of the operator.
@@ -57,15 +81,15 @@ The script takes the subject alternative names that should be added to the certi
 $ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> custom-values.yaml
 ```
 
-## Optional: ELK (Elasticsearch, Logstash and Kibana) integration
+## Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration
 
-The operator Helm chart includes the option of installing the necessary Kubernetes resources for ELK integration.
+The operator Helm chart includes the option of installing the necessary Kubernetes resources for Elastic Stack integration.
 
 You are responsible for configuring Kibana and Elasticsearch, then configuring the operator Helm chart to send events to Elasticsearch. In turn, the operator Helm chart configures Logstash in the operator deployment to send the operator's log contents to that Elasticsearch location.
 
-### ELK per-operator configuration
+### Elastic Stack per-operator configuration
 
-As part of the ELK integration, Logstash configuration occurs for each deployed operator instance.  You can use the following configuration values to configure the integration:
+As part of the Elastic Stack integration, Logstash configuration occurs for each deployed operator instance.  You can use the following configuration values to configure the integration:
 
 * Set `elkIntegrationEnabled` is `true` to enable the integration.
 * Set `logStashImage` to override the default version of Logstash to be used (`logstash:6.2`).
@@ -95,7 +119,7 @@ or:
 ```
 $ helm install kubernetes/charts/weblogic-operator \
   --name weblogic-operator --namespace weblogic-operator-namespace \
-  --set "javaLoggingLevel:FINE" --wait
+  --set "javaLoggingLevel=FINE" --wait
 ```
 
 This creates a Helm release, named `weblogic-operator` in the `weblogic-operator-namespace` namespace, and configures a deployment and supporting resources for the operator.
@@ -155,7 +179,7 @@ Change one or more values in the operator Helm release. In this example, the `--
 $ helm upgrade \
   --reuse-values \
   --set "domainNamespaces={sample-domains-ns1}" \
-  --set "javaLoggingLevel:FINE" \
+  --set "javaLoggingLevel=FINE" \
   --wait \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
@@ -244,11 +268,11 @@ domainNamespaces: [ "namespace1", "namespace2" ]
 
 **NOTE**: These examples show two valid YAML syntax options for arrays.
 
-### ELK integration
+### Elastic Stack integration
 
 #### `elkIntegrationEnabled`
 
-Specifies whether or not ELK integration is enabled.
+Specifies whether or not Elastic Stack integration is enabled.
 
 Defaults to `false`.
 
@@ -471,7 +495,7 @@ The `helm install` eventually times out and creates a failed release.
 $ helm install kubernetes/charts/weblogic-operator --name op2 --namespace myuser-op2-ns --values o24.yaml --wait --no-hooks
 Error: release op2 failed: timed out waiting for the condition
 
-kubectl log -n kube-system tiller-deploy-f9b8476d-mht6v
+kubectl logs -n kube-system tiller-deploy-f9b8476d-mht6v
 ...
 [kube] 2018/12/06 21:16:54 Deployment is not ready: myuser-op2-ns/weblogic-operator
 ...
