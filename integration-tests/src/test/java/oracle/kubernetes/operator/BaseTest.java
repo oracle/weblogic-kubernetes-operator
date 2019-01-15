@@ -188,6 +188,31 @@ public class BaseTest {
           getUsername(),
           getPassword());
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+
+      // this check is done for domain-home-in-image, it needs 12.2.1.3 patched image
+      // otherwise managed servers will be unicast errors after app deployment
+      if (domainMap.containsKey("domainHomeImageBase")) {
+        if (domainMap.get("initialManagedServerReplicas") != null
+            && ((Integer) domainMap.get("initialManagedServerReplicas")).intValue() >= 1) {
+
+          result =
+              ExecCommand.exec(
+                  "kubectl logs "
+                      + domain.getDomainUid()
+                      + ("-")
+                      + domainMap.get("managedServerNameBase")
+                      + "1 -n "
+                      + domainMap.get("namespace")
+                      + " | grep BEA-000802 ");
+          if (result.exitValue() == 0) {
+            throw new RuntimeException(
+                "FAILURE: Managed Servers are not part of the cluster, failing with "
+                    + result.stdout()
+                    + ". \n The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied.");
+          }
+        }
+      }
+
     } else {
       logger.info("exposeAdminT3Channel is false, can not test t3ChannelPort");
     }
