@@ -16,7 +16,7 @@ refer to the [User guide](user-guide.md).
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
 
-The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Using operator Helm charts](helm-charts.md).
+The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Using operator Helm charts](install.md).
 
 You should clone this repository to your local machine so that you have access to the
 various sample files mentioned throughout this guide:
@@ -113,7 +113,7 @@ $ kubectl get pods -n sample-weblogic-operator-ns
 f.  Verify that the operator is up and running by viewing the operator pod's log:
 
 ```
-$ kubectl log -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
+$ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
 ```
 
 ## 4. Prepare your environment for a domain.
