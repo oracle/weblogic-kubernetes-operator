@@ -10,7 +10,7 @@ There are two main options available:
 
 If you want to use the first option, you will need to obtain the standard
 WebLogic Server image from the Docker Store, [see here](#obtaining-standard-images-from-the-docker-store),
-and then create a new image with the mandatory patches applied as described in [this section](#creating-a-custom-images-with-patches-applied).
+and then create a new image with the mandatory patches applied as described in [this section](#creating-a-custom-image-with-patches-applied).
 If you want to use additional patches, you can customize that process to include additional patches.
 
 If you want to use the second option, which includes the domain directory
@@ -19,7 +19,7 @@ as described in [this section](#creating-a-custom-image-with-your-domain-inside-
 
 ## Setting up secrets to access the Docker Store
 
-**Note**: This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 28076014, so pulling an unpatched image directly to the Kubernetes cluster is not particularly useful.  However, we have left this information in the documentation for reference purposes.
+**Note**: This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 29135930, so pulling an unpatched image directly to the Kubernetes cluster is not particularly useful.  However, we have left this information in the documentation for reference purposes.
 
 In order for Kubernetes to obtain the WebLogic Server Docker image from the Docker Store, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Docker Store credentials, issue the following command:
 
@@ -64,7 +64,7 @@ Docker Store.
 
 ## Creating a custom image with patches applied
 
-The Oracle WebLogic Server Kubernetes Operator requires patch 28076014.
+The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
 This patch does have some prerequisites that will also need to be applied.
 
 [This sample](https://github.com/oracle/docker-images/blob/master/OracleWebLogic/samples/12213-patch-wls-for-k8s/README.md) in
