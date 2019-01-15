@@ -218,12 +218,12 @@ public class ServiceHelper {
 
     @Override
     protected Map<String, String> getServiceLabels() {
-      return getServerSpec().getPodLabels();
+      return getServerSpec().getServiceLabels();
     }
 
     @Override
     protected Map<String, String> getServiceAnnotations() {
-      return getServerSpec().getPodAnnotations();
+      return getServerSpec().getServiceAnnotations();
     }
 
     String getServerName() {
@@ -734,20 +734,31 @@ public class ServiceHelper {
   }
 
   private static boolean validateCurrentService(V1Service build, V1Service current) {
-    V1ServiceSpec buildSpec = build.getSpec();
-    V1ServiceSpec currentSpec = current.getSpec();
+    return isCurrentServiceMetadataValid(build.getMetadata(), current.getMetadata())
+        && isCurrentServiceSpecValid(build.getSpec(), current.getSpec());
+  }
 
-    if (!VersionHelper.matchesResourceVersion(
-        current.getMetadata(), VersionConstants.DEFAULT_DOMAIN_VERSION)) {
-      return false;
-    }
+  private static boolean isCurrentServiceMetadataValid(
+      V1ObjectMeta buildMeta, V1ObjectMeta currentMeta) {
+    return VersionHelper.matchesResourceVersion(
+            currentMeta, VersionConstants.DEFAULT_DOMAIN_VERSION)
+        && KubernetesUtils.areLabelsValid(buildMeta, currentMeta)
+        && KubernetesUtils.areAnnotationsValid(buildMeta, currentMeta);
+  }
 
+  private static boolean isCurrentServiceSpecValid(
+      V1ServiceSpec buildSpec, V1ServiceSpec currentSpec) {
     String buildType = buildSpec.getType();
     String currentType = currentSpec.getType();
+
     if (currentType == null) {
       currentType = "ClusterIP";
     }
     if (!currentType.equals(buildType)) {
+      return false;
+    }
+
+    if (!KubernetesUtils.mapEquals(buildSpec.getSelector(), currentSpec.getSelector())) {
       return false;
     }
 

@@ -341,6 +341,41 @@ public class CallBuilder {
         responseStep, new RequestParams("replaceDomain", namespace, name, body), REPLACE_DOMAIN);
   }
 
+  private com.squareup.okhttp.Call replaceDomainStatusAsync(
+      ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
+      throws ApiException {
+    return new WeblogicApi(client)
+        .replaceWebLogicOracleV2NamespacedDomainStatusAsync(
+            name, namespace, body, pretty, callback);
+  }
+
+  private final CallFactory<Domain> REPLACE_DOMAIN_STATUS =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceDomainStatusAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Domain) requestParams.body,
+                  callback));
+
+  /**
+   * Asynchronous step for replacing domain status
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceDomainStatusAsync(
+      String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("replaceDomainStatus", namespace, name, body),
+        REPLACE_DOMAIN_STATUS);
+  }
+
   /* Custom Resource Definitions */
 
   private com.squareup.okhttp.Call readCustomResourceDefinitionAsync(
