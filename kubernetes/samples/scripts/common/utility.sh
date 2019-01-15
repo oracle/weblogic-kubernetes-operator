@@ -113,6 +113,7 @@ function toLower {
 function toDNS1123Legal {
   local val=`echo $1 | tr "[:upper:]" "[:lower:]"`
   val=${val//"_"/"-"}
+  val=${val//"."/"-"}
   echo "$val"
 }
 

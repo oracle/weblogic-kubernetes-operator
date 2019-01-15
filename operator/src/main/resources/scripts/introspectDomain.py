@@ -220,7 +220,7 @@ class OfflineWlstEnv(object):
     return val
 
   def toDNS1123Legal(self, address):
-    return address.lower().replace('_','-')
+    return address.lower().replace('_','-').replace('.','-')
 
 class SecretManager(object):
 
