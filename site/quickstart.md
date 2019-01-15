@@ -16,7 +16,7 @@ refer to the [User guide](user-guide.md).
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md).
 
-The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Using operator Helm charts](install.md).
+The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Install Helm and Tiller](install.md#install-helm-and-tiller).
 
 You should clone this repository to your local machine so that you have access to the
 various sample files mentioned throughout this guide:
