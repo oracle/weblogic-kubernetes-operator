@@ -637,7 +637,7 @@ public class ITOperator extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testDomainInImageUsing19cAndWLST() throws Exception {
+  public void testDomainInImageUsingWLST() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     logTestBegin("testDomainInImageUsing19cAndWLST");
 
@@ -654,7 +654,7 @@ public class ITOperator extends BaseTest {
       domain13.verifyDomainCreated();
 
       testBasicUseCases(domain13);
-      testAdvancedUseCasesForADomain(operator1, domain13);
+      // testAdvancedUseCasesForADomain(operator1, domain13);
       testCompletedSuccessfully = false;
     } finally {
       if (domain13 != null && (JENKINS || testCompletedSuccessfully)) domain13.destroy();
@@ -668,7 +668,7 @@ public class ITOperator extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testDomainInImageUsing19cAndWDT() throws Exception {
+  public void testDomainInImageUsingWDT() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     logTestBegin("testDomainInImageUsing19cAndWDT");
 
