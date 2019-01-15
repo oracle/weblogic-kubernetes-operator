@@ -80,7 +80,9 @@ running in Kubernetes.
   administration port or a T3 channel to allow WLST access, you need to ensure that you allocate each channel a
   unique port number across the entire Kubernetes cluster.  If you expose the administration port in each WebLogic domain in
   the Kubernetes cluster, then each one must have a different port.  This is required because `NodePorts` are used to
-  expose channels outside the Kubernetes cluster.  **IMPORTANT:** Exposing admin, RMI, or T3 capable channels via a node port
+  expose channels outside the Kubernetes cluster.  
+
+  **IMPORTANT:** Exposing admin, RMI, or T3 capable channels via a node port
   can create an insecure configuration; in general only HTTP protocols should be made available externally and this exposure
   is usually accomplished by setting up an external load balancer that can access internal (non-NodePort) services.
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
@@ -111,10 +113,14 @@ You can modify the WebLogic domain configuration for both the "domain in persist
 
 Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and also support parameterizing overrides so that you can inject values into them from Kubernetes secrets.   For example, you can inject database user names, passwords, and URLs that are stored in a secret.
 
+### About the Domain resource
+
+More information about the Domain resource can be found [here](domain-resource.md).
+
 ### Managing lifecycle operations including shutting down and deleting domains
 
 In Operator 2.0, you can perform lifecycle operations on WebLogic servers, clusters, or domains.
-See [Starting, stopping and restarting servers](server-lifecycle.md).
+See [Starting, stopping, and restarting servers](server-lifecycle.md).
 
 ### Scaling clusters
 
