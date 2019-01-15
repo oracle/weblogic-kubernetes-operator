@@ -24,7 +24,7 @@ This tutorial covers following steps:
 1. Creating Ingress for WebLogic domains.
 
 ## Directory Structure Explained
-The following is the directory structure of this Quick Start:
+The following is the directory structure of this tutorial:
 ```
 $ tree
 .
