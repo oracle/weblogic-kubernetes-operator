@@ -203,7 +203,7 @@ The following `config.xml` override file demonstrates setting the `max-message-s
 </domain>
 ```
 
-**IMPORTANT: To ensure all situational config takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name as in the sample above.**
+**IMPORTANT: To ensure all situational configuration takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name as in the sample above.**
 
 ### Overriding a data source module
 
@@ -270,7 +270,7 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 
 **IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings when they detect an incorrectly formatted configuration override template file, but will still boot, and will skip overriding. So it is important to make sure that the template files are correct in a QA environment by checking your WebLogic pod logs for situational configuration errors and warnings, before attempting to use them in production.**
 
-**IMPORTANT: To ensure all custom overrides takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name when overriding config.xml fields. Also, remember to use 'replace' verb to modify existing fields in the domain home configuration, and the 'add' verb to add a field that doesn't yet exist in the domain home configuration.  Otherwise, situational config may be partially ignored without generating any errors or warnings. See the sample in [Override template samples](#override-template-samples).**
+**IMPORTANT: To ensure all custom overrides takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name when overriding config.xml fields. Also, remember to use the 'replace' verb to modify existing fields in the domain home configuration, and the 'add' verb to add a field that doesn't yet exist in the domain home configuration.  Otherwise, situational configuration may be partially ignored without generating any errors or warnings. See the sample in [Override template samples](#override-template-samples).**
 
 
 Example domain resource yaml:
@@ -337,7 +337,7 @@ spec:
 
 **IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings when they detect an incorrectly formatted configuration override template file, but will still boot, and will skip overriding. So it is important to make sure that the template files are correct in a QA environment by checking your WebLogic pod logs for situational configuration errors and warnings, before attempting to use them in production.**
 
-**IMPORTANT: To ensure all custom overrides takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name when overriding config.xml fields. Also, remember to use 'replace' verb to modify existing fields in the domain home configuration, and the 'add' verb to add a field that doesn't yet exist in the domain home configuration.  Otherwise, situational config may be partially ignored without generating any errors or warnings. See the sample in [Override template samples](#override-template-samples).**
+**IMPORTANT: To ensure all custom overrides takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name when overriding config.xml fields. Also, remember to use the 'replace' verb to modify existing fields in the domain home configuration, and the 'add' verb to add a field that doesn't yet exist in the domain home configuration.  Otherwise, situational configuration may be partially ignored without generating any errors or warnings. See the sample in [Override template samples](#override-template-samples).**
 
 ---
 # Internal design flow
