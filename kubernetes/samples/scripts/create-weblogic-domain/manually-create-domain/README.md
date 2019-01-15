@@ -5,8 +5,8 @@ Docker image containing your domain and the specific patches that you require, t
 be most suitable for your needs.
 
 To create the domain custom resource, just make a copy of the sample [domain.yaml](./domain.yaml) provided in
-this sample, and then edit it as per the instructions below.  When it is ready, you can create the domain in your
-Kubernetes cluster using the command:
+this sample, and then edit it as per the instructions provided in the comments in that file.
+When it is ready, you can create the domain in your Kubernetes cluster using the command:
 
 ```
 kubectl apply -f domain.yaml
@@ -27,5 +27,4 @@ kubectl -n YOUR_NAMESPACE describe domain YOUR_DOMAIN
 In both of these commands, replace `YOUR_NAMESPACE` with the namespace that you created the domain in, and
 replace `YOUR_DOMAIN` with the `domainUID` you chose.
 
-## Details of the domain custom resource YAML file
 
