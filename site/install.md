@@ -1,8 +1,10 @@
 # Create and manage the operator
 
+An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The Oracle WebLogic Server Kubernetes Operator (the "operator") simplifies the management and operation of WebLogic domains and deployments.
+
 ## Overview
 
-The WebLogic Kubernetes Operator uses Helm to create and deploy any necessary resources and then run the operator in a Kubernetes cluster. Helm helps you manage Kubernetes applications. Helm charts help you define and install applications into the Kubernetes cluster. The operator's Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
+The operator uses Helm to create and deploy any necessary resources and then run the operator in a Kubernetes cluster. Helm helps you manage Kubernetes applications. Helm charts help you define and install applications into the Kubernetes cluster. The operator's Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
 
 > If you have an older version of the operator installed on your cluster, then you must remove it before installing this version. This includes the 2.0-rc1 version; it must be completely removed. You should remove the deployment (for example, `kubectl delete deploy weblogic-operator -n your-namespace`) and the custom
   resource definition (for example, `kubectl delete crd domain`).  If you do not remove
