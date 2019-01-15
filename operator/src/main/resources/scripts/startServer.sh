@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
@@ -173,6 +173,11 @@ trace "LOG_HOME=${LOG_HOME}"
 trace "SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG}"
 trace "USER_MEM_ARGS=${USER_MEM_ARGS}"
 trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
+
+#
+# check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:
+#
+exportEffectiveDomainHome || exitOrLoop
 
 #
 # Check if introspector actually ran.  This should never fail since

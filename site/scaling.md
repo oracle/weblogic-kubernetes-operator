@@ -1,6 +1,6 @@
 # Scaling a WebLogic cluster
 
-WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/middleware/1221/wls/CLUST/dynamic_clusters.htm#CLUST678).
+WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/middleware/12213/wls/CLUST/dynamic_clusters.htm#CLUST678).
 
 The following blogs provide more in-depth information on support for scaling WebLogic clusters in Kubernetes:
 * [Automatic Scaling of WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2)
@@ -18,7 +18,7 @@ The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the 
 ```
 $ kubectl edit domain domain1 -n [namespace]
 ```
-Here we are editing a domain resource named 'domain1'.  The `kubectl edit` command will open the domain resource definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
+Here we are editing a domain resource named `domain1`.  The `kubectl edit` command will open the domain resource definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding dynamic cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
 ```
 spec:
   ...
@@ -71,8 +71,8 @@ The `/scale` REST endpoint accepts an HTTP POST request and the request body sup
 The `managedServerCount` value designates the number of WebLogic Server instances to scale to.  Note that the scale resource is implemented using the JAX-RS framework, and so a successful scaling request will return an HTTP response code of `204 (“No Content”)` because the resource method’s return type is void and does not return a message body.
 
 When you POST to the `/scale` REST endpoint, you must send the following headers:
-* `X-Requested-By` request value.  The value is an arbitrary name such as 'MyClient'.  
-* `Authorization: Bearer` request value. The value of the 'Bearer' token is the WebLogic domain service account token.
+* `X-Requested-By` request value.  The value is an arbitrary name such as `MyClient`.  
+* `Authorization: Bearer` request value. The value of the `Bearer` token is the WebLogic domain service account token.
 
 For example, when using `curl`:
 
@@ -101,8 +101,8 @@ When the operator receives a scaling request, it will:
 *	Validate that the WebLogic cluster, identified by `clusterName`, exists.
 *	Verify that the specified WebLogic cluster has a sufficient number of configured servers to satisfy the scaling request.
 *	Initiate scaling by setting the `replicas` property within the corresponding domain resource, which can be done in either:
-  *	A `cluster` entry, if defined within its cluster list.
-  *	At the domain level, if not defined in a `cluster` entry.
+      *	A `cluster` entry, if defined within its cluster list.
+      *	At the domain level, if not defined in a `cluster` entry.
 
 In response to a change to either `replicas` property, in the domain resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count, up to the number of configured managed servers for a configured cluster, or the dynamic cluster size for a dynamic cluster. 
 
@@ -119,7 +119,7 @@ for use as a Script Action, which illustrates how to issue a request to the oper
 The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests to the operator's REST endpoint:
 1. Copy the [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) script to a directory (such as `$DOMAIN_HOME/bin/scripts`) so that it's accessible within the Administration Server pod.
 2. Configure a WLDF policy and action as part of a diagnostic module targeted to the Administration Server. For information about configuring the WLDF Policies and Actions component,
-see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/wls/WLDFC/config_watch_notif.htm#WLDFC188) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
+see [Configuring Policies and Actions](https://docs.oracle.com/middleware/12213/wls/WLDFC/config_watch_notif.htm#WLDFC188) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
 
     a. Configure a WLDF policy with a rule expression for monitoring WebLogic Server metrics, such as memory, idle threads, and CPU load for example.
 
@@ -150,7 +150,9 @@ see [Configuring Policies and Actions](https://docs.oracle.com/middleware/1221/w
 
     * `cluster_name` - WebLogic cluster name (Required)
 
-    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes.  **NOTE**: Set this to https://kubernetes.default.svc when invoking `scalingAction.sh` from the Administration Server pod.
+    * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes  
+
+       **NOTE**: Set this to https://kubernetes.default.svc when invoking `scalingAction.sh` from the Administration Server pod.
 
     * `access_token` - Service Account Bearer token for authentication and authorization for access to REST Resources
 
@@ -232,7 +234,7 @@ roleRef:
 
 ## Using a Prometheus alert action to call the operator's REST scale API
 In addition to using the WebLogic Diagnostic Framework for automatic scaling of a dynamic cluster,
-you can use a third party monitoring application like Prometheus.  Please read the following blog for
+you can use a third-party monitoring application like Prometheus.  Please read the following blog for
 details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5).
 
 ## Helpful Tips
@@ -243,8 +245,8 @@ Administration Server pod because the associated diagnostic module is targed to 
 The easiest way to verify and debug the `scalingAction.sh` script is to open a shell on the running Administration Server pod and execute the script on the command line.
 
 The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
-* the domain home is in `/u01/oracle/user-projects/domains/domain1` (i.e. the domain home is inside a docker image).
-* the Dockerfile copied [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
+* The domain home is in `/u01/oracle/user-projects/domains/domain1` (that is, the domain home is inside a Docker image).
+* The Dockerfile copied [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```
 > kubectl exec -it domain1-admin-server /bin/bash
@@ -252,7 +254,7 @@ The following example illustrates how to open a bash shell on a running Administ
 # bash> ./scalingAction.sh
 ```
 
-A log, `scalingAction.log`, will be generated in the same directory as the script was executed in and can be examined for errors.
+A log, `scalingAction.log`, will be generated in the same directory in which the script was executed and can be examined for errors.
 
 ### Example on accessing the external REST endpoint
 The easiest way to test scaling using the external REST endpoint is to use a command-line tool like `curl`. Using `curl` to issue

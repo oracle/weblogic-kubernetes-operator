@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -112,6 +113,16 @@ public class WlsDomainConfigSupport {
    * @return a domain configuration, or null
    */
   public WlsDomainConfig createDomainConfig() {
+    // reconcile static clusters
+    for (WlsClusterConfig cluster : wlsClusters.values()) {
+      ListIterator<WlsServerConfig> servers = cluster.getServers().listIterator();
+      while (servers.hasNext()) {
+        WlsServerConfig existing = wlsServers.get(servers.next().getName());
+        if (existing != null) {
+          servers.set(existing);
+        }
+      }
+    }
     return new WlsDomainConfig(
         domain, adminServerName, wlsClusters, wlsServers, templates, machineConfigs);
   }

@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -7,39 +7,44 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import javax.validation.constraints.NotNull;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
 /** DomainCondition contains details for the current condition of this domain. */
-public class DomainCondition {
+public class DomainCondition implements Comparable<DomainCondition> {
 
-  /** Last time we probed the condition. */
+  @Description("Last time we probed the condition.")
   @SerializedName("lastProbeTime")
   @Expose
   private DateTime lastProbeTime;
-  /** Last time the condition transitioned from one status to another. */
+
+  @Description("Last time the condition transitioned from one status to another.")
   @SerializedName("lastTransitionTime")
   @Expose
   private DateTime lastTransitionTime;
-  /** Human-readable message indicating details about last transition. */
+
+  @Description("Human-readable message indicating details about last transition.")
   @SerializedName("message")
   @Expose
   private String message;
-  /** Unique, one-word, CamelCase reason for the condition's last transition. */
+
+  @Description("Unique, one-word, CamelCase reason for the condition's last transition.")
   @SerializedName("reason")
   @Expose
   private String reason;
-  /** Status is the status of the condition. Can be True, False, Unknown. (Required) */
+
+  @Description("Status is the status of the condition. Can be True, False, Unknown. Required")
   @SerializedName("status")
   @Expose
   @NotNull
   private String status;
-  /**
-   * Type is the type of the condition. Currently, valid types are Progressing, Available, and
-   * Failure. (Required)
-   */
+
+  @Description(
+      "Type is the type of the condition. Currently, valid types are Progressing, "
+          + "Available, and Failure. Required")
   @SerializedName("type")
   @Expose
   @NotNull
@@ -263,5 +268,10 @@ public class DomainCondition {
         .append(lastProbeTime, rhs.lastProbeTime)
         .append(status, rhs.status)
         .isEquals();
+  }
+
+  @Override
+  public int compareTo(DomainCondition o) {
+    return type.compareTo(o.type);
   }
 }
