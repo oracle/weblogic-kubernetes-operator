@@ -64,6 +64,21 @@ $ mvn javadoc:javadoc
 
 The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
 
+## Building the operator Docker image
+
+Log in to the Docker Store so that you will be able to pull the base image and create the Docker image as follows.  These commands should be executed in the project root directory:
+
+```
+$ docker login
+$ docker build --build-arg VERSION=<version> -t weblogic-kubernetes-operator:some-tag --no-cache=true .
+```
+
+Replace `<version>` with the version of the project found in the `pom.xml` file in the project root directory.
+
+**Note**: If you have not used the base image (`store/oracle/serverjre:8`) before, you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before the Docker Store will give you permission to pull that image.
+
+We recommend that you use a tag other than `latest`, to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
+
 ## Running the operator from an IDE
 
 The operator can be run from an IDE, which is useful for debugging.  In order to do so, the machine running the IDE must be configured with a Kubernetes configuration file in `~/.kube/config` or in a location pointed to by the `KUBECONFIG` environment variable.
