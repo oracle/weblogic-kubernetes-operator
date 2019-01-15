@@ -1,15 +1,17 @@
-# Quick Start
+# Tutorial
 
-This Quick Start will teach you how to run WebLogic domains in a Kubernetes environment using the operator.  
-This Quick Start provides reliable and automated scripts to setup everything from scratch. It takes less than 20 minutes to complete. After finished, you'll have three WebLogic domains created and managed by the operator.
+This tutorial will teach you how to run WebLogic domains in a Kubernetes environment using the operator.  
+This tutorial provides reliable and automated scripts to setup everything from scratch. 
+It takes less than 20 minutes to complete. After finished, you'll have three running WebLogic domains which 
+cover the three typical domain configurations.
 
-The Quick Start covers following steps:
+This tutorial covers following steps:
 
 1. Pulling the required docker images.
 
 1. Installing WebLogic operator.
 
-1. Installing Traefik controller.
+1. Installing a load balancer controller: Traefik or Voyager.
 
 1. Creating three WebLogic domains.
 
@@ -27,6 +29,7 @@ The following is the directory structure of this Quick Start:
 $ tree
 .
 ├── clean.sh
+├── clean-v.sh
 ├── domain1
 │   └── domain1.yaml
 ├── domain2
@@ -45,9 +48,14 @@ $ tree
 │       ├── create-domain.py
 │       └── create-domain.sh
 ├── domain.sh
-├── loadBalancer.sh
-├── opt.sh
-└── setup.sh
+├── ings
+│   └── voyager-ings.yaml
+├── operator.sh
+├── README.md
+├── setup.sh
+├── setup-v.sh
+├── traefik.sh
+└── voyager.sh
 
 5 directories, 17 files
 ```
@@ -69,15 +77,21 @@ An overview of what each of these does:
   
 - shell scripts
 
-  - `opt.sh`: To pull and delete required docker images and to create and delete the wls operator.
+  - `operator.sh`: To pull and delete required docker images and to create and delete the wls operator.
   
-  - `loadBalancer.sh`: To create and delete LB controller and Ingresses.
+  - `traefik.sh`: To create and delete Traefik controller and Ingresses.
+  
+  - `voyager.sh`: To create and delete Voyager controller and Ingresses.
   
   - `domain.sh`: To create and delete WebLogic domain related resources.
   
-  - `setup.sh`: a shell wrapper with all steps to create all from scratch. 
+  - `setup.sh`: a shell wrapper with all steps to create all from scratch using Traefik as load balancer. 
   
   - `clean.sh`: a shell wrapper to do the cleanup. 
+  
+  - `setup-v.sh`: a shell wrapper with all steps to create all from scratch using Voyager as load balancer. 
+    
+  - `clean-v.sh`: a shell wrapper to do the cleanup after run `setup-v.sh`. 
   
 - yaml files
 
@@ -86,6 +100,8 @@ An overview of what each of these does:
   - `domain2`: this folder contains three yaml file: domain resource, PV&PVC yamls to store domain/server logs.
   
   - `domain3`: this folder contains three yaml file: domain resource, PV&PVC yamls to mount the domain home host folder.
+  
+  - `ings`: this folder contains ingress yaml files.
   
 ## Prerequisites
   - Have Docker installed, a Kubernetes cluster running and have `kubectl` installed and configured. If you need help on this, check out our [cheat sheet](../../site/k8s_setup.md).
@@ -96,9 +112,10 @@ Before run script to setup everything automatically, there is one step needs to 
 
 ```
 git clone https://github.com:oracle/weblogic-kubernetes-operator.git
-cd ./weblogic-kubernetes-operator/kubernetes/quickstart/
+cd ./weblogic-kubernetes-operator/kubernetes/tutorial/
 export PV_ROOT=<PVPath>  # the value is the absolute path of the folder you just created
 ./startup.sh
+# Or you can choose to run startup-v.sh which will use Voyager as the load balancer.
 ```
 
 If everything goes well, after the `setup.sh` script finishes, you'll have all the resources deployed and running on your Kuberntes cluster. Let's check the result.
@@ -134,12 +151,13 @@ If everything goes well, after the `setup.sh` script finishes, you'll have all t
   pod/domain1-managed-server1   1/1       Running   0          8m
   pod/domain1-managed-server2   1/1       Running   0          8m
   
-  NAME                                TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-  service/domain1-admin-server        NodePort    10.102.162.31   <none>        7001:30701/TCP   9m
-  service/domain1-cluster-cluster-1   ClusterIP   10.101.40.242   <none>        8001/TCP         8m
-  service/domain1-managed-server1     ClusterIP   None            <none>        8001/TCP         8m
-  service/domain1-managed-server2     ClusterIP   None            <none>        8001/TCP         8m
-  ```
+  NAME                                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                          AGE
+  service/domain1-admin-server            ClusterIP   None            <none>        30012/TCP,7001/TCP               28m
+  service/domain1-admin-server-external   NodePort    10.109.14.252   <none>        30012:30712/TCP,7001:30701/TCP   28m
+  service/domain1-cluster-cluster-1       ClusterIP   10.103.24.97    <none>        8001/TCP                         27m
+  service/domain1-managed-server1         ClusterIP   None            <none>        8001/TCP                         27m
+  service/domain1-managed-server2         ClusterIP   None            <none>        8001/TCP                         27m
+ ```
   
   - Two domain named `domain2` and `domain3` running in namespace `test1`.
   ```
@@ -153,16 +171,18 @@ If everything goes well, after the `setup.sh` script finishes, you'll have all t
   pod/domain3-managed-server1   1/1       Running   0          6m
   pod/domain3-managed-server2   1/1       Running   0          6m
   
-  NAME                                TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-  service/domain2-admin-server        NodePort    10.104.92.200   <none>        7001:30703/TCP   9m
-  service/domain2-cluster-cluster-1   ClusterIP   10.109.27.147   <none>        8001/TCP         8m
-  service/domain2-managed-server1     ClusterIP   None            <none>        8001/TCP         8m
-  service/domain2-managed-server2     ClusterIP   None            <none>        8001/TCP         8m
-  service/domain3-admin-server        NodePort    10.107.35.78    <none>        7001:30705/TCP   9m
-  service/domain3-cluster-cluster-1   ClusterIP   10.97.177.109   <none>        8001/TCP         6m
-  service/domain3-managed-server1     ClusterIP   None            <none>        8001/TCP         6m
-  service/domain3-managed-server2     ClusterIP   None            <none>        8001/TCP         6m
-  ```
+  NAME                                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                          AGE
+  service/domain2-admin-server            ClusterIP   None             <none>        30012/TCP,7001/TCP               28m
+  service/domain2-admin-server-external   NodePort    10.105.187.192   <none>        30012:30012/TCP,7001:30703/TCP   28m
+  service/domain2-cluster-cluster-1       ClusterIP   10.100.183.40    <none>        8001/TCP                         27m
+  service/domain2-managed-server1         ClusterIP   None             <none>        8001/TCP                         27m
+  service/domain2-managed-server2         ClusterIP   None             <none>        8001/TCP                         27m
+  service/domain3-admin-server            ClusterIP   None             <none>        30012/TCP,7001/TCP               28m
+  service/domain3-admin-server-external   NodePort    10.103.129.254   <none>        7001:30705/TCP                   28m
+  service/domain3-cluster-cluster-1       ClusterIP   10.99.80.60      <none>        8001/TCP                         26m
+  service/domain3-managed-server1         ClusterIP   None             <none>        8001/TCP                         26m
+  service/domain3-managed-server2         ClusterIP   None             <none>        8001/TCP                         26m
+ ```
   
 - Have three Ingresses for the three domains
   ```
@@ -175,7 +195,8 @@ If everything goes well, after the `setup.sh` script finishes, you'll have all t
  
 ## To cleanup
 ```
-cd weblogic-kubernetes-operator/kubernetes/quickstart/
+cd weblogic-kubernetes-operator/kubernetes/tutorial/
 export PV_ROOT=<PVPath>
 ./clean.sh
+# if you run setup-v.sh, you need to run clean-v.sh to do cleanup.
 ```
