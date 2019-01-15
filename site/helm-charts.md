@@ -495,7 +495,7 @@ The `helm install` eventually times out and creates a failed release.
 $ helm install kubernetes/charts/weblogic-operator --name op2 --namespace myuser-op2-ns --values o24.yaml --wait --no-hooks
 Error: release op2 failed: timed out waiting for the condition
 
-kubectl log -n kube-system tiller-deploy-f9b8476d-mht6v
+kubectl logs -n kube-system tiller-deploy-f9b8476d-mht6v
 ...
 [kube] 2018/12/06 21:16:54 Deployment is not ready: myuser-op2-ns/weblogic-operator
 ...
