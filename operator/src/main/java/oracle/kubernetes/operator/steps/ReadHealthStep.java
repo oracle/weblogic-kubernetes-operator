@@ -86,9 +86,6 @@ public class ReadHealthStep extends Step {
 
     public ReadHealthWithHttpClientStep(V1Service service, Step next) {
       super(next);
-      if (service == null) {
-        throw new IllegalArgumentException("service cannot be null");
-      }
       this.service = service;
     }
 
@@ -101,62 +98,63 @@ public class ReadHealthStep extends Step {
         Domain dom = info.getDomain();
 
         String serviceURL = HttpClient.getServiceURL(service);
+        if (serviceURL != null) {
+          String jsonResult =
+              httpClient
+                  .executePostUrlOnServiceClusterIP(
+                      getRetrieveHealthSearchUrl(),
+                      serviceURL,
+                      getRetrieveHealthSearchPayload(),
+                      true)
+                  .getResponse();
 
-        String jsonResult =
-            httpClient
-                .executePostUrlOnServiceClusterIP(
-                    getRetrieveHealthSearchUrl(),
-                    serviceURL,
-                    getRetrieveHealthSearchPayload(),
-                    true)
-                .getResponse();
+          ObjectMapper mapper = new ObjectMapper();
+          JsonNode root = mapper.readTree(jsonResult);
 
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(jsonResult);
-
-        JsonNode state = null;
-        JsonNode subsystemName = null;
-        JsonNode symptoms = null;
-        JsonNode overallHealthState = root.path("overallHealthState");
-        if (overallHealthState != null) {
-          state = overallHealthState.path("state");
-          subsystemName = overallHealthState.path("subsystemName");
-          symptoms = overallHealthState.path("symptoms");
-        }
-        JsonNode activationTime = root.path("activationTime");
-
-        List<String> sym = new ArrayList<>();
-        if (symptoms != null) {
-          Iterator<JsonNode> it = symptoms.elements();
-          while (it.hasNext()) {
-            sym.add(it.next().asText());
+          JsonNode state = null;
+          JsonNode subsystemName = null;
+          JsonNode symptoms = null;
+          JsonNode overallHealthState = root.path("overallHealthState");
+          if (overallHealthState != null) {
+            state = overallHealthState.path("state");
+            subsystemName = overallHealthState.path("subsystemName");
+            symptoms = overallHealthState.path("symptoms");
           }
-        }
+          JsonNode activationTime = root.path("activationTime");
 
-        String subName = null;
-        if (subsystemName != null) {
-          String s = subsystemName.asText();
-          if (s != null && !"null".equals(s)) {
-            subName = s;
+          List<String> sym = new ArrayList<>();
+          if (symptoms != null) {
+            Iterator<JsonNode> it = symptoms.elements();
+            while (it.hasNext()) {
+              sym.add(it.next().asText());
+            }
           }
+
+          String subName = null;
+          if (subsystemName != null) {
+            String s = subsystemName.asText();
+            if (s != null && !"null".equals(s)) {
+              subName = s;
+            }
+          }
+
+          ServerHealth health =
+              new ServerHealth()
+                  .withOverallHealth(state != null ? state.asText() : null)
+                  .withActivationTime(
+                      activationTime != null ? new DateTime(activationTime.asLong()) : null);
+          if (subName != null) {
+            health
+                .getSubsystems()
+                .add(new SubsystemHealth().withSubsystemName(subName).withSymptoms(sym));
+          }
+
+          @SuppressWarnings("unchecked")
+          ConcurrentMap<String, ServerHealth> serverHealthMap =
+              (ConcurrentMap<String, ServerHealth>)
+                  packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
+          serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
         }
-
-        ServerHealth health =
-            new ServerHealth()
-                .withOverallHealth(state != null ? state.asText() : null)
-                .withActivationTime(
-                    activationTime != null ? new DateTime(activationTime.asLong()) : null);
-        if (subName != null) {
-          health
-              .getSubsystems()
-              .add(new SubsystemHealth().withSubsystemName(subName).withSymptoms(sym));
-        }
-
-        @SuppressWarnings("unchecked")
-        ConcurrentMap<String, ServerHealth> serverHealthMap =
-            (ConcurrentMap<String, ServerHealth>) packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
-        serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
-
         return doNext(packet);
       } catch (Throwable t) {
         // do not retry for health check
