@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,24 +10,27 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** SubsystemHealth describes the current health of a specific subsystem. */
-public class SubsystemHealth {
+public class SubsystemHealth implements Comparable<SubsystemHealth> {
 
-  /** Server health of this WebLogic server. (Required) */
+  @Description("Server health of this WebLogic server. Required")
   @SerializedName("health")
   @Expose
   @NotNull
   private String health;
-  /** Name of subsystem providing symptom information. (Required) */
+
+  @Description("Name of subsystem providing symptom information. Required")
   @SerializedName("subsystemName")
   @Expose
   @NotNull
   private String subsystemName;
-  /** Symptoms provided by the reporting subsystem. */
+
+  @Description("Symptoms provided by the reporting subsystem.")
   @SerializedName("symptoms")
   @Expose
   @Valid
@@ -131,7 +134,11 @@ public class SubsystemHealth {
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder().append(symptoms).append(health).append(subsystemName).toHashCode();
+    return new HashCodeBuilder()
+        .append(Domain.sortOrNull(symptoms))
+        .append(health)
+        .append(subsystemName)
+        .toHashCode();
   }
 
   @Override
@@ -144,9 +151,14 @@ public class SubsystemHealth {
     }
     SubsystemHealth rhs = ((SubsystemHealth) other);
     return new EqualsBuilder()
-        .append(symptoms, rhs.symptoms)
+        .append(Domain.sortOrNull(symptoms), Domain.sortOrNull(rhs.symptoms))
         .append(health, rhs.health)
         .append(subsystemName, rhs.subsystemName)
         .isEquals();
+  }
+
+  @Override
+  public int compareTo(SubsystemHealth o) {
+    return subsystemName.compareTo(subsystemName);
   }
 }

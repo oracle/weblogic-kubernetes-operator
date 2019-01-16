@@ -11,11 +11,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import javax.annotation.Nonnull;
+import org.joda.time.DateTime;
 
 @SuppressWarnings("WeakerAccess")
 public class SchemaGenerator {
@@ -48,6 +51,9 @@ public class SchemaGenerator {
 
   // if true, the object fields are implemented as references to definitions
   private boolean supportObjectReferences = true;
+
+  // if true, generate the top-level schema version reference
+  private boolean includeSchemaReference = true;
 
   /**
    * Returns a pretty-printed string corresponding to a generated schema
@@ -143,6 +149,15 @@ public class SchemaGenerator {
   }
 
   /**
+   * Specifies whether top-level schema reference is included
+   *
+   * @param includeSchemaReference true to include schema reference
+   */
+  public void setIncludeSchemaReference(boolean includeSchemaReference) {
+    this.includeSchemaReference = includeSchemaReference;
+  }
+
+  /**
    * Generates an object representing a JSON schema for the specified class.
    *
    * @param aClass the class for which the schema should be generated
@@ -151,7 +166,9 @@ public class SchemaGenerator {
   public Object generate(Class aClass) {
     Map<String, Object> result = new HashMap<>();
 
-    result.put("$schema", JSON_SCHEMA_REFERENCE);
+    if (includeSchemaReference) {
+      result.put("$schema", JSON_SCHEMA_REFERENCE);
+    }
     generateObjectTypeIn(result, aClass);
     if (!definedObjects.isEmpty()) {
       Map<String, Object> definitions = new TreeMap<>();
@@ -207,6 +224,10 @@ public class SchemaGenerator {
     return type.equals(String.class);
   }
 
+  private boolean isDateTime(Class<?> type) {
+    return type.equals(DateTime.class);
+  }
+
   private boolean isNumeric(Class<?> type) {
     return Number.class.isAssignableFrom(type) || PRIMITIVE_NUMBERS.contains(type);
   }
@@ -218,7 +239,7 @@ public class SchemaGenerator {
 
   private void addStringRestrictions(Map<String, Object> result, Field field) {
     Class<? extends Enum> enumClass = getEnumClass(field);
-    if (enumClass != null) addEnumValues(result, enumClass);
+    if (enumClass != null) addEnumValues(result, enumClass, getEnumQualifier(field));
 
     String pattern = getPattern(field);
     if (pattern != null) result.put("pattern", pattern);
@@ -229,9 +250,14 @@ public class SchemaGenerator {
     return annotation != null ? annotation.value() : null;
   }
 
+  private String getEnumQualifier(Field field) {
+    EnumClass annotation = field.getAnnotation(EnumClass.class);
+    return annotation != null ? annotation.qualifier() : "";
+  }
+
   private void addEnumValues(
-      Map<String, Object> result, Class<? extends java.lang.Enum> enumClass) {
-    result.put("enum", getEnumValues(enumClass));
+      Map<String, Object> result, Class<? extends Enum> enumClass, String qualifier) {
+    result.put("enum", getEnumValues(enumClass, qualifier));
   }
 
   private String getPattern(Field field) {
@@ -254,11 +280,12 @@ public class SchemaGenerator {
       this.field = field;
     }
 
+    @SuppressWarnings("unchecked")
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
       if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) result.put("type", "boolean");
       else if (isNumeric(type)) result.put("type", "number");
       else if (isString(type)) result.put("type", "string");
-      else if (type.isEnum()) generateEnumTypeIn(result, type);
+      else if (type.isEnum()) generateEnumTypeIn(result, (Class<? extends Enum>) type);
       else if (type.isArray()) this.generateArrayTypeIn(result, type);
       else if (Collection.class.isAssignableFrom(type)) generateCollectionTypeIn(result);
       else generateObjectFieldIn(result, type);
@@ -335,36 +362,65 @@ public class SchemaGenerator {
     return type.getSimpleName();
   }
 
-  private void generateEnumTypeIn(Map<String, Object> result, Class<?> enumType) {
+  private void generateEnumTypeIn(Map<String, Object> result, Class<? extends Enum> enumType) {
     result.put("type", "string");
-    result.put("enum", getEnumValues(enumType));
+    addEnumValues(result, enumType, "");
   }
 
-  private String[] getEnumValues(Class<?> enumType) {
+  private String[] getEnumValues(Class<?> enumType, String qualifier) {
     List<String> values = new ArrayList<>();
+    Method qualifierMethod = getQualifierMethod(enumType, qualifier);
 
     for (Object enumConstant : enumType.getEnumConstants()) {
-      values.add(enumConstant.toString());
+      if (satisfiesQualifier(enumConstant, qualifierMethod)) values.add(enumConstant.toString());
     }
 
     return values.toArray(new String[0]);
   }
 
-  private void generateObjectTypeIn(Map<String, Object> result, Class<?> type) {
-    Map<String, Object> properties = new HashMap<>();
-    List<String> requiredFields = new ArrayList<>();
-    result.put("type", "object");
-    if (includeAdditionalProperties) result.put("additionalProperties", "false");
-    result.put("properties", properties);
-
-    for (Field field : getPropertyFields(type)) {
-      if (!isSelfReference(field)) generateFieldIn(properties, field);
-      if (isRequired(field) && includeInSchema(field)) {
-        requiredFields.add(getPropertyName(field));
-      }
+  private Method getQualifierMethod(Class<?> enumType, String methodName) {
+    try {
+      Method method = enumType.getDeclaredMethod(methodName);
+      if (!isBooleanMethod(method)) return null;
+      return method;
+    } catch (NoSuchMethodException e) {
+      return null;
     }
+  }
 
-    if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+  private boolean isBooleanMethod(Method method) {
+    return method.getReturnType().equals(Boolean.class)
+        || method.getReturnType().equals(boolean.class);
+  }
+
+  private boolean satisfiesQualifier(Object enumConstant, Method qualifier) {
+    try {
+      return qualifier == null || (Boolean) qualifier.invoke(enumConstant);
+    } catch (IllegalAccessException | InvocationTargetException e) {
+      return true;
+    }
+  }
+
+  private void generateObjectTypeIn(Map<String, Object> result, Class<?> type) {
+    if (isDateTime(type)) {
+      result.put("type", "string");
+      result.put("format", "date-time");
+    } else {
+      Map<String, Object> properties = new HashMap<>();
+      List<String> requiredFields = new ArrayList<>();
+      result.put("type", "object");
+      if (includeAdditionalProperties) result.put("additionalProperties", "false");
+      result.put("properties", properties);
+
+      for (Field field : getPropertyFields(type)) {
+        if (!isSelfReference(field)) generateFieldIn(properties, field);
+        if (isRequired(field) && includeInSchema(field)) {
+          requiredFields.add(getPropertyName(field));
+        }
+      }
+
+      if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+    }
   }
 
   private Collection<Field> getPropertyFields(Class<?> type) {

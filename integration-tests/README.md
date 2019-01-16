@@ -24,7 +24,7 @@ Quick test use cases.
 4. verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
 5. verify web app load balancing by accessing the webapp using loadBalancerWebPort
 6. verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
-7. cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. (run.sh does scaling by editing the replicas in domain-custom-resource.yaml.)
+7. cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly.
 8. Operator life cycle(destroy and create) should not impact the running domain
 9. verify liveness probe by killing managed server 1 process 3 times to kick pod auto-restart
 10. shutdown the domain by changing domain serverStartPolicy to NEVER
