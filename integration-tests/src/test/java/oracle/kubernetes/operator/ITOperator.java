@@ -654,7 +654,7 @@ public class ITOperator extends BaseTest {
       domain13.verifyDomainCreated();
 
       testBasicUseCases(domain13);
-      // testAdvancedUseCasesForADomain(operator1, domain13);
+      testAdvancedUseCasesForADomain(operator1, domain13);
       testCompletedSuccessfully = false;
     } finally {
       if (domain13 != null && (JENKINS || testCompletedSuccessfully)) domain13.destroy();
