@@ -157,7 +157,7 @@ If everything goes well, after the `setup.sh` script finishes, you'll have all t
   service/domain1-cluster-cluster-1       ClusterIP   10.103.24.97    <none>        8001/TCP                         27m
   service/domain1-managed-server1         ClusterIP   None            <none>        8001/TCP                         27m
   service/domain1-managed-server2         ClusterIP   None            <none>        8001/TCP                         27m
- ```
+  ```
   
   - Two domain named `domain2` and `domain3` running in namespace `test1`.
   ```
@@ -182,7 +182,7 @@ If everything goes well, after the `setup.sh` script finishes, you'll have all t
   service/domain3-cluster-cluster-1       ClusterIP   10.99.80.60      <none>        8001/TCP                         26m
   service/domain3-managed-server1         ClusterIP   None             <none>        8001/TCP                         26m
   service/domain3-managed-server2         ClusterIP   None             <none>        8001/TCP                         26m
- ```
+  ```
   
 - Have three Ingresses for the three domains
   ```
