@@ -60,7 +60,10 @@ public class Domain {
   public Domain(String inputYaml) throws Exception {
 
     initialize(inputYaml);
-    if (!domainMap.containsKey("domainHomeImageBase")) {
+    if (!domainMap.containsKey("domainHomeImageBase")
+        || (domainMap.containsKey("domainHomeImageBase")
+            && domainMap.containsKey("logHomeOnPV")
+            && ((Boolean) domainMap.get("logHomeOnPV")).booleanValue())) {
       createPV();
     }
     createSecret();
@@ -191,6 +194,36 @@ public class Domain {
               + " is started, but its not expected.");
     } else {
       logger.info(additionalManagedServer + " is not running, which is expected behaviour");
+    }
+
+    // check logs are written on PV if logHomeOnPV is true for domain-home-in-image case
+    if ((domainMap.containsKey("domainHomeImageBase")
+        && domainMap.containsKey("logHomeOnPV")
+        && ((Boolean) domainMap.get("logHomeOnPV")).booleanValue())) {
+      logger.info("logHomeOnPV is true, checking if logs are written on PV");
+      cmd = new StringBuffer();
+      cmd.append("kubectl -n ")
+          .append(domainNS)
+          .append(" exec -it ")
+          .append(domainUid)
+          .append("-")
+          .append(adminServerName)
+          .append(" -- ls /shared/logs/")
+          .append(domainUid)
+          .append("/")
+          .append(adminServerName)
+          .append(".log");
+
+      result = ExecCommand.exec(cmd.toString());
+
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: logHomeOnPV is true, but logs are not written at /shared/logs/"
+                + domainUid
+                + " inside the pod");
+      } else {
+        logger.info("Logs are written at /shared/logs/" + domainUid + " inside the pod");
+      }
     }
   }
   /**
@@ -974,9 +1007,9 @@ public class Domain {
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
     }
+    domainMap.put("logHome", "/shared/logs/" + domainUid);
     if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
-      domainMap.put("logHome", "/shared/logs/" + domainUid);
       domainMap.put(
           "createDomainFilesDir",
           BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
