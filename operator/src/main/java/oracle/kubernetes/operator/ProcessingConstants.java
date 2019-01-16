@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -18,8 +18,6 @@ public interface ProcessingConstants {
 
   public static final String SERVER_NAME = "serverName";
   public static final String CLUSTER_NAME = "clusterName";
-  public static final String PORT = "port";
-  public static final String NODE_PORT = "nodePort";
   public static final String NETWORK_ACCESS_POINT = "nap";
 
   public static final String SERVERS_TO_ROLL = "roll";

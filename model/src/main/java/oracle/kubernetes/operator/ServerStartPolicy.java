@@ -5,10 +5,42 @@
 package oracle.kubernetes.operator;
 
 public enum ServerStartPolicy {
+  ALWAYS {
+    @Override
+    public boolean forDomain() {
+      return false;
+    }
+
+    @Override
+    public boolean forCluster() {
+      return false;
+    }
+  },
   NEVER,
-  ALWAYS,
   IF_NEEDED,
-  ADMIN_ONLY;
+  ADMIN_ONLY {
+    @Override
+    public boolean forCluster() {
+      return false;
+    }
+
+    @Override
+    public boolean forServer() {
+      return false;
+    }
+  };
+
+  public boolean forDomain() {
+    return true;
+  }
+
+  public boolean forCluster() {
+    return true;
+  }
+
+  public boolean forServer() {
+    return true;
+  }
 
   public static ServerStartPolicy getDefaultPolicy() {
     return IF_NEEDED;

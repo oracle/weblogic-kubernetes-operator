@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -9,6 +9,7 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -17,15 +18,17 @@ import org.joda.time.DateTime;
 /** ServerHealth describes the current status and health of a specific WebLogic server. */
 public class ServerHealth {
 
-  /** RFC 3339 date and time at which the server started. */
+  @Description("RFC 3339 date and time at which the server started.")
   @SerializedName("activationTime")
   @Expose
   private DateTime activationTime;
-  /** Server health of this WebLogic server. */
+
+  @Description("Server health of this WebLogic server.")
   @SerializedName("overallHealth")
   @Expose
   private String overallHealth;
-  /** Status of unhealthy subsystems, if any. */
+
+  @Description("Status of unhealthy subsystems, if any.")
   @SerializedName("subsystems")
   @Expose
   @Valid
@@ -132,7 +135,7 @@ public class ServerHealth {
     return new HashCodeBuilder()
         .append(overallHealth)
         .append(activationTime)
-        .append(subsystems)
+        .append(Domain.sortOrNull(subsystems))
         .toHashCode();
   }
 
@@ -148,7 +151,7 @@ public class ServerHealth {
     return new EqualsBuilder()
         .append(overallHealth, rhs.overallHealth)
         .append(activationTime, rhs.activationTime)
-        .append(subsystems, rhs.subsystems)
+        .append(Domain.sortOrNull(subsystems), Domain.sortOrNull(rhs.subsystems))
         .isEquals();
   }
 }

@@ -1,6 +1,6 @@
 # User guide
 
-This document provides detailed information targeted to users of the Oracle WebLogic
+This document provides detailed user information for the Oracle WebLogic
 Server Kubernetes Operator.  It provides instructions on how to install the operator in your
 Kubernetes cluster and how to use it to manage WebLogic domains.  
 
@@ -18,12 +18,12 @@ presented in the correct order.
 * [Getting started](#getting-started)
 * [Prerequisites](#prerequisites)
 * [Preparing your Kubernetes environment to run the operator](prepare-k8s.md)
-  * [Set up your Kubernetes cluster](prepare-k8s.md#set-up-your-kubernetes-cluster)
-  * [Set up load balancers](prepare-k8s.md#load-balancing-with-an-ingress-controller-or-a-web-server)
-  * [Configuring Kibana and Elasticsearch](prepare-k8s.md#configuring-kibana-and-elasticsearch)
+  * [Set up your Kubernetes cluster](k8s_setup.md)
+  * [Set up load balancers](../kubernetes/samples/charts/README.md)
+  * [Configuring Kibana and Elasticsearch](../kubernetes/samples/scripts/elasticsearch-and-kibana/README.md)
 * [Install and manage the operator](install.md)
-  * [Using the Helm charts](helm-charts.md)
-* [Using the operator's REST interface](rest.md)
+  * [Using the Helm charts](install.md#install-helm-and-tiller)
+  * [Using the operator's REST interface](rest.md)
 * [Creating or obtaining WebLogic Docker images](weblogic-docker-images.md)
   * [Obtaining standard images from the Docker store](weblogic-docker-images.md#obtaining-standard-images-from-the-docker-store)
   * [Creating a custom images with patches applied](weblogic-docker-images.md#creating-a-custom-images-with-patches-applied)
@@ -58,11 +58,24 @@ This documentation uses several important terms which are intended to have a spe
 
 Before using the operator, you might want to read the [design philosophy](design.md) to develop an understanding of the operator's design, and the [architectural overview](architecture.md) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator. Also, worth reading are the details of the [Kubernetes RBAC definitions](rbac.md) required by the operator.
 
+An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances
+of complex applications. The Oracle WebLogic Server Kubernetes Operator follows the standard Kubernetes operator pattern, and
+simplifies the management and operation of WebLogic domains and deployments.
+
+You can have one or more operators in your Kubernetes cluster that manage one or more WebLogic domains each.
+We provide a Helm chart to manage the installation and configuration of the operator.
+Detailed instructions are available [here](install.md).
+
+## Operator Docker image
+
+You can find the operator image in
+[Docker Hub](https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/).
+
 ## Prerequisites
 
 * Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
 * Docker 18.03.1.ce (check with `docker version`).
 * Helm 2.8.2+ (check with `helm version`).
-* Oracle WebLogic Server 12.2.1.3.0 with patch 28076014.
+* Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
 * You must have the `cluster-admin` role to install the operator.

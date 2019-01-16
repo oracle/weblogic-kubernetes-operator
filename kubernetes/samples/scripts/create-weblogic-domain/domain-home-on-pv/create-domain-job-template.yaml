@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 apiVersion: batch/v1
 kind: Job
@@ -44,7 +44,7 @@ spec:
             - name: CLUSTER_NAME
               value: "%CLUSTER_NAME%"
             - name: CLUSTER_TYPE
-              value: "%CLUSTER_TYPE%"
+              value: "DYNAMIC"
             - name: T3_CHANNEL_PORT
               value: "%T3_CHANNEL_PORT%"
             - name: T3_PUBLIC_ADDRESS
