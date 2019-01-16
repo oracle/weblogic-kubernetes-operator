@@ -74,10 +74,20 @@ An overview of what each of these does:
   - `scripts/create-domain.py`: A python script which uses offline WLST to create a domain home.
   
   - `scripts/create-domain.sh`: A simple shell wrapper to call create-domain.py.
+
+- yaml files
+
+  - `domain1`: yaml files for domain1.
+  
+  - `domain2`: yaml files for domain2.
+  
+  - `domain3`: yaml files for domain3.
+  
+  - `ings`: Ingress yaml files.
   
 - shell scripts
 
-  - `operator.sh`: To pull and delete required docker images and to create and delete the wls operator.
+  - `operator.sh`: To create and delete the wls operator.
   
   - `traefik.sh`: To create and delete Traefik controller and Ingresses.
   
@@ -92,16 +102,6 @@ An overview of what each of these does:
   - `setup-v.sh`: a shell wrapper with all steps to create all from scratch using Voyager as load balancer. 
     
   - `clean-v.sh`: a shell wrapper to do the cleanup after run `setup-v.sh`. 
-  
-- yaml files
-
-  - `domain1`: yaml files for domain1.
-  
-  - `domain2`: yaml files for domain2.
-  
-  - `domain3`: yaml files for domain3.
-  
-  - `ings`: this folder contains ingress yaml files.
   
 ## Prerequisites
   - Have Docker installed, a Kubernetes cluster running and have `kubectl` installed and configured. If you need help on this, check out our [cheat sheet](../../site/k8s_setup.md).
