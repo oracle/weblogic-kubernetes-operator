@@ -1,4 +1,4 @@
-// Copyright 2017, 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -38,6 +38,7 @@ abstract class Watcher<T> {
   private AtomicBoolean stopping;
   private WatchListener<T> listener;
   private Thread thread = null;
+  private long lastInitialize = 0;
 
   /**
    * Constructs a watcher without specifying a listener. Needed when the listener is the watch
@@ -120,19 +121,25 @@ abstract class Watcher<T> {
   }
 
   private void watchForEvents() {
+    long now = System.currentTimeMillis();
+    long delay = (tuning.watchMinimumDelay * 1000) - (now - lastInitialize);
+    if (lastInitialize != 0 && delay > 0) {
+      try {
+        Thread.sleep(delay);
+      } catch (InterruptedException ex) {
+        LOGGER.warning(MessageKeys.EXCEPTION, ex);
+      }
+      lastInitialize = System.currentTimeMillis();
+    } else {
+      lastInitialize = now;
+    }
     try (WatchI<T> watch =
         initiateWatch(
             new WatchBuilder()
                 .withResourceVersion(resourceVersion.toString())
                 .withTimeoutSeconds(tuning.watchLifetime))) {
       while (watch.hasNext()) {
-        Watch.Response<T> item;
-        try {
-          item = watch.next();
-        } catch (Throwable e) {
-          watch.discardClient();
-          throw e;
-        }
+        Watch.Response<T> item = watch.next();
 
         if (isStopping()) setIsDraining(true);
         if (isDraining()) continue;
