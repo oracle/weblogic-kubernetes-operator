@@ -1,0 +1,16 @@
+user.ocid= 
+okeclustername=
+tfvars.filename=
+tenancy.ocid=
+compartment.ocid=
+compartment.name=
+ociapi.pubkey.fingerprint=
+ocipk.path=
+vcn.cidr.prefix=
+vcn.cidr=
+nodepool.shape=
+k8s.version=
+nodepool.ssh.pubkey=
+terraform.installdir=
+go.installdir=
+
