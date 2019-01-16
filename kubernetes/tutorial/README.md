@@ -95,11 +95,11 @@ An overview of what each of these does:
   
 - yaml files
 
-  - `domain1`: this folder contains one yaml file which is the domain resource.
+  - `domain1`: yaml files for domain1.
   
-  - `domain2`: this folder contains three yaml file: domain resource, PV&PVC yamls to store domain/server logs.
+  - `domain2`: yaml files for domain2.
   
-  - `domain3`: this folder contains three yaml file: domain resource, PV&PVC yamls to mount the domain home host folder.
+  - `domain3`: yaml files for domain3.
   
   - `ings`: this folder contains ingress yaml files.
   
@@ -143,7 +143,7 @@ If everything goes well, after the `setup.sh` script finishes, you'll have all t
   test1       domain3   4h
   ```
   
-  - One domain named `domain1` running in namespace `default`.
+  - Domain named `domain1` is running in namespace `default`.
   ```
   $ kubectl -n default get all  -l weblogic.domainUID=domain1,weblogic.createdByOperator=true
   NAME                          READY     STATUS    RESTARTS   AGE
@@ -159,29 +159,36 @@ If everything goes well, after the `setup.sh` script finishes, you'll have all t
   service/domain1-managed-server2         ClusterIP   None            <none>        8001/TCP                         27m
   ```
   
-  - Two domain named `domain2` and `domain3` running in namespace `test1`.
+  - Domain named `domain2` is running in namespace `test1`.
+  ```
+  $ kubectl -n test1 get all  -l weblogic.domainUID=domain2,weblogic.createdByOperator=true
+  NAME                          READY     STATUS    RESTARTS   AGE
+  pod/domain2-admin-server      1/1       Running   0          18h
+  pod/domain2-managed-server1   1/1       Running   0          18h
+  pod/domain2-managed-server2   1/1       Running   0          18h
+
+  NAME                                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                          AGE
+  service/domain2-admin-server            ClusterIP   None             <none>        30012/TCP,7001/TCP               18h
+  service/domain2-admin-server-external   NodePort    10.105.187.192   <none>        30012:30012/TCP,7001:30703/TCP   18h
+  service/domain2-cluster-cluster-1       ClusterIP   10.100.183.40    <none>        8001/TCP                         18h
+  service/domain2-managed-server1         ClusterIP   None             <none>        8001/TCP                         18h
+  service/domain2-managed-server2         ClusterIP   None             <none>        8001/TCP                         18h
   ```
   
-  $ kubectl -n test1 get all  -l weblogic.domainUID,weblogic.createdByOperator=true
+  - Domain named `domain3` is running in namespace `test1`.
+  ```
+  $ kubectl -n test1 get all  -l weblogic.domainUID=domain3,weblogic.createdByOperator=true
   NAME                          READY     STATUS    RESTARTS   AGE
-  pod/domain2-admin-server      1/1       Running   0          9m
-  pod/domain2-managed-server1   1/1       Running   0          8m
-  pod/domain2-managed-server2   1/1       Running   0          8m
-  pod/domain3-admin-server      1/1       Running   0          9m
-  pod/domain3-managed-server1   1/1       Running   0          6m
-  pod/domain3-managed-server2   1/1       Running   0          6m
-  
-  NAME                                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                          AGE
-  service/domain2-admin-server            ClusterIP   None             <none>        30012/TCP,7001/TCP               28m
-  service/domain2-admin-server-external   NodePort    10.105.187.192   <none>        30012:30012/TCP,7001:30703/TCP   28m
-  service/domain2-cluster-cluster-1       ClusterIP   10.100.183.40    <none>        8001/TCP                         27m
-  service/domain2-managed-server1         ClusterIP   None             <none>        8001/TCP                         27m
-  service/domain2-managed-server2         ClusterIP   None             <none>        8001/TCP                         27m
-  service/domain3-admin-server            ClusterIP   None             <none>        30012/TCP,7001/TCP               28m
-  service/domain3-admin-server-external   NodePort    10.103.129.254   <none>        7001:30705/TCP                   28m
-  service/domain3-cluster-cluster-1       ClusterIP   10.99.80.60      <none>        8001/TCP                         26m
-  service/domain3-managed-server1         ClusterIP   None             <none>        8001/TCP                         26m
-  service/domain3-managed-server2         ClusterIP   None             <none>        8001/TCP                         26m
+  pod/domain3-admin-server      1/1       Running   0          18h
+  pod/domain3-managed-server1   1/1       Running   0          18h
+  pod/domain3-managed-server2   1/1       Running   0          18h
+
+  NAME                                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)              AGE
+  service/domain3-admin-server            ClusterIP   None             <none>        30012/TCP,7001/TCP   18h
+  service/domain3-admin-server-external   NodePort    10.103.129.254   <none>        7001:30705/TCP       18h
+  service/domain3-cluster-cluster-1       ClusterIP   10.99.80.60      <none>        8001/TCP             18h
+  service/domain3-managed-server1         ClusterIP   None             <none>        8001/TCP             18h
+  service/domain3-managed-server2         ClusterIP   None             <none>        8001/TCP             18h
   ```
   
 - Have three Ingresses for the three domains
