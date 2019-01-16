@@ -53,11 +53,11 @@ The PV and PVC creation inputs can be customized by editing the `create-pv-pvc-i
 | `domainUID` | ID of the domain resource to which the generated PV and PVC will be dedicated. Leave it empty if the PV and PVC are going to be shared by multiple domains. | no default |
 | `namespace` | Kubernetes namespace to create the PVC. | `default` |
 | `baseName` | Base name of the PV and PVC. The generated PV and PVC will be `<baseName>-pv` and `<baseName>-pvc` respectively. | `weblogic-sample` |
-| `weblogicDomainStoragePath` | Physical path of the storage for the PV. | no default |
+| `weblogicDomainStoragePath` | Physical path of the storage for the PV.  When `weblogicDomainStorageType` is set to `HOST_PATH`, this value should be set the to path to the domain storage on the Kubernetes host.  When `weblogicDomainStorageType` is set to NFS, then `weblogicDomainStorageNFSServer` should be set to the IP address or name of the DNS server, and this value should be set to the exported path on that server.  Note that the path where the domain is mounted in the WebLogic containers is not affected by this setting, that is determined when you create your domain. | no default |
 | `weblogicDomainStorageReclaimPolicy` | Kubernetes PVC policy for the persistent storage. The valid values are: `Retain`, `Delete`, and `Recycle`. | `Retain` |
 | `weblogicDomainStorageSize` | Total storage allocated for the PVC. | `10Gi` |
 | `weblogicDomainStorageType` | Type of storage. Legal values are `NFS` and `HOST_PATH`. If using `NFS`, `weblogicDomainStorageNFSServer` must be specified. | `HOST_PATH` |
-| `weblogicDomainStorageNFSServer`| Name of the IP address of the NFS server. This setting only applies if `weblogicDomainStorateType` is `NFS`.  | no default |
+| `weblogicDomainStorageNFSServer`| Name or IP address of the NFS server. This setting only applies if `weblogicDomainStorateType` is `NFS`.  | no default |
 
 ## Shared versus dedicated PVC
 
