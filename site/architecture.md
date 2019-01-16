@@ -4,7 +4,7 @@ The operator consists of the following parts:
 
 *	The operator runtime, a process that runs in a Docker container deployed into a Kubernetes pod and which performs the actual management tasks.
 * The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains. 
-*	Helm chart for installing the operator runtime and related resources.
+*	A Helm chart for installing the operator runtime and related resources.
 * A variety of sample shell scripts for preparing or packaging  WebLogic domains for running in Kubernetes.
 * A variety of sample Helm charts or shell scripts for conditionally exposing WebLogic endpoints outside the Kubernetes cluster.
 
@@ -15,7 +15,7 @@ $ docker login
 $ docker pull oracle/weblogic-kubernetes-operator:2.0-rc2
 ```
 
-For more details on acquiring the operator image and pre-requisites or about installing the operator, consult the [Quick Start guide](quickstart.md).
+For more details on acquiring the operator image and prerequisites for installing the operator, consult the [Quick Start guide](quickstart.md).
 
 The operator registers a Kubernetes custom resource definition called `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  More details about the domain resource type defined by this CRD, including its schema, are available [here](domain-resource.md).
 
@@ -28,7 +28,7 @@ The Kubernetes cluster has several namespaces.  Components may be deployed into 
 *	The operator is deployed into its own namespace.  If the Elastic Stack integration option is configured, then a logstash pod will also be deployed in the operator’s namespace.
 *	WebLogic domains will be deployed into various namespaces.  There can be more than one domain in a namespace, if desired.  There is no limit on the number of domains or namespaces that an operator can manage.  Note that there can be more than one operator in a Kubernetes cluster, but each operator is configured with a list of the specific namespaces that it is responsible for.  The operator will not take any action on any domain that is not in one of the namespaces the operator is configured to manage.
 * Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a system, shared namespace such as the `kube-system` namespace.
-*	Customers are responsible for Elasticsearch and kibana deployment, which are typically deployed in the `default` namespace.
+*	Customers are responsible for Elasticsearch and Kibana deployment, which are typically deployed in the `default` namespace.
 
 ## Domain architecture
 
