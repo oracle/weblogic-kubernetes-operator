@@ -208,7 +208,7 @@ public class BaseTest {
             throw new RuntimeException(
                 "FAILURE: Managed Servers are not part of the cluster, failing with "
                     + result.stdout()
-                    + ". \n The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied.");
+                    + ". \n Make sure WebLogic Server 12.2.1.3.0 with patch 29135930 applied is used.");
           }
         }
       }
