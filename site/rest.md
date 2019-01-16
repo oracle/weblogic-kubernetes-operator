@@ -24,7 +24,7 @@ Before using the sample script below, you must:
   that you used to install the operator (so that it can get the certificates),
 * Add your operator's certificate to your operating system's trust store (see below), and
 * If you are using a self-signed certificate and your client is macOS, you may need to update the version of `curl`
-  you have installed.  The version of curl that ships with macOS High Sierra (`curl 7.54.0 (x86_64-apple-darwin17.0)
+  you have installed.  The version of CURL that ships with macOS High Sierra (`curl 7.54.0 (x86_64-apple-darwin17.0)
   libcurl/7.54.0 LibreSSL/2.0.20 zlib/1.2.11 nghttp2/1.24.0`) has known issues with self-signed certificates.  Oracle
   recommends `curl 7.63.0 (x86_64-apple-darwin17.7.0) libcurl/7.63.0 SecureTransport zlib/1.2.11` which can be installed
   with `brew install curl`.
@@ -85,7 +85,7 @@ cat curl.err
 cat curl.out | jq .
 ```
 
-**Note** you can use the `-k` option to bypass the check to verify that the operator's certificate is trusted (instead of `curl --cacert`), but this is insecure.
+**Note**: you can use the `-k` option to bypass the check to verify that the operator's certificate is trusted (instead of `curl --cacert`), but this is insecure.
 
 To use this script, pass in the Kubernetes server address and then the URL you want to call.   The script assumes `jq` is installed and uses it to format the response.  This can be removed if desired.  The script also prints out quite a bit of useful debugging information in addition to the response.  Here is an example of the output of this script:
 
