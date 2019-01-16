@@ -639,7 +639,7 @@ public class ITOperator extends BaseTest {
   @Test
   public void testDomainInImageUsingWLST() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    logTestBegin("testDomainInImageUsing19cAndWLST");
+    logTestBegin("testDomainInImageUsingWLST");
 
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
@@ -659,7 +659,7 @@ public class ITOperator extends BaseTest {
     } finally {
       if (domain13 != null && (JENKINS || testCompletedSuccessfully)) domain13.destroy();
     }
-    logger.info("SUCCESS - testDomainInImageUsing19cAndWLST");
+    logger.info("SUCCESS - testDomainInImageUsingWLST");
   }
   /**
    * Create Operator and create domain using domain-in-image option. Verify the domain is started
@@ -670,7 +670,7 @@ public class ITOperator extends BaseTest {
   @Test
   public void testDomainInImageUsingWDT() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    logTestBegin("testDomainInImageUsing19cAndWDT");
+    logTestBegin("testDomainInImageUsingWDT");
 
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
@@ -690,7 +690,7 @@ public class ITOperator extends BaseTest {
     } finally {
       if (domain14 != null && (JENKINS || testCompletedSuccessfully)) domain14.destroy();
     }
-    logger.info("SUCCESS - testDomainInImageUsing19cAndWDT");
+    logger.info("SUCCESS - testDomainInImageUsingWDT");
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {

@@ -172,7 +172,8 @@ elif [ "$JENKINS" = "true" ]; then
   export docker_pass=${docker_pass:?}
   export M2_HOME=${M2_HOME:?}
   export K8S_VERSION=${K8S_VERSION}
-
+  export IMAGE_NAME_WEBLOGIC="store/oracle/weblogic-for-rc2"
+  export IMAGE_TAG_WEBLOGIC="12.2.1.3.0"
   clean_jenkins
 
   setup_jenkins
