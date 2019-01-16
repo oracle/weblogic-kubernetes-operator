@@ -108,12 +108,12 @@ An overview of what each of these does:
   - Have Helm installed: both the Helm client (helm) and the Helm server (Tiller). See [official helm doc](https://github.com/helm/helm/blob/master/docs/install.md) for detail.
 
 ## To setup from scratch
-Before run script to setup everything automatically, there is one step needs to be done manually. You need to create an empty folder which will be used as the root folder for PVs. 
+**NOTE:** Before run script to setup everything automatically, there is one manual step. You need to create an empty folder which will be used as the root folder for PVs. 
 
 ```
 git clone https://github.com:oracle/weblogic-kubernetes-operator.git
 cd ./weblogic-kubernetes-operator/kubernetes/tutorial/
-export PV_ROOT=<PVPath>  # the value is the absolute path of the folder you just created
+export PV_ROOT=<PVPath>  # the value is the absolute path of the PV folder you just created
 ./startup.sh
 # Or you can choose to run startup-v.sh which will use Voyager as the load balancer.
 ```
