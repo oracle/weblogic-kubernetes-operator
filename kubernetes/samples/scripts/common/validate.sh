@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -232,24 +232,6 @@ function validateServerStartPolicy {
 }
 
 #
-# Function to validate the cluster type value
-#
-function validateClusterType {
-  validateInputParamsSpecified clusterType
-  if [ ! -z "${clusterType}" ]; then
-    case ${clusterType} in
-      "CONFIGURED")
-      ;;
-      "DYNAMIC")
-      ;;
-      *)
-        validationError "Invalid value for clusterType: ${clusterType}. Valid values are 'CONFIGURED' and 'DYNAMIC'."
-      ;;
-    esac
-  fi
-}
-
-#
 # Function to validate the weblogic domain storage reclaim policy
 #
 function validateWeblogicDomainStorageReclaimPolicy {
@@ -388,10 +370,21 @@ function validateCommonInputs {
   validateClusterName
   validateWeblogicCredentialsSecretName
   validateServerStartPolicy
-  validateClusterType
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
 
+  failIfValidationErrors
+}
+
+#
+# Function to validate the domain's persistent volume claim has been created
+#
+function validateDomainPVC {
+  # Check if the persistent volume claim is already available
+  checkPvcExists ${persistentVolumeClaimName} ${namespace}
+  if [ "${PVC_EXISTS}" = "false" ]; then
+    validationError "The domain persistent volume claim ${persistentVolumeClaimName} does not exist in namespace ${namespace}"
+  fi
   failIfValidationErrors
 }
 

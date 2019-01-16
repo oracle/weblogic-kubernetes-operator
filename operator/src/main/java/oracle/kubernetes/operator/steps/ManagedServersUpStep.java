@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -13,6 +13,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -28,7 +29,7 @@ public class ManagedServersUpStep extends Step {
       "Running servers for domain with UID: {0}, running list: {1}";
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, config, servers, next) ->
-          scaleDownIfNecessary(info, config, servers, new ClusterServicesStep(info, next));
+          scaleDownIfNecessary(info, config, servers, new ClusterServicesStep(next));
 
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
@@ -63,6 +64,17 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
+    boolean exceedsMaxConfiguredClusterSize(WlsClusterConfig clusterConfig) {
+      if (clusterConfig != null) {
+        String clusterName = clusterConfig.getClusterName();
+        int configMaxClusterSize = clusterConfig.getMaxDynamicClusterSize();
+        return clusterConfig.hasDynamicServers()
+            && clusterConfig.getServerConfigs().size() == configMaxClusterSize
+            && domain.getReplicaCount(clusterName) > configMaxClusterSize;
+      }
+      return false;
+    }
+
     private Step createNextStep(Step next) {
       if (servers.isEmpty()) return next;
       else return new ManagedServerUpIteratorStep(getStartupInfos(), next);
@@ -83,6 +95,17 @@ public class ManagedServersUpStep extends Step {
 
     private Integer getReplicaCount(String clusterName) {
       return Optional.ofNullable(replicas.get(clusterName)).orElse(0);
+    }
+
+    private void logIfReplicasExceedsClusterServersMax(WlsClusterConfig clusterConfig) {
+      if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
+        String clusterName = clusterConfig.getClusterName();
+        LOGGER.warning(
+            MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT,
+            domain.getReplicaCount(clusterName),
+            clusterConfig.getMaxDynamicClusterSize(),
+            clusterName);
+      }
     }
   }
 
@@ -105,6 +128,7 @@ public class ManagedServersUpStep extends Step {
     Set<String> clusteredServers = new HashSet<>();
 
     for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
+      factory.logIfReplicasExceedsClusterServersMax(clusterConfig);
       for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
         factory.addServerIfNeeded(serverConfig, clusterConfig);
         clusteredServers.add(serverConfig.getName());

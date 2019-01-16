@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -131,9 +131,8 @@ public class Domain {
               + domainUid
               + "-"
               + adminServerName
-              + "-extchannel-t3channel) is created");
-      TestUtils.checkServiceCreated(
-          domainUid + "-" + adminServerName + "-extchannel-t3channel", domainNS);
+              + "-external) is created");
+      TestUtils.checkServiceCreated(domainUid + "-" + adminServerName + "-external", domainNS);
     }
     if (domainMap.get("serverStartPolicy") == null
         || (domainMap.get("serverStartPolicy") != null

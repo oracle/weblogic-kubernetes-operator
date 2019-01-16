@@ -3,10 +3,6 @@
 This sample demonstrates how to install the Traefik ingress controller to provide 
 load balancing for WebLogic clusters.
 
-## Prerequisites
-
-To use this sample you must download [onessl](https://github.com/kubepack/onessl) and place it in the `util` directory.
-
 ## Install the Traefik operator with a Helm chart
 The Traefik Helm chart is located in the official Helm project `charts` directory at https://github.com/helm/charts/tree/master/stable/traefik.
 The chart is in the default repository for Helm.
