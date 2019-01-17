@@ -114,7 +114,7 @@ public class YamlDocGeneratorTest {
         containsString(
             String.join(
                 "\n",
-                "###Simple Object",
+                "### Simple Object",
                 "",
                 tableHeader("Name", "Description"),
                 tableEntry("aBoolean", "A flag."),
@@ -132,7 +132,7 @@ public class YamlDocGeneratorTest {
         containsString(
             String.join(
                 "\n",
-                "###Start",
+                "### Start",
                 "",
                 tableHeader("Name", "Description"),
                 tableEntry("derived", "See section 'Derived Object'"),
@@ -149,13 +149,13 @@ public class YamlDocGeneratorTest {
         containsString(
             String.join(
                 "\n",
-                "###Start",
+                "### Start",
                 "",
                 tableHeader("Name", "Description"),
                 tableEntry("derived", "See section 'Derived Object'"),
                 tableEntry("simple", "See section 'Simple Object'"),
                 "",
-                "###Derived Object",
+                "### Derived Object",
                 "",
                 tableHeader("Name", "Description"),
                 tableEntry("aBoolean", "A flag."),
