@@ -31,16 +31,22 @@ public class ClientPool extends Pool<ApiClient> {
   public static void initialize(ThreadFactory threadFactory) {
     ClientPool.threadFactory =
         (r) -> {
-          return threadFactory.newThread(
-              () -> {
-                try {
-                  r.run();
-                } catch (Throwable t) {
-                  // These will almost always be spurious exceptions
-                  LOGGER.fine(MessageKeys.EXCEPTION, t);
-                }
-              });
+          return threadFactory.newThread(wrapRunnable(r));
         };
+  }
+
+  private static Runnable wrapRunnable(Runnable r) {
+    return new Runnable() {
+      @Override
+      public void run() {
+        try {
+          r.run();
+        } catch (Throwable t) {
+          // These will almost always be spurious exceptions
+          LOGGER.fine(MessageKeys.EXCEPTION, t);
+        }
+      }
+    };
   }
 
   public static ClientPool getInstance() {
