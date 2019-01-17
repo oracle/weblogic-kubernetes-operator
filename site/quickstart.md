@@ -42,9 +42,11 @@ d.	Pull the Traefik load balancer image:
 $ docker pull traefik:1.7.4
 ```
 e.	Pull the WebLogic 12.2.1.3 install image:
+
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```  
+**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if the you already have this image.
 
 f. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
@@ -157,13 +159,13 @@ Follow the directions in the [README](../kubernetes/samples/scripts/create-weblo
 including:
 
 * Copying the sample `kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
-domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`oracle/weblogic:12213-patch-wls-for-k8s`).
+domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`store/oracle/weblogic:12.2.1.3`).
 
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials, in this case, `sample-domain1-weblogic-credentials`.
 
 * Leaving the `image` empty unless you need to tag the new image that the script builds to a different name.
 
-**NOTE**: Make sure that your `JAVA_HOME` is set to a Java JDK version 1.8 or later.
+**NOTE**: If you set the `domainHomeImageBuildPath` property to `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt`, make sure that your `JAVA_HOME` is set to a Java JDK version 1.8 or later.
 
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
