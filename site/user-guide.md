@@ -80,5 +80,5 @@ You can find the operator image in
 * Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
    * The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`,
 was updated on January 17, 2019, and has all the necessary patches applied.
-   * A `docker pull` is required if the you already have this image.
+   * A `docker pull` is required if you already have this image.
 * You must have the `cluster-admin` role to install the operator.
