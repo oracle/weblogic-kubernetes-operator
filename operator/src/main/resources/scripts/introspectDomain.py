@@ -616,9 +616,11 @@ class TopologyGenerator(Generator):
     if serverTemplate.isListenPortEnabled():
       self.writeln("  listenPort: " + str(serverTemplate.getListenPort()))
     self.writeln("  clusterName: " + self.quote(serverTemplate.getCluster().getName()))
-    listenAddress=serverTemplate.getListenAddress()
-    if listenAddress is not None:
-      self.writeln("  listenAddress: " + self.quote(listenAddress))
+    self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + serverTemplate.getName())))
+    if serverTemplate.isAdministrationPortEnabled():
+      self.writeln("  adminPort: " + str(serverTemplate.getAdministrationPort()))
+    self.addSSL(serverTemplate)
+    self.addNetworkAccessPoints(serverTemplate)
 
   def addDynamicClusters(self):
     clusters = self.getDynamicClusters()
@@ -855,6 +857,20 @@ class SitConfigGenerator(Generator):
     self.writeln("<d:name>" + name + "</d:name>")
     self.customizeLog(server_name_prefix + "${id}", template, false)
     self.writeListenAddress(template.getListenAddress(),listen_address)
+    for nap in server.getNetworkAccessPoints():
+      # Don't bother 'add' a nap listen-address, only do a 'replace'.
+      # If we try 'add' this appears to mess up an attempt to 
+      #   'add' PublicAddress/Port via custom sit-cfg.
+      # FWIW there's theoretically no need to 'add' or 'replace' when empty
+      #   since the runtime default is the server listen-address.
+      nap_name=nap.getName()
+      if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
+        self.writeln("<d:network-access-point>")
+        self.indent()
+        self.writeln("<d:name>" + nap_name + "</d:name>")
+        self.writeListenAddress("force a replace",listen_address)
+        self.undent()
+        self.writeln("</d:network-access-point>")
     self.undent()
     self.writeln("</d:server-template>")
 
