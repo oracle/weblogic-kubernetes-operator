@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -46,6 +46,7 @@ public class JsonSchemaMojoTest {
   private static final String TARGET_DIR = "/target/dir";
   private static final String TEST_ROOT_CLASS = "a.b.c.D";
   private static final File SCHEMA_FILE = createFile(TARGET_DIR, TEST_ROOT_CLASS, ".json");
+  private static final File MARKDOWN_FILE = createFile(TARGET_DIR, TEST_ROOT_CLASS, ".md");
   private static final File CLASS_FILE = createFile("/classes", TEST_ROOT_CLASS, ".class");
   private static final String DOT = "\\.";
   private static final String SPECIFIED_FILE_NAME = "specifiedFile.json";
@@ -189,11 +190,47 @@ public class JsonSchemaMojoTest {
   }
 
   @Test
+  public void hasKubernetesVersionField_withAnnotation() throws Exception {
+    Field supportObjectReferencesField = JsonSchemaMojo.class.getDeclaredField("kubernetesVersion");
+    assertThat(supportObjectReferencesField.getType(), equalTo(String.class));
+    assertThat(
+        fieldAnnotations.get(supportObjectReferencesField), hasKey(toDescription(Parameter.class)));
+    assertThat(getMojoParameter("kubernetesVersion"), nullValue());
+  }
+
+  @Test
+  public void hasGenerateMarkdownField_withAnnotation() throws Exception {
+    Field supportObjectReferencesField = JsonSchemaMojo.class.getDeclaredField("generateMarkdown");
+    assertThat(supportObjectReferencesField.getType(), equalTo(boolean.class));
+    assertThat(
+        fieldAnnotations.get(supportObjectReferencesField), hasKey(toDescription(Parameter.class)));
+    assertThat(getMojoParameter("generateMarkdown"), is(false));
+  }
+
+  @Test
   public void hasOutputFileField_withAnnotation() throws Exception {
     Field field = JsonSchemaMojo.class.getDeclaredField("outputFile");
     assertThat(field.getType(), equalTo(String.class));
     assertThat(fieldAnnotations.get(field), hasKey(toDescription(Parameter.class)));
     assertThat(getMojoParameter("outputFile"), nullValue());
+  }
+
+  @Test
+  public void whenKubernetesVersionSpecified_passToGenerator() throws Exception {
+    setMojoParameter("kubernetesVersion", "1.9.0");
+
+    mojo.execute();
+
+    assertThat(main.getKubernetesVersion(), equalTo("1.9.0"));
+  }
+
+  @Test
+  public void whenKubernetesVersionNotSpecified_passToGenerator() throws Exception {
+    setMojoParameter("kubernetesVersion", null);
+
+    mojo.execute();
+
+    assertThat(main.getKubernetesVersion(), nullValue());
   }
 
   @Test
@@ -254,7 +291,23 @@ public class JsonSchemaMojoTest {
   public void generateToExpectedLocation() throws Exception {
     mojo.execute();
 
-    assertThat(main.getOutputFile(), equalTo(SCHEMA_FILE));
+    assertThat(main.getSchemaFile(), equalTo(SCHEMA_FILE));
+  }
+
+  @Test
+  public void whenGenerateMarkdownNotSpecified_dontGenerateMarkdown() throws Exception {
+    mojo.execute();
+
+    assertThat(main.getMarkdownFile(), nullValue());
+  }
+
+  @Test
+  public void whenGenerateMarkdownSpecified_denerateMarkdown() throws Exception {
+    setMojoParameter("generateMarkdown", true);
+
+    mojo.execute();
+
+    assertThat(main.getMarkdownFile(), equalTo(MARKDOWN_FILE));
   }
 
   @Test
@@ -265,7 +318,7 @@ public class JsonSchemaMojoTest {
 
     mojo.execute();
 
-    assertThat(main.getOutputFile(), nullValue());
+    assertThat(main.getSchemaFile(), nullValue());
   }
 
   @Test
@@ -276,7 +329,7 @@ public class JsonSchemaMojoTest {
 
     mojo.execute();
 
-    assertThat(main.getOutputFile(), equalTo(SCHEMA_FILE));
+    assertThat(main.getSchemaFile(), equalTo(SCHEMA_FILE));
   }
 
   @Test
@@ -284,7 +337,7 @@ public class JsonSchemaMojoTest {
     setMojoParameter("outputFile", SPECIFIED_FILE_NAME);
     mojo.execute();
 
-    assertThat(main.getOutputFile(), equalTo(SPECIFIED_FILE));
+    assertThat(main.getSchemaFile(), equalTo(SPECIFIED_FILE));
   }
 
   @Test
