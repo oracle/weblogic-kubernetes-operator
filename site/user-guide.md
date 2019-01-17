@@ -77,5 +77,5 @@ You can find the operator image in
 * Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
 * Docker 18.03.1.ce (check with `docker version`).
 * Helm 2.8.2+ (check with `helm version`).
-* Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
+* Oracle WebLogic Server 12.2.1.3.0 with patch 29135930. The WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, meets this requirement.
 * You must have the `cluster-admin` role to install the operator.
