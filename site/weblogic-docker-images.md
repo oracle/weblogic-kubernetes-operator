@@ -9,8 +9,8 @@ There are two main options available:
   and the domain directory.
 
 If you want to use the first option, you will need to obtain the standard
-WebLogic Server image from the Docker Store [see here](#obtaining-standard-images-from-the-docker-store)
-and then create a new image with the mandatory patches applied as described in [this section](#creating-a-custom-images-with-patches-applied).
+WebLogic Server image from the Docker Store, [see here](#obtaining-standard-images-from-the-docker-store),
+this image already contains the mandatory patches applied as described in [this section](#creating-a-custom-image-with-patches-applied).
 If you want to use additional patches, you can customize that process to include additional patches.
 
 If you want to use the second option, which includes the domain directory
@@ -19,7 +19,7 @@ as described in [this section](#creating-a-custom-image-with-your-domain-inside-
 
 ## Setting up secrets to access the Docker Store
 
-**Note** This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 28076014, so pulling an unpatched image directly to the Kubernetes cluster is not particularly useful.  However, we have left this information in the documentation for reference purposes. 
+**Note**: This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 29135930, and the standard image `store/oracle/weblogic:12.2.1.3` already includes this patch pre-applied.  
 
 In order for Kubernetes to obtain the WebLogic Server Docker image from the Docker Store, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Docker Store credentials, issue the following command:
 
@@ -40,7 +40,7 @@ If you choose this approach, you do not require the Kubernetes secret.
 ## Obtaining standard images from the Docker store
 
 Oracle provides a [WebLogic Server 12.2.1.3.0 Docker image](https://store.docker.com/_/oracle-weblogic-server-12c) in the
-[Docker Store](https://store.docker.com).  To obtain that image, you
+[Docker Store](https://store.docker.com) which already has the necessary patches applied.  To obtain that image, you
 must have a Docker Store account, log on to the Docker Store, navigate
 to that image and click on the "Proceed to Checkout" button which will
 prompt you to read and accept the license agreement for the image.
@@ -64,12 +64,11 @@ Docker Store.
 
 ## Creating a custom image with patches applied
 
-The Oracle WebLogic Server Kubernetes Operator requires patch 28076014.
-This patch does have some prerequisites that will also need to be applied.
+The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
+This patch does have some prerequisites that will also need to be applied. The standard image `store/oracle/weblogic:12.2.1.3` already has these patches applied. 
 
 [This sample](https://github.com/oracle/docker-images/blob/master/OracleWebLogic/samples/12213-patch-wls-for-k8s/README.md) in
-the Oracle GitHub Docker images repository demonstrates how to create
-a patched image.
+the Oracle GitHub Docker images repository demonstrates how to create an image with arbitrary patches.  You can customize that sample to apply a different set of patches, if you require additional patches or PSUs.
 
 When using that sample, you will need to download the required patch and also
 some prerequisite patches.  To find the correct version of the patch, you should
