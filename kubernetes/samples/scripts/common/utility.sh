@@ -282,10 +282,10 @@ function createFiles {
     fi
 
     # calculate the internal name to tag the generated image
-    imageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
+    defaultImageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
     baseTag=${domainHomeImageBase#*:}
    
-    imageName=${imageName}:${baseTag:-"latest"}
+    defaultImageName=${defaultImageName}:${baseTag:-"latest"}
 
     # Generate the properties file that will be used when creating the weblogic domain
     echo Generating ${domainPropertiesOutput}
@@ -303,7 +303,7 @@ function createFiles {
     sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
-    sed -i -e "s|%IMAGE_NAME%|${imageName}|g" ${domainPropertiesOutput}
+    sed -i -e "s|%IMAGE_NAME%|${defaultImageName}|g" ${domainPropertiesOutput}
 
   else
 
@@ -415,7 +415,7 @@ function createFiles {
  
     # now we know which image to use, update the domain yaml file
     if [ -z $image ]; then
-      sed -i -e "s|%WEBLOGIC_IMAGE%|${imageName}|g" ${dcrOutput}
+      sed -i -e "s|%WEBLOGIC_IMAGE%|${defaultImageName}|g" ${dcrOutput}
     else
       sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${dcrOutput}
     fi
