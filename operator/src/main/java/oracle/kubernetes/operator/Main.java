@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
+import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
@@ -89,6 +90,8 @@ public class Main {
 
   static {
     try {
+      ClientPool.initialize(threadFactory);
+
       TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
       tuningAndConfig = TuningParameters.getInstance();
     } catch (IOException e) {

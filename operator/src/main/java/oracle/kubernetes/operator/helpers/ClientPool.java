@@ -4,10 +4,16 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import com.squareup.okhttp.Dispatcher;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.Configuration;
 import io.kubernetes.client.util.Config;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -18,8 +24,24 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static ClientPool SINGLETON = new ClientPool();
+  private static ThreadFactory threadFactory;
 
   private static final ClientFactory FACTORY = new DefaultClientFactory();
+
+  public static void initialize(ThreadFactory threadFactory) {
+    ClientPool.threadFactory =
+        (r) -> {
+          return threadFactory.newThread(
+              () -> {
+                try {
+                  r.run();
+                } catch (Throwable t) {
+                  // These will almost always be spurious exceptions
+                  LOGGER.fine(MessageKeys.EXCEPTION, t);
+                }
+              });
+        };
+  }
 
   public static ClientPool getInstance() {
     return SINGLETON;
@@ -71,6 +93,19 @@ public class ClientPool extends Pool<ApiClient> {
         if (first.getAndSet(false)) {
           Configuration.setDefaultApiClient(client);
         }
+
+        if (threadFactory != null) {
+          ExecutorService exec =
+              new ThreadPoolExecutor(
+                  0,
+                  Integer.MAX_VALUE,
+                  60,
+                  TimeUnit.SECONDS,
+                  new SynchronousQueue<Runnable>(),
+                  threadFactory);
+          client.getHttpClient().setDispatcher(new Dispatcher(exec));
+        }
+
         return client;
       } catch (IOException e) {
         throw new RuntimeException(e);
