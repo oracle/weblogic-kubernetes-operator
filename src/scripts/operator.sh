@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 set -x
@@ -18,6 +18,8 @@ function relay_SIGTERM {
 trap relay_SIGTERM SIGTERM
 
 /operator/initialize-internal-operator-identity.sh
+
+/operator/initialize-external-operator-identity.sh
 
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
   DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=$HOSTNAME:$REMOTE_DEBUG_PORT"
