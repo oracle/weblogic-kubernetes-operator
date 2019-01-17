@@ -381,6 +381,23 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasNoJsonPath("$.definitions.V1EnvVar"));
   }
 
+  @Test
+  public void whenK8sVersionSpecified_useFullReferenceForK8sObject() throws IOException {
+    generator.useKubernetesVersion("1.9.0");
+    Object schema = generator.generate(ExternalReferenceObject.class);
+
+    assertThat(
+        schema,
+        hasJsonPath(
+            "$.properties.env.items.$ref",
+            equalTo(schemaUrl + "#/definitions/io.k8s.api.core.v1.EnvVar")));
+  }
+
+  @Test(expected = IOException.class)
+  public void whenNonCachedK8sVersionSpecified_throwException() throws IOException {
+    generator.useKubernetesVersion("1.12.0");
+  }
+
   // todo (future, maybe): generate $id nodes where they can simplify $ref urls
   // todo (future, maybe): support oneOf, allOf, anyOf, not ? - would need annotations.
   // todo access remote url if no cache found for kubernetes schema
