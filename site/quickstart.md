@@ -192,7 +192,7 @@ script will just generate the YAML files, but will not take any action on your c
 
 If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following:
 * Set the `image` property in the inputs file to the target image name (including the registry hostname/port, and the tag if needed).
-* If you want the Kubernetes to pull the image from a private registry, create a Kubernetes secret to hold your credentials, and set the `imagePullSecretName` property in the inputs file to the name of the secret. Note that the secret needs to be in the same namespace as where you want to run the domain.
+* If you want Kubernetes to pull the image from a private registry, create a Kubernetes secret to hold your credentials and set the `imagePullSecretName` property in the inputs file to the name of the secret. Note that the secret needs to be in the same namespace as where you want to run the domain.
 * Run the `create-domain.sh` script without the `-e` option.
 * Push the `image` to the registry.
 * Run the following command to create the domain.
