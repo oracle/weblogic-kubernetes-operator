@@ -549,6 +549,7 @@ public class ConfigMapHelperTest {
     List<WlsServerConfig> serverTemplates = wlsDomainConfig.getServerTemplates();
     assertEquals(1, serverTemplates.size());
     assertEquals("cluster-1-template", serverTemplates.get(0).getName());
+    assertEquals("domain1-managed-server${id}", serverTemplates.get(0).getListenAddress());
     assertEquals("cluster-1", serverTemplates.get(0).getClusterName());
 
     Map<String, WlsServerConfig> serverConfigMap = wlsDomainConfig.getServerConfigs();
