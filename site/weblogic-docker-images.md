@@ -9,8 +9,8 @@ There are two main options available:
   and the domain directory.
 
 If you want to use the first option, you will need to obtain the standard
-WebLogic Server image from the Docker Store, [see here](#obtaining-standard-images-from-the-docker-store),
-and then create a new image with the mandatory patches applied as described in [this section](#creating-a-custom-image-with-patches-applied).
+WebLogic Server image from the Docker Store [see here](#obtaining-standard-images-from-the-docker-store)
+and then create a new image with the mandatory patches applied as described in [this section](#creating-a-custom-images-with-patches-applied).
 If you want to use additional patches, you can customize that process to include additional patches.
 
 If you want to use the second option, which includes the domain directory
@@ -19,7 +19,7 @@ as described in [this section](#creating-a-custom-image-with-your-domain-inside-
 
 ## Setting up secrets to access the Docker Store
 
-**Note**: This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 29135930, so pulling an unpatched image directly to the Kubernetes cluster is not particularly useful.  However, we have left this information in the documentation for reference purposes.
+**Note** This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 28076014, so pulling an unpatched image directly to the Kubernetes cluster is not particularly useful.  However, we have left this information in the documentation for reference purposes. 
 
 In order for Kubernetes to obtain the WebLogic Server Docker image from the Docker Store, which requires authentication, a Kubernetes secret containing the registry credentials must be created. To create a secret with Docker Store credentials, issue the following command:
 
@@ -34,7 +34,7 @@ $ kubectl create secret docker-registry SECRET_NAME
 
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the first domain will be deployed, otherwise Kubernetes will not be able to find it.  
 
-It may be preferable to manually pull the image in advance, on each Kubernetes worker node, as described in the next section.
+It may be preferable to manually pull the image in advance, on each Kubernetes worker node, as described in the next section. 
 If you choose this approach, you do not require the Kubernetes secret.
 
 ## Obtaining standard images from the Docker store
@@ -44,10 +44,10 @@ Oracle provides a [WebLogic Server 12.2.1.3.0 Docker image](https://store.docker
 must have a Docker Store account, log on to the Docker Store, navigate
 to that image and click on the "Proceed to Checkout" button which will
 prompt you to read and accept the license agreement for the image.
-After you have accepted the license agreement, you will be able to
+Once you have accepted the license agreement, you will be able to
 pull the image using your Docker store credentials.
 
-First, you will need to log in to the Docker Store:
+First, you will need to login to the Docker Store:
 
 ```
 $ docker login
@@ -64,7 +64,7 @@ Docker Store.
 
 ## Creating a custom image with patches applied
 
-The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
+The Oracle WebLogic Server Kubernetes Operator requires patch 28076014.
 This patch does have some prerequisites that will also need to be applied.
 
 [This sample](https://github.com/oracle/docker-images/blob/master/OracleWebLogic/samples/12213-patch-wls-for-k8s/README.md) in
