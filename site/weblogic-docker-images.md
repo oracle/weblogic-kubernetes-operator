@@ -68,7 +68,7 @@ The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
 This patch does have some prerequisites that will also need to be applied. The standard image `store/oracle/weblogic:12.2.1.3` already has these patches applied. 
 
 [This sample](https://github.com/oracle/docker-images/blob/master/OracleWebLogic/samples/12213-patch-wls-for-k8s/README.md) in
-the Oracle GitHub Docker images repository demonstrates how to create an image with arbitrary patches.  You can customize that sample to apply a different set of patches, if you require additional patches or PSUs.
+the Oracle GitHub Docker images repository demonstrates how to create an image with arbitrary patches, starting from an unpatched WebLogic Server 12.2.1.3 image (not the standard `store/oracle/weblogic:12.2.1.3` pre-patched image).  You can customize that sample to apply a different set of patches, if you require additional patches or PSUs.
 
 When using that sample, you will need to download the required patch and also
 some prerequisite patches.  To find the correct version of the patch, you should
