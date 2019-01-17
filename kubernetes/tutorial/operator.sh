@@ -39,6 +39,7 @@ function create() {
     --name sample-weblogic-operator \
     --namespace weblogic-operator1 \
     --set serviceAccount=sample-weblogic-operator-sa \
+    --set image=weblogic-kubernetes-operator:2.0 \
     --set "domainNamespaces={default,test1}" \
     --wait
   
