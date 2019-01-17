@@ -1,4 +1,4 @@
-###Domain
+### Domain
 
 | Name | Description |
 | --- | --- |
@@ -8,7 +8,7 @@
 | spec | The specification of the domain. Required. See section 'Domain Spec' |
 | status | The current status of the domain. Updated by the operator. See section 'Domain Status' |
 
-###Domain Spec
+### Domain Spec
 
 | Name | Description |
 | --- | --- |
@@ -34,7 +34,7 @@
 | serverStartState | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 | webLogicCredentialsSecret | The name of a pre-created Kubernetes secret, in the domain's namepace, that holds the username and password needed to boot WebLogic Server under the 'username' and 'password' fields. |
 
-###Domain Status
+### Domain Status
 
 | Name | Description |
 | --- | --- |
@@ -45,7 +45,7 @@
 | servers | Status of WebLogic servers in this domain. See section 'Server Status' |
 | startTime | RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available. |
 
-###Admin Server
+### Admin Server
 
 | Name | Description |
 | --- | --- |
@@ -56,7 +56,7 @@
 | serverStartPolicy | The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED. |
 | serverStartState | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
-###Cluster
+### Cluster
 
 | Name | Description |
 | --- | --- |
@@ -70,7 +70,7 @@
 | serverStartPolicy | The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED. |
 | serverStartState | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
-###Managed Server
+### Managed Server
 
 | Name | Description |
 | --- | --- |
@@ -81,7 +81,7 @@
 | serverStartPolicy | The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED. |
 | serverStartState | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
-###Server Pod
+### Server Pod
 
 | Name | Description |
 | --- | --- |
@@ -97,14 +97,14 @@
 | volumeMounts | Additional volume mounts for the server pod. |
 | volumes | Additional volumes to be created in the server pod. |
 
-###Kubernetes Resource
+### Kubernetes Resource
 
 | Name | Description |
 | --- | --- |
 | annotations | The annotations to be attached to generated resources. |
 | labels | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
 
-###Domain Condition
+### Domain Condition
 
 | Name | Description |
 | --- | --- |
@@ -115,7 +115,7 @@
 | status | Status is the status of the condition. Can be True, False, Unknown. Required. |
 | type | Type is the type of the condition. Currently, valid types are Progressing, Available, and Failure. Required. |
 
-###Server Status
+### Server Status
 
 | Name | Description |
 | --- | --- |
@@ -125,13 +125,13 @@
 | serverName | WebLogic server name. Required. |
 | state | Current state of this WebLogic server. Required. |
 
-###Admin Service
+### Admin Service
 
 | Name | Description |
 | --- | --- |
 | channels | Specifies which of the admin server's WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server's node port service will not be created. See section 'Channel' |
 
-###Probe Tuning
+### Probe Tuning
 
 | Name | Description |
 | --- | --- |
@@ -139,7 +139,7 @@
 | periodSeconds | The number of seconds between checks. |
 | timeoutSeconds | The number of seconds with no response that indicates a failure. |
 
-###Server Health
+### Server Health
 
 | Name | Description |
 | --- | --- |
@@ -147,14 +147,14 @@
 | overallHealth | Server health of this WebLogic server. |
 | subsystems | Status of unhealthy subsystems, if any. See section 'Subsystem Health' |
 
-###Channel
+### Channel
 
 | Name | Description |
 | --- | --- |
 | channelName | Name of channel. default' refers to the admin server's default channel (configured via the ServerMBean's ListenPort) 'default-secure' refers to the admin server's default secure channel (configured via the ServerMBean's SSLMBean's ListenPort) 'default-admin' refers to the admin server's default administrative channel (configured via the DomainMBean's AdministrationPort) Otherwise, the name is the name of one of the admin server's network access points (configured via the ServerMBean's NetworkAccessMBeans). |
 | nodePort | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
 
-###Subsystem Health
+### Subsystem Health
 
 | Name | Description |
 | --- | --- |
