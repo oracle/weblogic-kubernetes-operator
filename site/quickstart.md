@@ -46,7 +46,7 @@ e.	Pull the WebLogic 12.2.1.3 install image:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```  
-**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if the you already have this image.
+**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you already have this image.
 
 f. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
