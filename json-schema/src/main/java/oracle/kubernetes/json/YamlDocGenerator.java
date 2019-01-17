@@ -26,7 +26,7 @@ public class YamlDocGenerator {
 
   public String generate(String reference, Map<String, Object> schema) {
     referencesNeeded.remove(reference);
-    StringBuilder sb = new StringBuilder("###");
+    StringBuilder sb = new StringBuilder("### ");
     sb.append(toStructureName(reference)).append("\n\n").append(generateForClass(schema));
     while (!referencesNeeded.isEmpty()) {
       generateForDefinition(sb, referencesNeeded.get(0));
