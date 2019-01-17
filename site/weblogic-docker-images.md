@@ -107,5 +107,9 @@ are provided that demonstrate how to create the image using:
 * [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
   to define the domain.
 
+In these samples you will see a reference to a "base" or `FROM` image.  You should use an image
+with the mandatory patches installed as this base image.  This image could be either 
+the standard `store/oracle/weblogic:12.2.1.3` pre-patched image or an image you created using the instructions above.
+
 **Note**: Oracle recommends that Docker images containing WebLogic domains
 be kept in a private repository.
