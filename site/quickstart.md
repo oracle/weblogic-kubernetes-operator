@@ -44,13 +44,9 @@ $ docker pull traefik:1.7.4
 e.	Pull the WebLogic 12.2.1.3 install image:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
-```
-f.	Then patch the WebLogic image according to the instructions [here](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s), with these modifications:
+```  
 
-* Change the `FROM` clause to extend the `store/oracle/weblogic:12.2.1.3` image from `Dockerfile.patch-ontop-12213`.
-* Comment out commands that apply patch 27117282.   
-
-g. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
+f. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
 ## 2. Grant the Helm service account the `cluster-admin` role.
 
@@ -166,6 +162,8 @@ domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`oracle/w
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials, in this case, `sample-domain1-weblogic-credentials`.
 
 * Leaving the `image` empty unless you need to tag the new image that the script builds to a different name.
+
+**NOTE**: Make sure that your `JAVA_HOME` is set to a Java JDK version 1.8 or later.
 
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
