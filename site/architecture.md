@@ -12,7 +12,7 @@ The operator is packaged in a [Docker image](https://hub.docker.com/r/oracle/web
 
 ```
 $ docker login
-$ docker pull oracle/weblogic-kubernetes-operator:2.0-rc2
+$ docker pull oracle/weblogic-kubernetes-operator:2.0
 ```
 
 For more details on acquiring the operator image and prerequisites for installing the operator, consult the [Quick Start guide](quickstart.md).
