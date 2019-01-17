@@ -165,7 +165,7 @@ function initialize {
 #
 function getDockerSample {
   rm -rf ${scriptDir}/docker-images
-  git clone https://github.com/mriccell/docker-images.git ${scriptDir}/docker-images
+  git clone https://github.com/oracle/docker-images.git ${scriptDir}/docker-images
 }
 
 #
@@ -194,8 +194,10 @@ function createDomainHome {
   fi
 
   sh ${dockerDir}/build.sh
+
+  # if the "image" property is set, tag the image as it too
   if [ ! -z $image ]; then
-    docker tag $imageName $image
+    docker tag $defaultImageName $image
   fi
 
   if [ "$?" != "0" ]; then
