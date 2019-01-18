@@ -1002,10 +1002,12 @@ public class Domain {
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
+      logger.info("IMAGE_NAME_WEBLOGIC "+ imageName);
     }
     String imageTag = "19.1.0.0";
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
+      logger.info("IMAGE_TAG_WEBLOGIC "+ imageTag);
     }
     domainMap.put("logHome", "/shared/logs/" + domainUid);
     if (!domainMap.containsKey("domainHomeImageBase")) {

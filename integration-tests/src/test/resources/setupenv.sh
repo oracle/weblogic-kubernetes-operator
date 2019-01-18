@@ -171,6 +171,8 @@ elif [ "$JENKINS" = "true" ]; then
   export K8S_VERSION=${K8S_VERSION}
   export IMAGE_NAME_WEBLOGIC="store/oracle/weblogic"
   export IMAGE_TAG_WEBLOGIC="12.2.1.3"
+  
+  echo IMAGE_NAME_WEBLOGIC $IMAGE_NAME_WEBLOGIC IMAGE_TAG_WEBLOGIC $IMAGE_TAG_WEBLOGIC
   clean_jenkins
 
   setup_jenkins
