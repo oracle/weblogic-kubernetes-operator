@@ -130,6 +130,16 @@ openssl \
 2> /dev/null
 
 # Create the secret with the self-signed certificate and private key in the weblogic-operator namespace
-kubectl create secret tls "weblogic-operator-certificate" --cert=${OP_CERT_PEM} --key=${OP_KEY_PEM} -n weblogic-operator
-echo "externalCertificateSecret: weblogic-operator-certificate"
+# kubectl create secret tls "weblogic-operator-certificate" --cert=${OP_CERT_PEM} --key=${OP_KEY_PEM} -n weblogic-operator
+# echo "externalCertificateSecret: weblogic-operator-certificate"
+
+# base64 encode the cert and private key pem
+CERT_DATA=`base64 -i ${OP_CERT_PEM} | tr -d '\n'`
+KEY_DATA=`base64 -i ${OP_KEY_PEM} | tr -d '\n'`
+
+# print out the cert and pem in the form that can be added to
+# the operator helm chart's values.yaml
+echo "externalOperatorCert: ${CERT_DATA}"
+echo "externalOperatorKey: ${KEY_DATA}"
+
 SUCCEEDED=true
