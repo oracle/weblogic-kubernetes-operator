@@ -40,7 +40,7 @@ public class ClientPool extends Pool<ApiClient> {
           r.run();
         } catch (Throwable t) {
           // These will almost always be spurious exceptions
-          LOGGER.fine(MessageKeys.EXCEPTION, t);
+          LOGGER.finer(MessageKeys.EXCEPTION, t);
         }
       }
     };
