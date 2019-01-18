@@ -565,6 +565,7 @@ class TopologyGenerator(Generator):
     self.writeln("serverTemplateName: " + self.quote(dynamicServer.getServerTemplate().getName()))
     self.writeln("calculatedListenPorts: " + str(dynamicServer.isCalculatedListenPorts()))
     self.writeln("serverNamePrefix: " + self.quote(dynamicServer.getServerNamePrefix()))
+    # report max dynamic cluster size as dynamicClusterSize since we are updating it with generated situational config
     self.writeln("dynamicClusterSize: " + str(dynamicServer.getMaxDynamicClusterSize()))
     self.writeln("maxDynamicClusterSize: " + str(dynamicServer.getMaxDynamicClusterSize()))
 
