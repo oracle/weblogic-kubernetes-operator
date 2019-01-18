@@ -36,7 +36,7 @@ public class BaseTest {
   private static int waitTimePod = 5;
   private static String leaseId = "";
   private static String branchName = "";
-
+  private static String appLocationInPod = "/u01/oracle/apps";
   private static Properties appProps;
 
   public static void initialize(String appPropsFile) throws Exception {
@@ -164,7 +164,7 @@ public class BaseTest {
     Map<String, Object> domainMap = domain.getDomainMap();
     // check if the property is set to true
     Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
-    String appLocationInPod = "/u01/oracle/apps";
+    
     if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
       ExecResult result =
           TestUtils.kubectlexecNoCheck(
@@ -335,7 +335,7 @@ public class BaseTest {
     domain.deployWebAppViaWLST(
         "opensessionapp",
         getProjectRoot() + "/src/integration-tests/apps/opensessionapp.war",
-        "/u01/oracle/apps/",
+        appLocationInPod,
         getUsername(),
         getPassword());
 
