@@ -16,8 +16,10 @@
 {{- if include "utils.verifyBoolean" (list $scope "externalRestEnabled") -}}
 {{-   if $scope.externalRestEnabled -}}
 {{-     $ignore := include "utils.verifyInteger" (list $scope "externalRestHttpsPort") -}}
-{{/*        The following condition is for backward compatibility only */}}
-{{-     if (or (not (hasKey $scope "externalOperatorCert")) (not (hasKey $scope "externalOperatorKey"))) -}}
+{{-     if (or (hasKey $scope "externalOperatorCert") (hasKey $scope "externalOperatorKey")) -}}
+{{-       $ignore := include "utils.verifyString"  (list $scope "externalOperatorCert") -}}
+{{-       $ignore := include "utils.verifyString"  (list $scope "externalOperatorKey") -}}
+{{-     else }}
 {{-       $ignore := include "utils.verifyString"  (list $scope "externalCertificateSecret") -}}
 {{-     end -}}
 {{-   end -}}
