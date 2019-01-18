@@ -29,10 +29,7 @@ public class ClientPool extends Pool<ApiClient> {
   private static final ClientFactory FACTORY = new DefaultClientFactory();
 
   public static void initialize(ThreadFactory threadFactory) {
-    ClientPool.threadFactory =
-        (r) -> {
-          return threadFactory.newThread(wrapRunnable(r));
-        };
+    ClientPool.threadFactory = threadFactory;
   }
 
   private static Runnable wrapRunnable(Runnable r) {
@@ -108,7 +105,12 @@ public class ClientPool extends Pool<ApiClient> {
                   60,
                   TimeUnit.SECONDS,
                   new SynchronousQueue<Runnable>(),
-                  threadFactory);
+                  threadFactory) {
+                @Override
+                public void execute(Runnable command) {
+                  wrapRunnable(command);
+                }
+              };
           client.getHttpClient().setDispatcher(new Dispatcher(exec));
         }
 
