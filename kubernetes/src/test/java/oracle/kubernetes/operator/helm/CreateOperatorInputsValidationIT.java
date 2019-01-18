@@ -18,7 +18,7 @@ import org.junit.Test;
 public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   private static final String MUTEX = "%s can not be present when %s is defined";
-  
+
   private static final String MISSING = "%s %s must be specified";
 
   private static final String WRONG_TYPE = "%s must be a %s : %s";
@@ -166,7 +166,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
     assertThat(getProcessingError(), emptyString());
   }
-  
+
   @Test
   public void whenRemoteDebugNodePortEnabled_reportMissingRelatedParameters() throws Exception {
     setProperty("remoteDebugNodePortEnabled", true);
