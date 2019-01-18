@@ -106,6 +106,7 @@ class OfflineWlstEnv(object):
 
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
+    self.DOMAIN_NAME              = self.getEnv('DOMAIN_NAME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
@@ -786,7 +787,7 @@ class SitConfigGenerator(Generator):
     self.writeln("<?xml version='1.0' encoding='UTF-8'?>")
     self.writeln("<d:domain xmlns:d=\"http://xmlns.oracle.com/weblogic/domain\" xmlns:f=\"http://xmlns.oracle.com/weblogic/domain-fragment\" xmlns:s=\"http://xmlns.oracle.com/weblogic/situational-config\">")
     self.indent()
-    self.writeln("<s:expiration> 2020-07-16T19:20+01:00 </s:expiration>")
+    self.writeln("<d:name>" + self.env.DOMAIN_NAME + "</d:name>")
     self.customizeNodeManagerCreds()
     self.customizeDomainLogPath()
     self.customizeServers()
@@ -925,6 +926,7 @@ class CustomSitConfigIntrospector(SecretManager):
     self.macroMap['env:DOMAIN_UID']  = self.env.DOMAIN_UID
     self.macroMap['env:DOMAIN_HOME'] = self.env.DOMAIN_HOME
     self.macroMap['env:LOG_HOME']    = self.env.LOG_HOME
+    self.macroMap['env:DOMAIN_NAME'] = self.env.DOMAIN_NAME
 
     keys=self.macroMap.keys()
     keys.sort()
