@@ -106,7 +106,7 @@ When the operator receives a scaling request, it will:
 
 In response to a change to either `replicas` property, in the domain resource, the operator will increase or decrease the number of pods (Managed Servers) to match the desired replica count, up to the number of configured managed servers for a configured cluster, or the dynamic cluster size for a dynamic cluster. 
 
-Note that for dynamic clusters, the maximum number of managed server pods that the operator can create is limited by the dynamic cluster size, not the maximum dynamic cluster size. 
+Note that for dynamic clusters, the operator will adjust the value of the dynamic cluster size to the maximum dynamic cluster size to allow for scaling up to the maximum dynamic cluster size.
 
 ## Using a WLDF policy rule and script action to call the operator's REST scale API
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
