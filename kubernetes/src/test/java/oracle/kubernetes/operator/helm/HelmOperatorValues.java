@@ -29,6 +29,7 @@ class HelmOperatorValues extends OperatorValues {
     loadFromMap(map, this::setJavaLoggingLevel, "javaLoggingLevel");
     loadFromMap(map, this::setNamespace, "operatorNamespace");
     loadFromMap(map, this::setWeblogicOperatorImagePullPolicy, "imagePullPolicy");
+    loadFromMap(map, this::setExternalOperatorSecret, "externalOperatorSecret");
     loadFromMap(map, this::setExternalOperatorCert, "externalOperatorCert");
     loadFromMap(map, this::setExternalOperatorKey, "externalOperatorKey");
     loadFromMap(map, this::setLogStashImage, "logStashImage");
@@ -96,6 +97,7 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getJavaLoggingLevel, "javaLoggingLevel");
     addStringMapEntry(map, this::getNamespace, "operatorNamespace");
     addStringMapEntry(map, this::getWeblogicOperatorImagePullPolicy, "imagePullPolicy");
+    addStringMapEntry(map, this::getExternalOperatorSecret, "externalOperatorSecret");
     addStringMapEntry(map, this::getExternalOperatorCert, "externalOperatorCert");
     addStringMapEntry(map, this::getExternalOperatorKey, "externalOperatorKey");
     addStringMapEntry(map, this::getLogStashImage, "logStashImage");
