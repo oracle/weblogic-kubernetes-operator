@@ -164,7 +164,7 @@ public class BaseTest {
     Map<String, Object> domainMap = domain.getDomainMap();
     // check if the property is set to true
     Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
-    
+
     if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
       ExecResult result =
           TestUtils.kubectlexecNoCheck(
