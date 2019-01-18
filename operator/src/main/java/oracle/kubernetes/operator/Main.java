@@ -10,8 +10,11 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -90,6 +93,11 @@ public class Main {
 
   static {
     try {
+      // suppress System.err since we catch all necessary output with Logger
+      OutputStream output = new FileOutputStream("/dev/null");
+      PrintStream nullOut = new PrintStream(output);
+      System.setErr(nullOut);
+
       ClientPool.initialize(threadFactory);
 
       TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
