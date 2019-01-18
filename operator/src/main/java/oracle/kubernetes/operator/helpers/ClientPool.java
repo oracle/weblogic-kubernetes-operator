@@ -108,7 +108,7 @@ public class ClientPool extends Pool<ApiClient> {
                   threadFactory) {
                 @Override
                 public void execute(Runnable command) {
-                  wrapRunnable(command);
+                  super.execute(wrapRunnable(command));
                 }
               };
           client.getHttpClient().setDispatcher(new Dispatcher(exec));
