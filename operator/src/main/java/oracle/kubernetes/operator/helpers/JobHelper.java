@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -169,7 +169,7 @@ public class JobHelper {
    * @param info
    * @return
    */
-  private static boolean creatingServers(DomainPresenceInfo info) {
+  static boolean creatingServers(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
     DomainSpec spec = dom.getSpec();
     List<Cluster> clusters = spec.getClusters();
@@ -178,7 +178,7 @@ public class JobHelper {
     // Are we starting a cluster?
     // NOTE: clusterServerStartPolicy == null indicates default policy
     for (Cluster cluster : clusters) {
-      int replicaCount = cluster.getReplicas();
+      int replicaCount = dom.getReplicaCount(cluster.getClusterName());
       String clusterServerStartPolicy = cluster.getServerStartPolicy();
       LOGGER.fine(
           "Start Policy: "
