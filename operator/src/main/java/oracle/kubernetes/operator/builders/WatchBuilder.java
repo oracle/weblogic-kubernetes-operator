@@ -406,7 +406,9 @@ public class WatchBuilder {
             pool,
             client,
             Watch.createWatch(
-                client.value(), function.apply(client.value(), callParams), getType(responseBodyType)));
+                client.value(),
+                function.apply(client.value(), callParams),
+                getType(responseBodyType)));
       } catch (UncheckedApiException e) {
         throw e.getCause();
       }

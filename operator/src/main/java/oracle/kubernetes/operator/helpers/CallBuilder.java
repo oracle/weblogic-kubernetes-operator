@@ -948,7 +948,8 @@ public class CallBuilder {
   public V1Service readService(String name, String namespace) throws ApiException {
     Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client.value()).readNamespacedService(name, namespace, pretty, exact, export);
+      return new CoreV1Api(client.value())
+          .readNamespacedService(name, namespace, pretty, exact, export);
     } finally {
       helper.recycle(client);
     }
@@ -1364,7 +1365,8 @@ public class CallBuilder {
   public V1Secret readSecret(String name, String namespace) throws ApiException {
     Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client.value()).readNamespacedSecret(name, namespace, pretty, exact, export);
+      return new CoreV1Api(client.value())
+          .readNamespacedSecret(name, namespace, pretty, exact, export);
     } finally {
       helper.recycle(client);
     }

@@ -166,7 +166,8 @@ public class AsyncRequestStep<T> extends Step {
               };
 
           try {
-            CancellableCall c = factory.generate(requestParams, client.value(), _continue, callback);
+            CancellableCall c =
+                factory.generate(requestParams, client.value(), _continue, callback);
 
             // timeout handling
             fiber

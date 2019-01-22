@@ -34,7 +34,7 @@ public class ClientPoolTest {
 
   @Test
   public void onTake_returnApiClient() {
-    assertThat(ClientPool.getInstance().take(), instanceOf(ApiClient.class));
+    assertThat(ClientPool.getInstance().take().value(), instanceOf(ApiClient.class));
   }
 
   @Test

@@ -318,14 +318,14 @@ public class WatchBuilderTest extends HttpUserAgentTest {
 
   static class ClientPoolStub extends ClientPool {
     private String basePath;
-    private static Queue<ApiClient> queue;
+    private static Queue<Entry<ApiClient>> queue;
 
     static Memento install(String basePath) throws NoSuchFieldException {
       queue = new ArrayDeque<>();
       return StaticStubSupport.install(ClientPool.class, "SINGLETON", new ClientPoolStub(basePath));
     }
 
-    static Collection<ApiClient> getPooledClients() {
+    static Collection<Entry<ApiClient>> getPooledClients() {
       return Collections.unmodifiableCollection(queue);
     }
 
@@ -341,7 +341,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     }
 
     @Override
-    protected Queue<ApiClient> getQueue() {
+    protected Queue<Entry<ApiClient>> getQueue() {
       return queue;
     }
   }

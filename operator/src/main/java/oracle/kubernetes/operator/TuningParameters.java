@@ -107,7 +107,11 @@ public interface TuningParameters extends Map<String, String> {
     public final int callTimeoutSeconds;
     public final int connectionLifetime;
 
-    public CallBuilderTuning(int callRequestLimit, int callMaxRetryCount, int callTimeoutSeconds, int connectionLifetime) {
+    public CallBuilderTuning(
+        int callRequestLimit,
+        int callMaxRetryCount,
+        int callTimeoutSeconds,
+        int connectionLifetime) {
       this.callRequestLimit = callRequestLimit;
       this.callMaxRetryCount = callMaxRetryCount;
       this.callTimeoutSeconds = callTimeoutSeconds;
