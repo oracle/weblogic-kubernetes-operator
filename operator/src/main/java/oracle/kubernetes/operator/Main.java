@@ -98,10 +98,10 @@ public class Main {
       PrintStream nullOut = new PrintStream(output);
       System.setErr(nullOut);
 
-      ClientPool.initialize(threadFactory);
-
       TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
       tuningAndConfig = TuningParameters.getInstance();
+
+      ClientPool.initialize(threadFactory, tuningAndConfig);
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);

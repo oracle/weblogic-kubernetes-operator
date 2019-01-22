@@ -15,6 +15,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -25,11 +26,13 @@ public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static ClientPool SINGLETON = new ClientPool();
   private static ThreadFactory threadFactory;
+  private static TuningParameters tuningParameters;
 
   private static final ClientFactory FACTORY = new DefaultClientFactory();
 
-  public static void initialize(ThreadFactory threadFactory) {
+  public static void initialize(ThreadFactory threadFactory, TuningParameters tuningParameters) {
     ClientPool.threadFactory = threadFactory;
+    ClientPool.tuningParameters = tuningParameters;
   }
 
   private static Runnable wrapRunnable(Runnable r) {
@@ -48,6 +51,14 @@ public class ClientPool extends Pool<ApiClient> {
 
   public static ClientPool getInstance() {
     return SINGLETON;
+  }
+
+  @Override
+  protected int connectionLifetimeSeconds() {
+    if (tuningParameters != null) {
+      return tuningParameters.getCallBuilderTuning().connectionLifetime;
+    }
+    return super.connectionLifetimeSeconds();
   }
 
   private final AtomicBoolean isFirst = new AtomicBoolean(true);

@@ -62,7 +62,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
         new CallBuilderTuning(
             (int) readTuningParameter("callRequestLimit", 500),
             (int) readTuningParameter("callMaxRetryCount", 5),
-            (int) readTuningParameter("callTimeoutSeconds", 10));
+            (int) readTuningParameter("callTimeoutSeconds", 10),
+            (int) readTuningParameter("connectionLifetime", 300));
 
     WatchTuning watch =
         new WatchTuning(

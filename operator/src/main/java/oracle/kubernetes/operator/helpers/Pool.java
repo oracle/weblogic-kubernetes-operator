@@ -31,6 +31,19 @@ public abstract class Pool<T> {
   // volatile since multiple threads may access queue reference
   private volatile Queue<Entry<T>> queue = new ConcurrentLinkedQueue<>();
 
+  protected int connectionLifetimeSeconds() {
+    return 0;
+  }
+
+  private final boolean validateEntry(Entry<T> entry) {
+    int lifetime = connectionLifetimeSeconds();
+    if (lifetime > 0) {
+      return entry.creationTime.plusSeconds(lifetime).compareTo(DateTime.now()) > 0;
+    }
+
+    return true;
+  }
+
   /**
    * Gets a new object from the pool. If no object is available in the pool, this method creates a
    * new one.
@@ -38,7 +51,10 @@ public abstract class Pool<T> {
    * @return always non-null.
    */
   public final Entry<T> take() {
-    Entry<T> instance = getQueue().poll();
+    Entry<T> instance = null;
+    do {
+      instance = getQueue().poll();
+    } while (instance != null && !validateEntry(instance));
     if (instance == null) {
       LOGGER.finer("Creating instance");
       return new Entry(create());
@@ -61,9 +77,11 @@ public abstract class Pool<T> {
    * @param instance Pool object to recycle
    */
   public final void recycle(Entry<T> instance) {
-    getQueue().offer(instance);
-    if (LOGGER.isFinerEnabled()) {
-      LOGGER.finer("Recycling instance to pool, instances now in pool: " + getQueue().size());
+    if (validateEntry(instance)) {
+      getQueue().offer(instance);
+      if (LOGGER.isFinerEnabled()) {
+        LOGGER.finer("Recycling instance to pool, instances now in pool: " + getQueue().size());
+      }
     }
   }
 

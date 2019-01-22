@@ -105,11 +105,13 @@ public interface TuningParameters extends Map<String, String> {
     public final int callRequestLimit;
     public final int callMaxRetryCount;
     public final int callTimeoutSeconds;
+    public final int connectionLifetime;
 
-    public CallBuilderTuning(int callRequestLimit, int callMaxRetryCount, int callTimeoutSeconds) {
+    public CallBuilderTuning(int callRequestLimit, int callMaxRetryCount, int callTimeoutSeconds, int connectionLifetime) {
       this.callRequestLimit = callRequestLimit;
       this.callMaxRetryCount = callMaxRetryCount;
       this.callTimeoutSeconds = callTimeoutSeconds;
+      this.connectionLifetime = connectionLifetime;
     }
 
     @Override
@@ -118,6 +120,7 @@ public interface TuningParameters extends Map<String, String> {
           .append("callRequestLimit", callRequestLimit)
           .append("callMaxRetryCount", callMaxRetryCount)
           .append("callTimeoutSeconds", callTimeoutSeconds)
+          .append("connectionLifetime", connectionLifetime)
           .toString();
     }
 
@@ -127,6 +130,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(callRequestLimit)
           .append(callMaxRetryCount)
           .append(callTimeoutSeconds)
+          .append(connectionLifetime)
           .toHashCode();
     }
 
@@ -143,6 +147,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(callRequestLimit, cbt.callRequestLimit)
           .append(callMaxRetryCount, cbt.callMaxRetryCount)
           .append(callTimeoutSeconds, cbt.callTimeoutSeconds)
+          .append(connectionLifetime, cbt.connectionLifetime)
           .isEquals();
     }
   }
