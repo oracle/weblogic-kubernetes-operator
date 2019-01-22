@@ -77,7 +77,7 @@ When you POST to the `/scale` REST endpoint, you must send the following headers
 For example, when using `curl`:
 
 ```
-curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d { "managedServerCount": 3 } https:/.../scaling
+curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d '{ "managedServerCount": 3 }' https://.../scaling
 ```
 
 If you omit the header, you'll get a `400 (bad request)` response without any details explaining why the request was bad.  If you omit the Bearer Authentication header, then you'll get a `401 (Unauthorized)` response.
@@ -88,7 +88,7 @@ The internal REST endpoint is only accessible from within the Kubernetes cluster
 is accessible from outside the Kubernetes cluster.
 The internal REST endpoint is enabled by default and thus always available, whereas the external REST endpoint
 is disabled by default and only exposed if explicitly configured.
-Detailed instructions for configuring the external REST endpoint are available [here](helm-charts.md).
+Detailed instructions for configuring the external REST endpoint are available [here](install.md).
 
 **NOTE**: Regardless of which endpoint is being invoked, the URL format for scaling is the same.
 
