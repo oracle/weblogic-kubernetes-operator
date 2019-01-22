@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
+import oracle.kubernetes.operator.helpers.Pool.Entry;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.api.WeblogicApi;
 
@@ -399,13 +400,13 @@ public class WatchBuilder {
         Class<?> responseBodyType,
         BiFunction<ApiClient, CallParams, Call> function)
         throws ApiException {
-      ApiClient client = pool.take();
+      Entry<ApiClient> client = pool.take();
       try {
         return new WatchImpl<>(
             pool,
             client,
             Watch.createWatch(
-                client, function.apply(client, callParams), getType(responseBodyType)));
+                client.value(), function.apply(client.value(), callParams), getType(responseBodyType)));
       } catch (UncheckedApiException e) {
         throw e.getCause();
       }

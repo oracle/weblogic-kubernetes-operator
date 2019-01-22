@@ -46,6 +46,7 @@ import oracle.kubernetes.operator.calls.CancellableCall;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
+import oracle.kubernetes.operator.helpers.Pool.Entry;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
@@ -64,9 +65,9 @@ public class CallBuilder {
         public <T> T execute(
             SynchronousCallFactory<T> factory, RequestParams params, Pool<ApiClient> pool)
             throws ApiException {
-          ApiClient client = pool.take();
+          Entry<ApiClient> client = pool.take();
           try {
-            return factory.execute(client, params);
+            return factory.execute(client.value(), params);
           } finally {
             pool.recycle(client);
           }
@@ -174,9 +175,9 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Namespace readNamespace(String name) throws ApiException {
-    ApiClient client = helper.take();
+    Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client).readNamespace(name, pretty, exact, export);
+      return new CoreV1Api(client.value()).readNamespace(name, pretty, exact, export);
     } finally {
       helper.recycle(client);
     }
@@ -190,9 +191,9 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Namespace createNamespace(V1Namespace body) throws ApiException {
-    ApiClient client = helper.take();
+    Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client).createNamespace(body, pretty);
+      return new CoreV1Api(client.value()).createNamespace(body, pretty);
     } finally {
       helper.recycle(client);
     }
@@ -883,9 +884,9 @@ public class CallBuilder {
    */
   public V1ServiceList listService(String namespace) throws ApiException {
     String _continue = "";
-    ApiClient client = helper.take();
+    Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client)
+      return new CoreV1Api(client.value())
           .listNamespacedService(
               namespace,
               pretty,
@@ -945,9 +946,9 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Service readService(String name, String namespace) throws ApiException {
-    ApiClient client = helper.take();
+    Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client).readNamespacedService(name, namespace, pretty, exact, export);
+      return new CoreV1Api(client.value()).readNamespacedService(name, namespace, pretty, exact, export);
     } finally {
       helper.recycle(client);
     }
@@ -1015,9 +1016,9 @@ public class CallBuilder {
    */
   public V1Status deleteService(String name, String namespace, V1DeleteOptions deleteOptions)
       throws ApiException {
-    ApiClient client = helper.take();
+    Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client)
+      return new CoreV1Api(client.value())
           .deleteNamespacedService(
               name,
               namespace,
@@ -1361,9 +1362,9 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Secret readSecret(String name, String namespace) throws ApiException {
-    ApiClient client = helper.take();
+    Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client).readNamespacedSecret(name, namespace, pretty, exact, export);
+      return new CoreV1Api(client.value()).readNamespacedSecret(name, namespace, pretty, exact, export);
     } finally {
       helper.recycle(client);
     }
@@ -1389,9 +1390,9 @@ public class CallBuilder {
    * @throws ApiException API Exception
    */
   public V1Secret createSecret(String namespace, V1Secret body) throws ApiException {
-    ApiClient client = helper.take();
+    Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client).createNamespacedSecret(namespace, body, pretty);
+      return new CoreV1Api(client.value()).createNamespacedSecret(namespace, body, pretty);
     } finally {
       helper.recycle(client);
     }
@@ -1408,9 +1409,9 @@ public class CallBuilder {
    */
   public V1Status deleteSecret(String name, String namespace, V1DeleteOptions deleteOptions)
       throws ApiException {
-    ApiClient client = helper.take();
+    Entry<ApiClient> client = helper.take();
     try {
-      return new CoreV1Api(client)
+      return new CoreV1Api(client.value())
           .deleteNamespacedSecret(
               name,
               namespace,

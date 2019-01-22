@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.Pool.Entry;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -109,7 +110,7 @@ public class AsyncRequestStep<T> extends Step {
         resourceVersion);
 
     AtomicBoolean didResume = new AtomicBoolean(false);
-    ApiClient client = helper.take();
+    Entry<ApiClient> client = helper.take();
     return doSuspend(
         (fiber) -> {
           ApiCallback<T> callback =
@@ -165,7 +166,7 @@ public class AsyncRequestStep<T> extends Step {
               };
 
           try {
-            CancellableCall c = factory.generate(requestParams, client, _continue, callback);
+            CancellableCall c = factory.generate(requestParams, client.value(), _continue, callback);
 
             // timeout handling
             fiber

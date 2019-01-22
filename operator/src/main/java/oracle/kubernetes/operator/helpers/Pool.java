@@ -8,13 +8,28 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.joda.time.DateTime;
 
 /** General-purpose object pool. */
 public abstract class Pool<T> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
+  public static class Entry<T> {
+    private final T value;
+    private final DateTime creationTime;
+
+    public Entry(T value) {
+      this.value = value;
+      this.creationTime = DateTime.now();
+    }
+
+    public T value() {
+      return value;
+    }
+  }
+
   // volatile since multiple threads may access queue reference
-  private volatile Queue<T> queue = new ConcurrentLinkedQueue<>();
+  private volatile Queue<Entry<T>> queue = new ConcurrentLinkedQueue<>();
 
   /**
    * Gets a new object from the pool. If no object is available in the pool, this method creates a
@@ -22,11 +37,11 @@ public abstract class Pool<T> {
    *
    * @return always non-null.
    */
-  public final T take() {
-    T instance = getQueue().poll();
+  public final Entry<T> take() {
+    Entry<T> instance = getQueue().poll();
     if (instance == null) {
       LOGGER.finer("Creating instance");
-      return create();
+      return new Entry(create());
     }
 
     if (LOGGER.isFinerEnabled()) {
@@ -36,7 +51,7 @@ public abstract class Pool<T> {
     return instance;
   }
 
-  protected Queue<T> getQueue() {
+  protected Queue<Entry<T>> getQueue() {
     return queue;
   }
 
@@ -45,7 +60,7 @@ public abstract class Pool<T> {
    *
    * @param instance Pool object to recycle
    */
-  public final void recycle(T instance) {
+  public final void recycle(Entry<T> instance) {
     getQueue().offer(instance);
     if (LOGGER.isFinerEnabled()) {
       LOGGER.finer("Recycling instance to pool, instances now in pool: " + getQueue().size());

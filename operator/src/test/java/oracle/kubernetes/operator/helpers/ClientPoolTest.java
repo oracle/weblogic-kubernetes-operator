@@ -6,13 +6,14 @@ package oracle.kubernetes.operator.helpers;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiClient;
 import java.util.ArrayList;
 import java.util.List;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.helpers.Pool.Entry;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +39,7 @@ public class ClientPoolTest {
 
   @Test
   public void afterRecycle_takeReturnsSameClient() {
-    ApiClient apiClient = ClientPool.getInstance().take();
+    Entry<ApiClient> apiClient = ClientPool.getInstance().take();
     ClientPool.getInstance().recycle(apiClient);
 
     assertThat(ClientPool.getInstance().take(), sameInstance(apiClient));

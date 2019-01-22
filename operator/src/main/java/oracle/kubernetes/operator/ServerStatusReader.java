@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.Pool.Entry;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -143,10 +144,10 @@ public class ServerStatusReader {
             Process proc = null;
             String state = null;
             ClientPool helper = ClientPool.getInstance();
-            ApiClient client = helper.take();
+            Entry<ApiClient> client = helper.take();
             try {
               proc =
-                  new Exec(client)
+                  new Exec(client.value())
                       .exec(
                           pod,
                           new String[] {"/weblogic-operator/scripts/readState.sh"},

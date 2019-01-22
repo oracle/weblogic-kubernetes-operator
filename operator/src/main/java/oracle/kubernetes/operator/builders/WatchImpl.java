@@ -10,16 +10,17 @@ import java.io.IOException;
 import java.util.Iterator;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.helpers.Pool;
+import oracle.kubernetes.operator.helpers.Pool.Entry;
 
 /**
  * A pass-through implementation of the Kubernetes Watch class which implements a facade interface.
  */
 public class WatchImpl<T> implements WatchI<T> {
   private final Pool<ApiClient> pool;
-  private ApiClient client;
+  private Entry<ApiClient> client;
   private Watch<T> impl;
 
-  WatchImpl(Pool<ApiClient> pool, ApiClient client, Watch<T> impl) {
+  WatchImpl(Pool<ApiClient> pool, Entry<ApiClient> client, Watch<T> impl) {
     this.pool = pool;
     this.client = client;
     this.impl = impl;
