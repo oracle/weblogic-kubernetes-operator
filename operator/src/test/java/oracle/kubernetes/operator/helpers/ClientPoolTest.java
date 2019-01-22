@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
@@ -43,5 +45,44 @@ public class ClientPoolTest {
     ClientPool.getInstance().recycle(apiClient);
 
     assertThat(ClientPool.getInstance().take(), sameInstance(apiClient));
+  }
+
+  @Test
+  public void onTake_noConnectionTimeout_clientIsValid() {
+    ClientPool pool = new ClientPool();
+    Entry<ApiClient> apiClient = pool.take();
+
+    assertTrue(apiClient.isValid());
+  }
+
+  @Test
+  public void onTake_connectionTimeout_clientIsValid() {
+    ClientPool pool =
+        new ClientPool() {
+          @Override
+          protected int connectionLifetimeSeconds() {
+            return 30;
+          }
+        };
+    Entry<ApiClient> apiClient = pool.take();
+
+    assertTrue(apiClient.isValid());
+  }
+
+  @Test
+  public void onTake_connectionTimeout_wait_clientNotValid() throws InterruptedException {
+    ClientPool pool =
+        new ClientPool() {
+          @Override
+          protected int connectionLifetimeSeconds() {
+            return 1;
+          }
+        };
+    Entry<ApiClient> apiClient = pool.take();
+
+    // sleep longer than connection lifetime
+    Thread.sleep(3000);
+
+    assertFalse(apiClient.isValid());
   }
 }

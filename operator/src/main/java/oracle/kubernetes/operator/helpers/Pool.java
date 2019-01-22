@@ -16,15 +16,26 @@ public abstract class Pool<T> {
 
   public static class Entry<T> {
     private final T value;
-    private final DateTime creationTime;
+    private final DateTime expiryTime;
 
-    public Entry(T value) {
+    public Entry(T value, int connectionLifetimeSeconds) {
       this.value = value;
-      this.creationTime = DateTime.now();
+      this.expiryTime =
+          connectionLifetimeSeconds > 0
+              ? DateTime.now().plusSeconds(connectionLifetimeSeconds)
+              : null;
     }
 
     public T value() {
       return value;
+    }
+
+    DateTime expiryTime() {
+      return expiryTime;
+    }
+
+    public boolean isValid() {
+      return expiryTime == null || expiryTime.compareTo(DateTime.now()) > 0;
     }
   }
 
@@ -33,15 +44,6 @@ public abstract class Pool<T> {
 
   protected int connectionLifetimeSeconds() {
     return 0;
-  }
-
-  private final boolean validateEntry(Entry<T> entry) {
-    int lifetime = connectionLifetimeSeconds();
-    if (lifetime > 0) {
-      return entry.creationTime.plusSeconds(lifetime).compareTo(DateTime.now()) > 0;
-    }
-
-    return true;
   }
 
   /**
@@ -54,10 +56,10 @@ public abstract class Pool<T> {
     Entry<T> instance = null;
     do {
       instance = getQueue().poll();
-    } while (instance != null && !validateEntry(instance));
+    } while (instance != null && !instance.isValid());
     if (instance == null) {
       LOGGER.finer("Creating instance");
-      return new Entry(create());
+      return new Entry(create(), connectionLifetimeSeconds());
     }
 
     if (LOGGER.isFinerEnabled()) {
@@ -77,7 +79,7 @@ public abstract class Pool<T> {
    * @param instance Pool object to recycle
    */
   public final void recycle(Entry<T> instance) {
-    if (validateEntry(instance)) {
+    if (instance.isValid()) {
       getQueue().offer(instance);
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer("Recycling instance to pool, instances now in pool: " + getQueue().size());
