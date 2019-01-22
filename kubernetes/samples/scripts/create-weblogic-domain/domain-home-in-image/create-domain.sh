@@ -205,7 +205,7 @@ function createDomainHome {
   fi
 
   # clean up the generated domain.properties file
-  rm -rf ${domainPropertiesOutput}/domain.properties
+  rm ${domainPropertiesOutput}
 
   echo ""
   echo "Create domain ${domainName} successfully."
