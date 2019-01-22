@@ -102,7 +102,7 @@ The following parameters can be provided in the inputs file.
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `5` |
-| `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to create one. | |
+| `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019,and has all the necessary patches applied; a `docker pull` is required if you already have this image. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to obtain or create the image. | store/oracle/weblogic:12.2.1.3 |
 | `domainHomeImageBuildPath` | Location of the WebLogic "domain home in image" Docker image in `https://github.com/oracle/docker-images.git` project. If not specified, use "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image". Another possible value is "./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt" which uses WDT, instead of WLST, to generate the domain configuration. | `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. This parameter is required if `logHomeOnPV` is true. Otherwise, it is ignored. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
@@ -161,7 +161,7 @@ spec:
   # If the domain home is in the image
   domainHomeInImage: true
   # The WebLogic Server Docker image that the operator uses to start the domain
-  image: "domain-home-in-image"
+  image: "domain-home-in-image:12.2.1.3"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "IfNotPresent"
   # Identify which Secret contains the credentials for pulling an image
@@ -295,7 +295,7 @@ Spec:
     Server Start State:           RUNNING
   Domain Home:                    /u01/oracle/user_projects/domains/domain1
   Domain Home In Image:           true
-  Image:                          domain-home-in-image
+  Image:                          domain-home-in-image:12.2.1.3
   Image Pull Policy:              IfNotPresent
   Include Server Out In Pod Log:  true
   Managed Servers:
