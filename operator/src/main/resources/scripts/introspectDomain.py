@@ -603,14 +603,6 @@ class TopologyGenerator(Generator):
     self.undent()
 
   def addServerTemplate(self, serverTemplate):
-    # TBD This looks wrong.  It should match addClusteredServer.
-    #     It adds default port & listen address. But:
-    #       It's missing adding admin port, SSL, and NAPs.
-    #       It reports the wrong listen address (original rather than overridden).
-    #     Probably tests are passing fine, as it's likely (A)
-    #     the Operator.java is only reading the port, and (B) cluster tests
-    #     are only looking at the cluster default port.
-    #     So:  Follow up and fix this, and file test JIRAs for tests.
     name=self.name(serverTemplate)
     self.writeln("- name: " + name)
     if serverTemplate.isListenPortEnabled():
@@ -827,20 +819,7 @@ class SitConfigGenerator(Generator):
     self.writeln("<d:name>" + name + "</d:name>")
     self.customizeLog(name, server, false)
     self.writeListenAddress(server.getListenAddress(),listen_address)
-    for nap in server.getNetworkAccessPoints():
-      # Don't bother 'add' a nap listen-address, only do a 'replace'.
-      # If we try 'add' this appears to mess up an attempt to 
-      #   'add' PublicAddress/Port via custom sit-cfg.
-      # FWIW there's theoretically no need to 'add' or 'replace' when empty
-      #   since the runtime default is the server listen-address.
-      nap_name=nap.getName()
-      if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
-        self.writeln("<d:network-access-point>")
-        self.indent()
-        self.writeln("<d:name>" + nap_name + "</d:name>")
-        self.writeListenAddress("force a replace",listen_address)
-        self.undent()
-        self.writeln("</d:network-access-point>")
+    self.customizeNetworkAccessPoints(server,listen_address)
     self.undent()
     self.writeln("</d:server>")
 
@@ -857,22 +836,28 @@ class SitConfigGenerator(Generator):
     self.writeln("<d:name>" + name + "</d:name>")
     self.customizeLog(server_name_prefix + "${id}", template, false)
     self.writeListenAddress(template.getListenAddress(),listen_address)
-    for nap in server.getNetworkAccessPoints():
-      # Don't bother 'add' a nap listen-address, only do a 'replace'.
-      # If we try 'add' this appears to mess up an attempt to 
-      #   'add' PublicAddress/Port via custom sit-cfg.
-      # FWIW there's theoretically no need to 'add' or 'replace' when empty
-      #   since the runtime default is the server listen-address.
-      nap_name=nap.getName()
-      if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
-        self.writeln("<d:network-access-point>")
-        self.indent()
-        self.writeln("<d:name>" + nap_name + "</d:name>")
-        self.writeListenAddress("force a replace",listen_address)
-        self.undent()
-        self.writeln("</d:network-access-point>")
+    self.customizeNetworkAccessPoints(template,listen_address)
     self.undent()
     self.writeln("</d:server-template>")
+
+  def customizeNetworkAccessPoints(self, server, listen_address):
+    for nap in server.getNetworkAccessPoints():
+      self.customizeNetworkAccessPoint(nap,listen_address)
+
+  def customizeNetworkAccessPoint(self, nap, listen_address):
+    # Don't bother 'add' a nap listen-address, only do a 'replace'.
+    # If we try 'add' this appears to mess up an attempt to 
+    #   'add' PublicAddress/Port via custom sit-cfg.
+    # FWIW there's theoretically no need to 'add' or 'replace' when empty
+    #   since the runtime default is the server listen-address.
+    nap_name=nap.getName()
+    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
+      self.writeln("<d:network-access-point>")
+      self.indent()
+      self.writeln("<d:name>" + nap_name + "</d:name>")
+      self.writeListenAddress("force a replace",listen_address)
+      self.undent()
+      self.writeln("</d:network-access-point>")
 
   def customizeLog(self, name, bean, isDomainBean):
     logs_dir = self.env.getDomainLogHome()
