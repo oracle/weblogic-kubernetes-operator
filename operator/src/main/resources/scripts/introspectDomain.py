@@ -106,7 +106,6 @@ class OfflineWlstEnv(object):
 
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
-    self.DOMAIN_NAME              = self.getEnv('DOMAIN_NAME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
@@ -155,6 +154,7 @@ class OfflineWlstEnv(object):
     trace("About to load domain from "+self.getDomainHome())
     readDomain(self.getDomainHome())
     self.domain = cmo
+    self.DOMAIN_NAME = self.getDomain().getName()
 
   def close(self):
     closeDomain()
@@ -788,6 +788,7 @@ class SitConfigGenerator(Generator):
     self.writeln("<?xml version='1.0' encoding='UTF-8'?>")
     self.writeln("<d:domain xmlns:d=\"http://xmlns.oracle.com/weblogic/domain\" xmlns:f=\"http://xmlns.oracle.com/weblogic/domain-fragment\" xmlns:s=\"http://xmlns.oracle.com/weblogic/situational-config\">")
     self.indent()
+    self.writeln("<s:expiration> 2099-07-16T19:20+01:00 </s:expiration>")
     self.writeln("<d:name>" + self.env.DOMAIN_NAME + "</d:name>")
     self.customizeNodeManagerCreds()
     self.customizeDomainLogPath()
