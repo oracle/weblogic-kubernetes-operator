@@ -155,7 +155,7 @@ function initialize {
 
   initOutputDir
 
-  if [ "${cloneIt}" = true ]; then
+  if [ "${cloneIt}" = true ] || [ ! -d ${domainHomeImageBuildPath} ]; then
     getDockerSample
   fi
 }
