@@ -19,7 +19,7 @@ DomainSpec is a description of a domain.
 | adminServer | [Admin Server](#admin-server) | Configuration for the admin server. |
 | clusters | array of [Cluster](#cluster) | Configuration for the clusters. |
 | configOverrides | string | The name of the config map for optional WebLogic configuration overrides. |
-| configOverrideSecrets | array of  | A list of names of the secrets for optional WebLogic configuration overrides. |
+| configOverrideSecrets | array of string | A list of names of the secrets for optional WebLogic configuration overrides. |
 | domainHome | string | The folder for the Weblogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true |
 | domainHomeInImage | boolean | True if this domain's home is defined in the docker image for the domain. Defaults to true. |
 | domainUID | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name |
@@ -49,7 +49,7 @@ DomainStatus represents information about the status of a domain. Status may tra
 | reason | string | A brief CamelCase message indicating details about why the domain is in this state. |
 | replicas | number | The number of running managed servers in the WebLogic cluster if there is only one cluster in the domain and where the cluster does not explicitly configure its replicas in a cluster specification. |
 | servers | array of [Server Status](#server-status) | Status of WebLogic servers in this domain. |
-| startTime |  | RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available. |
+| startTime | DateTime | RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available. |
 
 ### Admin Server
 
@@ -99,12 +99,12 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| annotations |  | The annotations to be attached to generated resources. |
+| annotations | Map | The annotations to be attached to generated resources. |
 | containerSecurityContext | [Security Context](k8s1.9.0.md#security-context) | Container-level security attributes. Will override any matching pod-level attributes. |
 | env | array of [Env Var](k8s1.9.0.md#env-var) | A list of environment variables to add to a server |
-| labels |  | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
+| labels | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
 | livenessProbe | [Probe Tuning](#probe-tuning) | Settings for the liveness probe associated with a server. |
-| nodeSelector |  | Selector which must match a node's labels for the pod to be scheduled on that node. |
+| nodeSelector | Map | Selector which must match a node's labels for the pod to be scheduled on that node. |
 | podSecurityContext | [Pod Security Context](k8s1.9.0.md#pod-security-context) | Pod-level security attributes. |
 | readinessProbe | [Probe Tuning](#probe-tuning) | Settings for the readiness probe associated with a server. |
 | resources | [Resource Requirements](k8s1.9.0.md#resource-requirements) | Memory and cpu minimum requirements and limits for the server. |
@@ -115,15 +115,15 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| annotations |  | The annotations to be attached to generated resources. |
-| labels |  | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
+| annotations | Map | The annotations to be attached to generated resources. |
+| labels | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
 
 ### Domain Condition
 
 | Name | Type | Description |
 | --- | --- | --- |
-| lastProbeTime |  | Last time we probed the condition. |
-| lastTransitionTime |  | Last time the condition transitioned from one status to another. |
+| lastProbeTime | DateTime | Last time we probed the condition. |
+| lastTransitionTime | DateTime | Last time the condition transitioned from one status to another. |
 | message | string | Human-readable message indicating details about last transition. |
 | reason | string | Unique, one-word, CamelCase reason for the condition's last transition. |
 | status | string | Status is the status of the condition. Can be True, False, Unknown. Required |
@@ -139,21 +139,11 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | serverName | string | WebLogic server name. Required |
 | state | string | Current state of this WebLogic server. Required |
 
-### Date Time
-
-| Name | Type | Description |
-| --- | --- | --- |
-
 ### Admin Service
 
 | Name | Type | Description |
 | --- | --- | --- |
 | channels | array of [Channel](#channel) | Specifies which of the admin server's WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server's node port service will not be created. |
-
-### Map
-
-| Name | Type | Description |
-| --- | --- | --- |
 
 ### Probe Tuning
 
@@ -167,7 +157,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| activationTime |  | RFC 3339 date and time at which the server started. |
+| activationTime | DateTime | RFC 3339 date and time at which the server started. |
 | overallHealth | string | Server health of this WebLogic server. |
 | subsystems | array of [Subsystem Health](#subsystem-health) | Status of unhealthy subsystems, if any. |
 
@@ -186,4 +176,4 @@ Describes a single channel used by the admin server.
 | --- | --- | --- |
 | health | string | Server health of this WebLogic server. Required |
 | subsystemName | string | Name of subsystem providing symptom information. Required |
-| symptoms | array of  | Symptoms provided by the reporting subsystem. |
+| symptoms | array of string | Symptoms provided by the reporting subsystem. |
