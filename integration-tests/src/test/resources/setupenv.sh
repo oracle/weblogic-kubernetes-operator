@@ -66,7 +66,7 @@ function pull_tag_images {
 
  
   docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-for-rc2:12.2.1.3.0
-  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-for-rc2:12.2.1.3.0 store/oracle/weblogic:12.2.1.3.0
+  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-for-rc2:12.2.1.3.0 store/oracle/weblogic:12.2.1.3
   
   docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
   docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 store/oracle/weblogic:19.1.0.0
@@ -171,7 +171,7 @@ elif [ "$JENKINS" = "true" ]; then
   export M2_HOME=${M2_HOME:?}
   export K8S_VERSION=${K8S_VERSION}
   export IMAGE_NAME_WEBLOGIC="store/oracle/weblogic"
-  export IMAGE_TAG_WEBLOGIC="12.2.1.3.0"
+  export IMAGE_TAG_WEBLOGIC="12.2.1.3"
   
   echo IMAGE_NAME_WEBLOGIC $IMAGE_NAME_WEBLOGIC IMAGE_TAG_WEBLOGIC $IMAGE_TAG_WEBLOGIC
   clean_jenkins
