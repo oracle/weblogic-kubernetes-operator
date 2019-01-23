@@ -30,6 +30,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@Description("ServerPod describes the configuration for a Kubernetes pod for a server.")
 class ServerPod extends KubernetesResource {
 
   /**
