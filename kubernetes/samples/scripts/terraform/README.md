@@ -14,7 +14,7 @@ All OCI Container Engine masters are Highly Available (HA) and fronted by load b
 
 
 
-##Prerequisites
+## Prerequisites
 
 To use these Terraform scripts, you will need fulfill the following prerequisites:
 * Have an existing tenancy with enough compute and networking resources available for the desired cluster.
@@ -37,7 +37,7 @@ Copy provided `oci.props.template` file to `oci.props` and add all required valu
 * `vcn.cidr` - Full CIDR for the VCN, must be unique within the compartment, first 2 octets should match the vcn_cidr_prefix.
 * `nodepool.shape` - A valid OCI VM Shape for the cluster nodes.
 * `k8s.version` - SSH public key (key contents as a string).
-* `nodepool.imagename - A valid image name for Node Pool creation.
+* `nodepool.imagename` - A valid image name for Node Pool creation.
 * `terraform.installdir` - Location to install Terraform binaries.
 
 To run the script, use the command:
