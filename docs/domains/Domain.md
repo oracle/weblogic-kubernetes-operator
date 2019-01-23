@@ -1,5 +1,6 @@
 ### Domain
 
+Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
 | Name | Type | Description |
 | --- | --- | --- |
 | apiVersion | string | The API version for the Domain. Must be 'weblogic.oracle/v2'. |
@@ -10,6 +11,7 @@
 
 ### Domain Spec
 
+DomainSpec is a description of a domain.
 | Name | Type | Description |
 | --- | --- | --- |
 | adminServer | [Admin Server](#admin-server) | Configuration for the admin server. |
@@ -36,6 +38,7 @@
 
 ### Domain Status
 
+DomainStatus represents information about the status of a domain. Status may trail the actual state of a system.
 | Name | Type | Description |
 | --- | --- | --- |
 | conditions | array of [Domain Condition](#domain-condition) | Current service state of domain. |
@@ -47,6 +50,7 @@
 
 ### Admin Server
 
+AdminServer represents the operator configuration for the admin server.
 | Name | Type | Description |
 | --- | --- | --- |
 | adminService | [Admin Service](#admin-service) | Configures which of the admin server's WebLogic admin channels should be exposed outside the Kubernetes cluster via a node port service. |
@@ -58,6 +62,7 @@
 
 ### Cluster
 
+An element representing a cluster in the domain configuration.
 | Name | Type | Description |
 | --- | --- | --- |
 | clusterName | string | The name of this cluster. Required |
@@ -72,6 +77,7 @@
 
 ### Managed Server
 
+ManagedServer represents the operator configuration for a single managed server.
 | Name | Type | Description |
 | --- | --- | --- |
 | restartVersion | string | If present, every time this value is updated the operator will restart the required servers. |
@@ -83,6 +89,7 @@
 
 ### Server Pod
 
+ServerPod describes the configuration for a Kubernetes pod for a server.
 | Name | Type | Description |
 | --- | --- | --- |
 | annotations |  | The annotations to be attached to generated resources. |
@@ -159,9 +166,10 @@
 
 ### Channel
 
+Describes a single channel used by the admin server.
 | Name | Type | Description |
 | --- | --- | --- |
-| channelName | string | Name of channel.<br/>default' refers to the admin server's default channel (configured via the ServerMBean's ListenPort) <br/>'default-secure' refers to the admin server's default secure channel (configured via the ServerMBean's SSLMBean's ListenPort) <br/>'default-admin' refers to the admin server's default administrative channel (configured via the DomainMBean's AdministrationPort) <br/>Otherwise, the name is the name of one of the admin server's network access points (configured via the ServerMBean's NetworkAccessMBeans). |
+| channelName | string | Name of channel.<br/>'default' refers to the admin server's default channel (configured via the ServerMBean's ListenPort) <br/>'default-secure' refers to the admin server's default secure channel (configured via the ServerMBean's SSLMBean's ListenPort) <br/>'default-admin' refers to the admin server's default administrative channel (configured via the DomainMBean's AdministrationPort) <br/>Otherwise, the name is the name of one of the admin server's network access points (configured via the ServerMBean's NetworkAccessMBeans). |
 | nodePort | number | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
 
 ### Subsystem Health
