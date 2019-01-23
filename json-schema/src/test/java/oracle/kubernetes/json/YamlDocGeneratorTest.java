@@ -180,6 +180,7 @@ public class YamlDocGeneratorTest {
                 "### Derived Object",
                 "",
                 "A simple object used for testing",
+                "",
                 tableHeader(),
                 tableEntry("aBoolean", "boolean", "A flag"),
                 tableEntry("anInt", "number", "An int<br/>value"))));
@@ -249,6 +250,7 @@ public class YamlDocGeneratorTest {
                 "### Env Var",
                 "",
                 "EnvVar represents an environment variable present in a Container.",
+                "",
                 tableHeader(),
                 tableEntry(
                     "name",
