@@ -64,7 +64,10 @@ cp /operator/logstash.conf /logs/logstash.conf
 # assumption is that we have mounted a volume on /logs which is also visible to
 # the logstash container/pod.
 
+# Container memory optimizaton flags
+HEAP="-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=1 -XshowSettings:vm"
+
 # Start operator
-java $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
+java $HEAP $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
 PID=$!
 wait $PID
