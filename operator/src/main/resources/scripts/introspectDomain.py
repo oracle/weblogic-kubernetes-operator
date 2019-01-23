@@ -106,7 +106,6 @@ class OfflineWlstEnv(object):
 
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
-    self.DOMAIN_NAME              = self.getEnv('DOMAIN_NAME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
@@ -155,6 +154,7 @@ class OfflineWlstEnv(object):
     trace("About to load domain from "+self.getDomainHome())
     readDomain(self.getDomainHome())
     self.domain = cmo
+    self.DOMAIN_NAME = self.env.getDomain().getName()
 
   def close(self):
     closeDomain()
