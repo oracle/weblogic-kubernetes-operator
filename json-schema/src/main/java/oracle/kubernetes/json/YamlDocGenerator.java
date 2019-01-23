@@ -7,6 +7,7 @@ package oracle.kubernetes.json;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -146,16 +147,20 @@ public class YamlDocGenerator {
         case "string":
           return specifiedType;
         case "array":
-          return "array of " + getReference();
+          Type subType = getItems();
+          return "array of " + subType.getString();
         default:
           return getReference();
       }
     }
 
+    private Type getItems() {
+      return new Type((Map<String, Object>) fieldMap.get("items"));
+    }
+
     private String getReference() {
       Reference reference = createReference(getReferenceString());
-      if (!reference.shouldGenerateReference()) return "";
-      return String.format("[%s](%s)", reference.getStructureName(), reference.getLink());
+      return reference.getString();
     }
 
     private String getReferenceString() {
@@ -186,6 +191,10 @@ public class YamlDocGenerator {
       this.typeName = typeName;
     }
 
+    String getString() {
+      return String.format("[%s](%s)", getStructureName(), getLink());
+    }
+
     String getTypeName() {
       return typeName;
     }
@@ -198,8 +207,6 @@ public class YamlDocGenerator {
     private String getStructureName() {
       return toStructureName(typeName);
     }
-
-    abstract boolean shouldGenerateReference();
 
     abstract boolean isLocal();
   }
@@ -215,8 +222,8 @@ public class YamlDocGenerator {
     }
 
     @Override
-    boolean shouldGenerateReference() {
-      return false;
+    String getString() {
+      return "";
     }
   }
 
@@ -225,11 +232,13 @@ public class YamlDocGenerator {
     return typeName.substring(typeName.lastIndexOf(".") + 1);
   }
 
+  private static List NON_REFERENCE_TYPES = Arrays.asList("Map", "DateTime");
+
   private class LocalReference extends Reference {
 
     LocalReference(String ref) {
       super(toLocalTypeName(ref));
-      addReferenceIfNeeded(getTypeName());
+      if (isReferenceType()) addReferenceIfNeeded(getTypeName());
     }
 
     @Override
@@ -238,8 +247,13 @@ public class YamlDocGenerator {
     }
 
     @Override
-    boolean shouldGenerateReference() {
-      return !(getTypeName().equals("DateTime")) && !(getTypeName().equals("Map"));
+    String getString() {
+      if (isReferenceType()) return super.getString();
+      else return getTypeName();
+    }
+
+    private boolean isReferenceType() {
+      return !NON_REFERENCE_TYPES.contains(getTypeName());
     }
   }
 
@@ -259,11 +273,6 @@ public class YamlDocGenerator {
     @Override
     boolean isLocal() {
       return false;
-    }
-
-    @Override
-    boolean shouldGenerateReference() {
-      return true;
     }
 
     @Override
