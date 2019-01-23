@@ -250,6 +250,7 @@ public class SchemaGeneratorTest {
   public void generateSchemaForDerivedObject() {
     Object schema = generator.generate(DerivedObject.class);
 
+    assertThat(schema, hasJsonPath("$.description", equalTo("A simple object used for testing")));
     assertThat(schema, hasJsonPath("$.type", equalTo("object")));
     assertThat(schema, hasJsonPath("$.additionalProperties", equalTo("false")));
     assertThat(schema, hasJsonPath("$.properties.aBoolean.type", equalTo("boolean")));

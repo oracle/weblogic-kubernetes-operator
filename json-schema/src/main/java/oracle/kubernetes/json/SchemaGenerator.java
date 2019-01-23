@@ -15,7 +15,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 import javax.annotation.Nonnull;
 import org.joda.time.DateTime;
 
@@ -398,6 +408,7 @@ public class SchemaGenerator {
       List<String> requiredFields = new ArrayList<>();
       result.put("type", "object");
       if (includeAdditionalProperties) result.put("additionalProperties", "false");
+      Optional.ofNullable(getDescription(type)).ifPresent(s -> result.put("description", s));
       result.put("properties", properties);
 
       for (Field field : getPropertyFields(type)) {
@@ -409,6 +420,11 @@ public class SchemaGenerator {
 
       if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
     }
+  }
+
+  private String getDescription(Class<?> aClass) {
+    Description description = aClass.getAnnotation(Description.class);
+    return description != null ? description.value() : null;
   }
 
   private Collection<Field> getPropertyFields(Class<?> type) {

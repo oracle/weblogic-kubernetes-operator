@@ -28,6 +28,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** DomainSpec is a description of a domain. */
+@Description("DomainSpec is a description of a domain.")
 public class DomainSpec extends BaseConfiguration {
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */

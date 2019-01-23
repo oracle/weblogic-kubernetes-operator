@@ -5,6 +5,7 @@
 package oracle.kubernetes.json;
 
 @SuppressWarnings("unused")
+@Description("A simple object used for testing")
 class DerivedObject extends SimpleObject {
   @Description("An int\nvalue")
   private int anInt;
