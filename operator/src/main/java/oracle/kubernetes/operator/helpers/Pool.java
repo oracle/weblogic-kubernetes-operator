@@ -46,10 +46,14 @@ public abstract class Pool<T> {
    * @param instance Pool object to recycle
    */
   public final void recycle(T instance) {
-    getQueue().offer(instance);
+    getQueue().offer(onRecycle(instance));
     if (LOGGER.isFinerEnabled()) {
       LOGGER.finer("Recycling instance to pool, instances now in pool: " + getQueue().size());
     }
+  }
+
+  protected T onRecycle(T instance) {
+    return instance;
   }
 
   /**
