@@ -22,6 +22,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * @since 2.0
  */
+@Description("An element representing a cluster in the domain configuration.")
 public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   /** The name of the cluster. Required. */
   @Description("The name of this cluster. Required")
