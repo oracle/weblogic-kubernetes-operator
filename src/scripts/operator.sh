@@ -63,6 +63,6 @@ cp /operator/logstash.conf /logs/logstash.conf
 # the logstash container/pod.
 
 # Start operator
-java $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
+java -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
 PID=$!
 wait $PID
