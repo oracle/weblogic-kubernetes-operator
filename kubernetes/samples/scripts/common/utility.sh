@@ -278,7 +278,7 @@ function createFiles {
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
 
     if [ -z $domainHomeImageBuildPath ]; then
-      domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt"
+      domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
     fi
 
     # calculate the internal name to tag the generated image
