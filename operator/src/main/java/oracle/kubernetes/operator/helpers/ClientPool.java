@@ -85,6 +85,13 @@ public class ClientPool extends Pool<ApiClient> {
     return client;
   }
 
+  @Override
+  protected ApiClient onRecycle(ApiClient instance) {
+    // Work around async processing creating, but not cleaning-up network interceptors
+    instance.getHttpClient().networkInterceptors().clear();
+    return super.onRecycle(instance);
+  }
+
   private static class DefaultClientFactory implements ClientFactory {
     private final AtomicBoolean first = new AtomicBoolean(true);
 
