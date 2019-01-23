@@ -1,9 +1,8 @@
-# Example TF variables file for cluster creation
-# 
-# Clone this and upate it with your own info as needed
-#
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-#
+# Template to generate TF variables file for cluster creation from property file oci.props
+# 
 # User-specific vars - you can get these easily from the OCI console from your user page
 #
 
@@ -17,6 +16,7 @@ private_key_path="@OCIPRIVATEKEYPATH@"
 tenancy_ocid="@TENANCYOCID@"
 compartment_ocid="@COMPARTMENTOCID@"
 compartment_name="@COMPARTMENTNAME@"
+region="@REGION@"
 
 #
 # Cluster-specific vars
@@ -24,8 +24,6 @@ compartment_name="@COMPARTMENTNAME@"
 
 # VCN CIDR -- must be unique within the compartment in the tenancy
 # - assuming 1:1 cluster:vcn 
-# - this can be obtained either through OCI console, or from the Otto clusters page https://confluence.oraclecorp.com/confluence/display/ODX/Otto+OKE+Clusters
-#
 # BE SURE TO SET BOTH VARS -- the first 2 octets for each variable have to match
 vcn_cidr_prefix="@VCNCIDRPREFIX@"
 vcn_cidr="@VCNCIDR@"
@@ -38,6 +36,7 @@ cluster_name="@OKECLUSTERNAME@"
 node_pool_kubernetes_version="@OKEK8SVERSION@"
 node_pool_name="@OKECLUSTERNAME@_workers"
 node_pool_node_shape="@NODEPOOLSHAPE@"
+node_pool_node_image_name="@NODEPOOLIMAGENAME@"
 node_pool_quantity_per_subnet=1
 
 # SSH public key, for SSH access to nodes in the cluster
