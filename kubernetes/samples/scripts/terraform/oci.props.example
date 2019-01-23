@@ -1,0 +1,17 @@
+user.ocid=ocid1.user.oc1..aaaaaaaast7s6jdho6mh2dqvyqcychofaiv5lhztkx7u5jlr5wwuhhmewq
+okeclustername=myokecluster
+tfvars.filename=myokeclustertf
+region=us-phoenix-1
+tenancy.ocid=ocid1.tenancy.oc1..aaaaaahmcbb5mp2h6toh4vj7ax526xtmihrneoumyat557rvlolsx63imq
+compartment.ocid=ocid1.compartment.oc1..aaaaaaaaxzwkinzejhkncuvfy67pmb6wb46ifrixtuikkrgnnrp4wswsu4xq
+compartment.name=QualityAssurance
+ociapi.pubkey.fingerprint=c8\:b2\:da\:b2\:e8\:96\:7e\:bf\:ac\:ee\:ce\:bc\:a8\:7f\:07\:c5
+ocipk.path=/scratch/mkogan/.oci/oci_api_key.pem
+vcn.cidr.prefix=10.1
+vcn.cidr=10.1.0.0/16
+nodepool.shape=VM.Standard2.1
+nodepool.imagename=Oracle-Linux-7.4
+k8s.version=v1.10.11
+nodepool.ssh.pubkey=ssh-rsa AAAAB3NzaC1yc2EAAAAQABAAABAQC9FSfGdjjL+EZre2p5yLTAgtLsnp49AUVX1yY9V8guaXHol6UkvJWnyFHhL7s0qvWj2M2BYo6WAROVc0/054UFtmbd9zb2oZtGVk82VbT6aS74cMlqlY91H/rt9/t51Om9Sp5AvbJEzN0mkI4ndeG/5p12AUyg9m5XOdkgI2n4J8KFnDAI33YSGjxXb7UrkWSGl6XZBGUdeaExo3t2Ow8Kpl9T0Tq19qI+IncOecsCFj1tbM5voD8IWE2l0SW7V6oIqFJDMecq4IZusXdO+bPc+TKak7g82RUZd8PARpvYB5/7EOfVadxsXGRirGAKPjlXDuhwJYVRj1+IjZ+5Suxz mkogan@slc13kef
+terraform.installdir=/scratch/mkogan/myterraformtest
+
