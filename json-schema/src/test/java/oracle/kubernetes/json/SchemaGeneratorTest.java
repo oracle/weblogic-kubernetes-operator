@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -257,7 +257,7 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.properties.anInt.type", equalTo("number")));
     assertThat(schema, hasJsonPath("$.properties.aBoolean.description", equalTo("A flag")));
     assertThat(schema, hasJsonPath("$.properties.aString.description", equalTo("A string")));
-    assertThat(schema, hasJsonPath("$.properties.anInt.description", equalTo("An int")));
+    assertThat(schema, hasJsonPath("$.properties.anInt.description", equalTo("An int\nvalue")));
     assertThat(schema, hasJsonPath("$.properties.depth.type", equalTo("number")));
     assertThat(
         schema, hasJsonPath("$.required", arrayContainingInAnyOrder("aBoolean", "anInt", "depth")));

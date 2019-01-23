@@ -14,13 +14,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import javax.annotation.Nonnull;
 import org.joda.time.DateTime;
 
-@SuppressWarnings("WeakerAccess")
 public class SchemaGenerator {
 
   private static final String EXTERNAL_CLASS = "external";
@@ -28,9 +26,6 @@ public class SchemaGenerator {
   private static final List<Class<?>> PRIMITIVE_NUMBERS =
       Arrays.asList(byte.class, short.class, int.class, long.class, float.class, double.class);
 
-  static final String K8S_SCHEMA_URL =
-      "https://github.com/garethr/kubernetes-json-schema/blob/master/v%s/_definitions.json";
-  private static final String K8S_SCHEMA_CACHE = "caches/kubernetes-%s.json";
   private static final String JSON_SCHEMA_REFERENCE = "http://json-schema.org/draft-04/schema#";
 
   // A map of classes to their $ref values
@@ -71,39 +66,35 @@ public class SchemaGenerator {
    * @throws IOException if no schema for that version is cached.
    */
   public void useKubernetesVersion(String version) throws IOException {
-    URL cacheUrl = getKubernetesSchemaCache(version);
+    KubernetesSchemaReference reference = KubernetesSchemaReference.create(version);
+    URL cacheUrl = reference.getKubernetesSchemaCacheUrl();
     if (cacheUrl == null) throw new IOException("No schema cached for Kubernetes " + version);
 
-    addExternalSchema(getKubernetesSchemaUrl(version), cacheUrl);
-  }
-
-  URL getKubernetesSchemaUrl(String version) throws MalformedURLException {
-    return new URL(String.format(K8S_SCHEMA_URL, version));
-  }
-
-  private URL getKubernetesSchemaCache(String version) {
-    return getClass().getResource(String.format(K8S_SCHEMA_CACHE, version));
-  }
-
-  public void addExternalSchema(URL schemaUrl) throws IOException {
-    addExternalSchema(schemaUrl, new BufferedReader(new InputStreamReader(schemaUrl.openStream())));
+    addExternalSchema(reference.getKubernetesSchemaUrl(), cacheUrl);
   }
 
   public void addExternalSchema(URL schemaUrl, URL cacheUrl) throws IOException {
-    addExternalSchema(schemaUrl, new BufferedReader(new InputStreamReader(cacheUrl.openStream())));
-  }
-
-  private void addExternalSchema(URL schemaUrl, BufferedReader schemaReader) throws IOException {
-    StringBuilder sb = new StringBuilder();
-    String inputLine;
-    while ((inputLine = schemaReader.readLine()) != null) sb.append(inputLine).append('\n');
-    schemaReader.close();
-
-    Map<String, Map<String, Object>> map = fromJson(sb.toString());
-    Map<String, Object> definitions = map.get("definitions");
+    Map<String, Map<String, Object>> objectObjectMap = loadCachedSchema(cacheUrl);
+    Map<String, Object> definitions = objectObjectMap.get("definitions");
     for (Map.Entry<String, Object> entry : definitions.entrySet()) {
       if (isDefinitionToUse(entry.getValue())) schemaUrls.put(entry.getKey(), schemaUrl.toString());
     }
+  }
+
+  static <T, S> Map<T, S> loadCachedSchema(URL cacheUrl) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    try (BufferedReader schemaReader =
+        new BufferedReader(new InputStreamReader(cacheUrl.openStream()))) {
+      String inputLine;
+      while ((inputLine = schemaReader.readLine()) != null) sb.append(inputLine).append('\n');
+    }
+
+    return fromJson(sb.toString());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T, S> Map<T, S> fromJson(String json) {
+    return new Gson().fromJson(json, HashMap.class);
   }
 
   @SuppressWarnings("unchecked")
@@ -114,11 +105,6 @@ public class SchemaGenerator {
 
   private boolean isDeprecated(Object description) {
     return description != null && description.toString().contains("Deprecated");
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T, S> Map<T, S> fromJson(String json) {
-    return new Gson().fromJson(json, HashMap.class);
   }
 
   /**
