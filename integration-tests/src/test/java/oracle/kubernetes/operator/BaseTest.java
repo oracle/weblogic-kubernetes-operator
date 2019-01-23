@@ -203,7 +203,7 @@ public class BaseTest {
                       + domainMap.get("managedServerNameBase")
                       + "1 -n "
                       + domainMap.get("namespace")
-                      + " | grep BEA-000802 ");
+                      + " | grep BEA-000802");
           if (result.exitValue() == 0) {
             throw new RuntimeException(
                 "FAILURE: Managed Servers are not part of the cluster, failing with "
