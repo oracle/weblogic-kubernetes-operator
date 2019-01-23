@@ -22,6 +22,8 @@ public class TestMain implements Main {
   private boolean includeAdditionalProperties;
   private boolean supportObjectReferences;
   private File markdownFile;
+  private Map<String, Object> schema;
+  private Map<String, Object> markdownSchema;
 
   TestMain() throws MalformedURLException {
     classpathResource = new URL("file:abc");
@@ -53,6 +55,14 @@ public class TestMain implements Main {
 
   File getMarkdownFile() {
     return markdownFile;
+  }
+
+  public Map<String, Object> getMarkdownSchema() {
+    return markdownSchema;
+  }
+
+  void setGeneratedSchema(Map<String, Object> schema) {
+    this.schema = schema;
   }
 
   URL getCacheFor(URL schemaUrl) {
@@ -108,13 +118,15 @@ public class TestMain implements Main {
   }
 
   @Override
-  public void generateSchema(String className, File outputFile) {
+  public Map<String, Object> generateSchema(String className, File outputFile) {
     this.className = className;
     this.schemaFile = outputFile;
+    return schema;
   }
 
   @Override
-  public void generateMarkdown(File markdownFile) {
+  public void generateMarkdown(String rootName, File markdownFile, Map<String, Object> schema) {
     this.markdownFile = markdownFile;
+    this.markdownSchema = schema;
   }
 }

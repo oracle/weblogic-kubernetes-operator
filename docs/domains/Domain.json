@@ -56,7 +56,7 @@
       "type": "object",
       "properties": {
         "channelName": {
-          "description": "Name of channel. default\u0027 refers to the admin server\u0027s default channel (configured via the ServerMBean\u0027s ListenPort) \u0027default-secure\u0027 refers to the admin server\u0027s default secure channel (configured via the ServerMBean\u0027s SSLMBean\u0027s ListenPort) \u0027default-admin\u0027 refers to the admin server\u0027s default administrative channel (configured via the DomainMBean\u0027s AdministrationPort) Otherwise, the name is the name of one of the admin server\u0027s network access points (configured via the ServerMBean\u0027s NetworkAccessMBeans).",
+          "description": "Name of channel.\ndefault\u0027 refers to the admin server\u0027s default channel (configured via the ServerMBean\u0027s ListenPort) \n\u0027default-secure\u0027 refers to the admin server\u0027s default secure channel (configured via the ServerMBean\u0027s SSLMBean\u0027s ListenPort) \n\u0027default-admin\u0027 refers to the admin server\u0027s default administrative channel (configured via the DomainMBean\u0027s AdministrationPort) \nOtherwise, the name is the name of one of the admin server\u0027s network access points (configured via the ServerMBean\u0027s NetworkAccessMBeans).",
           "type": "string"
         },
         "nodePort": {
