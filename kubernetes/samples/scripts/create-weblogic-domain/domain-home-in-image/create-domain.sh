@@ -155,7 +155,7 @@ function initialize {
 
   initOutputDir
 
-  if [ "${cloneIt}" = true ]; then
+  if [ "${cloneIt}" = true ] || [ ! -d $domainHomeImageBuildPath} ]; then
     getDockerSample
   fi
 }
@@ -164,8 +164,9 @@ function initialize {
 # Function to get the dependency docker sample
 #
 function getDockerSample {
-  rm -rf ${scriptDir}/docker-images
-  git clone https://github.com/oracle/docker-images.git ${scriptDir}/docker-images
+  dockerImagesDir=${domainHomeImageBuildPath%/OracleWebLogic*}
+  rm -rf ${dockerImagesDir}
+  git clone https://github.com/oracle/docker-images.git ${dockerImagesDir}
 }
 
 #
