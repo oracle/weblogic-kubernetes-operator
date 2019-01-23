@@ -154,7 +154,7 @@ class OfflineWlstEnv(object):
     trace("About to load domain from "+self.getDomainHome())
     readDomain(self.getDomainHome())
     self.domain = cmo
-    self.DOMAIN_NAME = self.env.getDomain().getName()
+    self.DOMAIN_NAME = self.getDomain().getName()
 
   def close(self):
     closeDomain()
