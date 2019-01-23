@@ -12,6 +12,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.joda.time.DateTime;
 import org.junit.Test;
@@ -50,7 +51,7 @@ public class YamlDocGeneratorTest {
   @Test
   public void whenPropertyTypeIsDateTime_doNotGenerateReference() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("dateTime"));
-    assertThat(markdown, containsString(tableEntry("dateTime", "")));
+    assertThat(markdown, containsString(tableEntry("dateTime", "DateTime", "")));
   }
 
   @SuppressWarnings("unused")
@@ -59,11 +60,20 @@ public class YamlDocGeneratorTest {
   @Test
   public void whenPropertyTypeIsMap_doNotGenerateReference() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("notes"));
-    assertThat(markdown, containsString(tableEntry("notes", "")));
+    assertThat(markdown, containsString(tableEntry("notes", "Map", "")));
   }
 
   @SuppressWarnings("unused")
   private Map<String, String> notes;
+
+  @Test
+  public void whenPropertyTypeIsArrayOfStrings_generateType() throws NoSuchFieldException {
+    String markdown = generateForProperty(getClass().getDeclaredField("myList"));
+    assertThat(markdown, containsString(tableEntry("myList", "array of string", "")));
+  }
+
+  @SuppressWarnings("unused")
+  private List<String> myList;
 
   @Test
   public void whenPropertyTypeIsReferenceWithDescription_includeBoth() throws NoSuchFieldException {
@@ -283,6 +293,4 @@ public class YamlDocGeneratorTest {
         generator.getKubernetesSchemaMarkdown(),
         containsString(String.join("\n", "### Env Var Source")));
   }
-
-  // todo description for objects
 }
