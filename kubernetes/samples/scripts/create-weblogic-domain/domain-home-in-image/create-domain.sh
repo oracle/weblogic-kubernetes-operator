@@ -195,7 +195,7 @@ function createDomainHome {
 
   sh ${dockerDir}/build.sh
 
-  # if the "image" property is set, tag the image as it too
+  # if the "image" property is set, tag the image with it too
   if [ ! -z $image ]; then
     docker tag $defaultImageName $image
   fi
