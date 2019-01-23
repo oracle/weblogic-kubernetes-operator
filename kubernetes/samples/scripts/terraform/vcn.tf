@@ -1,5 +1,9 @@
+/*
+ * Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+ * Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+*/
 
-// Compartment in which to create the clsuter resources.
+// Compartment in which to create the cluster resources.
 variable "compartment_name" {}
 variable "compartment_ocid" {}
 
@@ -12,7 +16,7 @@ variable "vcn_cidr" {
 
 /*
  * Create a VCN. 
- * a DNS label with the name of the cluster is attached to the VCN.
+ * A DNS label with the name of the cluster is attached to the VCN.
  * The creation of the vcn also creates the default route table, security list, and dhcp options.
  */
 resource "oci_core_virtual_network" "oke-vcn" {
@@ -58,17 +62,10 @@ resource "oci_core_default_dhcp_options" "oke-default-dhcp-options" {
     type        = "DomainNameServer"
     server_type = "VcnLocalPlusInternet"
   }
-
-  # optional search domain.
-  # options {
-  #   type = "SearchDomain"
-  #   search_domain_names = [ "abc.com" ]
-  # }
 }
 
 /*
- *Configures the default security list.
- *
+ * Configures the default security list.
  */
 resource "oci_core_default_security_list" "oke-default-security-list" {
   manage_default_resource_id = "${oci_core_virtual_network.oke-vcn.default_security_list_id}"

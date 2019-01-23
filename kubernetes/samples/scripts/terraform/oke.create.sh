@@ -1,103 +1,78 @@
 #!/bin/bash
-# Copyright 2017, Oracle Corporation and/or its affiliates. All rights reserved.
-
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 function prop {
     grep "${1}" ${propsFile}|cut -d'=' -f2
 }
+
 function generateTFVarFile {
+    tfVarsFiletfVarsFile=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+    rm -f ${tfVarsFiletfVarsFile}
+    cp ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
+    chmod 777 ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
 
-tfVarsFiletfVarsFile=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-rm -f ${tfVarsFiletfVarsFile}
-cp ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
-chmod 777 ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
-
-sed -i -e "s:@TENANCYOCID@:${tenancy_ocid}:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@USEROCID@:${user_ocid}:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@COMPARTMENTOCID@:${compartment_ocid}:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@COMPARTMENTNAME@:${compartment_name}:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@OKECLUSTERNAME@:${okeclustername}:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@OCIAPIPUBKEYFINGERPRINT@:"${ociapi_pubkey_fingerprint}":g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@OCIPRIVATEKEYPATH@:${ocipk_path}:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@VCNCIDRPREFIX@:${vcn_cidr_prefix}:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@VCNCIDR@:${vcn_cidr_prefix}.0.0/16:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@OKEK8SVERSION@:${k8s_version}:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@NODEPOOLSHAPE@:${nodepool_shape}:g" ${tfVarsFiletfVarsFile}
-sed -i -e "s:@NODEPOOLSSHPUBKEY@:${nodepool_ssh_pubkey}:g" ${tfVarsFiletfVarsFile}
-echo "Generated TFVars file [${tfVarsFiletfVarsFile}]"
+    sed -i -e "s:@TENANCYOCID@:${tenancy_ocid}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@USEROCID@:${user_ocid}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@COMPARTMENTOCID@:${compartment_ocid}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@COMPARTMENTNAME@:${compartment_name}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@OKECLUSTERNAME@:${okeclustername}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@OCIAPIPUBKEYFINGERPRINT@:"${ociapi_pubkey_fingerprint}":g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@OCIPRIVATEKEYPATH@:${ocipk_path}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@VCNCIDRPREFIX@:${vcn_cidr_prefix}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@VCNCIDR@:${vcn_cidr_prefix}.0.0/16:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@OKEK8SVERSION@:${k8s_version}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@NODEPOOLSHAPE@:${nodepool_shape}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@NODEPOOLIMAGENAME@:${nodepool_imagename}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@NODEPOOLSSHPUBKEY@:${nodepool_ssh_pubkey}:g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s:@REGION@:${region}:g" ${tfVarsFiletfVarsFile}
+    echo "Generated TFVars file [${tfVarsFiletfVarsFile}]"
 
 }
 
 function setupTerraform () {
-mkdir ${terraformDir}
-cd ${terraformDir}
-if [[ "${OSTYPE}" == "darwin"* ]]; then
-  curl -O https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_darwin_amd64.zip
-  unzip terraform_0.11.10_darwin_amd64.zip
-elif [[ "${OSTYPE}" == "linux"* ]]; then
-   curl -O https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip
-   unzip terraform_0.11.8_linux_amd64.zip
-else
-   echo "Unsupported OS"
-fi
-chmod 777 ${terraformDir}/terraform
-export PATH=${PATH}:${terraformDir}
+    mkdir ${terraformDir}
+    cd ${terraformDir}
+    if [[ "${OSTYPE}" == "darwin"* ]]; then
+      curl -O https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_darwin_amd64.zip
+      unzip terraform_0.11.10_darwin_amd64.zip
+    elif [[ "${OSTYPE}" == "linux"* ]]; then
+       curl -O https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip
+       unzip terraform_0.11.8_linux_amd64.zip
+    else
+       echo "Unsupported OS"
+    fi
+    chmod 777 ${terraformDir}/terraform
+    export PATH=${terraformDir}:${PATH}
 
 }
 
-function buildTerraformOCIProvider() {
-mkdir -p ${goDir}/go/src/github.com/terraform-providers; cd ${goDir}/go/src/github.com/terraform-providers
-git clone https://github.com/terraform-providers/terraform-provider-oci.git
-cd ${goDir}/go/src/github.com/terraform-providers/terraform-provider-oci
-#somehow it does not build first time need to run gofmt and rebuild
-make gofmt
-make fmt
-make build
-if ! [ -d ~/.terraform.d ]; then
-echo "Creating terraform plugins dir"
-mkdir ~/.terraform.d
-fi
-if ! [ -d ~/.terraform.d/plugins ]; then
-mkdir ~/.terraform.d/plugins
-fi
-cp ${goDir}/go/bin/terraform-provider-oci ~/.terraform.d/plugins/
-if [ -e ~/.terraformrc ]; then
-  rm ~/.terraformrc
-fi
-cat ${terraformVarDir}/terraformrc >> ~/.terraformrc
+function deleteOlderVersionTerraformOCIProvider() {
+    if [ -d ~/.terraform.d/plugins ]; then
+        echo "Deleting older version of terraform plugins dir"
+        rm -rf ~/.terraform.d/plugins
+    fi
+    if [ -d ${terraformVarDir}/.terraform ]; then
+        rm -rf ${terraformVarDir}/.terraform
+    fi
+    if [ -e ~/.terraformrc ]; then
+      rm ~/.terraformrc
+    fi
 }
 
 function createCluster () {
-cd ${terraformVarDir}
-echo "terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars"
-terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-terraform plan -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+    cd ${terraformVarDir}
+    echo "terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars"
+    terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+    terraform plan -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+    terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
 }
 
-function setupGo () {
-mkdir ${goDir}
-cd ${goDir}
-if [[ "${OSTYPE}" == "darwin"* ]]; then
-  curl -O https://dl.google.com/go/go1.11.2.darwin-amd64.tar.gz
-  tar -xvf go1.11.2.darwin-amd64.tar.gz
-elif [[ "${OSTYPE}" == "linux"* ]]; then
-   curl -O https://dl.google.com/go/go1.11.linux-amd64.tar.gz
-   tar -xvf go1.11.linux-amd64.tar.gz
-else
-   echo "Unsupported OS"
-fi
-chmod 777 ${goDir}/go/bin
-export PATH=${PATH}:${goDir}/go/bin
-
-}
-
-
-
-#MAIN 
-terraformVarDir=${2:-$PWD}
+#MAIN
 propsFile=${1:-$PWD/oci.props}
+terraformVarDir=${2:-$PWD}
 
+#grep props's values from oci.props file
 
 clusterTFVarsFile=$(prop 'tfvars.filename')
 tenancy_ocid=$(prop 'tenancy.ocid')
@@ -110,17 +85,25 @@ ocipk_path=$(prop 'ocipk.path')
 vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
 k8s_version=$(prop 'k8s.version')
 nodepool_shape=$(prop 'nodepool.shape')
+nodepool_imagename=$(prop 'nodepool.imagename')
 nodepool_ssh_pubkey=$(prop 'nodepool.ssh.pubkey')
+region=$(prop 'region')
 terraformDir=$(prop 'terraform.installdir')
-goDir=$(prop 'go.installdir')
+
+# generate terraform configuration file with name $(clusterTFVarsFile).tfvar
 generateTFVarFile
-rm -rf ${goDir} ${terraformDir}
+
+# cleanup previously installed terraform binaries
+rm -rf ${terraformDir}
+
+# download terraform binaries into ${terraformDir}
 setupTerraform
-setupGo
-buildTerraformOCIProvider
+
+# clean previous versions of terraform oci provider
+deleteOlderVersionTerraformOCIProvider
+
 chmod 600 ${ocipk_path}
+
+# run terraform init,plan,apply to create OKE cluster based on the provided tfvar file ${clusterTFVarsFile).tfvar
 createCluster
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
-
-
-
