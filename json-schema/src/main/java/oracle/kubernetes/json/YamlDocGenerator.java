@@ -37,7 +37,7 @@ public class YamlDocGenerator {
     referencesNeeded.remove(reference);
     StringBuilder sb = new StringBuilder("### ");
     sb.append(toStructureName(reference)).append("\n\n");
-    Optional.ofNullable(getDescription(schema)).ifPresent(s -> sb.append(s).append("\n"));
+    Optional.ofNullable(getDescription(schema)).ifPresent(s -> sb.append(s).append("\n\n"));
     sb.append(generateForClass(schema));
     while (!referencesNeeded.isEmpty()) {
       generateForDefinition(sb, referencesNeeded.get(0));
