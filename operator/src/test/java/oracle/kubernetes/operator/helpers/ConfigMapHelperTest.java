@@ -456,6 +456,12 @@ public class ConfigMapHelperTest {
           + "      listenPort: 8001\n"
           + "      clusterName: \"cluster-1\"\n"
           + "      listenAddress: \"domain1-managed-server${id}\"\n"
+          + "      sslListenPort: 7204\n"
+          + "      networkAccessPoints:\n"
+          + "        - name: \"nap3\"\n"
+          + "          protocol: \"t3\"\n"
+          + "          listenPort: 7205\n"
+          + "          publicPort: 7205\n"
           + "  servers:\n"
           + "    - name: \"admin-server\"\n"
           + "      listenPort: 7001\n"
@@ -612,14 +618,29 @@ public class ConfigMapHelperTest {
     assertEquals(true, dynamicServerConfigs.get(0).isDynamicServer());
     assertEquals("domain1-managed-server1", dynamicServerConfigs.get(0).getListenAddress());
     assertEquals(8001, dynamicServerConfigs.get(0).getListenPort().intValue());
+    assertEquals(7204, dynamicServerConfigs.get(0).getSslListenPort().intValue());
+    assertEquals(1, dynamicServerConfigs.get(0).getNetworkAccessPoints().size());
+    assertEquals(
+        7205,
+        dynamicServerConfigs.get(0).getNetworkAccessPoints().get(0).getListenPort().intValue());
 
     assertEquals(true, dynamicServerConfigs.get(1).isDynamicServer());
     assertEquals("domain1-managed-server2", dynamicServerConfigs.get(1).getListenAddress());
     assertEquals(8001, dynamicServerConfigs.get(1).getListenPort().intValue());
+    assertEquals(7204, dynamicServerConfigs.get(1).getSslListenPort().intValue());
+    assertEquals(1, dynamicServerConfigs.get(1).getNetworkAccessPoints().size());
+    assertEquals(
+        7205,
+        dynamicServerConfigs.get(1).getNetworkAccessPoints().get(0).getListenPort().intValue());
 
     assertEquals(true, dynamicServerConfigs.get(1).isDynamicServer());
     assertEquals("domain1-managed-server3", dynamicServerConfigs.get(2).getListenAddress());
     assertEquals(8001, dynamicServerConfigs.get(2).getListenPort().intValue());
+    assertEquals(7204, dynamicServerConfigs.get(2).getSslListenPort().intValue());
+    assertEquals(1, dynamicServerConfigs.get(2).getNetworkAccessPoints().size());
+    assertEquals(
+        7205,
+        dynamicServerConfigs.get(2).getNetworkAccessPoints().get(0).getListenPort().intValue());
   }
 
   @Test
