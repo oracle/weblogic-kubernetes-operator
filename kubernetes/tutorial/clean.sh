@@ -3,11 +3,14 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 SECONDS=0
+# clean load balancer
 ./traefik.sh delIng
+./traefik.sh delCon
+
+# clean WebLogic domains and operator
 ./domain.sh delAll
 ./domain.sh waitUntilAllStopped
-./traefik.sh delCon
 ./operator.sh delete
-./operator.sh delImages
+#./operator.sh delImages
 
 echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finish."
