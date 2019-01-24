@@ -195,11 +195,6 @@ function createDomainHome {
 
   sh ${dockerDir}/build.sh
 
-  # if the "image" property is set, tag the image with it too
-  if [ ! -z $image ]; then
-    docker tag $defaultImageName $image
-  fi
-
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."
   fi
