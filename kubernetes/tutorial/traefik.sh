@@ -10,6 +10,7 @@ function createCon() {
     --name traefik-controller \
     --namespace traefik \
     --values $PRJ_ROOT/kubernetes/samples/charts/traefik/values.yaml  \
+    --set "kubernetes.namespaces={traefik,default,test1}" \
     --wait
 }
 
