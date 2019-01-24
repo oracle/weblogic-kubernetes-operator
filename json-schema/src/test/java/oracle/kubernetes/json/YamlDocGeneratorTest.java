@@ -4,11 +4,13 @@
 
 package oracle.kubernetes.json;
 
+import static com.google.common.collect.ImmutableMap.of;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -47,6 +49,15 @@ public class YamlDocGeneratorTest {
   @SuppressWarnings("unused")
   @Description("An annotated field")
   private Double annotatedDouble;
+
+  @Test
+  public void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() throws NoSuchFieldException {
+    Map<String, Object> schema = ImmutableMap.of("anInt", of("type", "integer"));
+
+    String markdown = new YamlDocGenerator(schema).generateForProperty("anInt", schema);
+
+    assertThat(markdown, containsString(tableEntry("anInt", "integer", "")));
+  }
 
   @Test
   public void whenPropertyTypeIsDateTime_doNotGenerateReference() throws NoSuchFieldException {
