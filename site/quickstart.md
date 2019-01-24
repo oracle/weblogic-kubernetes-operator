@@ -39,7 +39,7 @@ $ docker pull oracle/weblogic-kubernetes-operator:2.0
 ```
 d.	Pull the Traefik load balancer image:
 ```
-$ docker pull traefik:1.7.4
+$ docker pull traefik:1.7.6
 ```
 e.	Pull the WebLogic 12.2.1.3 install image:
 
