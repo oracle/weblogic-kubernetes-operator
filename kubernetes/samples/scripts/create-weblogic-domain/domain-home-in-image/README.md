@@ -29,7 +29,7 @@ $ create-weblogic-credentials.sh
 **Note**: The `create-domain.sh` script generates a new Docker image on each run with a new domain home and a different internal `domain secret` in it.  To prevent having disparate images with different domain secrets in the same domain, it is highly recommended that a new domain uses a `domainUID` that is different from any of the active domains, or that you delete the existing domain resource before you create a domain with the same `domainUID` using the following command (and wait until all the server pods are terminated):
 
 ```
-$kubectl delete domain [domainUID] -n [domainNameSpace]
+$kubectl delete domain [domainUID] -n [domainNamespace]
 ```
 
 Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at your inputs file and an output directory:
