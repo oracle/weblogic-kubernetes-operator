@@ -93,6 +93,24 @@ function create_image_pull_secret_jenkins {
     echo 'secret wlsldi-secret was not created successfully'
     exit 1
   fi
+  
+  export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-weblogic}"
+  
+  echo "Creating Docker Secret"  
+  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
+    --docker-server=index.docker.io/v1/ \
+    --docker-username=$DOCKER_USERNAME \
+    --docker-password=$DOCKER_PASSWORD \
+    --docker-email=$DOCKER_EMAIL 
+
+  echo "Checking Secret"
+  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+  if [ "$SECRET" != "1" ]; then
+    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
+    exit 1
+  fi
+  
+  
 }
 
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
