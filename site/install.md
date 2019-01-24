@@ -13,6 +13,7 @@ Helm is used to create and deploy necessary operator resources and to run the op
     `Error from server (BadRequest): error when creating "/scratch/output/uidomain/weblogic-domains/uidomain/domain.yaml":
     the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1`
 
+> **NOTE**: You should be able to upgrade from version 2.0-rc2 to 2.0 because there are no backward incompatible changes between these two releases.
 
 ## Install Helm and Tiller
 
