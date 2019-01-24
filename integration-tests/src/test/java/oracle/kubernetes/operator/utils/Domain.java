@@ -1004,7 +1004,8 @@ public class Domain {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
       logger.info("IMAGE_NAME_WEBLOGIC " + imageName);
     }
-    String imageTag = "19.1.0.0";
+
+    String imageTag = "12.2.1.3";
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
       logger.info("IMAGE_TAG_WEBLOGIC " + imageTag);
@@ -1012,9 +1013,8 @@ public class Domain {
     if (System.getenv("JENKINS") != null) {
       // the below vars can be exported in Jenkins configure, but keeping it here helps for testing
       // without
-      // effecting the curren Jenkins runs
+      // effecting the current Jenkins runs
       domainMap.put("imagePullSecretName", "docker-weblogic");
-      imageTag = "12.2.1.3";
     }
 
     domainMap.put("logHome", "/shared/logs/" + domainUid);
