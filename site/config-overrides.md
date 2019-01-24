@@ -10,6 +10,7 @@
   * [Override template names](#override-template-names)
   * [Override template schemas](#override-template-schemas)
   * [Override template macros](#override-template-macros)
+  * [Override template syntax special requirements](#override-template-syntax-special-requirements)
   * [Override template samples](#override-template-samples)
 * [Step-by-step guide](#step-by-step-guide)
 * [Debugging](#debugging)
@@ -51,7 +52,7 @@ For a detailed walk-through of the runtime flow, see the [Internal design flow](
 ---
 # Prerequisites
 
-* A WebLogic domain home must contain any situational configuration XML file in its existing `optconfig` directory that was not put there by the operator.  Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates (if any).
+* A WebLogic domain home must not contain any situational configuration XML file in its `optconfig` directory that was not placed there by the operator. Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates (if any).
 
 * If you want to override a JDBC, JMS, or WLDF module, the original module must be located in your domain home `config/jdbc`, `config/jms`, and `config/wldf` directory, respectively. These are the default locations for these types of modules.
 
@@ -103,25 +104,6 @@ The behavior when using an unsupported override is undefined.
 
 Overrides leverage a built-in WebLogic feature called "Configuration Overriding" which is often informally called "Situational Configuration." Situational configuration consists of XML formatted files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.
 
-## Override template check-list
-
-**Check each item below to ensure custom situational configuration takes effect:**
-
-* Follow each step in the [Step-by-step guide](#step-by-step-guide) 
-* Reference the name of the current bean and each parent bean in any hierarchy you override.
-  * See [Override template samples](#override-template-samples) for examples.
-* Use situational config `replace` and `add` verbs as follows:
-  * If you are adding a new bean that doesn't already exist in your original domain home config.xml, specify `add` on the mbean itself and on each attribute within the bean. 
-    * See the `server-debug` stanza in [Override template samples](#override-template-samples) below for an example.
-  * If you are adding a new attribute to an existing bean in the domain home config.xml, the attribute needs an `add` verb.
-    * See the `max-message-size` stanza in [Override template samples](#override-template-samples) below for an example.
-  * If you are changing the value of an existing attribute within a domain home config.xml, the attribute needs a `replace` verb.
-    * See the `public-address` stanza in  [Override template samples](#override-template-samples) below for an example.
-* When overriding `config.xml`, XML namespace `xmlns` abbreviations must be exactly as specified.
-  * When overriding config.xml, the XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
-  * E.g. use `d:` to reference config.xml beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational config schema.
-* It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF module override files.
-
 ## Override template names
 
 The operator requires a different file name format for override templates than WebLogic's built-in situational configuration feature.  It converts the names to the format required by situational configuration when it moves the templates to the domain home `optconfig` directory.  The following table describes the format:
@@ -146,7 +128,7 @@ _`config.xml`_
           xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
           xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
   ...
-</domain>
+</d:domain>
 ```
 
 _`jdbc-MODULENAME.xml`_
@@ -192,6 +174,24 @@ Two types of macros are supported `environment variable macros` and `secret macr
 The secret macro `SECRETNAME` field must reference the name of a Kubernetes secret, and the `SECRETKEY` field must reference a key within that secret. For example, if you have created a secret named `dbuser` with a key named `username` that contains the value `scott`, then the macro `${secret:dbuser.username}` will be replaced with the word `scott` before the template is copied into its WebLogic Server pod.
 
 **SECURITY NOTE: Use the `:encrypt` suffix in a secret macro to encrypt its replacement value with the WebLogic WLST `encrypt` command (instead of leaving it at its plain text value).  This is useful for overriding MBean attributes that expect encrypted values, such as the `password-encrypted` field of a data source, and is also useful for ensuring that a custom override situational configuration file the operator places in the domain home does not expose passwords in plain-text.**
+
+## Override template syntax special requirements
+
+**Check each item below to ensure custom situational configuration takes effect:**
+
+* Reference the name of the current bean and each parent bean in any hierarchy you override.
+  * See [Override template samples](#override-template-samples) for examples.
+* Use situational config `replace` and `add` verbs as follows:
+  * If you are adding a new bean that doesn't already exist in your original domain home config.xml, specify `add` on the mbean itself and on each attribute within the bean. 
+    * See the `server-debug` stanza in [Override template samples](#override-template-samples) below for an example.
+  * If you are adding a new attribute to an existing bean in the domain home config.xml, the attribute needs an `add` verb.
+    * See the `max-message-size` stanza in [Override template samples](#override-template-samples) below for an example.
+  * If you are changing the value of an existing attribute within a domain home config.xml, the attribute needs a `replace` verb.
+    * See the `public-address` stanza in  [Override template samples](#override-template-samples) below for an example.
+* When overriding `config.xml`, XML namespace `xmlns` abbreviations must be exactly as specified.
+  * When overriding config.xml, the XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
+  * E.g. use `d:` to reference config.xml beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational config schema.
+* It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF module override files.
 
 ## Override template samples
 
