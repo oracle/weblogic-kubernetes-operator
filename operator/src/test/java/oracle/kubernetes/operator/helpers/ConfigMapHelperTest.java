@@ -585,6 +585,41 @@ public class ConfigMapHelperTest {
     assertEquals(2, wlsClusterConfig.getClusterSize());
     assertEquals(3, wlsClusterConfig.getDynamicClusterSize());
     assertEquals(5, wlsClusterConfig.getServerConfigs().size());
+    assertEquals(2, wlsClusterConfig.getServers().size());
+
+    assertNotNull(wlsDomainConfig.getServerTemplates());
+    assertEquals(1, wlsDomainConfig.getServerTemplates().size());
+    assertNotNull(wlsDomainConfig.getServerTemplates().get(0));
+    assertEquals("cluster-1-template", wlsDomainConfig.getServerTemplates().get(0).getName());
+    assertEquals(
+        "domain1-managed-server${id}",
+        wlsDomainConfig.getServerTemplates().get(0).getListenAddress());
+    assertEquals(8001, wlsDomainConfig.getServerTemplates().get(0).getListenPort().intValue());
+
+    List<WlsServerConfig> serverTemplates = wlsDomainConfig.getServerTemplates();
+    assertEquals(1, serverTemplates.size());
+    assertEquals("cluster-1-template", serverTemplates.get(0).getName());
+    assertEquals("domain1-managed-server${id}", serverTemplates.get(0).getListenAddress());
+    assertEquals("cluster-1", serverTemplates.get(0).getClusterName());
+
+    WlsDynamicServersConfig dynamicServerConfig = wlsClusterConfig.getDynamicServersConfig();
+    assertNotNull(dynamicServerConfig.getServerTemplateName());
+    assertEquals("cluster-1-template", dynamicServerConfig.getServerTemplateName());
+
+    List<WlsServerConfig> dynamicServerConfigs = dynamicServerConfig.getServerConfigs();
+    assertEquals(3, dynamicServerConfigs.size());
+
+    assertEquals(true, dynamicServerConfigs.get(0).isDynamicServer());
+    assertEquals("domain1-managed-server1", dynamicServerConfigs.get(0).getListenAddress());
+    assertEquals(8001, dynamicServerConfigs.get(0).getListenPort().intValue());
+
+    assertEquals(true, dynamicServerConfigs.get(1).isDynamicServer());
+    assertEquals("domain1-managed-server2", dynamicServerConfigs.get(1).getListenAddress());
+    assertEquals(8001, dynamicServerConfigs.get(1).getListenPort().intValue());
+
+    assertEquals(true, dynamicServerConfigs.get(1).isDynamicServer());
+    assertEquals("domain1-managed-server3", dynamicServerConfigs.get(2).getListenAddress());
+    assertEquals(8001, dynamicServerConfigs.get(2).getListenPort().intValue());
   }
 
   @Test
