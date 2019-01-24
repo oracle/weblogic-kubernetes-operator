@@ -281,12 +281,6 @@ function createFiles {
       domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
     fi
 
-    # calculate the internal name to tag the generated image
-    defaultImageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
-    baseTag=${domainHomeImageBase#*:}
-   
-    defaultImageName=${defaultImageName}:${baseTag:-"latest"}
-
     # Generate the properties file that will be used when creating the weblogic domain
     echo Generating ${domainPropertiesOutput}
 
@@ -303,8 +297,16 @@ function createFiles {
     sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
-    sed -i -e "s|%IMAGE_NAME%|${defaultImageName}|g" ${domainPropertiesOutput}
 
+    if [ -z "${image}" ]; then
+      # calculate the internal name to tag the generated image
+      defaultImageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
+      baseTag=${domainHomeImageBase#*:}
+      defaultImageName=${defaultImageName}:${baseTag:-"latest"}
+      sed -i -e "s|%IMAGE_NAME%|${defaultImageName}|g" ${domainPropertiesOutput}
+    else 
+      sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
+    fi
   else
 
     createJobOutput="${domainOutputDir}/create-domain-job.yaml"
