@@ -14,6 +14,7 @@ While these samples may be useful and usable as is, it is intended that you woul
 * [Sample for creating a WebLogic domain home inside a Docker image](scripts/create-weblogic-domain/domain-home-in-image/README.md), and the domain resource YAML file for deploying the generated WebLogic domain.
 * [Sample for configuring the Elasticsearch and Kibana](scripts/elasticsearch-and-kibana/README.md) deployments and services for the operator's logs.
 * [Sample for generating a self-signed certificate and private key](scripts/rest/README.md) that can be used for the operator's external REST API.
+* [Sample for creating an OKE cluster using Terraform](scripts/terraform/README.md).
 
 ## Sample Helm charts
 
