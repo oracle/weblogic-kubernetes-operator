@@ -138,7 +138,7 @@ if [ "$WERCKER" = "true" ]; then
     --docker-password=$DOCKER_PASSWORD \
     --docker-email=$DOCKER_EMAIL 
 
-  echo "Checking Secret DOCKER_USERNAME $DOCKER_USERNAME DOCKER_PASSWORD $DOCKER_PASSWORD DOCKER_EMAIL $DOCKER_EMAIL"
+  echo "Checking Secret"
   SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
   if [ "$SECRET" != "1" ]; then
     echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
