@@ -64,12 +64,14 @@ function setup_wercker {
 function pull_tag_images {
   echo "Pull and tag the images we need"
 
- 
-  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-for-rc2:12.2.1.3.0
-  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-for-rc2:12.2.1.3.0 store/oracle/weblogic:12.2.1.3
+  if [ -z "$JENKINS" ]; then
+    echo "Pull rc2 image for Standalone/local run"
+ 	docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-for-rc2:12.2.1.3.0
+  	docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-for-rc2:12.2.1.3.0 store/oracle/weblogic:12.2.1.3
+  fi
   
-  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
-  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 store/oracle/weblogic:19.1.0.0
+#  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
+#  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 store/oracle/weblogic:19.1.0.0
 
   docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
@@ -188,8 +190,6 @@ elif [ "$JENKINS" = "true" ]; then
   export docker_pass=${docker_pass:?}
   export M2_HOME=${M2_HOME:?}
   export K8S_VERSION=${K8S_VERSION}
-  export IMAGE_NAME_WEBLOGIC="store/oracle/weblogic"
-  export IMAGE_TAG_WEBLOGIC="12.2.1.3"
   
   echo IMAGE_NAME_WEBLOGIC $IMAGE_NAME_WEBLOGIC IMAGE_TAG_WEBLOGIC $IMAGE_TAG_WEBLOGIC
   clean_jenkins
