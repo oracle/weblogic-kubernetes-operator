@@ -8,13 +8,12 @@
 * [Unsupported overrides](#unsupported-overrides)
 * [Override template names and syntax](#override-template-names-and-syntax)
   * [Override template names](#override-template-names)
+  * [Override template schemas](#override-template-schemas)
   * [Override template macros](#override-template-macros)
   * [Override template samples](#override-template-samples)
 * [Step-by-step guide](#step-by-step-guide)
 * [Debugging](#debugging)
 * [Internal design flow](#internal-design-flow)
-* [Advanced situational configuration](#advanced-situational-configuration)
-* [References](#references)
 
 ---
 # Overview
@@ -52,7 +51,7 @@ For a detailed walk-through of the runtime flow, see the [Internal design flow](
 ---
 # Prerequisites
 
-* A WebLogic domain home must not already contain a situational configuration XML file in its existing `optconfig` directory.  Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates (if any).
+* A WebLogic domain home must contain any situational configuration XML file in its existing `optconfig` directory that was not put there by the operator.  Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates (if any).
 
 * If you want to override a JDBC, JMS, or WLDF module, the original module must be located in your domain home `config/jdbc`, `config/jms`, and `config/wldf` directory, respectively. These are the default locations for these types of modules.
 
@@ -78,7 +77,8 @@ Typical attributes for overrides include:
 * Domain topology (cluster members)
 * Network channel listen address, port, and enabled configuration
 * Server and domain log locations
-* Node Manager related configuration.  
+* Node Manager related configuration
+* Changing any existing mbean name
 
 **Specifically, do not use custom overrides for:**
 
@@ -92,8 +92,7 @@ Typical attributes for overrides include:
   * Network Access Point (custom channel), listen address, or port
   * Server and domain log locations -- use the `logHome` domain setting instead
   * Node Manager access credentials
-
-In addition, it is not possible to use overrides to change the name of any MBean.
+  * Any existing mbean name (for example, you cannot change the domain name)
 
 Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports.
 
@@ -102,7 +101,26 @@ The behavior when using an unsupported override is undefined.
 ---
 # Override template names and syntax
 
-Overrides leverage a built-in WebLogic feature called "Configuration Overriding" which is often informally called "Situational Configuration." (See [References](#references)). Situational configuration consists of XML formatted files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.
+Overrides leverage a built-in WebLogic feature called "Configuration Overriding" which is often informally called "Situational Configuration." Situational configuration consists of XML formatted files that closely resemble the structure of WebLogic `config.xml` and system resource module XML files. In addition, the attribute fields in these files can embed `add`, `replace`, and `delete` verbs to specify the desired override action for the field.
+
+## Override template check-list
+
+**Check each item below to ensure custom situational configuration takes effect:**
+
+* Follow each step in the [Step-by-step guide](#step-by-step-guide) 
+* Reference the name of the current bean and each parent bean in any hierarchy you override.
+  * See [Override template samples](#override-template-samples) for examples.
+* Use situational config `replace` and `add` verbs as follows:
+  * If you are adding a new bean that doesn't already exist in your original domain home config.xml, specify `add` on the mbean itself and on each attribute within the bean. 
+    * See the `server-debug` stanza in [Override template samples](#override-template-samples) below for an example.
+  * If you are adding a new attribute to an existing bean in the domain home config.xml, the attribute needs an `add` verb.
+    * See the `max-message-size` stanza in [Override template samples](#override-template-samples) below for an example.
+  * If you are changing the value of an existing attribute within a domain home config.xml, the attribute needs a `replace` verb.
+    * See the `public-address` stanza in  [Override template samples](#override-template-samples) below for an example.
+* When overriding `config.xml`, XML namespace `xmlns` abbreviations must be exactly as specified.
+  * When overriding config.xml, the XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
+  * E.g. use `d:` to reference config.xml beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational config schema.
+* It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF module override files.
 
 ## Override template names
 
@@ -124,46 +142,46 @@ An override template must define the exact schemas required by the situational c
 _`config.xml`_
 ```
 <?xml version='1.0' encoding='UTF-8'?>
-<domain xmlns="http://xmlns.oracle.com/weblogic/domain"
-        xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
-        xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+<d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain"
+          xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
+          xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
   ...
-<domain>
+</domain>
 ```
 
 _`jdbc-MODULENAME.xml`_
 ```
 <?xml version='1.0' encoding='UTF-8'?>
-<jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source"
-                  xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
-                  xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+<jdbc:jdbc-data-source xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
+                       xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
+                       xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
   ...
-<jdbc-data-source>
+</jdbc:jdbc-data-source>
 ```
 
 _`jms-MODULENAME.xml`_
 ```
-<weblogic-jms xmlns="http://xmlns.oracle.com/weblogic/weblogic-jms"
+<jms:weblogic-jms xmlns:jms="http://xmlns.oracle.com/weblogic/weblogic-jms"
               xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-jms-fragment"
               xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
   ...
-<weblogic-jms>
+</jms:weblogic-jms>
 ```
 
 _`wldf-MODULENAME.xml`_
 ```
 <?xml version='1.0' encoding='UTF-8'?>
-<wldf-resource
-  xmlns:"http://xmlns.oracle.com/weblogic/weblogic-diagnostics"
+<wldf:wldf-resource
+  xmlns:wldf="http://xmlns.oracle.com/weblogic/weblogic-diagnostics"
   xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-diagnostics-fragment"
   xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
   ...
-<wldf-resource>
+</wldf:wldf-resource>
 ```
 
 ## Override template macros
 
-The operator supports embedding macros within override templates.  This helps make your templates flexibly handle multiple use cases, such as specifying a different URL, user name, and password for a different deployment.
+The operator supports embedding macros within override templates. This helps make your templates flexibly handle multiple use cases, such as specifying a different URL, user name, and password for a different deployment.
 
 Two types of macros are supported `environment variable macros` and `secret macros`:
 
@@ -177,33 +195,37 @@ The secret macro `SECRETNAME` field must reference the name of a Kubernetes secr
 
 ## Override template samples
 
-Here are some sample template override files.  Use `combine-mode="add"` to specify the values for MBean attributes that have not been set in the original configuration, and use `combine-mode="replace"` to specify the values for MBean fields that are already set in the original configuration.
-
-**IMPORTANT: Your overrides may not take effect if you use 'add' for an MBean attribute that already has a value specified in your original configuration, or use 'replace' for an attribute that does not already exist.**
+Here are some sample template override files. 
 
 ### Overriding `config.xml`
 
-The following `config.xml` override file demonstrates setting the `max-message-size` field on a WebLogic Server named `admin-server`, and replacing the `public-address` and `public-port` fields with values obtained from a secret named `test-host` with keys `hostname` and `port`.
+The following `config.xml` override file demonstrates:
+
+ *  Setting the `max-message-size` field on a WebLogic Server named `admin-server`.  It assumes the original `config.xml` does not dfefine this value, and so uses `add` instead of `replace`.
+ *  Sets the `public-address` and `public-port` fields with values obtained from a secret named `test-host` with keys `hostname` and `port`. It assumes the original config.xml already sets these fields, and so uses `replace` instead of `add`.
+ *  Sets two debug settings. It assumes the original config.xml does not have a `server-debug` stanza, so it uses `add` throughout the entire stanza.
 
 ```
 <?xml version='1.0' encoding='UTF-8'?>
-<domain xmlns="http://xmlns.oracle.com/weblogic/domain"
-        xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
-        xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
-  <name>${env:DOMAIN_NAME}</name>
-  <server>
-    <name>admin-server</name>
-    <max-message-size f:combine-mode="add">78787878</max-message-size>
-    <network-access-point>
-      <name>T3Channel</name>
-      <public-address f:combine-mode="replace">${secret:test-host.hostname}</public-address>
-      <public-port f:combine-mode="replace">${secret:test-host.port}</public-port>
-    </network-access-point>
-  </server>
-</domain>
+<d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain"
+          xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
+          xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+    <d:name>${env:DOMAIN_NAME}</d:name>
+    <d:server>
+        <d:name>admin-server</d:name>
+        <d:max-message-size f:combine-mode="add">78787878</d:max-message-size>
+        <d:server-debug f:combine-mode="add">
+          <d:debug-server-life-cycle f:combine-mode="add">false</d:debug-server-life-cycle>
+          <d:debug-jmx-core f:combine-mode="replace">false</d:debug-jmx-core>
+        </d:server-debug>
+        <d:network-access-point>
+          <d:name>T3Channel</d:name>
+          <d:public-address f:combine-mode="replace">${secret:test-host.hostname}</d:public-address>
+          <d:public-port f:combine-mode="replace">${secret:test-host.port}</d:public-port>
+        </d:network-access-point>
+    </d:server>
+</d:domain>
 ```
-
-**IMPORTANT: To ensure all situational configuration takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name as in the sample above.**
 
 ### Overriding a data source module
 
@@ -239,8 +261,8 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
   * This directory must not contain any other files.
   * The `version.txt` file must contain only the string `2.0`.
   * Templates must not override the settings listed in [Unsupported overrides](#unsupported-overrides).
-  * Templates must be formatted and named as per [Override template names and syntax](#override-template-names-and-syntax) and [References](#references).
-  * Templates can embed macros that reference environement variables or Kubernetes secrets.  See [Override template macros](#override-template-macros).
+  * Templates must be formatted and named as per [Override template names and syntax](#override-template-names-and-syntax).
+  * Templates can embed macros that reference environment variables or Kubernetes secrets.  See [Override template macros](#override-template-macros).
 * Create a Kubernetes configuration map from the directory of templates.
   * The configuration map must be in the same Kubernetes namespace as the domain.
   * If the configuration map is going to be used by a single `DOMAIN_UID`, we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
@@ -262,16 +284,16 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 * Configure the names of each secret in domain CR.
   * If the secret contains the WebLogic admin `username` and `password` keys, set the domain CR `webLogicCredentialsSecret` field.
   * For all other secrets, add them to domain CR `configOverrideSecrets` field.
-* Stop all running WebLogic Server pods in your domain.  (See [Server Lifecycle](server-lifecycle.md).)
-* Start or restart your domain. (See [Server Lifecycle](server-lifecycle.md).)
+* Any override changes require a full domain restart before they can take effect.
+  * Custom override changes on an existing running domain, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted.  
+  * To stop all running WebLogic Server pods in your domain, and then start/restart the domain:
+    * Set your domain resource serverRestartPolicy to NEVER, wait, and restore back to ALWAYS or IF_NEEDED (see [Server Lifecycle](server-lifecycle.md).)
+    * Or delete your domain resource, wait, and then reapply it.
+* Verify overrides take effect after any change to overrides or to your domain home configuration.
+* Stop all running WebLogic Server pods in your domain, and then start/restart the domain.
+  * Set your domain resource serverRestartPolicy to NEVER, wait, and restore back to ALWAYS or IF_NEEDED (see [Server Lifecycle](server-lifecycle.md).)
+  * Or delete your domain resource, wait, and then reapply it.
 * See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
-
-**IMPORTANT: Custom override changes, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted.**
-
-**IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings when they detect an incorrectly formatted configuration override template file, but will still boot, and will skip overriding. So it is important to make sure that the template files are correct in a QA environment by checking your WebLogic pod logs for situational configuration errors and warnings, before attempting to use them in production.**
-
-**IMPORTANT: To ensure all custom overrides takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name when overriding config.xml fields. Also, remember to use the 'replace' verb to modify existing fields in the domain home configuration, and the 'add' verb to add a field that doesn't yet exist in the domain home configuration.  Otherwise, situational configuration may be partially ignored without generating any errors or warnings. See the sample in [Override template samples](#override-template-samples).**
-
 
 Example domain resource yaml:
 ```
@@ -295,6 +317,10 @@ spec:
 ---
 # Debugging
 
+Incorrectly formatted override files may be accepted without warnings or errors, and will not prevent WebLogic pods from booting. So it is important to make sure that the template files are correct in a QA environment, otherwise your WebLogic Servers may start even though critically required overrides are failing to take effect.
+
+* Make sure you've followed each step in the [Step-by-step guide](#step-by-step-guide).
+
 * If WL pods do not come up at all, then:
   * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspect-domain-job` and a corresponding pod named something like `DOMAIN_UID-introspect-domain-job-xxxx`.  If so, examine:
     * `kubectl -n MYDOMAINNAMESPACE describe job INTROSPECTJOBNAME`
@@ -308,6 +334,20 @@ spec:
       * `<Dec 14, 2018 12:20:47 PM UTC> <Info> <Management> <BEA-141330> <Loading situational configuration file: /shared/domains/domain1/optconfig/custom-situational-config.xml>`
       * This line indicates a situational configuration file has been loaded.
     * If the search yields Warning or Error lines, then the format of the custom situational configuration template is incorrect, and the Warning or Error text should describe the problem.
+    * Note: The following exception may show up in your server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored (a fix is pending for them):
+```
+java.lang.NullPointerException 
+        at weblogic.management.provider.internal.situationalconfig.SituationalConfigManag 
+erImpl.registerListener(SituationalConfigManagerImpl.java:227) 
+        at weblogic.management.provider.internal.situationalconfig.SituationalConfigManag 
+erImpl.start(SituationalConfigManagerImpl.java:319) 
+        at weblogic.server.AbstractServerService.postConstruct(AbstractServerService.java 
+:76) at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) 
+        ...
+        at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(Domai 
+nMBeanImpl.java:11444) 
+        ...
+```
   * Look in your `DOMAIN_HOME/optconfig` directory.
     * This directory, or a subdirectory within this directory, should contain each of your custom situational configuration files.
     * If it doesn't, this likely indicates your domain resource `configOverrides` was not set to match your custom override configuration map name, or that your custom override configuration map does not contain your override files.
@@ -333,11 +373,8 @@ spec:
 -Dweblogic.debug.DebugSituationalConfigDumpXml=true
 ```
 
-**IMPORTANT: Custom override changes, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted.**
+* NOTE: The WebLogic console will _not_ reflect any override changes. You cannot use the console to verify overrides are taking effect.
 
-**IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings when they detect an incorrectly formatted configuration override template file, but will still boot, and will skip overriding. So it is important to make sure that the template files are correct in a QA environment by checking your WebLogic pod logs for situational configuration errors and warnings, before attempting to use them in production.**
-
-**IMPORTANT: To ensure all custom overrides takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name when overriding config.xml fields. Also, remember to use the 'replace' verb to modify existing fields in the domain home configuration, and the 'add' verb to add a field that doesn't yet exist in the domain home configuration.  Otherwise, situational configuration may be partially ignored without generating any errors or warnings. See the sample in [Override template samples](#override-template-samples).**
 
 ---
 # Internal design flow
@@ -366,13 +403,3 @@ spec:
     * Module overrides are copied to the `optconfig/jdbc`, `optconfig/jms`, or `optconfig/wldf` directory.
   * Deletes any situational configuration files in the `optconfig` directory that do not have corresponding template files in the configuration map.
 * WebLogic Servers read their overrides from their domain home's `optconfig` directory.
-
----
-# Advanced situational configuration
-
-The WebLogic situational configuration feature provides advanced options and capabilities that are supported, but aren't covered in this document. For example, you can use a wildcard character in place of an MBean name. See [References](#references).
-
----
-# References
-
-See the "Managing Configuration Changes" chapter in _Oracle Fusion Middleware Understanding Domain Configuration for Oracle WebLogic Server_ version 19.1.0.0.0.
