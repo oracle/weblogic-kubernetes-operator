@@ -1,0 +1,45 @@
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# Properties to generate TF variables file for cluster creation from property file oci.props
+#
+# Copy this file to oci.props and update it with your own info, see oci.props.example as sample for values
+#
+
+# OCID can be obtained from the user info page in the OCI console
+user.ocid= 
+
+# name of OKE cluster
+okeclustername=
+
+# name of tfvars file (no extention) to generate
+tfvars.filename=
+
+# Required tenancy info
+tenancy.ocid=
+compartment.ocid=
+compartment.name=
+region=
+
+# API key fingerprint and private key location, needed for API access -- you should have added a public API key through the OCI console first, add escape backslash \ for each colon signt
+ociapi.pubkey.fingerprint=
+
+# path to private OCI API key
+ocipk.path=
+
+# VCN CIDR -- must be unique within the compartment in the tenancy
+# - assuming 1:1 cluster:vcn
+# BE SURE TO SET BOTH VARS -- the first 2 octets for each variable have to match
+vcn.cidr.prefix=
+vcn.cidr=
+
+# Node pool info
+nodepool.shape=
+nodepool.ssh.pubkey=
+nodepool.imagename=
+
+# K8S version
+k8s.version=
+
+#location for terraform installation
+terraform.installdir=
