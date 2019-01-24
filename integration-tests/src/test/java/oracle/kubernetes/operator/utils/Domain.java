@@ -1014,7 +1014,7 @@ public class Domain {
       // the below vars can be exported in Jenkins configure, but keeping it here helps for testing
       // without
       // effecting the current Jenkins runs
-      domainMap.put("imagePullSecretName", "docker-weblogic");
+      domainMap.put("imagePullSecretName", "docker-store");
     }
 
     domainMap.put("logHome", "/shared/logs/" + domainUid);
