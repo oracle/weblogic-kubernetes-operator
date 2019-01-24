@@ -150,24 +150,21 @@ public class YamlDocGenerator {
           Type subType = getItems();
           return "array of " + subType.getString();
         default:
-          return getReference();
+          return Optional.ofNullable(getReference()).orElse(specifiedType);
       }
     }
 
+    @SuppressWarnings("unchecked")
     private Type getItems() {
       return new Type((Map<String, Object>) fieldMap.get("items"));
     }
 
     private String getReference() {
-      Reference reference = createReference(getReferenceString());
-      return reference.getString();
+      return createReference(getReferenceString()).getString();
     }
 
     private String getReferenceString() {
-      String reference = (String) fieldMap.get("$ref");
-      if (reference != null) return reference;
-      else if (fieldMap.get("items") == null) return null;
-      else return (String) subMap(fieldMap, "items").get("$ref");
+      return (String) fieldMap.get("$ref");
     }
   }
 
@@ -207,8 +204,6 @@ public class YamlDocGenerator {
     private String getStructureName() {
       return toStructureName(typeName);
     }
-
-    abstract boolean isLocal();
   }
 
   private class NullReference extends Reference {
@@ -217,13 +212,8 @@ public class YamlDocGenerator {
     }
 
     @Override
-    boolean isLocal() {
-      return false;
-    }
-
-    @Override
     String getString() {
-      return "";
+      return null;
     }
   }
 
@@ -242,14 +232,8 @@ public class YamlDocGenerator {
     }
 
     @Override
-    boolean isLocal() {
-      return true;
-    }
-
-    @Override
     String getString() {
-      if (isReferenceType()) return super.getString();
-      else return getTypeName();
+      return isReferenceType() ? super.getString() : getTypeName();
     }
 
     private boolean isReferenceType() {
@@ -268,11 +252,6 @@ public class YamlDocGenerator {
 
     private String toK8sName(String ref) {
       return ref.substring(ref.lastIndexOf("/") + 1);
-    }
-
-    @Override
-    boolean isLocal() {
-      return false;
     }
 
     @Override
