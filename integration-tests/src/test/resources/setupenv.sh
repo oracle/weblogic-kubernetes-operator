@@ -96,7 +96,7 @@ function create_image_pull_secret_jenkins {
     exit 1
   fi
   
-  export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-weblogic}"
+  export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
   
   echo "Creating Docker Secret"  
   kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
