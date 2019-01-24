@@ -788,7 +788,7 @@ class SitConfigGenerator(Generator):
     self.writeln("<d:domain xmlns:d=\"http://xmlns.oracle.com/weblogic/domain\" xmlns:f=\"http://xmlns.oracle.com/weblogic/domain-fragment\" xmlns:s=\"http://xmlns.oracle.com/weblogic/situational-config\">")
     self.indent()
     self.writeln("<s:expiration> 2099-07-16T19:20+01:00 </s:expiration>")
-    self.writeln("<d:name>" + self.env.DOMAIN_NAME + "</d:name>")
+    #self.writeln("<d:name>" + self.env.DOMAIN_NAME + "</d:name>")
     self.customizeNodeManagerCreds()
     self.customizeDomainLogPath()
     self.customizeServers()
