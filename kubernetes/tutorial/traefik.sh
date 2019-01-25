@@ -61,6 +61,12 @@ function delIng() {
   helm delete --purge domain3-ing-t
 }
 
+function verify() {
+  curl -v -H 'host: domain1.org' http://$hostname:30305/weblogic/
+  curl -v -H 'host: domain2.org' http://$hostname:30305/weblogic/
+  curl -v -H 'host: domain3.org' http://$hostname:30305/weblogic/
+}
+
 function usage() {
   echo "usage: $0 <cmd>"
   echo "Commands:"

@@ -24,6 +24,12 @@ function delIng() {
   kubectl delete -f ings/voyager-ings.yaml
 }
 
+function verify() {
+  curl -v -H 'host: domain1.org' http://$hostname:30307/weblogic/
+  curl -v -H 'host: domain2.org' http://$hostname:30307/weblogic/
+  curl -v -H 'host: domain3.org' http://$hostname:30307/weblogic/
+}
+
 function usage() {
   echo "usage: $0 <cmd>"
   echo "Commands:"

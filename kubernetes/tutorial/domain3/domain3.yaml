@@ -15,7 +15,7 @@ metadata:
 spec:
   domainHome: /u01/oracle/user-projects/domains/domain3/ 
   domainHomeInImage: false
-  image: store/oracle/weblogic:19.1.0.0
+  image: store/oracle/weblogic:12.2.1.3
   imagePullPolicy: "IfNotPresent"
   logHomeEnabled: true
   logHome: /u01/oracle/user-projects/logs/domain3/

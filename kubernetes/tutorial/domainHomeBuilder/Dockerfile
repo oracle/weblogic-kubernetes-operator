@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 
-FROM store/oracle/weblogic:19.1.0.0
+FROM store/oracle/weblogic:12.2.1.3
 
 ARG ARG_DOMAIN_NAME="${ARG_DOMAIN_NAME}"
 ARG ADMIN_USER="${ADMIN_USER}"

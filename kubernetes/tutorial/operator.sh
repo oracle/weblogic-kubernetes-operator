@@ -2,7 +2,7 @@
 # Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-export WLS_BASE_IMAGE=store/oracle/weblogic:19.1.0.0
+export WLS_BASE_IMAGE=store/oracle/weblogic:12.2.1.3
 export PRJ_ROOT=../../
 
 function pullImages() {
@@ -11,14 +11,12 @@ function pullImages() {
   docker tag oracle/weblogic-kubernetes-operator:2.0-rc2 weblogic-kubernetes-operator:2.0
   docker pull traefik:1.7.6
   docker pull appscode/voyager:7.4.0 
-  docker pull store/oracle/weblogic:12.2.1.3 
-  docker tag store/oracle/weblogic:12.2.1.3 $WLS_BASE_IMAGE
+  docker pull $WLS_BASE_IMAGE 
 }
 
 function delImages() {
   docker rmi domain1-image
   docker rmi domain2-image
-  docker rmi store/oracle/weblogic:12.2.1.3 
   docker rmi $WLS_BASE_IMAGE
   docker rmi traefik:1.7.6
   docker rmi appscode/voyager:7.4.0

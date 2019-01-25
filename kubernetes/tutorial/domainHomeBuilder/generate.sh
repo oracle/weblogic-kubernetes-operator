@@ -24,4 +24,4 @@ docker run --rm  \
   -e "DOMAIN_NAME=$1" \
   -e "ADMIN_USER=$2" \
   -e "ADMIN_PWD=$3" \
-  store/oracle/weblogic:19.1.0.0  /scripts/create-domain.sh
+  store/oracle/weblogic:12.2.1.3  /scripts/create-domain.sh
