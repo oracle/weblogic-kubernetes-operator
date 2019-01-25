@@ -29,13 +29,13 @@ You can use overrides to customize domains as they are moved from QA to producti
 * Make sure your overrides are supported. See [Typical overrides](#typical-overrides) and [Unsupported overrides](#unsupported-overrides).
 * Create a Kubernetes configuration map that contains:
   * Override templates (also known as situational configuration templates), with names and syntax as described in [Override template names and syntax](#override-template-names-and-syntax).
-  * A file named `version.txt` that contains the string `2.0`.
+  * A file named `version.txt` that contains the exact string `2.0`.
 * Set your domain resource `configOverrides` to the name of this configuration map.
 * If templates leverage `secret macros`:
   * Create Kubernetes secrets that contain template macro values.
   * Set your domain `configOverrideSecrets` to reference the aforementioned secrets.
-* Stop all running WebLogic Server pods in your domain. (See [Server Lifecycle](server-lifecycle.md).)
-* Start or restart your domain. (See [Server Lifecycle](server-lifecycle.md).)
+* Stop all running WebLogic Server pods in your domain. (See [Server Lifecycle](server-lifecycle.md) and [Restarting WebLogic servers](restart.md).)
+* Start or restart your domain. (See [Server Lifecycle](server-lifecycle.md) and [Restarting WebLogic servers](restart.md).)
 * Verify your overrides are taking effect.  (See [Debugging](#debugging)).
 
 For a detailed walk-through of these steps, see the [Step-by-step guide](#step-by-step-guide).
@@ -261,7 +261,8 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 * Make sure your overrides are supported. See [Typical overrides](#typical-overrides) and [Unsupported overrides](#unsupported-overrides).
 * Create a directory containing (A) a set of situational configuration templates for overriding the MBean properties you want to replace and (B) a `version.txt` file.
   * This directory must not contain any other files.
-  * The `version.txt` file must contain only the string `2.0`.
+  * The `version.txt` file must contain exactly the string `2.0`.
+    * Note: This version.txt file must stay `2.0` even when you are updating your templates from a previous deployment.
   * Templates must not override the settings listed in [Unsupported overrides](#unsupported-overrides).
   * Templates must be formatted and named as per [Override template names and syntax](#override-template-names-and-syntax).
   * Templates can embed macros that reference environment variables or Kubernetes secrets.  See [Override template macros](#override-template-macros).
@@ -289,7 +290,7 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 * Any override changes require stopping all WebLogic pods, applying your domain resource (if it changed), and restarting the WebLogic pods before they can take effect.
   * Custom override changes on an existing running domain, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted with your new domain resource (if it changed), or with your existing domain resource (if you haven't changed it).
   * To stop all running WebLogic Server pods in your domain, apply a changed resource, and then start/restart the domain:
-    * Set your domain resource `serverRestartPolicy` to `NEVER`, wait, and apply your latest domain resource with the `serverRestartPolicy` restored back to `ALWAYS` or `IF_NEEDED` (see [Server Lifecycle](server-lifecycle.md).)
+    * Set your domain resource `serverRestartPolicy` to `NEVER`, wait, and apply your latest domain resource with the `serverRestartPolicy` restored back to `ALWAYS` or `IF_NEEDED` (see [Server Lifecycle](server-lifecycle.md) and [Restarting WebLogic servers](restart.md).)
     * Or delete your domain resource, wait, and apply your (potentially changed) domain resource.
 * See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
 
