@@ -235,22 +235,22 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 
 ```
 <?xml version='1.0' encoding='UTF-8'?>
-<jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source"
-                  xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
-                  xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+<jdbc:jdbc-data-source xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
+                       xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
+                       xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
 
-  <name>testDS</name>
-  <jdbc-driver-params>
-    <url f:combine-mode="replace">${secret:dbsecret.url}</url>
-    <properties>
-       <property>
-          <name>user</name>
-          <value f:combine-mode="replace">${secret:dbsecret.username}</value>
-       </property>
-    </properties>
-    <password-encrypted f:combine-mode="replace">${secret:dbsecret.password:encrypt}</password-encrypted>
-  </jdbc-driver-params>
-</jdbc-data-source>
+  <jdbc:name>testDS</jdbc:name>
+  <jdbc:jdbc-driver-params>
+    <jdbc:url f:combine-mode="replace">${secret:dbsecret.url}</jdbc:url>
+    <jdbc:properties>
+       <jdbc:property>
+          <jdbc:name>user</jdbc:name>
+          <jdbc:value f:combine-mode="replace">${secret:dbsecret.username}</jdbc:value>
+       </jdbc:property>
+    </jdbc:properties>
+    <jdbc:password-encrypted f:combine-mode="replace">${secret:dbsecret.password:encrypt}</jdbc:password-encrypted>
+  </jdbc:jdbc-driver-params>
+</jdbc:jdbc-data-source>
 ```
 
 ---
