@@ -312,7 +312,7 @@ public class Domain {
     callShellScriptByExecToPod(username, password, webappName);
   }
 
-  /** */
+  /** Test t3 channel using JMS t3 connection. */
   public void verifyJMST3Connection() throws Exception {
     logger.info("test" + domainMap.get("t3ChannelPort"));
 
@@ -1114,5 +1114,4 @@ public class Domain {
               + "for the admin server in domain.");
     }
   }
-
 }
