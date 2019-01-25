@@ -44,6 +44,10 @@ spec:
         - name: "MOCK_WLS"
           value: "true"
         {{- end }}
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "512Mi"
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/operator/config"
