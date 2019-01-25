@@ -554,7 +554,7 @@ class TopologyGenerator(Generator):
       self.writeln("servers:")
       self.indent()
       for server in servers:
-        self.addClusteredServer(cluster, server)
+        self.addServer(server)
       self.undent()
       self.undent()
 
@@ -574,7 +574,7 @@ class TopologyGenerator(Generator):
         rtn.append(server)
     return rtn
 
-  def addClusteredServer(self, cluster, server):
+  def addServer(self, server):
     name=self.name(server)
     self.writeln("- name: " + name)
     if server.isListenPortEnabled():
@@ -603,16 +603,8 @@ class TopologyGenerator(Generator):
     self.undent()
 
   def addServerTemplate(self, serverTemplate):
-    name=self.name(serverTemplate)
-    self.writeln("- name: " + name)
-    if serverTemplate.isListenPortEnabled():
-      self.writeln("  listenPort: " + str(serverTemplate.getListenPort()))
+    self.addServer(serverTemplate)
     self.writeln("  clusterName: " + self.quote(serverTemplate.getCluster().getName()))
-    self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + serverTemplate.getName())))
-    if serverTemplate.isAdministrationPortEnabled():
-      self.writeln("  adminPort: " + str(serverTemplate.getAdministrationPort()))
-    self.addSSL(serverTemplate)
-    self.addNetworkAccessPoints(serverTemplate)
 
   def addDynamicClusters(self):
     clusters = self.getDynamicClusters()
@@ -656,19 +648,8 @@ class TopologyGenerator(Generator):
     self.indent()
     for server in self.env.getDomain().getServers():
       if server.getCluster() is None:
-        self.addNonClusteredServer(server)
+        self.addServer(server)
     self.undent()
-
-  def addNonClusteredServer(self, server):
-    name=self.name(server)
-    self.writeln("- name: " + name)
-    if server.isListenPortEnabled():
-      self.writeln("  listenPort: " + str(server.getListenPort()))
-    self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
-    if server.isAdministrationPortEnabled():
-      self.writeln("  adminPort: " + str(server.getAdministrationPort()))
-    self.addSSL(server)
-    self.addNetworkAccessPoints(server)
 
   def addNetworkAccessPoints(self, server):
     naps = server.getNetworkAccessPoints()
