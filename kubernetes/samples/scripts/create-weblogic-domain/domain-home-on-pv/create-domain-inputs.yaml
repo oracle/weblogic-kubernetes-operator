@@ -43,7 +43,7 @@ managedServerPort: 8001
 # and has all the necessary patches applied; a `docker pull` is required if you already have this image.
 # Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how
 # to obtain or create the image.
-#image:
+image: store/oracle/weblogic:12.2.1.3
 
 # Image pull policy
 # Legal values are "IfNotPresent", "Always", or "Never"
