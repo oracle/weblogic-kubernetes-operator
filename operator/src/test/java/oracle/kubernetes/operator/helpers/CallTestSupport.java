@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -135,8 +135,14 @@ public class CallTestSupport {
       this.methodName = methodName;
     }
 
-    private Object getResult(RequestParams requestParams) {
-      return function == null ? result : function.apply(requestParams);
+    private Object getResult(RequestParams requestParams) throws ApiException {
+      if (function != null) {
+        return function.apply(requestParams);
+      }
+      if (status > 0) {
+        throw new ApiException(status, "");
+      }
+      return result;
     }
 
     CallResponse getCallResponse() {
@@ -349,7 +355,8 @@ public class CallTestSupport {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T execute(
-        SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> helper) {
+        SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> helper)
+        throws ApiException {
       return (T) getMatchingResponse(requestParams, null, null).getResult(requestParams);
     }
   }
