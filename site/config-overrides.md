@@ -217,8 +217,8 @@ The following `config.xml` override file demonstrates:
         <d:name>admin-server</d:name>
         <d:max-message-size f:combine-mode="add">78787878</d:max-message-size>
         <d:server-debug f:combine-mode="add">
-          <d:debug-server-life-cycle f:combine-mode="add">false</d:debug-server-life-cycle>
-          <d:debug-jmx-core f:combine-mode="replace">false</d:debug-jmx-core>
+          <d:debug-server-life-cycle f:combine-mode="add">true</d:debug-server-life-cycle>
+          <d:debug-jmx-core f:combine-mode="add">true</d:debug-jmx-core>
         </d:server-debug>
         <d:network-access-point>
           <d:name>T3Channel</d:name>
