@@ -285,12 +285,12 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 * Configure the name of the configuration map in the domain CR `configOverrides` field.
 * Configure the names of each secret in domain CR.
   * If the secret contains the WebLogic admin `username` and `password` keys, set the domain CR `webLogicCredentialsSecret` field.
-  * For all other secrets, add them to domain CR `configOverrideSecrets` field.
-* Any override changes require a full domain restart before they can take effect.
-  * Custom override changes on an existing running domain, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted.  
-  * To stop all running WebLogic Server pods in your domain, and then start/restart the domain:
-    * Set your domain resource serverRestartPolicy to NEVER, wait, and restore back to ALWAYS or IF_NEEDED (see [Server Lifecycle](server-lifecycle.md).)
-    * Or delete your domain resource, wait, and then reapply it.
+  * For all other secrets, add them to domain CR `configOverrideSecrets` field. Note: this must be in an array format even if you only add one secret (see the sample domain resource yaml below).
+* Any override changes require stopping all WebLogic pods, applying your domain resource (if it changed), and restarting the WebLogic pods before they can take effect.
+  * Custom override changes on an existing running domain, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted with your new domain resource (if it changed), or with you existing domain resource (if you haven't changed it).
+  * To stop all running WebLogic Server pods in your domain, apply a changed resource, and then start/restart the domain:
+    * Set your domain resource serverRestartPolicy to NEVER, wait, and apply your latest domain resource with the serverRestartPolicy restored back to ALWAYS or IF_NEEDED (see [Server Lifecycle](server-lifecycle.md).)
+    * Or delete your domain resource, wait, and apply your (potentially changed) domain resource.
 * See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
 
 Example domain resource yaml:
