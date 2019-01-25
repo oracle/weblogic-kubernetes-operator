@@ -185,9 +185,13 @@ public class BaseTest {
    * @throws Exception
    */
   public void testAdminT3ChannelWithJMS(Domain domain) throws Exception {
+    logger.info("Inside testAdminT3ChannelWithJMS");
+    domain.createT3NodePort(getProjectRoot() + "/integration-tests/src/test/resources/service-np.yaml");
     domain.verifyJMST3Connection();
+    domain.shutdownUsingServerStartPolicy();
     domain.restartUsingServerStartPolicy();
     domain.verifyJMST3Connection();
+    logger.info("Done - testAdminT3ChannelWithJMS");
   }
   /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
