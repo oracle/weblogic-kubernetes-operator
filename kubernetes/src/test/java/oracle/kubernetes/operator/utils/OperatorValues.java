@@ -30,6 +30,7 @@ public class OperatorValues {
   private String externalRestEnabled = "";
   private String externalRestHttpsPort = "";
   private String externalOperatorCert = "";
+  private String externalOperatorSecret = "";
   private String externalOperatorKey = "";
   private String remoteDebugNodePortEnabled = "";
   private String internalDebugHttpPort = "";
@@ -188,6 +189,14 @@ public class OperatorValues {
   public OperatorValues externalRestHttpsPort(String val) {
     setExternalRestHttpsPort(val);
     return this;
+  }
+
+  public String getExternalOperatorSecret() {
+    return externalOperatorSecret;
+  }
+
+  public void setExternalOperatorSecret(String val) {
+    externalOperatorSecret = convertNullToEmptyString(val);
   }
 
   public String getExternalOperatorCert() {

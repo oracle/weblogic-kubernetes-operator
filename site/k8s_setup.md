@@ -10,7 +10,7 @@ If you need some help setting up a Kubernetes environment to experiment with the
 "Production" options:
 
 * Set up your own Kubernetes environment on bare compute resources on a cloud.
-* Use you cloud provider's management console to provision a managed Kubernetes environment.
+* Use your cloud provider's management console to provision a managed Kubernetes environment.
 * Install Kubernetes on your own compute resources (for example, "real" computers, outside a cloud).
 
 "Development/test" options:

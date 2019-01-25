@@ -80,7 +80,9 @@ running in Kubernetes.
   administration port or a T3 channel to allow WLST access, you need to ensure that you allocate each channel a
   unique port number across the entire Kubernetes cluster.  If you expose the administration port in each WebLogic domain in
   the Kubernetes cluster, then each one must have a different port.  This is required because `NodePorts` are used to
-  expose channels outside the Kubernetes cluster.  **IMPORTANT:** Exposing admin, RMI, or T3 capable channels via a node port
+  expose channels outside the Kubernetes cluster.  
+
+  **IMPORTANT:** Exposing admin, RMI, or T3 capable channels via a node port
   can create an insecure configuration; in general only HTTP protocols should be made available externally and this exposure
   is usually accomplished by setting up an external load balancer that can access internal (non-NodePort) services.
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
@@ -100,7 +102,13 @@ Please consult My Oracle Support Doc ID 2349228.1 for up-to-date information abo
 
 ### Creating and managing WebLogic domains
 
-In this version of the operator, a WebLogic domain can be located either in a persistent volume (PV) or in a Docker image. For examples of each, see the [WebLogic operator samples](../kubernetes/samples/README.md).
+In this version of the operator, a WebLogic domain can be located either in a persistent volume (PV) or in a Docker image.
+For examples of each, see the [WebLogic operator samples](../kubernetes/samples/README.md).
+
+If you wish to create your own Docker images, for example to choose a specific set of patches, or to create a domain
+with a specific configuration and/or applications deployed, then you can create the domain custom resource
+manually to deploy your domain.  This process is documented in [this
+sample](../kubernetes/samples/scripts/create-weblogic-domain/manually-create-domain/README.md).
 
 ### Modifying domain configurations
 
@@ -118,7 +126,7 @@ More information about the Domain resource can be found [here](domain-resource.m
 ### Managing lifecycle operations including shutting down and deleting domains
 
 In Operator 2.0, you can perform lifecycle operations on WebLogic servers, clusters, or domains.
-See [Starting, stopping and restarting servers](server-lifecycle.md).
+See [Starting, stopping, and restarting servers](server-lifecycle.md) and [Restarting WebLogic servers](restart.md).
 
 ### Scaling clusters
 

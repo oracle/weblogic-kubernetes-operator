@@ -10,7 +10,7 @@ In addition to the requirements listed in the [User Guide](user-guide.md#prerequ
 * Java Developer Kit (1.8u131 or later recommended; please use 1.8, tests will not work on 1.9 or later versions)
 * Apache Maven (3.3 or later recommended)
 
-The operator is written primarily in Java, BASH shell scripts, and WLST scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 feature.
+The operator is written primarily in Java, BASH shell scripts, and WLST scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 features.
 
 Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.  Please be aware that Oracle will not provide support, or accept pull requests to add support, for other operating systems.
 
@@ -26,15 +26,17 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 ## Operator branching model
 
-The `master` branch is protected and contains source for the latest completed features and bug fixes.  While this branch contains active work, we expect to keep it always "ready to release."  Therefore, longer running feature work will be performed on specific branches, such as `feature/dynamic-clusters`.
+The `master` branch is protected and contains source for the most recently published release, including release candidates.
 
-Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to `master` when these smaller work items are completed.
+The `develop` branch is protected and contains source for the latest completed features and bug fixes.  While this branch contains active work, we expect to keep it always "ready to release."  Therefore, longer running feature work will be performed on specific branches, such as `feature/dynamic-clusters`.
 
-All commits to `master` must pass the [integration test suite](#running-integration-tests).  Please run these tests locally before submitting a pull request.  Additionally, each push to a branch in our GitHub repository triggers a run of a subset of the integration tests with the results visible [here](https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs).
+Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to `develop` when these smaller work items are completed.
 
-Please submit pull requests to the `master` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README](../README.md).
+All commits to `develop` must pass the [integration test suite](#running-integration-tests).  Please run these tests locally before submitting a pull request.  Additionally, each push to a branch in our GitHub repository triggers a run of a subset of the integration tests with the results visible [here](https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs).
 
-We will create git tags for each generally available (GA) release of the operator.
+Please submit pull requests to the `develop` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README](../README.md).
+
+We will create git tags for each release candidate and generally available (GA) release of the operator.
 
 ## Building the operator
 
@@ -64,6 +66,21 @@ $ mvn javadoc:javadoc
 
 The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
 
+## Building the operator Docker image
+
+Log in to the Docker Store so that you will be able to pull the base image and create the Docker image as follows.  These commands should be executed in the project root directory:
+
+```
+$ docker login
+$ docker build --build-arg VERSION=<version> -t weblogic-kubernetes-operator:some-tag --no-cache=true .
+```
+
+Replace `<version>` with the version of the project found in the `pom.xml` file in the project root directory.
+
+**Note**: If you have not used the base image (`store/oracle/serverjre:8`) before, you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before the Docker Store will give you permission to pull that image.
+
+We recommend that you use a tag other than `latest`, to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
+
 ## Running the operator from an IDE
 
 The operator can be run from an IDE, which is useful for debugging.  In order to do so, the machine running the IDE must be configured with a Kubernetes configuration file in `~/.kube/config` or in a location pointed to by the `KUBECONFIG` environment variable.
@@ -84,20 +101,21 @@ $ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 $ docker load < /some/path/operator.tar
 ```
 
-Use the Helm charts to [install the operator](helm-charts.md).
+Use the Helm charts to [install the operator](install.md).
 
-If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options](helm-charts.md#debugging-options).
+If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options](install.md#debugging-options).
 
 ## Running integration tests
 
 The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  The Kubernetes cluster must meet the version number requirements and have Helm installed.  Ensure that the operator Docker image is in a Docker registry visible to the Kubernetes cluster.
 
 
-You will need to obtain the `kube.config` file for an administrative user and make it available on the machine running the build.  To run the tests, update the `KUBECONFIG` environment varaible to point to your config file and then execute:
+You will need to obtain the `kube.config` file for an administrative user and make it available on the machine running the build.  To run the tests, update the `KUBECONFIG` environment variable to point to your config file and then execute:
 
 ```
 $ mvn clean verify -P java-integration-tests
 ```
+**NOTE**: When you run the integrations tests, they do a cleanup of any operator or domains on that cluster.   
 
 ## Coding standards
 
@@ -173,24 +191,31 @@ Each `Step` has a reference to the next `Step` in the processing flow; however, 
 In this sample, the caller creates an `Engine`, `Fiber`, linked set of `Step` instances, and `Packet`.  The `Fiber` is then started.  The `Engine` would typically be a singleton, since it's backed by a `ScheduledExecutorService`.  The `Packet` would also typically be pre-loaded with values that the `Steps` would use in their `apply()` methods.
 
 ```java
+static class SomeClass {
+  public static void main(String[] args) {
     Engine engine = new Engine("worker-pool");
-
+  
     Fiber fiber = engine.createFiber();
-
+  
     Step step = new StepOne(new StepTwo(new StepThree(null)));
-    Packet packet = new Packet();
+      Packet packet = new Packet();
+  
+    fiber.start(
+        step,
+        packet,
+        new CompletionCallback() {
+          @Override
+          public void onCompletion(Packet packet) {
+            // Fiber has completed successfully
+          }
 
-    fiber.start(step, packet, new CompletionCallback() {
-      @Override
-      public void onCompletion(Packet packet) {
-        // Fiber has completed successfully
-      }
-
-      @Override
-      public void onThrowable(Packet packet, Throwable throwable) {
-        // Fiber processing was terminated with an exception
-      }
-    });
+          @Override
+          public void onThrowable(Packet packet, Throwable throwable) {
+            // Fiber processing was terminated with an exception
+          }
+        });
+  }
+}
 ```
 
 `Steps` must not invoke sleep or blocking calls from within `apply()`.  This prevents the worker threads from serving other `Fibers`.  Instead, use asynchronous calls and the `Fiber` suspend/resume pattern.  `Step` provides a method, `doDelay()`, which creates a `NextAction` to drive `Fiber` suspend/resume that is a better option than sleep precisely because the worker thread can serve other `Fibers` during the delay.  For asynchronous IO or similar patterns, suspend the `Fiber`.  In the callback as the `Fiber` suspends, initiate the asynchronous call.  Finally, when the call completes, resume the `Fiber`.  The suspend/resume functionality handles the case where resumed before the suspending callback completes.
@@ -216,7 +241,7 @@ In this sample, the step uses asynchronous file IO and the suspend/resume `Fiber
             ByteBuffer buffer = ByteBuffer.allocate(1024);
             fileChannel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
               @Override
-              public void completed(Integer result, ByteBuffer attachment) {
+              void completed(Integer result, ByteBuffer attachment) {
                 // Store data in Packet and resume Fiber
                 packet.put("DATA_SIZE_READ", result);
                 packet.put("DATA_FROM_SOMEFILE", attachment);
@@ -268,7 +293,7 @@ In this sample, the developer is using the pattern to list pods from the default
           }
 
           @Override
-          public NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
+          NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
               Map<String, List<String>> responseHeaders) {
             // do something with the result Pod, if not null
             return doNext(packet);
