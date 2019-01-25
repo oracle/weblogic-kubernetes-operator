@@ -1,27 +1,26 @@
 #!/usr/bin/env bash
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # When the customer enables the operator's external REST api (by setting
 # externalRestEnabled to true when installing the operator helm chart), the customer needs
-# to provide the certificate and private key for api's SSL identity too (by setting
-# externalOperatorCert and externalOperatorKey to the base64 encoded PEM of the cert and
-# key when installing the operator helm chart).
+# to provide the certificate and private key for api's SSL identity too (by creating a 
+# tls secret befor the installation of the operator helm chart).
 #
 # This sample script generates a self-signed certificate and private key that can be used
 # for the operator's external REST api when experimenting with the operator.  They should
 # not be used in a production environment.
 #
 # The sytax of the script is:
-#   kubernetes/samples/scripts/generate-external-rest-identity.sh <subject alternative names>
+#   kubernetes/samples/scripts/rest/generate-external-rest-identity.sh <subject alternative names>
 #
 # <subject alternative names> lists the subject alternative names to put into the generated
 # self-signed certificate for the external WebLogic Operator REST https interface,
 # for example:
 #   DNS:myhost,DNS:localhost,IP:127.0.0.1
 #
-# The script prints out the base64 encoded pem of the generated certificate and private key
-# in the same format that the operator helm chart's values.yaml requires.
+# The script creates the weblogic-operator-certificate secret in the weblogic-operator namespace with 
+# the self-signed certificate and private key
 #
 # Example usage:
 #   generate-external-rest-identity.sh IP:127.0.0.1 > my_values.yaml
@@ -129,6 +128,10 @@ openssl \
   -nocerts \
   -out ${OP_KEY_PEM} \
 2> /dev/null
+
+# Create the secret with the self-signed certificate and private key in the weblogic-operator namespace
+# kubectl create secret tls "weblogic-operator-certificate" --cert=${OP_CERT_PEM} --key=${OP_KEY_PEM} -n weblogic-operator
+# echo "externalCertificateSecret: weblogic-operator-certificate"
 
 # base64 encode the cert and private key pem
 CERT_DATA=`base64 -i ${OP_CERT_PEM} | tr -d '\n'`

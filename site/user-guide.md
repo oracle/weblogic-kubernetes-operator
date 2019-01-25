@@ -26,7 +26,7 @@ presented in the correct order.
   * [Using the operator's REST interface](rest.md)
 * [Creating or obtaining WebLogic Docker images](weblogic-docker-images.md)
   * [Obtaining standard images from the Docker store](weblogic-docker-images.md#obtaining-standard-images-from-the-docker-store)
-  * [Creating a custom images with patches applied](weblogic-docker-images.md#creating-a-custom-images-with-patches-applied)
+  * [Creating a custom image with patches applied](weblogic-docker-images.md#creating-a-custom-image-with-patches-applied)
   * [Creating a custom image with your domain inside the image](weblogic-docker-images.md#creating-a-custom-image-with-your-domain-inside-the-image)
 * [Create and manage WebLogic domains](domains.md)
   * [Preparing the Kubernetes cluster to run WebLogic domains](domains.md#preparing-the-kubernetes-cluster-to-run-weblogic-domains)
@@ -78,4 +78,7 @@ You can find the operator image in
 * Docker 18.03.1.ce (check with `docker version`).
 * Helm 2.8.2+ (check with `helm version`).
 * Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
+   * The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`,
+was updated on January 17, 2019, and has all the necessary patches applied.
+   * A `docker pull` is required if you already have this image.
 * You must have the `cluster-admin` role to install the operator.

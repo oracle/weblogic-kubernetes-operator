@@ -10,7 +10,7 @@ In addition to the requirements listed in the [User Guide](user-guide.md#prerequ
 * Java Developer Kit (1.8u131 or later recommended; please use 1.8, tests will not work on 1.9 or later versions)
 * Apache Maven (3.3 or later recommended)
 
-The operator is written primarily in Java, BASH shell scripts, and WLST scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 feature.
+The operator is written primarily in Java, BASH shell scripts, and WLST scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 features.
 
 Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.  Please be aware that Oracle will not provide support, or accept pull requests to add support, for other operating systems.
 
@@ -26,15 +26,17 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 ## Operator branching model
 
-The `master` branch is protected and contains source for the latest completed features and bug fixes.  While this branch contains active work, we expect to keep it always "ready to release."  Therefore, longer running feature work will be performed on specific branches, such as `feature/dynamic-clusters`.
+The `master` branch is protected and contains source for the most recently published release, including release candidates.
 
-Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to `master` when these smaller work items are completed.
+The `develop` branch is protected and contains source for the latest completed features and bug fixes.  While this branch contains active work, we expect to keep it always "ready to release."  Therefore, longer running feature work will be performed on specific branches, such as `feature/dynamic-clusters`.
 
-All commits to `master` must pass the [integration test suite](#running-integration-tests).  Please run these tests locally before submitting a pull request.  Additionally, each push to a branch in our GitHub repository triggers a run of a subset of the integration tests with the results visible [here](https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs).
+Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to `develop` when these smaller work items are completed.
 
-Please submit pull requests to the `master` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README](../README.md).
+All commits to `develop` must pass the [integration test suite](#running-integration-tests).  Please run these tests locally before submitting a pull request.  Additionally, each push to a branch in our GitHub repository triggers a run of a subset of the integration tests with the results visible [here](https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs).
 
-We will create git tags for each generally available (GA) release of the operator.
+Please submit pull requests to the `develop` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README](../README.md).
+
+We will create git tags for each release candidate and generally available (GA) release of the operator.
 
 ## Building the operator
 
@@ -189,7 +191,7 @@ Each `Step` has a reference to the next `Step` in the processing flow; however, 
 In this sample, the caller creates an `Engine`, `Fiber`, linked set of `Step` instances, and `Packet`.  The `Fiber` is then started.  The `Engine` would typically be a singleton, since it's backed by a `ScheduledExecutorService`.  The `Packet` would also typically be pre-loaded with values that the `Steps` would use in their `apply()` methods.
 
 ```java
-static class Test {
+static class SomeClass {
   public static void main(String[] args) {
     Engine engine = new Engine("worker-pool");
   
