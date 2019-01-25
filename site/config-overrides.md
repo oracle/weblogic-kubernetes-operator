@@ -333,15 +333,14 @@ Incorrectly formatted override files may be accepted without warnings or errors,
       * This line indicates a situational configuration file has been loaded.
     * If the search yields Warning or Error lines, then the format of the custom situational configuration template is incorrect, and the Warning or Error text should describe the problem.
     * Note: The following exception may show up in your server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored (a fix is pending for them):
-    ```
-    java.lang.NullPointerException 
-      at weblogic.management.provider.internal.situationalconfig.SituationalConfigManagerImpl.registerListener(SituationalConfigManagerImpl.java:227) 
-      at weblogic.management.provider.internal.situationalconfig.SituationalConfigManagerImpl.start(SituationalConfigManagerImpl.java:319) 
-      at weblogic.server.AbstractServerService.postConstruct(AbstractServerService.java:76) at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) 
-      ...
-      at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(DomainMBeanImpl.java:11444) 
-      ...
-    ```
+         ```
+         java.lang.NullPointerException 
+           at weblogic.management.provider.internal.situationalconfig.SituationalConfigManagerImpl.registerListener(SituationalConfigManagerImpl.java:227) 
+           at weblogic.management.provider.internal.situationalconfig.SituationalConfigManagerImpl.start(SituationalConfigManagerImpl.java:319) 
+           ...
+           at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(DomainMBeanImpl.java:11444) 
+           ...
+         ```
   * Look in your `DOMAIN_HOME/optconfig` directory.
     * This directory, or a subdirectory within this directory, should contain each of your custom situational configuration files.
     * If it doesn't, this likely indicates your domain resource `configOverrides` was not set to match your custom override configuration map name, or that your custom override configuration map does not contain your override files.
