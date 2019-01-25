@@ -31,10 +31,12 @@ You can use overrides to customize domains as they are moved from QA to producti
   * Override templates (also known as situational configuration templates), with names and syntax as described in [Override template names and syntax](#override-template-names-and-syntax).
   * A file named `version.txt` that contains the string `2.0`.
 * Set your domain resource `configOverrides` to the name of this configuration map.
-* Create Kubernetes secrets that contain template macro values.
-* Set your domain `configOverrideSecrets` to reference the aforementioned secrets.
+* If templates leverage 'secret macros':
+  * Create Kubernetes secrets that contain template macro values.
+  * Set your domain `configOverrideSecrets` to reference the aforementioned secrets.
 * Stop all running WebLogic Server pods in your domain. (See [Server Lifecycle](server-lifecycle.md).)
 * Start or restart your domain. (See [Server Lifecycle](server-lifecycle.md).)
+* Verify your overrides are taking effect.  (See [Debugging](#debugging)).
 
 For a detailed walk-through of these steps, see the [Step-by-step guide](#step-by-step-guide).
 
@@ -144,8 +146,8 @@ _`jdbc-MODULENAME.xml`_
 _`jms-MODULENAME.xml`_
 ```
 <jms:weblogic-jms xmlns:jms="http://xmlns.oracle.com/weblogic/weblogic-jms"
-              xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-jms-fragment"
-              xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+                  xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-jms-fragment"
+                  xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
   ...
 </jms:weblogic-jms>
 ```
@@ -153,10 +155,9 @@ _`jms-MODULENAME.xml`_
 _`wldf-MODULENAME.xml`_
 ```
 <?xml version='1.0' encoding='UTF-8'?>
-<wldf:wldf-resource
-  xmlns:wldf="http://xmlns.oracle.com/weblogic/weblogic-diagnostics"
-  xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-diagnostics-fragment"
-  xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+<wldf:wldf-resource xmlns:wldf="http://xmlns.oracle.com/weblogic/weblogic-diagnostics"
+                    xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-diagnostics-fragment"
+                    xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
   ...
 </wldf:wldf-resource>
 ```
@@ -271,7 +272,7 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
     kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
     kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
     ```
-* Create any Kubernetes secrets referenced by a template macro.
+* Create any Kubernetes secrets referenced by a template 'secret macro'.
   * Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords via `Opaque` type secrets in their `data` field, so that they can't be easily read at a casual glance. For more information, see https://kubernetes.io/docs/concepts/configuration/secret/.
   * Secrets must be in the same Kubernetes namespace as the domain.
   * If a secret is going to be used by a single `DOMAIN_UID`, we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
@@ -289,10 +290,6 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
   * To stop all running WebLogic Server pods in your domain, and then start/restart the domain:
     * Set your domain resource serverRestartPolicy to NEVER, wait, and restore back to ALWAYS or IF_NEEDED (see [Server Lifecycle](server-lifecycle.md).)
     * Or delete your domain resource, wait, and then reapply it.
-* Verify overrides take effect after any change to overrides or to your domain home configuration.
-* Stop all running WebLogic Server pods in your domain, and then start/restart the domain.
-  * Set your domain resource serverRestartPolicy to NEVER, wait, and restore back to ALWAYS or IF_NEEDED (see [Server Lifecycle](server-lifecycle.md).)
-  * Or delete your domain resource, wait, and then reapply it.
 * See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
 
 Example domain resource yaml:
@@ -335,7 +332,7 @@ Incorrectly formatted override files may be accepted without warnings or errors,
       * This line indicates a situational configuration file has been loaded.
     * If the search yields Warning or Error lines, then the format of the custom situational configuration template is incorrect, and the Warning or Error text should describe the problem.
     * Note: The following exception may show up in your server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored (a fix is pending for them):
-```
+      * ```
 java.lang.NullPointerException 
         at weblogic.management.provider.internal.situationalconfig.SituationalConfigManag 
 erImpl.registerListener(SituationalConfigManagerImpl.java:227) 
