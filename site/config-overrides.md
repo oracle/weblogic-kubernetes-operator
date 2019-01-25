@@ -31,7 +31,7 @@ You can use overrides to customize domains as they are moved from QA to producti
   * Override templates (also known as situational configuration templates), with names and syntax as described in [Override template names and syntax](#override-template-names-and-syntax).
   * A file named `version.txt` that contains the string `2.0`.
 * Set your domain resource `configOverrides` to the name of this configuration map.
-* If templates leverage 'secret macros':
+* If templates leverage `secret macros`:
   * Create Kubernetes secrets that contain template macro values.
   * Set your domain `configOverrideSecrets` to reference the aforementioned secrets.
 * Stop all running WebLogic Server pods in your domain. (See [Server Lifecycle](server-lifecycle.md).)
@@ -81,7 +81,7 @@ Typical attributes for overrides include:
 * Network channel listen address, port, and enabled configuration
 * Server and domain log locations
 * Node Manager related configuration
-* Changing any existing mbean name
+* Changing any existing MBean name
 
 **Specifically, do not use custom overrides for:**
 
@@ -95,7 +95,7 @@ Typical attributes for overrides include:
   * Network Access Point (custom channel), listen address, or port
   * Server and domain log locations -- use the `logHome` domain setting instead
   * Node Manager access credentials
-  * Any existing mbean name (for example, you cannot change the domain name)
+  * Any existing MBean name (for example, you cannot change the domain name)
 
 Note that it's OK, even expected, to override Network Access Point `public` or `external` addresses and ports.
 
@@ -167,7 +167,7 @@ _`wldf-MODULENAME.xml`_
 
 The operator supports embedding macros within override templates. This helps make your templates flexibly handle multiple use cases, such as specifying a different URL, user name, and password for a different deployment.
 
-Two types of macros are supported `environment variable macros` and `secret macros`:
+Two types of macros are supported, `environment variable macros` and `secret macros`:
 
 * Environment variable macros have the syntax `${env:ENV-VAR-NAME}`, where the supported environment variables include `DOMAIN_UID`, `DOMAIN_NAME`, `DOMAIN_HOME`,  and `LOG_HOME`.
 
@@ -184,15 +184,15 @@ The secret macro `SECRETNAME` field must reference the name of a Kubernetes secr
 * Reference the name of the current bean and each parent bean in any hierarchy you override.
   * See [Override template samples](#override-template-samples) for examples.
 * Use situational config `replace` and `add` verbs as follows:
-  * If you are adding a new bean that doesn't already exist in your original domain home config.xml, specify `add` on the mbean itself and on each attribute within the bean. 
+  * If you are adding a new bean that doesn't already exist in your original domain home `config.xml`, specify `add` on the MBean itself and on each attribute within the bean. 
     * See the `server-debug` stanza in [Override template samples](#override-template-samples) below for an example.
-  * If you are adding a new attribute to an existing bean in the domain home config.xml, the attribute needs an `add` verb.
+  * If you are adding a new attribute to an existing bean in the domain home `config.xml`, the attribute needs an `add` verb.
     * See the `max-message-size` stanza in [Override template samples](#override-template-samples) below for an example.
-  * If you are changing the value of an existing attribute within a domain home config.xml, the attribute needs a `replace` verb.
+  * If you are changing the value of an existing attribute within a domain home `config.xml`, the attribute needs a `replace` verb.
     * See the `public-address` stanza in  [Override template samples](#override-template-samples) below for an example.
 * When overriding `config.xml`, XML namespace `xmlns` abbreviations must be exactly as specified.
-  * When overriding config.xml, the XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
-  * E.g. use `d:` to reference config.xml beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational config schema.
+  * When overriding `config.xml`, the XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
+  * For example, use `d:` to reference `config.xml` beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational config schema.
 * It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF module override files.
 
 ## Override template samples
@@ -231,7 +231,7 @@ The following `config.xml` override file demonstrates:
 
 ### Overriding a data source module
 
-The following `jdbc-testDS.xml` override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named `testDS` via secret macros.  The generated situational configuration that replaces the macros with secret values will be located in the `DOMAIN_HOME/optconfig/jdbc` directory.   The `password-encrypted` field will be populated with an encrypted value because it uses a secret macro with an `:encrypt` suffix.  The secret is named `dbsecret` and contains three keys: `url`, `username`, and `password`.
+The following `jdbc-testDS.xml` override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named `testDS` via `secret macros`.  The generated situational configuration that replaces the macros with secret values will be located in the `DOMAIN_HOME/optconfig/jdbc` directory.   The `password-encrypted` field will be populated with an encrypted value because it uses a secret macro with an `:encrypt` suffix.  The secret is named `dbsecret` and contains three keys: `url`, `username`, and `password`.
 
 
 ```
@@ -285,11 +285,11 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 * Configure the name of the configuration map in the domain CR `configOverrides` field.
 * Configure the names of each secret in domain CR.
   * If the secret contains the WebLogic admin `username` and `password` keys, set the domain CR `webLogicCredentialsSecret` field.
-  * For all other secrets, add them to domain CR `configOverrideSecrets` field. Note: this must be in an array format even if you only add one secret (see the sample domain resource yaml below).
+  * For all other secrets, add them to the domain CR `configOverrideSecrets` field. Note: This must be in an array format even if you only add one secret (see the sample domain resource yaml below).
 * Any override changes require stopping all WebLogic pods, applying your domain resource (if it changed), and restarting the WebLogic pods before they can take effect.
-  * Custom override changes on an existing running domain, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted with your new domain resource (if it changed), or with you existing domain resource (if you haven't changed it).
+  * Custom override changes on an existing running domain, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted with your new domain resource (if it changed), or with your existing domain resource (if you haven't changed it).
   * To stop all running WebLogic Server pods in your domain, apply a changed resource, and then start/restart the domain:
-    * Set your domain resource serverRestartPolicy to NEVER, wait, and apply your latest domain resource with the serverRestartPolicy restored back to ALWAYS or IF_NEEDED (see [Server Lifecycle](server-lifecycle.md).)
+    * Set your domain resource `serverRestartPolicy` to `NEVER`, wait, and apply your latest domain resource with the `serverRestartPolicy` restored back to `ALWAYS` or `IF_NEEDED` (see [Server Lifecycle](server-lifecycle.md).)
     * Or delete your domain resource, wait, and apply your (potentially changed) domain resource.
 * See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
 
@@ -319,14 +319,14 @@ Incorrectly formatted override files may be accepted without warnings or errors,
 
 * Make sure you've followed each step in the [Step-by-step guide](#step-by-step-guide).
 
-* If WL pods do not come up at all, then:
+* If WebLogic pods do not come up at all, then:
   * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspect-domain-job` and a corresponding pod named something like `DOMAIN_UID-introspect-domain-job-xxxx`.  If so, examine:
     * `kubectl -n MYDOMAINNAMESPACE describe job INTROSPECTJOBNAME`
     * `kubectl -n MYDOMAINNAMESPACE logs INTROSPECTPODNAME`
   * Check your operator log for Warning/Error/Severe messages.
     * `kubectl -n MYOPERATORNAMESPACE logs OPERATORPODNAME`
 
-* If WL pods do start, then:
+* If WebLogic pods do start, then:
   * Search your Administration Server pod's `kubectl log` for the keyword `situational`, for example `kubectl logs MYADMINPOD | grep -i situational`.
     * The only WebLogic Server log lines that match should look something like like:
       * `<Dec 14, 2018 12:20:47 PM UTC> <Info> <Management> <BEA-141330> <Loading situational configuration file: /shared/domains/domain1/optconfig/custom-situational-config.xml>`
