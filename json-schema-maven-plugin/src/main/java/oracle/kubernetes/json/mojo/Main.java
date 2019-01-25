@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,6 +10,13 @@ import java.net.URL;
 import org.apache.maven.plugin.MojoExecutionException;
 
 public interface Main {
+
+  /**
+   * Specifies the Kubernetes version to be used for object definitions.
+   *
+   * @param kubernetesVersion the desired version
+   */
+  void setKubernetesVersion(String kubernetesVersion) throws IOException;
 
   /**
    * Defines an external schema URL to be used for object definitions
@@ -66,7 +73,15 @@ public interface Main {
    *
    * @param className the root class for the schema
    * @param outputFile the file to generate
-   * @throws MojoExecutionException If an exception occurred during the schema generation
+   * @throws MojoExecutionException if an exception occurred during the schema generation
    */
   void generateSchema(String className, File outputFile) throws MojoExecutionException;
+
+  /**
+   * Generates markdown for the newly-generated schema to the specified output file.
+   *
+   * @param outputFile the file to generate
+   * @throws MojoExecutionException if an exception occurred during the markdown generation
+   */
+  void generateMarkdown(File outputFile) throws MojoExecutionException;
 }

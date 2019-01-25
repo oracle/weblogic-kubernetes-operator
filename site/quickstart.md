@@ -13,10 +13,12 @@ refer to the [User guide](user-guide.md).
     `Error from server (BadRequest): error when creating "/scratch/output/uidomain/weblogic-domains/uidomain/domain.yaml":
     the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1`
 
+> **NOTE**: You should be able to upgrade from version 2.0-rc2 to 2.0 because there are no backward incompatible changes between these two releases.    
+
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md). This guide assumes a single node cluster.
 
-The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Using operator Helm charts](install.md).
+The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Install Helm and Tiller](install.md#install-helm-and-tiller).
 
 You should clone this repository to your local machine so that you have access to the
 various sample files mentioned throughout this guide:
@@ -39,18 +41,16 @@ $ docker pull oracle/weblogic-kubernetes-operator:2.0-rc2
 ```
 d.	Pull the Traefik load balancer image:
 ```
-$ docker pull traefik:1.7.4
+$ docker pull traefik:1.7.6
 ```
 e.	Pull the WebLogic 12.2.1.3 install image:
+
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
-```
-f.	Then patch the WebLogic image according to the instructions [here](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s), with these modifications:
+```  
+**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you already have this image.
 
-* Change the `FROM` clause to extend the `store/oracle/weblogic:12.2.1.3` image from `Dockerfile.patch-ontop-12213`.
-* Comment out commands that apply patch 27117282.   
-
-g. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
+f. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
 ## 2. Grant the Helm service account the `cluster-admin` role.
 
@@ -162,11 +162,13 @@ Follow the directions in the [README](../kubernetes/samples/scripts/create-weblo
 including:
 
 * Copying the sample `kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
-domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`oracle/weblogic:12213-patch-wls-for-k8s`).
+domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`store/oracle/weblogic:12.2.1.3`).
 
 * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials, in this case, `sample-domain1-weblogic-credentials`.
 
 * Leaving the `image` empty unless you need to tag the new image that the script builds to a different name.
+
+**NOTE**: If you set the `domainHomeImageBuildPath` property to `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt`, make sure that your `JAVA_HOME` is set to a Java JDK version 1.8 or later.
 
 For example, assuming you named your copy `my-inputs.yaml`:
 ```
@@ -189,10 +191,10 @@ script will just generate the YAML files, but will not take any action on your c
 
 If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following:
 * Set the `image` property in the inputs file to the target image name (including the registry hostname/port, and the tag if needed).
+* If you want Kubernetes to pull the image from a private registry, create a Kubernetes secret to hold your credentials and set the `imagePullSecretName` property in the inputs file to the name of the secret. Note that the secret needs to be in the same namespace as where you want to run the domain.
 * Run the `create-domain.sh` script without the `-e` option.
 * Push the `image` to the registry.
 * Run the following command to create the domain.
-
 ```
 $ kubectl apply -f /some/output/directory/weblogic-domains/sample-domain1/domain.yaml
 ```

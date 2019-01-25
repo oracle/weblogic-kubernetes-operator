@@ -87,6 +87,8 @@
             </goals>
             <configuration>
               <rootClass>oracle.kubernetes.weblogic.domain.v2.Domain</rootClass>
+              <kubernetesVersion>1.9.0</kubernetesVersion>
+              <generateMarkdown>true</generateMarkdown>
             </configuration>
           </execution>
         </executions>
@@ -114,7 +116,7 @@
           </execution>
         </executions>
       </plugin>
-    
+
     </plugins>
   </build>
 
