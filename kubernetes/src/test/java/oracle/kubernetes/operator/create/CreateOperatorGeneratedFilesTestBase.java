@@ -44,11 +44,13 @@ import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1Role;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1Secret;
@@ -210,6 +212,11 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_LEVEL")
                                                 .value(getInputs().getJavaLoggingLevel()))
+                                        .resources(
+                                            new V1ResourceRequirements()
+                                                .putRequestsItem("cpu", Quantity.fromString("100m"))
+                                                .putRequestsItem(
+                                                    "memory", Quantity.fromString("512Mi")))
                                         .addVolumeMountsItem(
                                             newVolumeMount()
                                                 .name("weblogic-operator-cm-volume")

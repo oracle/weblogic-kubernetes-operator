@@ -17,6 +17,8 @@ import org.junit.Test;
 
 public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
+  private static final String MUTEX = "%s can not be present when %s is defined";
+
   private static final String MISSING = "%s %s must be specified";
 
   private static final String WRONG_TYPE = "%s must be a %s : %s";
@@ -116,15 +118,15 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
     setProperty("externalRestEnabled", true);
 
     removeProperty("externalRestHttpsPort");
+    removeProperty("externalOperatorSecret");
     removeProperty("externalOperatorCert");
     removeProperty("externalOperatorKey");
 
     assertThat(
         getProcessingError(),
         allOf(
-            containsMissingIntParameterError("externalRestHttpsPort"),
-            containsMissingStringParameterError("externalOperatorCert"),
-            containsMissingStringParameterError("externalOperatorKey")));
+            containsMissingStringParameterError("externalCertificateSecret"),
+            containsMissingIntParameterError("externalRestHttpsPort")));
   }
 
   @Test
@@ -281,6 +283,10 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   private Matcher<String> containsTypeError(String name, String expectedType, String actualType) {
     return containsString(String.format(WRONG_TYPE, name, expectedType, actualType));
+  }
+
+  private Matcher<String> containsMutexParameterError(String excluded, String value) {
+    return containsString(String.format(MUTEX, excluded, value));
   }
 
   private Matcher<String> containsMissingEnumParameterError(String propertyName) {

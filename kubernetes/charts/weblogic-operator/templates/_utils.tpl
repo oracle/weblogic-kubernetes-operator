@@ -1,4 +1,4 @@
-# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 {{/*
@@ -425,4 +425,36 @@ TBD - does helm provide a clone method we can use instead?
 */}}
 {{- define "utils.cloneDictionary" -}}
 {{- include "utils.mergeDictionaries" (list .) -}}
+{{- end -}}
+
+{{/*
+Verify that a list of values (exclude) can not be defined if another value (key) is already defined 
+*/}}
+{{- define "utils.mutexValue" -}}
+{{- $scope := index . 0 -}}
+{{- $key := index . 1 -}}
+{{- $exclude := index . 2 -}}
+{{- $type := index . 3 -}}
+{{- $parent := $scope.validationScope -}}
+{{- $args := . -}}
+{{- $status := dict -}}
+{{- if hasKey $parent $key -}}
+{{-   range $value := $exclude -}}
+{{-     if hasKey $parent $value -}}
+{{-       $errorMsg := cat $value "can not be present when" $key "is defined"  " " -}}
+{{-       include "utils.recordValidationError" (list $scope $errorMsg) -}}
+{{-       $ignore := set $status "error" true -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- if not (hasKey $status "error") -}}
+      true
+{{- end -}}
+{{- end -}}
+
+{{/*
+Verify that a list of strings can not be defined if another string is already defined 
+*/}}
+{{- define "utils.mutexString" -}}
+{{- include "utils.mutexValue" (append . "string") -}}
 {{- end -}}
