@@ -145,6 +145,7 @@ _`jdbc-MODULENAME.xml`_
 
 _`jms-MODULENAME.xml`_
 ```
+<?xml version='1.0' encoding='UTF-8'?>
 <jms:weblogic-jms xmlns:jms="http://xmlns.oracle.com/weblogic/weblogic-jms"
                   xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-jms-fragment"
                   xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
