@@ -34,7 +34,7 @@ $ kubectl create secret docker-registry SECRET_NAME
 
 In this command, replace the uppercase items with the appropriate values. The `SECRET_NAME` will be needed in later parameter files.  The `NAMESPACE` must match the namespace where the first domain will be deployed, otherwise Kubernetes will not be able to find it.  
 
-It may be preferable to manually pull the image in advance, on each Kubernetes worker node, as described in the next section. 
+It may be preferable to manually pull the image in advance, on each Kubernetes worker node, as described in the next section.
 If you choose this approach, you do not require the Kubernetes secret.
 
 ## Obtaining standard images from the Docker store
@@ -44,10 +44,10 @@ Oracle provides a [WebLogic Server 12.2.1.3.0 Docker image](https://store.docker
 must have a Docker Store account, log on to the Docker Store, navigate
 to that image and click on the "Proceed to Checkout" button which will
 prompt you to read and accept the license agreement for the image.
-Once you have accepted the license agreement, you will be able to
+After you have accepted the license agreement, you will be able to
 pull the image using your Docker store credentials.
 
-First, you will need to login to the Docker Store:
+First, you will need to log in to the Docker Store:
 
 ```
 $ docker login
