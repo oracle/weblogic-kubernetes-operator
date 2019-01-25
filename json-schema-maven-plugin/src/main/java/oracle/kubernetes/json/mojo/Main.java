@@ -7,6 +7,7 @@ package oracle.kubernetes.json.mojo;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Map;
 import org.apache.maven.plugin.MojoExecutionException;
 
 public interface Main {
@@ -75,13 +76,17 @@ public interface Main {
    * @param outputFile the file to generate
    * @throws MojoExecutionException if an exception occurred during the schema generation
    */
-  void generateSchema(String className, File outputFile) throws MojoExecutionException;
+  Map<String, Object> generateSchema(String className, File outputFile)
+      throws MojoExecutionException;
 
   /**
    * Generates markdown for the newly-generated schema to the specified output file.
    *
+   * @param rootName
    * @param outputFile the file to generate
+   * @param schema
    * @throws MojoExecutionException if an exception occurred during the markdown generation
    */
-  void generateMarkdown(File outputFile) throws MojoExecutionException;
+  void generateMarkdown(String rootName, File outputFile, Map<String, Object> schema)
+      throws MojoExecutionException;
 }
