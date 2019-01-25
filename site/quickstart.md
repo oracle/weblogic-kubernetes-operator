@@ -13,6 +13,8 @@ refer to the [User guide](user-guide.md).
     `Error from server (BadRequest): error when creating "/scratch/output/uidomain/weblogic-domains/uidomain/domain.yaml":
     the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1`
 
+> **NOTE**: You should be able to upgrade from version 2.0-rc2 to 2.0 because there are no backward incompatible changes between these two releases.    
+
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md). This guide assumes a single node cluster.
 
@@ -35,11 +37,11 @@ $ docker login
 ```
 c.	Pull the operator image:
 ```
-$ docker pull oracle/weblogic-kubernetes-operator:2.0-rc2
+$ docker pull oracle/weblogic-kubernetes-operator:2.0
 ```
 d.	Pull the Traefik load balancer image:
 ```
-$ docker pull traefik:1.7.4
+$ docker pull traefik:1.7.6
 ```
 e.	Pull the WebLogic 12.2.1.3 install image:
 
@@ -97,7 +99,6 @@ c.  Use `helm` to install and start the operator from the directory you just clo
 $ helm install kubernetes/charts/weblogic-operator \
   --name sample-weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=oracle/weblogic-kubernetes-operator:2.0-rc2 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "domainNamespaces={}" \
   --wait
@@ -189,10 +190,10 @@ script will just generate the YAML files, but will not take any action on your c
 
 If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following:
 * Set the `image` property in the inputs file to the target image name (including the registry hostname/port, and the tag if needed).
+* If you want Kubernetes to pull the image from a private registry, create a Kubernetes secret to hold your credentials and set the `imagePullSecretName` property in the inputs file to the name of the secret. Note that the secret needs to be in the same namespace as where you want to run the domain.
 * Run the `create-domain.sh` script without the `-e` option.
 * Push the `image` to the registry.
 * Run the following command to create the domain.
-
 ```
 $ kubectl apply -f /some/output/directory/weblogic-domains/sample-domain1/domain.yaml
 ```
