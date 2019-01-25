@@ -18,11 +18,11 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 * Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-The fastest way to experience the operator is to follow the [Quick start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](kubernetes/samples/README.md).
+The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](kubernetes/samples/README.md).
 
 ```diff
 + The current release of the operator is 2.0-rc2, a release candidate for our 2.0 release.
-+ This release candidate was published on Jan. 17, 2019.
++ This release candidate was published on Jan. 16, 2019.
 + We expect to publish the final 2.0 release later in January, 2019.
 + We expect that there will be some minor changes to documentation and samples in the final 2.0 release.
 + However, this release candidate is suitable for testing and early adopters.
@@ -32,7 +32,6 @@ The fastest way to experience the operator is to follow the [Quick start guide](
 
 | Issue | Description |
 | --- | --- |
-| [#722](https://github.com/oracle/weblogic-kubernetes-operator/issues/722) | Server services not recreated when labels/annotations changed. |
 | [#726](https://github.com/oracle/weblogic-kubernetes-operator/issues/726) | Clusters only support default channel. |
 
 ## Operator version 1.1
@@ -54,7 +53,7 @@ maintained for one release after a replacement is available.
 This documentation includes sections targeted to different audiences.  To help you find what you are looking for more easily,
 please consult this table of contents:
 
-* The [Quick start guide](site/quickstart.md) explains how to quickly get the operator running, using the defaults, nothing special.
+* The [Quick Start guide](site/quickstart.md) explains how to quickly get the operator running, using the defaults, nothing special.
 * The [User guide](site/user-guide.md) contains detailed usage information, including how to install and configure the operator,
   and how to use it to create and manage WebLogic domains.  
 * The [Samples](kubernetes/samples/README.md) provide detailed example code and instructions that show you how to perform

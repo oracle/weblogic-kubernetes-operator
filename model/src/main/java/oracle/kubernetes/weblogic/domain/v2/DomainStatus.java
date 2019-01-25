@@ -20,6 +20,9 @@ import org.joda.time.DateTime;
  * DomainStatus represents information about the status of a domain. Status may trail the actual
  * state of a system.
  */
+@Description(
+    "DomainStatus represents information about the status of a domain. "
+        + "Status may trail the actual state of a system.")
 public class DomainStatus {
 
   @Description("Current service state of domain.")
