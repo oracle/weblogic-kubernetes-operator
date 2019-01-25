@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -22,7 +22,6 @@ import org.joda.time.DateTime;
 
 @SuppressWarnings("WeakerAccess")
 public class SchemaGenerator {
-  public static final String DEFAULT_KUBERNETES_VERSION = "1.9.0";
 
   private static final String EXTERNAL_CLASS = "external";
 
@@ -72,7 +71,10 @@ public class SchemaGenerator {
    * @throws IOException if no schema for that version is cached.
    */
   public void useKubernetesVersion(String version) throws IOException {
-    addExternalSchema(getKubernetesSchemaUrl(version), getKubernetesSchemaCache(version));
+    URL cacheUrl = getKubernetesSchemaCache(version);
+    if (cacheUrl == null) throw new IOException("No schema cached for Kubernetes " + version);
+
+    addExternalSchema(getKubernetesSchemaUrl(version), cacheUrl);
   }
 
   URL getKubernetesSchemaUrl(String version) throws MalformedURLException {
@@ -163,7 +165,7 @@ public class SchemaGenerator {
    * @param aClass the class for which the schema should be generated
    * @return a map of maps, representing the computed JSON
    */
-  public Object generate(Class aClass) {
+  public Map<String, Object> generate(Class aClass) {
     Map<String, Object> result = new HashMap<>();
 
     if (includeSchemaReference) {

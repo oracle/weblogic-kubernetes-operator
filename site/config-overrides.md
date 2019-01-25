@@ -167,7 +167,7 @@ The operator supports embedding macros within override templates.  This helps ma
 
 Two types of macros are supported `environment variable macros` and `secret macros`:
 
-* Environment variable macros have the syntax `${env:ENV-VAR-NAME}`, where the supported environment variables include `DOMAIN_HOME`, `LOG_HOME`, and `DOMAIN_UID`.
+* Environment variable macros have the syntax `${env:ENV-VAR-NAME}`, where the supported environment variables include `DOMAIN_UID`, `DOMAIN_NAME`, `DOMAIN_HOME`,  and `LOG_HOME`.
 
 * Secret macros have the syntax `${secret:SECRETNAME.SECRETKEY}` and `${secret:SECRETNAME.SECRETKEY:encrypt}`.
 
@@ -190,6 +190,7 @@ The following `config.xml` override file demonstrates setting the `max-message-s
 <domain xmlns="http://xmlns.oracle.com/weblogic/domain"
         xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
         xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+  <name>${env:DOMAIN_NAME}</name>
   <server>
     <name>admin-server</name>
     <max-message-size f:combine-mode="add">78787878</max-message-size>
@@ -201,6 +202,8 @@ The following `config.xml` override file demonstrates setting the `max-message-s
   </server>
 </domain>
 ```
+
+**IMPORTANT: To ensure all situational configuration takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name as in the sample above.**
 
 ### Overriding a data source module
 
@@ -267,6 +270,8 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 
 **IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings when they detect an incorrectly formatted configuration override template file, but will still boot, and will skip overriding. So it is important to make sure that the template files are correct in a QA environment by checking your WebLogic pod logs for situational configuration errors and warnings, before attempting to use them in production.**
 
+**IMPORTANT: To ensure all custom overrides takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name when overriding config.xml fields. Also, remember to use the 'replace' verb to modify existing fields in the domain home configuration, and the 'add' verb to add a field that doesn't yet exist in the domain home configuration.  Otherwise, situational configuration may be partially ignored without generating any errors or warnings. See the sample in [Override template samples](#override-template-samples).**
+
 
 Example domain resource yaml:
 ```
@@ -331,6 +336,8 @@ spec:
 **IMPORTANT: Custom override changes, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted.**
 
 **IMPORTANT: Incorrectly formatted override files are 'somewhat' silently ignored. WebLogic Servers log errors or warnings when they detect an incorrectly formatted configuration override template file, but will still boot, and will skip overriding. So it is important to make sure that the template files are correct in a QA environment by checking your WebLogic pod logs for situational configuration errors and warnings, before attempting to use them in production.**
+
+**IMPORTANT: To ensure all custom overrides takes effect, remember to reference the name of each bean in the hierarchy that is overridden, including the domain name when overriding config.xml fields. Also, remember to use the 'replace' verb to modify existing fields in the domain home configuration, and the 'add' verb to add a field that doesn't yet exist in the domain home configuration.  Otherwise, situational configuration may be partially ignored without generating any errors or warnings. See the sample in [Override template samples](#override-template-samples).**
 
 ---
 # Internal design flow
