@@ -332,7 +332,7 @@ Incorrectly formatted override files may be accepted without warnings or errors,
       * This line indicates a situational configuration file has been loaded.
     * If the search yields Warning or Error lines, then the format of the custom situational configuration template is incorrect, and the Warning or Error text should describe the problem.
     * Note: The following exception may show up in your server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored (a fix is pending for them):
-      * ```
+```
 java.lang.NullPointerException 
         at weblogic.management.provider.internal.situationalconfig.SituationalConfigManag 
 erImpl.registerListener(SituationalConfigManagerImpl.java:227) 
