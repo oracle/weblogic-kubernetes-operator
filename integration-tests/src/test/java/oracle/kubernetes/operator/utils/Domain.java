@@ -315,10 +315,10 @@ public class Domain {
   /** Test t3 channel using JMS t3 connection. */
   public void verifyJMST3Connection() throws Exception {
     logger.info("test" + domainMap.get("t3ChannelPort"));
+
     Hashtable<String, String> env = new Hashtable<>();
     env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
-    env.put(
-        Context.PROVIDER_URL, "t3://" + domainUid + "-" + adminServerName + ":" + t3ChannelPort);
+    env.put(Context.PROVIDER_URL, "t3://" + TestUtils.getHostName() + ":" + t3ChannelPort);
     logger.info("Creating JNDI context with URL " + env.get(Context.PROVIDER_URL));
     InitialContext ctx = new InitialContext(env);
     QueueConnection qcc = null;
