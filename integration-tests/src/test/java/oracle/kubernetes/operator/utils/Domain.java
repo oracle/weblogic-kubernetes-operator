@@ -314,15 +314,19 @@ public class Domain {
 
   /** */
   public void verifyJMST3Connection() throws Exception {
+    logger.info("test" + domainMap.get("t3ChannelPort"));
+
     Hashtable<String, String> env = new Hashtable<>();
     env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
-    env.put(
-        Context.PROVIDER_URL, "t3://" + domainUid + "-" + adminServerName + ":" + t3ChannelPort);
+    env.put(Context.PROVIDER_URL, "t3://" + TestUtils.getHostName() + ":" + t3ChannelPort);
+    logger.info("Creating JNDI context with URL " + env.get(Context.PROVIDER_URL));
     InitialContext ctx = new InitialContext(env);
     QueueConnection qcc = null;
+    logger.info("Getting JMS Connection Factory");
     QueueConnectionFactory cf =
         (QueueConnectionFactory) ctx.lookup("weblogic.jms.ConnectionFactory");
     qcc = cf.createQueueConnection();
+    logger.info("Connection Factory created successfully");
     qcc.close();
   }
   /**
@@ -1110,4 +1114,5 @@ public class Domain {
               + "for the admin server in domain.");
     }
   }
+
 }
