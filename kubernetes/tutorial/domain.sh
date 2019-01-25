@@ -169,7 +169,7 @@ function main() {
   if [ "$#" == 0 ] ; then
     usage
   fi
-  $1
+  $@
 }
 
 main $@

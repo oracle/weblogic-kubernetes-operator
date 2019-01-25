@@ -1,27 +1,28 @@
 # Tutorial
 
-This tutorial will teach you how to run WebLogic domains in a Kubernetes environment using the operator.  
-This tutorial provides reliable and automated scripts to setup everything from scratch. 
-It takes less than 20 minutes to complete. After finished, you'll have three running WebLogic domains which 
-cover the three typical domain configurations.
+1. [Introduction](#introduction)
+1. [Directory Structure Explained](#directory-structure-explained)
+1. [Prerequisites Before Run](#prerequisites-before-run)
+1. [Run with Shell Wrapper](#run-with-shell-wrapper)
+1. [Run with Step-By-Step](#run-with-step-by-step)
 
+## Introduction
+This tutorial will teach you how to run WebLogic domains in a Kubernetes environment using the operator.  
 This tutorial covers following steps:
 
-1. Pulling the required docker images.
-
-1. Installing WebLogic operator.
-
-1. Installing a load balancer controller: Traefik or Voyager.
-
-1. Creating three WebLogic domains.
-
-   - `domain1`: domain-home-in-image case
+1. Install WebLogic domains with the operator.
+   1. Install the operator.
+   1. Install WebLogic domains.  
+   Three domains with different configurations will be covered:
+      - `domain1`: domain-home-in-image 
    
-   - `domain2`: domain-home-in-image case with logs on a volume
+      - `domain2`: domain-home-in-image and server-logs-on-pv
    
-   - `domain3`: domain-home-on-pv case
+      - `domain3`: domain-home-on-pv
    
-1. Creating Ingress for WebLogic domains.
+1. Configure load balancer to WebLogic domains.
+   1. Install an Ingress controller: Traefik or Voyager.
+   1. Install Ingress.
 
 ## Directory Structure Explained
 The following is the directory structure of this tutorial:
@@ -77,13 +78,13 @@ An overview of what each of these does:
 
 - yaml files
 
-  - `domain1`: yaml files for domain1.
+  - folder `domain1`: contains yaml files for domain1.
   
-  - `domain2`: yaml files for domain2.
+  - folder `domain2`: contains yaml files for domain2.
   
-  - `domain3`: yaml files for domain3.
+  - folder `domain3`: contains yaml files for domain3.
   
-  - `ings`: Ingress yaml files.
+  - folder `ings`: contains Ingress yaml files.
   
 - shell scripts
 
@@ -95,115 +96,22 @@ An overview of what each of these does:
   
   - `domain.sh`: To create and delete WebLogic domain related resources.
   
-  - `setup.sh`: a shell wrapper with all steps to create all from scratch using Traefik as load balancer. 
+  - `setup.sh&clean.sh`: a couple of shell wrappers to create all from scratch and do cleanup. Use Traefik as the load balancer. 
   
-  - `clean.sh`: a shell wrapper to do the cleanup. 
+  - `setup-v.sh&clean-v.sh`: a couple of shell wrappers to create all from scratch and do cleanup. Use Voyager as the load balancer. 
   
-  - `setup-v.sh`: a shell wrapper with all steps to create all from scratch using Voyager as load balancer. 
-    
-  - `clean-v.sh`: a shell wrapper to do the cleanup after run `setup-v.sh`. 
-  
-## Prerequisites
+## Prerequisites Before Run
   - Have Docker installed, a Kubernetes cluster running and have `kubectl` installed and configured. If you need help on this, check out our [cheat sheet](../../site/k8s_setup.md).
   - Have Helm installed: both the Helm client (helm) and the Helm server (Tiller). See [official helm doc](https://github.com/helm/helm/blob/master/docs/install.md) for detail.
 
-## To setup from scratch
-**NOTE:** Before run script to setup everything automatically, there is one manual step. You need to create an empty folder which will be used as the root folder for PVs. 
+## Run with Shell Wrapper
+We provide reliable and automated scripts to setup everything from scratch.  
+It takes less than 20 minutes to complete. After finished, you'll have three running WebLogic domains which 
+cover the three typical domain configurations and with load balancer configured.  
+With the running domains, you can experiment other operator features, like scale up/down, rolling restart etc.  
+See detail [here](shell-wrapper.md).
 
-```
-git clone https://github.com:oracle/weblogic-kubernetes-operator.git
-cd ./weblogic-kubernetes-operator/kubernetes/tutorial/
-export PV_ROOT=<PVPath>  # the value is the absolute path of the PV folder you just created
-./startup.sh
-# Or you can choose to run startup-v.sh which will use Voyager as the load balancer.
-```
+## Run with Step-By-Step
+We also provide step-by-step guide to guide you setup everything from scratch. This will help you understand the essential steps and you'll be able to do customization to meet your own requirements.
+See detail [here](step-by-step.md).
 
-If everything goes well, after the `setup.sh` script finishes, you'll have all the resources deployed and running on your Kuberntes cluster. Let's check the result.
-- Have the Traefik controller running in namespace `traefik`.
-  ```
-  $ kubectl -n traefik get pod
-  NAME                               READY     STATUS    RESTARTS   AGE
-  traefik-operator-7c6b5767c-6nt92   1/1       Running   0          10m
-  ```
-  
-- Have the operator running in namespace `weblogic-operator1`.
-  ```
-  $ kubectl -n weblogic-operator1 get pod
-  NAME                                READY     STATUS    RESTARTS   AGE
-  weblogic-operator-5fb9558ff-2tbvr   1/1       Running   0          8m
-  ```
-
-- Have three WebLogic domains running.
-  - Three domain resources deployed.
-  ```
-  $ kubectl get domain --all-namespaces
-  NAMESPACE   NAME      AGE
-  default     domain1   4h
-  test1       domain2   4h
-  test1       domain3   4h
-  ```
-  
-  - Domain named `domain1` is running in namespace `default`.
-  ```
-  $ kubectl -n default get all  -l weblogic.domainUID=domain1,weblogic.createdByOperator=true
-  NAME                          READY     STATUS    RESTARTS   AGE
-  pod/domain1-admin-server      1/1       Running   0          9m
-  pod/domain1-managed-server1   1/1       Running   0          8m
-  pod/domain1-managed-server2   1/1       Running   0          8m
-  
-  NAME                                    TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)                          AGE
-  service/domain1-admin-server            ClusterIP   None            <none>        30012/TCP,7001/TCP               28m
-  service/domain1-admin-server-external   NodePort    10.109.14.252   <none>        30012:30712/TCP,7001:30701/TCP   28m
-  service/domain1-cluster-cluster-1       ClusterIP   10.103.24.97    <none>        8001/TCP                         27m
-  service/domain1-managed-server1         ClusterIP   None            <none>        8001/TCP                         27m
-  service/domain1-managed-server2         ClusterIP   None            <none>        8001/TCP                         27m
-  ```
-  
-  - Domain named `domain2` is running in namespace `test1`.
-  ```
-  $ kubectl -n test1 get all  -l weblogic.domainUID=domain2,weblogic.createdByOperator=true
-  NAME                          READY     STATUS    RESTARTS   AGE
-  pod/domain2-admin-server      1/1       Running   0          18h
-  pod/domain2-managed-server1   1/1       Running   0          18h
-  pod/domain2-managed-server2   1/1       Running   0          18h
-
-  NAME                                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                          AGE
-  service/domain2-admin-server            ClusterIP   None             <none>        30012/TCP,7001/TCP               18h
-  service/domain2-admin-server-external   NodePort    10.105.187.192   <none>        30012:30012/TCP,7001:30703/TCP   18h
-  service/domain2-cluster-cluster-1       ClusterIP   10.100.183.40    <none>        8001/TCP                         18h
-  service/domain2-managed-server1         ClusterIP   None             <none>        8001/TCP                         18h
-  service/domain2-managed-server2         ClusterIP   None             <none>        8001/TCP                         18h
-  ```
-  
-  - Domain named `domain3` is running in namespace `test1`.
-  ```
-  $ kubectl -n test1 get all  -l weblogic.domainUID=domain3,weblogic.createdByOperator=true
-  NAME                          READY     STATUS    RESTARTS   AGE
-  pod/domain3-admin-server      1/1       Running   0          18h
-  pod/domain3-managed-server1   1/1       Running   0          18h
-  pod/domain3-managed-server2   1/1       Running   0          18h
-
-  NAME                                    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)              AGE
-  service/domain3-admin-server            ClusterIP   None             <none>        30012/TCP,7001/TCP   18h
-  service/domain3-admin-server-external   NodePort    10.103.129.254   <none>        7001:30705/TCP       18h
-  service/domain3-cluster-cluster-1       ClusterIP   10.99.80.60      <none>        8001/TCP             18h
-  service/domain3-managed-server1         ClusterIP   None             <none>        8001/TCP             18h
-  service/domain3-managed-server2         ClusterIP   None             <none>        8001/TCP             18h
-  ```
-  
-- Have three Ingresses for the three domains
-  ```
-  $ kubectl get Ingress --all-namespaces
-  NAMESPACE   NAME                         HOSTS                 ADDRESS   PORTS     AGE
-  default     domain1-ingress-traefik      domain1.org                     80        12m
-  test1       domain2-ingress-traefik      domain2.org                     80        12m
-  test1       domain3-ingress-traefik      domain3.org                     80        12m
-  ```
- 
-## To cleanup
-```
-cd weblogic-kubernetes-operator/kubernetes/tutorial/
-export PV_ROOT=<PVPath>
-./clean.sh
-# if you run setup-v.sh, you need to run clean-v.sh to do cleanup.
-```
