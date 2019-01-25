@@ -203,7 +203,7 @@ Here are some sample template override files.
 
 The following `config.xml` override file demonstrates:
 
- *  Setting the `max-message-size` field on a WebLogic Server named `admin-server`.  It assumes the original `config.xml` does not dfefine this value, and so uses `add` instead of `replace`.
+ *  Setting the `max-message-size` field on a WebLogic Server named `admin-server`.  It assumes the original `config.xml` does not define this value, and so uses `add` instead of `replace`.
  *  Sets the `public-address` and `public-port` fields with values obtained from a secret named `test-host` with keys `hostname` and `port`. It assumes the original config.xml already sets these fields, and so uses `replace` instead of `add`.
  *  Sets two debug settings. It assumes the original config.xml does not have a `server-debug` stanza, so it uses `add` throughout the entire stanza.
 
