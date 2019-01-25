@@ -924,6 +924,7 @@ window.onload = function() {
       "properties": {}
     },
     "AdminServer": {
+      "description": "AdminServer represents the operator configuration for the admin server.",
       "type": "object",
       "properties": {
         "serverStartState": {
@@ -974,10 +975,11 @@ window.onload = function() {
       }
     },
     "Channel": {
+      "description": "Describes a single channel used by the admin server.",
       "type": "object",
       "properties": {
         "channelName": {
-          "description": "Name of channel. default\u0027 refers to the admin server\u0027s default channel (configured via the ServerMBean\u0027s ListenPort) \u0027default-secure\u0027 refers to the admin server\u0027s default secure channel (configured via the ServerMBean\u0027s SSLMBean\u0027s ListenPort) \u0027default-admin\u0027 refers to the admin server\u0027s default administrative channel (configured via the DomainMBean\u0027s AdministrationPort) Otherwise, the name is the name of one of the admin server\u0027s network access points (configured via the ServerMBean\u0027s NetworkAccessMBeans).",
+          "description": "Name of channel.\n\u0027default\u0027 refers to the admin server\u0027s default channel (configured via the ServerMBean\u0027s ListenPort) \n\u0027default-secure\u0027 refers to the admin server\u0027s default secure channel (configured via the ServerMBean\u0027s SSLMBean\u0027s ListenPort) \n\u0027default-admin\u0027 refers to the admin server\u0027s default administrative channel (configured via the DomainMBean\u0027s AdministrationPort) \nOtherwise, the name is the name of one of the admin server\u0027s network access points (configured via the ServerMBean\u0027s NetworkAccessMBeans).",
           "type": "string"
         },
         "nodePort": {
@@ -990,6 +992,7 @@ window.onload = function() {
       ]
     },
     "Cluster": {
+      "description": "An element representing a cluster in the domain configuration.",
       "type": "object",
       "properties": {
         "serverStartState": {
@@ -1077,6 +1080,7 @@ window.onload = function() {
       }
     },
     "DomainSpec": {
+      "description": "DomainSpec is a description of a domain.",
       "type": "object",
       "properties": {
         "serverStartState": {
@@ -1194,6 +1198,7 @@ window.onload = function() {
       }
     },
     "DomainStatus": {
+      "description": "DomainStatus represents information about the status of a domain. Status may trail the actual state of a system.",
       "type": "object",
       "properties": {
         "reason": {
@@ -1243,6 +1248,7 @@ window.onload = function() {
       }
     },
     "ManagedServer": {
+      "description": "ManagedServer represents the operator configuration for a single managed server.",
       "type": "object",
       "properties": {
         "serverStartState": {
@@ -1325,6 +1331,7 @@ window.onload = function() {
       }
     },
     "ServerPod": {
+      "description": "ServerPod describes the configuration for a Kubernetes pod for a server.",
       "type": "object",
       "properties": {
         "livenessProbe": {
