@@ -127,6 +127,7 @@ More information about the Domain resource can be found [here](domain-resource.m
 
 In Operator 2.0, you can perform lifecycle operations on WebLogic servers, clusters, or domains.
 See [Starting, stopping, and restarting servers](server-lifecycle.md).
+See [Restarting WebLogic servers](restart.md)
 
 ### Scaling clusters
 
