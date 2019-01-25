@@ -126,7 +126,7 @@ More information about the Domain resource can be found [here](domain-resource.m
 ### Managing lifecycle operations including shutting down and deleting domains
 
 In Operator 2.0, you can perform lifecycle operations on WebLogic servers, clusters, or domains.
-See [Starting, stopping, and restarting servers](server-lifecycle.md).
+See [Starting, stopping, and restarting servers](server-lifecycle.md) and [Restarting WebLogic servers](restart.md).
 
 ### Scaling clusters
 
