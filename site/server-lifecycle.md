@@ -161,6 +161,11 @@ Clustered servers that need to be restarted are gradually restarted (for example
 The `maxUnavailable` property on the domain resource determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
 It can be specified at the domain and cluster levels and defaults to 1 (that is, by default, clustered servers are restarted one at a time).
 
+When using in-memory session replication, Oracle WebLogic Server employs a primary-secondary session replication model to provide high availability of application session state (that is, HTTP and EJB sessions).
+The primary server creates a primary session state on the server to which the client first connects, and a secondary replica on another WebLogic Server instance in the cluster.
+Specifying a `maxUnavailable` property value of `1` protects against inadvertent session state loss which could occur if both the primary and secondary
+servers are shut down at the same time during the rolling restart process.
+
 ### Using `restartVersion` to force the operator to restart servers
 
 The `restartVersion` property lets you force the operator to restart servers.
@@ -229,3 +234,31 @@ Set `restartVersion` at the `managedServer` level to a new value.
          restartVersion: "v1"
        ...
 ```
+### Full domain restarts
+
+To do a full domain restart, first shut down all of the domain's servers (Administration and Managed Servers), taking the domain out of service,
+then restart them.  Unlike rolling restarts, the operator cannot detect and initiate a full domain restart; you must always manually initiate it.
+
+To manually initiate a full domain restart:
+
+1. Change the domain level `serverStartPolicy` on the domain resource to `NEVER`.
+    ```
+       domain:
+         spec:
+           serverStartPolicy: "NEVER"
+           ...
+    ```
+
+2. Wait for the operator to stop ALL the servers for that domain.
+
+3. To restart the domain, set the domain level `serverStartPolicy` back to `IF_NEEDED`. Alternatively, you do not
+have to specify the `serverStartPolicy` as the default value is `IF_NEEDED`.
+
+    ```
+       domain:
+         spec:
+           serverStartPolicy: "IF_NEEDED"
+           ...
+    ```
+
+4. The operator will restart all the servers in the domain.
