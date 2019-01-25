@@ -16,6 +16,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
+import javax.jms.ConnectionFactory;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.naming.Context;
@@ -312,10 +313,13 @@ public class Domain {
     callShellScriptByExecToPod(username, password, webappName);
   }
 
-  /** Test t3 channel using JMS t3 connection. */
-  public void verifyJMST3Connection() throws Exception {
-    logger.info("test" + domainMap.get("t3ChannelPort"));
-
+  /**
+   * Creates a Connection Factory using JMS.
+   *
+   * @return connection facotry.
+   * @throws Exception
+   */
+  public ConnectionFactory createJMSConnectionFactory() throws Exception {
     Hashtable<String, String> env = new Hashtable<>();
     env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
     env.put(Context.PROVIDER_URL, "t3://" + TestUtils.getHostName() + ":" + t3ChannelPort);
@@ -325,10 +329,10 @@ public class Domain {
     logger.info("Getting JMS Connection Factory");
     QueueConnectionFactory cf =
         (QueueConnectionFactory) ctx.lookup("weblogic.jms.ConnectionFactory");
-    qcc = cf.createQueueConnection();
     logger.info("Connection Factory created successfully");
-    qcc.close();
+    return cf;
   }
+
   /**
    * Test http load balancing using loadBalancerWebPort
    *
