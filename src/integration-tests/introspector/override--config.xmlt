@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <domain xmlns="http://xmlns.oracle.com/weblogic/domain" xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+  <name>${env:DOMAIN_NAME}</name>
   <server>
     <name>${ADMIN_NAME}</name>
     <max-message-size f:combine-mode="replace">78787878</max-message-size>

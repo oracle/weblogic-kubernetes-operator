@@ -125,7 +125,7 @@ domainPVMountPath: /shared
 # Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how
 # to obtain or create the image.
 # See README.md for more help.
-#domainHomeImageBase:
+domainHomeImageBase: store/oracle/weblogic:12.2.1.3
 
 # Location of the WebLogic "domain home in image" Docker image sample in the
 # `https://github.com/oracle/docker-images.git` project.
