@@ -117,7 +117,6 @@ class FileGroupReader {
     private FileSystem fileSystem;
 
     JarScriptPath(URI uri) throws IOException {
-      System.out.println("loading from " + uri);
       fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
     }
 

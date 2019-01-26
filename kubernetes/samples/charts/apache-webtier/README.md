@@ -35,23 +35,21 @@ The following table lists the configurable parameters of the Apache webtier char
 
 | Parameter                          | Description                                                   | Default               |
 | -----------------------------------| ------------------------------------------------------------- | ----------------------|
-| `imageRegistry`                    | Docker registry used to pull image                            | `store/oracle`        |
-| `image`                            | Apache webtier Docker image                                   | `apache`              |
-| `imageTag`                         | Image tag for the Apache webtier Docker image                 | `12.2.1.3`            |
+| `image`                            | Apache webtier Docker image                                   | `store/oracle/apache:12.2.1.3` |
 | `imagePullPolicy`                  | Image pull policy for the Apache webtier Docker image         | `IfNotPresent`        |
-| `volumePath`                       | Docker volume path for the Apache webtier                         | ``                    |
+| `volumePath`                       | Docker volume path for the Apache webtier                     | ``                    |
 | `createRBAC`                       | Boolean indicating if RBAC resources should be created        | `true`                |
-| `httpNodePort`                     | Node port to expose for HTTP access                            | `30305`               |
-| `httpsNodePort`                    | Node port to expose for HTTPS access                           | `30443`               |
-| `virtualHostName`                  | The `VirtualHostName` of the Apache HTTP Server                 | ``                    |
+| `httpNodePort`                     | Node port to expose for HTTP access                           | `30305`               |
+| `httpsNodePort`                    | Node port to expose for HTTPS access                          | `30443`               |
+| `virtualHostName`                  | The `VirtualHostName` of the Apache HTTP Server               | ``                    |
 | `customCert`                       | The customer supplied certificate                             | ``                    |
 | `customKey`                        | The customer supplied private key                             | ``                    |
 | `domainUID`                        | Unique ID identifying a domain                                | `domain1`             |
 | `clusterName`                      | Cluster name                                                  | `cluster-1`           |
-| `adminServerName`                  | Name of the Administration Server                                      | `admin-server`        |
-| `adminPort`                        | Port number for Administration Server                                  | `7001`                |
+| `adminServerName`                  | Name of the Administration Server                             | `admin-server`        |
+| `adminPort`                        | Port number for Administration Server                         | `7001`                |
 | `managedServerPort`                | Port number for each Managed Server                           | `8001`                |
-| `location`                         | Prepath for all applications deployed on the WebLogic cluster      | `/weblogic`           |
+| `location`                         | Prepath for all applications deployed on the WebLogic cluster | `/weblogic`           |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 

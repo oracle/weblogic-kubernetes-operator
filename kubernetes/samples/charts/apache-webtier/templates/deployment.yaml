@@ -1,4 +1,4 @@
-# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 kind: Deployment
@@ -8,18 +8,18 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "apache.fullname" . }}
-    release: "{{ .Release.Name }}"
+    weblogic.resourceVersion: "loadbalancer-v2"
 spec:
   replicas: 1
   selector:
     matchLabels:
-        app: {{ template "apache.fullname" . }}
-        release: "{{ .Release.Name }}"
+      app: {{ template "apache.fullname" . }}
+      weblogic.resourceVersion: "loadbalancer-v2"
   template:
     metadata:
       labels:
         app: {{ template "apache.fullname" . }}
-        release: "{{ .Release.Name }}"
+        weblogic.resourceVersion: "loadbalancer-v2"
     spec:
       serviceAccountName: {{ template "apache.serviceAccountName" . }}
       terminationGracePeriodSeconds: 60
@@ -39,7 +39,7 @@ spec:
 {{- end }}
       containers:
       - name: {{ template "apache.fullname" . }}
-        image: "{{ .Values.imageRegistry }}/{{ .Values.image }}:{{ .Values.imageTag }}"
+        image: {{ .Values.image | quote }}
         imagePullPolicy: {{ .Values.imagePullPolicy | quote }}
 {{- if or (and (.Values.virtualHostName) (.Values.customCert)) (.Values.volumePath) }}
         volumeMounts:

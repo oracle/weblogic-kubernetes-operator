@@ -1,4 +1,4 @@
-# Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 {{- define "operator.validateInputs" -}}
@@ -12,11 +12,16 @@
 {{- $ignore := include "utils.verifyEnum" (list $scope "imagePullPolicy" (list "Always" "IfNotPresent" "Never")) -}}
 {{- $ignore := include "utils.verifyOptionalDictionaryList" (list $scope "imagePullSecrets") -}}
 {{- $ignore := include "utils.verifyEnum" (list $scope "javaLoggingLevel" (list "SEVERE" "WARNING" "INFO" "CONFIG" "FINE" "FINER" "FINEST")) -}}
+{{- $ignore := include "utils.mutexString" (list $scope "externalCertificateSecret" (list "externalOperatorKey" "externalOperatorCert")) -}}
 {{- if include "utils.verifyBoolean" (list $scope "externalRestEnabled") -}}
 {{-   if $scope.externalRestEnabled -}}
 {{-     $ignore := include "utils.verifyInteger" (list $scope "externalRestHttpsPort") -}}
-{{-     $ignore := include "utils.verifyString"  (list $scope "externalOperatorCert") -}}
-{{-     $ignore := include "utils.verifyString"  (list $scope "externalOperatorKey") -}}
+{{-     if (or (hasKey $scope "externalOperatorCert") (hasKey $scope "externalOperatorKey")) -}}
+{{-       $ignore := include "utils.verifyString"  (list $scope "externalOperatorCert") -}}
+{{-       $ignore := include "utils.verifyString"  (list $scope "externalOperatorKey") -}}
+{{-     else }}
+{{-       $ignore := include "utils.verifyString"  (list $scope "externalCertificateSecret") -}}
+{{-     end -}}
 {{-   end -}}
 {{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "remoteDebugNodePortEnabled") -}}
