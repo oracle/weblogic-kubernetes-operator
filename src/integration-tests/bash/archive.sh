@@ -5,7 +5,7 @@
 #
 # archive.sh <source_dir> <target_dir>
 #   - internal helper method
-#   - archives directory ${1} into ${2}/IntSuite.TIMESTAMP.tar.gz
+#   - archives directory ${1} into ${2}/IntSuite.TIMESTAMP.jar
 #   - deletes all but the 10 newest archives
 #   - this method doesn't have any configurable env vars
 #
@@ -24,7 +24,7 @@ function fail {
 function archive {
   local SOURCE_DIR="${1?}"
   local ARCHIVE_DIR="${2?}"
-  local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.tar.gz"
+  local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.jar"
   local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
   local OUTFILE="/tmp/$ARCHIVE_FILE"
 
