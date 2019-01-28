@@ -34,12 +34,13 @@ function archive {
 
   mkdir -p $ARCHIVE_DIR || fail Could not archive, could not create target directory \'$ARCHIVE_DIR\'.
 
-  tar -czf $ARCHIVE $SOURCE_DIR > $OUTFILE 2>&1 
-  [ $? -eq 0 ] || fail "Could not archive, 'tar -czf $ARCHIVE $SOURCE_DIR' command failed: `cat $OUTFILE`"
+  # tar -czf $ARCHIVE $SOURCE_DIR > $OUTFILE 2>&1
+  jar cf $ARCHIVE $SOURCE_DIR > $OUTFILE 2>&1
+  [ $? -eq 0 ] || fail "Could not archive, 'jar cf $ARCHIVE $SOURCE_DIR' command failed: `cat $OUTFILE`"
   rm -f $OUTFILE
 
-  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*tar.gz" | sort -r | awk '{ if (NR>10) print $NF }' | xargs rm -f
-
+  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*jar" | sort -r | awk '{ if (NR>10) print $NF }' | xargs rm -f
+   
   trace Archived to \'$ARCHIVE\'.
 }
 
