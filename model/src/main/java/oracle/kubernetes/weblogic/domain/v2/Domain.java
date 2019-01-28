@@ -24,7 +24,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster. */
-@SuppressWarnings("deprecation")
+@Description(
+    "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
 public class Domain {
   /** The pattern for computing the default shared logs directory. */
   private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
