@@ -141,7 +141,7 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void test1CreateFirstOperatorAndDomain() throws Exception {
-	  
+
     logTestBegin("test1CreateFirstOperatorAndDomain");
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
