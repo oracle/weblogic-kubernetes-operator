@@ -324,24 +324,29 @@ public class Domain {
       String username,
       String password)
       throws Exception {
+    String adminPod = domainUid + "-" + adminServerName;
 
-    TestUtils.kubectlcp(
-        webappLocation,
-        appLocationInPod + "/" + webappName + ".war",
-        domainUid + "-" + adminServerName,
-        domainNS);
+    String cmd =
+        " -- bash -c 'cat > " + appLocationInPod + "/" + webappName + ".war' < " + webappLocation;
 
-    TestUtils.kubectlcp(
-        projectRoot + "/integration-tests/src/test/resources/deploywebapp.py",
-        appLocationInPod + "/deploywebapp.py",
-        domainUid + "-" + adminServerName,
-        domainNS);
+    TestUtils.kubectlexec(adminPod, domainNS, cmd);
 
-    TestUtils.kubectlcp(
-        projectRoot + "/integration-tests/src/test/resources/callpyscript.sh",
-        appLocationInPod + "/callpyscript.sh",
-        domainUid + "-" + adminServerName,
-        domainNS);
+    TestUtils.kubectlexec(
+        adminPod,
+        domainNS,
+        " -- bash -c 'cat > "
+            + appLocationInPod
+            + "/deploywebapp.py' < "
+            + projectRoot
+            + "/integration-tests/src/test/resources/deploywebapp.py");
+    TestUtils.kubectlexec(
+        adminPod,
+        domainNS,
+        " -- bash -c 'cat > "
+            + appLocationInPod
+            + "/callpyscript.sh' < "
+            + projectRoot
+            + "/integration-tests/src/test/resources/callpyscript.sh");
 
     callShellScriptByExecToPod(username, password, webappName, appLocationInPod);
   }
@@ -840,7 +845,9 @@ public class Domain {
         .append(domainUid)
         .append("-")
         .append(adminServerName)
-        .append(" ")
+        .append(" -- bash -c 'chmod +x -R ")
+        .append(appLocationInPod)
+        .append("  && ")
         .append(appLocationInPod)
         .append("/callpyscript.sh ")
         .append(appLocationInPod)
@@ -862,7 +869,8 @@ public class Domain {
         .append("/")
         .append(webappName)
         .append(".war ")
-        .append(clusterName);
+        .append(clusterName)
+        .append("'");
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
     if (result.exitValue() != 0) {
