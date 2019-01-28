@@ -1,0 +1,61 @@
+domainInfo:
+    AdminUserName: 'weblogic'
+    AdminPassword: 'welcome1'
+topology:
+    Name: 'domain1'
+    AdminServerName: 'admin-server'
+    ProductionModeEnabled: true
+    Cluster:
+        'cluster-1':
+            DynamicServers:
+                ServerNamePrefix: 'managed-server'
+                MaxDynamicClusterSize: 5
+                CalculatedListenPorts: false
+                ServerTemplate: 'cluster-1-template'
+                DynamicClusterSize: 5
+    Server:
+        'admin-server':
+            NetworkAccessPoint:
+                T3Channel:
+                    PublicPort: 30012
+                    ListenPort: 30012
+                    PublicAddress: kubernetes
+    ServerTemplate:
+        'cluster-1-template':
+            ListenPort: 8001
+            Cluster: 'cluster-1'
+            SSL:
+                ListenPort: 8100
+    SecurityConfiguration:
+        Realm:
+            myrealm:
+                Adjudicator:
+                    DefaultAdjudicator:
+                        DefaultAdjudicator:
+                AuthenticationProvider:
+                    DefaultAuthenticator:
+                        DefaultAuthenticator:
+                    DefaultIdentityAsserter:
+                        DefaultIdentityAsserter:
+                Authorizer:
+                    XACMLAuthorizer:
+                        XACMLAuthorizer:
+                            PolicyDeploymentEnabled: true
+                CertPathProvider:
+                    WebLogicCertPathProvider:
+                        WebLogicCertPathProvider:
+                CredentialMapper:
+                    DefaultCredentialMapper:
+                        DefaultCredentialMapper:
+                PasswordValidator:
+                    SystemPasswordValidator:
+                        SystemPasswordValidator:
+                RoleMapper:
+                    XACMLRoleMapper:
+                        XACMLRoleMapper:
+appDeployments:
+    Application:
+        testwebapp:
+            SourcePath: wlsdeploy/applications/testwebapp.war
+            ModuleType: war
+            Target: 'cluster-1'

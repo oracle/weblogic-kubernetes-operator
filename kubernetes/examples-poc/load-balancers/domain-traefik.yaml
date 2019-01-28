@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: domain1-uid-traefik
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.resourceVersion: domain-v2
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: 'domain1.org'
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: 'domain1-uid-cluster-cluster-1'
+          servicePort: 8001

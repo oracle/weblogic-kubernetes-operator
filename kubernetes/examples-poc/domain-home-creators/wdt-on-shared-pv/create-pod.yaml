@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: domain1-uid-create-pod
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: domain1-uid
+spec:
+  restartPolicy: Never
+  containers:
+    - name: create-domain-home
+      image: store/oracle/weblogic:12.2.1.3
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - mountPath: /shared
+          name: domain-namespace-storage-volume
+      command: ["bash", "-c"]
+      args:
+        - echo starting;
+          DEF_DIR='/u01/domain1-def';
+          DOMAIN_HOME='/shared/domains/domain1-uid';
+          while [[ ! -d ${DEF_DIR} ]]; do
+            sleep 5;
+          done;
+          cd ${DEF_DIR};
+          jar -xvf weblogic-deploy.zip;
+          chmod a+x ${DEF_DIR}/weblogic-deploy/bin/*.sh;
+          jar -cvf apps.zip wlsdeploy;
+          mkdir -p ${DOMAIN_HOME};
+          weblogic-deploy/bin/createDomain.sh -oracle_home ${ORACLE_HOME} -java_home ${JAVA_HOME} -domain_home ${DOMAIN_HOME} -domain_type WLS -model_file ${DEF_DIR}/model/model.yaml -archive_file ${DEF_DIR}/apps.zip;
+          find ${DOMAIN_HOME} -type f;
+          cat ${DOMAIN_HOME}/config/config.xml;
+          echo done;
+          exit 0;
+  volumes:
+    - name: domain-namespace-storage-volume
+      persistentVolumeClaim:
+        claimName: sample-domain1-ns-pvc

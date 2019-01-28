@@ -1,0 +1,36 @@
+apiVersion: "weblogic.oracle/v2"
+kind: Domain
+metadata:
+  name: domain1-uid
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: domain1-uid
+spec:
+  image: "domain1:latest"
+  imagePullPolicy: "Never"
+  webLogicCredentialsSecret: 
+    name: domain1-uid-weblogic-credentials
+  logHomeEnabled: true
+  logHome: /shared/logs/domain1-uid
+  includeServerOutInPodLog: true
+  serverPod:
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
+    volumes:
+    - name: domain-namespace-storage-volume
+      persistentVolumeClaim:
+        claimName: sample-domain1-ns-pvc
+    volumeMounts:
+    - mountPath: /shared
+      name: domain-namespace-storage-volume
+  adminServer:
+    adminService:
+      channels:
+      - channelName: default
+        nodePort: 30701
+      - channelName: T3Channel
+  replicas: 1
