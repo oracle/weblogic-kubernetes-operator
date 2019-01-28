@@ -16,17 +16,14 @@ topology:
                 ServerTemplate: '@@PROP:clusterName@@-template'
     Server:
         '@@PROP:adminServerName@@':
-            ListenAddress: '@@PROP:domainUID@@-@@PROP:adminServerName@@'
             NetworkAccessPoint:
                 T3Channel:
-                    ListenAddress: '@@PROP:domainUID@@-@@PROP:adminServerName@@'
                     ListenPort: '@@PROP:t3ChannelPort@@'
                     PublicAddress: '@@PROP:t3PublicAddress@@'
                     PublicPort: '@@PROP:t3ChannelPort@@'
     ServerTemplate:
         '@@PROP:clusterName@@-template':
             Cluster: '@@PROP:clusterName@@'
-            ListenAddress: '@@PROP:domainUID@@-@@PROP:managedServerNameBase@@${id}'
             ListenPort: '@@PROP:managedServerPort@@'
             JTAMigratableTarget:
                 Cluster: '@@PROP:clusterName@@'
