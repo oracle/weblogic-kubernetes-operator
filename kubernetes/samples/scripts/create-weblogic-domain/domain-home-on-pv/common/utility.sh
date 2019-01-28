@@ -47,6 +47,8 @@ function prepareDomainHomeDir {
   fi
 
   # Create the base folders
+  createFolder ${DOMAIN_ROOT_DIR}/domains
+  createFolder ${DOMAIN_LOGS_DIR}
   createFolder ${DOMAIN_ROOT_DIR}/applications
   createFolder ${DOMAIN_ROOT_DIR}/stores
 }
