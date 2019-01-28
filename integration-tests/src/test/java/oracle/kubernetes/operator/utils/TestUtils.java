@@ -232,7 +232,11 @@ public class TestUtils {
     new File(filePath).setExecutable(true, false);
 
     // copy file to pod
-    kubectlexec(podName, namespace, " -- bash -c 'cat > /shared/killserver.sh' < " + filePath);
+    kubectlexec(
+        podName,
+        namespace,
+        " -- bash -c 'chmod +x /shared/killserver.sh && cat > /shared/killserver.sh' < "
+            + filePath);
 
     // kill server process 3 times
     for (int i = 0; i < 3; i++) {
