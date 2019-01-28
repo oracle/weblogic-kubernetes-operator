@@ -1,0 +1,53 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${DOMAIN_UID}-mysql
+  namespace: ${NAMESPACE}
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: ${DOMAIN_UID}-mysql
+  clusterIP: None
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  labels:
+    weblogic.domainUID: ${DOMAIN_UID}
+  name: ${DOMAIN_UID}-mysql
+  namespace: ${NAMESPACE}
+spec:
+  selector:
+    matchLabels:
+      app: ${DOMAIN_UID}-mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ${DOMAIN_UID}-mysql
+    spec:
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+          # Use secret in real usage
+        - name: MYSQL_ROOT_PASSWORD
+          value: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-storage-volume
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mysql-storage-volume
+        persistentVolumeClaim:
+          claimName: ${DOMAIN_UID}-mysql-pvc
