@@ -18,7 +18,7 @@ script=${CREATE_DOMAIN_SCRIPT_DIR}/create-domain-script.sh
 
 checkCreateDomainScript $script
 checkDomainSecret
-prepareDomainHomeDir
+checkDomainHomeDir
 
 # Execute the script to create the domain
 source $script
