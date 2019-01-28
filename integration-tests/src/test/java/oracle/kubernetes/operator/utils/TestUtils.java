@@ -232,7 +232,7 @@ public class TestUtils {
     new File(filePath).setExecutable(true, false);
 
     // copy file to pod
-    kubectlcp(filePath, "/shared/killserver.sh", podName, namespace);
+    kubectlexec(podName, namespace, " -- bash -c 'cat > /shared/killserver.sh' < " + filePath);
 
     // kill server process 3 times
     for (int i = 0; i < 3; i++) {
@@ -311,8 +311,9 @@ public class TestUtils {
         .append(" ")
         .append(scriptPath);
 
-    ExecResult result = ExecCommand.exec("kubectl get pods -n " + namespace);
-    logger.info("get pods before killing the server " + result.stdout() + "\n " + result.stderr());
+    // ExecResult result = ExecCommand.exec("kubectl get pods -n " + namespace);
+    // logger.info("get pods before killing the server " + result.stdout() + "\n " +
+    // result.stderr());
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     return ExecCommand.exec(cmdKubectlSh.toString());
   }
@@ -646,10 +647,11 @@ public class TestUtils {
         .append(namespace)
         .append(" exec -it ")
         .append(podName)
-        .append(" ")
+        .append(" -- bash -c 'chmod +x -R /shared && ")
         .append(scriptPath)
         .append(" ")
-        .append(arguments);
+        .append(arguments)
+        .append("'");
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
     if (result.exitValue() != 0) {
@@ -682,18 +684,20 @@ public class TestUtils {
       throws Exception {
 
     // copy wldf.py script tp pod
-    TestUtils.kubectlcp(
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
-        "/shared/wldf.py",
+    TestUtils.kubectlexec(
         adminPodName,
-        domainNS);
+        domainNS,
+        " -- bash -c 'cat > /shared/wldf.py' < "
+            + BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/wldf/wldf.py");
 
     // copy callpyscript.sh to pod
-    TestUtils.kubectlcp(
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
-        "/shared/callpyscript.sh",
+    TestUtils.kubectlexec(
         adminPodName,
-        domainNS);
+        domainNS,
+        " -- bash -c 'cat > /shared/callpyscript.sh' < "
+            + BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/callpyscript.sh");
 
     // arguments to shell script to call py script
     String arguments =
