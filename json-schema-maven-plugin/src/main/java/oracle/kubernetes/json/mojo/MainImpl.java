@@ -17,7 +17,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 public class MainImpl implements Main {
   private SchemaGenerator generator = new SchemaGenerator();
   private ClassLoader classLoader;
-  private Map<String, Object> schema;
+  private String kubernetesVersion;
 
   @Override
   public void setIncludeDeprecated(boolean includeDeprecated) {
@@ -46,6 +46,7 @@ public class MainImpl implements Main {
 
   @Override
   public void setKubernetesVersion(String kubernetesVersion) throws IOException {
+    this.kubernetesVersion = kubernetesVersion;
     generator.useKubernetesVersion(kubernetesVersion);
   }
 
@@ -56,12 +57,14 @@ public class MainImpl implements Main {
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
-  public void generateSchema(String className, File outputFile) throws MojoExecutionException {
+  public Map<String, Object> generateSchema(String className, File outputFile)
+      throws MojoExecutionException {
     outputFile.getParentFile().mkdirs();
     try (FileWriter writer = new FileWriter(outputFile)) {
       Class<?> theClass = classLoader.loadClass(className);
-      schema = generator.generate(theClass);
+      Map<String, Object> schema = generator.generate(theClass);
       writer.write(SchemaGenerator.prettyPrint(schema));
+      return schema;
     } catch (IOException e) {
       throw new MojoExecutionException("Error generating schema", e);
     } catch (ClassNotFoundException e) {
@@ -71,11 +74,24 @@ public class MainImpl implements Main {
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
-  public void generateMarkdown(File outputFile) throws MojoExecutionException {
+  public void generateMarkdown(String rootName, File outputFile, Map<String, Object> schema)
+      throws MojoExecutionException {
     outputFile.getParentFile().mkdirs();
 
+    YamlDocGenerator generator = new YamlDocGenerator(schema);
     try (FileWriter writer = new FileWriter(outputFile)) {
-      writer.write(new YamlDocGenerator(schema).generate("Domain", schema));
+      if (kubernetesVersion != null) generator.useKubernetesVersion(kubernetesVersion);
+      writer.write(generator.generate(rootName));
+    } catch (IOException e) {
+      throw new MojoExecutionException("Error generating markdown", e);
+    }
+
+    String kubernetesSchemaMarkdownFile = generator.getKubernetesSchemaMarkdownFile();
+    if (kubernetesSchemaMarkdownFile == null) return;
+
+    File kubernetesFile = new File(outputFile.getParent(), kubernetesSchemaMarkdownFile);
+    try (FileWriter writer = new FileWriter(kubernetesFile)) {
+      writer.write(generator.getKubernetesSchemaMarkdown());
     } catch (IOException e) {
       throw new MojoExecutionException("Error generating markdown", e);
     }

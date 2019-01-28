@@ -11,6 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.objectweb.asm.Opcodes.ASM5;
 
+import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import java.io.File;
@@ -302,12 +303,23 @@ public class JsonSchemaMojoTest {
   }
 
   @Test
-  public void whenGenerateMarkdownSpecified_denerateMarkdown() throws Exception {
+  public void whenGenerateMarkdownSpecified_generateMarkdown() throws Exception {
     setMojoParameter("generateMarkdown", true);
 
     mojo.execute();
 
     assertThat(main.getMarkdownFile(), equalTo(MARKDOWN_FILE));
+  }
+
+  @Test
+  public void whenGenerateMarkdownSpecified_useGeneratedSchemaForMarkdown() throws Exception {
+    ImmutableMap<String, Object> generatedSchema = ImmutableMap.of();
+    main.setGeneratedSchema(generatedSchema);
+    setMojoParameter("generateMarkdown", true);
+
+    mojo.execute();
+
+    assertThat(main.getMarkdownSchema(), sameInstance(generatedSchema));
   }
 
   @Test
