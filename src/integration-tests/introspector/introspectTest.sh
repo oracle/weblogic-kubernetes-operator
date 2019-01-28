@@ -435,6 +435,13 @@ function deployWebLogic_PV_PVC_and_Secret() {
   deployYamlTemplate wl-secret.yamlt wl-secret.yaml
 }
 
+function deployMySQL() {
+  trace "Info: Deploying MySQL pv, pvc, & deployment."
+  deployYamlTemplate mysql-pv.yamlt mysql-pv.yaml
+  deployYamlTemplate mysql-pvc.yamlt mysql-pvc.yaml 
+  deployYamlTemplate mysql-deployment.yamlt mysql-deployment.yaml
+}
+
 #############################################################################
 #
 # Run create domain job if CREATE_DOMAIN is true
@@ -772,6 +779,7 @@ if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   deployTestScriptConfigMap
   deployCustomOverridesConfigMap
   createTestRootPVDir
+  deployMySQL
   deployWebLogic_PV_PVC_and_Secret
   deployCreateDomainJob
   #deployIntrospectJob
