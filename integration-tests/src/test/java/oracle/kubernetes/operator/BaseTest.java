@@ -449,12 +449,15 @@ public class BaseTest {
     TestUtils.createDirUnderDomainPV(dirPathToCreate);
 
     // copy script to pod
-    TestUtils.kubectlcp(
-        getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
-        "/shared/domains/" + domainUID + "/bin/scripts/scalingAction.sh",
-        // "/shared/scalingAction.sh",
+    TestUtils.kubectlexec(
         podName,
-        domainNS);
+        domainNS,
+        " -- bash -c 'cat > "
+            + "/shared/domains/"
+            + domainUID
+            + "/bin/scripts/scalingAction.sh' < "
+            + getProjectRoot()
+            + "/src/scripts/scaling/scalingAction.sh");
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
