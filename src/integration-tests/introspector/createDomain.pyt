@@ -48,6 +48,7 @@ set('ListenPort', ${ADMIN_PORT})
 set('Name', '${ADMIN_NAME}')
 set('AdministrationPort', ${ADMINISTRATION_PORT})
 set('AdministrationPortEnabled', 'true')
+adminServerMBean=cmo
 
 cd('/Servers/${ADMIN_NAME}')
 set('MaxMessageSize',999999)
@@ -160,6 +161,66 @@ def createDataSource(dsName,dsJNDI,dsHost,dsSID,dsTarget):
   set('MinCapacity', 0)
 
 createDataSource('testDS','testDS','myoriginalhostname','myoriginalsid','${ADMIN_NAME}')
+
+def createMySQLDataSource(jndiName, driver, globalTX, url, user, passwd, minSize, maxSize, target):
+  print '### createMySQLDataSource #################################################################################'
+
+  #dsName = jndiNames[0]
+  dsName = jndiName
+
+  print 'Creating MySQL DataSource ' + dsName
+
+  cd('/')
+  jdbcSystemResource = create(dsName, "JDBCSystemResource")
+
+  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+  dataSourceParams = create('dataSourceParams', 'JDBCDataSourceParams')
+  dataSourceParams.setGlobalTransactionsProtocol(globalTX)
+  cd('JDBCDataSourceParams/NO_NAME_0')
+  #set('JNDINames', jarray.array(jndiNames, String))
+  set('JNDIName', java.lang.String(jndiName))
+
+  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+  connPoolParams = create('connPoolParams', 'JDBCConnectionPoolParams')
+  connPoolParams.setInitialCapacity(minSize)
+  connPoolParams.setMinCapacity(minSize)
+  connPoolParams.setMaxCapacity(maxSize)
+  connPoolParams.setCapacityIncrement(1)
+  connPoolParams.setTestConnectionsOnReserve(true)
+  connPoolParams.setTestTableName('SQL SELECT 1')
+
+  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+  driverParams = create('driverParams', 'JDBCDriverParams')
+  driverParams.setUrl(url)
+  driverParams.setDriverName(driver)
+  driverParams.setPasswordEncrypted(passwd)
+  cd('JDBCDriverParams/NO_NAME_0')
+
+  create(dsName, 'Properties')
+  cd('Properties/NO_NAME_0')
+
+  create('user', 'Property')
+  cd('Property/user')
+  cmo.setValue(user)
+
+  cd('/JDBCSystemResource/' + dsName)
+  jdbcSystemResource.setTargets(jarray.array([target], weblogic.management.configuration.TargetMBean))
+
+  print dsName + ' successfully created.'
+  return jdbcSystemResource
+
+  #<!-- MySQL DB info to create JDBC DS -->
+  #<property name="mysql.db.host" value="{k8s.admin.host}/>
+  #<property name="mysql.db.port" value="31306"/>
+  #<property name="mysql.db.name" value="mysql"/>
+  #<property name="mysql.db.user" value="root"/>
+  #<property name="mysql.db.password" value="root123"/>
+  #<property name="mysql.db.driver" value="com.mysql.cj.jdbc.Driver" />
+  #<property name="mysql.ds.name" value="MySQLDataSource"/>
+  #<property name="mysql.db.url" value="jdbc:mysql://{mysql.db.host}:{mysql.db.port}/mysql"/>
+  #<property name="mysql.db.jndi" value="jdbc/TestMySQLDB" />
+
+createMySQLDataSource('MySqlDs','com.mysql.cj.jdbc.Driver','None','jdbc:mysql://domain1-mysql:3306/mysql', 'root', 'password', 0, 10, adminServerMBean)
 
 # Create a cluster
 # ======================
