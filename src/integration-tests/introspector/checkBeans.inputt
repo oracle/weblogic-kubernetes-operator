@@ -22,6 +22,8 @@
 
 /ServerTemplates/mycluster-template/Log/mycluster-template,FileName,logs/mycluster-template.log,/shared/logs/managed-server${id}.log
 /ServerTemplates/mycluster-template,ListenAddress,None,domain1-managed-server${id}
+# Note that a customer/admin should never override a port, they must stay fixed
+/ServerTemplates/mycluster-template,ListenPort,8001,8001
 
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,Url,jdbc:oracle:thin:@myoriginalhostname:1521:myoriginalsid,jdbc:oracle:thin:@mynewhost:1521:mynewsid
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,PasswordEncrypted,*,!
