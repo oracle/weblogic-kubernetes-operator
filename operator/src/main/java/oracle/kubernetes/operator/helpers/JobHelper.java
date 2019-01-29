@@ -11,7 +11,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.util.ArrayList;
 import java.util.List;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -93,7 +92,9 @@ public class JobHelper {
 
     @Override
     List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
-      List<V1EnvVar> envVarList = new ArrayList<V1EnvVar>();
+      // Start with environment variables specified for Admin Server
+      List<V1EnvVar> envVarList = getDomain().getAdminServerSpec().getEnvironmentVariables();
+
       addEnvVar(envVarList, "NAMESPACE", getNamespace());
       addEnvVar(envVarList, "DOMAIN_UID", getDomainUID());
       addEnvVar(envVarList, "DOMAIN_HOME", getDomainHome());
