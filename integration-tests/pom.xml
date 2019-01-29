@@ -76,13 +76,6 @@
 			<artifactId>javax.jms-api</artifactId>
 			<version>2.0</version>
 		</dependency>
-		<dependency>
-			<groupId>wlthint3client</groupId>
-			<artifactId>wlthint3client</artifactId>
-			<scope>system</scope>
-			<version>1.0</version>
-			<systemPath>${project.basedir}/src/test/resources/wlthint3client.jar</systemPath>
-		</dependency>
 	</dependencies>
 
 
@@ -115,6 +108,19 @@
 								</goals>
 								<configuration>
 									<executable>${resource-integration-test}/setupenv.sh</executable>
+								</configuration>
+							</execution>
+							<execution>
+								<id>getT3Client</id>
+								<phase>pre-integration-test</phase>
+								<goals>
+									<goal>exec</goal>
+								</goals>
+								<configuration>
+									<executable>${resource-integration-test}/getT3Client.sh</executable>
+									<arguments>
+										<argument></argument>
+									</arguments>
 								</configuration>
 							</execution>
 						</executions>
@@ -168,6 +174,9 @@
 								<!--<TAGS>${env.TAGS}</TAGS> -->
 								<maxThreads>3</maxThreads>
 							</systemPropertyVariables>
+							<additionalClasspathElements>
+								<additionalClasspathElement>${project.basedir}/src/test/resources/wlthint3client.jar</additionalClasspathElement>
+							</additionalClasspathElements>
     					</configuration>
 
 						<executions>
