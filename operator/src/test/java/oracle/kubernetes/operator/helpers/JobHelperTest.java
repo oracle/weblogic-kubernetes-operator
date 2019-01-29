@@ -35,6 +35,8 @@ public class JobHelperTest {
 
   private static final String NS = "ns1";
   private static final String DOMAIN_UID = "JobHelperTestDomain";
+  private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
+  private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
 
   @Test
   public void creatingServers_true_whenClusterReplicas_gt_0() {
@@ -148,7 +150,9 @@ public class JobHelperTest {
 
     configureDomain(domainPresenceInfo)
         .withEnvironmentVariable("item1", "value1")
-        .withEnvironmentVariable("item2", "value2");
+        .withEnvironmentVariable("item2", "value2")
+        .withEnvironmentVariable("WL_HOME", "/u01/custom_wl_home/")
+        .withEnvironmentVariable("MW_HOME", "/u01/custom_mw_home/");
 
     Packet packet = new Packet();
     packet
@@ -161,7 +165,31 @@ public class JobHelperTest {
 
     MatcherAssert.assertThat(
         getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
-        allOf(hasEnvVar("item1", "value1"), hasEnvVar("item2", "value2")));
+        allOf(
+            hasEnvVar("item1", "value1"),
+            hasEnvVar("item2", "value2"),
+            hasEnvVar("WL_HOME", "/u01/custom_wl_home/"),
+            hasEnvVar("MW_HOME", "/u01/custom_mw_home/")));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentItemsWithVariables_introspectorPodStartupWithThem() {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    configureDomain(domainPresenceInfo).withEnvironmentVariable("item1", RAW_VALUE_1);
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    MatcherAssert.assertThat(
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        allOf(hasEnvVar("item1", END_VALUE_1)));
   }
 
   @Test
@@ -190,6 +218,24 @@ public class JobHelperTest {
             hasEnvVar("item1", "domain-value1"),
             hasEnvVar("item2", "admin-value2"),
             hasEnvVar("item3", "admin-value3")));
+  }
+
+  @Test
+  public void introspectorPodStartupWithNullAdminUsernamePasswordEnvVarValues() {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    MatcherAssert.assertThat(
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
   }
 
   private DomainPresenceInfo createDomainPresenceInfo() {

@@ -1,10 +1,24 @@
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1ConfigMapVolumeSource;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1JobSpec;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1PodTemplateSpec;
+import io.kubernetes.client.models.V1SecretVolumeSource;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-import oracle.kubernetes.operator.*;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -13,7 +27,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 
-public abstract class JobStepContext implements StepContextConstants {
+public abstract class JobStepContext extends StepContextBase {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
@@ -30,6 +44,11 @@ public abstract class JobStepContext implements StepContextConstants {
 
   void init() {
     jobModel = createJobModel();
+    createSubstitutionMap();
+  }
+
+  private void createSubstitutionMap() {
+    substitutionVariables.put("DOMAIN_HOME", getDomainHome());
   }
 
   private V1Job getJobModel() {
@@ -277,14 +296,8 @@ public abstract class JobStepContext implements StepContextConstants {
     return Arrays.asList(WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH);
   }
 
-  abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
-
   protected String getDomainHome() {
     return getDomain().getDomainHome();
-  }
-
-  static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
-    vars.add(new V1EnvVar().name(name).value(value));
   }
 
   private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
