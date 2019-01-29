@@ -4,8 +4,6 @@ from weblogic.management.configuration import TargetMBean
 wl_home                  = os.environ.get("WL_HOME")
 domain_path              = os.environ.get("DOMAIN_HOME")
 domain_name              = "domain1"
-username                 = "weblogic"
-password                 = "welcome1"
 admin_server_name        = "admin-server"
 admin_port               = 7001
 t3_channel_port          = 30012
@@ -14,6 +12,14 @@ cluster_name             = "cluster-1"
 number_of_ms             = 5
 managed_server_name_base = "managed-server"
 managed_server_port      = 8001
+
+file = open('/weblogic-credentials/username', 'r')
+username = file.read()
+file.close()
+
+file = open('/weblogic-credentials/password', 'r')
+password = file.read()
+file.close()
 
 readTemplate(wl_home + "/common/templates/wls/wls.jar")
 

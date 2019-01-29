@@ -9,25 +9,24 @@ cp -r domain-definitions/wdt/simple domain1-def
 find domain1-def -type f
 edit domain1-def/model/model.yaml
 
-# step 3 - create the domain home
+# step 3 - create a secret containing the WLS admin credentials
+kubectl create secret generic -n sample-domain1-ns domain1-uid-weblogic-credentials \
+  --from-literal=username=weblogic --from-literal=password=welcome1
+kubectl label secret -n sample-domain1-ns domain1-uid-weblogic-credentials \
+  weblogic.domainUID=domain1-uid weblogic.domainName=domain1
+
+# step 4 - create the domain home
 cp weblogic-deploy.zip domain1-def
 cp domain-home-creators/wdt-on-shared-pv/create-pod.yaml domain1-create-pod.yaml
 edit domain1-create-pod.yaml
 kubectl apply -f domain1-create-pod.yaml
 kubectl logs -n sample-domain1-ns domain1-uid-create-pod
-#kubectl cp domain1-def sample-domain1-ns/domain1-uid-create-pod:/u01/
 jar -c domain1-def | kubectl exec -i -n sample-domain1-ns domain1-uid-create-pod -- /bin/bash -c 'cd /u01 && jar -x'
 kubectl get po -n sample-domain1-ns domain1-uid-create-pod
   (until Completed)
 cat /scratch/k8s-dir/storage/domain-namespaces/sample-domain1-ns/domains/domain1-uid/config/config.xml
 kubectl delete -f domain1-create-pod.yaml
 rm domain1-create-pod.yaml
-
-# step 4 - create a secret containing the WLS admin credentials
-kubectl create secret generic -n sample-domain1-ns domain1-uid-weblogic-credentials \
-  --from-literal=username=weblogic --from-literal=password=welcome1
-kubectl label secret -n sample-domain1-ns domain1-uid-weblogic-credentials \
-  weblogic.domainUID=domain1-uid weblogic.domainName=domain1
 
 # step 5 - create the domain resource and wait for the servers to start
 cp domain-resources/domain-and-logs-on-shared-pv.yaml domain1.yaml
@@ -50,10 +49,10 @@ kubectl delete -f domain1-lb.yaml
 kubectl delete -f domain1.yaml
 kubectl get po -n sample-domain1-ns && kubectl get svc -n sample-domain1-ns
   (until they all go away)
-kubectl delete secret -n sample-domain1-ns domain1-uid-weblogic-credentials
 kubectl delete -f sample-domain1-ns-pv.yaml
 rm domain1-lb.yaml
 rm domain1.yaml
 rm -r domain1-def
+kubectl delete secret -n sample-domain1-ns domain1-uid-weblogic-credentials
 rm sample-domain1-ns-pv.yaml
 rm -r /scratch/k8s-dir/storage/domain-namespaces/sample-domain1-ns
