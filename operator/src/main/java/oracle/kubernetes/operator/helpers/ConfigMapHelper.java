@@ -616,7 +616,7 @@ public class ConfigMapHelper {
 
     public String toString() {
       if (domainValid) {
-        return "Ddomain: " + domain;
+        return "domain: " + domain;
       }
       return "domainValid: " + domainValid + ", validationErrors: " + validationErrors;
     }
