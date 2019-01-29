@@ -270,7 +270,7 @@ public class ConfigMapHelper {
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
-        if (domainTopology.isDomainInvalid()) {
+        if (!domainTopology.getDomainValid()) {
           // If introspector determines Domain is invalid then log erros and terminate the fiber
           logValidationErrors(domainTopology.getValidationErrors());
           return doNext(null, packet);
@@ -590,7 +590,11 @@ public class ConfigMapHelper {
     private List<String> validationErrors;
 
     public boolean getDomainValid() {
-      return this.domainValid;
+      // domainValid = true AND no validation errors exist
+      if (domainValid && getValidationErrors().isEmpty()) {
+        return true;
+      }
+      return false;
     }
 
     public void setDomainValid(boolean domainValid) {
@@ -616,7 +620,7 @@ public class ConfigMapHelper {
         // errors from introspector.
         validationErrors = new ArrayList<>();
         validationErrors.add(
-            "Error, domain is marked invalid without error messages from introspector job.");
+            "Error, domain is invalid although there are no validation errors from introspector job.");
       }
 
       return validationErrors;
@@ -631,14 +635,6 @@ public class ConfigMapHelper {
         return "domain: " + domain;
       }
       return "domainValid: " + domainValid + ", validationErrors: " + validationErrors;
-    }
-
-    boolean isDomainInvalid() {
-      // domainValid = false OR validation errors exist
-      if (!domainValid || !getValidationErrors().isEmpty()) {
-        return true;
-      }
-      return false;
     }
   }
 }
