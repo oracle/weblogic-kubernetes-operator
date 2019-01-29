@@ -1019,10 +1019,10 @@ public class Domain {
       logger.info("IMAGE_TAG_WEBLOGIC " + imageTag);
     }
     if (System.getenv("JENKINS") != null) {
-      // the below vars can be exported in Jenkins configure, but keeping it here helps for testing
-      // without
-      // effecting the current Jenkins runs
-      domainMap.put("imagePullSecretName", "docker-store");
+	    // the below vars can be exported in Jenkins configure, but keeping it here helps for testing
+	    // without
+	    // effecting the current Jenkins runs
+	    domainMap.put("imagePullSecretName", "docker-store");
     }
 
     domainMap.put("logHome", "/shared/logs/" + domainUid);
@@ -1036,7 +1036,7 @@ public class Domain {
 
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
-      if (System.getenv("WERCKER") != null) {
+      /* if (System.getenv("WERCKER") != null) {
         // create docker registry secrets
         TestUtils.createDockerRegistrySecret(
             System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
@@ -1045,7 +1045,7 @@ public class Domain {
             System.getenv("REPO_PASSWORD"),
             System.getenv("REPO_EMAIL"),
             domainNS);
-      }
+      } */
     }
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
