@@ -269,11 +269,8 @@ public class ConfigMapHelper {
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
-        if (!domainTopology.getValidationErrors().isEmpty()) {
-          for (String err : domainTopology.getValidationErrors()) {
-            LOGGER.severe(err);
-          }
-          doNext(null, packet);
+        if (domainTopology.hasValidationErrors()) {
+          return doNext(null, packet);
         }
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
         ScanCache.INSTANCE.registerScan(
@@ -604,6 +601,28 @@ public class ConfigMapHelper {
 
     public void setValidationErrors(List<String> validationErrors) {
       this.validationErrors = validationErrors;
+    }
+
+    public String toString() {
+      if (domainValid) {
+        return "Ddomain: " + domain;
+      }
+      return "domainValid: " + domainValid + ", validationErrors: " + validationErrors;
+    }
+
+    public boolean hasValidationErrors() {
+      List<String> validationErrors = getValidationErrors();
+      if (!domainValid || !validationErrors.isEmpty()) {
+        logValidationErrors(validationErrors);
+        return true;
+      }
+      return false;
+    }
+
+    private void logValidationErrors(List<String> validationErrors) {
+      for (String err : validationErrors) {
+        LOGGER.severe(err);
+      }
     }
   }
 }
