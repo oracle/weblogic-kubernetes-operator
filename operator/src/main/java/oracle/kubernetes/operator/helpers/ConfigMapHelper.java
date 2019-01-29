@@ -14,6 +14,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -269,9 +270,8 @@ public class ConfigMapHelper {
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
-        if (!domainTopology.getDomainValid()) {
-          // If introspector determines Domain is invalid then log and validation errors
-          // and terminate the fiber
+        if (domainTopology.isDomainInvalid()) {
+          // If introspector determines Domain is invalid then log erros and terminate the fiber
           logValidationErrors(domainTopology.getValidationErrors());
           return doNext(null, packet);
         }
@@ -607,7 +607,19 @@ public class ConfigMapHelper {
     }
 
     public List<String> getValidationErrors() {
-      return validationErrors == null ? Collections.emptyList() : validationErrors;
+      if (validationErrors == null) {
+        validationErrors = Collections.emptyList();
+      }
+
+      if (!domainValid && validationErrors.isEmpty()) {
+        // add a log message that domain was marked invalid since we have no validation
+        // errors from introspector.
+        validationErrors = new ArrayList<>();
+        validationErrors.add(
+            "Error, domain is marked invalid without error messages from introspector job.");
+      }
+
+      return validationErrors;
     }
 
     public void setValidationErrors(List<String> validationErrors) {
@@ -619,6 +631,14 @@ public class ConfigMapHelper {
         return "domain: " + domain;
       }
       return "domainValid: " + domainValid + ", validationErrors: " + validationErrors;
+    }
+
+    boolean isDomainInvalid() {
+      // domainValid = false OR validation errors exist
+      if (!domainValid || !getValidationErrors().isEmpty()) {
+        return true;
+      }
+      return false;
     }
   }
 }
