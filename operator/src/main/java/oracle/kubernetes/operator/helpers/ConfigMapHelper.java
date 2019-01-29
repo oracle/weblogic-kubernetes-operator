@@ -269,7 +269,10 @@ public class ConfigMapHelper {
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
-        if (domainTopology.hasValidationErrors()) {
+        if (!domainTopology.getDomainValid()) {
+          // If introspector determines Domain is invalid then log and validation errors
+          // and terminate the fiber
+          logValidationErrors(domainTopology.getValidationErrors());
           return doNext(null, packet);
         }
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
@@ -289,6 +292,14 @@ public class ConfigMapHelper {
 
       // TODO: How do we handle no topology?
       return doNext(getNext(), packet);
+    }
+
+    private void logValidationErrors(List<String> validationErrors) {
+      if (!validationErrors.isEmpty()) {
+        for (String err : validationErrors) {
+          LOGGER.severe(err);
+        }
+      }
     }
 
     private static String getOperatorNamespace() {
@@ -608,21 +619,6 @@ public class ConfigMapHelper {
         return "Ddomain: " + domain;
       }
       return "domainValid: " + domainValid + ", validationErrors: " + validationErrors;
-    }
-
-    public boolean hasValidationErrors() {
-      List<String> validationErrors = getValidationErrors();
-      if (!domainValid || !validationErrors.isEmpty()) {
-        logValidationErrors(validationErrors);
-        return true;
-      }
-      return false;
-    }
-
-    private void logValidationErrors(List<String> validationErrors) {
-      for (String err : validationErrors) {
-        LOGGER.severe(err);
-      }
     }
   }
 }
