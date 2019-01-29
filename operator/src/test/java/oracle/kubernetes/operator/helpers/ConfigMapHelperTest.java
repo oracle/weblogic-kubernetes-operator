@@ -567,7 +567,6 @@ public class ConfigMapHelperTest {
 
     assertNotNull(domainTopology);
     assertTrue(domainTopology.getDomainValid());
-    assertFalse(domainTopology.isDomainInvalid());
 
     WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
     assertNotNull(wlsDomainConfig);
@@ -597,7 +596,6 @@ public class ConfigMapHelperTest {
 
     assertFalse(domainTopology.getValidationErrors().isEmpty());
     assertFalse(domainTopology.getDomainValid());
-    assertTrue(domainTopology.isDomainInvalid());
     assertEquals(
         "The dynamic cluster \"mycluster\"'s dynamic servers use calculated listen ports.",
         domainTopology.getValidationErrors().get(0));
@@ -610,6 +608,5 @@ public class ConfigMapHelperTest {
 
     assertFalse(domainTopology.getValidationErrors().isEmpty());
     assertFalse(domainTopology.getDomainValid());
-    assertTrue(domainTopology.isDomainInvalid());
   }
 }
