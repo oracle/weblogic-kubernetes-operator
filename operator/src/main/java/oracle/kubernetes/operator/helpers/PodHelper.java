@@ -77,11 +77,10 @@ public class PodHelper {
     }
 
     @Override
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> vars = new ArrayList<>(getServerSpec().getEnvironmentVariables());
       addEnvVar(vars, INTERNAL_OPERATOR_CERT_ENV, getInternalOperatorCertFile(tuningParameters));
       overrideContainerWeblogicEnvVars(vars);
-      doSubstitution(vars);
       return vars;
     }
 
@@ -246,7 +245,7 @@ public class PodHelper {
 
     @Override
     @SuppressWarnings("unchecked")
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> envVars = (List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS);
 
       List<V1EnvVar> vars = new ArrayList<>();
@@ -254,7 +253,6 @@ public class PodHelper {
         vars.addAll(envVars);
       }
       overrideContainerWeblogicEnvVars(vars);
-      doSubstitution(vars);
       return vars;
     }
   }
