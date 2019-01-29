@@ -91,20 +91,20 @@ public class JobHelper {
     }
 
     @Override
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
-      // Start with environment variables specified for Admin Server
-      List<V1EnvVar> envVarList = getDomain().getAdminServerSpec().getEnvironmentVariables();
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
+      // Pod for introspector job would use same environment variables as for admin server
+      List<V1EnvVar> vars = getDomain().getAdminServerSpec().getEnvironmentVariables();
 
-      addEnvVar(envVarList, "NAMESPACE", getNamespace());
-      addEnvVar(envVarList, "DOMAIN_UID", getDomainUID());
-      addEnvVar(envVarList, "DOMAIN_HOME", getDomainHome());
-      addEnvVar(envVarList, "NODEMGR_HOME", getNodeManagerHome());
-      addEnvVar(envVarList, "LOG_HOME", getEffectiveLogHome());
-      addEnvVar(envVarList, "INTROSPECT_HOME", getIntrospectHome());
-      addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-      addEnvVar(envVarList, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
+      addEnvVar(vars, "NAMESPACE", getNamespace());
+      addEnvVar(vars, "DOMAIN_UID", getDomainUID());
+      addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
+      addEnvVar(vars, "NODEMGR_HOME", getNodeManagerHome());
+      addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
+      addEnvVar(vars, "INTROSPECT_HOME", getIntrospectHome());
+      addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
+      addEnvVar(vars, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
 
-      return envVarList;
+      return vars;
     }
   }
 
