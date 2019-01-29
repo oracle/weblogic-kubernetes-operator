@@ -195,6 +195,7 @@ public class BaseTest {
     domain.restartUsingServerStartPolicy();
     c = cf.createConnection();
     logger.info("Connection created successfully after cycle");
+    c.close();
     logger.info("Done - testAdminT3ChannelWithJMS");
   }
   /**
