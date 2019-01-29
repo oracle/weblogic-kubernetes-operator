@@ -116,6 +116,19 @@ set('ListenPort', 6124)
 # ==============================================
 setOption('OverwriteDomain', 'true')
 
+# Setup a diagnostics module
+# ============================================
+def createWLDFModule(moduleName):
+  cd('/')
+  print 'create WLDFSystemResource'
+  create(moduleName, 'WLDFSystemResource')
+  cd('/WLDFSystemResource/' + moduleName)
+  #set('Target',dsTarget)
+  cd('/WLDFSystemResource/' + moduleName + '/WLDFResource/' + moduleName)
+  cmo.setName(moduleName)
+
+createWLDFModule('myWLDF')
+
 # Setup a datasource
 # ============================================
 def createDataSource(dsName,dsJNDI,dsHost,dsSID,dsTarget):
