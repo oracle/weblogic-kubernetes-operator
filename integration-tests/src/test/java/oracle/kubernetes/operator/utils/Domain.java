@@ -1019,10 +1019,10 @@ public class Domain {
       logger.info("IMAGE_TAG_WEBLOGIC " + imageTag);
     }
     if (System.getenv("JENKINS") != null) {
-	    // the below vars can be exported in Jenkins configure, but keeping it here helps for testing
-	    // without
-	    // effecting the current Jenkins runs
-	    domainMap.put("imagePullSecretName", "docker-store");
+      // the below vars can be exported in Jenkins configure, but keeping it here helps for testing
+      // without
+      // effecting the current Jenkins runs
+      domainMap.put("imagePullSecretName", "docker-store");
     }
 
     domainMap.put("logHome", "/shared/logs/" + domainUid);
