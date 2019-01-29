@@ -1008,22 +1008,23 @@ public class Domain {
     }
 
     String imageName = "store/oracle/weblogic";
-    if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
+    // uncomment the below after changing $REPO_PREFIX var on wercker
+    /* if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
       logger.info("IMAGE_NAME_WEBLOGIC " + imageName);
-    }
+    } */
 
     String imageTag = "12.2.1.3";
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
       logger.info("IMAGE_TAG_WEBLOGIC " + imageTag);
     }
-    if (System.getenv("JENKINS") != null) {
-      // the below vars can be exported in Jenkins configure, but keeping it here helps for testing
-      // without
-      // effecting the current Jenkins runs
-      domainMap.put("imagePullSecretName", "docker-store");
-    }
+    // if (System.getenv("JENKINS") != null) {
+    // the below vars can be exported in Jenkins configure, but keeping it here helps for testing
+    // without
+    // effecting the current Jenkins runs
+    domainMap.put("imagePullSecretName", "docker-store");
+    // }
 
     domainMap.put("logHome", "/shared/logs/" + domainUid);
     if (!domainMap.containsKey("domainHomeImageBase")) {
