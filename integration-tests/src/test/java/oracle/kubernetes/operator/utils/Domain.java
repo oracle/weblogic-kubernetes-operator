@@ -1038,9 +1038,9 @@ public class Domain {
             System.getenv("REPO_PASSWORD"),
             System.getenv("REPO_EMAIL"),
             domainNS);
-      } 
+      }
     } else {
-    	domainMap.put("imagePullSecretName", "docker-store");
+      domainMap.put("imagePullSecretName", "docker-store");
     }
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
