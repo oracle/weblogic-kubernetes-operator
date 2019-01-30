@@ -4,6 +4,8 @@
 
 package oracle.kubernetes;
 
+import static com.meterware.simplestub.Stub.createStub;
+
 import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,8 +18,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-
-import static com.meterware.simplestub.Stub.createStub;
 
 public class TestUtils {
   /**
