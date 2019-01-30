@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentMap;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -93,7 +92,7 @@ public class DomainStatusUpdater {
     }
   }
 
-  private static class StatusUpdateStep extends Step {
+  static class StatusUpdateStep extends Step {
     public StatusUpdateStep(Step next) {
       super(next);
     }
@@ -125,12 +124,12 @@ public class DomainStatusUpdater {
 
         // Acquire current state
         @SuppressWarnings("unchecked")
-        ConcurrentMap<String, String> serverState =
-            (ConcurrentMap<String, String>) packet.get(ProcessingConstants.SERVER_STATE_MAP);
+        Map<String, String> serverState =
+            (Map<String, String>) packet.get(ProcessingConstants.SERVER_STATE_MAP);
 
         @SuppressWarnings("unchecked")
-        ConcurrentMap<String, ServerHealth> serverHealth =
-            (ConcurrentMap<String, ServerHealth>) packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
+        Map<String, ServerHealth> serverHealth =
+            (Map<String, ServerHealth>) packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
 
         Map<String, ServerStatus> serverStatuses = new TreeMap<>();
         WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
@@ -164,6 +163,7 @@ public class DomainStatusUpdater {
           }
         }
 
+        // num servers in named cluster, using labels
         Map<String, Integer> clusterCounts = new HashMap<>();
         for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
           String serverName = entry.getKey();
@@ -173,11 +173,7 @@ public class DomainStatusUpdater {
               String clusterName =
                   pod.getMetadata().getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
               if (clusterName != null) {
-                clusterCounts.compute(
-                    clusterName,
-                    (key, value) -> {
-                      return (value == null) ? 1 : value + 1;
-                    });
+                clusterCounts.compute(clusterName, (key, value) -> (value == null) ? 1 : value + 1);
               }
               ServerStatus ss =
                   new ServerStatus()
