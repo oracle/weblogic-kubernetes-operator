@@ -51,7 +51,7 @@ This documentation uses several important terms which are intended to have a spe
 | Operator	| A Kubernetes operator is software that performs management of complex applications. |
 | Pod	    | A Kubernetes pod contains one or more containers and is the object that provides the execution environment for an instance of an application component, such as a web server or database. |
 | Job	    | A Kubernetes job is a type of controller that creates one or more pods that run to completion to complete a specific task. |
-| Secret	| A Kubernetes secret is a named object that can store secret information like usernames, passwords, X.509 certificates, or any other arbitrary data. |
+| Secret	| A Kubernetes secret is a named object that can store secret information like user names, passwords, X.509 certificates, or any other arbitrary data. |
 | Service	| A Kubernetes service exposes application endpoints inside a pod to other pods, or outside the Kubernetes cluster.  A service may also provide additional features like load balancing. |
 
 ## Getting started
@@ -80,5 +80,5 @@ You can find the operator image in
 * Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
    * The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`,
 was updated on January 17, 2019, and has all the necessary patches applied.
-   * A `docker pull` is required if you already have this image.
+   * A `docker pull` is required if you have previously pulled this image.
 * You must have the `cluster-admin` role to install the operator.
