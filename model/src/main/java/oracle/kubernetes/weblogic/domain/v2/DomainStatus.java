@@ -8,6 +8,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Range;
@@ -69,7 +70,7 @@ public class DomainStatus {
    *
    * @return conditions
    */
-  public List<DomainCondition> getConditions() {
+  public @Nonnull List<DomainCondition> getConditions() {
     return conditions;
   }
 
@@ -78,7 +79,7 @@ public class DomainStatus {
    *
    * @param conditions conditions
    */
-  public void setConditions(List<DomainCondition> conditions) {
+  public void setConditions(@Nonnull List<DomainCondition> conditions) {
     this.conditions = conditions;
   }
 
@@ -90,6 +91,11 @@ public class DomainStatus {
    */
   public DomainStatus withConditions(List<DomainCondition> conditions) {
     this.conditions = conditions;
+    return this;
+  }
+
+  public DomainStatus addCondition(DomainCondition condition) {
+    conditions.add(condition);
     return this;
   }
 
