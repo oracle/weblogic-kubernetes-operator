@@ -55,9 +55,9 @@ externalRestHttpsPort: 31001
 # The name of the secret used to store the certificate and private key to use for the external operator REST https interface.
 # The secret has to be created in the same namespace of the welbogic operator.
 # This parameter is required if 'externalRestEnabled' is true. Otherwise, it is ignored.
-# As example, a self-sigend certificate can be created and stored in weblogic-operator-certificate using the 
-# following sample script kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
-#externalCertificateSecret: 
+# As example, an external rest identity can be created using the following sample script 
+# kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
+#externalRestIdentitySecret: 
 
 # remoteDebugNodePortEnabled specifies whether or not the operator will start a Java remote debug server
 # on the provided port and suspend execution until a remote debugger has attached.
