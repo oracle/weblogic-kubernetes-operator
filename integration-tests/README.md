@@ -53,6 +53,8 @@ Full test use cases
 * verify automatic situational config override works by bringing up the domain and by doing checks 2 - 5 listed in quick test
 * create another domain domain12 with some junk value for t3 channel public address and using custom situational config override replace with valid public address
 * verify the domain by doing checks 2 - 5 listed in quick test
+* create domain home in image using wdt build path in samples and verify the domain by doing checks 2 - 5 listed in quick test
+* create domain home in image using wlst build path in samples and verify the domain by doing checks 2 - 5 listed in quick test
  
 
 
