@@ -1008,24 +1008,16 @@ public class Domain {
     }
 
     String imageName = "store/oracle/weblogic";
-    // uncomment the below after changing $REPO_PREFIX var on wercker
-    /* if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
+    if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
       logger.info("IMAGE_NAME_WEBLOGIC " + imageName);
-    } */
+    }
 
     String imageTag = "12.2.1.3";
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
       logger.info("IMAGE_TAG_WEBLOGIC " + imageTag);
     }
-    // if (System.getenv("JENKINS") != null) {
-    // the below vars can be exported in Jenkins configure, but keeping it here helps for testing
-    // without
-    // effecting the current Jenkins runs
-    domainMap.put("imagePullSecretName", "docker-store");
-    // }
-
     domainMap.put("logHome", "/shared/logs/" + domainUid);
     if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
@@ -1037,7 +1029,7 @@ public class Domain {
 
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
-      /* if (System.getenv("WERCKER") != null) {
+      if (System.getenv("WERCKER") != null) {
         // create docker registry secrets
         TestUtils.createDockerRegistrySecret(
             System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
@@ -1046,7 +1038,9 @@ public class Domain {
             System.getenv("REPO_PASSWORD"),
             System.getenv("REPO_EMAIL"),
             domainNS);
-      } */
+      } 
+    } else {
+    	domainMap.put("imagePullSecretName", "docker-store");
     }
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
