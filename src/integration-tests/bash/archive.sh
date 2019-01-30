@@ -34,8 +34,7 @@ function archive {
 
   mkdir -p $ARCHIVE_DIR || fail Could not archive, could not create target directory \'$ARCHIVE_DIR\'.
 
-  # tar -czf $ARCHIVE $SOURCE_DIR > $OUTFILE 2>&1
-  jar cf $ARCHIVE $SOURCE_DIR > $OUTFILE 2>&1
+  $JAVA_HOME/bin/jar cf $ARCHIVE $SOURCE_DIR > $OUTFILE 2>&1
   [ $? -eq 0 ] || fail "Could not archive, 'jar cf $ARCHIVE $SOURCE_DIR' command failed: `cat $OUTFILE`"
   rm -f $OUTFILE
 

@@ -97,28 +97,6 @@ function pull_tag_images {
 }
 
 
-function create_image_pull_secret_jenkins {
-  echo "Creating Secret"
- 
-  export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
-  
-  echo "Creating Docker Secret"  
-  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-    --docker-server=index.docker.io/v1/ \
-    --docker-username=$DOCKER_USERNAME \
-    --docker-password=$DOCKER_PASSWORD \
-    --docker-email=$DOCKER_EMAIL 
-
-  echo "Checking Secret"
-  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-  if [ "$SECRET" != "1" ]; then
-    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-    exit 1
-  fi
-  
-  
-}
-
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
@@ -199,8 +177,6 @@ elif [ "$JENKINS" = "true" ]; then
   clean_jenkins
 
   setup_jenkins
-
-  create_image_pull_secret_jenkins
 
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT"
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT"
