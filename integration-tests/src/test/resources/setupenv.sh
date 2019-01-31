@@ -69,6 +69,9 @@ function pull_tag_images {
   docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
   docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 store/oracle/weblogic:19.1.0.0
   
+  docker pull wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest
+  docker tag wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest store/oracle/weblogic:12.2.1.3
+  
   if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
 	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
 		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
