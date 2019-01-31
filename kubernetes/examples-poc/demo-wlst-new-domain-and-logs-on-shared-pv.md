@@ -1,13 +1,13 @@
 # step 1 - create a pv for the domain namespace
-mkdir -p /scratch/k8s-dir/storage/domains/domain1-uid
-cp persistent-volumes/hostpath/domain-pv.yaml domain1-pv.yaml
-edit domain1-pv.yaml
-kubectl apply -f domain1-pv.yaml
+mkdir -p /scratch/k8s-dir/storage/domain-namespaces/sample-domain1-ns
+cp persistent-volumes/hostpath/shared-pv.yaml sample-domain1-ns-pv.yaml
+edit sample-domain1-ns-pv.yaml
+kubectl apply -f sample-domain1-ns-pv.yaml
 
 # step 2 - create a domain definition
-cp -r domain-definitions/wdt/simple domain1-def
+cp -r domain-definitions/wlst/simple domain1-def
 find domain1-def -type f
-edit domain1-def/model/model.yaml
+edit domain1-def/model/model.py
 
 # step 3 - create a secret containing the WLS admin credentials
 kubectl create secret generic -n sample-domain1-ns domain1-uid-weblogic-credentials \
@@ -16,15 +16,19 @@ kubectl label secret -n sample-domain1-ns domain1-uid-weblogic-credentials \
   weblogic.domainUID=domain1-uid weblogic.domainName=domain1
 
 # step 4 - create the domain home
-cp domain-home-creators/wdt-in-image/Dockerfile domain1-def
-edit domain1-def/Dockerfile
-cp weblogic-deploy.zip domain1-def
-ENCODED_ADMIN_USERNAME=`kubectl get secret -n sample-domain1-ns domain1-uid-weblogic-credentials -o jsonpath='{.data.username}'`
-ENCODED_ADMIN_PASSWORD=`kubectl get secret -n sample-domain1-ns domain1-uid-weblogic-credentials -o jsonpath='{.data.password}'`
-docker build --build-arg ENCODED_ADMIN_USERNAME=${ENCODED_ADMIN_USERNAME} --build-arg ENCODED_ADMIN_PASSWORD=${ENCODED_ADMIN_PASSWORD} --force-rm=true -t domain1 domain1-def
+cp domain-home-creators/wlst-on-shared-pv/create-pod.yaml domain1-create-pod.yaml
+edit domain1-create-pod.yaml
+kubectl apply -f domain1-create-pod.yaml
+kubectl logs -n sample-domain1-ns domain1-uid-create-pod
+jar -c domain1-def | kubectl exec -i -n sample-domain1-ns domain1-uid-create-pod -- /bin/bash -c 'cd /u01 && jar -x'
+kubectl get po -n sample-domain1-ns domain1-uid-create-pod
+  (until Completed)
+cat /scratch/k8s-dir/storage/domain-namespaces/sample-domain1-ns/domains/domain1-uid/config/config.xml
+kubectl delete -f domain1-create-pod.yaml
+rm domain1-create-pod.yaml
 
 # step 5 - create the domain resource and wait for the servers to start
-cp domain-resources/domain-in-image-logs-on-domain-pv.yaml domain1.yaml
+cp domain-resources/domain-and-logs-on-shared-pv.yaml domain1.yaml
 edit domain1.yaml
 kubectl apply -f domain1.yaml
 kubectl get po -n sample-domain1-ns
@@ -44,12 +48,10 @@ kubectl delete -f domain1-lb.yaml
 kubectl delete -f domain1.yaml
 kubectl get po -n sample-domain1-ns && kubectl get svc -n sample-domain1-ns
   (until they all go away)
-kubectl delete -f domain1-pv.yaml
-docker rmi domain1
-kubectl delete secret -n sample-domain1-ns domain1-uid-weblogic-credentials
+kubectl delete -f sample-domain1-ns-pv.yaml
 rm domain1-lb.yaml
 rm domain1.yaml
 rm -r domain1-def
-rm domain1-pv.yaml
-rm -r /scratch/k8s-dir/storage/domains/domain1-uid
-
+kubectl delete secret -n sample-domain1-ns domain1-uid-weblogic-credentials
+rm sample-domain1-ns-pv.yaml
+rm -r /scratch/k8s-dir/storage/domain-namespaces/sample-domain1-ns
