@@ -80,7 +80,7 @@ ___This script should not be used in a production environment (because self-sign
 
 The script takes the subject alternative names that should be added to the certificate, for example, the list of hostnames that clients can use to access the external REST interface, the optional secret name to store the certificate (defaults to weblogic-operator-external-rest-identity) and the namespace where the operator will be installed. In this example, the output is directly appended to your custom YAML configuration:
 ```
-$ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1 -n weblogic-operator " >> custom-values.yaml
+$ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh -a "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" -n weblogic-operator >> custom-values.yaml
 ```
 
 ## Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration
@@ -328,7 +328,7 @@ Determines whether the operator's REST interface will be exposed outside the Kub
 
 Defaults to `false`.
 
-If set to `true`, you must provide the SSL certificate and private key for the operator's external REST interface by specifying the `externalOperatorCert` and `externalOperatorKey` properties.
+If set to `true`, you must provide the `externalRestIdentitySecret` property that contains the name of the Kubernetes secret which contains the SSL certificate and private key for the operator's external REST interface.
 
 Example:
 ```
