@@ -1041,7 +1041,7 @@ public class Domain {
       }
     } else {
       domainMap.put("imagePullSecretName", "docker-store");
-    } 
+    }
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
