@@ -1013,7 +1013,7 @@ public class Domain {
       logger.info("IMAGE_NAME_WEBLOGIC " + imageName);
     }
 
-    String imageTag = "12.2.1.3";
+    String imageTag = "19.1.0.0";
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
       logger.info("IMAGE_TAG_WEBLOGIC " + imageTag);
@@ -1041,7 +1041,7 @@ public class Domain {
       }
     } else {
       domainMap.put("imagePullSecretName", "docker-store");
-    }
+    } 
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
