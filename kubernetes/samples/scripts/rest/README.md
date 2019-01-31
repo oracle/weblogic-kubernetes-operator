@@ -20,7 +20,7 @@ the namespace where the operator will be installed, and optionally the secret na
 to `weblogic-operator-external-rest-identity`.  Each must be prefaced
 by `DNS:` (for a name) or `IP:` (for an address), for example:
 ```
-DNS:myhost,DNS:localhost,IP:127.0.0.1 -n weblogic-operator
+DNS:myhost,DNS:localhost,IP:127.0.0.1
 ```
 
 You should include the addresses of all masters and load balancers in this list.  The certificate

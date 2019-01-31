@@ -280,6 +280,7 @@ public class Operator {
     sb.append(TestUtils.getHostName());
     sb.append(" >> ");
     sb.append(generatedInputYamlFile);
+    logger.info("Invoking " + sb.toString());
     ExecCommand.exec(sb.toString());
   }
 
