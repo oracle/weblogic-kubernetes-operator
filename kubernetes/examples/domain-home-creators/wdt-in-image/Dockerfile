@@ -1,3 +1,6 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 FROM  oracle/weblogic:12213-patch-wls-for-k8s
 
 ENV DOMAIN_NAME="domain1" \
