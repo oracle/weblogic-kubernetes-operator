@@ -13,12 +13,12 @@
 #
 # The sytax of the script is:
 #
-#   kubernetes/samples/scripts/rest/generate-external-rest-identity.sh <SANs> -n <namespace>
+#   kubernetes/samples/scripts/rest/generate-external-rest-identity.sh -a <SANs> -n <namespace>
 #
 # Where <SANs> lists the subject alternative names to put into the generated self-signed 
 # certificate for the external WebLogic Operator REST https interface, for example:
 #
-#   DNS:myhost,DNS:localhost,IP:127.0.0.1 -n weblogic-operator
+#   DNS:myhost,DNS:localhost,IP:127.0.0.1
 #
 # You should include the addresses of all masters and load balancers in this list.  The certificate
 # cannot be conveniently changed after installation of the operator.
@@ -27,19 +27,18 @@
 # certificate and private key
 #
 # Example usage:
-#   generate-external-rest-identity.sh IP:127.0.0.1 -n weblogic-operator > my_values.yaml
+#   generate-external-rest-identity.sh -a IP:127.0.0.1 -n weblogic-operator > my_values.yaml
 #   echo "externalRestEnabled: true" >> my_values.yaml
 #   ...
 #   helm install kubernetes/charts/weblogic-operator --name my_operator --namespace my_operator-ns --values my_values.yaml --wait
 usage(){
 cat <<EOF
-Usage: $0 [options] <subject alternative names> <-n namespace>
+Usage: $0 [options] -a <subject alternative names> -n <namespace>
 Options:
-    --subject-alternative-name SANS Required, the SANs for the certificate
--n, --namespace NAMESPACE           Required, the namespace where the secret will be created.
--s, --secret-name SECRET_NAME       Optional, the name of the kubernetes secret. Default is: 
-                                    weblogic-operator-external-rest-identity.
--h, --help                          Display this help text.
+-a  SANS           Required, the SANs for the certificate
+-n  NAMESPACE      Required, the namespace where the secret will be created.
+-s  SECRET_NAME    Optional, the name of the kubernetes secret. Default is: weblogic-operator-external-rest-identity.
+-h, --help         Display this help text.
 EOF
 exit 1
 }
@@ -88,25 +87,25 @@ while [ $# -gt 0 ]
   do 
     key="$1"
     case $key in
-      --subject-alternative-name)
+      -a)
       shift # past argument
       if [ $# -eq 0 ] || [ ${1:0:1} == "-" ]; then echo "SANs is required and is missing"; usage; fi
       SANS=$1
       shift # past value
       ;;
-      -n|--namespace)
+      -n)
       shift # past argument
       if [ $# -eq 0 ] || [ ${1:0:1} == "-" ]; then echo "Namespace is required and is missing"; usage; fi
       NAMESPACE=$1
       shift # past value
       ;;
-      -s|--secret-name)
+      -s)
       shift # past argument
       if [ $# -eq 0 ] || [ ${1:0:1} == "-" ]; then echo "Invalid secret name $1"; usage; fi
       SECRET_NAME=$1
       shift # past value
       ;;
-      -h|--help)
+      -h)
       shift # past argument
       ;;
       *)
