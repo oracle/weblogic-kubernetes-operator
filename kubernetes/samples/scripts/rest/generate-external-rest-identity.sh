@@ -12,15 +12,19 @@
 # not be used in a production environment.
 #
 # The sytax of the script is:
-#   kubernetes/samples/scripts/rest/generate-external-rest-identity.sh <SANs> <-n namespace>
 #
-# <subject alternative names> lists the subject alternative names to put into the generated
-# self-signed certificate for the external WebLogic Operator REST https interface.
-# For example:
+#   kubernetes/samples/scripts/rest/generate-external-rest-identity.sh <SANs> -n <namespace>
+#
+# Where <SANs> lists the subject alternative names to put into the generated self-signed 
+# certificate for the external WebLogic Operator REST https interface, for example:
+#
 #   DNS:myhost,DNS:localhost,IP:127.0.0.1 -n weblogic-operator
 #
-# The script creates the secret secret in the weblogic-operator namespace with 
-# the self-signed certificate and private key
+# You should include the addresses of all masters and load balancers in this list.  The certificate
+# cannot be conveniently changed after installation of the operator.
+#
+# The script creates the secret in the weblogic-operator namespace with the self-signed 
+# certificate and private key
 #
 # Example usage:
 #   generate-external-rest-identity.sh IP:127.0.0.1 -n weblogic-operator > my_values.yaml
@@ -78,6 +82,8 @@ set -e
 
 trap "cleanup" EXIT
 
+SECRET_NAME="weblogic-operator-external-rest-identity"
+
 while [ $# -gt 0 ]
   do 
     key="$1"
@@ -122,11 +128,6 @@ then
   1>&2
   echo "Namespace is required and is missing"
   usage
-fi
-
-if [ -z "$SECRET_NAME" ]
-then
-  SECRET_NAME="weblogic-operator-external-rest-identity"
 fi
 
 DAYS_VALID="3650"
