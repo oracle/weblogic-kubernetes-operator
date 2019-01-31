@@ -62,24 +62,13 @@ function setup_wercker {
 }
 
 function pull_tag_images {
+  echo "Pull and tag the images we need"
 
-  
-  export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
-  
-  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
-  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 store/oracle/weblogic:19.1.0.0
-  
   docker pull wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest store/oracle/weblogic:12.2.1.3
-  
-  if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
-	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
-		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
-	  	exit 1
-	fi
-  fi
 
-  echo "Pull and tag the images we need"
+  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
+  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 store/oracle/weblogic:19.1.0.0
 
   docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
@@ -88,6 +77,22 @@ function pull_tag_images {
   docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
 }
 
+
+function create_image_pull_secret_jenkins {
+  echo "Creating Secret"
+  kubectl create secret docker-registry wlsldi-secret  \
+    --docker-server=wlsldi-v2.docker.oraclecorp.com \
+    --docker-username=teamsldi_us@oracle.com \
+    --docker-password=$docker_pass \
+    --docker-email=teamsldi_us@oracle.com 
+
+  echo "Checking Secret"
+  local SECRET="`kubectl get secret wlsldi-secret | grep wlsldi | wc | awk ' { print $1; }'`"
+  if [ "$SECRET" != "1" ]; then
+    echo 'secret wlsldi-secret was not created successfully'
+    exit 1
+  fi
+}
 
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
@@ -164,11 +169,12 @@ elif [ "$JENKINS" = "true" ]; then
   export docker_pass=${docker_pass:?}
   export M2_HOME=${M2_HOME:?}
   export K8S_VERSION=${K8S_VERSION}
-  
-  echo IMAGE_NAME_WEBLOGIC $IMAGE_NAME_WEBLOGIC IMAGE_TAG_WEBLOGIC $IMAGE_TAG_WEBLOGIC
+
   clean_jenkins
 
   setup_jenkins
+
+  create_image_pull_secret_jenkins
 
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT"
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT"
