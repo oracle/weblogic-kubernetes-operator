@@ -43,7 +43,7 @@ public abstract class StepContextBase implements StepContextConstants {
     return vars;
   }
 
-  void doSubstitution(List<V1EnvVar> vars) {
+  protected void doSubstitution(List<V1EnvVar> vars) {
     for (V1EnvVar var : vars) {
       var.setValue(translate(var.getValue()));
     }
