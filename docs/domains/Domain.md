@@ -46,6 +46,7 @@ DomainStatus represents information about the status of a domain. Status may tra
 | --- | --- | --- |
 | conditions | array of [Domain Condition](#domain-condition) | Current service state of domain. |
 | message | string | A human readable message indicating details about why the domain is in this condition. |
+| modified | boolean |  |
 | reason | string | A brief CamelCase message indicating details about why the domain is in this state. |
 | replicas | number | The number of running managed servers in the WebLogic cluster if there is only one cluster in the domain and where the cluster does not explicitly configure its replicas in a cluster specification. |
 | servers | array of [Server Status](#server-status) | Status of WebLogic servers in this domain. |
@@ -127,7 +128,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | message | string | Human-readable message indicating details about last transition. |
 | reason | string | Unique, one-word, CamelCase reason for the condition's last transition. |
 | status | string | Status is the status of the condition. Can be True, False, Unknown. Required |
-| type | string | Type is the type of the condition. Currently, valid types are Progressing, Available, and Failure. Required |
+| type | string | The type of the condition. Valid types are Progressing, Available, and Failed. Required |
 
 ### Server Status
 

@@ -9,6 +9,7 @@ import io.kubernetes.client.models.V1Service;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -212,6 +213,10 @@ public class DomainPresenceInfo {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
       this.serverSpec = serverSpec;
+    }
+
+    public String getServerName() {
+      return Optional.ofNullable(serverConfig).map(WlsServerConfig::getName).orElse(null);
     }
 
     public String getClusterName() {
