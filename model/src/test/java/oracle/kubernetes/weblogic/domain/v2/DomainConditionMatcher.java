@@ -2,22 +2,19 @@
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.operator;
+package oracle.kubernetes.weblogic.domain.v2;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainCondition;
-import oracle.kubernetes.weblogic.domain.v2.DomainConditionType;
-import oracle.kubernetes.weblogic.domain.v2.DomainStatus;
+import javax.annotation.Nonnull;
+import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 @SuppressWarnings("unused")
-class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
-  private DomainConditionType expectedType;
+class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<DomainStatus> {
+  private @Nonnull DomainConditionType expectedType;
   private String expectedStatus;
   private String expectedReason;
   private String expectedMessage;
@@ -46,12 +43,11 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   }
 
   @Override
-  protected boolean matchesSafely(Domain item, Description mismatchDescription) {
-    for (DomainCondition condition : getStatus(item).getConditions())
-      if (matches(condition)) return true;
+  protected boolean matchesSafely(DomainStatus item, Description mismatchDescription) {
+    for (DomainCondition condition : item.getConditions()) if (matches(condition)) return true;
 
     mismatchDescription.appendValueList(
-        "found domain with conditions ", ", ", ".", getStatus(item).getConditions());
+        "found domain with conditions ", ", ", ".", item.getConditions());
     return false;
   }
 
