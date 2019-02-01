@@ -192,7 +192,10 @@ elif [ "$JENKINS" = "true" ]; then
 
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv_archive"
   /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv_archive"
-
+  # Get wlthint3client.jar from image
+  id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
+  docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
+  docker rm -v $id
 else
   pull_tag_images
     
@@ -203,9 +206,8 @@ else
 	
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+  # Get wlthint3client.jar from image
+  id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
+  docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
+  docker rm -v $id
 fi
-
-# Get wlthint3client.jar from image
-id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
-docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
-docker rm -v $id
