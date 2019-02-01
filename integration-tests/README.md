@@ -163,7 +163,7 @@ Certain properties like weblogicDomainStoragePath, image, externalOperatorCert a
 
 # How does it work
 
-When the tests are run manually with mvn command on hosted Linux, WebLogic image store/oracle/weblogic is pulled from docker hub or uses local image if one exists. Server jre images are pulled from a local repository wlsldi-v2.docker.oraclecorp.com. Operator image is built with the git branch from where the mvn command is executed.
+When the tests are run manually with mvn command on hosted Linux, WebLogic image store/oracle/weblogic:12.2.1.3 is pulled from docker hub or uses local image if one exists. Server jre images are pulled from a local repository wlsldi-v2.docker.oraclecorp.com. Operator image is built with the git branch from where the mvn command is executed.
 All the tests that start with IT*.java are run. The test builds the operator, runs a series of tests and archives the results into tar.gz files upon completion.
 
 Integration test classes:

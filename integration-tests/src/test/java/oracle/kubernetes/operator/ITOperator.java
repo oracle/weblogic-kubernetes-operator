@@ -637,7 +637,7 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWLST() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    // Assume.assumeFalse(QUICKTEST);
     logTestBegin("testDomainInImageUsingWLST");
 
     logger.info("Checking if operator1 is running, if not creating");
@@ -668,7 +668,7 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWDT() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    // Assume.assumeFalse(QUICKTEST);
     logTestBegin("testDomainInImageUsingWDT");
 
     logger.info("Checking if operator1 is running, if not creating");
