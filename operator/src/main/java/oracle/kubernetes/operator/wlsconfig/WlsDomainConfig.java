@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -87,6 +87,15 @@ public class WlsDomainConfig implements WlsDomain {
         wlsClusterConfig.setWlsDomainConfig(this);
       }
     }
+  }
+
+  public String getClusterName(String serverName) {
+    return getConfiguredClusters()
+        .stream()
+        .filter(c -> c.hasNamedServer(serverName))
+        .findFirst()
+        .map(WlsClusterConfig::getClusterName)
+        .orElse(null);
   }
 
   /**
