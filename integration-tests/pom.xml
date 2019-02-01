@@ -110,19 +110,6 @@
 									<executable>${resource-integration-test}/setupenv.sh</executable>
 								</configuration>
 							</execution>
-							<execution>
-								<id>getT3Client</id>
-								<phase>pre-integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>${resource-integration-test}/getT3Client.sh</executable>
-									<arguments>
-										<argument></argument>
-									</arguments>
-								</configuration>
-							</execution>
 						</executions>
 					</plugin>
 					<plugin>
