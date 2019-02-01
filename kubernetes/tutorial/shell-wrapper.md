@@ -16,10 +16,12 @@
 
 ```
 git clone https://github.com:oracle/weblogic-kubernetes-operator.git
-cd ./weblogic-kubernetes-operator/kubernetes/tutorial/
-export PV_ROOT=<PVPath>  # the value is the absolute path of the PV folder you just created
-./startup.sh # use Traefik as the load balancer
-# Or you can choose to run startup-v.sh which will use Voyager as the load balancer.
+cd weblogic-kubernetes-operator/kubernetes/tutorial
+# Edit env.sh: set values to PV_ROOT and optionally change value of other variables.
+#  Modify value of LB_TYPE to choose load balancer type: traefik or voyager.
+#  Modify value of DOMAIN_BUILD_TYPE to choose the approach to create domain home: wlst or wdt.
+
+./startup.sh
 ```
 
 If everything goes well, after the setup script finishes, you'll have all the resources deployed and running on your Kubernetes cluster. Let's check the result.
@@ -115,12 +117,12 @@ Have the operator running in namespace `weblogic-operator1`.
   test1       domain2-ingress-traefik      domain2.org                     80        12m
   test1       domain3-ingress-traefik      domain3.org                     80        12m
   ```
-- Access WebLogic Domains via Traefik
-  - To access "WebLogic Ready App" in the cluster in `domain1`, run   
+- Access "WebLogic Ready App" in WebLogic Domains via Traefik.
+  - To access `domain1`: 
   `curl -v -H 'host: domain1.org' http://$hostname:30305/weblogic/`
-  - To access "WebLogic Ready App" in the cluster in `domain2`, run  
+  - To access `domain2`: 
   `curl -v -H 'host: domain2.org' http://$hostname:30305/weblogic/`
-  - To access "WebLogic Ready App" in the cluster in `domain3`, run  
+  - To access `domain3`:   
   `curl -v -H 'host: domain3.org' http://$hostname:30305/weblogic/`
 
 #### With Voyager
@@ -148,57 +150,29 @@ Have the operator running in namespace `weblogic-operator1`.
   service/voyager-ings-stats   ClusterIP   10.111.168.56   <none>        56789/TCP      11h
   ```
   
-- Access WebLogic Domains via Voyager
-  - To access "WebLogic Ready App" in the cluster in `domain1`, run  
+- Access "WebLogic Ready App" in WebLogic Domains via Voyager.
+  - To access `domain1`:
   `curl -v -H 'host: domain1.org' http://$hostname:30307/weblogic/`
-  - To access "WebLogic Ready App" in the cluster in `domain2`, run  
+  - To access `domain2`:  
   `curl -v -H 'host: domain2.org' http://$hostname:30307/weblogic/`
-  - To access "WebLogic Ready App" in the cluster in `domain3`, run  
+  - To access `domain3`: 
   `curl -v -H 'host: domain3.org' http://$hostname:30307/weblogic/`
 
 ## Customize Setup
 You can create your own setup shell wrapper to do some customization, specially if you choose to run one or two domains.  
-Uncomments some lines to the following file and generate your own setup shell file.
+For instance, following are the cmds to create only `domain1`.
 ```
-#!/bin/bash
-# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-set -e   # Exit immediately if a command exits with a non-zero status.
-
-SECONDS=0
-./domain.sh checkPV
-
-# create operator
-./operator.sh pullImages
-./operator.sh create
-./domain.sh createPV
-
-# run domain1
+# create domain1
 ./domain.sh createDomain1
 ./domain.sh waitUntilReady default domain1
-
-# run domain2
-./domain.sh createDomain2
-./domain.sh waitUntilReady test1 domain2
-
-# run domain3
-./domain.sh createDomain3
-./domain.sh waitUntilReady test1 domain3
-
-# setup load balancer
-./traefik.sh createCon
-./traefik.sh createIng
-
-echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finish."
 ```
 
 ## Cleanup
+Run `clean.sh` to clean up everything created by `setup.sh`.  
+Then got to PV_ROOT to clean all subfolders. Note that the owner of the subfolders can be different from current user since they are created by container. So you need to use `sudo` to delete them.
 ```
-cd weblogic-kubernetes-operator/kubernetes/tutorial/
-export PV_ROOT=<PVPath>
-./clean.sh  # if you run setup-v.sh, you need to run clean-v.sh to do cleanup.
-# Then go to PV_ROOT and clean this folder. 
-# The owner of subfolders can be different from current user since they are created by container so you need sudo to delete them.
+cd wls-operator-tutorial
+./clean.sh
 cd $PV_ROOT
 sudo rm -rf shared logs
 ```

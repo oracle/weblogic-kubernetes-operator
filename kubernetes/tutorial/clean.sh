@@ -3,9 +3,11 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 SECONDS=0
+. ./env.sh
+
 # clean load balancer
-./traefik.sh delIng
-./traefik.sh delCon
+./$LB_TYPE.sh delIng
+./$LB_TYPE.sh delCon
 
 # clean WebLogic domains and operator
 ./domain.sh delAll

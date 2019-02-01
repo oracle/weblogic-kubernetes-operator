@@ -2,7 +2,7 @@
 # Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-export PRJ_ROOT=../../
+set -u
 
 function checkPV() {
   if [ -z "$PV_ROOT" ] || [ ! -e "$PV_ROOT" ]; then
@@ -26,7 +26,7 @@ function createPV() {
 function createDomain1() {
   echo "create domain1"
   # create image 'domain1-image' with domainHome in the image
-  ./domainHomeBuilder/build.sh domain1 weblogic welcome1
+  ./domainHomeBuilder/$DOMAIN_BUILD_TYPE/build.sh domain1 weblogic welcome1
 
   kubectl -n default create secret generic domain1-weblogic-credentials \
     --from-literal=username=weblogic \
@@ -38,7 +38,7 @@ function createDomain1() {
 function createDomain2() {
   echo "create domain2"
   # create image 'domain2-image' with domainHome in the image
-  ./domainHomeBuilder/build.sh domain2 weblogic welcome2
+  ./domainHomeBuilder/$DOMAIN_BUILD_TYPE/build.sh domain2 weblogic welcome2
 
   kubectl -n test1 create secret generic domain2-weblogic-credentials \
     --from-literal=username=weblogic \
@@ -52,7 +52,7 @@ function createDomain2() {
 function createDomain3() {
   echo "create domain3"
   # generate the domain3 configuration to a host folder
-  ./domainHomeBuilder/generate.sh domain3 weblogic welcome3
+  ./domainHomeBuilder/$DOMAIN_BUILD_TYPE/generate.sh domain3 weblogic welcome3
 
   kubectl -n test1 create secret generic domain3-weblogic-credentials \
     --from-literal=username=weblogic \

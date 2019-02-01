@@ -2,13 +2,27 @@
 # Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-export WLS_BASE_IMAGE=store/oracle/weblogic:12.2.1.3
-export PRJ_ROOT=../../
+set -u
+
+function checkEnv() {
+  flag=0
+  if [ -z "$WLS_OPT_ROOT" ]; then
+    echo "Pls fill in proper value to WLS_OPT_ROOT in env.sh."
+    flag=1
+  fi
+  if [ -z "$PV_ROOT" ] || [ ! -e "$PV_ROOT" ]; then
+    echo "Pls fill in proper value to PV_ROOT in env.sh. It needs to point to an existing folder."
+    flag=1
+  fi
+  if [ $flag = 1 ]; then
+    exit 1
+  fi
+}
 
 function pullImages() {
   echo "pull docker images"
-  docker pull oracle/weblogic-kubernetes-operator:2.0-rc2
-  docker tag oracle/weblogic-kubernetes-operator:2.0-rc2 weblogic-kubernetes-operator:2.0
+  docker pull oracle/weblogic-kubernetes-operator:2.0
+  docker tag oracle/weblogic-kubernetes-operator:2.0 weblogic-kubernetes-operator:2.0
   docker pull traefik:1.7.6
   docker pull appscode/voyager:7.4.0 
   docker pull $WLS_BASE_IMAGE 
@@ -32,7 +46,7 @@ function create() {
   kubectl create namespace weblogic-operator1
   kubectl create serviceaccount -n weblogic-operator1 sample-weblogic-operator-sa
 
-  helm install $PRJ_ROOT/kubernetes/charts/weblogic-operator \
+  helm install $WLS_OPT_ROOT/kubernetes/charts/weblogic-operator \
     --name sample-weblogic-operator \
     --namespace weblogic-operator1 \
     --set serviceAccount=sample-weblogic-operator-sa \

@@ -4,17 +4,18 @@
 set -e   # Exit immediately if a command exits with a non-zero status.
 
 SECONDS=0
-./domain.sh checkPV
+. ./env.sh
+bash -e ./operator.sh checkEnv
 
 # create domains
-./operator.sh pullImages
-./operator.sh create
-./domain.sh createPV
-./domain.sh createAll
-./domain.sh waitUntilAllReady
+bash -e ./operator.sh pullImages
+bash -e ./operator.sh create
+bash -e ./domain.sh createPV
+bash -e ./domain.sh createAll
+bash -e ./domain.sh waitUntilAllReady
 
 # setup load balancer
-./traefik.sh createCon
-./traefik.sh createIng
+bash -e ./$LB_TYPE.sh createCon
+bash -e ./$LB_TYPE.sh createIng
 
 echo "$0 took $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds to finish."

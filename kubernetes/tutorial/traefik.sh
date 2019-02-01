@@ -2,14 +2,14 @@
 # Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-export PRJ_ROOT=../../
+set -u
 
 function createCon() {
   echo "install Treafik controller to namespace traefik"
   helm install stable/traefik \
     --name traefik-controller \
     --namespace traefik \
-    --values $PRJ_ROOT/kubernetes/samples/charts/traefik/values.yaml  \
+    --values $WLS_OPT_ROOT/kubernetes/samples/charts/traefik/values.yaml  \
     --set "kubernetes.namespaces={traefik,default,test1}" \
     --wait
 }
@@ -35,19 +35,19 @@ function waitUntilNSTerm() {
 
 function createIng() {
   echo "install Ingress for domains"
-  helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
+  helm install $WLS_OPT_ROOT/kubernetes/samples/charts/ingress-per-domain \
     --name domain1-ing-t \
     --namespace default \
     --set wlsDomain.domainUID=domain1 \
     --set traefik.hostname=domain1.org
 
- helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
+ helm install $WLS_OPT_ROOT/kubernetes/samples/charts/ingress-per-domain \
     --name domain2-ing-t \
     --namespace test1 \
     --set wlsDomain.domainUID=domain2 \
     --set traefik.hostname=domain2.org
 
- helm install $PRJ_ROOT/kubernetes/samples/charts/ingress-per-domain \
+ helm install $WLS_OPT_ROOT/kubernetes/samples/charts/ingress-per-domain \
     --name domain3-ing-t \
     --namespace test1 \
     --set wlsDomain.domainUID=domain3 \

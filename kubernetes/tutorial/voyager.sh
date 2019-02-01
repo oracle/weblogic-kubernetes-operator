@@ -2,16 +2,16 @@
 # Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-export PRJ_ROOT=../../
+set -u
 
 function createCon() {
   echo "install Voyager controller to namespace voyager"
-  ../samples/charts/util/setup.sh create voyager
+  $WLS_OPT_ROOT/kubernetes/samples/charts/util/setup.sh create voyager
 }
 
 function delCon() {
   echo "delete Voyager controller"
-  ../samples/charts/util/setup.sh delete voyager
+  $WLS_OPT_ROOT/kubernetes/samples/charts/util/setup.sh delete voyager
 }
 
 function createIng() {

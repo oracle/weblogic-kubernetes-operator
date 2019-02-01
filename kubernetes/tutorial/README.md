@@ -4,7 +4,7 @@
 1. [Directory Structure Explained](#directory-structure-explained)
 1. [Prerequisites Before Run](#prerequisites-before-run)
 1. [Run with Shell Wrapper](#run-with-shell-wrapper)
-1. [Run with Step-By-Step](#run-with-step-by-step)
+1. [Run with Step-By-Step TODO](#run-with-step-by-step)
 
 ## Introduction
 This tutorial will teach you how to run WebLogic domains in a Kubernetes environment using the operator.  
@@ -27,10 +27,7 @@ This tutorial covers following steps:
 ## Directory Structure Explained
 The following is the directory structure of this tutorial:
 ```
-$ tree
-.
 ├── clean.sh
-├── clean-v.sh
 ├── domain1
 │   └── domain1.yaml
 ├── domain2
@@ -42,39 +39,46 @@ $ tree
 │   ├── pvc.yaml
 │   └── pv.yaml
 ├── domainHomeBuilder
-│   ├── build.sh
-│   ├── Dockerfile
-│   ├── generate.sh
-│   └── scripts
-│       ├── create-domain.py
-│       └── create-domain.sh
+│   ├── wdt
+│   │   ├── build.sh
+│   │   ├── Dockerfile
+│   │   ├── generate.sh
+│   │   └── scripts
+│   │       ├── create-domain.sh
+│   │       ├── domain.properties
+│   │       ├── simple-topology-with-app.yaml
+│   │       └── simple-topology.yaml
+│   └── wlst
+│       ├── build.sh
+│       ├── Dockerfile
+│       ├── generate.sh
+│       └── scripts
+│           ├── create-domain.py
+│           └── create-domain.sh
 ├── domain.sh
+├── env.sh
 ├── ings
 │   └── voyager-ings.yaml
 ├── operator.sh
-├── README.md
 ├── setup.sh
-├── setup-v.sh
 ├── traefik.sh
 └── voyager.sh
-
-5 directories, 17 files
 ```
 
 An overview of what each of these does:
 - `domainHomeBuilder`: This folder contains one Dockfile, one WLST file and some shell scripts to create domain home.
+  - There are two subfolders: `wlst` and `wdt`. The former is to create domain with WLST and the later is to create domain with WDT.
+    This two folder has similar structure and files.
 
-  - `build.sh`: To build a docker image with a domain home in it via calling `docker build`. The generated image name is `<domainName>-image` which will be used in domain-home-in-image case.  
-    `usage: ./build.sh domainName adminUser adminPwd`
+    - `build.sh`: To build a docker image with a domain home in it via calling `docker build`. The generated image name is `<domainName>-image` which will be used in domain-home-in-image case.  
+      `usage: ./build.sh domainName adminUser adminPwd`
     
-  - `generate.sh`: To create a domain home on a host folder via calling `docker run`. And later this folder will be mounted via a PV and used in domain-home-on-pv case.  
-    `usage: ./generate.sh domainName adminUser adminPwd`
+    - `generate.sh`: To create a domain home on a host folder via calling `docker run`. And later this folder will be mounted via a PV and used in domain-home-on-pv case.  
+      `usage: ./generate.sh domainName adminUser adminPwd`
     
-  - `Dockerfile`: Simple docker file to build a image with a domain home in it.
+    - `Dockerfile`: Simple docker file to build a image with a domain home in it.
   
-  - `scripts/create-domain.py`: A python script which uses offline WLST to create a domain home.
-  
-  - `scripts/create-domain.sh`: A simple shell wrapper to call create-domain.py.
+    - `scripts`: This folder contains the scripts and configuration files to create domain.
 
 - yaml files
 
@@ -87,7 +91,9 @@ An overview of what each of these does:
   - folder `ings`: contains Ingress yaml files.
   
 - shell scripts
-
+  
+  - `env.sh`: To setup env variables.
+  
   - `operator.sh`: To create and delete the wls operator.
   
   - `traefik.sh`: To create and delete Traefik controller and Ingresses.
@@ -96,9 +102,9 @@ An overview of what each of these does:
   
   - `domain.sh`: To create and delete WebLogic domain related resources.
   
-  - `setup.sh&clean.sh`: a couple of shell wrappers to create all from scratch and do cleanup. Use Traefik as the load balancer. 
+  - `setup.sh`: a shell wrapper to create all from scratch.
   
-  - `setup-v.sh&clean-v.sh`: a couple of shell wrappers to create all from scratch and do cleanup. Use Voyager as the load balancer. 
+  - `clean.sh`: a shell wrapper to do cleanup.
   
 ## Prerequisites Before Run
   - Have Docker installed, a Kubernetes cluster running and have `kubectl` installed and configured. If you need help on this, check out our [cheat sheet](../../site/k8s_setup.md).
