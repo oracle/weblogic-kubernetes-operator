@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 SECONDS=0
-. ./env.sh
+source ./setenv.sh
 
 # clean load balancer
 ./$LB_TYPE.sh delIng

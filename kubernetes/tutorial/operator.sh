@@ -4,21 +4,6 @@
 
 set -u
 
-function checkEnv() {
-  flag=0
-  if [ -z "$WLS_OPT_ROOT" ]; then
-    echo "Pls fill in proper value to WLS_OPT_ROOT in env.sh."
-    flag=1
-  fi
-  if [ -z "$PV_ROOT" ] || [ ! -e "$PV_ROOT" ]; then
-    echo "Pls fill in proper value to PV_ROOT in env.sh. It needs to point to an existing folder."
-    flag=1
-  fi
-  if [ $flag = 1 ]; then
-    exit 1
-  fi
-}
-
 function pullImages() {
   echo "pull docker images"
   docker pull oracle/weblogic-kubernetes-operator:2.0
@@ -34,7 +19,7 @@ function delImages() {
   docker rmi $WLS_BASE_IMAGE
   docker rmi traefik:1.7.6
   docker rmi appscode/voyager:7.4.0
-  docker rmi oracle/weblogic-kubernetes-operator:2.0-rc2
+  docker rmi oracle/weblogic-kubernetes-operator:2.0
   docker rmi weblogic-kubernetes-operator:2.0
 }
 

@@ -6,7 +6,7 @@ set -u
 
 function checkPV() {
   if [ -z "$PV_ROOT" ] || [ ! -e "$PV_ROOT" ]; then
-    echo "PV_ROOT is not set correctly. It needs to point to an existing folder. Currently PV_ROOT is '$PV_ROOT'."
+    echo "PV_ROOT is not set correctly in file setenv.sh. It needs to point to an existing folder. Currently PV_ROOT is '$PV_ROOT'."
     exit 1
   fi
 }

@@ -4,8 +4,8 @@
 set -e   # Exit immediately if a command exits with a non-zero status.
 
 SECONDS=0
-. ./env.sh
-bash -e ./operator.sh checkEnv
+source ./setenv.sh
+bash -e ./domain.sh checkPV
 
 # create domains
 bash -e ./operator.sh pullImages

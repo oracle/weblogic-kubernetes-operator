@@ -17,10 +17,10 @@
 ```
 git clone https://github.com:oracle/weblogic-kubernetes-operator.git
 cd weblogic-kubernetes-operator/kubernetes/tutorial
-# Edit env.sh: set values to PV_ROOT and optionally change value of other variables.
+# Edit setenv.sh: set values to PV_ROOT and optionally change value of other variables.
 #  Modify value of LB_TYPE to choose load balancer type: traefik or voyager.
 #  Modify value of DOMAIN_BUILD_TYPE to choose the approach to create domain home: wlst or wdt.
-
+.
 ./startup.sh
 ```
 

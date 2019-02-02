@@ -56,7 +56,7 @@ The following is the directory structure of this tutorial:
 │           ├── create-domain.py
 │           └── create-domain.sh
 ├── domain.sh
-├── env.sh
+├── setenv.sh
 ├── ings
 │   └── voyager-ings.yaml
 ├── operator.sh
@@ -92,7 +92,7 @@ An overview of what each of these does:
   
 - shell scripts
   
-  - `env.sh`: To setup env variables.
+  - `setenv.sh`: To setup env variables. Need to run it with `source` so other shell scripts can use the variables set by it.
   
   - `operator.sh`: To create and delete the wls operator.
   
