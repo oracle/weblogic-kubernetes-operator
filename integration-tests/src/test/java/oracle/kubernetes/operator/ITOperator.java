@@ -51,8 +51,8 @@ public class ITOperator extends BaseTest {
   private static String domain10YamlFile = "domain10.yaml";
   private static String domain11YamlFile = "domain11.yaml";
   private static String domain12YamlFile = "domain12.yaml";
-  private static String domain13YamlFile = "domain13.yaml";
-  private static String domain14YamlFile = "domain14.yaml";
+  private static String domain13YamlFile = "DomainHomeInImageUsingWLST.yaml";
+  private static String domain14YamlFile = "DomainHomeInImageUsingWDT.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -664,7 +664,7 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWLST() throws Exception {
-    // Assume.assumeFalse(QUICKTEST);
+    Assume.assumeFalse(QUICKTEST);
     logTestBegin("testDomainInImageUsingWLST");
 
     logger.info("Checking if operator1 is running, if not creating");
@@ -695,7 +695,7 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWDT() throws Exception {
-    // Assume.assumeFalse(QUICKTEST);
+    Assume.assumeFalse(QUICKTEST);
     logTestBegin("testDomainInImageUsingWDT");
 
     logger.info("Checking if operator1 is running, if not creating");
