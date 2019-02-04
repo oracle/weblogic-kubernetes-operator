@@ -91,6 +91,16 @@ public class SchemaGeneratorTest {
   private int[] intArray;
 
   @Test
+  public void doNotGenerateSchemaForVolatileFields() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("ignoreMe"));
+
+    assertThat(schema, hasNoJsonPath("$.ignoreMe"));
+  }
+
+  @SuppressWarnings("unused")
+  private volatile boolean ignoreMe;
+
+  @Test
   public void generateSchemaForEnum() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("colors"));
 
