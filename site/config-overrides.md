@@ -56,7 +56,7 @@ For a detailed walk-through of the runtime flow, see the [Internal design flow](
 
 * A WebLogic domain home must not contain any situational configuration XML file in its `optconfig` directory that was not placed there by the operator. Any existing situational configuration XML files in this directory will be deleted and replaced by your operator override templates (if any).
 
-* If you want to override a JDBC, JMS, or WLDF module, the original module must be located in your domain home `config/jdbc`, `config/jms`, and `config/wldf` directory, respectively. These are the default locations for these types of modules.
+* If you want to override a JDBC, JMS, or WLDF (diagnostics) module, the original module must be located in your domain home `config/jdbc`, `config/jms`, and `config/diagnostics` directory, respectively. These are the default locations for these types of modules.
 
 ---
 # Typical overrides
@@ -115,7 +115,7 @@ The operator requires a different file name format for override templates than W
 | `config.xml`    |  `config.xml`           |
 | JMS module      |  `jms-MODULENAME.xml`   |
 | JDBC module     |  `jdbc-MODULENAME.xml`  |
-| WLDF module     |  `wldf-MODULENAME.xml`  |
+| Diagnostics module     |  `diagnostics-MODULENAME.xml`  |
 
 A `MODULENAME` must correspond to the MBean name of a system resource defined in your original `config.xml` file.
 
@@ -153,7 +153,7 @@ _`jms-MODULENAME.xml`_
 </jms:weblogic-jms>
 ```
 
-_`wldf-MODULENAME.xml`_
+_`diagnostics-MODULENAME.xml`_
 ```
 <?xml version='1.0' encoding='UTF-8'?>
 <wldf:wldf-resource xmlns:wldf="http://xmlns.oracle.com/weblogic/weblogic-diagnostics"
@@ -193,7 +193,7 @@ The secret macro `SECRETNAME` field must reference the name of a Kubernetes secr
 * When overriding `config.xml`, XML namespace `xmlns` abbreviations must be exactly as specified.
   * When overriding `config.xml`, the XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
   * For example, use `d:` to reference `config.xml` beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational config schema.
-* It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF module override files.
+* It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF (diagnostics) module override files.
 
 ## Override template samples
 
@@ -394,6 +394,6 @@ Incorrectly formatted override files may be accepted without warnings or errors,
 * The `startServer.sh` script in the WebLogic Server pods:
   * Copies the expanded situational configuration files to a special location where the WebLogic runtime can find them:
     * `config.xml` overrides are copied to the `optconfig` directory in its domain home.
-    * Module overrides are copied to the `optconfig/jdbc`, `optconfig/jms`, or `optconfig/wldf` directory.
+    * Module overrides are copied to the `optconfig/jdbc`, `optconfig/jms`, or `optconfig/diagnostics` directory.
   * Deletes any situational configuration files in the `optconfig` directory that do not have corresponding template files in the configuration map.
 * WebLogic Servers read their overrides from their domain home's `optconfig` directory.
