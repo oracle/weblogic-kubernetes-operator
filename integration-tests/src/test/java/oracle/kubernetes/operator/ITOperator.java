@@ -653,7 +653,7 @@ public class ITOperator extends BaseTest {
       domain13.verifyDomainCreated();
 
       testBasicUseCases(domain13);
-      testAdvancedUseCasesForADomain(operator1, domain13);
+      testClusterScaling(operator1, domain13);
       testCompletedSuccessfully = true;
     } finally {
       if (domain13 != null && (JENKINS || testCompletedSuccessfully)) domain13.destroy();
@@ -684,7 +684,7 @@ public class ITOperator extends BaseTest {
       domain14.verifyDomainCreated();
 
       testBasicUseCases(domain14);
-      testAdvancedUseCasesForADomain(operator1, domain14);
+      testClusterScaling(operator1, domain14);
       testCompletedSuccessfully = true;
     } finally {
       if (domain14 != null && (JENKINS || testCompletedSuccessfully)) domain14.destroy();
