@@ -8,8 +8,8 @@ In this guide, we outline how to set up a Kubernetes persistent volume and persi
 
 The following prerequisites must be fulfilled before proceeding with the creation of the volume.
 * Create a Kubernetes namespace for the persistent volume claim unless the intention is to use the default namespace. Note that a persistent volume claim has to be in the same namespace as the domain resource that uses it.
-* Make sure that all servers in WLS domain are able to reach the storage location.
-* Make sure that the host directory that will be used already exists and has the appropriate file permissions set.
+* Make sure that all the servers in the WebLogic domain are able to reach the storage location.
+* Make sure that the host directory that will be used, already exists and has the appropriate file permissions set.
 
 ## Storage locations
 Persistent volumes can point to different storage locations, for example NFS servers or a local directory path. The list of available options is listed in the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
