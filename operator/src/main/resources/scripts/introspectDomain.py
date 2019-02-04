@@ -917,7 +917,7 @@ class CustomSitConfigIntrospector(SecretManager):
                            self.env.CUSTOM_PREFIX_JMS)
 
     self.wldfModuleStr = self.buildModuleTable(
-                           'wldf', 
+                           'diagnostics', 
                            self.env.getDomain().getWLDFSystemResources(),
                            self.env.CUSTOM_PREFIX_WLDF)
 
