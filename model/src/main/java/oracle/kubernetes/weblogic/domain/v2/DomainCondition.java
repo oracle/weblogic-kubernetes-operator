@@ -8,6 +8,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import javax.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -43,12 +44,15 @@ public class DomainCondition implements Comparable<DomainCondition> {
   private String status;
 
   @Description(
-      "Type is the type of the condition. Currently, valid types are Progressing, "
-          + "Available, and Failure. Required")
-  @SerializedName("type")
-  @Expose
+      "The type of the condition. Valid types are Progressing, "
+          + "Available, and Failed. Required")
   @NotNull
-  private String type;
+  private final DomainConditionType type;
+
+  public DomainCondition(DomainConditionType conditionType) {
+    lastTransitionTime = SystemClock.now();
+    type = conditionType;
+  }
 
   /**
    * Last time we probed the condition.
@@ -89,26 +93,6 @@ public class DomainCondition implements Comparable<DomainCondition> {
   }
 
   /**
-   * Last time the condition transitioned from one status to another.
-   *
-   * @param lastTransitionTime time
-   */
-  public void setLastTransitionTime(DateTime lastTransitionTime) {
-    this.lastTransitionTime = lastTransitionTime;
-  }
-
-  /**
-   * Last time the condition transitioned from one status to another.
-   *
-   * @param lastTransitionTime time
-   * @return this
-   */
-  public DomainCondition withLastTransitionTime(DateTime lastTransitionTime) {
-    this.lastTransitionTime = lastTransitionTime;
-    return this;
-  }
-
-  /**
    * Human-readable message indicating details about last transition.
    *
    * @return message
@@ -121,18 +105,10 @@ public class DomainCondition implements Comparable<DomainCondition> {
    * Human-readable message indicating details about last transition.
    *
    * @param message message
-   */
-  public void setMessage(String message) {
-    this.message = message;
-  }
-
-  /**
-   * Human-readable message indicating details about last transition.
-   *
-   * @param message message
    * @return this
    */
   public DomainCondition withMessage(String message) {
+    lastTransitionTime = SystemClock.now();
     this.message = message;
     return this;
   }
@@ -150,18 +126,10 @@ public class DomainCondition implements Comparable<DomainCondition> {
    * Unique, one-word, CamelCase reason for the condition's last transition.
    *
    * @param reason reason
-   */
-  public void setReason(String reason) {
-    this.reason = reason;
-  }
-
-  /**
-   * Unique, one-word, CamelCase reason for the condition's last transition.
-   *
-   * @param reason reason
    * @return this
    */
   public DomainCondition withReason(String reason) {
+    lastTransitionTime = SystemClock.now();
     this.reason = reason;
     return this;
   }
@@ -179,18 +147,10 @@ public class DomainCondition implements Comparable<DomainCondition> {
    * Status is the status of the condition. Can be True, False, Unknown. (Required)
    *
    * @param status status
-   */
-  public void setStatus(String status) {
-    this.status = status;
-  }
-
-  /**
-   * Status is the status of the condition. Can be True, False, Unknown. (Required)
-   *
-   * @param status status
    * @return this
    */
   public DomainCondition withStatus(String status) {
+    lastTransitionTime = SystemClock.now();
     this.status = status;
     return this;
   }
@@ -201,30 +161,12 @@ public class DomainCondition implements Comparable<DomainCondition> {
    *
    * @return type
    */
-  public String getType() {
+  public DomainConditionType getType() {
     return type;
   }
 
-  /**
-   * Type is the type of the condition. Currently, valid types are Progressing, Available, and
-   * Failure. (Required)
-   *
-   * @param type type
-   */
-  public void setType(String type) {
-    this.type = type;
-  }
-
-  /**
-   * Type is the type of the condition. Currently, valid types are Progressing, Available, and
-   * Failure. (Required)
-   *
-   * @param type type
-   * @return this
-   */
-  public DomainCondition withType(String type) {
-    this.type = type;
-    return this;
+  public boolean hasType(DomainConditionType type) {
+    return type == this.type;
   }
 
   @Override
@@ -243,10 +185,8 @@ public class DomainCondition implements Comparable<DomainCondition> {
   public int hashCode() {
     return new HashCodeBuilder()
         .append(reason)
-        .append(lastTransitionTime)
         .append(message)
         .append(type)
-        .append(lastProbeTime)
         .append(status)
         .toHashCode();
   }
@@ -256,16 +196,14 @@ public class DomainCondition implements Comparable<DomainCondition> {
     if (other == this) {
       return true;
     }
-    if ((other instanceof DomainCondition) == false) {
+    if (!(other instanceof DomainCondition)) {
       return false;
     }
     DomainCondition rhs = ((DomainCondition) other);
     return new EqualsBuilder()
         .append(reason, rhs.reason)
-        .append(lastTransitionTime, rhs.lastTransitionTime)
         .append(message, rhs.message)
         .append(type, rhs.type)
-        .append(lastProbeTime, rhs.lastProbeTime)
         .append(status, rhs.status)
         .isEquals();
   }
