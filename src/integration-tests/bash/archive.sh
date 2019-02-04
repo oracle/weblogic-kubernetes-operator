@@ -5,7 +5,7 @@
 #
 # archive.sh <source_dir> <target_dir>
 #   - internal helper method
-#   - archives directory ${1} into ${2}/IntSuite.TIMESTAMP.tar.gz
+#   - archives directory ${1} into ${2}/IntSuite.TIMESTAMP.jar
 #   - deletes all but the 10 newest archives
 #   - this method doesn't have any configurable env vars
 #
@@ -24,7 +24,7 @@ function fail {
 function archive {
   local SOURCE_DIR="${1?}"
   local ARCHIVE_DIR="${2?}"
-  local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.tar.gz"
+  local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.jar"
   local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
   local OUTFILE="/tmp/$ARCHIVE_FILE"
 
@@ -34,12 +34,12 @@ function archive {
 
   mkdir -p $ARCHIVE_DIR || fail Could not archive, could not create target directory \'$ARCHIVE_DIR\'.
 
-  tar -czf $ARCHIVE $SOURCE_DIR > $OUTFILE 2>&1 
-  [ $? -eq 0 ] || fail "Could not archive, 'tar -czf $ARCHIVE $SOURCE_DIR' command failed: `cat $OUTFILE`"
+  $JAVA_HOME/bin/jar cf $ARCHIVE $SOURCE_DIR > $OUTFILE 2>&1
+  [ $? -eq 0 ] || fail "Could not archive, 'jar cf $ARCHIVE $SOURCE_DIR' command failed: `cat $OUTFILE`"
   rm -f $OUTFILE
 
-  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*tar.gz" | sort -r | awk '{ if (NR>10) print $NF }' | xargs rm -f
-
+  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*jar" | sort -r | awk '{ if (NR>10) print $NF }' | xargs rm -f
+   
   trace Archived to \'$ARCHIVE\'.
 }
 
