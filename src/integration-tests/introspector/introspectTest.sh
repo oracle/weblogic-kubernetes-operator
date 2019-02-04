@@ -163,6 +163,7 @@ function cleanupMajor() {
 
   tracen "Info: Waiting for cleanup.sh to complete."
   printdots_start
+  FAST_DELETE="--grace-period=1 --timeout=1s" \
   DELETE_FILES=${CREATE_DOMAIN:-false} \
     ${SOURCEPATH}/src/integration-tests/bash/cleanup.sh 2>&1 > \
     ${test_home}/cleanup.out
@@ -436,10 +437,17 @@ function deployWebLogic_PV_PVC_and_Secret() {
 }
 
 function deployMySQL() {
-  trace "Info: Deploying MySQL pv, pvc, & deployment."
+  trace "Info: Deploying MySQL pv, pvc, & pod."
+  # Create local custom mysql image that runs as 'oracle' user with uid/gid 1000/1000:
+  docker build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser . 2>&1 > ${test_home}/docker_build.out 2>&1
+  if [ $? -ne 0 ]; then
+    trace "Error: 'docker build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser .' failed, results in ${test_home}/docker_build.out:"
+    cat ${test_home}/docker_build.out
+    exit 1
+  fi
   deployYamlTemplate mysql-pv.yamlt mysql-pv.yaml
   deployYamlTemplate mysql-pvc.yamlt mysql-pvc.yaml 
-  deployYamlTemplate mysql-deployment.yamlt mysql-deployment.yaml
+  deployYamlTemplate mysql-pod.yamlt mysql-pod.yaml
 }
 
 #############################################################################
@@ -541,26 +549,7 @@ function deployIntrospectJobPod() {
 
   # Wait for pod to come up successfully
 
-  # TBD make the following a helper fn since this is the second place
-  #     we wait for a pod to start, and the code is exactly the same...
-  local status="0/1"
-  local startsecs=$SECONDS
-  local maxsecs=180
-  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
-  while [ "${status}" != "1/1" ] ; do
-    if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
-      echo
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl describe:"
-      kubectl -n $NAMESPACE describe pod $pod_name
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl log:"
-      kubectl -n $NAMESPACE logs $pod_name
-      exit 1
-    fi
-    echo -n "."
-    sleep 1
-    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
-  done
-  echo "  ($((SECONDS - startsecs)) seconds)"
+  waitForPod $pod_name
 
   local startSecs=$SECONDS
   local maxsecs=30
@@ -601,12 +590,34 @@ function deployIntrospectJobPod() {
 #   - this emulates what the operator pod would do after running the introspect job
 #
 
+function waitForPod() {
+  local pod_name=${1?}
+  local status="0/1"
+  local startsecs=$SECONDS
+  local maxsecs=180
+  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
+  while [ "${status}" != "1/1" ] ; do
+    if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
+      echo
+      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl describe:"
+      kubectl -n $NAMESPACE describe pod $pod_name
+      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl log:"
+      kubectl -n $NAMESPACE logs $pod_name
+      exit 1
+    fi
+    echo -n "."
+    sleep 1
+    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
+  done
+  echo "  ($((SECONDS - startsecs)) seconds)"
+}
+
 function deployPod() {
   local server_name=${1?}
   local pod_name=${DOMAIN_UID}-${server_name}
   local target_yaml=${test_home}/wl-${server_name}-pod.yaml 
 
-  trace "Info: Deploying pod '$pod_name' and waiting for it to be ready."
+  trace "Info: Deploying pod '$pod_name'."
 
   # delete anything left over from a previous invocation of this function
 
@@ -633,27 +644,6 @@ function deployPod() {
 
   kubectl create -f ${target_yaml} \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1 
-
-  # Wait for pod to come up successfully
-
-  local status="0/1"
-  local startsecs=$SECONDS
-  local maxsecs=180
-  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
-  while [ "${status}" != "1/1" ] ; do
-    if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
-      echo
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl describe:"
-      kubectl -n $NAMESPACE describe pod $pod_name
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl log:"
-      kubectl -n $NAMESPACE logs $pod_name
-      exit 1
-    fi
-    echo -n "."
-    sleep 1
-    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
-  done
-  echo "  ($((SECONDS - startsecs)) seconds)"
 }
 
 function deploySinglePodService() {
@@ -758,65 +748,50 @@ function checkOverrides() {
 # PVCOMMENT is set, or if CREATE_DOMAIN is set to false.
 #
 
-#
-# TBD ADMIN_NAME, ADMIN_PORT, and MANAGED_SERVER_NAME_BASE, etc env vars
-#     should be checked to see if topology file the introspector generated
-#     matches
-#
+if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
+  cleanupMajor
+else
+  # This path assumes we've already run the test succesfully once, it re-uses
+  # the existing domain-home/pv/pvc/secret/etc, deletes wl pods, deletes introspect job, then
+  # redeploys the custom overrides, reruns the introspect job, and restarts the admin server pod.
+  cleanupMinor
+fi
 
+deployDomainConfigMap
+deployTestScriptConfigMap
+deployCustomOverridesConfigMap
+
+if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
+  createTestRootPVDir
+  deployMySQL
+  deployWebLogic_PV_PVC_and_Secret
+  deployCreateDomainJob
+fi
 
 kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
 kubectl -n $NAMESPACE create secret generic my-secret \
         --from-literal=key1=supersecret  \
         --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
 
-
-if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
-
-  cleanupMajor
-
-  deployDomainConfigMap
-  deployTestScriptConfigMap
-  deployCustomOverridesConfigMap
-  createTestRootPVDir
-  deployMySQL
-  deployWebLogic_PV_PVC_and_Secret
-  deployCreateDomainJob
-  #deployIntrospectJob
-  deployIntrospectJobPod
-  deployPod ${ADMIN_NAME?}
-  deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
-  deployPod ${MANAGED_SERVER_NAME_BASE?}1
-  deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
-
-else
-
-  # This path assumes we've already run the test succesfully once, it re-uses
-  # the existing domain-home/pv/pvc/secret/etc, deletes wl pods, deletes introspect job, then
-  # redeploys the custom overrides, reruns the introspect job, and restarts the admin server pod.
-
-  cleanupMinor
-
-  deployDomainConfigMap
-  deployTestScriptConfigMap
-  deployCustomOverridesConfigMap
-  #deployIntrospectJob
-  deployIntrospectJobPod
-  deployPod ${ADMIN_NAME?}
-  deployPod ${MANAGED_SERVER_NAME_BASE?}1
-
-fi
-
+#deployIntrospectJob
+deployIntrospectJobPod
 #
-# Check admin-server pod log and also Call on-line WLST to check
-# if automatic and custom overrides are taking effect in the bean
-# tree.
+# TBD ADMIN_NAME, ADMIN_PORT, and MANAGED_SERVER_NAME_BASE, etc env vars
+#     should be checked to see if topology file the introspector generated
+#     matches
 #
+
+deployPod ${ADMIN_NAME?}
+deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
+waitForPod ${DOMAIN_UID}-${ADMIN_NAME?}
+
+deployPod ${MANAGED_SERVER_NAME_BASE?}1
+deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
+waitForPod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1
+
+# Check admin-server pod log and also call on-line WLST to check if
+# automatic and custom overrides are taking effect in the bean tree:
 
 checkOverrides
-
-#
-# TBD potentially add additional checks to verify wl pods are healthy
-#
 
 trace "Info: Success!"
