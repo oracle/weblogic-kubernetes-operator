@@ -5,7 +5,7 @@
 
 # Cheat sheet for setting up Kubernetes
 
-If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal; or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that are suitable for development or testing purposes.  Your options look like this:
+If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that are suitable for development or testing purposes.  Your options look like this:
 
 "Production" options:
 
@@ -31,10 +31,10 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 3. Create an Terraform configuration file at  `~/.terraformrc` that specifies the path to the OCI provider:
    ```
    providers {
-     oci = "<path_to_provider_binary>/terraform-provider-oci" 
+     oci = "<path_to_provider_binary>/terraform-provider-oci"
    }
    ```
-4.  Ensure that you have [Kubectl][Kubectl] installed if you plan to interact with the cluster locally.
+4.  Ensure that you have [kubectl][Kubectl] installed if you plan to interact with the cluster locally.
 
 ### Quick Start
 
@@ -61,28 +61,28 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
     ```
     #give a label to your cluster to help identify it if you have multiple
     label_prefix="weblogic-operator-1-"
-    
+
     #identification/authorization info
     tenancy_ocid = "ocid1.tenancy...."
     compartment_ocid = "ocid1.compartment...."
     fingerprint = "..."
     private_key_path = "/Users/username/.oci/oci_api_key.pem"
     user_ocid = "ocid1.user..."
-    
+
     #shapes for your VMs
     etcdShape = "VM.Standard1.2"
     k8sMasterShape = "VM.Standard1.8"
     k8sWorkerShape = "VM.Standard1.8"
     k8sMasterAd1Count = "1"
     k8sWorkerAd1Count = "2"
-    
+
     #this ingress is set to wide-open for testing **not secure**
     etcd_ssh_ingress = "0.0.0.0/0"
     master_ssh_ingress = "0.0.0.0/0"
     worker_ssh_ingress = "0.0.0.0/0"
     master_https_ingress = "0.0.0.0/0"
     worker_nodeport_ingress = "0.0.0.0/0"
-    
+
     #create iscsi volumes to store your etcd and /var/lib/docker info
     worker_iscsi_volume_create = true
     worker_iscsi_volume_size = 100
@@ -110,9 +110,9 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 
 8. If you need shared storage between your Kubernetes worker nodes, enable and configure NFS:
 
-In the current GA version, the OCI Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). 
-If you choose to place your domain in a persistent volume, 
-you must use a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. 
+In the current GA version, the OCI Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only).
+If you choose to place your domain in a persistent volume,
+you must use a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes.
 Oracle recommends that you use the Oracle Cloud Infrastructure File Storage Service (or equivalent on other cloud providers).
 Alternatively, you may install an NFS server on one node and share the file system across all the nodes.
 
@@ -165,20 +165,20 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
     ```
     export PATH=$PATH:/sbin:/usr/sbin
     pod_network_cidr="10.244.0.0/16"
-    
+
     k8s_dir=$k8s_dir
-    
+
     ## grab my IP address to pass into  kubeadm init, and to add to no_proxy vars
     # assume ipv4 and eth0
     ip_addr=`ip -f inet addr show eth0  | egrep inet | awk  '{print $2}' | awk -F/ '{print $1}'\`
-    
+
     export HTTPS_PROXY=http://proxy:80
     export https_proxy=http://proxy:80
     export NO_PROXY=localhost,127.0.0.1,.my.domain.com,/var/run/docker.sock,$pod_network_cidr,$ip_addr
     export no_proxy=localhost,127.0.0.1,.my.domain.com,/var/run/docker.sock,$pod_network_cidr,$ip_addr
     export HTTP_PROXY=http://proxy:80
     export http_proxy=http://proxy:80
-    
+
     export KUBECONFIG=$k8s_dir/admin.conf
     ```
 
@@ -267,23 +267,23 @@ If you want command completion, you can add the following to the script:
     gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
            https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
     EOF
-    
+
     setenforce 0
     # install kube* packages
     v=${1:-1.8.4-0}
     old_ver=`echo $v | egrep "^1.7"`
     yum install -y kubelet-$v kubeadm-$v kubectl-$v kubernetes-cni
-    
+
     # change the cgroup-driver to match what docker is using
     cgroup=`docker info 2>&1 | egrep Cgroup | awk '{print $NF}'`
     [ "$cgroup" == "" ] && echo "cgroup not detected!" && exit 1
-    
+
     cat /etc/systemd/system/kubelet.service.d/10-kubeadm.conf | sed "s#KUBELET_CGROUP_ARGS=--cgroup-driver=.*#KUBELET_CGROUP_ARGS=--cgroup-driver=$cgroup\"#"> /etc/systemd/system/kubelet.service.d/10-kubeadm.conf.out
     diff  /etc/systemd/system/kubelet.service.d/10-kubeadm.conf  /etc/systemd/system/kubelet.service.d/10-kubeadm.conf.out
     mv  /etc/systemd/system/kubelet.service.d/10-kubeadm.conf.out  /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-    
+
     if [ "$old_ver" = "" ] ; then
-    
+
     # run with swap if not in version 1.7* (starting in 1.8, kubelet
     # fails to start with swap enabled)
     #
@@ -291,7 +291,7 @@ If you want command completion, you can add the following to the script:
     [Service]
     Environment="KUBELET_EXTRA_ARGS=--fail-swap-on=false"
     EOF
-    
+
     fi
     ```
 
@@ -317,7 +317,7 @@ If you want command completion, you can add the following to the script:
       # tail the log to get the "join" token
       tail -6 /tmp/kubeadm-init.out
     fi
-    
+
     cp /etc/kubernetes/admin.conf  $KUBECONFIG
     chown YOUR_USERID:YOUR_GROUP $KUBECONFIG
     chmod 644 $KUBECONFIG
@@ -333,7 +333,7 @@ If you want command completion, you can add the following to the script:
     ```
 
     Wait for `kubectl get nodes` to show `Ready` for this host:
-    
+
     ```
     host=`hostname | awk -F. '{print $1}'`
     status="NotReady"
@@ -345,7 +345,7 @@ If you want command completion, you can add the following to the script:
       echo "kubectl status is ${status:=Error}, iteration $count of $max"
       count=`expr $count + 1`
     done
-    
+
     status=`sudo -u YOUR_USERID kubectl get nodes | egrep $host | awk '{print $2}'`
     if [ ${status:=Error} != "Ready" ] ; then
       echo "ERROR: kubectl get nodes reports status=${status:=Error} after configuration, exiting!"

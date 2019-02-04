@@ -28,10 +28,10 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator
 
 ## 1.	Get these images and put them into your local registry.
 
-a.  If you don't already have one, obtain a Docker Store account, log in to the Docker Store
+a.  If you don't already have one, obtain a Docker store account, log in to the Docker store
     and accept the license agreement for the [WebLogic Server image](https://hub.docker.com/_/oracle-weblogic-server-12c).
 
-b.  Log in to the Docker Store from your Docker client:
+b.  Log in to the Docker store from your Docker client:
 ```
 $ docker login
 ```
@@ -48,7 +48,7 @@ e.	Pull the WebLogic 12.2.1.3 install image:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```  
-**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you already have this image.
+**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you have previously pulled this image.
 
 f. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
@@ -225,7 +225,7 @@ $ helm install kubernetes/samples/charts/ingress-per-domain \
 ```
 
 e.	To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods,
-    you can hit the URL for the "WebLogic Ready App" which will return a HTTP 200 status code, as
+    you can send a request to the URL for the "WebLogic ReadyApp framework" which will return a HTTP 200 status code, as
     shown in the example below.  If you used the host-based routing Ingress sample, you will need to
     provide the hostname in the `-H` option.
 
