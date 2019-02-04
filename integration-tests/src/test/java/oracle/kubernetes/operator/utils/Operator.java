@@ -44,6 +44,19 @@ public class Operator {
    * @param inputYaml
    * @throws Exception
    */
+  public Operator(String inputYaml, boolean useLegacyRESTIdentity) throws Exception {
+    initialize(inputYaml);
+    generateInputYaml(useLegacyRESTIdentity);
+    callHelmInstall();
+  }
+
+  /**
+   * Takes operator input properties which needs to be customized and generates a operator input
+   * yaml file.
+   *
+   * @param inputYaml
+   * @throws Exception
+   */
   public Operator(String inputYaml) throws Exception {
     initialize(inputYaml);
     generateInputYaml();
@@ -245,19 +258,30 @@ public class Operator {
   }
 
   private void generateInputYaml() throws Exception {
+    generateInputYaml(false);
+  }
+
+  private void generateInputYaml(boolean useLegacyRESTIdentity) throws Exception {
     Path parentDir =
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-operators/" + operatorNS));
     generatedInputYamlFile = parentDir + "/weblogic-operator-values.yaml";
     TestUtils.createInputFile(operatorMap, generatedInputYamlFile);
-
-    // write certificates
-    ExecCommand.exec(
-        BaseTest.getProjectRoot()
-            + "/kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "
-            + "DNS:"
-            + TestUtils.getHostName()
-            + " >> "
-            + generatedInputYamlFile);
+    StringBuilder sb = new StringBuilder(200);
+    sb.append(BaseTest.getProjectRoot());
+    if (useLegacyRESTIdentity) {
+      sb.append(
+          "/integration-tests/src/test/resources/scripts/legacy-generate-external-rest-identity.sh ");
+    } else {
+      sb.append("/kubernetes/samples/scripts/rest/generate-external-rest-identity.sh ");
+      sb.append(" -n ");
+      sb.append(operatorNS);
+    }
+    sb.append(" DNS:");
+    sb.append(TestUtils.getHostName());
+    sb.append(" >> ");
+    sb.append(generatedInputYamlFile);
+    logger.info("Invoking " + sb.toString());
+    ExecCommand.exec(sb.toString());
   }
 
   private void runCommandInLoop(String command) throws Exception {
