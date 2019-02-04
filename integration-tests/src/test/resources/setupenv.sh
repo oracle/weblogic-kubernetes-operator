@@ -64,7 +64,7 @@ function setup_wercker {
 function pull_tag_images {
 
   export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
-   
+  set +x 
   if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
 	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
 		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
@@ -74,7 +74,7 @@ function pull_tag_images {
   
   if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ] && [ -n "$DOCKER_EMAIL" ]; then  
 	  echo "Creating Docker Secret"
-	  set +x 
+	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
 	    --docker-server=index.docker.io/v1/ \
 	    --docker-username=$DOCKER_USERNAME \
@@ -89,9 +89,8 @@ function pull_tag_images {
 	  fi
 	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
    	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
-	  set -x
   fi
-  
+  set -x
   echo "Pull and tag the images we need"
   docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
