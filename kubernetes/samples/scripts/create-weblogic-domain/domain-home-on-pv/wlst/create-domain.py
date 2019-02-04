@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 def getEnvVar(var):
@@ -48,7 +48,6 @@ setOption('DomainName', domain_name)
 # Configure the Administration Server
 # ===================================
 cd('/Servers/AdminServer')
-set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
 set('ListenPort', admin_port)
 set('Name', admin_server_name)
 
@@ -56,7 +55,6 @@ create('T3Channel', 'NetworkAccessPoint')
 cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
 set('PublicPort', t3_channel_port)
 set('PublicAddress', t3_public_address)
-set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
 set('ListenPort', t3_channel_port)
 
 # Set the admin user's username and password
@@ -87,7 +85,6 @@ if cluster_type == "CONFIGURED":
     create(name, 'Server')
     cd('/Servers/%s/' % name )
     print('managed server name is %s' % name);
-    set('ListenAddress', '%s-%s' % (domain_uid, name_svc))
     set('ListenPort', server_port)
     set('NumOfRetriesBeforeMSIMode', 0)
     set('RetryIntervalBeforeMSIMode', 1)
@@ -102,7 +99,6 @@ else:
   print('Done creating Server Template: %s' % templateName)
   cd('/ServerTemplates/%s' % templateName)
   cmo.setListenPort(server_port)
-  cmo.setListenAddress('%s-%s${id}' % (domain_uid, managed_server_name_base_svc))
   cmo.setCluster(cl)
   print('Done setting attributes for Server Template: %s' % templateName);
 
