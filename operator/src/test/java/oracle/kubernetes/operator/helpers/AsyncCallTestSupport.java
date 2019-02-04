@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -100,6 +100,18 @@ public class AsyncCallTestSupport extends FiberTestSupport {
    */
   public CallTestSupport.CannedResponse createCannedResponse(String forMethod) {
     return callTestSupport.createCannedResponse(forMethod);
+  }
+
+  /**
+   * Primes CallBuilder to expect a request for the specified method but not complain if none is
+   * made.
+   *
+   * @param forMethod the name of the method
+   * @return a canned response which may be qualified by parameters and defines how CallBuilder
+   *     should react.
+   */
+  public CallTestSupport.CannedResponse createOptionalCannedResponse(String forMethod) {
+    return callTestSupport.createOptionalCannedResponse(forMethod);
   }
 
   /**
