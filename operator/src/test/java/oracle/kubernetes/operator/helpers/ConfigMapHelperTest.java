@@ -472,6 +472,9 @@ public class ConfigMapHelperTest {
           + "validationErrors:\n"
           + "  - \"The dynamic cluster \\\"mycluster\\\"'s dynamic servers use calculated listen ports.\"";
 
+  private static final String DOMAIN_INVALID_NO_ERRORS =
+      "domainValid: false\n" + "validationErrors:\n";
+
   @Test
   public void parseDomainTopologyYaml() {
     ConfigMapHelper.DomainTopology domainTopology =
@@ -653,5 +656,14 @@ public class ConfigMapHelperTest {
     assertEquals(
         "The dynamic cluster \"mycluster\"'s dynamic servers use calculated listen ports.",
         domainTopology.getValidationErrors().get(0));
+  }
+
+  @Test
+  public void parseInvalidTopologyYamlWithNoValidationErrors() {
+    ConfigMapHelper.DomainTopology domainTopology =
+        ConfigMapHelper.parseDomainTopologyYaml(DOMAIN_INVALID_NO_ERRORS);
+
+    assertFalse(domainTopology.getValidationErrors().isEmpty());
+    assertFalse(domainTopology.getDomainValid());
   }
 }
