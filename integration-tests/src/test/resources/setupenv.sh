@@ -80,17 +80,19 @@ function pull_tag_images {
 	    --docker-username=$DOCKER_USERNAME \
 	    --docker-password=$DOCKER_PASSWORD \
 	    --docker-email=$DOCKER_EMAIL 
-	  set -x
+	  
 	  echo "Checking Secret"
 	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
 	  if [ "$SECRET" != "1" ]; then
 	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
 	    exit 1
 	  fi
+	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+   	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+	  set -x
   fi
   
   echo "Pull and tag the images we need"
-
   docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
 
