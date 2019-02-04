@@ -250,6 +250,11 @@ $ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/
 **Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
 update security lists to allow ingress to this port.
 
+f.	To access the WLS Administration Console, uncomment the `NodePort` setting in your `domain.yaml` file and open a browser to http://your.server.com:30305. Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running:
+```
+$ kubectl get po -n sample-domain1-ns -o wide
+```
+
 ## 7. Remove the domain.
 
 a.	Remove the domain's Ingress by using `helm`:
