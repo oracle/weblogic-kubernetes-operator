@@ -1102,8 +1102,11 @@ public class Domain {
     domainMap.values().removeIf(Objects::isNull);
 
     // create config map and secret for custom sit config
-    if (domainMap.get("configOverrides") != null) {
+    if ((domainMap.get("configOverrides") != null)
+        && (domainMap.get("configOverridesFile") != null)) {
       // write hostname in config file for public address
+
+      String configOverridesFile = domainMap.get("configOverridesFile").toString();
 
       String cmd =
           "kubectl -n "
@@ -1114,7 +1117,7 @@ public class Domain {
               + domainMap.get("configOverrides")
               + " --from-file "
               + BaseTest.getProjectRoot()
-              + "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig";
+              + configOverridesFile;
       ExecResult result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
         throw new RuntimeException(

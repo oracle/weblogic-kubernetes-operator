@@ -4,8 +4,11 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
@@ -494,6 +497,39 @@ public class BaseTest {
 
   public static String getBranchName() {
     return branchName;
+  }
+
+  public void overrideCreateDomainScript(String scriptPath) throws IOException {
+
+    if (scriptPath == null) {
+      return;
+    }
+
+    logger.info("Overriding create domain script with this: " + scriptPath);
+
+    String createDomainScriptDir =
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
+
+    // cp py
+    Files.copy(
+        new File(createDomainScriptDir + "/create-domain.py").toPath(),
+        new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+        StandardCopyOption.REPLACE_EXISTING);
+    Files.copy(
+        new File(BaseTest.getProjectRoot() + scriptPath).toPath(),
+        new File(createDomainScriptDir + "/create-domain.py").toPath(),
+        StandardCopyOption.REPLACE_EXISTING);
+  }
+
+  public void unoverrideCreateDomainScript() throws IOException {
+
+    String createDomainScriptDir =
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
+
+    Files.copy(
+        new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
+        new File(createDomainScriptDir + "/create-domain.py").toPath(),
+        StandardCopyOption.REPLACE_EXISTING);
   }
 
   private void copyScalingScriptToPod(
