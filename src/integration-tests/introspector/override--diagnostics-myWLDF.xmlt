@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<wldf:wldf-resource xmlns:wldf="http://xmlns.oracle.com/weblogic/weblogic-diagnostics"
+                    xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-diagnostics-fragment"
+                    xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+</wldf:wldf-resource>

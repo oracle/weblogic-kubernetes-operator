@@ -11,6 +11,8 @@ import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -179,6 +181,23 @@ public class BaseTest {
     logger.info("Done - testAdminT3Channel");
   }
 
+  /**
+   * Verify t3channel port by a JMS connection.
+   *
+   * @throws Exception
+   */
+  public void testAdminT3ChannelWithJMS(Domain domain) throws Exception {
+    logger.info("Inside testAdminT3ChannelWithJMS");
+    ConnectionFactory cf = domain.createJMSConnectionFactory();
+    Connection c = cf.createConnection();
+    logger.info("Connection created successfully before cycle.");
+    domain.shutdownUsingServerStartPolicy();
+    domain.restartUsingServerStartPolicy();
+    c = cf.createConnection();
+    logger.info("Connection created successfully after cycle");
+    c.close();
+    logger.info("Done - testAdminT3ChannelWithJMS");
+  }
   /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
    * balancing and node port service
