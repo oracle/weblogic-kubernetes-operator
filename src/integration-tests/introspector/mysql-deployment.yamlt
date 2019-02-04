@@ -31,11 +31,12 @@ spec:
       labels:
         app: ${DOMAIN_UID}-mysql
     spec:
-      securityContext:
-        runAsUser: 1000
-        fsGroup: 1000
+      #securityContext:
+      #  runAsUser: 1000
+      #  fsGroup: 1000
+      terminationGracePeriodSeconds: 5
       containers:
-      - image: mysql:5.6
+      - image: mysql:5.6o
         name: mysql
         env:
           # Use secret in real usage
