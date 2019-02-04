@@ -3,7 +3,7 @@
 The operator consists of the following parts:
 
 *	The operator runtime, a process that runs in a Docker container deployed into a Kubernetes pod and which performs the actual management tasks.
-* The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains. 
+* The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains.
 *	A Helm chart for installing the operator runtime and related resources.
 * A variety of sample shell scripts for preparing or packaging  WebLogic domains for running in Kubernetes.
 * A variety of sample Helm charts or shell scripts for conditionally exposing WebLogic endpoints outside the Kubernetes cluster.
@@ -25,7 +25,7 @@ The diagram below shows the general layout of high-level components, including o
 
 The Kubernetes cluster has several namespaces.  Components may be deployed into namespaces as follows:
 
-*	The operator is deployed into its own namespace.  If the Elastic Stack integration option is configured, then a logstash pod will also be deployed in the operator’s namespace.
+*	The operator is deployed into its own namespace.  If the Elastic Stack integration option is configured, then a Logstash pod will also be deployed in the operator’s namespace.
 *	WebLogic domains will be deployed into various namespaces.  There can be more than one domain in a namespace, if desired.  There is no limit on the number of domains or namespaces that an operator can manage.  Note that there can be more than one operator in a Kubernetes cluster, but each operator is configured with a list of the specific namespaces that it is responsible for.  The operator will not take any action on any domain that is not in one of the namespaces the operator is configured to manage.
 * Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a system, shared namespace such as the `kube-system` namespace.
 *	Customers are responsible for Elasticsearch and Kibana deployment, which are typically deployed in the `default` namespace.
@@ -38,8 +38,8 @@ The diagram below shows how the various parts of a WebLogic domain are manifest 
 
 This diagram shows the following details:
 
-*	An optional persistent volume is created by the customer using one of the available providers.  If the persistent volume is shared across the domain or members of a cluster, the chosen provider must support “Read Write Many” access mode.  The shared state on the persistent volume may include the “domain” directory, the “applications” directory, a directory for storing logs and a directory for any file-based persistence stores.
-*	A pod is created for the WebLogic Administration Server.  This pod is labeled with `weblogic.domainUID`, `weblogic.serverName` and `weblogic.domainName`.  One container runs in this pod.  WebLogic Node Manager and Administration Server processes are run inside this container.  The Node Manager process is used as an internal implementation detail for the liveness probe, for patching, and to provide monitoring and control capabilities to the Administration Console.  It is not intended to be used for other purposes, and it may be removed in some future release.
+*	An optional, persistent volume is created by the customer using one of the available providers.  If the persistent volume is shared across the domain or members of a cluster, then the chosen provider must support “Read Write Many” access mode.  The shared state on the persistent volume may include the “domain” directory, the “applications” directory, a directory for storing logs, and a directory for any file-based persistence stores.
+*	A pod is created for the WebLogic Administration Server.  This pod is labeled with `weblogic.domainUID`, `weblogic.serverName`, and `weblogic.domainName`.  One container runs in this pod.  WebLogic Node Manager and Administration Server processes are run inside this container.  The Node Manager process is used as an internal implementation detail for the liveness probe, for patching, and to provide monitoring and control capabilities to the Administration Console.  It is not intended to be used for other purposes, and it may be removed in some future release.
 *	A `ClusterIP` type service is created for the Administration Server pod.  This service provides a stable, well-known network (DNS) name for the Administration Server.  This name is derived from the `domainUID` and the Administration Server name, and it is known before starting up any pod.  The Administration Server `ListenAddress` is set to this well-known name.  `ClusterIP` type services are only visible inside the Kubernetes cluster.  They are used to provide the well-known names that all of the servers in a domain use to communicate with each other.  This service is labeled with `weblogic.domainUID` and `weblogic.domainName`.
 *	A `NodePort` type service is optionally created for the Administration Server pod.  This service provides HTTP access to the Administration Server to clients that are outside the Kubernetes cluster.  This service is intended to be used to access the WebLogic Server Administration Console or for the T3 protocol for WLST connections.  This service is labeled with `weblogic.domainUID` and `weblogic.domainName`.
 *	A pod is created for each WebLogic Managed Server.  These pods are labeled with `weblogic.domainUID`, `weblogic.serverName`, and `weblogic.domainName`.  One container runs in each pod.  WebLogic Node Manager and Managed Server processes are run inside each of these containers.  The Node Manager process is used as an internal implementation detail for the liveness probe.  It is not intended to be used for other purposes, and it may be removed in some future release.
@@ -51,13 +51,13 @@ The diagram below shows the components inside the containers running WebLogic Se
 ![Inside a container](images/inside-a-container.png)
 
 The domain resource specifies a Docker image, defaulting to `store/oracle/weblogic:12.2.1.3`. All containers running WebLogic Server use this same Docker image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory.
-**Note**: During a rolling event caused by a change to the domain resource's image field, containers will be using a mix of the updated value of the image field and its previous value.
+**Note**: During a rolling event caused by a change to the domain resource's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
 
 Within the container, the following aspects are configured by the operator:
 
-*	The `ENTRYPOINT` is configured to a script that starts up a Node Manager process, and then uses WLST to request that Node Manager start the server.  Node Manager is used to start servers so that the socket connection to the server will be available to obtain server status even when the server is unresponsive.  This is used by the liveness probe.
+*	The `ENTRYPOINT` is configured by a script that starts up a Node Manager process, and then uses WLST to request that Node Manager start the server.  Node Manager is used to start servers so that the socket connection to the server will be available to obtain server status even when the server is unresponsive.  This is used by the liveness probe.
 * The liveness probe is configured to check that the server is alive by querying the Node Manager process.  The liveness probe is by default configured to check liveness every 15 seconds, and to timeout after 5 seconds.  If a pod fails the liveness probe, Kubernetes will restart that container.
-*	The readiness probe is configured to use the WebLogic Server ReadyApp.  The readiness probe is used to determine if the server is ready to accept user requests.  The readiness is used to determine when a server should be included in a load balancer's endpoints, when a restarted server is fully started in the case of a rolling restart, and for various other purposes.
+*	The readiness probe is configured to use the WebLogic Server ReadyApp framework.  The readiness probe is used to determine if the server is ready to accept user requests.  The readiness is used to determine when a server should be included in a load balancer's endpoints, when a restarted server is fully started in the case of a rolling restart, and for various other purposes.
 *	A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.
 
 ## Domain state stored outside Docker images

@@ -47,6 +47,11 @@ spec:
         ports:
         - containerPort: 9200
         - containerPort: 9300
+        env:
+        - name: ES_JAVA_OPTS
+          value: -Xms2014m -Xmx1024m
+        - name: bootstrap.memory_lock
+          value: "true"
 
 ---
 kind: "Service"
