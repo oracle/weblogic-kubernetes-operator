@@ -152,6 +152,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>com.meterware.simplestub</groupId>
+      <artifactId>simplestub</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>${jackson-version}</version>
