@@ -422,6 +422,10 @@ public class BaseTest {
     return password;
   }
 
+  public static String getResultDir() {
+    return resultDir;
+  }
+
   public static int getMaxIterationsPod() {
     return maxIterationsPod;
   }

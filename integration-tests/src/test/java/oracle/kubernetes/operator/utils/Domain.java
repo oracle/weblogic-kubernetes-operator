@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
@@ -751,30 +752,36 @@ public class Domain {
   }
 
   private void callCreateDomainScript(String outputDir) throws Exception {
-    StringBuffer cmd = new StringBuffer(BaseTest.getProjectRoot());
+    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getProjectRoot());
 
     if (domainMap.containsKey("domainHomeImageBase")) {
-      cmd.append(
+      // clone docker sample from github
+      gitCloneDockerImagesSample(domainMap);
+      createDomainScriptCmd
+          .append(
               "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
           .append(BaseTest.getUsername())
           .append(" -p ")
           .append(BaseTest.getPassword())
-          .append(" -i ");
+          .append(" -k -i ");
     } else {
-      cmd.append(
+      createDomainScriptCmd.append(
           "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
     }
-    cmd.append(generatedInputYamlFile);
+    createDomainScriptCmd.append(generatedInputYamlFile);
+
+    // skip executing yaml if configOverrides
     if (!domainMap.containsKey("configOverrides")) {
-      cmd.append(" -e ");
+      createDomainScriptCmd.append(" -e ");
     }
-    cmd.append(" -o ").append(outputDir);
-    logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString(), true);
+    createDomainScriptCmd.append(" -o ").append(outputDir);
+
+    logger.info("Running " + createDomainScriptCmd);
+    ExecResult result = ExecCommand.exec(createDomainScriptCmd.toString(), true);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command "
-              + cmd
+              + createDomainScriptCmd
               + " failed, returned "
               + result.stdout()
               + "\n"
@@ -785,33 +792,7 @@ public class Domain {
 
     // write configOverride and configOverrideSecrets to domain.yaml
     if (domainMap.containsKey("configOverrides")) {
-      String contentToAppend =
-          "  configOverrides: "
-              + domainUid
-              + "-"
-              + domainMap.get("configOverrides")
-              + "\n"
-              + "  configOverrideSecrets: [ \""
-              + domainUid
-              + "-t3publicaddress\" ]"
-              + "\n";
-
-      String domainYaml =
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
-      Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
-
-      String command = "kubectl create -f " + domainYaml;
-      result = ExecCommand.exec(command);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command "
-                + cmd
-                + " failed, returned "
-                + result.stdout()
-                + "\n"
-                + result.stderr());
-      }
-      logger.info("Command returned " + result.stdout().trim());
+      appendToDomainYamlAndCreate(domainMap);
     }
   }
 
@@ -1013,7 +994,7 @@ public class Domain {
       logger.info("IMAGE_NAME_WEBLOGIC " + imageName);
     }
 
-    String imageTag = "19.1.0.0";
+    String imageTag = "12.2.1.3";
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
       logger.info("IMAGE_TAG_WEBLOGIC " + imageTag);
@@ -1027,6 +1008,11 @@ public class Domain {
       domainMap.put("image", imageName + ":" + imageTag);
     }
 
+    if (domainMap.containsKey("domainHomeImageBuildPath")) {
+      domainMap.put(
+          "domainHomeImageBuildPath",
+          BaseTest.getResultDir() + "/" + domainMap.get("domainHomeImageBuildPath"));
+    }
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
       if (System.getenv("WERCKER") != null) {
@@ -1039,9 +1025,9 @@ public class Domain {
             System.getenv("REPO_EMAIL"),
             domainNS);
       }
-    } /* else {
-        domainMap.put("imagePullSecretName", "docker-store");
-      } */
+    } else {
+      domainMap.put("imagePullSecretName", "docker-store");
+    }
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
@@ -1144,5 +1130,78 @@ public class Domain {
               + " does not exist or no NodePort is not configured "
               + "for the admin server in domain.");
     }
+  }
+
+  private void gitCloneDockerImagesSample(Map domainMap) throws Exception {
+    if (domainMap.containsKey("domainHomeImageBuildPath")
+        && !(((String) domainMap.get("domainHomeImageBuildPath")).trim().isEmpty())) {
+      String domainHomeImageBuildPath = (String) domainMap.get("domainHomeImageBuildPath");
+      StringBuffer removeAndClone = new StringBuffer();
+      logger.info(
+          "Checking if directory "
+              + domainHomeImageBuildPath
+              + " exists "
+              + new File(domainHomeImageBuildPath).exists());
+      if (new File(domainHomeImageBuildPath).exists()) {
+        removeAndClone
+            .append("rm -rf ")
+            .append(BaseTest.getResultDir())
+            .append("/docker-images && ");
+      }
+      // git clone docker-images project
+      removeAndClone
+          .append(" git clone https://github.com/oracle/docker-images.git ")
+          .append(BaseTest.getResultDir())
+          .append("/docker-images");
+      logger.info("Executing cmd " + removeAndClone);
+      ExecResult result = ExecCommand.exec(removeAndClone.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command "
+                + removeAndClone
+                + " failed "
+                + result.stderr()
+                + " "
+                + result.stdout());
+      }
+      // copy script to cloned location
+      Files.copy(
+          new File(
+                  BaseTest.getProjectRoot()
+                      + "/integration-tests/src/test/resources/domain-home-on-image/create-wls-domain.py")
+              .toPath(),
+          new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py").toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+    }
+  }
+
+  private void appendToDomainYamlAndCreate(Map domainMap) throws Exception {
+    String contentToAppend =
+        "  configOverrides: "
+            + domainUid
+            + "-"
+            + domainMap.get("configOverrides")
+            + "\n"
+            + "  configOverrideSecrets: [ \""
+            + domainUid
+            + "-t3publicaddress\" ]"
+            + "\n";
+
+    String domainYaml =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+
+    String command = "kubectl create -f " + domainYaml;
+    ExecResult result = ExecCommand.exec(command);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command "
+              + command
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
+    logger.info("Command returned " + result.stdout().trim());
   }
 }
