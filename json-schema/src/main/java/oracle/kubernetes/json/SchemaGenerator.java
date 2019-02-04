@@ -186,11 +186,15 @@ public class SchemaGenerator {
   }
 
   private boolean includeInSchema(Field field) {
-    return !isStatic(field) && !ignoreAsDeprecated(field);
+    return !isStatic(field) && !isVolatile(field) && !ignoreAsDeprecated(field);
   }
 
   private boolean isStatic(Field field) {
     return Modifier.isStatic(field.getModifiers());
+  }
+
+  private boolean isVolatile(Field field) {
+    return Modifier.isVolatile(field.getModifiers());
   }
 
   private boolean ignoreAsDeprecated(Field field) {
