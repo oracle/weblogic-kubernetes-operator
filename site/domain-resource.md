@@ -19,7 +19,7 @@ For sample YAML templates, see the [Domain resource example](../kubernetes/sampl
 
 # Kubernetes resources
 
-After you have written your YAML files, please use them to create your WLS domain artifacts using the `kubectl apply -f` command.
+After you have written your YAML files, you use them to create your WLS domain artifacts using the `kubectl apply -f` command.
 
 ```
 $ kubectl apply -f domain-resource.yaml
