@@ -565,6 +565,7 @@ public class ITOperator extends BaseTest {
       domain11 = testDomainCreation(domain11YamlFile);
       domain11.verifyDomainCreated();
       testBasicUseCases(domain11);
+      testAdminT3ChannelWithJMS(domain11);
       // testAdvancedUseCasesForADomain(operator1, domain11);
       testCompletedSuccessfully = true;
 
@@ -613,6 +614,7 @@ public class ITOperator extends BaseTest {
       domain12 = testDomainCreation(domain12YamlFile);
       domain12.verifyDomainCreated();
       testBasicUseCases(domain12);
+      testAdminT3ChannelWithJMS(domain12);
       // testAdvancedUseCasesForADomain(operator1, domain11);
       testCompletedSuccessfully = true;
 
