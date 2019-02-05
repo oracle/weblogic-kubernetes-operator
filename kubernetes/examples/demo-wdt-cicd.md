@@ -26,8 +26,7 @@ cp -r cicd/domain-definitions/v1 domain1-def
 cp cicd/domain-home-creators/derived/Dockerfile domain1-def
 cp weblogic-deploy.zip domain1-def
 docker build --force-rm=true -t domain1:v1 domain1-def
-cp cicd/domain-resources/v1.yaml domain1.yaml
-kubectl apply -f domain1.yaml
+helm install cicd/domain1 --name domain1 --namespace sample-domain1-ns --set Version=v1
 kubectl get po -n sample-domain1-ns && curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp1/
   (until admin server and managed server are running)
 
@@ -38,8 +37,7 @@ cp -r cicd/domain-definitions/v2 domain1-def
 cp cicd/domain-home-creators/derived/Dockerfile domain1-def
 cp weblogic-deploy.zip domain1-def
 docker build --force-rm=true -t domain1:v2 domain1-def
-cp cicd/domain-resources/v2.yaml domain1.yaml
-kubectl apply -f domain1.yaml
+helm upgrade domain1 cicd/domain1 --reuse-values --set Version=v2
 kubectl get po -n sample-domain1-ns && curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp1/
   (until admin server and managed server are restarted)
 
@@ -50,8 +48,7 @@ cp -r cicd/domain-definitions/v3 domain1-def
 cp cicd/domain-home-creators/derived/Dockerfile domain1-def
 cp weblogic-deploy.zip domain1-def
 docker build --force-rm=true -t domain1:v3 domain1-def
-cp cicd/domain-resources/v3.yaml domain1.yaml
-kubectl apply -f domain1.yaml
+helm upgrade domain1 cicd/domain1 --reuse-values --set Version=v3
 kubectl get po -n sample-domain1-ns && curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp1/ && curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp2/
   (until admin server and managed server are running)
 
@@ -62,8 +59,7 @@ cp -r cicd/domain-definitions/v4 domain1-def
 cp cicd/domain-home-creators/derived/Dockerfile domain1-def
 cp weblogic-deploy.zip domain1-def
 docker build --force-rm=true -t domain1:v4 domain1-def
-cp cicd/domain-resources/v4.yaml domain1.yaml
-kubectl apply -f domain1.yaml
+helm upgrade domain1 cicd/domain1 --reuse-values --set Version=v4
 kubectl get po -n sample-domain1-ns && curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp1/ && curl -H 'host: domain1.org' http://${HOSTNAME}:30305/testwebapp2/
   (until admin server and managed server are running)
 
@@ -79,7 +75,6 @@ docker rmi domain1:v1
 docker rmi domain1:base
 kubectl delete secret -n sample-domain1-ns domain1-uid-weblogic-credentials
 rm domain1-lb.yaml
-rm domain1.yaml
 rm -r domain1-def
 
 # Here's how to connect to managed server1's pod and look at its config, local apps, and its serverConfig bean tree:

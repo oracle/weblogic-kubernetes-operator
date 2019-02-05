@@ -10,7 +10,7 @@ metadata:
     weblogic.resourceVersion: domain-v2
     weblogic.domainUID: domain1-uid
 spec:
-  image: "domain1:v3"
+  image: domain1:{{ .Values.Version }}
   imagePullPolicy: "Never"
   webLogicCredentialsSecret: 
     name: domain1-uid-weblogic-credentials
@@ -27,4 +27,4 @@ spec:
       - channelName: default
         nodePort: 30701
       - channelName: T3Channel
-  replicas: 2
+  replicas: 3
