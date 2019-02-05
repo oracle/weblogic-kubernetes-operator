@@ -282,10 +282,10 @@ public class BaseTest {
     logger.info(
         "Scale domain " + domain.getDomainUid() + " Up to " + replicas + " managed servers");
     operator.scale(domainUid, domainMap.get("clusterName").toString(), replicas);
-    
+
     logger.info("Adding sleep ");
     Thread.sleep(30 * 1000);
-    
+
     logger.info("Checking if managed pod(" + podName + ") is Running");
     TestUtils.checkPodCreated(podName, domainNS);
 
