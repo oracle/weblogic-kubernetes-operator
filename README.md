@@ -4,8 +4,6 @@ Built with [Jenkins](http://build.weblogick8s.org:8080/job/WebLogic%20Kubernetes
 
 [![Build Status](http://build.weblogick8s.org:8080/buildStatus/icon?job=WebLogic Kubernetes Operator)](http://build.weblogick8s.org:8080/job/WebLogic%20Kubernetes%20Operator/)
 
-TEST
-
 Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
 
 * Create WebLogic domains in a Kubernetes persistent volume. This persistent volume can reside in an NFS file system or other Kubernetes volume types.
