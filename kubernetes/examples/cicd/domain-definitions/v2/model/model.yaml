@@ -1,0 +1,35 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+topology:
+    Name: 'domain1'
+    AdminServerName: 'admin-server'
+    ProductionModeEnabled: 'true'
+    Cluster:
+        'cluster-1':
+            DynamicServers:
+                ServerTemplate: 'cluster-1-template'
+                CalculatedListenPorts: false
+                ServerNamePrefix: 'managed-server'
+                DynamicClusterSize: '5'
+                MaxDynamicClusterSize: '5'
+    Server:
+        'admin-server':
+            ListenPort: '7001'
+            NetworkAccessPoint:
+                T3Channel:
+                    ListenPort: '30012'
+                    PublicAddress: 'kubernetes'
+                    PublicPort: '30012'
+    ServerTemplate:
+        'cluster-1-template':
+            ListenPort: '8001'
+            Cluster: 'cluster-1'
+appDeployments:
+    Application:
+        'testwebapp1':
+            SourcePath: 'wlsdeploy/applications/testwebapp1.war'
+            Target: 'cluster-1'
+            ModuleType: war
+            StagingMode: nostage
+            PlanStagingMode: nostage
