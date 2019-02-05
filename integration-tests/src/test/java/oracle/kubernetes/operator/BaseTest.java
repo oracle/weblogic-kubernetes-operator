@@ -315,6 +315,7 @@ public class BaseTest {
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
+        logger.info("Number of servers addresses in endpoint is same as replica count ");
         break;
       }
     }
