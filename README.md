@@ -1,8 +1,8 @@
 # Oracle WebLogic Server Kubernetes Operator
 
-Built with [Wercker](http://www.wercker.com)
+Built with [Jenkins](http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator/)
 
-[![wercker status](https://app.wercker.com/status/68ce42623fce7fb2e52d304de8ea7530/m/develop "wercker status")](https://app.wercker.com/project/byKey/68ce42623fce7fb2e52d304de8ea7530)
+[![Build Status](http://build.weblogick8s.org:8080/buildStatus/icon?job=weblogic-kubernetes-operator)](http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator/)
 
 Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
 
