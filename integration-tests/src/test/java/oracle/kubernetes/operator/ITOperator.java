@@ -593,6 +593,7 @@ public class ITOperator extends BaseTest {
       // TODO: This one is not working yet
       // testBasicUseCases(domain);
       // testAdvancedUseCasesForADomain(operator1, domain);
+      testAdminServerExternalService(domain);
       testCompletedSuccessfully = true;
 
     } finally {
