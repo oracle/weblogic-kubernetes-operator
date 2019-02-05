@@ -301,6 +301,24 @@ public class BaseTest {
               + replicas);
     }
 
+    // make sure cluster service endpoint is updated with the scaled up servers before verifying
+    // load balancing
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      int numberOfServersInEndpoint =
+          domain.getNumberOfServersInClusterServiceEndpoint((String) domainMap.get("clusterName"));
+      if (replicaCnt != numberOfServersInEndpoint) {
+        // check for last iteration
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+          throw new RuntimeException("FAILURE: Cluster Serice Endpoint is not updated");
+        }
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+        i++;
+      } else {
+        break;
+      }
+    }
+
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
 
     replicas = 2;
