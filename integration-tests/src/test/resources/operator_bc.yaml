@@ -1,0 +1,11 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+#any property can be provided here from kubernetes/charts/weblogic-operator/values.yaml
+releaseName: op3
+serviceAccount: weblogic-operator
+namespace: weblogic-operator-backward-compatibility
+domainNamespaces: [ "domain-backward-compatibility"]
+externalRestEnabled: true
+externalRestHttpsPort: 32004
+javaLoggingLevel: FINE

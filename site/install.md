@@ -4,7 +4,7 @@ An operator is an application-specific controller that extends Kubernetes to cre
 
 ## Overview
 
-Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster. Helm is a framework that helps you manage Kubernetes applications, and helm charts help you define and install Helm applications into a Kubernetes cluster. The operator's Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
+Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster. Helm is a framework that helps you manage Kubernetes applications, and Helm charts help you define and install Helm applications into a Kubernetes cluster. The operator's Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
 
 > If you have an older version of the operator installed on your cluster, then you must remove it before installing this version. This includes the 2.0-rc1 version; it must be completely removed. You should remove the deployment (for example, `kubectl delete deploy weblogic-operator -n your-namespace`) and the custom
   resource definition (for example, `kubectl delete crd domain`).  If you do not remove
@@ -67,21 +67,20 @@ The operator can expose an external REST HTTPS interface which can be accessed f
 To enable the external REST interface, configure these values in a custom configuration file, or on the Helm command line:
 
 * Set `externalRestEnabled` to `true`.
-* Set `externalOperatorCert` to the certificate's Base64 encoded PEM.
-* Set `externalOperatorKey` to the keys Base64 encoded PEM.
+* Set `externalRestIdentitySecret` to the name of the Kubernetes secret that contains the certificate and private key.
 * Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
 
 More detailed information about configuration values can be found in [Operator Helm configuration values](#operator-helm-configuration-values).
 
 ### SSL certificate and private key for the REST interface
 
-For testing purposes, the WebLogic Kubernetes Operator project provides a sample script that generates a self-signed certificate and private key for the operator REST interface and outputs them in YAML format. These values can be added to your custom YAML configuration file, for use when the operator's Helm chart is installed.
+For testing purposes, the WebLogic Kubernetes Operator project provides a sample script that generates a self-signed certificate and private key for the operator REST interface, store them in a Kubernetes tls secret and outputs the corresponding configuration values in YAML format. These values can be added to your custom YAML configuration file, for use when the operator's Helm chart is installed.
 
-___This script should not be used in a production environment (because self-signed certificates are not typically considered safe).___
+___This script should not be used in a production environment (because typically, self-signed certificates are not considered safe).___
 
-The script takes the subject alternative names that should be added to the certificate, for example, the list of hostnames that clients can use to access the external REST interface. In this example, the output is directly appended to your custom YAML configuration:
+The script takes the subject alternative names that should be added to the certificate, for example, the list of hostnames that clients can use to access the external REST interface, the optional secret name to store the certificate (defaults to weblogic-operator-external-rest-identity) and the namespace where the operator will be installed. In this example, the output is directly appended to your custom YAML configuration:
 ```
-$ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" >> custom-values.yaml
+$ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh -a "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" -n weblogic-operator >> custom-values.yaml
 ```
 
 ## Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration
@@ -102,15 +101,15 @@ More detailed information about configuration values can be found in [Operator H
 
 ## Install the Helm chart
 
-Use the `helm install` command to install the operator Helm chart. As part of this, you must specify a "release" name for their operator.
+Use the `helm install` command to install the operator Helm chart. As part of this, you must specify a "release" name for the operator.
 
 You can override default configuration values in the operator Helm chart by doing one of the following:
 - Creating a custom YAML file containing the values to be overridden, and specifying the `--value` option on the Helm command line.
 - Overriding individual values directly on the Helm command line, using the `--set` option.
 
-You supply the `–namespace` argument from the `helm install` command line to specify the namespace in which the operator should be installed.  If not specified, it defaults to `default`.  If the namespace does not already exist, Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is deleted.  If the namespace already exists, Helm will re-use it.  These are standard Helm behaviors.
+You supply the `–namespace` argument from the `helm install` command line to specify the namespace in which the operator should be installed.  If not specified, then it defaults to `default`.  If the namespace does not already exist, then Helm will automatically create it (and create a default service account in the new namespace), but will not remove it when the release is deleted.  If the namespace already exists, then Helm will re-use it.  These are standard Helm behaviors.
 
-Similarly, you may override the default `serviceAccount` configuration value to specify which service account in the operator's namespace the operator should use.  If not specified, it defaults to `default` (for example, the namespace's default service account).  If you want to use a different service account, then you must create the operator's namespace and the service account before installing the operator Helm chart.
+Similarly, you may override the default `serviceAccount` configuration value to specify which service account in the operator's namespace, the operator should use.  If not specified, then it defaults to `default` (for example, the namespace's default service account).  If you want to use a different service account, then you must create the operator's namespace and the service account before installing the operator Helm chart.
 
 For example:
 ```
@@ -127,7 +126,7 @@ $ helm install kubernetes/charts/weblogic-operator \
 
 This creates a Helm release, named `weblogic-operator` in the `weblogic-operator-namespace` namespace, and configures a deployment and supporting resources for the operator.
 
-If `weblogic-operator-namespace` exists, it will be used.  If it does not exist, then Helm will create it.
+If `weblogic-operator-namespace` exists, then it will be used.  If it does not exist, then Helm will create it.
 
 You can verify the operator installation by examining the output from the `helm install` command.
 
@@ -329,7 +328,7 @@ Determines whether the operator's REST interface will be exposed outside the Kub
 
 Defaults to `false`.
 
-If set to `true`, you must provide the SSL certificate and private key for the operator's external REST interface by specifying the `externalOperatorCert` and `externalOperatorKey` properties.
+If set to `true`, you must provide the `externalRestIdentitySecret` property that contains the name of the Kubernetes secret which contains the SSL certificate and private key for the operator's external REST interface.
 
 Example:
 ```
@@ -348,7 +347,7 @@ Example:
 externalRestHttpsPort: 32009
 ```
 
-#### externalOperatorCert
+#### externalOperatorCert (Deprecated, use externalRestIdentitySecret instead)
 
 Specifies the user supplied certificate to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM certificate. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored.
 
@@ -367,7 +366,7 @@ Example:
 externalOperatorCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S ...
 ```
 
-#### externalOperatorKey
+#### externalOperatorKey (Deprecated, use externalRestIdentitySecret instead)
 
 Specifies user supplied private key to use for the external operator REST HTTPS interface. The value must be a string containing a Base64 encoded PEM key. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored.
 
@@ -384,6 +383,27 @@ Error: render error in "weblogic-operator/templates/main.yaml": template: weblog
 Example:
 ```
 externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...
+```
+#### externalRestIdentitySecret
+
+Specifies the user supplied secret that contains the tls certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes tls secret previously created. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes tls secret you can use the following command:
+`kubectl create secret tls <secret-name> --cert=<path_to_certificate> --key=<path_to_private_key> -n <namespace>`
+
+There is no default value.
+
+The Helm installation will produce an error, similar to the following, if `externalRestIdentitySecret` is not specified (left blank) and `externalRestEnabled` is `true`:
+```
+Error: render error in "weblogic-operator/templates/main.yaml": template: weblogic-operator/templates/main.yaml:9:3: executing "weblogic-operator/templates/main.yaml"
+    at <include "operator.va...>: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:42:14: executing "operator.validateInputs"
+    at <include "utils.endVa...>: error calling include: template: weblogic-operator/templates/_utils.tpl:22:6: executing "utils.endValidation" 
+    at <fail $scope.validati...>: error calling fail:
+ string externalRestIdentitySecret must be specified
+
+```
+
+Example: externalRestIdentitySecret: weblogic-operator-external-rest-identity
+```
+externalOperatorCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S ...
 ```
 
 ### Debugging options
