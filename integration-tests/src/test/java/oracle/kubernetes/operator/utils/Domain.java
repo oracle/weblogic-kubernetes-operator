@@ -234,6 +234,7 @@ public class Domain {
       }
     }
   }
+
   /**
    * verify nodeport by accessing admin REST endpoint
    *
