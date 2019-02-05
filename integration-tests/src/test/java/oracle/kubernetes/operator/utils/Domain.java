@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import javax.jms.ConnectionFactory;
 import javax.jms.QueueConnection;
@@ -692,6 +693,31 @@ public class Domain {
     // test managed server1 pod auto restart
     String serverName = managedServerNameBase + "1";
     TestUtils.testWlsLivenessProbe(domainUid, serverName, domainNS);
+  }
+
+  /**
+   * Get number of server addresses in cluster service endpoint
+   *
+   * @param clusterName
+   * @return
+   * @throws Exception
+   */
+  public int getNumberOfServersInClusterServiceEndpoint(String clusterName) throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl describe service ")
+        .append(domainUid)
+        .append("-cluster-")
+        .append(clusterName)
+        .append(" -n ")
+        .append(domainNS)
+        .append(" | grep Endpoints | awk '{print $2}'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: Commmand " + cmd + " failed, cluster service is not ready.");
+    }
+    return new StringTokenizer(result.stdout(), ",").countTokens();
   }
 
   private int getAdminSericeLBNodePort() throws Exception {
