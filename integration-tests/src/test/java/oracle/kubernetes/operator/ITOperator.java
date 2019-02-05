@@ -594,6 +594,7 @@ public class ITOperator extends BaseTest {
       // testBasicUseCases(domain);
       // testAdvancedUseCasesForADomain(operator1, domain);
       testAdminServerExternalService(domain);
+      testAdminT3ChannelWithJMS(domain);
       testCompletedSuccessfully = true;
 
     } finally {
