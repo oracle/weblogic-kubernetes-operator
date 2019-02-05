@@ -717,6 +717,7 @@ public class Domain {
       throw new RuntimeException(
           "FAILURE: Commmand " + cmd + " failed, cluster service is not ready.");
     }
+    logger.info("Cluster service Endpoint " + result.stdout());
     return new StringTokenizer(result.stdout(), ",").countTokens();
   }
 
