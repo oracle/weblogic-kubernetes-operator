@@ -14,6 +14,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -269,11 +270,12 @@ public class ConfigMapHelper {
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
-        if (!domainTopology.getValidationErrors().isEmpty()) {
-          for (String err : domainTopology.getValidationErrors()) {
-            LOGGER.severe(err);
+        if (domainTopology == null || !domainTopology.getDomainValid()) {
+          // If introspector determines Domain is invalid then log erros and terminate the fiber
+          if (domainTopology != null) {
+            logValidationErrors(domainTopology.getValidationErrors());
           }
-          doNext(null, packet);
+          return doNext(null, packet);
         }
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
         ScanCache.INSTANCE.registerScan(
@@ -292,6 +294,14 @@ public class ConfigMapHelper {
 
       // TODO: How do we handle no topology?
       return doNext(getNext(), packet);
+    }
+
+    private void logValidationErrors(List<String> validationErrors) {
+      if (!validationErrors.isEmpty()) {
+        for (String err : validationErrors) {
+          LOGGER.severe(err);
+        }
+      }
     }
 
     private static String getOperatorNamespace() {
@@ -501,10 +511,14 @@ public class ConfigMapHelper {
         if (topologyYaml != null) {
           ConfigMapHelper.DomainTopology domainTopology =
               ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
-          WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
-          ScanCache.INSTANCE.registerScan(
-              info.getNamespace(), info.getDomainUID(), new Scan(wlsDomainConfig, new DateTime()));
-          packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+          if (domainTopology != null) {
+            WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
+            ScanCache.INSTANCE.registerScan(
+                info.getNamespace(),
+                info.getDomainUID(),
+                new Scan(wlsDomainConfig, new DateTime()));
+            packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+          }
         }
       }
 
@@ -582,7 +596,11 @@ public class ConfigMapHelper {
     private List<String> validationErrors;
 
     public boolean getDomainValid() {
-      return this.domainValid;
+      // domainValid = true AND no validation errors exist
+      if (domainValid && getValidationErrors().isEmpty()) {
+        return true;
+      }
+      return false;
     }
 
     public void setDomainValid(boolean domainValid) {
@@ -599,11 +617,30 @@ public class ConfigMapHelper {
     }
 
     public List<String> getValidationErrors() {
-      return validationErrors == null ? Collections.emptyList() : validationErrors;
+      if (validationErrors == null) {
+        validationErrors = Collections.emptyList();
+      }
+
+      if (!domainValid && validationErrors.isEmpty()) {
+        // add a log message that domain was marked invalid since we have no validation
+        // errors from introspector.
+        validationErrors = new ArrayList<>();
+        validationErrors.add(
+            "Error, domain is invalid although there are no validation errors from introspector job.");
+      }
+
+      return validationErrors;
     }
 
     public void setValidationErrors(List<String> validationErrors) {
       this.validationErrors = validationErrors;
+    }
+
+    public String toString() {
+      if (domainValid) {
+        return "domain: " + domain;
+      }
+      return "domainValid: " + domainValid + ", validationErrors: " + validationErrors;
     }
   }
 }

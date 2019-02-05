@@ -314,6 +314,15 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void createAdminPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
+    configureAdminServer();
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
+  }
+
+  @Test
   public void whenDomainHasAdditionalVolumes_createAdminPodWithThem() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/source-path1")

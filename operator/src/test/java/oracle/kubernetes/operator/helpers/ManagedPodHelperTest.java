@@ -137,6 +137,15 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void createManagedPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList());
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
+  }
+
+  @Test
   public void whenPacketHasClusterConfig_managedPodHasClusterLabel() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 

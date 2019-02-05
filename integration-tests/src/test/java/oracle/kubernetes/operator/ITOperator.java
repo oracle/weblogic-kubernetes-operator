@@ -33,6 +33,7 @@ public class ITOperator extends BaseTest {
   private static String op2YamlFile = "operator2.yaml";
   private static final String opForDelYamlFile1 = "operator_del1.yaml";
   private static final String opForDelYamlFile2 = "operator_del2.yaml";
+  private static final String opForBackwardCompatibility = "operator_bc.yaml";
 
   // property file used to customize domain properties for domain inputs yaml
   private static String domain1YamlFile = "domain1.yaml";
@@ -58,6 +59,8 @@ public class ITOperator extends BaseTest {
 
   private static Operator operatorForDel1;
   private static Operator operatorForDel2;
+
+  private static Operator operatorForBackwardCompatibility;
 
   private static boolean QUICKTEST;
   private static boolean SMOKETEST;
@@ -565,6 +568,7 @@ public class ITOperator extends BaseTest {
       domain11 = testDomainCreation(domain11YamlFile);
       domain11.verifyDomainCreated();
       testBasicUseCases(domain11);
+      testAdminT3ChannelWithJMS(domain11);
       // testAdvancedUseCasesForADomain(operator1, domain11);
       testCompletedSuccessfully = true;
 
@@ -579,6 +583,28 @@ public class ITOperator extends BaseTest {
     }
     logger.info("SUCCESS - testAutoSitConfigOverrides");
   }
+
+  /**
+   * Create operator and enable external rest endpoint using the externalOperatorCert and
+   * externalOperatorKey defined in the helm chart values instead of the tls secret. This test is
+   * for backward compatibility
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testRESTIdentityBackwardCompatibility() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+
+    logTestBegin("testRESTIdentityBackwardCompatibility");
+    logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
+    if (operatorForBackwardCompatibility == null) {
+      operatorForBackwardCompatibility = TestUtils.createOperator(opForBackwardCompatibility, true);
+    }
+    logger.info("Operator using legacy REST identity created successfully");
+    operatorForBackwardCompatibility.destroy();
+    logger.info("SUCCESS - testRESTIdentityBackwardCompatibility");
+  }
+
   /**
    * Create Operator and create domain with some junk value for t3 channel public address and using
    * custom situational config override replace with valid public address using secret Verify the
@@ -613,6 +639,7 @@ public class ITOperator extends BaseTest {
       domain12 = testDomainCreation(domain12YamlFile);
       domain12.verifyDomainCreated();
       testBasicUseCases(domain12);
+      testAdminT3ChannelWithJMS(domain12);
       // testAdvancedUseCasesForADomain(operator1, domain11);
       testCompletedSuccessfully = true;
 
