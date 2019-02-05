@@ -91,11 +91,26 @@ public class JobHelper {
       return getDomain().getSpec().getAdditionalVolumeMounts();
     }
 
+    private boolean excludeEnvVar(V1EnvVar envVar) {
+      // Do not allow the overriding of USER_MEM_ARGS environment variable
+      // in introspector pod which has the value of
+      // "-Djava.security.egd=file:/dev/./urandom" from the WebLogic docker image
+      if ("USER_MEM_ARGS".equals(envVar.getName())) {
+        return true;
+      }
+      return false;
+    }
+
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       // Pod for introspector job would use same environment variables as for admin server
-      List<V1EnvVar> vars =
-          new ArrayList<>(getDomain().getAdminServerSpec().getEnvironmentVariables());
+      List<V1EnvVar> vars = new ArrayList<>();
+      for (V1EnvVar adminServerEnvVar :
+          getDomain().getAdminServerSpec().getEnvironmentVariables()) {
+        if (!excludeEnvVar(adminServerEnvVar)) {
+          vars.add(adminServerEnvVar);
+        }
+      }
 
       addEnvVar(vars, "NAMESPACE", getNamespace());
       addEnvVar(vars, "DOMAIN_UID", getDomainUID());

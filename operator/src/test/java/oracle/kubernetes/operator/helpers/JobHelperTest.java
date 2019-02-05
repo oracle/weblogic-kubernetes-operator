@@ -5,8 +5,10 @@
 package oracle.kubernetes.operator.helpers;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
 import io.kubernetes.client.models.V1Container;
@@ -173,6 +175,32 @@ public class JobHelperTest {
   }
 
   @Test
+  public void introspectorPodDoesNotStartsWithUSER_MEM_ARGS_envVar() {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    configureDomain(domainPresenceInfo)
+        .withEnvironmentVariable("item1", "value1")
+        .withEnvironmentVariable("item2", "value2")
+        .withEnvironmentVariable("USER_MEM_ARGS", "-Xms64m -Xmx256m");
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    MatcherAssert.assertThat(
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        allOf(
+            hasEnvVar("item1", "value1"),
+            hasEnvVar("item2", "value2"),
+            not(hasEnvVar("USER_MEM_ARGS", "-Xms64m -Xmx256m"))));
+  }
+
+  @Test
   public void whenDomainHasEnvironmentItemsWithVariables_introspectorPodStartupWithThem() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
@@ -236,6 +264,49 @@ public class JobHelperTest {
     MatcherAssert.assertThat(
         getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
         allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
+  }
+
+  @Test
+  public void verify_introspectorPodSpec_activeDeadlineSeconds_initial_values() {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    MatcherAssert.assertThat(
+        jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),
+        is(JobStepContext.DEFAULT_ACTIVE_DEADLINE_SECONDS));
+    MatcherAssert.assertThat(
+        jobSpec.getActiveDeadlineSeconds(), is(JobStepContext.DEFAULT_ACTIVE_DEADLINE_SECONDS));
+  }
+
+  @Test
+  public void verify_introspectorPodSpec_activeDeadlineSeconds_retry_values() {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+    int failureCount = domainPresenceInfo.incrementAndGetFailureCount();
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    long expectedActiveDeadlineSeconds =
+        JobStepContext.DEFAULT_ACTIVE_DEADLINE_SECONDS
+            + (failureCount * JobStepContext.DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS);
+    MatcherAssert.assertThat(
+        jobSpec.getTemplate().getSpec().getActiveDeadlineSeconds(),
+        is(expectedActiveDeadlineSeconds));
+    MatcherAssert.assertThat(jobSpec.getActiveDeadlineSeconds(), is(expectedActiveDeadlineSeconds));
   }
 
   private DomainPresenceInfo createDomainPresenceInfo() {
