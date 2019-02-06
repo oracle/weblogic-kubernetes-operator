@@ -1,4 +1,4 @@
-eror and how to resolve them
+errors and how to resolve them
 
 1. Message: "status on iteration 20 of 20
 pod domain1-create-weblogic-sample-domain-job-4qwt2 status is Pending
@@ -6,23 +6,23 @@ The create domain job is not showing status completed after waiting 300 seconds.
 * The most likely cause is related to the value of persistentVolumeClaimName, defined in domain-home-on-pv/create-domain-inputs.yaml. Change the value to weblogic-sample-pvc.
 * Verify that the operator is deployed. Use the command
 ```
-kubectl  get all --all-namespaces
+kubectl  get all --all-namespaces  
+```  
+and look for lines similar to  
 ```
-and look for lines similar to
-```
-weblogic-operator1   pod/weblogic-operator-
-```
-If you do not find something similar in the output, the WebLogic Operator for Kubernetes may not have been installed completely. Review the operator installation instructions in 
+weblogic-operator1   pod/weblogic-operator-  
+```  
+If you do not find something similar in the output, the WebLogic Operator for Kubernetes may not have been installed completely. Review the operator installation instructions in
 1. Message: "ERROR: Unable to create folder /shared/domains"
-The most common cause is a poor choice of value for weblogicDomainStoragePath in the input file used when you executed 
+The most common cause is a poor choice of value for weblogicDomainStoragePath in the input file used when you executed  
 ```
-create-pv-pvc.sh
+create-pv-pvc.sh  
 ```
-The you should delete the resources for your sample domain, correct the value in that file and rerun the commands to create the pv/pvc and the credential before you attampt to rerun
+The you should delete the resources for your sample domain, correct the value in that file and rerun the commands to create the pv/pvc and the credential before you attampt to rerun  
 ```
-create-domain.sh
+create-domain.sh  
 ```
-A correct values for weblogicDomainStoragePath will meet the following requirements
+A correct values for weblogicDomainStoragePath will meet the following requirements  
 * owned by the useer that started the operator
 * exists
 * is a directory
