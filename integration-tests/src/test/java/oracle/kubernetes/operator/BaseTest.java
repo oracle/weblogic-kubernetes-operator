@@ -325,6 +325,12 @@ public class BaseTest {
       }
     }
 
+    logger.info("***************Adding debug**************");
+    ExecResult result = ExecCommand.exec("kubectl describe service -n " + domainNS);
+    logger.info("kubectl describe service outpout " + result.stdout());
+
+    logger.info("***************Adding debug**************");
+
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
 
     replicas = 2;
