@@ -15,6 +15,10 @@ spec:
   - command:
     - ${JOB_SCRIPT}
     env:
+    - name: JAVA_OPTIONS
+      value: "-Djava.security.egd=file:/dev/./urandom "
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
     - name: NAMESPACE
       value: "${NAMESPACE}"
     - name: DOMAIN_UID
