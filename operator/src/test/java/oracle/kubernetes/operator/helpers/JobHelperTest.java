@@ -8,7 +8,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
 import io.kubernetes.client.models.V1Container;
@@ -172,32 +171,6 @@ public class JobHelperTest {
             hasEnvVar("item2", "value2"),
             hasEnvVar("WL_HOME", "/u01/custom_wl_home/"),
             hasEnvVar("MW_HOME", "/u01/custom_mw_home/")));
-  }
-
-  @Test
-  public void introspectorPodDoesNotStartsWithUSER_MEM_ARGS_envVar() {
-    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
-
-    configureDomain(domainPresenceInfo)
-        .withEnvironmentVariable("item1", "value1")
-        .withEnvironmentVariable("item2", "value2")
-        .withEnvironmentVariable("USER_MEM_ARGS", "-Xms64m -Xmx256m");
-
-    Packet packet = new Packet();
-    packet
-        .getComponents()
-        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
-    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
-        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
-    V1JobSpec jobSpec =
-        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
-
-    MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
-        allOf(
-            hasEnvVar("item1", "value1"),
-            hasEnvVar("item2", "value2"),
-            not(hasEnvVar("USER_MEM_ARGS", "-Xms64m -Xmx256m"))));
   }
 
   @Test
