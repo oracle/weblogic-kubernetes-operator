@@ -285,7 +285,7 @@ public class BaseTest {
 
     if (domainUid.equalsIgnoreCase("domain1")) {
       logger.info("Adding sleep ");
-      Thread.sleep(30 * 1000);
+      Thread.sleep(60 * 1000);
     }
 
     logger.info("Checking if managed pod(" + podName + ") is Running");
