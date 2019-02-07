@@ -237,10 +237,10 @@ e.	To confirm that the load balancer noticed the new Ingress and is successfully
 **NOTE**: Be sure to include the trailing forward slash on the URL, otherwise the command won't work.
 
 ```
-$ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/
-* About to connect() to your.server.com port 30305 (#0)
+$ curl -v -H 'host: sample-domain1.org' http://your.server.com:30701/weblogic/
+* About to connect() to your.server.com port 30701 (#0)
 *   Trying 10.196.1.64...
-* Connected to your.server.com (10.196.1.64) port 30305 (#0)
+* Connected to your.server.com (10.196.1.64) port 30701 (#0)
  > GET /weblogic/ HTTP/1.1
 > User-Agent: curl/7.29.0
 > Accept: */*
@@ -255,7 +255,7 @@ $ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/
 
 **Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or update security lists to allow ingress to this port.
 
-f.	To access the WLS Administration Console, edit the `my-inputs.yaml` file (assuming that you named your copy `my-inputs.yaml`) to set `exposedAdminNodePort: true`. Open a browser to `http://your.server.com:30305`. As in the previous step, substitute the Node IP address of the worker node for `your.server.com`.
+f.	To access the WLS Administration Console, edit the `my-inputs.yaml` file (assuming that you named your copy `my-inputs.yaml`) to set `exposedAdminNodePort: true`. Open a browser to `http://your.server.com:30701`. As in the previous step, substitute the Node IP address of the worker node for `your.server.com`.
 
 ## 7. Remove the domain.
 
