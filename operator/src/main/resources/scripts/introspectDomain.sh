@@ -78,12 +78,6 @@ done
 
 exportEffectiveDomainHome || exit 1
 
-# append java.security.egd to speed up domain introspection
-
-export USER_MEM_ARGS="-Djava.security.egd=file:/dev/./urandom ${USER_MEM_ARGS} "
-
-trace "USER_MEM_ARGS=${USER_MEM_ARGS}"
-
 # start node manager
 
 trace "Starting node manager"
