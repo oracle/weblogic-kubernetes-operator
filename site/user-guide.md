@@ -82,7 +82,7 @@ The operator can configure services to expose WebLogic applications and features
 
 While it is natural to expose web applications outside the cluster, exposing administrative features like the Administration Console and a T3 channel for WLST should be given more careful consideration.  There are alternative options that should be weighed.  For example, Kubernetes provides the ability to securely access a shell running in a container in a pod in the cluster.  WLST could be executed from such an environment, meaning the T3 communications are entirely within the Kubernetes cluster and therefore more secure.
 
-Oracle recommends careful consideration before deciding to expose any administrative interfaces externally.
+Oracle recommends careful consideration before deciding to expose any administrative or non-HTTP(S) interfaces or protocols externally.
 
 ## Operator Docker image
 
