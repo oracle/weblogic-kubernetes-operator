@@ -229,6 +229,12 @@ e.	To confirm that the load balancer noticed the new Ingress and is successfully
     shown in the example below.  If you used the host-based routing Ingress sample, you will need to
     provide the hostname in the `-H` option.
 
+  Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running:
+
+    ```
+    $ kubectl get po -n sample-domain1-ns -o wide
+    ```
+
 **NOTE**: Be sure to include the trailing forward slash on the URL, otherwise the command won't work.
 
 ```
@@ -247,13 +253,10 @@ $ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/
  < Vary: Accept-Encoding
 < * Connection #0 to host your.server.com left intact
 ```
-**Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
-update security lists to allow ingress to this port.
 
-f.	To access the WLS Administration Console, uncomment the `NodePort` setting in your `domain.yaml` file and open a browser to http://your.server.com:30305. Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running:
-```
-$ kubectl get po -n sample-domain1-ns -o wide
-```
+**Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or update security lists to allow ingress to this port.
+
+f.	To access the WLS Administration Console, edit the `my-inputs.yaml` file (assuming that you named your copy `my-inputs.yaml`) to set `exposedAdminNodePort: true`. Open a browser to `http://your.server.com:30305`. As in the previous step, substitute the Node IP address of the worker node for `your.server.com`.
 
 ## 7. Remove the domain.
 
