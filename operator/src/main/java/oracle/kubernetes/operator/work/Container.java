@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -22,9 +22,6 @@ public class Container implements ComponentRegistry, ComponentEx {
 
   @Override
   public <S> S getSPI(Class<S> spiType) {
-    if (components == null) {
-      return null;
-    }
     for (Component c : components.values()) {
       S s = c.getSPI(spiType);
       if (s != null) {
