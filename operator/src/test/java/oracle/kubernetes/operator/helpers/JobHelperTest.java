@@ -174,6 +174,65 @@ public class JobHelperTest {
   }
 
   @Test
+  public void introspectorPodStartsWithDefaultUSER_MEM_ARGS_environmentVariable() {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    MatcherAssert.assertThat(
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        allOf(hasEnvVar("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom")));
+  }
+
+  @Test
+  public void whenDomainHasUSER_MEM_ARGS_EnvironmentItem_introspectorPodStartupWithIt() {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    configureDomain(domainPresenceInfo)
+        .withEnvironmentVariable("USER_MEM_ARGS", "-Xms64m -Xmx256m");
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    MatcherAssert.assertThat(
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        allOf(hasEnvVar("USER_MEM_ARGS", "-Xms64m -Xmx256m")));
+  }
+
+  @Test
+  public void whenDomainHasEmptyStringUSER_MEM_ARGS_EnvironmentItem_introspectorPodStartupWithIt() {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    configureDomain(domainPresenceInfo).withEnvironmentVariable("USER_MEM_ARGS", "");
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    MatcherAssert.assertThat(
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        allOf(hasEnvVar("USER_MEM_ARGS", "")));
+  }
+
+  @Test
   public void whenDomainHasEnvironmentItemsWithVariables_introspectorPodStartupWithThem() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
