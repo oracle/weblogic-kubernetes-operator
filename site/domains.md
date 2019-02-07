@@ -65,8 +65,6 @@ running in Kubernetes.
 * _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using situational
   configuration overrides.  This occurs if the domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeInImage` is explicitly set to `false`.   When overriding, the log location will be the location specified by the `logHome` setting.
-* _Listen Address Configuration:_  Channel listen addresses in a configuration either must be left completely unset (for example, not set to anything), or must be set to the exact required value, which will be in the form of the `domainUID`
-  followed by a hyphen and then the server name (with all lower case, underscores converted to hyphens), for example, `domain1-admin-server`. This includes default, SSL, admin, and custom channels.
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
   SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
   hyphen and then the server name, all lower case, and underscores converted to hyphens.  For example, if `domainUID=domain1` and
