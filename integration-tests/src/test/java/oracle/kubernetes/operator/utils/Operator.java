@@ -308,9 +308,6 @@ public class Operator {
         sb.append(operatorNS);
         break;
     }
-    if (RESTCertType.LEGACY.equals(restCertType)) {
-    } else {
-    }
     sb.append(" DNS:");
     sb.append(TestUtils.getHostName());
     sb.append(" >> ");
