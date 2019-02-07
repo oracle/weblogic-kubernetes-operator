@@ -35,6 +35,7 @@ public class ITOperator extends BaseTest {
   private static final String opForDelYamlFile1 = "operator_del1.yaml";
   private static final String opForDelYamlFile2 = "operator_del2.yaml";
   private static final String opForBackwardCompatibility = "operator_bc.yaml";
+  private static final String opForRESTCertChain = "operator_chain.yaml";
 
   // property file used to customize domain properties for domain inputs yaml
   private static String domain1YamlFile = "domain1.yaml";
@@ -62,6 +63,7 @@ public class ITOperator extends BaseTest {
   private static Operator operatorForDel2;
 
   private static Operator operatorForBackwardCompatibility;
+  private static Operator operatorForRESTCertChain;
 
   private static boolean QUICKTEST;
   private static boolean SMOKETEST;
@@ -404,7 +406,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  // //@DisabledTest
   public void testACreateDomainApacheLB() throws Exception {
     Assume.assumeFalse(QUICKTEST);
 
@@ -620,13 +622,11 @@ public class ITOperator extends BaseTest {
 
     logTestBegin("testOperatorRESTUsingCertificateChain");
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
-    if (operatorForBackwardCompatibility == null) {
-      operatorForBackwardCompatibility =
-          TestUtils.createOperator(opForBackwardCompatibility, RESTCertType.CHAIN);
+    if (operatorForRESTCertChain == null) {
+      operatorForRESTCertChain = TestUtils.createOperator(opForRESTCertChain, RESTCertType.CHAIN);
     }
-    operatorForBackwardCompatibility.verifyOperatorExternalRESTEndpoint();
+    operatorForRESTCertChain.verifyOperatorExternalRESTEndpoint();
     logger.info("Operator using legacy REST identity created successfully");
-    operatorForBackwardCompatibility.destroy();
     logger.info("SUCCESS - testOperatorRESTUsingCertificateChain");
   }
 

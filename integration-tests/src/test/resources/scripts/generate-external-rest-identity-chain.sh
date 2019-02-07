@@ -122,7 +122,6 @@ keytool \
    -validity 10000 \
    -keyalg RSA \
    -keysize 2048 \
-   -ext bc:c \
    -keystore ${ROOT_JKS} \
    -keypass ${TEMP_PW} \
    -storepass ${TEMP_PW}
@@ -134,7 +133,6 @@ keytool \
    -validity 10000 \
    -keyalg RSA \
    -keysize 2048 \
-   -ext bc:c \
    -keystore ${CA_JKS} \
    -keypass ${TEMP_PW} \
    -storepass ${TEMP_PW}
@@ -149,6 +147,13 @@ keytool \
    -storepass ${TEMP_PW} \
    > ${OP_ROOT_PEM}
 
+keytool \
+   -keystore ${CA_JKS} \
+   -storepass ${TEMP_PW} \
+   -importcert \
+   -noprompt \
+   -alias ${ROOT_ALIAS} \
+   -file ${OP_ROOT_PEM}
 # generate a certificate for operator-ca signed by operator-root (operator-root -> operator-ca)
 
 keytool \
@@ -167,15 +172,6 @@ keytool \
    > ${OP_CA_PEM}
 
 # import operator-ca cert chain into operator-ca.jks
-
-keytool \
-   -keystore ${CA_JKS} \
-   -storepass ${TEMP_PW} \
-   -importcert \
-   -trustcacerts \
-   -noprompt \
-   -alias ${ROOT_ALIAS} \
-   -file ${OP_ROOT_PEM}
    
 keytool \
    -keystore ${CA_JKS} \
@@ -184,7 +180,7 @@ keytool \
    -alias ${CA_ALIAS} \
    -file ${OP_CA_PEM}
 
-# generate private keys (for server)
+# generate private keys (for operator)
 
 keytool \
   -genkeypair \
@@ -200,7 +196,7 @@ keytool \
   -ext SAN="${SANS}" \
 2> /dev/null
 
-# generate a certificate for server signed by operator-ca (operator-root -> operator-ca -> weblogic-operator)
+# generate a certificate for operator signed by operator-ca (operator-root -> operator-ca -> weblogic-operator)
 
 keytool \
    -keystore ${OP_JKS} \

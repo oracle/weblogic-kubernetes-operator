@@ -1,4 +1,4 @@
-// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -162,7 +162,9 @@ public class ServerStatusReader {
                   state = CharStreams.toString(reader);
                 }
               }
-            } catch (IOException | ApiException | InterruptedException e) {
+            } catch (InterruptedException ignore) {
+              Thread.currentThread().interrupt();
+            } catch (IOException | ApiException e) {
               LOGGER.warning(MessageKeys.EXCEPTION, e);
             } finally {
               helper.recycle(client);

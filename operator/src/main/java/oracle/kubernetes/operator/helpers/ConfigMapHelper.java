@@ -270,9 +270,11 @@ public class ConfigMapHelper {
       if (topologyYaml != null) {
         LOGGER.fine("topology.yaml: " + topologyYaml);
         DomainTopology domainTopology = parseDomainTopologyYaml(topologyYaml);
-        if (!domainTopology.getDomainValid()) {
+        if (domainTopology == null || !domainTopology.getDomainValid()) {
           // If introspector determines Domain is invalid then log erros and terminate the fiber
-          logValidationErrors(domainTopology.getValidationErrors());
+          if (domainTopology != null) {
+            logValidationErrors(domainTopology.getValidationErrors());
+          }
           return doNext(null, packet);
         }
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
@@ -509,10 +511,14 @@ public class ConfigMapHelper {
         if (topologyYaml != null) {
           ConfigMapHelper.DomainTopology domainTopology =
               ConfigMapHelper.parseDomainTopologyYaml(topologyYaml);
-          WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
-          ScanCache.INSTANCE.registerScan(
-              info.getNamespace(), info.getDomainUID(), new Scan(wlsDomainConfig, new DateTime()));
-          packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+          if (domainTopology != null) {
+            WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
+            ScanCache.INSTANCE.registerScan(
+                info.getNamespace(),
+                info.getDomainUID(),
+                new Scan(wlsDomainConfig, new DateTime()));
+            packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
+          }
         }
       }
 
