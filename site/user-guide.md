@@ -76,6 +76,9 @@ The operator can configure services to expose WebLogic applications and features
 *	Is certificate-based integrity needed?
 *	How will users authenticate?
 * Is the network channel encrypted?
+* Is exposing RMI required (T3 enables RMI), or IIOP, or would HTTP alone suffice?
+* Is it necessary to expose admin-capable channels?
+* Is it required to expose default channels (these accept T3/RMI, and by default, accept administrative traffic)?
 
 While it is natural to expose web applications outside the cluster, exposing administrative features like the Administration Console and a T3 channel for WLST should be given more careful consideration.  There are alternative options that should be weighed.  For example, Kubernetes provides the ability to securely access a shell running in a container in a pod in the cluster.  WLST could be executed from such an environment, meaning the T3 communications are entirely within the Kubernetes cluster and therefore more secure.
 
