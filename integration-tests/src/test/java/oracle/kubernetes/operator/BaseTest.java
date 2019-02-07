@@ -191,8 +191,20 @@ public class BaseTest {
           getPassword());
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
 
-      // this check is done for domain-home-in-image, it needs 12.2.1.3 patched image
-      // otherwise managed servers will be unicast errors after app deployment
+      /* The below check is done for domain-home-in-image domains, it needs 12.2.1.3 patched image
+       * otherwise managed servers will see unicast errors after app deployment and run as standalone servers, not in cluster.
+       * Here is the error message
+       * <Jan 18, 2019 8:54:16,214 PM GMT> <Error> <Kernel> <BEA-000802> <ExecuteRequest failed
+       * java.lang.AssertionError: LocalGroup should atleast have the local server!.
+       * java.lang.AssertionError: LocalGroup should atleast have the local server!
+       * 	at weblogic.cluster.messaging.internal.GroupImpl.send(GroupImpl.java:176)
+       * 	at weblogic.cluster.messaging.internal.server.UnicastFragmentSocket.send(UnicastFragmentSocket.java:97)
+       * 	at weblogic.cluster.FragmentSocketWrapper.send(FragmentSocketWrapper.java:84)
+       * 	at weblogic.cluster.UnicastSender.send(UnicastSender.java:53)
+       * 	at weblogic.cluster.UnicastSender.send(UnicastSender.java:21)
+       * 	Truncated. see log file for complete stacktrace
+       */
+
       if (domainMap.containsKey("domainHomeImageBase")) {
         if (domainMap.get("initialManagedServerReplicas") != null
             && ((Integer) domainMap.get("initialManagedServerReplicas")).intValue() >= 1) {
@@ -283,11 +295,6 @@ public class BaseTest {
         "Scale domain " + domain.getDomainUid() + " Up to " + replicas + " managed servers");
     operator.scale(domainUid, domainMap.get("clusterName").toString(), replicas);
 
-    if (domainUid.equalsIgnoreCase("domain1")) {
-      logger.info("Adding sleep ");
-      Thread.sleep(60 * 1000);
-    }
-
     logger.info("Checking if managed pod(" + podName + ") is Running");
     TestUtils.checkPodCreated(podName, domainNS);
 
@@ -324,7 +331,7 @@ public class BaseTest {
         break;
       }
     }
-
+    // Debug for https://bug.oraclecorp.com/pls/bug/webbug_edit.edit_info_top?rptno=29325139
     logger.info("***************Adding debug**************");
     ExecResult result = ExecCommand.exec("kubectl describe service -n " + domainNS);
     logger.info("kubectl describe service outpout " + result.stdout());
