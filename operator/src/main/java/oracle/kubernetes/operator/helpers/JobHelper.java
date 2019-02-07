@@ -118,6 +118,7 @@ public class JobHelper {
    * @param next Next processing step
    * @return Step for creating job
    */
+  @Deprecated
   public static Step createDomainIntrospectorJobStep(WatchTuning tuning, Step next) {
 
     // return new DomainIntrospectorJobStep(
