@@ -66,6 +66,21 @@ You can have one or more operators in your Kubernetes cluster that manage one or
 We provide a Helm chart to manage the installation and configuration of the operator.
 Detailed instructions are available [here](install.md).
 
+## Exposing applications outside the Kubernetes cluster
+The operator can configure services to expose WebLogic applications and features outside of the Kubernetes cluster.  Care should be taken when exposing anything externally to ensure that the appropriate security considerations are taken into account. In this regard, there is no significant difference between a WebLogic domain running in a Kubernetes cluster and a domain running in a traditional data center.  The same kinds of considerations should be taken into account, for example:
+
+* Only expose those protocols and ports that need to be exposed.
+*	Use secure protocols (HTTPS, T3S, and such).
+*	Use custom channels to restrict the protocols that are exposed.
+*	Is load balancing required?
+*	Is certificate-based integrity needed?
+*	How will users authenticate?
+* Is the network channel encrypted?
+
+While it is natural to expose web applications outside the cluster, exposing administrative features like the Administration Console and a T3 channel for WLST should be given more careful consideration.  There are alternative options that should be weighed.  For example, Kubernetes provides the ability to securely access a shell running in a container in a pod in the cluster.  WLST could be executed from such an environment, meaning the T3 communications are entirely within the Kubernetes cluster and therefore more secure.
+
+Oracle recommends careful consideration before deciding to expose any administrative interfaces externally.
+
 ## Operator Docker image
 
 You can find the operator image in
