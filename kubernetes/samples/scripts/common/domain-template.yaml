@@ -46,7 +46,7 @@ spec:
     - name: JAVA_OPTIONS
       value: "%JAVA_OPTIONS%"
     - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
     %LOG_HOME_ON_PV_PREFIX%volumes:
     %LOG_HOME_ON_PV_PREFIX%- name: weblogic-domain-storage-volume
     %LOG_HOME_ON_PV_PREFIX%  persistentVolumeClaim:
