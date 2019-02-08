@@ -500,8 +500,11 @@ public class TestUtils {
   public static Domain createDomain(String inputYaml) throws Exception {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
-    /* domain.verifyDomainCreated();
-    return domain; */
+  }
+
+  public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
+    logger.info("Creating domain with Map, waiting for the script to complete execution");
+    return new Domain(inputDomainMap);
   }
 
   public static Map<String, Object> loadYaml(String yamlFile) throws Exception {

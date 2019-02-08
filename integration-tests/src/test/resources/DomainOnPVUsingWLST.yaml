@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 adminServerName: admin-server
-domainUID: domain2
+domainUID: domainonpvwlst
 clusterName: cluster-1
 configuredManagedServerCount: 4
 initialManagedServerReplicas: 2
@@ -10,8 +10,6 @@ managedServerNameBase: managed-server
 #weblogicDomainStoragePath will be ignored, PV dir will be created at /<baseDir>/<USER>/acceptance_test_pv
 #weblogicDomainStoragePath: /scratch/external-domain-home/pv001/
 exposeAdminT3Channel: true
-t3ChannelPort: 30031
 exposeAdminNodePort: true
-adminNodePort: 30702
 namespace: default
 
