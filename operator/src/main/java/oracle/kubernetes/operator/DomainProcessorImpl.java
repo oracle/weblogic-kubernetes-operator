@@ -1003,7 +1003,10 @@ public class DomainProcessorImpl implements DomainProcessor {
             dom.getDomainUID(), dom.getMetadata().getNamespace(), null));
     resources.add(
         JobHelper.createDomainIntrospectorJobStep(
-            Main.tuningAndConfig.getWatchTuning(), next, jws));
+            Main.tuningAndConfig.getWatchTuning(),
+            next,
+            jws,
+            Main.isNamespaceStopping(dom.getMetadata().getNamespace())));
     return resources.toArray(new Step[resources.size()]);
   }
 
