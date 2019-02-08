@@ -37,6 +37,8 @@ public abstract class StepContextBase implements StepContextConstants {
 
     List<V1EnvVar> vars = getConfiguredEnvVars(tuningParameters);
 
+    addDefaultEnvVarIfMissing(vars, "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom");
+
     hideAdminUserCredentials(vars);
     doSubstitution(vars);
 
@@ -61,6 +63,21 @@ public abstract class StepContextBase implements StepContextConstants {
 
   protected void addEnvVar(List<V1EnvVar> vars, String name, String value) {
     vars.add(new V1EnvVar().name(name).value(value));
+  }
+
+  protected boolean hasEnvVar(List<V1EnvVar> vars, String name) {
+    for (V1EnvVar var : vars) {
+      if (name.equals(var.getName())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  protected void addDefaultEnvVarIfMissing(List<V1EnvVar> vars, String name, String value) {
+    if (!hasEnvVar(vars, name)) {
+      addEnvVar(vars, name, value);
+    }
   }
 
   // Hide the admin account's user name and password.
