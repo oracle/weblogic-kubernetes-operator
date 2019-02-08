@@ -16,8 +16,8 @@ presented in the correct order.
 
 * [Important terms](#important-terms)
 * [Getting started](#getting-started)
-* [Exposing applications outside the Kubernetes cluster](#exposing-applications-outside-the-kubernetes-cluster)
-* [Operator Docker image](#0perator-docker-image)
+  * [Exposing applications outside the Kubernetes cluster](#exposing-applications-outside-the-kubernetes-cluster)
+  * [Operator Docker image](#0perator-docker-image)
 * [Prerequisites](#prerequisites)
 * [Preparing your Kubernetes environment to run the operator](prepare-k8s.md)
   * [Set up your Kubernetes cluster](k8s_setup.md)
