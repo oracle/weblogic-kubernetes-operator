@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
@@ -294,7 +295,10 @@ public class DomainIntrospectorJobTest {
   FiberTestSupport.StepFactory getStepFactory() {
     return next ->
         JobHelper.createDomainIntrospectorJobStep(
-            new WatchTuning(30, 0), next, new ConcurrentHashMap<String, JobWatcher>());
+            new WatchTuning(30, 0),
+            next,
+            new ConcurrentHashMap<String, JobWatcher>(),
+            new AtomicBoolean(false));
   }
 
   V1PodList createListPods() {

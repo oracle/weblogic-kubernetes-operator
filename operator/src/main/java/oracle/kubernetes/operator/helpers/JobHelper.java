@@ -14,6 +14,7 @@ import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -123,7 +124,7 @@ public class JobHelper {
 
     // return new DomainIntrospectorJobStep(
     //    readDomainIntrospectorPodLogStep(ConfigMapHelper.createSitConfigMapStep(next)));
-    return new DomainIntrospectorJobStep(tuning, next, null);
+    return new DomainIntrospectorJobStep(tuning, next, null, new AtomicBoolean(false));
   }
 
   /**
@@ -132,22 +133,26 @@ public class JobHelper {
    * @param tuning Watch tuning parameters
    * @param next Next processing step
    * @param jws Map of JobWatcher objects, keyed by the string value of the name of a namespace
+   * @param isStopping
    * @return Step for creating job
    */
   public static Step createDomainIntrospectorJobStep(
-      WatchTuning tuning, Step next, Map<String, JobWatcher> jws) {
+      WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
 
-    return new DomainIntrospectorJobStep(tuning, next, jws);
+    return new DomainIntrospectorJobStep(tuning, next, jws, isStopping);
   }
 
   static class DomainIntrospectorJobStep extends Step {
     private final WatchTuning tuning;
     private final Map<String, JobWatcher> jws;
+    private final AtomicBoolean isStopping;
 
-    DomainIntrospectorJobStep(WatchTuning tuning, Step next, Map<String, JobWatcher> jws) {
+    DomainIntrospectorJobStep(
+        WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
       super(next);
       this.tuning = tuning;
       this.jws = jws;
+      this.isStopping = isStopping;
     }
 
     @Override
@@ -161,7 +166,7 @@ public class JobHelper {
         return doNext(
             context.createNewJob(
                 readDomainIntrospectorPodLogStep(
-                    tuning, ConfigMapHelper.createSitConfigMapStep(getNext()), jws)),
+                    tuning, ConfigMapHelper.createSitConfigMapStep(getNext()), jws, isStopping)),
             packet);
       }
 
@@ -288,8 +293,8 @@ public class JobHelper {
   }
 
   private static Step createWatchDomainIntrospectorJobReadyStep(
-      WatchTuning tuning, Step next, Map<String, JobWatcher> jws) {
-    return new WatchDomainIntrospectorJobReadyStep(tuning, next, jws);
+      WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
+    return new WatchDomainIntrospectorJobReadyStep(tuning, next, jws, isStopping);
   }
 
   /**
@@ -300,9 +305,12 @@ public class JobHelper {
    * @return Step for reading WebLogic domain introspector pod log
    */
   static Step readDomainIntrospectorPodLogStep(
-      WatchTuning tuning, Step next, Map<String, JobWatcher> jws) {
+      WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
     return createWatchDomainIntrospectorJobReadyStep(
-        tuning, readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)), jws);
+        tuning,
+        readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)),
+        jws,
+        isStopping);
   }
 
   private static class ReadDomainIntrospectorPodLogStep extends Step {
