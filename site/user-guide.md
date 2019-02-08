@@ -16,6 +16,8 @@ presented in the correct order.
 
 * [Important terms](#important-terms)
 * [Getting started](#getting-started)
+* [Exposing applications outside the Kubernetes cluster](#exposing-applications-outside-the-kubernetes-cluster)
+* [Operator Docker image](#0perator-docker-image)
 * [Prerequisites](#prerequisites)
 * [Preparing your Kubernetes environment to run the operator](prepare-k8s.md)
   * [Set up your Kubernetes cluster](k8s_setup.md)
@@ -66,7 +68,7 @@ You can have one or more operators in your Kubernetes cluster that manage one or
 We provide a Helm chart to manage the installation and configuration of the operator.
 Detailed instructions are available [here](install.md).
 
-## Exposing applications outside the Kubernetes cluster
+### Exposing applications outside the Kubernetes cluster
 The operator can configure services to expose WebLogic applications and features outside of the Kubernetes cluster.  Care should be taken when exposing anything externally to ensure that the appropriate security considerations are taken into account. In this regard, there is no significant difference between a WebLogic domain running in a Kubernetes cluster and a domain running in a traditional data center.  The same kinds of considerations should be taken into account, for example:
 
 * Only expose those protocols and ports that need to be exposed.
@@ -84,7 +86,7 @@ While it is natural to expose web applications outside the cluster, exposing adm
 
 Oracle recommends careful consideration before deciding to expose any administrative or non-HTTP(S) interfaces or protocols externally.
 
-## Operator Docker image
+### Operator Docker image
 
 You can find the operator image in
 [Docker Hub](https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/).
@@ -98,5 +100,5 @@ You can find the operator image in
 * Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
    * The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`,
 was updated on January 17, 2019, and has all the necessary patches applied.
-   * A `docker pull` is required if you have previously pulled this image.
+   * A `docker pull` is required if you pulled the image prior to that date.
 * You must have the `cluster-admin` role to install the operator.
