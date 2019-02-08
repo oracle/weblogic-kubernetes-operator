@@ -18,7 +18,7 @@ refer to the [User guide](user-guide.md).
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md). This guide assumes a single node cluster.
 
-The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Install Helm and Tiller](install.md#install-helm-and-tiller).
+The operator uses Helm to create and deploy the necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Install Helm and Tiller](install.md#install-helm-and-tiller).
 
 You should clone this repository to your local machine so that you have access to the
 various sample files mentioned throughout this guide:
@@ -48,7 +48,7 @@ e.	Pull the WebLogic 12.2.1.3 install image:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```  
-**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you have previously pulled this image.
+**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you pulled the image prior to that date.
 
 f. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
@@ -238,10 +238,10 @@ e.	To confirm that the load balancer noticed the new Ingress and is successfully
 **NOTE**: Be sure to include the trailing forward slash on the URL, otherwise the command won't work.
 
 ```
-$ curl -v -H 'host: sample-domain1.org' http://your.server.com:30701/weblogic/
-* About to connect() to your.server.com port 30701 (#0)
+$ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/
+* About to connect() to your.server.com port 30305 (#0)
 *   Trying 10.196.1.64...
-* Connected to your.server.com (10.196.1.64) port 30701 (#0)
+* Connected to your.server.com (10.196.1.64) port 30305 (#0)
  > GET /weblogic/ HTTP/1.1
 > User-Agent: curl/7.29.0
 > Accept: */*
