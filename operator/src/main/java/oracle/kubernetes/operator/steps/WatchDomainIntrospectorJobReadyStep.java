@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.steps;
 import io.kubernetes.client.models.V1Job;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.validation.constraints.NotNull;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
@@ -22,7 +23,10 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
   private final AtomicBoolean isStopping;
 
   public WatchDomainIntrospectorJobReadyStep(
-      WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
+      WatchTuning tuning,
+      Step next,
+      @NotNull Map<String, JobWatcher> jws,
+      @NotNull AtomicBoolean isStopping) {
     super(next);
     this.tuning = tuning;
     this.jws = jws;
@@ -39,18 +43,16 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
 
     // No need to spawn a watcher if the job is already complete
     if (domainIntrospectorJob != null && !JobWatcher.isComplete(domainIntrospectorJob)) {
-      JobWatcher jw = null;
-      if (jws == null || !jws.containsKey(namespace)) {
+      JobWatcher jw = jws.get(namespace);
+      if (jw == null) {
         jw =
             JobWatcher.create(
                 ThreadFactorySingleton.getInstance(),
                 namespace,
                 initialResourceVersion,
                 tuning,
-                isStopping != null ? isStopping : new AtomicBoolean(false));
-        if (jws != null) jws.put(namespace, jw);
-      } else {
-        jw = jws.get(namespace);
+                isStopping);
+        jws.put(namespace, jw);
       }
       NextAction retVal = doNext(jw.waitForReady(domainIntrospectorJob, getNext()), packet);
 
