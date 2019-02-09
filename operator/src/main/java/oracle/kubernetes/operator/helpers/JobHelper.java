@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.validation.constraints.NotNull;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -117,27 +118,15 @@ public class JobHelper {
    *
    * @param tuning Watch tuning parameters
    * @param next Next processing step
-   * @return Step for creating job
-   */
-  @Deprecated
-  public static Step createDomainIntrospectorJobStep(WatchTuning tuning, Step next) {
-
-    // return new DomainIntrospectorJobStep(
-    //    readDomainIntrospectorPodLogStep(ConfigMapHelper.createSitConfigMapStep(next)));
-    return new DomainIntrospectorJobStep(tuning, next, null, new AtomicBoolean(false));
-  }
-
-  /**
-   * Factory for {@link Step} that creates WebLogic domain introspector job
-   *
-   * @param tuning Watch tuning parameters
-   * @param next Next processing step
    * @param jws Map of JobWatcher objects, keyed by the string value of the name of a namespace
    * @param isStopping
    * @return Step for creating job
    */
   public static Step createDomainIntrospectorJobStep(
-      WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
+      WatchTuning tuning,
+      Step next,
+      @NotNull Map<String, JobWatcher> jws,
+      @NotNull AtomicBoolean isStopping) {
 
     return new DomainIntrospectorJobStep(tuning, next, jws, isStopping);
   }
