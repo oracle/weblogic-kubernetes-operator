@@ -142,7 +142,9 @@ public class ITOperator extends BaseTest {
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
-    operator1 = TestUtils.createOperator(opManagingdefaultAndtest1NSYamlFile);
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(opManagingdefaultAndtest1NSYamlFile);
+    }
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
@@ -195,8 +197,6 @@ public class ITOperator extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        // domain.destroy();
-        // TestUtils.verifyBeforeDeletion(domain);
         logger.info("About to delete domain: " + domain.getDomainUid());
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
@@ -235,6 +235,8 @@ public class ITOperator extends BaseTest {
       // load input yaml to map and add configOverrides
       Map<String, Object> wlstDomainMap = TestUtils.loadYaml(domainOnPVUsingWLSTYamlFile);
       wlstDomainMap.put("domainUID", "domain1onpvwlst");
+      wlstDomainMap.put("adminNodePort", new Integer("30702"));
+      wlstDomainMap.put("t3ChannelPort", new Integer("30031"));
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1);
@@ -247,6 +249,8 @@ public class ITOperator extends BaseTest {
       // configured cluster
       Map<String, Object> wdtDomainMap = TestUtils.loadYaml(domainOnPVUsingWDTYamlFile);
       wdtDomainMap.put("domainUID", "domain2onpvwdt");
+      wdtDomainMap.put("adminNodePort", new Integer("30703"));
+      wdtDomainMap.put("t3ChannelPort", new Integer("30041"));
       // wdtDomainMap.put("clusterType", "Configured");
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
@@ -271,19 +275,17 @@ public class ITOperator extends BaseTest {
       String domainUidsToBeDeleted = "";
 
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
-        // domain1.destroy();
-        // TestUtils.verifyBeforeDeletion(domain1);
         domainUidsToBeDeleted = domain1.getDomainUid();
       }
       if (domain2 != null && (JENKINS || testCompletedSuccessfully)) {
-        // domain2.destroy();
         domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
       }
       if (!domainUidsToBeDeleted.equals("")) {
         logger.info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
-
+        logger.info("domain1 domainMap " + domain1.getDomainMap());
         TestUtils.verifyAfterDeletion(domain1);
+        logger.info("domain2 domainMap " + domain2.getDomainMap());
         TestUtils.verifyAfterDeletion(domain2);
       }
     }
@@ -420,7 +422,8 @@ public class ITOperator extends BaseTest {
       Map<String, Object> domainMap = TestUtils.loadYaml(domainOnPVUsingWLSTYamlFile);
       domainMap.put("configOverrides", "sitconfigcm");
       domainMap.put("domainUID", "customsitdomain");
-
+      domainMap.put("adminNodePort", new Integer("30704"));
+      domainMap.put("t3ChannelPort", new Integer("30051"));
       // use NFS for this domain on Jenkins, defaultis HOST_PATH
       if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
         domainMap.put("weblogicDomainStorageType", "NFS");
