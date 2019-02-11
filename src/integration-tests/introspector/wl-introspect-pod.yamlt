@@ -38,6 +38,9 @@ spec:
     - name: weblogic-credentials-volume
       mountPath: /weblogic-operator/secrets
       readOnly: true
+    - name: mysql-secret-volume
+      mountPath: /weblogic-operator/config-overrides-secrets/${DOMAIN_UID}-mysql-secret
+      readOnly: true
     - name: my-secret-volume
       mountPath: /weblogic-operator/config-overrides-secrets/my-secret
       readOnly: true
@@ -57,6 +60,10 @@ spec:
     secret:
       defaultMode: 420
       secretName:  ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
+  - name: mysql-secret-volume
+    secret:
+      defaultMode: 420
+      secretName:  ${DOMAIN_UID}-mysql-secret
   - name: my-secret-volume
     secret:
       defaultMode: 420

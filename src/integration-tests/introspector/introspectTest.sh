@@ -437,7 +437,7 @@ function deployWebLogic_PV_PVC_and_Secret() {
 }
 
 function deployMySQL() {
-  trace "Info: Deploying MySQL pv, pvc, & pod."
+  trace "Info: Deploying MySQL secret, pv, pvc, & pod."
   # Create local custom mysql image that runs as 'oracle' user with uid/gid 1000/1000:
   docker build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser . 2>&1 > ${test_home}/docker_build.out 2>&1
   if [ $? -ne 0 ]; then
@@ -445,9 +445,10 @@ function deployMySQL() {
     cat ${test_home}/docker_build.out
     exit 1
   fi
-  deployYamlTemplate mysql-pv.yamlt mysql-pv.yaml
-  deployYamlTemplate mysql-pvc.yamlt mysql-pvc.yaml 
-  deployYamlTemplate mysql-pod.yamlt mysql-pod.yaml
+  deployYamlTemplate mysql-secret.yamlt mysql-secret.yaml
+  deployYamlTemplate mysql-pv.yamlt     mysql-pv.yaml
+  deployYamlTemplate mysql-pvc.yamlt    mysql-pvc.yaml 
+  deployYamlTemplate mysql-pod.yamlt    mysql-pod.yaml
 }
 
 #############################################################################
@@ -701,11 +702,11 @@ function checkOverrides() {
   # Check for exactly 3 occurances of Info.*.BEA.*situational lines -- one for each file we're overriding.
   #   the awk expression below gets the tail of the log, everything after the last occurance of 'Starting WebLogic...'
   
-  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'Info.*BEA.*situational'`"
+  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
 
-  if [ "$linecount" != "3" ]; then
-    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 3 lines that match ' grep 'Info.*BEA.*situational' ', this probably means that it's reporting situational config problems."
+  if [ "$linecount" != "4" ]; then
+    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 4 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
   fi
   
