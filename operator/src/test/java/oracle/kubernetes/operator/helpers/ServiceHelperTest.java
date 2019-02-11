@@ -65,7 +65,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-@SuppressWarnings({"unchecked", "SameParameterValue"})
+@SuppressWarnings({"SameParameterValue"})
 public class ServiceHelperTest {
 
   private static final String NS = "namespace";
