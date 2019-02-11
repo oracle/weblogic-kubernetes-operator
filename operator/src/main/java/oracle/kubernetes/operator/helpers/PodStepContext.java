@@ -9,10 +9,42 @@ import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1ContainerPort;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ExecAction;
+import io.kubernetes.client.models.V1HTTPGetAction;
+import io.kubernetes.client.models.V1Handler;
+import io.kubernetes.client.models.V1Lifecycle;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Probe;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.io.File;
-import java.util.*;
-import oracle.kubernetes.operator.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -145,7 +177,7 @@ public abstract class PodStepContext extends StepContextBase {
     return getDomain().isDomainHomeInImage();
   }
 
-  String getEffectiveLogHome() {
+  private String getEffectiveLogHome() {
     if (!getDomain().getLogHomeEnabled()) return null;
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
@@ -274,12 +306,31 @@ public abstract class PodStepContext extends StepContextBase {
     return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), replaceResponse(next));
   }
 
+  private Step patchCurrentPod(V1Pod currentPod, Step next) {
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+
+    KubernetesUtils.addPatches(
+        patchBuilder, "/metadata/labels/", currentPod.getMetadata().getLabels(), getPodLabels());
+    KubernetesUtils.addPatches(
+        patchBuilder,
+        "/metadata/annotations/",
+        currentPod.getMetadata().getAnnotations(),
+        getPodAnnotations());
+
+    return new CallBuilder()
+        .patchPodAsync(getPodName(), getNamespace(), patchBuilder.build(), patchResponse(next));
+  }
+
   private void logPodCreated() {
     LOGGER.info(getPodCreatedMessageKey(), getDomainUID(), getServerName());
   }
 
   private void logPodExists() {
     LOGGER.fine(getPodExistsMessageKey(), getDomainUID(), getServerName());
+  }
+
+  private void logPodPatched() {
+    LOGGER.info(getPodPatchedMessageKey(), getDomainUID(), getServerName());
   }
 
   private void logPodReplaced() {
@@ -289,6 +340,8 @@ public abstract class PodStepContext extends StepContextBase {
   abstract String getPodCreatedMessageKey();
 
   abstract String getPodExistsMessageKey();
+
+  abstract String getPodPatchedMessageKey();
 
   abstract String getPodReplacedMessageKey();
 
@@ -309,6 +362,12 @@ public abstract class PodStepContext extends StepContextBase {
     }
   }
 
+  private boolean mustPatchPod(V1Pod currentPod) {
+    return KubernetesUtils.isMissingValues(currentPod.getMetadata().getLabels(), getPodLabels())
+        || KubernetesUtils.isMissingValues(
+            currentPod.getMetadata().getAnnotations(), getPodAnnotations());
+  }
+
   private boolean canUseCurrentPod(V1Pod currentPod) {
     return isCurrentPodValid(getPodModel(), currentPod);
   }
@@ -326,9 +385,7 @@ public abstract class PodStepContext extends StepContextBase {
 
   private static boolean isCurrentPodMetadataValid(V1ObjectMeta build, V1ObjectMeta current) {
     return VersionHelper.matchesResourceVersion(current, DEFAULT_DOMAIN_VERSION)
-        && isRestartVersionValid(build, current)
-        && KubernetesUtils.areLabelsValid(build, current)
-        && KubernetesUtils.areAnnotationsValid(build, current);
+        && isRestartVersionValid(build, current);
   }
 
   private static boolean isCurrentPodSpecValid(
@@ -472,6 +529,8 @@ public abstract class PodStepContext extends StepContextBase {
       V1Pod currentPod = getSko().getPod().get();
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
+      } else if (mustPatchPod(currentPod)) {
+        return doNext(patchCurrentPod(currentPod, getNext()), packet);
       } else if (canUseCurrentPod(currentPod)) {
         logPodExists();
         return doNext(packet);
@@ -551,6 +610,37 @@ public abstract class PodStepContext extends StepContextBase {
 
       V1Pod newPod = callResponse.getResult();
       logPodReplaced();
+      if (newPod != null) {
+        setRecordedPod(newPod);
+      }
+
+      PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
+      return doNext(pw.waitForReady(newPod, next), packet);
+    }
+  }
+
+  private ResponseStep<V1Pod> patchResponse(Step next) {
+    return new PatchPodResponseStep(next);
+  }
+
+  private class PatchPodResponseStep extends ResponseStep<V1Pod> {
+    private final Step next;
+
+    PatchPodResponseStep(Step next) {
+      super(next);
+      this.next = next;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+      return super.onFailure(getConflictStep(), packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+
+      V1Pod newPod = callResponse.getResult();
+      logPodPatched();
       if (newPod != null) {
         setRecordedPod(newPod);
       }

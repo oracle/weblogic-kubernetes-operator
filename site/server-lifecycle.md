@@ -132,7 +132,6 @@ The operator runtime does rolling restarts of clustered servers so that service 
 
 ### Properties that cause servers to be restarted
 The operator will restart servers when any of the follow properties on the domain resource that affect the server are changed:
-* `annotations`
 * `containerSecurityContext`
 * `domainHome`
 * `domainHomeInImage`
@@ -141,7 +140,6 @@ The operator will restart servers when any of the follow properties on the domai
 * `imagePullPolicy`
 * `imagePullSecrets`
 * `includeServerOutInPodLog`
-* `labels`
 * `logHomeEnabled`
 * `logHome`
 * `livenessProbe`
