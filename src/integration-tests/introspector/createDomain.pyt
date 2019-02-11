@@ -220,7 +220,7 @@ def createMySQLDataSource(jndiName, driver, globalTX, url, user, passwd, minSize
   #<property name="mysql.db.url" value="jdbc:mysql://{mysql.db.host}:{mysql.db.port}/mysql"/>
   #<property name="mysql.db.jndi" value="jdbc/TestMySQLDB" />
 
-createMySQLDataSource('MySqlDs','com.mysql.cj.jdbc.Driver','None','jdbc:mysql://domain1-mysql:3306/mysql', 'root', 'password', 0, 10, adminServerMBean)
+createMySQLDataSource('mysqlDS','com.mysql.cj.jdbc.Driver','None','jdbc:mysql://invalid-url:3306/mysql', 'invalid-user', 'invalid-password', 0, 10, adminServerMBean)
 
 # Create a cluster
 # ======================
