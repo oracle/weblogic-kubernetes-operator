@@ -230,9 +230,9 @@ e.	To confirm that the load balancer noticed the new Ingress and is successfully
 
   Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running:
 
-    ```
+```
     $ kubectl get po -n sample-domain1-ns -o wide
-    ```
+```
 
 **NOTE**: Be sure to include the trailing forward slash on the URL, otherwise the command won't work.
 
