@@ -56,9 +56,6 @@ public class ITOperator extends BaseTest {
 
   private static Operator operator1, operator2;
 
-  private static Operator operatorForDel1;
-  private static Operator operatorForDel2;
-
   private static Operator operatorForBackwardCompatibility;
 
   private static boolean QUICKTEST;
@@ -199,7 +196,7 @@ public class ITOperator extends BaseTest {
     } finally {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) {
         // domain.destroy();
-        TestUtils.verifyBeforeDeletion(domain);
+        // TestUtils.verifyBeforeDeletion(domain);
         logger.info("About to delete domain: " + domain.getDomainUid());
         TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
         TestUtils.verifyAfterDeletion(domain);
@@ -235,7 +232,10 @@ public class ITOperator extends BaseTest {
     Domain domain1 = null, domain2 = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain1 = TestUtils.createDomain(domainOnPVUsingWLSTYamlFile);
+      // load input yaml to map and add configOverrides
+      Map<String, Object> wlstDomainMap = TestUtils.loadYaml(domainOnPVUsingWLSTYamlFile);
+      wlstDomainMap.put("domainUID", "domain1onpvwlst");
+      domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1);
       logger.info("Checking if operator2 is running, if not creating");
@@ -246,6 +246,7 @@ public class ITOperator extends BaseTest {
       // ToDo: configured cluster support is removed from samples, modify the test to create
       // configured cluster
       Map<String, Object> wdtDomainMap = TestUtils.loadYaml(domainOnPVUsingWDTYamlFile);
+      wdtDomainMap.put("domainUID", "domain2onpvwdt");
       // wdtDomainMap.put("clusterType", "Configured");
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
@@ -418,6 +419,7 @@ public class ITOperator extends BaseTest {
       // load input yaml to map and add configOverrides
       Map<String, Object> domainMap = TestUtils.loadYaml(domainOnPVUsingWLSTYamlFile);
       domainMap.put("configOverrides", "sitconfigcm");
+      domainMap.put("domainUID", "customsitdomain");
 
       // use NFS for this domain on Jenkins, defaultis HOST_PATH
       if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
