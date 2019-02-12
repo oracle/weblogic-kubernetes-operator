@@ -1,0 +1,27 @@
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# Default values for ingress-per-domain.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Load balancer type.  Supported values are: TRAEFIK, VOYAGER
+type: TRAEFIK
+
+# WLS domain as backend to the load balancer
+wlsDomain:
+  domainUID: domain1
+  clusterName: cluster-1
+  managedServerPort: 8001
+
+# Traefik specific values
+traefik:
+  # hostname used by host-routing
+  hostname: domain1.org
+
+# Voyager specific values
+voyager:
+  # web port
+  webPort: 30305
+  # stats port
+  statsPort: 30315
