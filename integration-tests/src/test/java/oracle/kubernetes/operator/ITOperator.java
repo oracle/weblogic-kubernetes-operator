@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -34,8 +34,6 @@ public class ITOperator extends BaseTest {
   private static String op2YamlFile = "operator2.yaml";
   private static final String opForDelYamlFile1 = "operator_del1.yaml";
   private static final String opForDelYamlFile2 = "operator_del2.yaml";
-  private static final String opForBackwardCompatibility = "operator_bc.yaml";
-  private static final String opForRESTCertChain = "operator_chain.yaml";
 
   // property file used to customize domain properties for domain inputs yaml
   private static String domain1YamlFile = "domain1.yaml";
@@ -61,9 +59,6 @@ public class ITOperator extends BaseTest {
 
   private static Operator operatorForDel1;
   private static Operator operatorForDel2;
-
-  private static Operator operatorForBackwardCompatibility;
-  private static Operator operatorForRESTCertChain;
 
   private static boolean QUICKTEST;
   private static boolean SMOKETEST;
@@ -599,14 +594,14 @@ public class ITOperator extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
 
     logTestBegin("testRESTIdentityBackwardCompatibility");
-    logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
-    if (operatorForBackwardCompatibility == null) {
-      operatorForBackwardCompatibility =
-          TestUtils.createOperator(opForBackwardCompatibility, RESTCertType.LEGACY);
+    logger.info("Checking if operator1 is running");
+    if (operator1 != null) {
+      logger.info("Removing operator1");
+      operator1.destroy();
     }
-    operatorForBackwardCompatibility.verifyOperatorExternalRESTEndpoint();
-    logger.info("Operator using legacy REST identity created successfully");
-    operatorForBackwardCompatibility.destroy();
+    logger.info("Creating operator1 with external REST certificates defined in helm values file");
+    operator1 = TestUtils.createOperator(op1YamlFile, RESTCertType.LEGACY);
+    operator1.verifyOperatorExternalRESTEndpoint();
     logger.info("SUCCESS - testRESTIdentityBackwardCompatibility");
   }
 
@@ -621,12 +616,15 @@ public class ITOperator extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
 
     logTestBegin("testOperatorRESTUsingCertificateChain");
-    logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
-    if (operatorForRESTCertChain == null) {
-      operatorForRESTCertChain = TestUtils.createOperator(opForRESTCertChain, RESTCertType.CHAIN);
+    logger.info("Checking if operator1 is running");
+    if (operator1 != null) {
+      logger.info("Removing operator1");
+      operator1.destroy();
     }
-    operatorForRESTCertChain.verifyOperatorExternalRESTEndpoint();
-    logger.info("Operator using legacy REST identity created successfully");
+    logger.info(
+        "Creating operator1 with external REST certificates chain defined in kubernetes tls secret");
+    operator1 = TestUtils.createOperator(op1YamlFile, RESTCertType.CHAIN);
+    operator1.verifyOperatorExternalRESTEndpoint();
     logger.info("SUCCESS - testOperatorRESTUsingCertificateChain");
   }
 

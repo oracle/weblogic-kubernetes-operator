@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -23,7 +23,7 @@ public class Operator {
     /*Certificate signed by an auto-created CA signed by an auto-created root certificate,
      * both and stored in a kubernetes tls secret*/
     CHAIN,
-    /*Certificate and public key, and stored in a kubernetes tls secret*/
+    /*Certificate and public key are stored in a helm values file*/
     LEGACY
   };
 
@@ -46,7 +46,7 @@ public class Operator {
 
   private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTimeOp = BaseTest.getWaitTimePod();
-  private static RESTCertType restCertType = RESTCertType.SELF_SIGNED;
+  private RESTCertType restCertType = RESTCertType.SELF_SIGNED;
 
   /**
    * Takes operator input properties which needs to be customized and generates a operator input
@@ -379,6 +379,8 @@ public class Operator {
     }
 
     ExecCommand.exec("kubectl delete namespace " + operatorNS);
+
+    runCommandInLoop("kubectl get namespace | egrep " + operatorNS);
 
     // create opeartor namespace
     ExecCommand.exec("kubectl create namespace " + operatorNS);
