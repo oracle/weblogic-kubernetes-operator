@@ -8,7 +8,6 @@ import static java.util.Collections.emptyList;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.*;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -86,8 +85,8 @@ class ServerPod extends KubernetesResource {
   // TODO mark: can probably add the initContainers here using the same method as ^^^^
 
   /**
-   * InitContainers holds a list of initialization containers that should be run before starting
-   * the main containers in this pod.
+   * InitContainers holds a list of initialization containers that should be run before starting the
+   * main containers in this pod.
    *
    * @since 2.1
    */

@@ -1377,6 +1377,13 @@ window.onload = function() {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
+        "initContainers": {
+          "description": "Initialization containers",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+          }
+        },
         "labels": {
           "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
           "$ref": "#/definitions/Map"

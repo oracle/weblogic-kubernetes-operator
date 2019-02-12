@@ -9,7 +9,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
 import io.kubernetes.client.models.*;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -198,10 +197,10 @@ public abstract class ServerSpec {
     return Collections.emptyMap();
   }
 
-//  @Nonnull
-//  public List<V1Container> getInitContainers() {
-//    return Collections.emptyList();
-//  }
+  @Nonnull
+  public List<V1Container> getInitContainers() {
+    return Collections.emptyList();
+  }
 
   public V1ResourceRequirements getResources() {
     return null;

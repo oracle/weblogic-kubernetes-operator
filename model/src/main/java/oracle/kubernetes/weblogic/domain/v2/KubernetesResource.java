@@ -5,10 +5,7 @@
 package oracle.kubernetes.weblogic.domain.v2;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import io.kubernetes.client.models.V1Container;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
