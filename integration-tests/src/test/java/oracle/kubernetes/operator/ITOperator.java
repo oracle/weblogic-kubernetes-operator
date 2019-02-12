@@ -51,6 +51,7 @@ public class ITOperator extends BaseTest {
   private static String domain10YamlFile = "domain10.yaml";
   private static String domain11YamlFile = "domain11.yaml";
   private static String domain12YamlFile = "domain12.yaml";
+  private static String domainTraefikIngressYamlFile = "domainTraefikIngress.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -653,6 +654,39 @@ public class ITOperator extends BaseTest {
       }
     }
     logger.info("SUCCESS - testCustomSitConfigOverrides");
+  }
+
+  /**
+   * Create operator and create domain with TRAEFIK Ingress-per-domain load balancer and verify
+   * domain is started. Verify web app load balancing by accessing the webapp using
+   * loadBalancerWebPort. Shutdwn domain by deleting domain CRD using yaml
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testTraefikIngressPerDomainInDefaultNS() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+
+    logTestBegin("testTraefikIngressPerDomainInDefaultNS");
+    logger.info("Creating Domain domainTraefikIngress & verifing the domain creation");
+    Domain domainTraefikIngress = null;
+    boolean testCompletedSuccessfully = false;
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(op1YamlFile);
+    }
+    try {
+      // create domainTraefikIngress
+      domainTraefikIngress = testDomainCreation(domainTraefikIngressYamlFile);
+      domainTraefikIngress.verifyDomainCreated();
+      testBasicUseCases(domainTraefikIngress);
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domainTraefikIngress != null && (JENKINS || testCompletedSuccessfully)) {
+        logger.info("Destroy domainTraefikIngress");
+        domainTraefikIngress.destroy();
+      }
+    }
+    logger.info("SUCCESS - testTraefikIngressPerDomainInDefaultNS");
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
