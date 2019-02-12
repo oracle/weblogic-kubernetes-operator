@@ -8,13 +8,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOL
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -202,6 +197,11 @@ public abstract class ServerSpec {
   public Map<String, String> getNodeSelectors() {
     return Collections.emptyMap();
   }
+
+//  @Nonnull
+//  public List<V1Container> getInitContainers() {
+//    return Collections.emptyList();
+//  }
 
   public V1ResourceRequirements getResources() {
     return null;

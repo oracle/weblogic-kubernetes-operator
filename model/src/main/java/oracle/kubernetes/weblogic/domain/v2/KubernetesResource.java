@@ -5,7 +5,10 @@
 package oracle.kubernetes.weblogic.domain.v2;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import io.kubernetes.client.models.V1Container;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -35,6 +38,8 @@ class KubernetesResource {
     kubernetesResource1.getLabels().forEach(this::addLabelIfMissing);
     kubernetesResource1.getAnnotations().forEach(this::addAnnotationIfMissing);
   }
+
+  // TODO mark: ^^^ will need something like this for the initContainers too
 
   private void addLabelIfMissing(String name, String value) {
     if (!labels.containsKey(name)) labels.put(name, value);

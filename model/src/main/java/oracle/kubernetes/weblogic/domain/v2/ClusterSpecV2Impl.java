@@ -38,3 +38,8 @@ public class ClusterSpecV2Impl extends ClusterSpec {
     return cluster.getClusterAnnotations();
   }
 }
+
+
+// TODO mark: will need a class like this to roll up the initContainers
+// also have to think about what the override rules are if they are
+// specified at multiple levels

@@ -7,14 +7,8 @@ package oracle.kubernetes.weblogic.domain.v2;
 import static java.util.Collections.emptyList;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.V1Capabilities;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1HostPathVolumeSource;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -88,6 +82,17 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Pod-level security attributes.")
   private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
+
+  // TODO mark: can probably add the initContainers here using the same method as ^^^^
+
+  /**
+   * InitContainers holds a list of initialization containers that should be run before starting
+   * the main containers in this pod.
+   *
+   * @since 2.1
+   */
+  @Description("Initialization containers")
+  private List<V1Container> initContainers = new ArrayList<>();
 
   /**
    * SecurityContext holds security configuration that will be applied to a container. Some fields
@@ -204,6 +209,12 @@ class ServerPod extends KubernetesResource {
     }
   }
 
+  private void copyValues(List<V1Container> to, List<V1Container> from) {
+    if (from != null) {
+      to.addAll(from);
+    }
+  }
+
   private List<V1EnvVar> getV1EnvVars() {
     return Optional.ofNullable(getEnv()).orElse(emptyList());
   }
@@ -288,6 +299,14 @@ class ServerPod extends KubernetesResource {
     this.podSecurityContext = podSecurityContext;
   }
 
+  List<V1Container> getInitContainers() {
+    return initContainers;
+  }
+
+  void setInitContainers(List<V1Container> initContainers) {
+    this.initContainers = initContainers;
+  }
+
   V1SecurityContext getContainerSecurityContext() {
     return containerSecurityContext;
   }
@@ -334,6 +353,7 @@ class ServerPod extends KubernetesResource {
         .append("resourceRequirements", resources)
         .append("podSecurityContext", podSecurityContext)
         .append("containerSecurityContext", containerSecurityContext)
+        .append("initContainers", initContainers)
         .toString();
   }
 
@@ -362,6 +382,7 @@ class ServerPod extends KubernetesResource {
         .append(resources, that.resources)
         .append(podSecurityContext, that.podSecurityContext)
         .append(containerSecurityContext, that.containerSecurityContext)
+        .append(initContainers, that.initContainers)
         .isEquals();
   }
 
@@ -378,6 +399,7 @@ class ServerPod extends KubernetesResource {
         .append(resources)
         .append(podSecurityContext)
         .append(containerSecurityContext)
+        .append(initContainers)
         .toHashCode();
   }
 
