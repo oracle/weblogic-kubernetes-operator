@@ -42,14 +42,8 @@ public class ITOperator extends BaseTest {
       "DomainWithServerStartPolicyAsAdminOnly.yaml";
   private static String domainWithStorageReclaimPolicyRecycleYamlFile =
       "DomainWithStorageReclaimPolicyRecycle.yaml";
-
-  private static String domain4YamlFile = "domain4.yaml";
-  private static String domain5YamlFile = "domain5.yaml";
-  private static final String domain1ForDelValueYamlFile = "domain_del_1.yaml";
-  private static final String domain2ForDelValueYamlFile = "domain_del_2.yaml";
-  private static final String domain3ForDelValueYamlFile = "domain_del_3.yaml";
-  private static String domainWithApacheLB = "DomainWithApacheLB.yaml";
-  private static String domain10YamlFile = "domain10.yaml";
+  private static String domainWithDefaultValuesForSamplesYamlFile =
+      "DomainWithDefaultValuesForSamples.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -283,9 +277,7 @@ public class ITOperator extends BaseTest {
       if (!domainUidsToBeDeleted.equals("")) {
         logger.info("About to delete domains: " + domainUidsToBeDeleted);
         TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
-        logger.info("domain1 domainMap " + domain1.getDomainMap());
         TestUtils.verifyAfterDeletion(domain1);
-        logger.info("domain2 domainMap " + domain2.getDomainMap());
         TestUtils.verifyAfterDeletion(domain2);
       }
     }
@@ -379,7 +371,7 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(domain10YamlFile);
+      domain = TestUtils.createDomain(domainWithDefaultValuesForSamplesYamlFile);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       // testAdvancedUseCasesForADomain(operator1, domain10);
