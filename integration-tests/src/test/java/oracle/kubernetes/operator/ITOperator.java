@@ -12,6 +12,7 @@ import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.Operator.RESTCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assume;
@@ -34,6 +35,7 @@ public class ITOperator extends BaseTest {
       "OperatorManagingdefaultAndtest1NS.yaml";
   private static String opManagingtest2NSYamlFile = "OperatorManagingtest2NS.yaml";
   private static final String opForBackwardCompatibility = "OperatorForBackwardCompatibility.yaml";
+  private static final String opForRESTCertChain = "operator_chain.yaml";
 
   // file used to customize domain properties for domain, PV and LB inputs yaml
   private static String domainOnPVUsingWLSTYamlFile = "DomainOnPVUsingWLST.yaml";
@@ -51,6 +53,7 @@ public class ITOperator extends BaseTest {
   private static Operator operator1, operator2;
 
   private static Operator operatorForBackwardCompatibility;
+  private static Operator operatorForRESTCertChain;
 
   private static boolean QUICKTEST;
   private static boolean SMOKETEST;
@@ -463,11 +466,33 @@ public class ITOperator extends BaseTest {
     logTestBegin(testMethodName);
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
     if (operatorForBackwardCompatibility == null) {
-      operatorForBackwardCompatibility = TestUtils.createOperator(opForBackwardCompatibility, true);
+      operatorForBackwardCompatibility =
+          TestUtils.createOperator(opForBackwardCompatibility, RESTCertType.LEGACY);
     }
+    operatorForBackwardCompatibility.verifyOperatorExternalRESTEndpoint();
     logger.info("Operator using legacy REST identity created successfully");
     operatorForBackwardCompatibility.destroy();
     logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Create operator and enable external rest endpoint using a certificate chain. This test uses the
+   * operator backward compatibility operator because that operator is destroyed.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testOperatorRESTUsingCertificateChain() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+
+    logTestBegin("testOperatorRESTUsingCertificateChain");
+    logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
+    if (operatorForRESTCertChain == null) {
+      operatorForRESTCertChain = TestUtils.createOperator(opForRESTCertChain, RESTCertType.CHAIN);
+    }
+    operatorForRESTCertChain.verifyOperatorExternalRESTEndpoint();
+    logger.info("Operator using legacy REST identity created successfully");
+    logger.info("SUCCESS - testOperatorRESTUsingCertificateChain");
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
