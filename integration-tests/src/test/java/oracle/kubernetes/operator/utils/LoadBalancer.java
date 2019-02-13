@@ -36,16 +36,13 @@ public class LoadBalancer {
 
       if (lbMap.get("ingressPerDomain") == null
           || !((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
-        if (lbMap.get("loadBalancer").equals("TRAEFIK")) {
-          logger.info("Is going to createTraefikHostRouting");
+       logger.info("Is going to createTraefikHostRouting");
           createTraefikHostRouting();
-        }
       }
 
       if (lbMap.get("ingressPerDomain") != null
-          && ((Boolean) lbMap.get("ingressPerDomain")).booleanValue())
-        if (lbMap.get("loadBalancer").equals("TRAEFIK")) {
-          logger.info("Is going to createTraefikIngressPerDomain");
+          && ((Boolean) lbMap.get("ingressPerDomain")).booleanValue()){
+        logger.info("Is going to createTraefikIngressPerDomain");
           createTraefikIngressPerDomain();
         }
     }
