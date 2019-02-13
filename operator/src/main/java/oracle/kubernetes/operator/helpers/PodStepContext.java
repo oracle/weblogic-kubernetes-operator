@@ -529,14 +529,14 @@ public abstract class PodStepContext extends StepContextBase {
       V1Pod currentPod = getSko().getPod().get();
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
-      } else if (mustPatchPod(currentPod)) {
-        return doNext(patchCurrentPod(currentPod, getNext()), packet);
-      } else if (canUseCurrentPod(currentPod)) {
-        logPodExists();
-        return doNext(packet);
-      } else {
+      } else if (!canUseCurrentPod(currentPod)) {
         LOGGER.info(MessageKeys.CYCLING_POD, currentPod, getPodModel());
         return doNext(replaceCurrentPod(getNext()), packet);
+      } else if (mustPatchPod(currentPod)) {
+        return doNext(patchCurrentPod(currentPod, getNext()), packet);
+      } else {
+        logPodExists();
+        return doNext(packet);
       }
     }
   }

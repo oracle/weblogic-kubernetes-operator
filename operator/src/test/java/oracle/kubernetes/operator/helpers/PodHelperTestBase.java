@@ -505,6 +505,13 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenPodLacksExpectedCustomerLabelAndRequestRequirement_replaceIt() {
+    configurator.withPodLabel("expected.label", "value").withRequestRequirement("widgets", "10");
+
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
   public void whenPodHasUnknownCustomerAnnotations_ignoreIt() {
     verifyPodNotReplacedWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation", "value"));
   }
