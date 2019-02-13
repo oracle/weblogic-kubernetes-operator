@@ -12,9 +12,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
+import javax.jms.ConnectionFactory;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 import oracle.kubernetes.operator.BaseTest;
 import org.yaml.snakeyaml.Yaml;
 
@@ -58,8 +64,12 @@ public class Domain {
   private static int waitTime = BaseTest.getWaitTimePod();
 
   public Domain(String inputYaml) throws Exception {
+    // read input domain yaml to test
+    this(TestUtils.loadYaml(inputYaml));
+  }
 
-    initialize(inputYaml);
+  public Domain(Map<String, Object> inputDomainMap) throws Exception {
+    initialize(inputDomainMap);
     createPV();
     createSecret();
     generateInputYaml();
@@ -307,6 +317,26 @@ public class Domain {
   }
 
   /**
+   * Creates a Connection Factory using JMS.
+   *
+   * @return connection facotry.
+   * @throws Exception
+   */
+  public ConnectionFactory createJMSConnectionFactory() throws Exception {
+    Hashtable<String, String> env = new Hashtable<>();
+    env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
+    env.put(Context.PROVIDER_URL, "t3://" + TestUtils.getHostName() + ":" + t3ChannelPort);
+    logger.info("Creating JNDI context with URL " + env.get(Context.PROVIDER_URL));
+    InitialContext ctx = new InitialContext(env);
+    QueueConnection qcc = null;
+    logger.info("Getting JMS Connection Factory");
+    QueueConnectionFactory cf =
+        (QueueConnectionFactory) ctx.lookup("weblogic.jms.ConnectionFactory");
+    logger.info("Connection Factory created successfully");
+    return cf;
+  }
+
+  /**
    * Test http load balancing using loadBalancerWebPort
    *
    * @param webappName
@@ -457,6 +487,28 @@ public class Domain {
     verifyServerPodsDeleted(replicas);
   }
 
+  /**
+   * restart domain by setting serverStartPolicy to IF_NEEDED
+   *
+   * @throws Exception
+   */
+  public void restartUsingServerStartPolicy() throws Exception {
+    String cmd =
+        "kubectl patch domain "
+            + domainUid
+            + " -n "
+            + domainNS
+            + " -p '{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}' --type merge";
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
+    logger.info("command to restart domain " + cmd + " \n returned " + output);
+    verifyPodsCreated();
+    verifyServersReady();
+  }
   /**
    * verify domain is deleted
    *
@@ -650,16 +702,8 @@ public class Domain {
     weblogicDomainStorageReclaimPolicy = (String) pvMap.get("weblogicDomainStorageReclaimPolicy");
     weblogicDomainStorageSize = (String) pvMap.get("weblogicDomainStorageSize");
 
-    // test NFS for domain5 on JENKINS
-    if (domainUid.equals("domain6")
-        && (System.getenv("JENKINS") != null
-            && System.getenv("JENKINS").equalsIgnoreCase("true"))) {
-      pvMap.put("weblogicDomainStorageType", "NFS");
-      pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
-    } else {
-      pvMap.put("weblogicDomainStorageType", "HOST_PATH");
-      pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
-    }
+    pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
+
     // set pv path
     domainMap.put(
         "weblogicDomainStoragePath",
@@ -772,7 +816,7 @@ public class Domain {
 
     loadBalancer = (String) lbMap.get("loadBalancer");
 
-    if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
+    if (loadBalancer.equals("APACHE")) {
       /* lbMap.put("loadBalancerAppPrepath", "/weblogic");
       lbMap.put("loadBalancerExposeAdminPort", new Boolean(true)); */
     }
@@ -895,12 +939,11 @@ public class Domain {
     }
   }
 
-  private void initialize(String inputYaml) throws Exception {
+  private void initialize(Map<String, Object> inputDomainMap) throws Exception {
+    domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
 
-    // read input domain yaml to test
-    domainMap = TestUtils.loadYaml(inputYaml);
     domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
@@ -942,9 +985,9 @@ public class Domain {
 
     domainMap.put("domainHome", "/shared/domains/" + domainUid);
     domainMap.put("logHome", "/shared/logs/" + domainUid);
-    domainMap.put(
-        "createDomainFilesDir",
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
+    /* domainMap.put(
+    "createDomainFilesDir",
+    BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv"); */
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");

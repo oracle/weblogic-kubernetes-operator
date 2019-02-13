@@ -1066,8 +1066,13 @@ window.onload = function() {
           "type": "string"
         },
         "type": {
-          "description": "Type is the type of the condition. Currently, valid types are Progressing, Available, and Failure. Required",
-          "type": "string"
+          "description": "The type of the condition. Valid types are Progressing, Available, and Failed. Required",
+          "type": "string",
+          "enum": [
+            "Progressing",
+            "Available",
+            "Failed"
+          ]
         },
         "lastProbeTime": {
           "description": "Last time we probed the condition.",

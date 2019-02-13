@@ -4,11 +4,19 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.operator.*;
+import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.Component;
@@ -67,6 +75,11 @@ public class PodHelper {
     }
 
     @Override
+    String getPodPatchedMessageKey() {
+      return MessageKeys.ADMIN_POD_PATCHED;
+    }
+
+    @Override
     String getPodReplacedMessageKey() {
       return MessageKeys.ADMIN_POD_REPLACED;
     }
@@ -77,11 +90,10 @@ public class PodHelper {
     }
 
     @Override
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> vars = new ArrayList<>(getServerSpec().getEnvironmentVariables());
       addEnvVar(vars, INTERNAL_OPERATOR_CERT_ENV, getInternalOperatorCertFile(tuningParameters));
       overrideContainerWeblogicEnvVars(vars);
-      doSubstitution(vars);
       return vars;
     }
 
@@ -222,6 +234,11 @@ public class PodHelper {
     }
 
     @Override
+    String getPodPatchedMessageKey() {
+      return MessageKeys.MANAGED_POD_PATCHED;
+    }
+
+    @Override
     protected String getPodReplacedMessageKey() {
       return MessageKeys.MANAGED_POD_REPLACED;
     }
@@ -246,7 +263,7 @@ public class PodHelper {
 
     @Override
     @SuppressWarnings("unchecked")
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> envVars = (List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS);
 
       List<V1EnvVar> vars = new ArrayList<>();
@@ -254,7 +271,6 @@ public class PodHelper {
         vars.addAll(envVars);
       }
       overrideContainerWeblogicEnvVars(vars);
-      doSubstitution(vars);
       return vars;
     }
   }

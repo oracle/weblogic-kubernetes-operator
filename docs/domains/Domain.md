@@ -127,7 +127,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | message | string | Human-readable message indicating details about last transition. |
 | reason | string | Unique, one-word, CamelCase reason for the condition's last transition. |
 | status | string | Status is the status of the condition. Can be True, False, Unknown. Required |
-| type | string | Type is the type of the condition. Currently, valid types are Progressing, Available, and Failure. Required |
+| type | string | The type of the condition. Valid types are Progressing, Available, and Failed. Required |
 
 ### Server Status
 

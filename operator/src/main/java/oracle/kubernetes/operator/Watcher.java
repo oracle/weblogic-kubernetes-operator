@@ -78,7 +78,8 @@ abstract class Watcher<T> {
       if (thread != null) {
         thread.join();
       }
-    } catch (InterruptedException ignored) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -128,6 +129,7 @@ abstract class Watcher<T> {
         Thread.sleep(delay);
       } catch (InterruptedException ex) {
         LOGGER.warning(MessageKeys.EXCEPTION, ex);
+        Thread.currentThread().interrupt();
       }
       lastInitialize = System.currentTimeMillis();
     } else {
