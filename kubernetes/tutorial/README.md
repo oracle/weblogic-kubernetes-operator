@@ -4,7 +4,7 @@
 1. [Directory Structure Explained](#directory-structure-explained)
 1. [Prerequisites Before Run](#prerequisites-before-run)
 1. [Run with Shell Wrapper](#run-with-shell-wrapper)
-1. [Run with Step-By-Step TODO](#run-with-step-by-step)
+1. [Run Step-By-Step](#run-step-by-step)
 
 ## Introduction
 This tutorial will teach you how to run WebLogic domains in a Kubernetes environment using the operator.  
@@ -117,7 +117,7 @@ cover the three typical domain configurations and with load balancer configured.
 With the running domains, you can experiment other operator features, like scale up/down, rolling restart etc.  
 See detail [here](shell-wrapper.md).
 
-## Run with Step-By-Step
-We also provide step-by-step guide to guide you setup everything from scratch. This will help you understand the essential steps and you'll be able to do customization to meet your own requirements.
+## Run Step-By-Step
+We also provide step-by-step guide to guide you setup everything from scratch. This will help you understand the essential steps and then you'll be able to do customization to meet your own requirements.
 See detail [here](step-by-step.md).
 
