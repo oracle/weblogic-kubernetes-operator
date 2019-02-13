@@ -16,11 +16,13 @@ Wercker runs only Quick test use cases, Jenkins run both Quick and Full test use
 
 Java integration tests cover the below use cases:
 
-Quick test use cases. 
+Quick test use cases - 
+
 Operator Configuration - operator1 deployed in weblogic-operator1 namespace and manages domains in defaut and test1 namespaces
 Domain Configuration - Domain on PV using WLST, traefik load balancer
 
 Basic Use Cases
+
 1. create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
 2. create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
 3. verify admin external service by accessing admin REST endpoint with nodeport in URL
@@ -28,22 +30,28 @@ Basic Use Cases
 5. verify web app load balancing by accessing the webapp using loadBalancerWebPort
 
 Advanced Use Cases
+
 6. verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
 7. cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly.
 8. Operator life cycle(destroy and create) should not impact the running domain
 
 Also the below use cases are covered for Quick test
+
 9. verify liveness probe by killing managed server 1 process 3 times to kick pod auto-restart
 10. shutdown the domain by changing domain serverStartPolicy to NEVER
 
-Full test use cases
+Full test use cases -
+
+```
 Operator Configuration - operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace
 Domain Configuration - Domain on PV using WDT, Domain with serverStartPolicy ADMIN_ONLY, 
 					   Domain with auto and custom situational configuration, Two domains managed by two operators,
 					   Domain with Recycle weblogicDomainStorageReclaimPolicy, Domain with default sample values
+```
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
 
+```
 Domain on PV using WDT - WLDF scaling
 Domain with ADMIN_ONLY - making sure only admin server is started and managed servers are not started. 
 						Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain.
@@ -57,6 +65,7 @@ Domain with Recycle weblogicDomainStorageReclaimPolicy - create domain with pvRe
    						 once the domain and PVC are deleted
 Domain with default sample values - create domain using mostly default values for inputs						
 						
+```
 
 # Directory Configuration and Structure
 
