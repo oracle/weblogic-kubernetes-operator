@@ -18,7 +18,7 @@ Java integration tests cover the below use cases:
 
 Quick test use cases - 
 
-Operator Configuration - operator1 deployed in weblogic-operator1 namespace and manages domains in defaut and test1 namespaces
+Operator Configuration - operator1 deployed in weblogic-operator1 namespace and manages domains in default and test1 namespaces
 Domain Configuration - Domain on PV using WLST, traefik load balancer
 
 Basic Use Cases
@@ -42,16 +42,14 @@ Also the below use cases are covered for Quick test
 
 Full test use cases -
 
-```
 Operator Configuration - operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace
 Domain Configuration - Domain on PV using WDT, Domain with serverStartPolicy ADMIN_ONLY, 
 					   Domain with auto and custom situational configuration, Two domains managed by two operators,
 					   Domain with Recycle weblogicDomainStorageReclaimPolicy, Domain with default sample values
-```
+
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
 
-```
 Domain on PV using WDT - WLDF scaling
 Domain with ADMIN_ONLY - making sure only admin server is started and managed servers are not started. 
 						Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain.
@@ -65,7 +63,6 @@ Domain with Recycle weblogicDomainStorageReclaimPolicy - create domain with pvRe
    						 once the domain and PVC are deleted
 Domain with default sample values - create domain using mostly default values for inputs						
 						
-```
 
 # Directory Configuration and Structure
 
