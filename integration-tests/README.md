@@ -42,6 +42,8 @@ Also the below use cases are covered for Quick test
 
 Full test use cases -
 
+| Configuration | Description |
+| --- | --- |
 | Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
 | Domain Configuration | Domain on PV using WDT, Domain with serverStartPolicy ADMIN_ONLY, 
 					   Domain with auto and custom situational configuration, Two domains managed by two operators,
@@ -50,6 +52,8 @@ Full test use cases -
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
 
+| Domain | Use Case |
+| --- | --- |
 | Domain on PV using WDT | WLDF scaling |
 | Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. 
 						Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
@@ -93,6 +97,7 @@ Defaults for RESULT_ROOT & PV_ROOT:
 
 
 'Physical' subdirectories created by test:
+
     Local tmp files:      RESULT_ROOT/acceptance_test_tmp/...
 
     PV dirs K8S NFS:      PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid}/...
