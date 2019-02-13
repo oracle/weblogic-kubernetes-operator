@@ -38,15 +38,15 @@ wn1 = wldfResource.getWatchNotification()
 scriptAct = wn1.createScriptAction('ScriptActionScaleUp')
 scriptAct.setEnabled(true)
 scriptAct.setTimeout(0)
-scriptAct.setWorkingDirectory('/shared/domains/domain3/bin/scripts/')
-scriptAct.setPathToScript('/shared/domains/domain3/bin/scripts/scalingAction.sh')
+scriptAct.setWorkingDirectory('/shared/domains/domainonpvwdt/bin/scripts/')
+scriptAct.setPathToScript('/shared/domains/domainonpvwdt/bin/scripts/scalingAction.sh')
 props = Properties()
 props.setProperty("INTERNAL_OPERATOR_CERT",  operator_cert_data);
 #props.setProperty("KUBERNETES_SERVICE_HOST", k8s_master_host);
 #props.setProperty("KUBERNETES_SERVICE_PORT", k8s_master_port);
 scriptAct.setEnvironment(props)
 
-params=['--action=scaleUp', '--domain_uid=domain3', '--cluster_name=cluster-1', '--wls_domain_namespace=test1', '--operator_namespace=weblogic-operator1']
+params=['--action=scaleUp', '--domain_uid=domainonpvwdt', '--cluster_name=cluster-1', '--wls_domain_namespace=test2', '--operator_namespace=weblogic-operator2']
 k8s_master_url='--kubernetes_master=%s' %(k8s_master)
 params.append(k8s_master_url)
 scriptAct.setParameters(params)
