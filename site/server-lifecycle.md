@@ -152,6 +152,11 @@ The operator will restart servers when any of the follow properties on the domai
 * `volumes`
 * `volumeMounts`
 
+**Note**: if the only change detected is the addition or modification of a domain-specified label or annotation, 
+the operator will *patch* the server's pod rather than restarting it. Removing a label or annotation from
+the domain resource will cause neither a restart nor a patch. It is possible to force a restart to remove
+such a label or annotation by modifying the restartVersion.
+
 ### Rolling restarts
 
 Clustered servers that need to be restarted are gradually restarted (for example, `rolling restarted`) so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.
