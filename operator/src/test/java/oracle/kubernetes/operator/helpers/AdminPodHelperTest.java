@@ -6,12 +6,29 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.logging.MessageKeys.*;
-import static org.hamcrest.Matchers.*;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1ContainerPort;
+import io.kubernetes.client.models.V1EnvFromSource;
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +53,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getPodCreatedMessageKey() {
+  String getCreatedMessageKey() {
     return ADMIN_POD_CREATED;
   }
 
@@ -49,12 +66,17 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   void expectStepsAfterCreation() {}
 
   @Override
-  String getPodExistsMessageKey() {
+  String getExistsMessageKey() {
     return ADMIN_POD_EXISTS;
   }
 
   @Override
-  String getPodReplacedMessageKey() {
+  String getPatchedMessageKey() {
+    return ADMIN_POD_PATCHED;
+  }
+
+  @Override
+  String getReplacedMessageKey() {
     return ADMIN_POD_REPLACED;
   }
 
@@ -73,7 +95,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsInfo(getPodReplacedMessageKey()));
+    assertThat(logRecords, containsInfo(getReplacedMessageKey()));
   }
 
   @Override
@@ -89,7 +111,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsFine(getPodExistsMessageKey()));
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
   }
 
   private CallTestSupport.CannedResponse expectDeletePod(String podName) {
@@ -113,7 +135,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsInfo(getPodReplacedMessageKey()));
+    assertThat(logRecords, containsInfo(getReplacedMessageKey()));
   }
 
   private V1Pod getIncompatiblePod() {
@@ -149,11 +171,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(initialStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecHasUnknownCustomerAnnotation_replaceIt() {
-    verifyReplacePodWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
   }
 
   @Test
