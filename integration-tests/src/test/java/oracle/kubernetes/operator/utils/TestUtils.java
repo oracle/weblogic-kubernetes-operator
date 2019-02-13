@@ -22,6 +22,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import oracle.kubernetes.operator.BaseTest;
+import oracle.kubernetes.operator.utils.Operator.RESTCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -326,23 +327,22 @@ public class TestUtils {
     }
   }
 
-  public static int makeOperatorPostRestCall(
-      String operatorNS, String url, String jsonObjStr, String userProjectsDir) throws Exception {
-    return makeOperatorRestCall(operatorNS, url, jsonObjStr, userProjectsDir);
-  }
-
-  public static int makeOperatorGetRestCall(String operatorNS, String url, String userProjectsDir)
+  public static int makeOperatorPostRestCall(Operator operator, String url, String jsonObjStr)
       throws Exception {
-    return makeOperatorRestCall(operatorNS, url, null, userProjectsDir);
+    return makeOperatorRestCall(operator, url, jsonObjStr);
   }
 
-  private static int makeOperatorRestCall(
-      String operatorNS, String url, String jsonObjStr, String userProjectsDir) throws Exception {
+  public static int makeOperatorGetRestCall(Operator operator, String url) throws Exception {
+    return makeOperatorRestCall(operator, url, null);
+  }
+
+  private static int makeOperatorRestCall(Operator operator, String url, String jsonObjStr)
+      throws Exception {
     // get access token
-    String token = getAccessToken(operatorNS);
+    String token = getAccessToken(operator);
     logger.info("token =" + token);
 
-    KeyStore myKeyStore = createKeyStore(operatorNS, userProjectsDir);
+    KeyStore myKeyStore = createKeyStore(operator);
 
     Builder request = createRESTRequest(myKeyStore, url, token);
 
@@ -387,9 +387,16 @@ public class TestUtils {
     return returnCode;
   }
 
-  public static String getAccessToken(String operatorNS) throws Exception {
+  public static String getLegacyAccessToken(Operator operator) throws Exception {
+    return null;
+  }
+
+  public static String getAccessToken(Operator operator) throws Exception {
     StringBuffer secretCmd = new StringBuffer("kubectl get serviceaccount weblogic-operator ");
-    secretCmd.append(" -n ").append(operatorNS).append(" -o jsonpath='{.secrets[0].name}'");
+    secretCmd
+        .append(" -n ")
+        .append(operator.getOperatorNamespace())
+        .append(" -o jsonpath='{.secrets[0].name}'");
 
     ExecResult result = ExecCommand.exec(secretCmd.toString());
     if (result.exitValue() != 0) {
@@ -402,7 +409,7 @@ public class TestUtils {
     etokenCmd
         .append(secretName)
         .append(" -n ")
-        .append(operatorNS)
+        .append(operator.getOperatorNamespace())
         .append(" -o jsonpath='{.data.token}'");
     result = ExecCommand.exec(etokenCmd.toString());
     if (result.exitValue() != 0) {
@@ -413,17 +420,28 @@ public class TestUtils {
     return ExecCommand.exec("echo " + etoken + " | base64 --decode").stdout().trim();
   }
 
-  public static String getExternalOperatorCertificate(String operatorNS, String userProjectsDir)
-      throws Exception {
+  public static String getExternalOperatorCertificate(Operator operator) throws Exception {
 
     File certFile =
-        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.cert.pem");
+        new File(
+            operator.getUserProjectsDir()
+                + "/weblogic-operators/"
+                + operator.getOperatorNamespace()
+                + "/operator.cert.pem");
 
-    StringBuffer opCertCmd = new StringBuffer("kubectl get cm -n ");
-    opCertCmd
-        .append(operatorNS)
-        .append(" weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'");
-
+    StringBuffer opCertCmd;
+    if (RESTCertType.LEGACY == operator.getRestCertType()) {
+      opCertCmd = new StringBuffer("kubectl get cm -n ");
+      opCertCmd
+          .append(operator.getOperatorNamespace())
+          .append(" weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'");
+    } else {
+      opCertCmd = new StringBuffer("kubectl get secret -n ");
+      opCertCmd
+          .append(operator.getOperatorNamespace())
+          .append(
+              " weblogic-operator-external-rest-identity -o yaml | grep tls.crt | cut -d':' -f 2");
+    }
     ExecResult result = ExecCommand.exec(opCertCmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -440,21 +458,23 @@ public class TestUtils {
         .append(" | base64 --decode > ")
         .append(certFile.getAbsolutePath());
 
-    String decodedOpCert = ExecCommand.exec(opCertDecodeCmd.toString()).stdout().trim();
+    ExecCommand.exec(opCertDecodeCmd.toString()).stdout().trim();
     return certFile.getAbsolutePath();
   }
 
-  public static String getExternalOperatorKey(String operatorNS, String userProjectsDir)
-      throws Exception {
+  public static String getExternalOperatorKey(Operator operator) throws Exception {
     File keyFile =
-        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.key.pem");
+        new File(
+            operator.getUserProjectsDir()
+                + "/weblogic-operators/"
+                + operator.getOperatorNamespace()
+                + "/operator.key.pem");
 
-    StringBuffer opKeyCmd = new StringBuffer("grep externalOperatorKey: ");
+    StringBuffer opKeyCmd = new StringBuffer("kubectl get secret -n ");
     opKeyCmd
-        .append(userProjectsDir)
-        .append("/weblogic-operators/")
-        .append(operatorNS)
-        .append("/weblogic-operator-values.yaml | awk '{ print $2 }'");
+        .append(operator.getOperatorNamespace())
+        .append(
+            " weblogic-operator-external-rest-identity -o yaml | grep tls.key | cut -d':' -f 2");
 
     ExecResult result = ExecCommand.exec(opKeyCmd.toString());
     if (result.exitValue() != 0) {
@@ -467,7 +487,7 @@ public class TestUtils {
     StringBuffer opKeyDecodeCmd = new StringBuffer("echo ");
     opKeyDecodeCmd.append(opKey).append(" | base64 --decode > ").append(keyFile.getAbsolutePath());
 
-    String decodedOpKey = ExecCommand.exec(opKeyDecodeCmd.toString()).stdout().trim();
+    ExecCommand.exec(opKeyDecodeCmd.toString()).stdout().trim();
     return keyFile.getAbsolutePath();
   }
 
@@ -480,9 +500,10 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
-  public static Operator createOperator(String opYamlFile) throws Exception {
+  public static Operator createOperator(String opYamlFile, RESTCertType restCertType)
+      throws Exception {
     // create op
-    Operator operator = new Operator(opYamlFile);
+    Operator operator = new Operator(opYamlFile, restCertType);
 
     logger.info("Check Operator status");
     operator.verifyPodCreated();
@@ -492,11 +513,18 @@ public class TestUtils {
     return operator;
   }
 
+  public static Operator createOperator(String opYamlFile) throws Exception {
+    return createOperator(opYamlFile, RESTCertType.SELF_SIGNED);
+  }
+
   public static Domain createDomain(String inputYaml) throws Exception {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
-    /* domain.verifyDomainCreated();
-    return domain; */
+  }
+
+  public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
+    logger.info("Creating domain with Map, waiting for the script to complete execution");
+    return new Domain(inputDomainMap);
   }
 
   public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
@@ -807,27 +835,26 @@ public class TestUtils {
     k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
   }
 
-  private static KeyStore createKeyStore(String operatorNS, String userProjectsDir)
-      throws Exception {
+  private static KeyStore createKeyStore(Operator operator) throws Exception {
     // get operator external certificate from weblogic-operator.yaml
-    String opExtCertFile = getExternalOperatorCertificate(operatorNS, userProjectsDir);
+    String opExtCertFile = getExternalOperatorCertificate(operator);
     // logger.info("opExtCertFile =" + opExtCertFile);
 
+    // NOTE: Operator's private key should not be added to a keystore
+    // used for the client connection
     // get operator external key from weblogic-operator.yaml
-    String opExtKeyFile = getExternalOperatorKey(operatorNS, userProjectsDir);
+    //    String opExtKeyFile = getExternalOperatorKey(operator);
     // logger.info("opExternalKeyFile =" + opExtKeyFile);
 
     if (!new File(opExtCertFile).exists()) {
       throw new RuntimeException("File " + opExtCertFile + " doesn't exist");
     }
-    if (!new File(opExtKeyFile).exists()) {
-      throw new RuntimeException("File " + opExtKeyFile + " doesn't exist");
-    }
+    //    if (!new File(opExtKeyFile).exists()) {
+    //      throw new RuntimeException("File " + opExtKeyFile + " doesn't exist");
+    //    }
     logger.info("opExtCertFile " + opExtCertFile);
     // Create a java Keystore obj and verify it's not null
-    KeyStore myKeyStore =
-        PEMImporter.createKeyStore(
-            new File(opExtKeyFile), new File(opExtCertFile), "temp_password");
+    KeyStore myKeyStore = PEMImporter.createKeyStore(new File(opExtCertFile), "temp_password");
     if (myKeyStore == null) {
       throw new RuntimeException("Keystore Obj is null");
     }

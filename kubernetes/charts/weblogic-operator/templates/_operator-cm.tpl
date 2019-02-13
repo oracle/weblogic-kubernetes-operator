@@ -6,8 +6,8 @@
 apiVersion: "v1"
 data:
   {{- if .externalRestEnabled }}
-    {{- if (hasKey . "externalCertificateSecret") }}
-  externalCertificateSecret: {{ .externalCertificateSecret | quote }}
+    {{- if (hasKey . "externalRestIdentitySecret") }}
+  externalRestIdentitySecret: {{ .externalRestIdentitySecret | quote }}
     {{- else }}
   externalOperatorCert: {{ .externalOperatorCert | quote }}
     {{- end }}

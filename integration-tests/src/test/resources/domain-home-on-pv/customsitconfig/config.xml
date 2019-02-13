@@ -3,7 +3,7 @@
     <name>admin-server</name>
     <network-access-point>
       <name>T3Channel</name>
-      <public-address f:combine-mode="replace">${secret:domain12-t3publicaddress.hostname}</public-address>
+      <public-address f:combine-mode="replace">${secret:customsitdomain-t3publicaddress.hostname}</public-address>
     </network-access-point>
   </server>
   </domain>
