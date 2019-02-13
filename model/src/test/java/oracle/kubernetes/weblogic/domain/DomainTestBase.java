@@ -395,7 +395,11 @@ public abstract class DomainTestBase {
     assertThat(
         serverSpec.getEnvironmentVariables(),
         both(hasItem(envVar("JAVA_OPTIONS", "-server")))
-            .and(hasItem(envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "))));
+            .and(
+                hasItem(
+                    envVar(
+                        "USER_MEM_ARGS",
+                        "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "))));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
   }
 

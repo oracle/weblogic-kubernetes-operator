@@ -18,7 +18,7 @@ refer to the [User guide](user-guide.md).
 ## Prerequisites
 For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our [cheat sheet](k8s_setup.md). This guide assumes a single node cluster.
 
-The operator uses Helm to create and deploy necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Install Helm and Tiller](install.md#install-helm-and-tiller).
+The operator uses Helm to create and deploy the necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see [Install Helm and Tiller](install.md#install-helm-and-tiller).
 
 You should clone this repository to your local machine so that you have access to the
 various sample files mentioned throughout this guide:
@@ -28,10 +28,10 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator
 
 ## 1.	Get these images and put them into your local registry.
 
-a.  If you don't already have one, obtain a Docker Store account, log in to the Docker Store
+a.  If you don't already have one, obtain a Docker store account, log in to the Docker store
     and accept the license agreement for the [WebLogic Server image](https://hub.docker.com/_/oracle-weblogic-server-12c).
 
-b.  Log in to the Docker Store from your Docker client:
+b.  Log in to the Docker store from your Docker client:
 ```
 $ docker login
 ```
@@ -48,7 +48,7 @@ e.	Pull the WebLogic 12.2.1.3 install image:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```  
-**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you already have this image.
+**Note**: The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you pulled the image prior to that date.
 
 f. Copy the image to all the nodes in your cluster, or put it in a Docker registry that your cluster can access.
 
@@ -225,9 +225,15 @@ $ helm install kubernetes/samples/charts/ingress-per-domain \
 ```
 
 e.	To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods,
-    you can hit the URL for the "WebLogic Ready App" which will return a HTTP 200 status code, as
+    you can send a request to the URL for the "WebLogic ReadyApp framework" which will return a HTTP 200 status code, as
     shown in the example below.  If you used the host-based routing Ingress sample, you will need to
     provide the hostname in the `-H` option.
+
+  Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running:
+
+```
+    $ kubectl get po -n sample-domain1-ns -o wide
+```
 
 **NOTE**: Be sure to include the trailing forward slash on the URL, otherwise the command won't work.
 
@@ -247,8 +253,10 @@ $ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/
  < Vary: Accept-Encoding
 < * Connection #0 to host your.server.com left intact
 ```
-**Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or
-update security lists to allow ingress to this port.
+
+**Note**: Depending on where your Kubernetes cluster is running, you may need to open firewall ports or update security lists to allow ingress to this port.
+
+f.	To access the WLS Administration Console, edit the `my-inputs.yaml` file (assuming that you named your copy `my-inputs.yaml`) to set `exposedAdminNodePort: true`. Open a browser to `http://your.server.com:30701`. As in the previous step, substitute the Node IP address of the worker node for `your.server.com`.
 
 ## 7. Remove the domain.
 

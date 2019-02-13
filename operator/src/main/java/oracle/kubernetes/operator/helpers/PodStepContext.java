@@ -9,10 +9,42 @@ import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1ContainerPort;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ExecAction;
+import io.kubernetes.client.models.V1HTTPGetAction;
+import io.kubernetes.client.models.V1Handler;
+import io.kubernetes.client.models.V1Lifecycle;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Probe;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.io.File;
-import java.util.*;
-import oracle.kubernetes.operator.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -29,7 +61,7 @@ import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
-public abstract class PodStepContext implements StepContextConstants {
+public abstract class PodStepContext extends StepContextBase {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -44,7 +76,6 @@ public abstract class PodStepContext implements StepContextConstants {
   protected final WlsServerConfig scan;
   private final Step conflictStep;
   private V1Pod podModel;
-  private Map<String, String> substitutionVariables = new HashMap<>();
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
@@ -146,7 +177,7 @@ public abstract class PodStepContext implements StepContextConstants {
     return getDomain().isDomainHomeInImage();
   }
 
-  String getEffectiveLogHome() {
+  private String getEffectiveLogHome() {
     if (!getDomain().getLogHomeEnabled()) return null;
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
@@ -275,12 +306,31 @@ public abstract class PodStepContext implements StepContextConstants {
     return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), replaceResponse(next));
   }
 
+  private Step patchCurrentPod(V1Pod currentPod, Step next) {
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+
+    KubernetesUtils.addPatches(
+        patchBuilder, "/metadata/labels/", currentPod.getMetadata().getLabels(), getPodLabels());
+    KubernetesUtils.addPatches(
+        patchBuilder,
+        "/metadata/annotations/",
+        currentPod.getMetadata().getAnnotations(),
+        getPodAnnotations());
+
+    return new CallBuilder()
+        .patchPodAsync(getPodName(), getNamespace(), patchBuilder.build(), patchResponse(next));
+  }
+
   private void logPodCreated() {
     LOGGER.info(getPodCreatedMessageKey(), getDomainUID(), getServerName());
   }
 
   private void logPodExists() {
     LOGGER.fine(getPodExistsMessageKey(), getDomainUID(), getServerName());
+  }
+
+  private void logPodPatched() {
+    LOGGER.info(getPodPatchedMessageKey(), getDomainUID(), getServerName());
   }
 
   private void logPodReplaced() {
@@ -290,6 +340,8 @@ public abstract class PodStepContext implements StepContextConstants {
   abstract String getPodCreatedMessageKey();
 
   abstract String getPodExistsMessageKey();
+
+  abstract String getPodPatchedMessageKey();
 
   abstract String getPodReplacedMessageKey();
 
@@ -310,6 +362,12 @@ public abstract class PodStepContext implements StepContextConstants {
     }
   }
 
+  private boolean mustPatchPod(V1Pod currentPod) {
+    return KubernetesUtils.isMissingValues(currentPod.getMetadata().getLabels(), getPodLabels())
+        || KubernetesUtils.isMissingValues(
+            currentPod.getMetadata().getAnnotations(), getPodAnnotations());
+  }
+
   private boolean canUseCurrentPod(V1Pod currentPod) {
     return isCurrentPodValid(getPodModel(), currentPod);
   }
@@ -327,9 +385,7 @@ public abstract class PodStepContext implements StepContextConstants {
 
   private static boolean isCurrentPodMetadataValid(V1ObjectMeta build, V1ObjectMeta current) {
     return VersionHelper.matchesResourceVersion(current, DEFAULT_DOMAIN_VERSION)
-        && isRestartVersionValid(build, current)
-        && KubernetesUtils.areLabelsValid(build, current)
-        && KubernetesUtils.areAnnotationsValid(build, current);
+        && isRestartVersionValid(build, current);
   }
 
   private static boolean isCurrentPodSpecValid(
@@ -473,12 +529,14 @@ public abstract class PodStepContext implements StepContextConstants {
       V1Pod currentPod = getSko().getPod().get();
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
-      } else if (canUseCurrentPod(currentPod)) {
-        logPodExists();
-        return doNext(packet);
-      } else {
+      } else if (!canUseCurrentPod(currentPod)) {
         LOGGER.info(MessageKeys.CYCLING_POD, currentPod, getPodModel());
         return doNext(replaceCurrentPod(getNext()), packet);
+      } else if (mustPatchPod(currentPod)) {
+        return doNext(patchCurrentPod(currentPod, getNext()), packet);
+      } else {
+        logPodExists();
+        return doNext(packet);
       }
     }
   }
@@ -552,6 +610,37 @@ public abstract class PodStepContext implements StepContextConstants {
 
       V1Pod newPod = callResponse.getResult();
       logPodReplaced();
+      if (newPod != null) {
+        setRecordedPod(newPod);
+      }
+
+      PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
+      return doNext(pw.waitForReady(newPod, next), packet);
+    }
+  }
+
+  private ResponseStep<V1Pod> patchResponse(Step next) {
+    return new PatchPodResponseStep(next);
+  }
+
+  private class PatchPodResponseStep extends ResponseStep<V1Pod> {
+    private final Step next;
+
+    PatchPodResponseStep(Step next) {
+      super(next);
+      this.next = next;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+      return super.onFailure(getConflictStep(), packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+
+      V1Pod newPod = callResponse.getResult();
+      logPodPatched();
       if (newPod != null) {
         setRecordedPod(newPod);
       }
@@ -714,8 +803,6 @@ public abstract class PodStepContext implements StepContextConstants {
     return Collections.singletonList(START_SERVER);
   }
 
-  abstract List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters);
-
   private List<V1VolumeMount> getVolumeMounts() {
     List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUID());
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
@@ -739,43 +826,10 @@ public abstract class PodStepContext implements StepContextConstants {
     if (mockWLS()) {
       addEnvVar(vars, "MOCK_WLS", "true");
     }
-    hideAdminUserCredentials(vars);
   }
 
   private String getDomainHome() {
     return getDomain().getDomainHome();
-  }
-
-  // Hide the admin account's user name and password.
-  // Note: need to use null v.s. "" since if you upload a "" to kubectl then download it,
-  // it comes back as a null and V1EnvVar.equals returns false even though it's supposed to
-  // be the same value.
-  // Regardless, the pod ends up with an empty string as the value (v.s. thinking that
-  // the environment variable hasn't been set), so it honors the value (instead of using
-  // the default, e.g. 'weblogic' for the user name).
-  private static void hideAdminUserCredentials(List<V1EnvVar> vars) {
-    addEnvVar(vars, "ADMIN_USERNAME", null);
-    addEnvVar(vars, "ADMIN_PASSWORD", null);
-  }
-
-  static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
-    vars.add(new V1EnvVar().name(name).value(value));
-  }
-
-  void doSubstitution(List<V1EnvVar> vars) {
-    for (V1EnvVar var : vars) {
-      var.setValue(translate(var.getValue()));
-    }
-  }
-
-  private String translate(String rawValue) {
-    String result = rawValue;
-    for (Map.Entry<String, String> entry : substitutionVariables.entrySet()) {
-      if (result != null && entry.getValue() != null) {
-        result = result.replace(String.format("$(%s)", entry.getKey()), entry.getValue());
-      }
-    }
-    return result;
   }
 
   private V1Lifecycle createLifecycle() {
