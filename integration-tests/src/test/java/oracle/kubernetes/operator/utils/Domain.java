@@ -822,10 +822,12 @@ public class Domain {
     lbMap.put("clusterName", domainMap.get("clusterName"));
 
     loadBalancer = (String) lbMap.get("loadBalancer");
-    ingressPerDomain = ((Boolean) domainMap.get("ingressPerDomain")).booleanValue();
-    logger.info("Forr this domain loadBalancer is: " + loadBalaner 
-    		+ " ingressPerDomain is: " + ingressPerDomain);
-    	
+    ingressPerDomain = ((Boolean) lbMap.get("ingressPerDomain")).booleanValue();
+    logger.info(
+        "For this domain loadBalancer is: "
+            + loadBalancer
+            + " ingressPerDomain is: "
+            + ingressPerDomain);
 
     if (loadBalancer.equals("TRAEFIK") && !ingressPerDomain) {
       lbMap.put("name", "traefik-hostrouting-" + domainUid);
