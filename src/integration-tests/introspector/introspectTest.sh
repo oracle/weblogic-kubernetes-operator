@@ -15,7 +15,7 @@
 #
 # Notes:
 #
-#   The test can optionally work with any arbitrary exiting domain home, or
+#   The test can optionally work with any arbitrary existing domain home, or
 #   it can create a domain_home for you.  See CREATE_DOMAIN in the implementation
 #   below, (default true).
 #
@@ -473,43 +473,11 @@ function deployCreateDomainJob() {
 
 #############################################################################
 #
-# Run introspection job, parse its output to files, and put files in a cm
+# Run introspection "JobPod", parse its output to files, and put files in a cm
 #   - this emulates what the operator pod would do prior to start wl-pods
 #
 
-# Alternatively, run deployIntrospectJobPod() instead.
-function deployIntrospectJob() {
-  local introspect_output_cm_name=${DOMAIN_UID}-weblogic-domain-introspect-cm
-
-  trace "Info: Run introspection job, parse its output to files, and put files in configmap '$introspect_output_cm_name'."
-
-  # delete anything left over from a previous invocation of this function
-
-  kubectl -n $NAMESPACE delete cm $introspect_output_cm_name \
-    --ignore-not-found  \
-    2>&1 | tracePipe "Info: kubectl output: "
-
-  # run introspection job
-
-  runJob ${DOMAIN_UID}-introspect-domain-job \
-         /weblogic-operator/scripts/introspectDomain.sh \
-         wl-job.yamlt \
-         wl-introspect-domain-job.yaml 
-
-  # parse job's output files
-
-  ${SCRIPTPATH}/util_fsplit.sh \
-    ${test_home}/job-${DOMAIN_UID}-introspect-domain-job.out \
-    ${test_home}/jobfiles || exit 1
-
-  # put the outputfile in a cm
-
-  createConfigMapFromDir $introspect_output_cm_name ${test_home}/jobfiles 
-
-}
-
 # Here we emulate the introspect job by directly starting an introspect pod and monitoring it.
-# deployIntrospectJob() does about the same thing, but starts a pod via a job
 # (Running a pod directly is helpful for debugging.)
 
 function deployIntrospectJobPod() {
@@ -551,6 +519,9 @@ function deployIntrospectJobPod() {
   # Wait for pod to come up successfully
 
   waitForPod $pod_name
+
+  # TODO: We can eliminate the following code if we (1) have job pod script touch
+  #       a file upon completion, and (2) have job pod ready check look for this file
 
   local startSecs=$SECONDS
   local maxsecs=30
@@ -705,8 +676,8 @@ function checkOverrides() {
   linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
 
-  if [ "$linecount" != "4" ]; then
-    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 4 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
+  if [ "$linecount" != "5" ]; then
+    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
   fi
   
@@ -774,8 +745,8 @@ kubectl -n $NAMESPACE create secret generic my-secret \
         --from-literal=key1=supersecret  \
         --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
 
-#deployIntrospectJob
 deployIntrospectJobPod
+
 #
 # TBD ADMIN_NAME, ADMIN_PORT, and MANAGED_SERVER_NAME_BASE, etc env vars
 #     should be checked to see if topology file the introspector generated
