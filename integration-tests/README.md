@@ -42,12 +42,10 @@ Also the below use cases are covered for Quick test
 
 Full test use cases -
 
-| Configuration | Description |
+|  |  |
 | --- | --- |
 | Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
-| Domain Configuration | Domain on PV using WDT, Domain with serverStartPolicy ADMIN_ONLY, 
-					   Domain with auto and custom situational configuration, Two domains managed by two operators,
-					   Domain with Recycle weblogicDomainStorageReclaimPolicy, Domain with default sample values |
+| Domain Configuration | Domain on PV using WDT, Domain with serverStartPolicy ADMIN_ONLY, Domain with auto and custom situational configuration, Two domains managed by two operators, Domain with Recycle weblogicDomainStorageReclaimPolicy, Domain with default sample values |
 
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
@@ -55,17 +53,11 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Domain | Use Case |
 | --- | --- |
 | Domain on PV using WDT | WLDF scaling |
-| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. 
-						Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
-| Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and 
-					incorrect file for admin server log location. Introspector should override these with sit-config automatically. 
-					Also, with some junk value for t3 channel public address and using custom situational config override 
-					replace with valid public address using secret. |	
-| Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. 
-					Delete domain resources using delete script from samples. |								
-| Domain with Recycle weblogicDomainStorageReclaimPolicy | create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted
-   						 once the domain and PVC are deleted |
-| Domain with default sample values | create domain using mostly default values for inputs	|					
+| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
+| Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. |	
+| Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
+| Domain with Recycle policy | create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted once the domain and PVC are deleted |
+| Domain with default sample values | create domain using mostly default values for inputs |					
 						
 
 # Directory Configuration and Structure
