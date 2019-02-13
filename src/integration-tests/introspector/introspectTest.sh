@@ -711,6 +711,37 @@ function checkOverrides() {
   fi
 }
 
+#############################################################################
+#
+# Check if datasource is working
+#
+
+function checkDataSource() {
+
+  local pod_name=${1?}
+  local admin_url=${2?}
+  local wl_server_name=${3?}
+  local data_source_name=${4?}
+  local script_file=checkDataSource.py
+  local out_file=$test_home/checkDataSource-${pod_name}-${data_source_name}.out
+
+  local script_cmd="wlst.sh /shared/${script_file} ${admin_url} ${wl_server_name} ${data_source_name}"
+
+  trace "Info: Checking datasource via '$script_cmd' on pod '$pod_name'."
+  
+  kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/${script_file} ${pod_name}:/shared/${script_file} || exit 1
+
+  tracen "Info: Waiting for script to complete"
+  printdots_start
+  kubectl exec -it ${pod_name} ${script_cmd} > ${out_file} 2>&1
+  status=$?
+  printdots_end
+  if [ $status -ne 0 ]; then
+    trace "Error: The '$script_cmd' failed, see '$out_file'."
+    exit 1
+  fi
+}
+
 
 #############################################################################
 #
@@ -765,5 +796,10 @@ waitForPod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1
 # automatic and custom overrides are taking effect in the bean tree:
 
 checkOverrides
+
+# Check DS to see if it can contact the DB.  This will only pass if the
+# overrides actually took effect:
+
+checkDataSource ${DOMAIN_UID}-${ADMIN_NAME?} t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} ${ADMIN_NAME?} mysqlDS
 
 trace "Info: Success!"
