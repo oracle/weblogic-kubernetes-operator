@@ -55,7 +55,7 @@ public class Domain {
   private int loadBalancerWebPort = 30305;
   private String userProjectsDir = "";
   private String projectRoot = "";
-  private boolean ingressPerDomain;
+  private boolean ingressPerDomain = false;
 
   private String createDomainScript = "";
   private String inputTemplateFile = "";
@@ -818,10 +818,14 @@ public class Domain {
     lbMap.put("host", domainUid + ".org");
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
     lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
-    lbMap.put("ingressPerDomain", ingressPerDomain);
+    lbMap.put("ingressPerDomain", domainMap.getOrDefault("ingressPerDomain", ingressPerDomain));
     lbMap.put("clusterName", domainMap.get("clusterName"));
 
     loadBalancer = (String) lbMap.get("loadBalancer");
+    ingressPerDomain = ((Boolean) domainMap.get("ingressPerDomain")).booleanValue();
+    logger.info("Forr this domain loadBalancer is: " + loadBalaner 
+    		+ " ingressPerDomain is: " + ingressPerDomain);
+    	
 
     if (loadBalancer.equals("TRAEFIK") && !ingressPerDomain) {
       lbMap.put("name", "traefik-hostrouting-" + domainUid);
@@ -994,11 +998,13 @@ public class Domain {
     clusterName = (String) domainMap.get("clusterName");
     clusterType = (String) domainMap.get("clusterType");
     serverStartPolicy = (String) domainMap.get("serverStartPolicy");
+    /*
     if (domainMap.containsKey("ingressPerDomain")) {
       ingressPerDomain = ((Boolean) domainMap.get("ingressPerDomain")).booleanValue();
     }
 
     logger.info("ingressPerDomain for this domain is: " + ingressPerDomain);
+    */
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
