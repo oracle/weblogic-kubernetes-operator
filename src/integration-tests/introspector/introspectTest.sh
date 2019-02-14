@@ -11,17 +11,11 @@
 #   introspector is working correctly, and for quickly testing changes to
 #   its overall flow.
 #
+#   The test calls the integration test 'cleanup.sh' when it starts, which
+#   will delete all test resources and the domain_home that might
+#   have been left over from a previous run.
+#
 #   See the README in this directory for overall flow and usage.
-#
-# Notes:
-#
-#   The test can optionally work with any arbitrary existing domain home, or
-#   it can create a domain_home for you.  See CREATE_DOMAIN in the implementation
-#   below, (default true).
-#
-#   The test calls the integration test 'cleanup.sh' when it starts.  It
-#   passes a special parameter to cleanup.sh to skip domain_home deletion if
-#   the test's CREATE_DOMAIN parameter is set to false.
 #
 # Internal design:
 #
@@ -62,31 +56,7 @@ export PV_ROOT=${PV_ROOT:-/scratch/$USER/wl_k8s_test_results}
 
 #############################################################################
 #
-# Set CREATE_DOMAIN to false to use an existing domain instead 
-# of creating a new one.  
-#   - If setting to true (the default), see "extra env var" section below
-#     for additional related env vars.
-#   - If setting to false, remember to also set PVCOMMENT if the 
-#     pre-existing domain is not in a PV.
-#
-
-CREATE_DOMAIN=${CREATE_DOMAIN:-true}
-
-#############################################################################
-#
-# Set PVCOMMENT to "#" to remove PV from wl-job/wl-pod yaml.
-#   - Do this when the introspector job or wl-pod already has
-#     the domain home burned into the image and so doesn't need
-#     to mount a PV.
-#   - Do not do this when CREATE_DOMAIN is true (create domain
-#     depends on the PV).
-#
-
-export PVCOMMENT=${PVCOMMENT:-""}
-
-#############################################################################
-#
-# Set env vars for an existing domain and/or a to-be-created domain:
+# Set env vars for to-be-created domain:
 #
 
 export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-store/oracle/weblogic}
@@ -110,11 +80,6 @@ export ADMIN_PORT=${ADMIN_PORT:-7001}
 export MANAGED_SERVER_NAME_BASE=${MANAGED_SERVER_NAME_BASE:-"managed-server"}
 export DOMAIN_NAME=${DOMAIN_NAME:-"base_domain"}
 export ADMINISTRATION_PORT=${ADMINISTRATION_PORT:-7099}
-
-#############################################################################
-#
-# Set extra env vars needed when CREATE_DOMAIN == true
-#
 
 #publicip="`kubectl cluster-info | grep KubeDNS | sed 's;.*//\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\):.*;\1;'`"
 #export TEST_HOST="`nslookup $publicip | grep 'name =' | sed 's/.*name = \(.*\)./\1/'`"
@@ -159,12 +124,10 @@ function cleanupMajor() {
   #
   #   1 - delete all operator related k8s artifacts
   #   2 - delete contents of k8s weblogic domain PV/PVC
-  #       (if CREATE_DOMAIN has been set to "true")
 
   tracen "Info: Waiting for cleanup.sh to complete."
   printdots_start
   FAST_DELETE="--grace-period=1 --timeout=1s" \
-  DELETE_FILES=${CREATE_DOMAIN:-false} \
     ${SOURCEPATH}/src/integration-tests/bash/cleanup.sh 2>&1 > \
     ${test_home}/cleanup.out
   status=$?
@@ -341,14 +304,12 @@ function deployTestScriptConfigMap() {
   mkdir -p ${test_home}/test-scripts
 
   cp ${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils* ${test_home}/test-scripts || exit 1
-  cp ${SCRIPTPATH}/createDomain.sh ${test_home}/test-scripts || exit 1
+  cp ${SCRIPTPATH}/wl-create-domain-pod.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/createTestRoot.sh ${test_home}/test-scripts || exit 1
-  cp ${SCRIPTPATH}/introspectDomainProxy.sh ${test_home}/test-scripts || exit 1
+  cp ${SCRIPTPATH}/wl-introspect-pod.sh ${test_home}/test-scripts || exit 1
 
-  if [ "$CREATE_DOMAIN" = "true" ]; then
-    rm -f ${test_home}/test-scripts/createDomain.py
-    ${SCRIPTPATH}/util_subst.sh -g createDomain.pyt ${test_home}/test-scripts/createDomain.py || exit 1
-  fi
+  rm -f ${test_home}/test-scripts/wl-create-domain-pod.py
+  ${SCRIPTPATH}/util_subst.sh -g wl-create-domain-pod.pyt ${test_home}/test-scripts/wl-create-domain-pod.py || exit 1
   
   kubectl -n $NAMESPACE delete cm test-script-cm \
     --ignore-not-found  \
@@ -395,12 +356,9 @@ function deployCustomOverridesConfigMap() {
 #############################################################################
 #
 # Create base directory for PV (uses a job)
-# (Skip if PVCOMMENT="#".)
 #
 
 function createTestRootPVDir() {
-
-  [ "$PVCOMMENT" = "#" ] && return
 
   trace "Info: Creating k8s cluster physical directory 'PV_ROOT/acceptance_test_pv/domain-${DOMAIN_UID}-storage'."
   trace "Info: PV_ROOT='$PV_ROOT'"
@@ -425,14 +383,13 @@ function createTestRootPVDir() {
 #############################################################################
 #
 # Deploy WebLogic pv, pvc, & admin user/pass secret
-# (Skip pv/pvc if PVCOMMENT="#".)
 #
 
 function deployWebLogic_PV_PVC_and_Secret() {
   trace "Info: Deploying WebLogic domain's pv, pvc, & secret."
 
-  [ "$PVCOMMENT" = "#" ] || deployYamlTemplate wl-pv.yamlt wl-pv.yaml
-  [ "$PVCOMMENT" = "#" ] || deployYamlTemplate wl-pvc.yamlt wl-pvc.yaml
+  deployYamlTemplate wl-pv.yamlt wl-pv.yaml
+  deployYamlTemplate wl-pvc.yamlt wl-pvc.yaml
   deployYamlTemplate wl-secret.yamlt wl-secret.yaml
 }
 
@@ -453,22 +410,56 @@ function deployMySQL() {
 
 #############################################################################
 #
-# Run create domain job if CREATE_DOMAIN is true
+# Run create domain "JobPod" - This is a pod that acts somewhat like a job
 #
 
-function deployCreateDomainJob() {
-  [ ! "$CREATE_DOMAIN" = "true" ] && return 0
+function deployCreateDomainJobPod() {
+  trace "Info: Run create domain pod."
 
-  trace "Info: Run create domain job."
+  local target_yaml=${test_home}/wl-create-domain-pod.yaml
+  local pod_name=${DOMAIN_UID}-create-domain-pod
 
-  [ "$PVCOMMENT" = "#" ] \
-    && trace "Error: Cannot run create domain job, PV is disabled via PVCOMMENT." \
-    && exit 1
+  # delete anything left over from a previous invocation of this function, assume all pods
+  # have already been cleaned up
 
-  runJob ${DOMAIN_UID}-create-domain-job \
-         /test-scripts/createDomain.sh \
-         wl-job.yamlt \
-         wl-create-domain-job.yaml
+  rm -f ${target_yaml}
+
+  trace "Info: Deploying job pod '$pod_name' and waiting for it to be ready."
+
+  (
+    export JOB_SCRIPT=/test-scripts/wl-create-domain-pod.sh
+    ${SCRIPTPATH}/util_subst.sh -g wl-create-domain-pod.yamlt ${target_yaml}  || exit 1
+  ) || exit 1
+
+  kubectl create -f ${target_yaml} \
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+
+  # Wait for pod to come up successfully
+
+  waitForPod $pod_name
+
+  # TODO: We can eliminate the following code if we (1) have job pod script touch
+  #       a file upon completion, and (2) have job pod ready check look for this file
+
+  local startSecs=$SECONDS
+  local maxsecs=30
+  local exitString=""
+  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' to run the wl-create-domain-pod.py script."
+  printdots_start
+  while [ $((SECONDS - startSecs)) -lt $maxsecs ] && [ "$exitString" = "" ]; do
+    exitString="`kubectl -n $NAMESPACE logs $pod_name 2>&1 | grep CREATE_DOMAIN_EXIT`"
+    sleep 1
+  done
+  printdots_end
+  if [ "$exitString" = "" ]; then
+    trace "Error: Timed out, see 'kubectl -n $NAMESPACE logs $pod_name'."
+    exit 1
+  fi
+  if [ ! "$exitString" = "CREATE_DOMAIN_EXIT=0" ]; then
+    trace "Error: Pod script failed, see 'kubectl -n $NAMESPACE logs $pod_name'."
+    exit 1
+  fi
+
 }
 
 #############################################################################
@@ -484,7 +475,6 @@ function deployIntrospectJobPod() {
   local introspect_output_cm_name=${DOMAIN_UID}-weblogic-domain-introspect-cm
   local target_yaml=${test_home}/wl-introspect-pod.yaml
   local pod_name=${DOMAIN_UID}--introspect-domain-pod
-  local job_name=$pod_name
 
   trace "Info: Run introspection job, parse its output to files, and put files in configmap '$introspect_output_cm_name'."
 
@@ -502,7 +492,7 @@ function deployIntrospectJobPod() {
   (
     export SERVER_NAME=introspect
     export JOB_NAME=${DOMAIN_UID}--introspect-domain-pod
-    export JOB_SCRIPT=/test-scripts/introspectDomainProxy.sh
+    export JOB_SCRIPT=/test-scripts/wl-introspect-pod.sh
     export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
     export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
     if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
@@ -747,9 +737,6 @@ function checkDataSource() {
 #
 # Main
 #
-# Some of the following calls will be a partial or complete no-op if
-# PVCOMMENT is set, or if CREATE_DOMAIN is set to false.
-#
 
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   cleanupMajor
@@ -768,7 +755,7 @@ if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   createTestRootPVDir
   deployMySQL
   deployWebLogic_PV_PVC_and_Secret
-  deployCreateDomainJob
+  deployCreateDomainJobPod
 fi
 
 kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
