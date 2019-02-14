@@ -23,16 +23,21 @@ out="$(helm package $WOCHARTPATH -d $SCRIPTPATH)"
 helm_package=$(echo $out | cut -d ':' -f 2)
 helm_package_name=$(basename $helm_package)
 
-dsttime="$(stat $mod_time_fmt $SCRIPTPATH/../docs/charts/$helm_package_name)"
+dsttime=0
+if [ -f $SCRIPTPATH/../docs/charts/$helm_package_name ]; then
+  dsttime="$(stat $mod_time_fmt $SCRIPTPATH/../docs/charts/$helm_package_name)"
+fi
 
 if [ $srctime \> $dsttime ];
 then
+  mkdir $SCRIPTPATH/../docs/charts
   helm repo index $WOCHARTPATH/ --url https://oracle.github.io/weblogic-kubernetes-operator/charts
 
-  cp $WOCHARTPATH/index.yaml $SCRIPTPATH/../docs/charts
-  mv $helm_package $SCRIPTPATH/../docs/charts/ -f
+  mv -f $WOCHARTPATH/index.yaml $SCRIPTPATH/../docs/charts
+  mv -f $helm_package $SCRIPTPATH/../docs/charts/
 else
   rm $helm_package
+  rm $WOCHARTPATH/index.yaml
 fi;
 
 
