@@ -4,14 +4,13 @@ This guide provides information for developers who wish to understand or contrib
 
 ## Requirements
 
-The following software is required to obtain and build the operator:
+In addition to the requirements listed in the [User Guide](user-guide.md#prerequisites), the following software is also required to obtain and build the operator:
 
-*	Git (1.8 or later recommended)
-*	Apache Maven (3.3 or later recommended)
-*	Java Developer Kit (1.8u131 or later recommended, not 1.9)
-*	Docker 17.03.1.ce
+* Git (1.8 or later recommended)
+* Java Developer Kit (1.8u131 or later recommended; please use 1.8, tests will not work on 1.9 or later versions)
+* Apache Maven (3.3 or later recommended)
 
-The operator is written primarily in Java and BASH shell scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 feature.
+The operator is written primarily in Java, BASH shell scripts, and WLST scripts.  The Java code uses features introduced in Java 1.8 -- for example, closures -- but does not use any Java 1.9 features.
 
 Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.  Please be aware that Oracle will not provide support, or accept pull requests to add support, for other operating systems.
 
@@ -22,26 +21,22 @@ The operator source code is published on GitHub at https://github.com/oracle/web
 To clone the repository from GitHub, issue this command:
 
 ```
-git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 
 ## Operator branching model
 
-The ```master``` branch is protected and will always contain source for the latest, generally available (GA) 
-release of the operator, including any critical hot fixes.  No general pull requests will be merged to this branch.
+The `master` branch is protected and contains source for the most recently published release, including release candidates.
 
-Active work will be performed on the ```develop``` branch.  This branch is also protected.  Please submit pull
-requests to this branch unless you are collaborating on a feature and have another target branch.  
-Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README] (README.md).
+The `develop` branch is protected and contains source for the latest completed features and bug fixes.  While this branch contains active work, we expect to keep it always "ready to release."  Therefore, longer running feature work will be performed on specific branches, such as `feature/dynamic-clusters`.
 
-Longer running feature work will be performed on specific branches, such as ```feature/dynamic-clusters```.  Since we want 
-to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we
-encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into 
-their own shorter-lived branches and create pull requests to ```develop``` when these smaller work items are complete.
+Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to `develop` when these smaller work items are completed.
 
-When it is time for a release, we will branch off ```develop``` to create a per-release branch.  Here, we will update version
-numbers, rebuild javadoc, if necessary, and perform any other pre-release updates.  Finally, this release branch will be merged 
-to ```master```.
+All commits to `develop` must pass the [integration test suite](#running-integration-tests).  Please run these tests locally before submitting a pull request.  Additionally, each push to a branch in our GitHub repository triggers a run of a subset of the integration tests with the results visible [here](https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs).
+
+Please submit pull requests to the `develop` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README](../README.md).
+
+We will create git tags for each release candidate and generally available (GA) release of the operator.
 
 ## Building the operator
 
@@ -50,68 +45,41 @@ The operator is built using [Apache Maven](http://maven.apache.org).  The build 
 To build the operator, issue the following command in the project directory:
 
 ```
-mvn clean install
+$ mvn clean install
 ```
 
 This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.
+
+Contributions must conform to [coding and formatting standards](#coding-standards).  To automatically update local code to conform to formatting standards, issue the following command:
+
+```
+$ mvn fmt:format
+```
 
 ## Building Javadoc
 
 To build the Javadoc for the operator, issue the following command:
 
 ```
-mvn javadoc:javadoc
+$ mvn javadoc:javadoc
 ```
 
 The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
 
-## Running integration tests
+## Building the operator Docker image
 
-The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  You will need to obtain the `kube.config` file for an administrator user and make it available on the machine running the build.  Tests will run against Kubernetes 1.7.5+, 1.8.0+, 1.9.0+, and 1.10.0.
-
-To run the tests, uncomment the following `execution` element in the `pom.xml` file and update the `KUBECONFIG` to point to your kube config file.
+Log in to the Docker Store so that you will be able to pull the base image and create the Docker image as follows.  These commands should be executed in the project root directory:
 
 ```
-<!--
-<execution>
-  <id>kubernetes-config</id>
-  <phase>test</phase>
-  <goals>
-      <goal>test</goal>
-  </goals>
-  <configuration>
-      <argLine>${surefireArgLine} -Xms512m -Xmx1500m</argLine>
-      <environmentVariables>
-          <KUBECONFIG>
-              ${project.basedir}/your.kube.config
-          </KUBECONFIG>
-      </environmentVariables>
-  </configuration>
-</execution>
--->
+$ docker login
+$ docker build --build-arg VERSION=<version> -t weblogic-kubernetes-operator:some-tag --no-cache=true .
 ```
 
-These tests assume that the RBAC definitions exist on the Kubernetes cluster.
+Replace `<version>` with the version of the project found in the `pom.xml` file in the project root directory.
 
-To create them, first, make a copy of the inputs file (`create-weblogic-operator-inputs.yaml`) and update it.
+**Note**: If you have not used the base image (`store/oracle/serverjre:8`) before, you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before the Docker Store will give you permission to pull that image.
 
-Next, choose and create a directory that generated operator-related files will be stored in, for example, `/path/to/weblogic-operator-output-directory`.
-
-Finally, run the operator installation script with the "generate only" option as shown below, pointing it at your inputs file and your output directory.  (See the [installation](installation.md) page for details about this script and the inputs):
-
-```
-./create-weblogic-operator.sh -g \
-  -i create-weblogic-operator-inputs.yaml \
-  -o /path/to/weblogic-operator-output-directory
-```
-
-This will create a file called `/path/to/weblogic-operator-output-directory/weblogic-operators/weblogic-operator/weblogic-operator-security.yaml`, which you will need to apply to your cluster:
-
-```
-kubectl apply -f /path/to/weblogic-operator-output-directory/weblogic-operators/webogic-operator/weblogic-operator-security.yaml
-```
-
-After this is done, and the `execution` is uncommented, the tests will run against your cluster.
+We recommend that you use a tag other than `latest`, to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
 
 ## Running the operator from an IDE
 
@@ -123,51 +91,41 @@ You may need to create a directory called `/operator` on your machine.  Please b
 
 ## Running the operator in a Kubernetes cluster
 
-To run the operator in a Kubernetes cluster, you need to build the Docker image and then deploy it to your cluster.
-
-After you have run the build (that is, `mvn clean install`), create the Docker image as follows:
-
-```
-docker build -t weblogic-kubernetes-operator:some-tag --no-cache=true .
-```
-
-We recommend that you use a tag other than `latest` to make it easy to distinguish your image from the "real" one.  In the example above, we used the GitHub ID of the developer.
-
-Next, upload your image to your Kubernetes server as follows:
+If you're not running Kubernetes on your development machine, you'll need to make the Docker image available to a registry visible to your Kubernetes cluster.  Either `docker push` the image to a private registry or upload your image to a machine running Docker and Kubernetes as follows:
 
 ```
 # on your build machine
-docker save weblogic-kubernetes-operator:some-tag > operator.tar
-scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
+$ docker save weblogic-kubernetes-operator:some-tag > operator.tar
+$ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar
 # on the Kubernetes server
-docker load < /some/path/operator.tar
+$ docker load < /some/path/operator.tar
 ```
 
-Verify that you have the right image by running `docker images | grep webloogic-kubernetes-operator` on both machines and comparing the image IDs.
+Use the Helm charts to [install the operator](install.md).
 
-To create and deploy the operator, first, make a copy of the inputs file (`create-weblogic-operator-inputs.yaml`) and update it, making sure that `weblogicOperatorImagePullPolicy` is set to `Never` and `weblogicOperatorImage` matches the name you used in your `docker build` command.
+If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options](install.md#debugging-options).
 
-Next, choose and create a directory that generated operator-related files will be stored in, for example, `/path/to/weblogic-operator-output-directory`.
+## Running integration tests
 
-Finally, run the operator installation script to deploy the operator, pointing it at your inputs file and your output directory:
+The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  The Kubernetes cluster must meet the version number requirements and have Helm installed.  Ensure that the operator Docker image is in a Docker registry visible to the Kubernetes cluster.
+
+
+You will need to obtain the `kube.config` file for an administrative user and make it available on the machine running the build.  To run the tests, update the `KUBECONFIG` environment variable to point to your config file and then execute:
 
 ```
-./create-weblogic-operator.sh \
-  -i /path/to/create-weblogic-operator-inputs.yaml \
-  -o /path/to/weblogic-operator-output-directory
+$ mvn clean verify -P java-integration-tests
 ```
-
+**NOTE**: When you run the integrations tests, they do a cleanup of any operator or domains on that cluster.   
 
 ## Coding standards
 
 This project has adopted the following coding standards:
 
-* Code will be formated using Oracle / WebLogic standards, which are identical to the [Google Java Style](https://google.github.io/styleguide/javaguide.html)
+* Code will be formated using Oracle / WebLogic standards, which are identical to the [Google Java Style](https://google.github.io/styleguide/javaguide.html).
 * Javadoc must be provided for all public packages, classes, and methods, and must include all parameters and returns.  Javadoc is not required for methods that override or implement methods that are already documented.
 * All non-trivial methods should include `LOGGER.entering()` and `LOGGER.exiting()` calls.
 * The `LOGGER.exiting()` call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.
 * All logged messages must be internationalized using the resource bundle `src/main/resources/Operator.properties` and using a key itemized in `src/main/java/oracle/kubernetes/operator/logging/MessageKeys.java`.
-* Before throwing an exception, there should be a call to `LOGGER.throwing(e)` to log the exception.
 * After operator initialization, all operator work must be implemented using the asynchronous call model (described below).  In particular, worker threads must not use `sleep()` or IO or lock-based blocking methods.
 
 ## Code formatting plugins
@@ -178,9 +136,9 @@ The following IDE plugins are available to assist with following the code format
 
 An [IntelliJ plugin](https://plugins.jetbrains.com/plugin/8527) is available from the plugin repository.
 
-The plugin will be enabled by default. To disable it in the current project, go to ```File > Settings... > google-java-format Settings``` (or ```IntelliJ IDEA > Preferences... > Other Settings > google-java-format Settings``` on macOS) and uncheck the "Enable google-java-format" checkbox.
+The plugin will be enabled by default. To disable it in the current project, go to `File > Settings... > google-java-format Settings` (or `IntelliJ IDEA > Preferences... > Other Settings > google-java-format Settings` on macOS) and uncheck the "Enable google-java-format" checkbox.
 
-To disable it by default in new projects, use ```File > Other Settings > Default Settings...```.
+To disable it by default in new projects, use `File > Other Settings > Default Settings...`.
 
 When enabled, it will replace the normal "Reformat Code" action, which can be triggered from the "Code" menu or with the Ctrl-Alt-L (by default) keyboard shortcut.
 
@@ -190,19 +148,23 @@ The import ordering is not handled by this plugin, unfortunately. To fix the imp
 
 An [Eclipse plugin](https://github.com/google/google-java-format/releases/download/google-java-format-1.3/google-java-format-eclipse-plugin-1.3.0.jar) can be downloaded from the releases page. Drop it into the Eclipse [drop-ins folder](http://help.eclipse.org/neon/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fmisc%2Fp2_dropins_format.html) to activate the plugin.
 
-The plugin adds a google-java-format formatter implementation that can be configured in ```Eclipse > Preferences > Java > Code Style > Formatter > Formatter Implementation```.
+The plugin adds a google-java-format formatter implementation that can be configured in `Eclipse > Preferences > Java > Code Style > Formatter > Formatter Implementation`.
 
 ## Source code structure
 
 This project has the following directory structure:
 
-* `docs`: Generated javadoc and Swagger
-* `kubernetes`: BASH scripts and YAML templates for operator installation and WebLogic domain creation job.
+* `docs`: Generated Javadoc and Swagger
+* `integration-tests`: Integration test suite
+* `json-schema`: Java model to JSON schema generator
+* `json-schema-maven-plugin`: Maven plugin for schema generator
+* `kubernetes/charts`: Helm charts
+* `kubernetes/samples`: All samples, including for WebLogic domain creation
+* `model`: Domain resource Java model
+* `operator`: Operator runtime
 * `site`: This documentation
-* `src/main/java`: Java source code for the operator
-* `src/test/java`: Java unit-tests for the operator
-* `src-generated-swagger`: Snapshot of Java source files generated from the domain custom resource's Swagger
-* `swagger`: Swagger files for the Kubernetes API server and domain custom resource
+* `src/scripts`: Scripts operator injects into WebLogic server instance Pods
+* `swagger`: Swagger files for the Kubernetes API server and domain resource
 
 ### Watch package
 
@@ -210,7 +172,7 @@ The Watch API in the Kubernetes Java client provides a watch capability across a
 
 ## Asynchronous call model
 
-Our expectation is that certain customers will task the operator with managing thousands of WebLogic domains across dozens of Kubernetes namespaces.  Therefore, we have designed the operator with an efficient user-level threads pattern based on a simplified version of the code from the JAX-WS reference implementation.  We have then used that pattern to implement an asynchronous call model for Kubernetes API requests.  This call model has built-in support for timeouts, retries with exponential back-off, and lists that exceed the requested maximum size using the continuance functionality.
+Our expectation is that customers will task the operator with managing hundreds of WebLogic domains across dozens of Kubernetes namespaces.  Therefore, we have designed the operator with an efficient user-level threads pattern.  We've used that pattern to implement an asynchronous call model for Kubernetes API requests.  This call model has built-in support for timeouts, retries with exponential back-off, and lists that exceed the requested maximum size using the continuance functionality.
 
 ### User-Level Thread Pattern
 
@@ -228,32 +190,39 @@ Each `Step` has a reference to the next `Step` in the processing flow; however, 
 
 In this sample, the caller creates an `Engine`, `Fiber`, linked set of `Step` instances, and `Packet`.  The `Fiber` is then started.  The `Engine` would typically be a singleton, since it's backed by a `ScheduledExecutorService`.  The `Packet` would also typically be pre-loaded with values that the `Steps` would use in their `apply()` methods.
 
-```
+```java
+static class SomeClass {
+  public static void main(String[] args) {
     Engine engine = new Engine("worker-pool");
-
+  
     Fiber fiber = engine.createFiber();
-
+  
     Step step = new StepOne(new StepTwo(new StepThree(null)));
-    Packet packet = new Packet();
+      Packet packet = new Packet();
+  
+    fiber.start(
+        step,
+        packet,
+        new CompletionCallback() {
+          @Override
+          public void onCompletion(Packet packet) {
+            // Fiber has completed successfully
+          }
 
-    fiber.start(step, packet, new CompletionCallback() {
-      @Override
-      public void onCompletion(Packet packet) {
-        // Fiber has completed successfully
-      }
-
-      @Override
-      public void onThrowable(Packet packet, Throwable throwable) {
-        // Fiber processing was terminated with an exception
-      }
-    });
+          @Override
+          public void onThrowable(Packet packet, Throwable throwable) {
+            // Fiber processing was terminated with an exception
+          }
+        });
+  }
+}
 ```
 
 `Steps` must not invoke sleep or blocking calls from within `apply()`.  This prevents the worker threads from serving other `Fibers`.  Instead, use asynchronous calls and the `Fiber` suspend/resume pattern.  `Step` provides a method, `doDelay()`, which creates a `NextAction` to drive `Fiber` suspend/resume that is a better option than sleep precisely because the worker thread can serve other `Fibers` during the delay.  For asynchronous IO or similar patterns, suspend the `Fiber`.  In the callback as the `Fiber` suspends, initiate the asynchronous call.  Finally, when the call completes, resume the `Fiber`.  The suspend/resume functionality handles the case where resumed before the suspending callback completes.
 
 In this sample, the step uses asynchronous file IO and the suspend/resume `Fiber` pattern.
 
-```
+```java
     static class StepTwo extends Step {
       public StepTwo(Step next) {
         super(next);
@@ -272,7 +241,7 @@ In this sample, the step uses asynchronous file IO and the suspend/resume `Fiber
             ByteBuffer buffer = ByteBuffer.allocate(1024);
             fileChannel.read(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
               @Override
-              public void completed(Integer result, ByteBuffer attachment) {
+              void completed(Integer result, ByteBuffer attachment) {
                 // Store data in Packet and resume Fiber
                 packet.put("DATA_SIZE_READ", result);
                 packet.put("DATA_FROM_SOMEFILE", attachment);
@@ -300,7 +269,7 @@ The asynchronous call model is implemented by classes in the `oracle.kubernetes.
 
 In this sample, the developer is using the pattern to list pods from the default namespace that are labeled as part of `cluster-1`.
 
-```
+```java
     static class StepOne extends Step {
       public StepOne(Step next) {
         super(next);
@@ -324,7 +293,7 @@ In this sample, the developer is using the pattern to list pods from the default
           }
 
           @Override
-          public NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
+          NextAction onSuccess(Packet packet, V1PodList result, int statusCode,
               Map<String, List<String>> responseHeaders) {
             // do something with the result Pod, if not null
             return doNext(packet);
@@ -341,3 +310,17 @@ Notice that the required parameters, such as `namespace`, are method arguments, 
 The default behavior of `onFailure()` will retry with an exponential backoff the request on status codes `429 (TooManyRequests)`, `500 (InternalServerError)`, `503 (ServiceUnavailable)`, `504 (ServerTimeout)` or a simple timeout with no response from the server.
 
 If the server responds with status code `409 (Conflict)`, then this indicates an optimistic locking failure.  Common use cases are that the code read a Kubernetes object in one asynchronous step, modified the object, and attempted to replace the object in another asynchronous step; however, another activity replaced that same object in the interim.  In this case, retrying the request would give the same result.  Therefore, developers may provide an "on conflict" step when calling `super.onFailure()`.  The conflict step will be invoked after an exponential backoff delay.  In this example, that conflict step should be the step that reads the existing Kubernetes object.
+
+## Domain processing
+
+When the operator starts, it lists all existing Domain resources and processes these domains to create the necessary Kubernetes resources, such as Pods and Services, if they don't already exist.  This initialization also includes looking for any stranded resources that, while created by the operator, no longer correlate with a Domain resource.
+
+After this, the operator starts watches for changes to Domain resources and any changes to other resources created by the operator.  When a watch event is received, the operator processes the modified Domain resource to again bring the runtime presence in to alignment with the desired state.
+
+The operator ensures that at most one `Fiber` is running for any given Domain.  For instance, if the customer modifies a Domain resource to trigger a rolling restart, then the operator will create a `Fiber` to process this activity.  However, if while the rolling restart is in process, the customer makes another change to the Domain resource, such as to increase the `replicas` field for a cluster, then the operator will cancel the in-flight `Fiber` and replace it with a new `Fiber`.  This replacement processing must be able to handle taking over for the cancelled work regardless of where the earlier processing may have been in its flow.  Therefore, domain processing always starts at the beginning of the "make right" flow without any state other than the current Domain resource.
+
+Finally, the operator periodically lists all Domains and rechecks them.  This is a backstop against the possibility that a watch event is missed, such as because of a temporary network outage.  Recheck activities will not interrupt already running processes for a given Domain.
+
+## Backward Compatibility Guidelines
+
+Starting with the 2.0 release, future operator releases must be backward compatible with respect to the domain resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface.  We will maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.

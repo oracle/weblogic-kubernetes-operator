@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
@@ -39,6 +39,15 @@ function parseYaml {
       }
     }
   }' > $2
+}
+
+#
+# Function to remove a file if it exists 
+#
+function removeFileIfExists {
+  if [ -f $1 ]; then
+    rm $1
+  fi
 }
 
 #
@@ -203,4 +212,279 @@ function getKubernetesClusterIP {
   K8S_IP="${array[1]}"
 }
 
+#
+# Function to generate the properties and yaml files for creating a domain
+#
+function createFiles {
+
+  # Make sure the output directory has a copy of the inputs file.
+  # The user can either pre-create the output directory, put the inputs
+  # file there, and create the domain from it, or the user can put the
+  # inputs file some place else and let this script create the output directory
+  # (if needed) and copy the inputs file there.
+  copyInputsFileToOutputDirectory ${valuesInputFile} "${domainOutputDir}/create-domain-inputs.yaml"
+
+  if [ "${domainHomeInImage}" == "true" ]; then
+    if [ -z "${domainHomeImageBase}" ]; then
+      fail "Please specify domainHomeImageBase in your input YAML"
+    fi
+  else
+    if [ -z "${image}" ]; then
+      fail "Please specify image in your input YAML"
+    fi
+  fi
+
+  dcrOutput="${domainOutputDir}/domain.yaml"
+
+  domainName=${domainUID}
+
+  enabledPrefix=""     # uncomment the feature
+  disabledPrefix="# "  # comment out the feature
+
+  exposeAnyChannelPrefix="${disabledPrefix}"
+  if [ "${exposeAdminT3Channel}" = true ]; then
+    exposeAdminT3ChannelPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
+  else
+    exposeAdminT3ChannelPrefix="${disabledPrefix}"
+  fi
+
+  if [ "${exposeAdminNodePort}" = true ]; then
+    exposeAdminNodePortPrefix="${enabledPrefix}"
+    exposeAnyChannelPrefix="${enabledPrefix}"
+  else
+    exposeAdminNodePortPrefix="${disabledPrefix}"
+  fi
+
+  # For some parameters, use the default value if not defined.
+  if [ -z "${domainPVMountPath}" ]; then
+    domainPVMountPath="/shared"
+  fi
+
+  if [ -z "${logHome}" ]; then
+    logHome="${domainPVMountPath}/logs/${domainUID}"
+  fi
+
+  if [ -z "${persistentVolumeClaimName}" ]; then
+    persistentVolumeClaimName="${domainUID}-weblogic-sample-pvc"
+  fi
+
+  if [ -z "${weblogicCredentialsSecretName}" ]; then
+    weblogicCredentialsSecretName="${domainUID}-weblogic-credentials"
+  fi
+
+  if [ "${domainHomeInImage}" == "true" ]; then
+    domainPropertiesOutput="${domainOutputDir}/domain.properties"
+    domainHome="/u01/oracle/user_projects/domains/${domainName}"
+
+    if [ -z $domainHomeImageBuildPath ]; then
+      domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
+    fi
+
+    # Generate the properties file that will be used when creating the weblogic domain
+    echo Generating ${domainPropertiesOutput}
+
+    cp ${domainPropertiesInput} ${domainPropertiesOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
+
+    if [ -z "${image}" ]; then
+      # calculate the internal name to tag the generated image
+      defaultImageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
+      baseTag=${domainHomeImageBase#*:}
+      defaultImageName=${defaultImageName}:${baseTag:-"latest"}
+      sed -i -e "s|%IMAGE_NAME%|${defaultImageName}|g" ${domainPropertiesOutput}
+    else 
+      sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
+    fi
+  else
+
+    createJobOutput="${domainOutputDir}/create-domain-job.yaml"
+    deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
+
+    if [ -z "${domainHome}" ]; then
+      domainHome="${domainPVMountPath}/domains/${domainUID}"
+    fi
+
+    # Use the default value if not defined.
+    if [ -z "${createDomainScriptsMountPath}" ]; then
+      createDomainScriptsMountPath="/u01/weblogic"
+    fi
+
+    if [ -z "${createDomainScriptName}" ]; then
+      createDomainScriptName="create-domain-job.sh"
+    fi
+
+    # Must escape the ':' value in image for sed to properly parse and replace
+    image=$(echo ${image} | sed -e "s/\:/\\\:/g")
+
+    # Generate the yaml to create the kubernetes job that will create the weblogic domain
+    echo Generating ${createJobOutput}
+
+    cp ${createJobInput} ${createJobOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${createJobOutput}
+    sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${createJobOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${createJobOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${createJobOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${createJobOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${createJobOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${createJobOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${createJobOutput}
+    sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${createJobOutput}
+    sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${createJobOutput}
+    sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${createJobOutput}
+    sed -i -e "s:%ADMIN_SERVER_NAME_SVC%:${adminServerNameSVC}:g" ${createJobOutput}
+    sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${createJobOutput}
+    sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${createJobOutput}
+    sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${createJobOutput}
+    sed -i -e "s:%MANAGED_SERVER_NAME_BASE_SVC%:${managedServerNameBaseSVC}:g" ${createJobOutput}
+    sed -i -e "s:%MANAGED_SERVER_PORT%:${managedServerPort}:g" ${createJobOutput}
+    sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${createJobOutput}
+    sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${createJobOutput}
+    sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${createJobOutput}
+    sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
+    sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${createJobOutput}
+    sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${createJobOutput}
+    sed -i -e "s:%CREATE_DOMAIN_SCRIPT_DIR%:${createDomainScriptsMountPath}:g" ${createJobOutput}
+    sed -i -e "s:%CREATE_DOMAIN_SCRIPT%:${createDomainScriptName}:g" ${createJobOutput}
+
+    # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
+    echo Generating ${deleteJobOutput}
+
+    cp ${deleteJobInput} ${deleteJobOutput}
+    sed -i -e "s:%NAMESPACE%:$namespace:g" ${deleteJobOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${deleteJobOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${deleteJobOutput}
+    sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${deleteJobOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${deleteJobOutput}
+    sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${deleteJobOutput}
+    sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${deleteJobOutput}
+    sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${deleteJobOutput}
+    sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${deleteJobOutput}
+    sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${deleteJobOutput}
+    sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
+  fi
+
+  if [ "${domainHomeInImage}" == "true" ]; then
+    if [ "${logHomeOnPV}" == "true" ]; then
+      logHomeOnPVPrefix="${enabledPrefix}"
+    else
+      logHomeOnPVPrefix="${disabledPrefix}"
+    fi
+  else
+    logHomeOnPVPrefix="${enabledPrefix}"
+    logHomeOnPV=true
+  fi
+
+  # Generate the yaml file for creating the domain resource
+  echo Generating ${dcrOutput}
+
+  cp ${dcrInput} ${dcrOutput}
+  sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${dcrOutput}
+  sed -i -e "s:%NAMESPACE%:$namespace:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_HOME_IN_IMAGE%:${domainHomeInImage}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_POLICY%:${imagePullPolicy}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%:${imagePullSecretPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_IMAGE_PULL_SECRET_NAME%:${imagePullSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${dcrOutput}
+  sed -i -e "s:%INCLUDE_SERVER_OUT_IN_POD_LOG%:${includeServerOutInPodLog}:g" ${dcrOutput}
+  sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${dcrOutput}
+  sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
+  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
+  sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
+  sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
+  sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
+  sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
+
+  if [ "${domainHomeInImage}" == "true" ]; then
+ 
+    # now we know which image to use, update the domain yaml file
+    if [ -z $image ]; then
+      sed -i -e "s|%WEBLOGIC_IMAGE%|${defaultImageName}|g" ${dcrOutput}
+    else
+      sed -i -e "s|%WEBLOGIC_IMAGE%|${image}|g" ${dcrOutput}
+    fi
+  else
+    sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${dcrOutput}
+  fi
+
+  # Remove any "...yaml-e" and "...properties-e" files left over from running sed
+  rm -f ${domainOutputDir}/*.yaml-e
+  rm -f ${domainOutputDir}/*.properties-e
+}
+
+#
+# Function to create the domain recource
+#
+function createDomainResource {
+  kubectl apply -f ${dcrOutput}
+
+  attempts=0
+  while [ "$DCR_AVAIL" != "1" ] && [ ! $attempts -eq 10 ]; do
+    attempts=$((attempts + 1))
+    sleep 1
+    DCR_AVAIL=`kubectl get domain ${domainUID} -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
+  done
+  if [ "${DCR_AVAIL}" != "1" ]; then
+    fail "The domain resource ${domainUID} was not found"
+  fi
+}
+
+#
+# Function to create a domain
+# $1 - boolean value indicating the location of the domain home
+#      true means domain home in image
+#      false means domain home on PV
+#
+function createDomain {
+  if [ "$#" != 1 ]; then
+    fail "The function must be called with domainHomeInImage parameter."
+  fi
+
+  domainHomeInImage="${1}"
+  if [ "true" != "${domainHomeInImage}" ] && [ "false" != "${domainHomeInImage}" ]; then
+    fail "The value of domainHomeInImage must be true or false: ${domainHomeInImage}"
+  fi
+
+  # Setup the environment for running this script and perform initial validation checks
+  initialize
+
+  # Generate files for creating the domain
+  createFiles
+
+  # Check that the domain secret exists and contains the required elements
+  validateDomainSecret
+
+  # Validate the domain's persistent volume claim
+  if [ "${doValidation}" == true ] && [ "${domainHomeInImage}" == false -o "${logHomeOnPV}" == true ]; then
+    validateDomainPVC
+  fi
+
+  # Create the WebLogic domain home
+  createDomainHome
+
+  if [ "${executeIt}" = true ]; then
+    createDomainResource
+  fi
+
+  # Print a summary
+  printSummary
+}
 

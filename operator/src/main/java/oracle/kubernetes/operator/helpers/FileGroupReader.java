@@ -45,13 +45,15 @@ class FileGroupReader {
    * @return a map of file paths to string contents.
    */
   Map<String, String> loadFilesFromClasspath() {
-    try {
-      try (ScriptPath scriptPath = getScriptPath()) {
-        return loadContents(scriptPath.getScriptsDir());
+    synchronized (FileGroupReader.class) {
+      try {
+        try (ScriptPath scriptPath = getScriptPath()) {
+          return loadContents(scriptPath.getScriptsDir());
+        }
+      } catch (Exception e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
+        throw new RuntimeException(e);
       }
-    } catch (Exception e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
-      throw new RuntimeException(e);
     }
   }
 
@@ -115,7 +117,6 @@ class FileGroupReader {
     private FileSystem fileSystem;
 
     JarScriptPath(URI uri) throws IOException {
-      System.out.println("loading from " + uri);
       fileSystem = FileSystems.newFileSystem(uri, Collections.emptyMap());
     }
 

@@ -24,28 +24,36 @@ Quick test use cases.
 4. verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
 5. verify web app load balancing by accessing the webapp using loadBalancerWebPort
 6. verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
-7. cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly. (run.sh does scaling by editing the replicas in domain-custom-resource.yaml.)
+7. cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly.
 8. Operator life cycle(destroy and create) should not impact the running domain
+9. verify liveness probe by killing managed server 1 process 3 times to kick pod auto-restart
+10. shutdown the domain by changing domain serverStartPolicy to NEVER
 
 Full test use cases
 
-* keep the first domain and operator running
+* keep the first operator running
 * create another domain domain2 in default namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-* destroy domain domain2
+* shutdown and delete domain domain2
 * create another domain domain3 with dynamic cluster using WDT in test1 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
 * verify cluster scaling by doing scale up for domain3 using WLDF scaling 
-* destroy domain domain3
+* shutdown and delete domain domain3
 * create another operator operator2 which manages test2 namespace and verify domain1 is not affected
-* create another domain domain4 with Configured cluster using WDT in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-* verify scaling for domain4 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1
-* cycle domain1 down and back up, plus verify no impact on domain4
-* create domain5 in the default namespace with startupControl="ADMIN", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
-* create domain6 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
-* test managed server 1 pod auto-restart in domain1
-* destroy domain1
-* test that create domain fails when its pv is already populated by a shutdown domain
-* create another domain domain7 with APACHE load balancer and access admin console via LB port. 
-* create another domain domain8 with mostly default values from sample domain inputs, mainly exposeAdminT3Channel and exposeAdminNodePort which are false by default and verify domain startup and cluster scaling using operator rest endpoint works. 
+* create another domain domain4 with dynamic cluster in default namespace and domain domain5 with Configured cluster using WDT in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
+* verify scaling for domain5 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain4
+* cycle domain4 down and back up, plus verify no impact on domain5
+* shutdown and delete both domain4 and domain5 
+* create domain6 in the default namespace with serverStartPolicy="ADMIN_ONLY", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
+* shutdown and delete domain6
+* create domain7 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
+* shutdown and delete domain7
+* create domain domain8 and test that create domain fails when its pv is already populated by a shutdown domain
+* create another domain domain9 with APACHE load balancer and access admin console via LB port. shutdown domain.
+* create another domain domain10 with mostly default values from sample domain inputs, mainly exposeAdminT3Channel and exposeAdminNodePort which are false by default and verify domain startup and cluster scaling using operator rest endpoint works.
+* create another domain domain11 with listen address not set for admin server and t3 channel and incorrect file for admin server log
+* verify automatic situational config override works by bringing up the domain and by doing checks 2 - 5 listed in quick test
+* create another domain domain12 with some junk value for t3 channel public address and using custom situational config override replace with valid public address
+* verify the domain by doing checks 2 - 5 listed in quick test
+ 
 
 
 # Directory Configuration and Structure
@@ -267,6 +275,12 @@ mvn -Dit.test="ITOperator#test6CreateConfiguredDomainInTest2NS" -DfailIfNoTests=
 # How to run multiple tests
 
 mvn -Dit.test="ITOperator#test6CreateConfiguredDomainInTest2NS+test7CreateDomainPVReclaimPolicyRecycle" -DfailIfNoTests=false integration-test -P java-integration-tests
+
+# How to run cleanup script
+
+cleanup script deletes the k8s artifacts, local test tmp directory, delete all helm charts and the potentially remote domain pv directories.
+cd weblogic-kubernetes-operator
+src/integration-tests/bash/cleanup.sh
 
 # Logging/Archiving
 

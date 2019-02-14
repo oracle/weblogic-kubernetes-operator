@@ -1,0 +1,21 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  labels:
+    weblogic.domainName: ${DOMAIN_NAME}
+    weblogic.domainUID: ${DOMAIN_UID}
+    weblogic.resourceVersion: domain-v1
+  name: ${DOMAIN_UID}-weblogic-domain-pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 10Gi
+  hostPath:
+    path: ${PV_ROOT}/acceptance_test_pv/domain-${DOMAIN_UID}-storage
+    type: ""
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ${DOMAIN_UID}-weblogic-domain-storage-class

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
  
@@ -27,7 +27,6 @@ function state_dump {
 
   mkdir -p ${DUMP_DIR}
 
-  # Test output is captured to ${TESTOUT} when run.sh is run stand-alone
   # if [ -f ${TESTOUT:-NoSuchFile.out} ]; then
    #   echo Copying ${TESTOUT} to ${DUMP_DIR}/test_suite.out
    #   cp ${TESTOUT} ${DUMP_DIR}/test_suite.out

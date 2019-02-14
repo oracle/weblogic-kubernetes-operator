@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -7,14 +7,18 @@ package oracle.kubernetes.weblogic.domain.v2;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import javax.annotation.Nonnull;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class ManagedServer extends Server {
+@Description("ManagedServer represents the operator configuration for a single managed server.")
+public class ManagedServer extends Server implements Comparable<ManagedServer> {
   /** The name of the managed server. Required. */
   @SerializedName("serverName")
   @Expose
+  @Description("The name of the server. Required")
+  @Nonnull
   private String serverName;
 
   public String getServerName() {
@@ -60,5 +64,10 @@ public class ManagedServer extends Server {
         .appendSuper(super.hashCode())
         .append(serverName)
         .toHashCode();
+  }
+
+  @Override
+  public int compareTo(ManagedServer o) {
+    return serverName.compareTo(o.serverName);
   }
 }

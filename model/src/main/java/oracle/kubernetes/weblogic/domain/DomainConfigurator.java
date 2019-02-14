@@ -6,11 +6,12 @@ package oracle.kubernetes.weblogic.domain;
 
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1SecurityContext;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.DomainStorage;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -33,11 +34,29 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator createFor(Domain domain);
 
   /**
-   * Defines a name for the domain's admin server.
+   * Sets the home for the domain.
    *
-   * @param adminServerName the name of the admin server
+   * @param domainHome the home of the domain
+   * @return this object
    */
-  public abstract AdminServerConfigurator configureAdminServer(String adminServerName);
+  public DomainConfigurator withDomainHome(String domainHome) {
+    getDomainSpec().setDomainHome(domainHome);
+    return this;
+  }
+
+  /**
+   * Specifies whether the domain home is stored in the image
+   *
+   * @param domainHomeInImage boolean indicating if the domain home is stored in the image
+   * @return this object
+   */
+  public DomainConfigurator withDomainHomeInImage(boolean domainHomeInImage) {
+    getDomainSpec().setDomainHomeInImage(domainHomeInImage);
+    return this;
+  }
+
+  /** @return An AdminServerConfigurator object for configuring an admin server */
+  public abstract AdminServerConfigurator configureAdminServer();
 
   public void withDefaultReplicaCount(int replicas) {
     getDomainSpec().setReplicas(replicas);
@@ -89,60 +108,42 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Configures the domain to use a persistent volume claim defined before the domain is created.
+   * Sets the log home value
    *
-   * @param claimName the name of the persistent volume claim
+   * @param logHome the log home value
    * @return this object
    */
-  public DomainConfigurator withPredefinedClaim(String claimName) {
-    getDomainSpec().setStorage(DomainStorage.createPredefinedClaim(claimName));
+  public DomainConfigurator withLogHome(String logHome) {
+    getDomainSpec().setLogHome(logHome);
     return this;
   }
 
   /**
-   * Configures the domain to use storage in the local node.
+   * Sets the log home enabled flag
    *
-   * @param path the path to the storage
+   * @param logHomeEnabled true if log home is enabled, false otherwise
    * @return this object
    */
-  public DomainConfigurator withHostPathStorage(String path) {
-    getDomainSpec().setStorage(DomainStorage.createHostPathStorage(path));
+  public DomainConfigurator withLogHomeEnabled(boolean logHomeEnabled) {
+    getDomainSpec().setLogHomeEnabled(logHomeEnabled);
     return this;
   }
 
   /**
-   * Configures the domain to use storage on a remote server.
+   * Sets the WebLogic configuration overrides configmap name for the domain
    *
-   * @param server the server hosting the storage
-   * @param path the path to the storage
+   * @param configMapName Name of the Kubernetes configmap that contains the config overrides
    * @return this object
    */
-  public DomainConfigurator withNfsStorage(String server, String path) {
-    getDomainSpec().setStorage(DomainStorage.createNfsStorage(server, path));
-    return this;
-  }
+  public abstract DomainConfigurator withConfigOverrides(String configMapName);
 
   /**
-   * Defines the amount of storage to allocate for the domain.
+   * Sets the WebLogic configuration overrides secret names for the domain
    *
-   * @param size the size to allocate
+   * @param secretNames a list of secret names
    * @return this object
    */
-  public DomainConfigurator withStorageSize(String size) {
-    getDomainSpec().getStorage().setStorageSize(size);
-    return this;
-  }
-
-  /**
-   * Defines the amount of storage to allocate for the domain.
-   *
-   * @param policy the size to allocate
-   * @return this object
-   */
-  public DomainConfigurator withStorageReclaimPolicy(String policy) {
-    getDomainSpec().getStorage().setStorageReclaimPolicy(policy);
-    return this;
-  }
+  public abstract DomainConfigurator withConfigOverrideSecrets(String... secretNames);
 
   /**
    * Sets the default settings for the readiness probe. Any settings left null will default to the
@@ -170,30 +171,9 @@ public abstract class DomainConfigurator {
    * Sets the default server start policy ("ALWAYS", "NEVER" or "IF_NEEDED") for the domain.
    *
    * @param startPolicy the new default policy
-   */
-  public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
-
-  /**
-   * Defines the startup control mechanism for a version 1 domain. Must be one of:
-   *
-   * <ul>
-   *   <li>NONE indicates that no servers, including the administration server, will be started.
-   *   <li>ADMIN indicates that only the administration server will be started.
-   *   <li>ALL indicates that all servers in the domain will be started.
-   *   <li>SPECIFIED indicates that the administration server will be started and then additionally
-   *       only those servers listed under serverStartup or managed servers belonging to cluster
-   *       listed under clusterStartup up to the cluster's replicas field will be started.
-   *   <li>AUTO indicates that servers will be started exactly as with SPECIFIED, but then managed
-   *       servers belonging to clusters not listed under clusterStartup will be started up to the
-   *       replicas field.
-   * </ul>
-   *
-   * <p>Defaults to AUTO.
-   *
-   * @param startupControl the new value
    * @return this object
    */
-  public abstract DomainConfigurator withStartupControl(String startupControl);
+  public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
 
   /**
    * Add an environment variable to the domain
@@ -208,9 +188,13 @@ public abstract class DomainConfigurator {
     return domain.getSpec();
   }
 
-  protected String getAsName() {
-    return domain.getAsName();
-  }
+  public abstract DomainConfigurator withAdditionalVolume(String name, String path);
+
+  public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
+
+  public abstract DomainConfigurator withPodLabel(String name, String value);
+
+  public abstract DomainConfigurator withPodAnnotation(String name, String value);
 
   /**
    * Adds a default server configuration to the domain, if not already present.
@@ -231,9 +215,71 @@ public abstract class DomainConfigurator {
   public abstract void setShuttingDown(boolean start);
 
   /**
-   * Returns true if this configurator supports use of the startup control flag.
+   * Add a node label to the Domain's node selector
    *
-   * @return true or false
+   * @param labelKey the pod label key
+   * @param labelValue the pod label value
+   * @return this object
    */
-  public abstract boolean useDomainV1();
+  public abstract DomainConfigurator withNodeSelector(String labelKey, String labelValue);
+
+  /**
+   * Add a resource requirement at domain level. The requests for memory are measured in bytes. You
+   * can express memory as a plain integer or as a fixed-point integer using one of these suffixes:
+   * E, P, T, G, M, K. You can also use the power-of-two equivalents: Ei, Pi, Ti, Gi, Mi, Ki. The
+   * requests for cpu are mesured in cpu units and can be expressed in millicores i.e. 100m is the
+   * same as 0.1
+   *
+   * @param resource the resource to be added as requirement cpu or memory
+   * @param quantity the quantity required for the resource
+   * @return this object
+   */
+  public abstract DomainConfigurator withRequestRequirement(String resource, String quantity);
+
+  /**
+   * Add a resource limit at domain level, the requests for memory are measured in bytes. You can
+   * express memory as a plain integer or as a fixed-point integer using one of these suffixes: E,
+   * P, T, G, M, K. You can also use the power-of-two equivalents: Ei, Pi, Ti, Gi, Mi, Ki. The
+   * requests for cpu are mesured in cpu units and can be expressed in millicores i.e. 100m is the
+   * same as 0.1
+   *
+   * @param resource the resource to be added as requirement cpu or memory
+   * @param quantity the quantity required for the resource
+   * @return this object
+   */
+  public abstract DomainConfigurator withLimitRequirement(String resource, String quantity);
+
+  /**
+   * Add security constraints at container level, if the same constraint is also defined at pod
+   * level then container constraint take precedence
+   *
+   * @param containerSecurityContext the security context object
+   * @return this object
+   */
+  public abstract DomainConfigurator withContainerSecurityContext(
+      V1SecurityContext containerSecurityContext);
+
+  /**
+   * Add security constraints at container level, if the same constraint is also defined at pod
+   * level then container constraint take precedence
+   *
+   * @param podSecurityContext pod-level security attributes to be added to this DomainConfigurator
+   * @return this object
+   */
+  public abstract DomainConfigurator withPodSecurityContext(
+      V1PodSecurityContext podSecurityContext);
+
+  /**
+   * Tells the operator whether the customer wants to restart the server pods. The value can be any
+   * String and it can be defined on domain, cluster or server to restart the different pods. After
+   * the value is added, the corresponding pods will be terminated and created again. If customer
+   * modifies the value again after the pods were recreated, then the pods will again be terminated
+   * and recreated.
+   *
+   * @since 2.0
+   * @param restartVersion If present, every time this value is updated the operator will restart
+   *     the required servers
+   * @return this object
+   */
+  public abstract DomainConfigurator withRestartVersion(String restartVersion);
 }

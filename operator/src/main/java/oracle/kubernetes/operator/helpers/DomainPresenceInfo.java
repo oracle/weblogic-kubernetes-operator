@@ -1,29 +1,23 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1beta1Ingress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.joda.time.DateTime;
 
 /**
@@ -32,22 +26,16 @@ import org.joda.time.DateTime;
  */
 public class DomainPresenceInfo {
   private final String namespace;
+  private final String domainUID;
   private final AtomicReference<Domain> domain;
-  private final AtomicReference<ScheduledFuture<?>> statusUpdater;
+  private final AtomicBoolean isDeleting = new AtomicBoolean(false);
+  private final AtomicBoolean isPopulated = new AtomicBoolean(false);
+  private final AtomicInteger retryCount = new AtomicInteger(0);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
 
-  private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ServerMap();
+  private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
-  private final ConcurrentMap<String, V1beta1Ingress> ingresses = new ConcurrentHashMap<>();
 
-  private final AtomicBoolean explicitRestartAdmin = new AtomicBoolean(false);
-  private final Set<String> explicitRestartServers = new CopyOnWriteArraySet<>();
-  private final Set<String> explicitRestartClusters = new CopyOnWriteArraySet<>();
-
-  private V1PersistentVolumeClaimList claims = null;
-
-  private WlsDomainConfig domainConfig;
-  private DateTime lastScanTime;
   private DateTime lastCompletionTime;
 
   /**
@@ -58,74 +46,49 @@ public class DomainPresenceInfo {
   public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
+    this.domainUID = domain.getDomainUID();
     this.serverStartupInfo = new AtomicReference<>(null);
-    this.statusUpdater = new AtomicReference<>(null);
   }
 
   /**
    * Create presence for a domain
    *
    * @param namespace Namespace
+   * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
    */
-  DomainPresenceInfo(String namespace) {
+  public DomainPresenceInfo(String namespace, String domainUID) {
     this.domain = new AtomicReference<>(null);
     this.namespace = namespace;
+    this.domainUID = domainUID;
     this.serverStartupInfo = new AtomicReference<>(null);
-    this.statusUpdater = new AtomicReference<>(null);
   }
 
-  /**
-   * Claims associated with the domain
-   *
-   * @return Claims
-   */
-  public V1PersistentVolumeClaimList getClaims() {
-    return claims;
+  public boolean isDeleting() {
+    return isDeleting.get();
   }
 
-  /**
-   * Sets claims
-   *
-   * @param claims Claims
-   */
-  public void setClaims(V1PersistentVolumeClaimList claims) {
-    this.claims = claims;
+  public void setDeleting(boolean deleting) {
+    isDeleting.set(deleting);
   }
 
-  /**
-   * Domain scan
-   *
-   * @return Domain scan
-   */
-  public WlsDomainConfig getScan() {
-    return domainConfig;
+  public boolean isPopulated() {
+    return isPopulated.get();
   }
 
-  /**
-   * Sets scan
-   *
-   * @param domainConfig Scan
-   */
-  public void setScan(WlsDomainConfig domainConfig) {
-    this.domainConfig = domainConfig;
+  public void setPopulated(boolean populated) {
+    isPopulated.set(populated);
   }
 
-  /**
-   * Last scan time
-   *
-   * @return Last scan time
-   */
-  public DateTime getLastScanTime() {
-    return lastScanTime;
+  public void resetFailureCount() {
+    retryCount.set(0);
   }
 
-  /**
-   * Sets last scan time
-   *
-   * @param lastScanTime Last scan time
-   */
-  public void setLastScanTime(DateTime lastScanTime) {
-    this.lastScanTime = lastScanTime;
+  public int incrementAndGetFailureCount() {
+    return retryCount.incrementAndGet();
+  }
+
+  public int getRetryCount() {
+    return retryCount.get();
   }
 
   /**
@@ -140,6 +103,7 @@ public class DomainPresenceInfo {
   /** Sets the last completion time to now */
   public void complete() {
     this.lastCompletionTime = new DateTime();
+    resetFailureCount();
   }
 
   /**
@@ -157,13 +121,16 @@ public class DomainPresenceInfo {
    * @param domain Domain
    */
   public void setDomain(Domain domain) {
-    Domain old = this.domain.getAndSet(domain);
-    if (old == null) {
-      for (Map.Entry<String, ServerKubernetesObjects> entry : servers.entrySet()) {
-        ServerKubernetesObjectsManager.register(
-            domain.getSpec().getDomainUID(), entry.getKey(), entry.getValue());
-      }
-    }
+    this.domain.set(domain);
+  }
+
+  /**
+   * Gets the Domain UID
+   *
+   * @return Domain UID
+   */
+  public String getDomainUID() {
+    return domainUID;
   }
 
   /**
@@ -194,53 +161,6 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Map from cluster name to Ingress
-   *
-   * @return Cluster object map
-   */
-  public ConcurrentMap<String, V1beta1Ingress> getIngresses() {
-    return ingresses;
-  }
-
-  /**
-   * Control for if domain has outstanding restart admin server pending
-   *
-   * @return Control for pending admin server restart
-   */
-  public AtomicBoolean getExplicitRestartAdmin() {
-    return explicitRestartAdmin;
-  }
-
-  /**
-   * Control list for outstanding server restarts
-   *
-   * @return Control list for outstanding server restarts
-   */
-  public Set<String> getExplicitRestartServers() {
-    return explicitRestartServers;
-  }
-
-  /**
-   * Control list for outstanding cluster restarts
-   *
-   * @return Control list for outstanding cluster restarts
-   */
-  public Set<String> getExplicitRestartClusters() {
-    return explicitRestartClusters;
-  }
-
-  /**
-   * Server objects (Pods and Services) for admin server
-   *
-   * @return Server objects for admin server
-   */
-  public ServerKubernetesObjects getAdmin() {
-    Domain dom = domain.get();
-    DomainSpec spec = dom.getSpec();
-    return servers.get(spec.getAsName());
-  }
-
-  /**
    * Server startup info
    *
    * @return Server startup info
@@ -260,13 +180,15 @@ public class DomainPresenceInfo {
 
   @Override
   public String toString() {
-    StringBuilder sb =
-        new StringBuilder(
-            String.format(
-                "DomainPresenceInfo{uid=%s, namespace=%s",
-                getDomain().getSpec().getDomainUID(), getDomain().getMetadata().getNamespace()));
-    if (!ingresses.isEmpty()) {
-      sb.append(", ingresses ").append(String.join(",", ingresses.keySet()));
+    StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
+    Domain d = getDomain();
+    if (d != null) {
+      sb.append(
+          String.format(
+              "uid=%s, namespace=%s",
+              getDomain().getDomainUID(), getDomain().getMetadata().getNamespace()));
+    } else {
+      sb.append(", namespace=").append(namespace);
     }
     sb.append("}");
 
@@ -293,17 +215,12 @@ public class DomainPresenceInfo {
       this.serverSpec = serverSpec;
     }
 
-    public String getClusterName() {
-      return clusterName;
+    public String getServerName() {
+      return Optional.ofNullable(serverConfig).map(WlsServerConfig::getName).orElse(null);
     }
 
-    /**
-     * Returns the node port to use when starting up the configured server.
-     *
-     * @return a port number, or null.
-     */
-    public Integer getNodePort() {
-      return serverSpec == null ? null : serverSpec.getNodePort();
+    public String getClusterName() {
+      return clusterName;
     }
 
     /**
@@ -317,150 +234,6 @@ public class DomainPresenceInfo {
 
     public List<V1EnvVar> getEnvironment() {
       return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
-    }
-  }
-
-  /**
-   * Domain status updater
-   *
-   * @return Domain status updater
-   */
-  public AtomicReference<ScheduledFuture<?>> getStatusUpdater() {
-    return statusUpdater;
-  }
-
-  private class ServerMap implements ConcurrentMap<String, ServerKubernetesObjects> {
-    private final ConcurrentMap<String, ServerKubernetesObjects> delegate =
-        new ConcurrentHashMap<>();
-
-    @Override
-    public int size() {
-      return delegate.size();
-    }
-
-    @Override
-    public boolean isEmpty() {
-      return delegate.isEmpty();
-    }
-
-    @Override
-    public boolean containsKey(Object key) {
-      return delegate.containsKey(key);
-    }
-
-    @Override
-    public boolean containsValue(Object value) {
-      return delegate.containsValue(value);
-    }
-
-    @Override
-    public ServerKubernetesObjects get(Object key) {
-      return delegate.get(key);
-    }
-
-    @Override
-    public ServerKubernetesObjects put(String key, ServerKubernetesObjects value) {
-      Domain d = domain.get();
-      if (d != null) {
-        ServerKubernetesObjectsManager.register(d.getSpec().getDomainUID(), key, value);
-      }
-      return delegate.put(key, value);
-    }
-
-    @Override
-    public ServerKubernetesObjects remove(Object key) {
-      Domain d = domain.get();
-      if (d != null) {
-        ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
-      }
-      return delegate.remove(key);
-    }
-
-    @Override
-    public void putAll(Map<? extends String, ? extends ServerKubernetesObjects> m) {
-      Domain d = domain.get();
-      if (d != null) {
-        for (Map.Entry<? extends String, ? extends ServerKubernetesObjects> entry : m.entrySet()) {
-          ServerKubernetesObjectsManager.register(
-              d.getSpec().getDomainUID(), entry.getKey(), entry.getValue());
-        }
-      }
-      delegate.putAll(m);
-    }
-
-    @Override
-    public void clear() {
-      Domain d = domain.get();
-      if (d != null) {
-        for (Map.Entry<? extends String, ? extends ServerKubernetesObjects> entry : entrySet()) {
-          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), entry.getKey());
-        }
-      }
-      delegate.clear();
-    }
-
-    @Override
-    public Set<String> keySet() {
-      return Collections.unmodifiableSet(delegate.keySet());
-    }
-
-    @Override
-    public Collection<ServerKubernetesObjects> values() {
-      return Collections.unmodifiableCollection(delegate.values());
-    }
-
-    @Override
-    public Set<Entry<String, ServerKubernetesObjects>> entrySet() {
-      return Collections.unmodifiableSet(delegate.entrySet());
-    }
-
-    @Override
-    public ServerKubernetesObjects putIfAbsent(String key, ServerKubernetesObjects value) {
-      ServerKubernetesObjects result = delegate.putIfAbsent(key, value);
-      if (result == null) {
-        Domain d = domain.get();
-        if (d != null) {
-          ServerKubernetesObjectsManager.register(d.getSpec().getDomainUID(), key, value);
-        }
-      }
-      return result;
-    }
-
-    @Override
-    public boolean remove(Object key, Object value) {
-      boolean result = delegate.remove(key, value);
-      if (result) {
-        Domain d = domain.get();
-        if (d != null) {
-          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
-        }
-      }
-      return result;
-    }
-
-    @Override
-    public boolean replace(
-        String key, ServerKubernetesObjects oldValue, ServerKubernetesObjects newValue) {
-      boolean result = delegate.replace(key, oldValue, newValue);
-      if (result) {
-        Domain d = domain.get();
-        if (d != null) {
-          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
-        }
-      }
-      return result;
-    }
-
-    @Override
-    public ServerKubernetesObjects replace(String key, ServerKubernetesObjects value) {
-      ServerKubernetesObjects result = delegate.replace(key, value);
-      if (result == null) {
-        Domain d = domain.get();
-        if (d != null) {
-          ServerKubernetesObjectsManager.unregister(d.getSpec().getDomainUID(), (String) key);
-        }
-      }
-      return result;
     }
   }
 }

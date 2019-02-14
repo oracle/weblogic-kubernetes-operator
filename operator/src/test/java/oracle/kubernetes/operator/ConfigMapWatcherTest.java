@@ -44,6 +44,6 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListen
 
   @Override
   protected ConfigMapWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return ConfigMapWatcher.create(this, ns, Integer.toString(rv), this, stopping);
+    return ConfigMapWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
   }
 }

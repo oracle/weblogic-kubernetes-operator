@@ -1,0 +1,502 @@
+{
+    "swagger":"2.0",
+    "info":{
+        "title":"Oracle WebLogic Server Kubernetes Operator REST interface",
+        "description":"<p>RESTful Management Interface for the Oracle WebLogic Server Kubernetes Operator.</p><p>Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.</p><p>Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</p>",
+        "version":"v1"
+    },
+    "schemes":[
+        "https"
+    ],
+    "parameters":{
+        "X-Requested-By":{
+            "name":"X-Requested-By",
+            "type":"string",
+            "description":"The 'X-Requested-By' header is used to protect against Cross-Site Request Forgery (CSRF) attacks. The value is an arbitrary name such as 'MyClient'.",
+            "required":true,
+            "in":"header"
+        }
+    },
+    "tags":[
+        {
+            "name":"Version",
+            "description":"WebLogic operator REST interface version operations"
+        },
+        {
+            "name":"Domain",
+            "description":"WebLogic domain operations"
+        },
+        {
+            "name":"Cluster",
+            "description":"WebLogic cluster operations"
+        }
+    ],
+    "paths":{
+        "/operator":{
+            "get":{
+                "tags":[
+                    "Version"
+                ],
+                "operationId":"/operator GET",
+                "produces":[
+                    "application/json"
+                ],
+                "responses":{
+                    "200":{
+                        "schema":{
+                            "$ref":"#/definitions/Versions"
+                        },
+                        "description":"Returns a list of versions."
+                    }
+                },
+                "description":"<p>List the supported versions of the WebLogic operator REST interface.</p><p>The latest version is 1.<p><code>latest</code> always refers to the most recent release.</p>"
+            }
+        },
+        "/operator/{version}":{
+            "parameters":[
+                {
+                    "name":"version",
+                    "type":"string",
+                    "description":"The version of the WebLogic operator REST interface.",
+                    "required":true,
+                    "in":"path"
+                }
+            ],
+            "get":{
+                "tags":[
+                    "Version"
+                ],
+                "operationId":"/operator/{version} GET",
+                "produces":[
+                    "application/json"
+                ],
+                "responses":{
+                    "200":{
+                        "schema":{
+                            "$ref":"#/definitions/Version"
+                        },
+                        "description":"Returns this version."
+                    }
+                },
+                "description":"Describe a version of the WebLogic operator REST interface."
+            }
+        },
+        "/operator/{version}/swagger":{
+            "parameters":[
+                {
+                    "name":"version",
+                    "type":"string",
+                    "description":"The version of the WebLogic operator REST interface.",
+                    "required":true,
+                    "in":"path"
+                }
+            ],
+            "get":{
+                "tags":[
+                    "Version"
+                ],
+                "operationId":"/operator/{version}/swagger GET",
+                "produces":[
+                    "application/json"
+                ],
+                "responses":{
+                    "200":{
+                        "schema":{
+                            "$ref":"#/definitions/Swagger"
+                        },
+                        "description":"Returns a swagger definition."
+                    }
+                },
+                "description":"View the swagger definition of a version of the WebLogic operator REST interface."
+            }
+        },
+        "/operator/{version}/domains":{
+            "parameters":[
+                {
+                    "name":"version",
+                    "type":"string",
+                    "description":"The version of the WebLogic operator REST interface.",
+                    "required":true,
+                    "in":"path"
+                }
+            ],
+            "get":{
+                "tags":[
+                    "Domain"
+                ],
+                "operationId":"/operator/{version}/domains GET",
+                "produces":[
+                    "application/json"
+                ],
+                "responses":{
+                    "200":{
+                        "schema":{
+                            "$ref":"#/definitions/Domains"
+                        },
+                        "description":"Returns a list of domains."
+                    }
+                },
+                "description":"List the WebLogic domains that this WebLogic operator manages."
+            }
+        },
+        "/operator/{version}/domains/{domainUID}":{
+            "parameters":[
+                {
+                    "name":"version",
+                    "type":"string",
+                    "description":"The version of the WebLogic operator REST interface.",
+                    "required":true,
+                    "in":"path"
+                },
+                {
+                    "name":"domainUID",
+                    "type":"string",
+                    "description":"The unique identifier assigned to the WebLogic domain.",
+                    "required":true,
+                    "in":"path"
+                }
+            ],
+            "get":{
+                "tags":[
+                    "Domain"
+                ],
+                "operationId":"/operator/{version}/domains/{domainUID} GET",
+                "produces":[
+                    "application/json"
+                ],
+                "responses":{
+                    "200":{
+                        "schema":{
+                            "$ref":"#/definitions/Domain"
+                        },
+                        "description":"Returns this domain."
+                    }
+                },
+                "description":"Describe a WebLogic domain that the WebLogic operator manages."
+            }
+        },
+        "/operator/{version}/domains/{domainUID}/clusters":{
+            "parameters":[
+                {
+                    "name":"version",
+                    "type":"string",
+                    "description":"The version of the WebLogic operator REST interface.",
+                    "required":true,
+                    "in":"path"
+                },
+                {
+                    "name":"domainUID",
+                    "type":"string",
+                    "description":"The unique identifier assigned to the WebLogic domain.",
+                    "required":true,
+                    "in":"path"
+                }
+            ],
+            "get":{
+                "tags":[
+                    "Cluster"
+                ],
+                "operationId":"/operator/{version}/domains/{domainUID}/clusters GET",
+                "produces":[
+                    "application/json"
+                ],
+                "responses":{
+                    "200":{
+                        "schema":{
+                            "$ref":"#/definitions/Clusters"
+                        },
+                        "description":"Returns a list of WebLogic clusters."
+                    }
+                },
+                "description":"List the WebLogic clusters in a WebLogic domain."
+            }
+        },
+        "/operator/{version}/domains/{domainUID}/clusters/{cluster}":{
+            "parameters":[
+                {
+                    "name":"version",
+                    "type":"string",
+                    "description":"The version of the WebLogic operator REST interface.",
+                    "required":true,
+                    "in":"path"
+                },
+                {
+                    "name":"domainUID",
+                    "type":"string",
+                    "description":"The unique identifier assigned to the WebLogic domain.",
+                    "required":true,
+                    "in":"path"
+                },
+                {
+                    "name":"cluster",
+                    "type":"string",
+                    "description":"The WebLogic cluster's name.",
+                    "required":true,
+                    "in":"path"
+                }
+            ],
+            "get":{
+                "tags":[
+                    "Cluster"
+                ],
+                "operationId":"/operator/{version}/domains/{domainUID}/clusters/{cluster} GET",
+                "produces":[
+                    "application/json"
+                ],
+                "responses":{
+                    "200":{
+                        "schema":{
+                            "$ref":"#/definitions/Cluster"
+                        },
+                        "description":"Returns this cluster."
+                    }
+                },
+                "description":"Describe a WebLogic cluster."
+            }
+        },
+        "/operator/{version}/domains/{domainUID}/clusters/{cluster}/scale":{
+            "parameters":[
+                {
+                    "name":"version",
+                    "type":"string",
+                    "description":"The version of the WebLogic operator REST interface.",
+                    "required":true,
+                    "in":"path"
+                },
+                {
+                    "name":"domainUID",
+                    "type":"string",
+                    "description":"The unique identifier assigned to the WebLogic domain.",
+                    "required":true,
+                    "in":"path"
+                },
+                {
+                    "name":"cluster",
+                    "type":"string",
+                    "description":"The WebLogic cluster's name.",
+                    "required":true,
+                    "in":"path"
+                }
+            ],
+            "post":{
+                "tags":[
+                    "Cluster"
+                ],
+                "operationId":"/operator/{version}/domains/{domainUID}/clusters/{cluster}/scale POST",
+                "consumes":[
+                    "application/json"
+                ],
+                "parameters":[
+                    {
+                        "schema":{
+                            "type":"object",
+                            "title":"Arguments",
+                            "properties":{
+                                "managedServerCount":{
+                                    "type":"integer",
+                                    "format":"int32",
+                                    "description":"Desired number of running managed servers."
+                                }
+                            },
+                            "description":""
+                        },
+                        "name":"payload",
+                        "required":true,
+                        "in":"body",
+                        "description":"Must contain the following fields:"
+                    },
+                    {
+                        "$ref":"#/parameters/X-Requested-By"
+                    }
+                ],
+                 "responses":{
+                    "204":{
+                        "description":"The cluster has been successfully reconfigured to run the specified number of managed servers."
+                    }
+                },
+                "description":"Scale a WebLogic cluster."
+            }
+        }
+    },
+    "definitions":{
+        "Version":{
+            "type":"object",
+            "allOf":[
+                {
+                    "$ref":"#/definitions/Links"
+                },
+                {
+                    "type":"object",
+                    "properties":{
+                        "isLatest":{
+                            "type":"boolean",
+                            "description":"<code>True</code> if this is the default version."
+                        },
+                        "lifecycle":{
+                            "enum":[
+                                "active",
+                                "deprecated"
+                            ],
+                            "type":"string",
+                            "description":"The lifecycle of this version: <code>active</code> or <code>deprecated</code>"
+                        },
+                        "version":{
+                            "type":"string",
+                            "description":"The name of this version."
+                        }
+                    }
+                }
+            ],
+            "description":"A version of the WebLogic operator REST interface."
+        },
+        "Versions":{
+            "type":"object",
+            "allOf":[
+                {
+                    "$ref":"#/definitions/Links"
+                },
+                {
+                    "type":"object",
+                    "properties":{
+                        "items":{
+                            "type":"array",
+                            "items":{
+                                "$ref":"#/definitions/Version"
+                            },
+                            "description":"An array of WebLogic operator REST interface versions."
+                        }
+                    }
+                }
+            ],
+            "description":"A collection of WebLogic operator REST interface versions."
+        },
+        "Domain":{
+            "type":"object",
+            "allOf":[
+                {
+                    "$ref":"#/definitions/Links"
+                },
+                {
+                    "type":"object",
+                    "properties":{
+                        "domainUID":{
+                            "type":"string",
+                            "description":"The unique identifier assigned to this WebLogic domain."
+                        }
+                    }
+                }
+            ],
+            "description":"A WebLogic domain that the WebLogic operator manages."
+        },
+        "Domains":{
+            "type":"object",
+            "allOf":[
+                {
+                    "$ref":"#/definitions/Links"
+                },
+                {
+                    "type":"object",
+                    "properties":{
+                        "items":{
+                            "type":"array",
+                            "items":{
+                                "$ref":"#/definitions/Domain"
+                            },
+                            "description":"An array of WebLogic domains."
+                        }
+                    }
+                }
+            ],
+            "description":"A collection of WebLogic domains that the WebLogic operator manages."
+        },
+        "Cluster":{
+            "type":"object",
+            "allOf":[
+                {
+                    "$ref":"#/definitions/Links"
+                },
+                {
+                    "type":"object",
+                    "properties":{
+                        "cluster":{
+                            "type":"string",
+                            "description":"The WebLogic cluster's name."
+                        }
+                    }
+                }
+            ],
+            "description":"A WebLogic cluster that the WebLogic operator manages."
+        },
+        "Clusters":{
+            "type":"object",
+            "allOf":[
+                {
+                    "$ref":"#/definitions/Links"
+                },
+                {
+                    "type":"object",
+                    "properties":{
+                        "items":{
+                            "type":"array",
+                            "items":{
+                                "$ref":"#/definitions/Cluster"
+                            },
+                            "description":"An array of WebLogic clusters."
+                        }
+                    }
+                }
+            ],
+            "description":"A collection of WebLogic clusters that the WebLogic operator manages."
+        },
+        "Link":{
+            "type":"object",
+            "properties":{
+                "rel":{
+                    "type":"string",
+                    "description":"The link relationship, e.g. parent."
+                },
+                "title":{
+                    "type":"string",
+                    "description":"The link's title."
+                },
+                "href":{
+                    "type":"string",
+                    "description":"The link's hypertext reference."
+                }
+            },
+            "description":"A link to a related REST endpoint."
+        },
+        "Links":{
+            "type":"object",
+            "properties":{
+                "links":{
+                    "type":"array",
+                    "items":{
+                        "$ref":"#/definitions/Link"
+                    },
+                    "description":"An array of links to related REST endpoints."
+                }
+            },
+            "description":"A collection of links to related REST endpoints."
+        },
+        "Swagger":{
+            "type":"object",
+            "properties":{
+            },
+            "description":"A swagger definition describing a version of the WebLogic operator REST interface."
+        }
+    },
+    "securityDefinitions": {
+        "BearerToken":{
+            "description":"Bearer Token authentication",
+            "type":"apiKey",
+            "name":"authorization",
+            "in":"header"
+        }
+    },
+    "security":[
+        {
+            "BearerToken":[]
+        }
+    ]
+}

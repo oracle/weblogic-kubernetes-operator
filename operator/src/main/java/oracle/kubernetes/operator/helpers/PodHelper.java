@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -19,14 +19,12 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 
-@SuppressWarnings("deprecation")
 public class PodHelper {
 
   private PodHelper() {}
@@ -47,7 +45,7 @@ public class PodHelper {
     }
 
     @Override
-    Integer getPort() {
+    Integer getDefaultPort() {
       return getAsPort();
     }
 
@@ -77,25 +75,13 @@ public class PodHelper {
     }
 
     @Override
+    String getPodPatchedMessageKey() {
+      return MessageKeys.ADMIN_POD_PATCHED;
+    }
+
+    @Override
     String getPodReplacedMessageKey() {
       return MessageKeys.ADMIN_POD_REPLACED;
-    }
-
-    @Override
-    void updateRestartForNewPod() {
-      getExplicitRestartAdmin().set(false);
-      getExplicitRestartServers().remove(getServerName());
-    }
-
-    @Override
-    void updateRestartForReplacedPod() {
-      getExplicitRestartAdmin().set(false);
-    }
-
-    @Override
-    protected boolean isExplicitRestartThisServer() {
-      return getExplicitRestartAdmin().get()
-          || getExplicitRestartServers().contains(getServerName());
     }
 
     @Override
@@ -104,12 +90,21 @@ public class PodHelper {
     }
 
     @Override
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> vars = new ArrayList<>(getServerSpec().getEnvironmentVariables());
       addEnvVar(vars, INTERNAL_OPERATOR_CERT_ENV, getInternalOperatorCertFile(tuningParameters));
       overrideContainerWeblogicEnvVars(vars);
-      doSubstitution(vars);
       return vars;
+    }
+
+    @Override
+    protected Map<String, String> getPodLabels() {
+      return getServerSpec().getPodLabels();
+    }
+
+    @Override
+    protected Map<String, String> getPodAnnotations() {
+      return getServerSpec().getPodAnnotations();
     }
 
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
@@ -165,14 +160,12 @@ public class PodHelper {
 
   static class ManagedPodStepContext extends PodStepContext {
 
-    private final WlsServerConfig scan;
     private final String clusterName;
     private final Packet packet;
 
     ManagedPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       this.packet = packet;
-      scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
 
       init();
@@ -184,7 +177,17 @@ public class PodHelper {
     }
 
     @Override
-    Integer getPort() {
+    protected Map<String, String> getPodLabels() {
+      return getServerSpec().getPodLabels();
+    }
+
+    @Override
+    protected Map<String, String> getPodAnnotations() {
+      return getServerSpec().getPodAnnotations();
+    }
+
+    @Override
+    Integer getDefaultPort() {
       return scan.getListenPort();
     }
 
@@ -221,14 +224,6 @@ public class PodHelper {
     }
 
     @Override
-    void updateRestartForNewPod() {
-      getExplicitRestartServers().remove(getServerName());
-    }
-
-    @Override
-    void updateRestartForReplacedPod() {}
-
-    @Override
     String getPodCreatedMessageKey() {
       return MessageKeys.MANAGED_POD_CREATED;
     }
@@ -239,14 +234,13 @@ public class PodHelper {
     }
 
     @Override
-    protected String getPodReplacedMessageKey() {
-      return MessageKeys.MANAGED_POD_REPLACED;
+    String getPodPatchedMessageKey() {
+      return MessageKeys.MANAGED_POD_PATCHED;
     }
 
     @Override
-    protected boolean isExplicitRestartThisServer() {
-      return getExplicitRestartServers().contains(getServerName())
-          || (getClusterName() != null && getExplicitRestartClusters().contains(getClusterName()));
+    protected String getPodReplacedMessageKey() {
+      return MessageKeys.MANAGED_POD_REPLACED;
     }
 
     @Override
@@ -264,13 +258,12 @@ public class PodHelper {
 
     @Override
     protected List<String> getContainerCommand() {
-      List<String> command = new ArrayList<>(super.getContainerCommand());
-      return command;
+      return new ArrayList<>(super.getContainerCommand());
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> envVars = (List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS);
 
       List<V1EnvVar> vars = new ArrayList<>();
@@ -278,7 +271,6 @@ public class PodHelper {
         vars.addAll(envVars);
       }
       overrideContainerWeblogicEnvVars(vars);
-      doSubstitution(vars);
       return vars;
     }
   }

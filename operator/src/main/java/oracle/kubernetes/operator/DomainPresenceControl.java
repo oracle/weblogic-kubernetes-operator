@@ -5,9 +5,7 @@
 package oracle.kubernetes.operator;
 
 import com.google.common.base.Strings;
-import java.util.concurrent.ScheduledFuture;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 
 class DomainPresenceControl {
 
@@ -16,7 +14,6 @@ class DomainPresenceControl {
   static void normalizeDomainSpec(DomainSpec spec) {
     normalizeImage(spec);
     normalizeImagePullPolicy(spec);
-    normalizeStartupControl(spec);
   }
 
   private static void normalizeImage(DomainSpec spec) {
@@ -29,18 +26,6 @@ class DomainPresenceControl {
           (spec.getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX))
               ? KubernetesConstants.ALWAYS_IMAGEPULLPOLICY
               : KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY);
-    }
-  }
-
-  private static void normalizeStartupControl(DomainSpec spec) {
-    if (Strings.isNullOrEmpty(spec.getStartupControl()))
-      spec.setStartupControl(StartupControlConstants.AUTO_STARTUPCONTROL);
-  }
-
-  static void cancelDomainStatusUpdating(DomainPresenceInfo info) {
-    ScheduledFuture<?> statusUpdater = info.getStatusUpdater().getAndSet(null);
-    if (statusUpdater != null) {
-      statusUpdater.cancel(true);
     }
   }
 }

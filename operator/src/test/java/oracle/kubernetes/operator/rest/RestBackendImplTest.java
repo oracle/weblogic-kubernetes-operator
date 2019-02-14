@@ -1,15 +1,17 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
@@ -19,27 +21,20 @@ import io.kubernetes.client.models.V1UserInfo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
 import javax.ws.rs.WebApplicationException;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.BodyMatcher;
 import oracle.kubernetes.operator.helpers.CallTestSupport;
+import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.work.Component;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainList;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainList;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,12 +46,14 @@ public class RestBackendImplTest {
   private static final String DOMAIN = "domain";
   private static final String NS = "namespace1";
   private static final String UID = "uid1";
+  private static final String UID2 = "uid2";
   private static List<Domain> domains = new ArrayList<>();
   private WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN);
 
   private List<Memento> mementos = new ArrayList<>();
   private RestBackend restBackend;
   private Domain domain = createDomain(NS, UID);
+  private Domain domain2 = createDomain(NS, UID2);
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private CallTestSupport testSupport = new CallTestSupport();
   private Domain updatedDomain;
@@ -73,11 +70,21 @@ public class RestBackendImplTest {
         .withSpec(new DomainSpec().withDomainUID(uid));
   }
 
+  private WlsDomainConfig config;
+
+  private class TopologyRetrieverStub implements TopologyRetriever {
+    @Override
+    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUID) {
+      return config;
+    }
+  }
+
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(WlsRetrievalExecutor.install(configSupport));
     mementos.add(testSupport.installSynchronousCallDispatcher());
+    mementos.add(
+        StaticStubSupport.install(RestBackendImpl.class, "INSTANCE", new TopologyRetrieverStub()));
 
     expectSecurityCalls();
     expectPossibleListDomainCall();
@@ -85,8 +92,11 @@ public class RestBackendImplTest {
 
     domains.clear();
     domains.add(domain);
+    domains.add(domain2);
     configSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     restBackend = new RestBackendImpl("", "", Collections.singletonList(NS));
+
+    setupScanCache();
   }
 
   private void expectSecurityCalls() {
@@ -114,6 +124,13 @@ public class RestBackendImplTest {
         .withUid(UID)
         .withBody(fetchDomain)
         .returning(new Domain());
+
+    testSupport
+        .createOptionalCannedResponse("replaceDomain")
+        .withNamespace(NS)
+        .withUid(UID2)
+        .withBody(fetchDomain)
+        .failingWithStatus(HTTP_CONFLICT);
   }
 
   @After
@@ -169,6 +186,66 @@ public class RestBackendImplTest {
     assertThat(getUpdatedDomain(), nullValue());
   }
 
+  @Test(expected = WebApplicationException.class)
+  public void whenReplaceDomainReturnsError_scaleClusterThrowsException() {
+    DomainConfiguratorFactory.forDomain(domain2).configureCluster("cluster1").withReplicas(2);
+
+    restBackend.scaleCluster(UID2, "cluster1", 3);
+  }
+
+  @Test
+  public void getDomainForConflictRetry_returnsBeforeDomain() {
+    configureDomain().withDefaultReplicaCount(2);
+
+    assertThat(
+        ((RestBackendImpl) restBackend)
+            .getDomainForConflictRetry(UID, "cluster1", REPLICA_LIMIT)
+            .getReplicaCount("cluster-1"),
+        equalTo(2));
+  }
+
+  @Test
+  public void getDomainForConflictRetry_ifSameReplicaCount_returnsNull() {
+    final int REPLICA_COUNT = REPLICA_LIMIT;
+    configureDomain().withDefaultReplicaCount(REPLICA_COUNT);
+
+    assertThat(
+        ((RestBackendImpl) restBackend).getDomainForConflictRetry(UID, "cluster1", REPLICA_LIMIT),
+        nullValue());
+  }
+
+  @Test(expected = WebApplicationException.class)
+  public void getDomainForConflictRetry_ifDomainNotFound_throws() {
+    configureDomain().withDefaultReplicaCount(2);
+
+    ((RestBackendImpl) restBackend)
+        .getDomainForConflictRetry("noSuchUID", "cluster1", REPLICA_LIMIT);
+  }
+
+  @Test
+  public void verify_getWlsDomainConfig_returnsWlsDomainConfig() {
+    WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(UID);
+
+    assertThat(wlsDomainConfig.getName(), equalTo(DOMAIN));
+  }
+
+  @Test
+  public void verify_getWlsDomainConfig_doesNotReturnNull_whenNoSuchDomainUID() {
+    WlsDomainConfig wlsDomainConfig =
+        ((RestBackendImpl) restBackend).getWlsDomainConfig("NoSuchDomainUID");
+
+    assertThat(wlsDomainConfig, notNullValue());
+  }
+
+  @Test
+  public void verify_getWlsDomainConfig_doesNotReturnNull_whenScanIsNull() {
+    config = null;
+
+    WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(UID);
+
+    assertThat(wlsDomainConfig, notNullValue());
+  }
+
   private DomainConfigurator configureDomain() {
     return configurator;
   }
@@ -190,66 +267,7 @@ public class RestBackendImplTest {
     }
   }
 
-  abstract static class WlsRetrievalExecutor implements ScheduledExecutorService {
-    private WlsDomainConfigSupport configSupport;
-
-    static Memento install(WlsDomainConfigSupport configSupport) {
-      return new MapMemento<>(
-          ContainerResolver.getInstance().getContainer().getComponents(),
-          "test",
-          Component.createFor(ScheduledExecutorService.class, newExecutor(configSupport)));
-    }
-
-    private static WlsRetrievalExecutor newExecutor(WlsDomainConfigSupport response) {
-      return createStrictStub(WlsRetrievalExecutor.class, response);
-    }
-
-    WlsRetrievalExecutor(WlsDomainConfigSupport configSupport) {
-      this.configSupport = configSupport;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public @Nonnull <T> Future<T> submit(@Nonnull Callable<T> task) {
-      return (Future<T>) createStrictStub(WlsDomainConfigFuture.class, configSupport);
-    }
-  }
-
-  abstract static class WlsDomainConfigFuture implements Future<WlsDomainConfig> {
-    private WlsDomainConfigSupport configSupport;
-
-    WlsDomainConfigFuture(WlsDomainConfigSupport configSupport) {
-      this.configSupport = configSupport;
-    }
-
-    @Override
-    public WlsDomainConfig get(long timeout, @Nonnull TimeUnit unit) {
-      return configSupport.createDomainConfig();
-    }
-  }
-
-  static class MapMemento<K, V> implements Memento {
-    private final Map<K, V> map;
-    private final K key;
-    private final V originalValue;
-
-    MapMemento(Map<K, V> map, K key, V value) {
-      this.map = map;
-      this.key = key;
-      this.originalValue = map.get(key);
-      map.put(key, value);
-    }
-
-    @Override
-    public void revert() {
-      if (originalValue == null) map.remove(key);
-      else map.put(key, originalValue);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T getOriginalValue() {
-      return (T) originalValue;
-    }
+  void setupScanCache() {
+    config = configSupport.createDomainConfig();
   }
 }

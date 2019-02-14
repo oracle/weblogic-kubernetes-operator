@@ -1,34 +1,36 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import org.apache.maven.plugin.MojoExecutionException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TestMain implements Main {
-  private String version;
   private URL[] classpath;
-  private IOException badKubernetesVersionException;
   private URL classpathResource;
   private String className;
-  private File outputFile;
+  private File schemaFile;
   private String resourceName;
+  private boolean includeDeprecated;
+  private Map<URL, URL> schemas = new HashMap<>();
+  private String kubernetesVersion;
+  private boolean includeAdditionalProperties;
+  private boolean supportObjectReferences;
+  private File markdownFile;
+  private Map<String, Object> schema;
+  private Map<String, Object> markdownSchema;
 
   TestMain() throws MalformedURLException {
     classpathResource = new URL("file:abc");
   }
 
-  String getVersion() {
-    return version;
-  }
-
-  void reportBadKubernetesException() {
-    badKubernetesVersionException = new IOException();
+  boolean isIncludeDeprecated() {
+    return includeDeprecated;
   }
 
   URL[] getClasspath() {
@@ -47,13 +49,61 @@ public class TestMain implements Main {
     return className;
   }
 
-  File getOutputFile() {
-    return outputFile;
+  File getSchemaFile() {
+    return schemaFile;
+  }
+
+  File getMarkdownFile() {
+    return markdownFile;
+  }
+
+  public Map<String, Object> getMarkdownSchema() {
+    return markdownSchema;
+  }
+
+  void setGeneratedSchema(Map<String, Object> schema) {
+    this.schema = schema;
+  }
+
+  URL getCacheFor(URL schemaUrl) {
+    return schemas.get(schemaUrl);
+  }
+
+  String getKubernetesVersion() {
+    return kubernetesVersion;
+  }
+
+  boolean isIncludeAdditionalProperties() {
+    return includeAdditionalProperties;
+  }
+
+  boolean isSupportObjectReferences() {
+    return supportObjectReferences;
   }
 
   @Override
-  public void setKubernetesVersion(String version) {
-    this.version = version;
+  public void setSupportObjectReferences(boolean supportObjectReferences) {
+    this.supportObjectReferences = supportObjectReferences;
+  }
+
+  @Override
+  public void setKubernetesVersion(String kubernetesVersion) {
+    this.kubernetesVersion = kubernetesVersion;
+  }
+
+  @Override
+  public void defineSchemaUrlAndContents(URL schemaURL, URL cacheUrl) {
+    schemas.put(schemaURL, cacheUrl);
+  }
+
+  @Override
+  public void setIncludeDeprecated(boolean includeDeprecated) {
+    this.includeDeprecated = includeDeprecated;
+  }
+
+  @Override
+  public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
+    this.includeAdditionalProperties = includeAdditionalProperties;
   }
 
   @Override
@@ -68,9 +118,15 @@ public class TestMain implements Main {
   }
 
   @Override
-  public void generateSchema(String className, File outputFile) throws MojoExecutionException {
+  public Map<String, Object> generateSchema(String className, File outputFile) {
     this.className = className;
-    this.outputFile = outputFile;
-    if (badKubernetesVersionException != null) throw new MojoExecutionException("bad version");
+    this.schemaFile = outputFile;
+    return schema;
+  }
+
+  @Override
+  public void generateMarkdown(String rootName, File markdownFile, Map<String, Object> schema) {
+    this.markdownFile = markdownFile;
+    this.markdownSchema = schema;
   }
 }

@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "javaType": "oracle.kubernetes.weblogic.domain.v1.NonClusteredServer",
+  "description": "NonClusteredServer describes the desired state of a non-clustered server.",
+  "extends" : {
+    "$ref": "server.json"
+  },
+  "properties": {
+    "nonClusteredServerStartPolicy": {
+      "description": "Whether this non-clustered server should be started. Legal values are ALWAYS and NEVER. <p>Defaults to ALWAYS.",
+      "type": "string"
+    }
+  }
+}

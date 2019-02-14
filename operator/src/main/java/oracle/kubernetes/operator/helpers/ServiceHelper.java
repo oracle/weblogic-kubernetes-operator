@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl..
 
@@ -20,23 +20,34 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1Status;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v2.AdminServer;
+import oracle.kubernetes.weblogic.domain.v2.AdminService;
+import oracle.kubernetes.weblogic.domain.v2.Channel;
+import oracle.kubernetes.weblogic.domain.v2.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -85,14 +96,10 @@ public class ServiceHelper {
 
   private static class ForServerStepContext extends ServerServiceStepContext {
     private final KubernetesVersion version;
-    private final Integer port;
-    private final Integer nodePort;
 
     ForServerStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       version = packet.getSPI(KubernetesVersion.class);
-      port = (Integer) packet.get(ProcessingConstants.PORT);
-      nodePort = (Integer) packet.get(ProcessingConstants.NODE_PORT);
     }
 
     @Override
@@ -101,24 +108,46 @@ public class ServiceHelper {
       if (isPublishNotReadyAddressesSupported()) {
         serviceSpec.setPublishNotReadyAddresses(Boolean.TRUE);
       }
-      if (nodePort == null) {
-        serviceSpec.clusterIP("None");
-      }
+      serviceSpec.clusterIP("None");
+      serviceSpec.ports(createServicePorts());
       return serviceSpec;
     }
 
-    @Override
-    protected V1ServicePort createServicePort() {
-      V1ServicePort servicePort = new V1ServicePort().port(port);
-      if (nodePort != null) {
-        servicePort.setNodePort(nodePort);
+    protected List<V1ServicePort> createServicePorts() {
+      if (scan != null) {
+        List<V1ServicePort> ports = new ArrayList<>();
+        if (scan.getNetworkAccessPoints() != null) {
+          for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
+            V1ServicePort port =
+                new V1ServicePort()
+                    .name(LegalNames.toDNS1123LegalName(nap.getName()))
+                    .port(nap.getListenPort())
+                    .protocol("TCP");
+            ports.add(port);
+          }
+        }
+        if (scan.getListenPort() != null) {
+          ports.add(new V1ServicePort().name("default").port(scan.getListenPort()).protocol("TCP"));
+        }
+        if (scan.getSslListenPort() != null) {
+          ports.add(
+              new V1ServicePort()
+                  .name("default-secure")
+                  .port(scan.getSslListenPort())
+                  .protocol("TCP"));
+        }
+        if (scan.getAdminPort() != null) {
+          ports.add(
+              new V1ServicePort().name("default-admin").port(scan.getAdminPort()).protocol("TCP"));
+        }
+        return ports;
       }
-      return servicePort;
+      return null;
     }
 
     @Override
     protected String getSpecType() {
-      return nodePort == null ? "ClusterIP" : "NodePort";
+      return "ClusterIP";
     }
 
     private boolean isPublishNotReadyAddressesSupported() {
@@ -154,12 +183,16 @@ public class ServiceHelper {
 
   private abstract static class ServerServiceStepContext extends ServiceStepContext {
     protected final String serverName;
+    protected final String clusterName;
     protected final ServerKubernetesObjects sko;
+    protected final WlsServerConfig scan;
 
     ServerServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
-      sko = ServerKubernetesObjectsManager.getOrCreate(info, getServerName());
+      clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
+      sko = info.getServers().computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
+      scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
     }
 
     @Override
@@ -170,11 +203,35 @@ public class ServiceHelper {
 
     @Override
     protected V1ObjectMeta createMetadata() {
-      return super.createMetadata().putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName());
+      V1ObjectMeta metadata =
+          super.createMetadata().putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName());
+      if (getClusterName() != null) {
+        metadata.putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, getClusterName());
+      }
+      return metadata;
+    }
+
+    @Override
+    ServerSpec getServerSpec() {
+      return getDomain().getServer(getServerName(), getClusterName());
+    }
+
+    @Override
+    protected Map<String, String> getServiceLabels() {
+      return getServerSpec().getServiceLabels();
+    }
+
+    @Override
+    protected Map<String, String> getServiceAnnotations() {
+      return getServerSpec().getServiceAnnotations();
     }
 
     String getServerName() {
       return serverName;
+    }
+
+    private String getClusterName() {
+      return clusterName;
     }
 
     @Override
@@ -197,11 +254,7 @@ public class ServiceHelper {
     }
 
     private boolean isForAdminServer() {
-      return getServerName().equals(getAsName());
-    }
-
-    private String getAsName() {
-      return info.getDomain().getAsName();
+      return getServerName().equals(domainTopology.getAdminServerName());
     }
 
     @Override
@@ -213,10 +266,12 @@ public class ServiceHelper {
   private abstract static class ServiceStepContext {
     private final Step conflictStep;
     DomainPresenceInfo info;
+    WlsDomainConfig domainTopology;
 
     ServiceStepContext(Step conflictStep, Packet packet) {
       this.conflictStep = conflictStep;
       info = packet.getSPI(DomainPresenceInfo.class);
+      domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     }
 
     Step getConflictStep() {
@@ -259,21 +314,31 @@ public class ServiceHelper {
           .type(getSpecType())
           .putSelectorItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
           .putSelectorItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
-          .ports(Collections.singletonList(createServicePort()));
+          .ports(createServicePorts());
     }
 
     protected V1ObjectMeta createMetadata() {
-      return new V1ObjectMeta()
-          .name(createServiceName())
-          .namespace(getNamespace())
-          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
+      V1ObjectMeta metadata =
+          new V1ObjectMeta().name(createServiceName()).namespace(getNamespace());
+
+      // Add custom labels
+      getServiceLabels().forEach(metadata::putLabelsItem);
+
+      metadata
+          .putLabelsItem(
+              LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
           .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+
+      // Add custom annotations
+      getServiceAnnotations().forEach(metadata::putAnnotationsItem);
+
+      return metadata;
     }
 
     String getDomainName() {
-      return getDomain().getDomainName();
+      return domainTopology.getName();
     }
 
     Domain getDomain() {
@@ -290,11 +355,17 @@ public class ServiceHelper {
 
     protected abstract String createServiceName();
 
+    abstract ServerSpec getServerSpec();
+
+    abstract Map<String, String> getServiceLabels();
+
+    abstract Map<String, String> getServiceAnnotations();
+
     protected abstract void logServiceCreated(String messageKey);
 
     protected abstract String getSpecType();
 
-    protected abstract V1ServicePort createServicePort();
+    protected abstract List<V1ServicePort> createServicePorts();
 
     protected abstract V1Service getServiceFromRecord();
 
@@ -406,14 +477,41 @@ public class ServiceHelper {
   }
 
   /**
-   * Factory for {@link Step} that deletes per-managed server service
+   * Factory for {@link Step} that deletes per-managed server and channel services
    *
    * @param sko Server Kubernetes Objects
    * @param next Next processing step
-   * @return Step for deleting per-managed server service
+   * @return Step for deleting per-managed server and channel services
    */
-  public static Step deleteServiceStep(ServerKubernetesObjects sko, Step next) {
-    return new DeleteServiceStep(sko, next);
+  public static Step deleteServicesStep(ServerKubernetesObjects sko, Step next) {
+    return new DeleteServicesIteratorStep(sko, next);
+  }
+
+  private static class DeleteServicesIteratorStep extends Step {
+    private final ServerKubernetesObjects sko;
+
+    DeleteServicesIteratorStep(ServerKubernetesObjects sko, Step next) {
+      super(next);
+      this.sko = sko;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Collection<StepAndPacket> startDetails = new ArrayList<>();
+
+      startDetails.add(new StepAndPacket(new DeleteServiceStep(sko, null), packet.clone()));
+      ConcurrentMap<String, V1Service> channels = sko.getChannels();
+      for (Map.Entry<String, V1Service> entry : channels.entrySet()) {
+        startDetails.add(
+            new StepAndPacket(
+                new DeleteChannelServiceStep(channels, entry.getKey(), null), packet.clone()));
+      }
+
+      if (startDetails.isEmpty()) {
+        return doNext(packet);
+      }
+      return doForkJoin(getNext(), packet, startDetails);
+    }
   }
 
   private static class DeleteServiceStep extends Step {
@@ -448,6 +546,41 @@ public class ServiceHelper {
     }
   }
 
+  private static class DeleteChannelServiceStep extends Step {
+    private final ConcurrentMap<String, V1Service> channels;
+    private final String channelName;
+
+    DeleteChannelServiceStep(
+        ConcurrentMap<String, V1Service> channels, String channelName, Step next) {
+      super(next);
+      this.channels = channels;
+      this.channelName = channelName;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      V1Service oldService = removeServiceFromRecord();
+
+      if (oldService != null) {
+        return doNext(
+            deleteService(oldService.getMetadata().getName(), info.getNamespace()), packet);
+      }
+      return doNext(packet);
+    }
+
+    Step deleteService(String name, String namespace) {
+      V1DeleteOptions deleteOptions = new V1DeleteOptions();
+      return new CallBuilder()
+          .deleteServiceAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(getNext()));
+    }
+
+    // Set service to null so that watcher doesn't try to recreate service
+    private V1Service removeServiceFromRecord() {
+      return channels.remove(channelName);
+    }
+  }
+
   /**
    * Create asynchronous step for internal cluster service
    *
@@ -471,17 +604,65 @@ public class ServiceHelper {
 
   private static class ClusterStepContext extends ServiceStepContext {
     private final String clusterName;
-    private final Integer port;
+    private final WlsDomainConfig config;
 
     ClusterStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
-      port = (Integer) packet.get(ProcessingConstants.PORT);
+      config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     }
 
     protected V1ServiceSpec createServiceSpec() {
       return super.createServiceSpec()
           .putSelectorItem(LabelConstants.CLUSTERNAME_LABEL, clusterName);
+    }
+
+    protected List<V1ServicePort> createServicePorts() {
+      WlsClusterConfig clusterConfig = config.getClusterConfig(clusterName);
+      List<WlsServerConfig> serverConfigs =
+          clusterConfig != null ? clusterConfig.getServerConfigs() : null;
+      if (serverConfigs != null) {
+        Map<String, V1ServicePort> ports = new HashMap<>();
+        for (WlsServerConfig server : serverConfigs) {
+          // for every server in the cluster, locate ports
+          if (server.getNetworkAccessPoints() != null) {
+            for (NetworkAccessPoint nap : server.getNetworkAccessPoints()) {
+              V1ServicePort port =
+                  new V1ServicePort()
+                      .name(LegalNames.toDNS1123LegalName(nap.getName()))
+                      .port(nap.getListenPort())
+                      .protocol("TCP");
+              ports.putIfAbsent(nap.getName(), port);
+            }
+          }
+          if (server.getListenPort() != null) {
+            ports.putIfAbsent(
+                "default",
+                new V1ServicePort().name("default").port(server.getListenPort()).protocol("TCP"));
+          }
+          if (server.getSslListenPort() != null) {
+            ports.putIfAbsent(
+                "defaultSecure",
+                new V1ServicePort()
+                    .name("default-secure")
+                    .port(server.getSslListenPort())
+                    .protocol("TCP"));
+          }
+          if (server.getAdminPort() != null) {
+            ports.putIfAbsent(
+                "defaultAdmin",
+                new V1ServicePort()
+                    .name("default-admin")
+                    .port(server.getAdminPort())
+                    .protocol("TCP"));
+          }
+        }
+        if (!ports.isEmpty()) {
+          return new ArrayList<>(ports.values());
+        }
+      }
+
+      return null;
     }
 
     @Override
@@ -491,11 +672,6 @@ public class ServiceHelper {
 
     protected V1ObjectMeta createMetadata() {
       return super.createMetadata().putLabelsItem(LabelConstants.CLUSTERNAME_LABEL, clusterName);
-    }
-
-    @Override
-    protected V1ServicePort createServicePort() {
-      return new V1ServicePort().port(port);
     }
 
     protected String createServiceName() {
@@ -536,22 +712,53 @@ public class ServiceHelper {
     protected String getServiceReplaceMessageKey() {
       return CLUSTER_SERVICE_REPLACED;
     }
+
+    @Override
+    ServerSpec getServerSpec() {
+      return null;
+    }
+
+    ClusterSpec getClusterSpec() {
+      return getDomain().getCluster(clusterName);
+    }
+
+    @Override
+    Map<String, String> getServiceLabels() {
+      return getClusterSpec().getClusterLabels();
+    }
+
+    @Override
+    Map<String, String> getServiceAnnotations() {
+      return getClusterSpec().getClusterAnnotations();
+    }
   }
 
   private static boolean validateCurrentService(V1Service build, V1Service current) {
-    V1ServiceSpec buildSpec = build.getSpec();
-    V1ServiceSpec currentSpec = current.getSpec();
+    return isCurrentServiceMetadataValid(build.getMetadata(), current.getMetadata())
+        && isCurrentServiceSpecValid(build.getSpec(), current.getSpec());
+  }
 
-    if (!VersionHelper.matchesResourceVersion(current.getMetadata(), VersionConstants.DOMAIN_V1)) {
-      return false;
-    }
+  private static boolean isCurrentServiceMetadataValid(
+      V1ObjectMeta buildMeta, V1ObjectMeta currentMeta) {
+    return VersionHelper.matchesResourceVersion(
+            currentMeta, VersionConstants.DEFAULT_DOMAIN_VERSION)
+        && KubernetesUtils.areLabelsValid(buildMeta, currentMeta)
+        && KubernetesUtils.areAnnotationsValid(buildMeta, currentMeta);
+  }
 
+  private static boolean isCurrentServiceSpecValid(
+      V1ServiceSpec buildSpec, V1ServiceSpec currentSpec) {
     String buildType = buildSpec.getType();
     String currentType = currentSpec.getType();
+
     if (currentType == null) {
       currentType = "ClusterIP";
     }
     if (!currentType.equals(buildType)) {
+      return false;
+    }
+
+    if (!KubernetesUtils.mapEquals(buildSpec.getSelector(), currentSpec.getSelector())) {
       return false;
     }
 
@@ -576,86 +783,149 @@ public class ServiceHelper {
   }
 
   /**
-   * Create asynchronous step for external channel
+   * Create asynchronous step for external, NodePort service
    *
    * @param next Next processing step
-   * @return Step for external channel creation
+   * @return Step for creating external service
    */
-  public static Step createForExternalChannelStep(Step next) {
-    return new ForExternalChannelStep(next);
+  public static Step createForExternalServiceStep(Step next) {
+    return new ForExternalServiceStep(next);
   }
 
-  private static class ForExternalChannelStep extends ServiceHelperStep {
-    ForExternalChannelStep(Step next) {
+  private static class ForExternalServiceStep extends ServiceHelperStep {
+    ForExternalServiceStep(Step next) {
       super(next);
     }
 
     @Override
     protected ServiceStepContext createContext(Packet packet) {
-      return new ExternalChannelServiceStepContext(this, packet);
+      return new ForExternalServiceStepContext(this, packet);
     }
   }
 
-  private static class ExternalChannelServiceStepContext extends ServerServiceStepContext {
-    private final NetworkAccessPoint networkAccessPoint;
+  private static class ForExternalServiceStepContext extends ServerServiceStepContext {
 
-    ExternalChannelServiceStepContext(Step conflictStep, Packet packet) {
+    ForExternalServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
-      networkAccessPoint =
-          (NetworkAccessPoint) packet.get(ProcessingConstants.NETWORK_ACCESS_POINT);
-    }
-
-    protected String getSpecType() {
-      return "NodePort";
-    }
-
-    protected V1ServicePort createServicePort() {
-      return new V1ServicePort()
-          .port(networkAccessPoint.getListenPort())
-          .nodePort(networkAccessPoint.getPublicPort());
-    }
-
-    protected V1ObjectMeta createMetadata() {
-      V1ObjectMeta metadata =
-          super.createMetadata().putLabelsItem(LabelConstants.CHANNELNAME_LABEL, getChannelName());
-
-      for (Map.Entry<String, String> entry : getChannelServiceLabels().entrySet())
-        metadata.putLabelsItem(entry.getKey(), entry.getValue());
-      for (Map.Entry<String, String> entry : getChannelServiceAnnotations().entrySet())
-        metadata.putAnnotationsItem(entry.getKey(), entry.getValue());
-      return metadata;
-    }
-
-    Map<String, String> getChannelServiceLabels() {
-      return getDomain().getChannelServiceLabels(getChannelName());
-    }
-
-    private Map<String, String> getChannelServiceAnnotations() {
-      return getDomain().getChannelServiceAnnotations(getChannelName());
-    }
-
-    private String getChannelName() {
-      return networkAccessPoint.getName();
     }
 
     @Override
     protected String createServiceName() {
-      return LegalNames.toNAPName(getDomainUID(), getServerName(), networkAccessPoint);
+      return LegalNames.toExternalServiceName(getDomainUID(), getServerName());
+    }
+
+    @Override
+    ServerSpec getServerSpec() {
+      return getDomain().getAdminServerSpec();
+    }
+
+    @Override
+    protected String getSpecType() {
+      return "NodePort";
     }
 
     @Override
     protected V1Service getServiceFromRecord() {
-      return sko.getChannels().get(getChannelName());
+      return sko.getService().get();
     }
 
     @Override
-    protected void addServiceToRecord(@Nonnull V1Service service) {
-      sko.getChannels().put(getChannelName(), service);
+    protected void addServiceToRecord(V1Service service) {
+      sko.getService().set(service);
     }
 
     @Override
     protected void removeServiceFromRecord() {
-      sko.getChannels().remove(getChannelName());
+      sko.getService().set(null);
+    }
+
+    @Override
+    protected String getServiceCreatedMessageKey() {
+      return ADMIN_SERVICE_CREATED;
+    }
+
+    @Override
+    protected String getServiceReplaceMessageKey() {
+      return ADMIN_SERVICE_REPLACED;
+    }
+
+    protected List<V1ServicePort> createServicePorts() {
+      if (scan != null) {
+        List<V1ServicePort> ports = new ArrayList<>();
+        if (scan.getNetworkAccessPoints() != null) {
+          for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
+            Channel c = getChannel(nap.getName());
+            if (c != null) {
+              Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(nap.getListenPort());
+              V1ServicePort port =
+                  new V1ServicePort()
+                      .name(LegalNames.toDNS1123LegalName(nap.getName()))
+                      .port(nap.getListenPort())
+                      .nodePort(nodePort)
+                      .protocol("TCP");
+              ports.add(port);
+            }
+          }
+        }
+        if (scan.getListenPort() != null) {
+          Channel c = getChannel("default");
+          if (c != null) {
+            Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(scan.getListenPort());
+            ports.add(
+                new V1ServicePort()
+                    .name("default")
+                    .port(scan.getListenPort())
+                    .nodePort(nodePort)
+                    .protocol("TCP"));
+          }
+        }
+        if (scan.getSslListenPort() != null) {
+          Channel c = getChannel("default-secure");
+          if (c != null) {
+            Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(scan.getSslListenPort());
+            ports.add(
+                new V1ServicePort()
+                    .name("default-secure")
+                    .port(scan.getSslListenPort())
+                    .nodePort(nodePort)
+                    .protocol("TCP"));
+          }
+        }
+        if (scan.getAdminPort() != null) {
+          Channel c = getChannel("default-admin");
+          if (c != null) {
+            Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(scan.getAdminPort());
+            ports.add(
+                new V1ServicePort()
+                    .name("default-admin")
+                    .port(scan.getAdminPort())
+                    .nodePort(nodePort)
+                    .protocol("TCP"));
+          }
+        }
+        return ports;
+      }
+      return null;
+    }
+
+    private Channel getChannel(String channelName) {
+      AdminService adminService = getAdminService();
+      if (adminService != null) {
+        List<Channel> channels = adminService.getChannels();
+        if (channels != null) {
+          for (Channel c : channels) {
+            if (channelName.equals(c.getChannelName())) {
+              return c;
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    private AdminService getAdminService() {
+      AdminServer adminServer = getDomain().getSpec().getAdminServer();
+      return adminServer != null ? adminServer.getAdminService() : null;
     }
   }
 }

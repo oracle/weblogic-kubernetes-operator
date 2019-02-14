@@ -71,6 +71,11 @@ public class AsyncRequestStep<T> extends Step {
   }
 
   @Override
+  protected String getDetail() {
+    return requestParams.call;
+  }
+
+  @Override
   public NextAction apply(Packet packet) {
     // clear out earlier results
     String cont = null;

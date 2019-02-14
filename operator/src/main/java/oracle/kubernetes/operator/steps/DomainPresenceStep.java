@@ -4,10 +4,10 @@
 
 package oracle.kubernetes.operator.steps;
 
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 
 public class DomainPresenceStep extends Step {
 
@@ -16,9 +16,8 @@ public class DomainPresenceStep extends Step {
   }
 
   public static DomainPresenceStep createDomainPresenceStep(
-      DomainPresenceInfo info, Step adminStep, Step managedServerStep) {
-    return new DomainPresenceStep(
-        info.getDomain().isShuttingDown() ? managedServerStep : adminStep);
+      Domain dom, Step adminStep, Step managedServerStep) {
+    return new DomainPresenceStep(dom.isShuttingDown() ? managedServerStep : adminStep);
   }
 
   @Override
