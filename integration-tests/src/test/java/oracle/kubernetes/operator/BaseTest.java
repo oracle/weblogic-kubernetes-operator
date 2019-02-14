@@ -254,6 +254,7 @@ public class BaseTest {
     c.close();
     logger.info("Done - testAdminT3ChannelWithJMS");
   }
+
   /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
    * balancing and node port service
@@ -499,6 +500,13 @@ public class BaseTest {
     return branchName;
   }
 
+  /**
+   * Use this method to override the create_domain.py script with a custom one. Remember to call
+   * unoverrideCreateDomainScript below after you are done.
+   *
+   * @param scriptPath
+   * @throws IOException
+   */
   public void overrideCreateDomainScript(String scriptPath) throws IOException {
 
     if (scriptPath == null) {
@@ -521,6 +529,12 @@ public class BaseTest {
         StandardCopyOption.REPLACE_EXISTING);
   }
 
+  /**
+   * Reverts the custom create_domain.py script with the default one. Should be called after you are
+   * done with overrideCreateDomainScript above.
+   *
+   * @throws IOException
+   */
   public void unoverrideCreateDomainScript() throws IOException {
 
     String createDomainScriptDir =
