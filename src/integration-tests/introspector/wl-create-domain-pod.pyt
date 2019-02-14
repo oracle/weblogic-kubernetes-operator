@@ -130,110 +130,70 @@ def createWLDFModule(moduleName):
 
 createWLDFModule('myWLDF')
 
-# Setup a datasource
+# Setup datasources
 # ============================================
-def createDataSource(dsName,dsJNDI,dsHost,dsSID,dsTarget):
-  cd('/')
-  print 'create JDBCSystemResource'
-  create(dsName, 'JDBCSystemResource')
-  cd('/JDBCSystemResource/' + dsName)
-  #set('Target',dsTarget)
-  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
-  cmo.setName(dsName)
 
-  print 'create JDBCDataSourceParams'
-  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
-  create('testDataSourceParams','JDBCDataSourceParams')
-  cd('JDBCDataSourceParams/NO_NAME_0')
-  set('JNDIName', java.lang.String(dsJNDI))
-  set('GlobalTransactionsProtocol', java.lang.String('None'))
-
-  print 'create JDBCDriverParams'
-  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
-  create('testDriverParams','JDBCDriverParams')
-  cd('JDBCDriverParams/NO_NAME_0')
-  set('DriverName','oracle.jdbc.OracleDriver')
-  set('URL','jdbc:oracle:thin:@' + dsHost + ':1521:' + dsSID)
-  #set('PasswordEncrypted', 'manager')
-  set('UseXADataSourceInterface', 'false')
- 
-  print 'create JDBCDriverParams Properties'
-  create('testProperties','Properties')
-  cd('Properties/NO_NAME_0')
-  create('user','Property')
-  cd('Property')
-  cd('user')
-  set('Value', 'scott')
- 
-  print 'create JDBCConnectionPoolParams'
-  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
-  create('testJdbcConnectionPoolParams','JDBCConnectionPoolParams')
-  cd('JDBCConnectionPoolParams/NO_NAME_0')
-  set('TestTableName','SQL SELECT 1 FROM DUAL')
-  set('InitialCapacity', 0)
-  set('MinCapacity', 0)
-
-createDataSource('testDS','testDS','myoriginalhostname','myoriginalsid','${ADMIN_NAME}')
-
-def createMySQLDataSource(jndiName, driver, globalTX, url, user, passwd, minSize, maxSize, target):
-  print '### createMySQLDataSource #################################################################################'
-
-  #dsName = jndiNames[0]
-  dsName = jndiName
-
-  print 'Creating MySQL DataSource ' + dsName
+def createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL, dsUser, dsPass, dsMinSize, dsMaxSize, dsTest, dsTarget):
+  print 'Creating DataSource ' + dsName
 
   cd('/')
+
   jdbcSystemResource = create(dsName, "JDBCSystemResource")
+  jdbcSystemResource.setTargets(jarray.array([dsTarget], weblogic.management.configuration.TargetMBean))
 
   cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+
   dataSourceParams = create('dataSourceParams', 'JDBCDataSourceParams')
-  dataSourceParams.setGlobalTransactionsProtocol(globalTX)
+  dataSourceParams.setGlobalTransactionsProtocol(java.lang.String(dsGlobalTX))
+
   cd('JDBCDataSourceParams/NO_NAME_0')
-  #set('JNDINames', jarray.array(jndiNames, String))
-  set('JNDIName', java.lang.String(jndiName))
+
+  set('JNDIName', java.lang.String(dsJNDI))
 
   cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+
   connPoolParams = create('connPoolParams', 'JDBCConnectionPoolParams')
-  connPoolParams.setInitialCapacity(minSize)
-  connPoolParams.setMinCapacity(minSize)
-  connPoolParams.setMaxCapacity(maxSize)
+  connPoolParams.setInitialCapacity(dsMinSize)
+  connPoolParams.setMinCapacity(dsMinSize)
+  connPoolParams.setMaxCapacity(dsMaxSize)
   connPoolParams.setCapacityIncrement(1)
   connPoolParams.setTestConnectionsOnReserve(true)
-  connPoolParams.setTestTableName('SQL SELECT 1')
+  connPoolParams.setTestTableName(dsTest)
 
-  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
   driverParams = create('driverParams', 'JDBCDriverParams')
-  driverParams.setUrl(url)
-  driverParams.setDriverName(driver)
-  driverParams.setPasswordEncrypted(passwd)
+  driverParams.setUrl(dsURL)
+  driverParams.setDriverName(dsDriver)
+  driverParams.setPasswordEncrypted(dsPass)
+  driverParams.setUseXaDataSourceInterface(dsXAInterface)
+
   cd('JDBCDriverParams/NO_NAME_0')
 
-  create(dsName, 'Properties')
+  create('testProperties','Properties')
+
   cd('Properties/NO_NAME_0')
 
-  create('user', 'Property')
-  cd('Property/user')
-  cmo.setValue(user)
+  property = create('user','Property')
+  property.setValue(dsUser)
 
-  cd('/JDBCSystemResource/' + dsName)
-  jdbcSystemResource.setTargets(jarray.array([target], weblogic.management.configuration.TargetMBean))
+  cd('/')
 
   print dsName + ' successfully created.'
   return jdbcSystemResource
 
-  #<!-- MySQL DB info to create JDBC DS -->
-  #<property name="mysql.db.host" value="{k8s.admin.host}/>
-  #<property name="mysql.db.port" value="31306"/>
-  #<property name="mysql.db.name" value="mysql"/>
-  #<property name="mysql.db.user" value="root"/>
-  #<property name="mysql.db.password" value="root123"/>
-  #<property name="mysql.db.driver" value="com.mysql.cj.jdbc.Driver" />
-  #<property name="mysql.ds.name" value="MySQLDataSource"/>
-  #<property name="mysql.db.url" value="jdbc:mysql://{mysql.db.host}:{mysql.db.port}/mysql"/>
-  #<property name="mysql.db.jndi" value="jdbc/TestMySQLDB" />
+def createOracleDataSource(dsName,dsJNDI,dsGlobalTX,dsXAInterface,dsHost,dsPort,dsSID,dsUser,dsPass,dsMinSize,dsMaxSize,dsTarget):
+  dsDriver='oracle.jdbc.OracleDriver'
+  dsURL='jdbc:oracle:thin:@' + dsHost + ':' + dsPort + ':' + dsSID
+  dsTest='SQL SELECT 1 FROM DUAL'
+  createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL, dsUser, dsPass, dsMinSize, dsMaxSize, dsTest, dsTarget)
 
-createMySQLDataSource('mysqlDS','com.mysql.cj.jdbc.Driver','None','jdbc:mysql://invalid-url:3306/mysql', 'invalid-user', 'invalid-password', 0, 10, adminServerMBean)
+def createMySQLDataSource(dsName,dsJNDI,dsGlobalTX,dsXAInterface,dsHost,dsPort,dsUser,dsPass,dsMinSize,dsMaxSize,dsTarget):
+  dsDriver='com.mysql.cj.jdbc.Driver'
+  dsURL='jdbc:mysql://' + dsHost + ':' + dsPort + '/mysql'
+  dsTest='SQL SELECT 1'
+  createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL, dsUser, dsPass, dsMinSize, dsMaxSize, dsTest, dsTarget)
+  
+createOracleDataSource('testDS','testDS','None',false,'invalid-host','1521','invalid-sid','invalid-user','invalid-pass',0,10,adminServerMBean)
+createMySQLDataSource('mysqlDS','mysqlDS','None',false,'invalid-host','3306','invalid-user','invalid-pass',0,10,adminServerMBean)
 
 # Create a cluster
 # ======================
