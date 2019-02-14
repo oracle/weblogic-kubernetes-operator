@@ -577,34 +577,6 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
-  @Test
-  public void testIntrospectorSitConfigOverrides() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    logTestBegin("testIntrospectorSitConfigOverrides");
-
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
-    }
-    Domain domain = null;
-    boolean testCompletedSuccessfully = false;
-    try {
-      domain = TestUtils.createDomain(domaininimagewdtFile);
-      domain.verifyDomainCreated();
-      // TODO: This one is not working yet
-      // testBasicUseCases(domain);
-      // testAdvancedUseCasesForADomain(operator1, domain);
-      testAdminServerExternalService(domain);
-      testAdminT3ChannelWithJMS(domain);
-      testCompletedSuccessfully = true;
-
-    } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
-        domain.destroy();
-      }
-    }
-    logger.info("SUCCESS - testIntrospectorSitConfigOverrides");
-  }
-
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
     if (!SMOKETEST) {
       testClusterScaling(operator, domain);
