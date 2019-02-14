@@ -4,11 +4,19 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.operator.*;
+import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.Component;
@@ -64,6 +72,11 @@ public class PodHelper {
     @Override
     String getPodExistsMessageKey() {
       return MessageKeys.ADMIN_POD_EXISTS;
+    }
+
+    @Override
+    String getPodPatchedMessageKey() {
+      return MessageKeys.ADMIN_POD_PATCHED;
     }
 
     @Override
@@ -218,6 +231,11 @@ public class PodHelper {
     @Override
     String getPodExistsMessageKey() {
       return MessageKeys.MANAGED_POD_EXISTS;
+    }
+
+    @Override
+    String getPodPatchedMessageKey() {
+      return MessageKeys.MANAGED_POD_PATCHED;
     }
 
     @Override

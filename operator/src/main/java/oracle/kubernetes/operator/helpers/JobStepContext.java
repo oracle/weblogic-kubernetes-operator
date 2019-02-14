@@ -35,8 +35,8 @@ public abstract class JobStepContext extends StepContextBase {
 
   private final DomainPresenceInfo info;
   private V1Job jobModel;
-  final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
-  final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
+  static final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
+  static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
 
   JobStepContext(Packet packet) {
     info = packet.getSPI(DomainPresenceInfo.class);
@@ -217,7 +217,7 @@ public abstract class JobStepContext extends StepContextBase {
   private V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec =
         new V1PodSpec()
-            .activeDeadlineSeconds(60L)
+            .activeDeadlineSeconds(getActiveDeadlineSeconds())
             .restartPolicy("Never")
             .addContainersItem(createContainer(tuningParameters))
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
