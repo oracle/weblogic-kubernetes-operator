@@ -18,7 +18,7 @@ serviceAccount: "default"
 domainNamespaces: [ "default" ]
 
 # image specifies the docker image containing the operator code.
-image: "weblogic-kubernetes-operator:1.1"
+image: "oracle/weblogic-kubernetes-operator:2.1"
 
 # imagePullPolicy specifies the image pull policy for the operator docker image.
 imagePullPolicy: "IfNotPresent"
