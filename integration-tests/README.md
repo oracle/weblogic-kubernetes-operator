@@ -18,8 +18,10 @@ Java integration tests cover the below use cases:
 
 Quick test use cases - 
 
-Operator Configuration - operator1 deployed in weblogic-operator1 namespace and manages domains in default and test1 namespaces
-Domain Configuration - Domain on PV using WLST, traefik load balancer
+|  |  |
+| --- | --- |
+| Operator Configuration | operator1 deployed in weblogic-operator1 namespace and manages domains in default and test1 namespaces |
+| Domain Configuration | Domain on PV using WLST, traefik load balancer |
 
 Basic Use Cases
 
@@ -238,36 +240,38 @@ Successful run will have the output like below:
 [INFO] Final Memory: 60M/1236M
 
 ```
-Failed run will have the output
+Failed run will have the output like
 ```
 
 [INFO] 
 [INFO] Results:
 [INFO] 
 [ERROR] Errors: 
-[ERROR]   ITOperator.testBCreateDomainWithDefaultValuesInSampleInputs:287->testAllUseCasesForADomain:303->BaseTest.testClusterScaling:241 ? Runtime
+[ERROR]   ITOperator.testDomainOnPVUsingWLST:145 ? Runtime FAILURE: Couldn't create serv...
 [INFO] 
-[ERROR] Tests run: 11, Failures: 0, Errors: 1, Skipped: 0
+[ERROR] Tests run: 9, Failures: 0, Errors: 1, Skipped: 0
 [INFO] 
 [INFO] 
 [INFO] --- maven-failsafe-plugin:2.20.1:verify (integration-tests) @ operator-integration-tests ---
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary:
 [INFO] 
-[INFO] weblogic-kubernetes-operator ....................... SUCCESS [  1.669 s]
-[INFO] operator-model ..................................... SUCCESS [ 22.159 s]
-[INFO] operator-swagger ................................... SUCCESS [  1.426 s]
-[INFO] operator-runtime ................................... SUCCESS [ 54.559 s]
-[INFO] operator-integration-tests ......................... FAILURE [  01:03 h]
+[INFO] Build Tools ........................................ SUCCESS [  1.193 s]
+[INFO] weblogic-kubernetes-operator ....................... SUCCESS [  2.671 s]
+[INFO] json-schema ........................................ SUCCESS [ 14.917 s]
+[INFO] jsonschema-maven-plugin Maven Mojo ................. SUCCESS [  8.600 s]
+[INFO] operator-model ..................................... SUCCESS [ 23.065 s]
+[INFO] operator-swagger ................................... SUCCESS [  4.487 s]
+[INFO] operator-runtime ................................... SUCCESS [ 53.675 s]
+[INFO] operator-integration-tests ......................... FAILURE [41:09 min]
 [INFO] installation-tests ................................. SKIPPED
+[INFO] Project Reports .................................... SKIPPED
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD FAILURE
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time: 01:04 h
-[INFO] Finished at: 2018-10-31T15:19:46-07:00
-[INFO] Final Memory: 48M/1275M
-[INFO] ------------------------------------------------------------------------
-
+[INFO] Total time: 42:58 min
+[INFO] Finished at: 2019-02-11T09:42:08-08:00
+[INFO] Final Memory: 124M/1534M
 ```
 JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITOperator.xml". This file shows how much time each test case took to run and the failed test results if any.
 
