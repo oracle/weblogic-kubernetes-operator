@@ -220,6 +220,32 @@ public class TestUtils {
     }
     return true;
   }
+
+  /**
+   * NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) domain1-cluster-cluster-1 ClusterIP 10.105.146.61
+   * <none> 30032/TCP,8001/TCP domain1-managed-server1 ClusterIP None <none> 30032/TCP,8001/TCP
+   *
+   * @param service
+   * @param protocol
+   * @param port
+   * @return
+   * @throws Exception
+   */
+  public static boolean checkHasServiceChannelPort(String service, String protocol, int port)
+      throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl get services ");
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String stdout = result.stdout();
+    String stdoutlines[] = stdout.split("\\r?\\n");
+    if (result.exitValue() == 0 && stdoutlines.length > 0) {
+      for (String stdoutline : stdoutlines) {
+        if (stdoutline.contains(service) && stdoutline.contains(port + "/" + protocol)) {}
+      }
+    }
+    logger.warning(" -> checkHasServiceChannelPort: has neither: YES ");
+    return false;
+  }
+
   /**
    * First, kill the mgd server process in the container three times to cause the node manager to
    * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which

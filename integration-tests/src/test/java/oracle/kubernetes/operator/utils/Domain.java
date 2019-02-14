@@ -282,6 +282,42 @@ public class Domain {
   }
 
   /**
+   * Verify that we have the channel set for the cluster
+   *
+   * @param protocol
+   * @param port
+   * @throws Exception
+   */
+  public void verifyHasClusterServiceChannelPort(String protocol, int port) throws Exception {
+    if (!TestUtils.checkHasServiceChannelPort(
+        this.getDomainUid() + "-cluster-" + this.clusterName, protocol, port)) {
+      throw new RuntimeException(
+          "FAILURE: Cannot find channel port in cluster, but expecting one"
+              + port
+              + "/"
+              + protocol);
+    }
+  }
+
+  /**
+   * Verify that we have do not have the channel set for the cluster
+   *
+   * @param protocol
+   * @param port
+   * @throws Exception
+   */
+  public void verifyNotClusterServiceChannelPort(String protocol, int port) throws Exception {
+    if (TestUtils.checkHasServiceChannelPort(
+        this.getDomainUid() + "-cluster-" + this.clusterName, protocol, port)) {
+      throw new RuntimeException(
+          "FAILURE: Can find channel port in cluster, but not expecting one"
+              + port
+              + "/"
+              + protocol);
+    }
+  }
+
+  /**
    * deploy webapp using nodehost and nodeport
    *
    * @throws Exception
