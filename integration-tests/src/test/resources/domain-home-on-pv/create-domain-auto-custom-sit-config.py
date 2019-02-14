@@ -116,6 +116,13 @@ else:
   cmo.setCluster(cl)
   print('Done setting attributes for Server Template: %s' % templateName);
 
+  templateChannelName = cluster_name + "-NAP"
+  create(templateChannelName, 'NetworkAccessPoint')
+  cd('NetworkAccessPoints/%s' % templateChannelName)
+  set('PublicPort', server_port + 10)
+  # set('PublicAddress', 'junkvalue')
+  set('ListenAddress', '%s-%s${id}' % (domain_uid, managed_server_name_base_svc))
+  set('ListenPort', server_port + 10)
 
   cd('/Clusters/%s' % cluster_name)
   create(cluster_name, 'DynamicServers')
