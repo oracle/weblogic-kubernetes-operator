@@ -6,12 +6,32 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
-import static oracle.kubernetes.operator.logging.MessageKeys.*;
-import static org.hamcrest.Matchers.*;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-import io.kubernetes.client.models.*;
-import java.util.*;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1ContainerPort;
+import io.kubernetes.client.models.V1EnvFromSource;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -53,17 +73,22 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getPodCreatedMessageKey() {
+  String getCreatedMessageKey() {
     return MANAGED_POD_CREATED;
   }
 
   @Override
-  String getPodExistsMessageKey() {
+  String getExistsMessageKey() {
     return MANAGED_POD_EXISTS;
   }
 
   @Override
-  String getPodReplacedMessageKey() {
+  String getPatchedMessageKey() {
+    return MANAGED_POD_PATCHED;
+  }
+
+  @Override
+  String getReplacedMessageKey() {
     return MANAGED_POD_REPLACED;
   }
 
@@ -152,11 +177,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(
         getCreatedPod().getMetadata().getLabels(),
         hasEntry(LabelConstants.CLUSTERNAME_LABEL, CLUSTER_NAME));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecHasExtraCustomerAnnotation_replaceIt() {
-    verifyReplacePodWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
   }
 
   @Test
@@ -554,7 +574,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     Map<String, StepAndPacket> rolling = computePodsToRoll(mutator);
 
     assertThat(rolling, is(anEmptyMap()));
-    assertThat(logRecords, containsFine(getPodExistsMessageKey()));
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
   }
 
   @Override
