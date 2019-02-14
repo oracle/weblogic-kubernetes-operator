@@ -31,13 +31,12 @@ fi
 if [ $srctime \> $dsttime ];
 then
   mkdir $SCRIPTPATH/../docs/charts
-  helm repo index $WOCHARTPATH/ --url https://oracle.github.io/weblogic-kubernetes-operator/charts
+  helm repo index $WOCHARTPATH/ --url https://oracle.github.io/weblogic-kubernetes-operator/charts --merge $SCRIPTPATH/../docs/charts/index.yaml
 
-  mv -f $WOCHARTPATH/index.yaml $SCRIPTPATH/../docs/charts
   mv -f $helm_package $SCRIPTPATH/../docs/charts/
+  rm $WOCHARTPATH/index.yaml
 else
   rm $helm_package
-  rm $WOCHARTPATH/index.yaml
 fi;
 
 
