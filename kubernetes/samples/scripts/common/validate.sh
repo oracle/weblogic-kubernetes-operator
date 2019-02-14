@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -101,72 +101,6 @@ function validateNamespace {
 }
 
 #
-# Function to validate that either the output dir does not exist,
-# or that if it does, it does not contain any generated yaml files
-# and does not contain an inputs file that differs from the one
-# the script is using
-# $1   - the output directory to validate
-# $2   - the name of the input file the create script is using
-# $3   - the name of the input file that is put into the output directory
-# $4-n - the names of the generated yaml files
-function validateOutputDir {
-  local dir=$1
-  shift
-  if [ -e ${dir} ]; then
-    # the output directory already exists
-    if [ -d ${dir} ]; then
-      # the output directory is a directory
-      local in1=$1
-      shift
-      local in2=${1}
-      shift
-      internalValidateGeneratedYamlFilesDoNotExist ${dir} $@
-    else
-      validationError "${dir} exists but is not a directory."
-    fi
-  fi
-}
-
-#
-# Internal function to validate that the inputs file does not exist in the
-# outputs directory or is the same as the inputs file the script is using
-# $1 - the output directory to validate
-# $2 - the name of the input file the create script is using
-# $3 - the name of the input file that is put into the output directory
-function internalValidateInputsFileDoesNotExistOrIsTheSame {
-  local dir=$1
-  local in1=$2
-  local in2=$3
-  local f="${dir}/${in2}"
-  if [ -e ${f} ]; then
-    if [ -f ${f} ]; then
-      local differences=`diff -q ${f} ${in1}`
-      if ! [ -z "${differences}" ]; then
-        validationError "${f} is different than ${in1}"
-      fi
-    else
-      validationError "${f} exists and is not a file."
-    fi
-  fi
-}
-
-#
-# Internal unction to validate that the generated yaml files do not exist
-# in the outputs directory
-# $1 - the output directory to validate
-# $2-n - the names of the generated yaml files
-function internalValidateGeneratedYamlFilesDoNotExist {
-  local dir=$1
-  shift
-  for var in "$@"; do
-    local f="${dir}/${var}"
-    if [ -e ${f} ]; then
-      validationError "${f} exists."
-    fi
-  done
-}
-
-#
 # Function to validate the version of the inputs file
 #
 function validateVersion {
@@ -219,6 +153,56 @@ function validateWeblogicCredentialsSecretName {
   validateLowerCase "weblogicCredentialsSecretName" ${weblogicCredentialsSecretName}
 }
 
+#
+# Function to validate the weblogic image pull policy
+#
+function validateWeblogicImagePullPolicy {
+  if [ ! -z ${imagePullPolicy} ]; then
+    case ${imagePullPolicy} in
+      "IfNotPresent")
+      ;;
+      "Always")
+      ;;
+      "Never")
+      ;;
+      *)
+        validationError "Invalid value for imagePullPolicy: ${imagePullPolicy}. Valid values are IfNotPresent, Always, and Never."
+      ;;
+    esac
+  else
+    # Set the default
+    imagePullPolicy="IfNotPresent"
+  fi
+  failIfValidationErrors
+}
+
+#
+# Function to validate the weblogic image pull secret name
+#
+function validateWeblogicImagePullSecretName {
+  if [ ! -z ${imagePullSecretName} ]; then
+    validateLowerCase imagePullSecretName ${imagePullSecretName}
+    imagePullSecretPrefix=""
+    if [ "${generateOnly}" = false ]; then
+      validateWeblogicImagePullSecret
+    fi
+  else
+    # Set name blank when not specified, and comment out the yaml
+    imagePullSecretName=""
+    imagePullSecretPrefix="#"
+  fi
+}
+
+#
+# Function to validate the weblogic image pull secret exists
+#
+function validateWeblogicImagePullSecret {
+  # The kubernetes secret for pulling images from the docker store is optional.
+  # If it was specified, make sure it exists.
+  validateSecretExists ${imagePullSecretName} ${namespace}
+  failIfValidationErrors
+}
+
 # try to execute kubectl to see whether kubectl is available
 function validateKubectlAvailable {
   if ! [ -x "$(command -v kubectl)" ]; then
@@ -226,42 +210,22 @@ function validateKubectlAvailable {
   fi
 }
 
-# Function to validate the server startup control value
+# Function to validate the server start policy value
 #
-function validateStartupControl {
-  validateInputParamsSpecified startupControl
-  if [ ! -z "${startupControl}" ]; then
-    case ${startupControl} in
-      "NONE")
+function validateServerStartPolicy {
+  validateInputParamsSpecified serverStartPolicy
+  if [ ! -z "${serverStartPolicy}" ]; then
+    case ${serverStartPolicy} in
+      "NEVER")
       ;;
-      "ALL")
+      "ALWAYS")
       ;;
-      "ADMIN")
+      "IF_NEEDED")
       ;;
-      "SPECIFIED")
-      ;;
-      "AUTO")
+      "ADMIN_ONLY")
       ;;
       *)
-        validationError "Invalid value for startupControl: ${startupControl}. Valid values are 'NONE', 'ALL', 'ADMIN', 'SPECIFIED', and 'AUTO'."
-      ;;
-    esac
-  fi
-}
-
-#
-# Function to validate the cluster type value
-#
-function validateClusterType {
-  validateInputParamsSpecified clusterType
-  if [ ! -z "${clusterType}" ]; then
-    case ${clusterType} in
-      "CONFIGURED")
-      ;;
-      "DYNAMIC")
-      ;;
-      *)
-        validationError "Invalid value for clusterType: ${clusterType}. Valid values are 'CONFIGURED' and 'DYNAMIC'."
+        validationError "Invalid value for serverStartPolicy: ${serverStartPolicy}. Valid values are 'NEVER', 'ALWAYS', 'IF_NEEDED', and 'ADMIN_ONLY'."
       ;;
     esac
   fi
@@ -331,4 +295,96 @@ function validateLoadBalancer {
   fi
 }
 
+#
+# Function to validate a kubernetes secret exists
+# $1 - the name of the secret
+# $2 - namespace
+function validateSecretExists {
+  echo "Checking to see if the secret ${1} exists in namespace ${2}"
+  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The secret ${1} was not found in namespace ${2}"
+  fi
+}
+
+#
+# Function to validate the domain secret
+#
+function validateDomainSecret {
+  # Verify the secret exists
+  validateSecretExists ${weblogicCredentialsSecretName} ${namespace}
+  failIfValidationErrors
+
+  # Verify the secret contains a username
+  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep username: | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a username"
+  fi
+
+  # Verify the secret contains a password
+  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}'| grep password: | wc | awk ' { print $1; }'`
+  if [ "${SECRET}" != "1" ]; then
+    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a password"
+  fi
+  failIfValidationErrors
+}
+
+#
+# Function to validate the common input parameters
+#
+function validateCommonInputs {
+  # Parse the commonn inputs file
+  parseCommonInputs
+
+  validateInputParamsSpecified \
+    adminServerName \
+    domainUID \
+    clusterName \
+    managedServerNameBase \
+    namespace \
+    t3PublicAddress \
+    includeServerOutInPodLog \
+    version
+
+  validateIntegerInputParamsSpecified \
+    adminPort \
+    configuredManagedServerCount \
+    initialManagedServerReplicas \
+    managedServerPort \
+    t3ChannelPort \
+    adminNodePort
+
+  validateBooleanInputParamsSpecified \
+    productionModeEnabled \
+    exposeAdminT3Channel \
+    exposeAdminNodePort \
+    includeServerOutInPodLog
+
+  export requiredInputsVersion="create-weblogic-sample-domain-inputs-v1"
+  validateVersion
+
+  validateDomainUid
+  validateNamespace
+  validateAdminServerName
+  validateManagedServerNameBase
+  validateClusterName
+  validateWeblogicCredentialsSecretName
+  validateServerStartPolicy
+  validateWeblogicImagePullPolicy
+  validateWeblogicImagePullSecretName
+
+  failIfValidationErrors
+}
+
+#
+# Function to validate the domain's persistent volume claim has been created
+#
+function validateDomainPVC {
+  # Check if the persistent volume claim is already available
+  checkPvcExists ${persistentVolumeClaimName} ${namespace}
+  if [ "${PVC_EXISTS}" = "false" ]; then
+    validationError "The domain persistent volume claim ${persistentVolumeClaimName} does not exist in namespace ${namespace}"
+  fi
+  failIfValidationErrors
+}
 

@@ -1,16 +1,13 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.Workarounds.INTORSTRING_BAD_EQUALS;
-
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1beta1Ingress;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,7 +21,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
-import oracle.kubernetes.operator.utils.YamlUtils;
 
 /**
  * Support for writing unit tests that use CallBuilder to send requests that expect responses.
@@ -99,7 +95,6 @@ public class CallTestSupport {
     return !cannedResponse.optional && !cannedResponses.get(cannedResponse);
   }
 
-  @SuppressWarnings("unchecked")
   CannedResponse getMatchingResponse(
       RequestParams requestParams, String fieldSelector, String labelSelector) {
     AdditionalParams params = new AdditionalParams(fieldSelector, labelSelector);
@@ -139,8 +134,14 @@ public class CallTestSupport {
       this.methodName = methodName;
     }
 
-    private Object getResult(RequestParams requestParams) {
-      return function == null ? result : function.apply(requestParams);
+    private Object getResult(RequestParams requestParams) throws ApiException {
+      if (function != null) {
+        return function.apply(requestParams);
+      }
+      if (status > 0) {
+        throw new ApiException(status, "");
+      }
+      return result;
     }
 
     CallResponse getCallResponse() {
@@ -163,29 +164,8 @@ public class CallTestSupport {
 
     private boolean matchesBody(Object actualBody, Object expectedBody) {
       return expectedBody instanceof BodyMatcher && ((BodyMatcher) expectedBody).matches(actualBody)
-          || equalBodies(actualBody, expectedBody)
+          || Objects.equals(actualBody, expectedBody)
           || function != null;
-    }
-
-    private static boolean equalBodies(Object actual, Object expected) {
-      return useYamlComparison(actual)
-          ? yamlEquals(actual, expected)
-          : Objects.equals(actual, expected);
-    }
-
-    // This is a hack to get around a bug in the 1.0 K8s client code:
-    //    the IntOrString class does not define equals(), meaning that any classes which depend on
-    //    it require special handling.
-    private static boolean useYamlComparison(Object actual) {
-      return INTORSTRING_BAD_EQUALS && actual instanceof V1beta1Ingress;
-    }
-
-    private static boolean yamlEquals(Object actual, Object expected) {
-      return Objects.equals(objectToYaml(actual), objectToYaml(expected));
-    }
-
-    private static String objectToYaml(Object object) {
-      return YamlUtils.newYaml().dump(object);
     }
 
     private boolean matches(AdditionalParams params) {
@@ -267,7 +247,7 @@ public class CallTestSupport {
      *
      * @param function the specified function
      */
-    public void computingResult(Function<RequestParams, Object> function) {
+    void computingResult(Function<RequestParams, Object> function) {
       this.function = function;
     }
 
@@ -374,7 +354,8 @@ public class CallTestSupport {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T execute(
-        SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> helper) {
+        SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> helper)
+        throws ApiException {
       return (T) getMatchingResponse(requestParams, null, null).getResult(requestParams);
     }
   }

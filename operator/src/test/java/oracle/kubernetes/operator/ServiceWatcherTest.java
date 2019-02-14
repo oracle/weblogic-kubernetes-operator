@@ -55,7 +55,7 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
 
   @Override
   protected ServiceWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return ServiceWatcher.create(this, ns, Integer.toString(rv), this, stopping);
+    return ServiceWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
   }
 
   @Test

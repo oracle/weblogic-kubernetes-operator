@@ -25,6 +25,13 @@ weblogicDomainStorageType: HOST_PATH
 #weblogicDomainStorageNFSServer: nfsServer
 
 # Physical path of the persistent storage.
+# When weblogicDomainStorageType is set to HOST_PATH, this value should be set the to path to the
+# domain storage on the Kubernetes host.
+# When weblogicDomainStorageType is set to NFS, then weblogicDomainStorageNFSServer should be set
+# to the IP address or name of the DNS server, and this value should be set to the exported path
+# on that server.
+# Note that the path where the domain is mounted in the WebLogic containers is not affected by this
+# setting, that is determined when you create your domain.
 # The following line must be uncomment and customized:
 #weblogicDomainStoragePath: /scratch/k8s_dir
 

@@ -7,25 +7,22 @@ package oracle.kubernetes.operator.builders;
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.ProgressRequestBody;
-import io.kubernetes.client.ProgressResponseBody;
+import io.kubernetes.client.apis.BatchV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
-import io.kubernetes.client.apis.ExtensionsV1beta1Api;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
+import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1beta1Ingress;
 import io.kubernetes.client.util.Watch;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
-import oracle.kubernetes.operator.work.ContainerResolver;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.api.WeblogicApi;
 
 public class WatchBuilder {
   /** Always true for watches. */
@@ -33,6 +30,8 @@ public class WatchBuilder {
 
   /** Ignored for watches. */
   private static final String START_LIST = null;
+
+  private static final int ADDITIONAL_TIMEOUT_FOR_SOCKET = 60;
 
   private static WatchFactory FACTORY = new WatchFactoryImpl();
 
@@ -47,13 +46,7 @@ public class WatchBuilder {
         throws ApiException;
   }
 
-  public WatchBuilder() {
-    TuningParameters tuning =
-        ContainerResolver.getInstance().getContainer().getSPI(TuningParameters.class);
-    if (tuning != null) {
-      callParams.setTimeoutSeconds(tuning.getWatchTuning().watchLifetime);
-    }
-  }
+  public WatchBuilder() {}
 
   private static Type getType(Class<?> responseBodyType) {
     return new ParameterizedType() {
@@ -98,6 +91,9 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
       try {
         return new CoreV1Api(client)
             .listNamespacedServiceCall(
@@ -140,9 +136,57 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
       try {
         return new CoreV1Api(client)
             .listNamespacedPodCall(
+                namespace,
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getIncludeUninitialized(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
+  /**
+   * Creates a web hook object to track jobs
+   *
+   * @param namespace the namespace
+   * @return the active web hook
+   * @throws ApiException if there is an error on the call that sets up the web hook.
+   */
+  public WatchI<V1Job> createJobWatch(String namespace) throws ApiException {
+    return FACTORY.createWatch(
+        ClientPool.getInstance(), callParams, V1Job.class, new ListJobCall(namespace));
+  }
+
+  private class ListJobCall implements BiFunction<ApiClient, CallParams, Call> {
+    private String namespace;
+
+    ListJobCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
+      try {
+        return new BatchV1Api(client)
+            .listNamespacedJobCall(
                 namespace,
                 callParams.getPretty(),
                 START_LIST,
@@ -182,51 +226,12 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
       try {
         return new CoreV1Api(client)
             .listNamespacedEventCall(
-                namespace,
-                callParams.getPretty(),
-                START_LIST,
-                callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
-                callParams.getLabelSelector(),
-                callParams.getLimit(),
-                callParams.getResourceVersion(),
-                callParams.getTimeoutSeconds(),
-                WATCH,
-                null,
-                null);
-      } catch (ApiException e) {
-        throw new UncheckedApiException(e);
-      }
-    }
-  }
-
-  /**
-   * Creates a web hook object to track changes to the cluster ingress
-   *
-   * @param namespace the namespace
-   * @return the active web hook
-   * @throws ApiException if there is an error on the call that sets up the web hook.
-   */
-  public WatchI<V1beta1Ingress> createIngressWatch(String namespace) throws ApiException {
-    return FACTORY.createWatch(
-        ClientPool.getInstance(), callParams, V1beta1Ingress.class, new ListIngressCall(namespace));
-  }
-
-  private class ListIngressCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
-
-    ListIngressCall(String namespace) {
-      this.namespace = namespace;
-    }
-
-    @Override
-    public Call apply(ApiClient client, CallParams callParams) {
-      try {
-        return new ExtensionsV1beta1Api(client)
-            .listNamespacedIngressCall(
                 namespace,
                 callParams.getPretty(),
                 START_LIST,
@@ -266,9 +271,12 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
       try {
         return new WeblogicApi(client)
-            .listWebLogicOracleV1NamespacedDomainCall(
+            .listWebLogicOracleV2NamespacedDomainCall(
                 namespace,
                 callParams.getPretty(),
                 START_LIST,
@@ -311,6 +319,9 @@ public class WatchBuilder {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
       try {
         return new CoreV1Api(client)
             .listNamespacedConfigMapCall(
@@ -332,6 +343,10 @@ public class WatchBuilder {
     }
   }
 
+  private Integer getSocketTimeout(CallParams callParams) {
+    return callParams.getTimeoutSeconds() + ADDITIONAL_TIMEOUT_FOR_SOCKET;
+  }
+
   /**
    * Sets a value for the fieldSelector parameter for the call that will set up this watch. Defaults
    * to null.
@@ -344,7 +359,8 @@ public class WatchBuilder {
     return this;
   }
 
-  public WatchBuilder withIncludeUninitialized(Boolean includeUninitialized) {
+  @SuppressWarnings("SameParameterValue")
+  WatchBuilder withIncludeUninitialized(Boolean includeUninitialized) {
     callParams.setIncludeUninitialized(includeUninitialized);
     return this;
   }
@@ -359,13 +375,9 @@ public class WatchBuilder {
     return this;
   }
 
-  public WatchBuilder withLimit(Integer limit) {
+  @SuppressWarnings("SameParameterValue")
+  WatchBuilder withLimit(Integer limit) {
     callParams.setLimit(limit);
-    return this;
-  }
-
-  public WatchBuilder withPrettyPrinting() {
-    callParams.setPretty("true");
     return this;
   }
 
@@ -379,17 +391,6 @@ public class WatchBuilder {
     return this;
   }
 
-  public WatchBuilder withProgressListener(ProgressResponseBody.ProgressListener progressListener) {
-    callParams.setProgressListener(progressListener);
-    return this;
-  }
-
-  public WatchBuilder withProgressRequestListener(
-      ProgressRequestBody.ProgressRequestListener progressRequestListener) {
-    callParams.setProgressRequestListener(progressRequestListener);
-    return this;
-  }
-
   static class WatchFactoryImpl implements WatchFactory {
     @Override
     public <T> WatchI<T> createWatch(
@@ -400,7 +401,7 @@ public class WatchBuilder {
         throws ApiException {
       ApiClient client = pool.take();
       try {
-        return new WatchImpl<T>(
+        return new WatchImpl<>(
             pool,
             client,
             Watch.createWatch(

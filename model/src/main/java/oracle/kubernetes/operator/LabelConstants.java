@@ -9,12 +9,17 @@ public interface LabelConstants {
   String RESOURCE_VERSION_LABEL = "weblogic.resourceVersion";
   String DOMAINUID_LABEL = "weblogic.domainUID";
   String DOMAINNAME_LABEL = "weblogic.domainName";
+  String DOMAINHOME_LABEL = "weblogic.domainHome";
   String SERVERNAME_LABEL = "weblogic.serverName";
   String CHANNELNAME_LABEL = "weblogic.channelName";
   String CLUSTERNAME_LABEL = "weblogic.clusterName";
   String CREATEDBYOPERATOR_LABEL = "weblogic.createdByOperator";
   String OPERATORNAME_LABEL = "weblogic.operatorName";
+  String JOBNAME_LABEL = "job-name";
   String APP_LABEL = "app";
+  String DOMAINRESTARTVERSION_LABEL = "weblogic.domainRestartVersion";
+  String CLUSTERRESTARTVERSION_LABEL = "weblogic.clusterRestartVersion";
+  String SERVERRESTARTVERSION_LABEL = "weblogic.serverRestartVersion";
 
   static String forDomainUid(String uid) {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);

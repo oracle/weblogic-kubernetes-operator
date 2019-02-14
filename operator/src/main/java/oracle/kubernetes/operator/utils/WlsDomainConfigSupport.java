@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -15,6 +16,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 
 public class WlsDomainConfigSupport {
   private String domain;
+  private String adminServerName;
   private Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
   private Map<String, WlsServerConfig> wlsServers = new HashMap<>();
   private Map<String, WlsServerConfig> templates = new HashMap<>();
@@ -24,6 +26,10 @@ public class WlsDomainConfigSupport {
     this.domain = domain;
   }
 
+  public void setAdminServerName(String adminServerName) {
+    this.adminServerName = adminServerName;
+  }
+
   /**
    * Adds a WLS server to the configuration. Any non-clustered server must be added explicitly.
    * Clustered servers may be added, or may be added simply as part of their cluster.
@@ -31,11 +37,22 @@ public class WlsDomainConfigSupport {
    * @param serverName the name of the server.
    */
   public void addWlsServer(String serverName) {
-    wlsServers.put(serverName, createServerConfig(serverName));
+    addWlsServer(serverName, null);
   }
 
-  private static WlsServerConfig createServerConfig(String serverName) {
-    return new ServerConfigBuilder(serverName).build();
+  /**
+   * Adds a WLS server to the configuration. Any non-clustered server must be added explicitly.
+   * Clustered servers may be added, or may be added simply as part of their cluster.
+   *
+   * @param serverName the name of the server.
+   * @param listenPort the listen port
+   */
+  public void addWlsServer(String serverName, Integer listenPort) {
+    wlsServers.put(serverName, createServerConfig(serverName, listenPort));
+  }
+
+  private static WlsServerConfig createServerConfig(String serverName, Integer listenPort) {
+    return new ServerConfigBuilder(serverName, listenPort).build();
   }
 
   /**
@@ -96,18 +113,31 @@ public class WlsDomainConfigSupport {
    * @return a domain configuration, or null
    */
   public WlsDomainConfig createDomainConfig() {
-    return new WlsDomainConfig(domain, wlsClusters, wlsServers, templates, machineConfigs);
+    // reconcile static clusters
+    for (WlsClusterConfig cluster : wlsClusters.values()) {
+      ListIterator<WlsServerConfig> servers = cluster.getServers().listIterator();
+      while (servers.hasNext()) {
+        WlsServerConfig existing = wlsServers.get(servers.next().getName());
+        if (existing != null) {
+          servers.set(existing);
+        }
+      }
+    }
+    return new WlsDomainConfig(
+        domain, adminServerName, wlsClusters, wlsServers, templates, machineConfigs);
   }
 
   static class ServerConfigBuilder {
     private String name;
+    private Integer listenPort;
 
-    ServerConfigBuilder(String name) {
+    ServerConfigBuilder(String name, Integer listenPort) {
       this.name = name;
+      this.listenPort = listenPort;
     }
 
     WlsServerConfig build() {
-      return new WlsServerConfig(name, null, null, null, false, null, null);
+      return new WlsServerConfig(name, listenPort, null, null, false, null, null, null, false);
     }
   }
 
@@ -120,7 +150,11 @@ public class WlsDomainConfigSupport {
     }
 
     void addServer(String serverName) {
-      serverConfigs.add(createServerConfig(serverName));
+      addServer(serverName, null);
+    }
+
+    void addServer(String serverName, Integer listenPort) {
+      serverConfigs.add(createServerConfig(serverName, listenPort));
     }
 
     WlsClusterConfig build() {

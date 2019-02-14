@@ -1,25 +1,16 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
-apiVersion: "weblogic.oracle/v1"
+apiVersion: "weblogic.oracle/v2"
 kind: Domain
 metadata:
   name: domain1
   namespace: domain_ns
-  labels:
-    weblogic.resourceVersion: domain-v2
 spec:
   # Identify which Secret contains the WebLogic Admin credentials
-  adminSecret:
+  webLogicCredentialsSecret:
     name: admin-secret
-  # The name of the Admin Server
-  asName: admin
-  # The Admin Server's ListenPort
-  asPort: 8001
-  # The WebLogic Domain Name
-
-  domainName: base_domain
   # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
   # have its own unique domainUID.  This does not have to be the same as the Domain Name.  It is allowed
   # to have multiple Domains with the same Domain Name, but they MUST have different domainUID's.
@@ -41,26 +32,46 @@ spec:
     env:
     - name: var1
       value: value0
+    nodeSelector:
+      os_arch: x86
+      os: linux
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
 
-  # Configured storage using nfs style
-  storage:
-    generated:
-      storageSize: 8Gi
-      nfs:
-        server: thatServer
-        path: /local/path
+  # configured wls configuration overrides configmap name
+  configOverrides: overrides-config-map
+
+  # configured wls configuration overrides secret names
+  configOverrideSecrets: [overrides-secret-1, overrides-secret-2]
+  
+  # Restart version 
+  restartVersion: "1"
 
   adminServer:
     # The Admin Server's NodePort (optional)
-    nodePort: 7001
+    adminService:
+      channels:
+      - channelName: default
+        nodePort: 7001
     serverPod:
       env:
       - name: var1
         value: value1
+      nodeSelector:
+        os_arch: x86_64
+      resources:
+        requests:
+          cpu: "150m"
+        limits:
+          cpu: "200m"
 
   # list of configurations per named server.
   managedServers:
-    # the name of the server to apply these rules to
   - serverName: server1
     # an (optional) list of environment variable to be set on the server
     serverPod:
@@ -68,14 +79,19 @@ spec:
       - name: JAVA_OPTIONS
         value: "-server"
       - name: USER_MEM_ARGS
-        value: "-Xms64m -Xmx256m "
-        
+        value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
+      nodeSelector:
+        os_arch: arm64
+      resources:
+        requests:
+          memory: "32Mi"
+        limits:
+          memory: "256Mi"
   - serverName: server2
     serverStartState: ADMIN
-
-  # clusterStartup has the same structure as serverStartup, but it allows you to specify the name
-  # of a cluster instead of an individual server.  If you use this entry, then the rules will be
-  # applied to ALL servers that are members of the named clusters.
+    restartVersion: "3"
+      
+  # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
   - clusterName: cluster2
     desiredState: "RUNNING"
@@ -86,3 +102,4 @@ spec:
         value: "-verbose"
       - name: USER_MEM_ARGS
         value: "-Xms64m -Xmx256m "
+    restartVersion: "2"

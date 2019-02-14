@@ -10,52 +10,46 @@ import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1beta1IngressList;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.helpers.ConfigMapHelper;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 public class DeleteDomainStep extends Step {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
+  private final DomainPresenceInfo info;
   private final String namespace;
   private final String domainUID;
 
-  public DeleteDomainStep(String namespace, String domainUID) {
+  public DeleteDomainStep(DomainPresenceInfo info, String namespace, String domainUID) {
     super(null);
+    this.info = info;
     this.namespace = namespace;
     this.domainUID = domainUID;
   }
 
   @Override
   public NextAction apply(Packet packet) {
-    return doNext(
+    Step serverDownStep =
         Step.chain(
-            deleteIngresses(),
-            deleteServices(),
             deletePods(),
+            deleteServices(),
             deletePersistentVolumes(),
-            deletePersistentVolumeClaims()),
-        packet);
-  }
+            deletePersistentVolumeClaims(),
+            ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUID, namespace, getNext()));
+    if (info != null) {
+      Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
+      serversToStop.addAll(info.getServers().entrySet());
+      serverDownStep = new ServerDownIteratorStep(serversToStop, serverDownStep);
+    }
 
-  private Step deleteIngresses() {
-    LOGGER.finer(MessageKeys.LIST_INGRESS_FOR_DOMAIN, this.domainUID, namespace);
-    return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
-        .listIngressAsync(
-            namespace,
-            new ActionResponseStep<V1beta1IngressList>() {
-              @Override
-              Step createSuccessStep(V1beta1IngressList result, Step next) {
-                return new DeleteIngressListStep(result.getItems(), next);
-              }
-            });
+    return doNext(serverDownStep, packet);
   }
 
   private Step deleteServices() {
@@ -73,7 +67,7 @@ public class DeleteDomainStep extends Step {
   private Step deletePods() {
     return new CallBuilder()
         .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
-        .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(getNext()));
+        .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(null));
   }
 
   private Step deletePersistentVolumes() {

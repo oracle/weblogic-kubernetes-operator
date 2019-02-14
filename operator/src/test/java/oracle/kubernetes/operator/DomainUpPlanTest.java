@@ -1,3 +1,7 @@
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStep;
@@ -19,8 +23,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
@@ -38,8 +42,7 @@ public class DomainUpPlanTest {
   private DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
 
   private DomainPresenceStep getDomainPresenceStep() {
-    return DomainPresenceStep.createDomainPresenceStep(
-        domainPresenceInfo, adminStep, managedServersStep);
+    return DomainPresenceStep.createDomainPresenceStep(domain, adminStep, managedServersStep);
   }
 
   @Before
@@ -57,7 +60,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenStartupControlNull_runAdminStepOnly() {
+  public void whenStartPolicyNull_runAdminStepOnly() {
     testSupport.runSteps(getDomainPresenceStep());
 
     assertThat(adminStep.wasRun(), is(true));
@@ -88,56 +91,44 @@ public class DomainUpPlanTest {
   public void whenNotShuttingDown_selectAdminServerStep() {
     configurator.setShuttingDown(false);
 
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
-    assertThat(plan.step, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
+    assertThat(plan, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
   }
 
   @Test
   public void whenShuttingDown_selectManagedServerStepOnly() {
     configurator.setShuttingDown(true);
 
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
-        plan.step,
+        plan,
         both(hasChainWithStep("ManagedServersUpStep"))
             .and(not(hasChainWithStep("AdminServerStep"))));
   }
 
   @Test
   public void useSequenceBeforeAdminServerStep() {
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
+    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
-        plan.step,
+        plan,
         hasChainWithStepsInOrder(
             "ProgressingHookStep",
             "DomainPresenceStep",
-            "ListPersistentVolumeClaimStep",
+            // "DeleteIntrospectorJobStep",
+            "DomainIntrospectorJobStep",
+            // "WatchDomainIntrospectorJobReadyStep",
+            // "ReadDomainIntrospectorPodStep",
+            // "ReadDomainIntrospectorPodLogStep",
+            // "SitConfigMapStep",
             "AdminPodStep",
             "BeforeAdminServiceStep",
             "ForServerStep",
             "WatchPodReadyAdminStep",
-            "ReadStep",
-            "ExternalAdminChannelsStep",
             "ManagedServersUpStep",
             "EndProgressingStep"));
-  }
-
-  @Test
-  public void whenOperatorCreatedStorageConfigured_createBeforeListingClaims() {
-    configurator.withNfsStorage("myhost", "/path");
-
-    Step.StepAndPacket plan = Main.createDomainUpPlan(domainPresenceInfo, NS);
-
-    assertThat(
-        plan.step,
-        hasChainWithStepsInOrder(
-            "ProgressingHookStep",
-            "PersistentVolumeStep",
-            "PersistentVolumeClaimStep",
-            "ListPersistentVolumeClaimStep"));
   }
 
   static class StepChainMatcher

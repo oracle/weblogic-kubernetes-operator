@@ -43,6 +43,10 @@ public class GeneratedOperatorObjects {
     return operatorYaml.getObjectCount() + securityYaml.getObjectCount();
   }
 
+  public V1Namespace getOperatorNamespace() {
+    return securityYaml.getOperatorNamespace();
+  }
+
   public ExtensionsV1beta1Deployment getOperatorDeployment() {
     return operatorYaml.getOperatorDeployment();
   }
@@ -61,10 +65,6 @@ public class GeneratedOperatorObjects {
 
   public V1Service getInternalOperatorService() {
     return operatorYaml.getInternalOperatorService();
-  }
-
-  public V1Namespace getOperatorNamespace() {
-    return securityYaml.getOperatorNamespace();
   }
 
   public V1ServiceAccount getOperatorServiceAccount() {

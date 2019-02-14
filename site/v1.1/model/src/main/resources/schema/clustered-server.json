@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "javaType": "oracle.kubernetes.weblogic.domain.v1.ClusteredServer",
+  "description": "ClusteredServer describes the desired state of a clustered server.",
+  "extends" : {
+    "$ref": "server.json"
+  },
+  "properties": {
+    "clusteredServerStartPolicy": {
+      "description": "Whether this clustered server should be started. Legal values are ALWAYS, IF_NEEDED and NEVER.  <p>Defaults to IF_NEEDED.",
+      "type": "string"
+    }
+  }
+}

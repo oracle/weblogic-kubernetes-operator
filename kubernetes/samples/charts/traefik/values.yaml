@@ -8,3 +8,9 @@ dashboard:
   domain: traefik.example.com
 rbac:
   enabled: true
+ssl:
+  enabled: true
+  #enforced: true 
+  #upstream: true
+  #insecureSkipVerify: false
+  tlsMinVersion: VersionTLS12

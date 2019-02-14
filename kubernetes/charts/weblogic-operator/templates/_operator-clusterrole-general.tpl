@@ -8,7 +8,7 @@ apiVersion: "rbac.authorization.k8s.io/v1"
 metadata:
   name: {{ list .Release.Namespace "weblogic-operator-clusterrole-general" | join "-" | quote }}
   labels:
-    weblogic.resourceVersion: "operator-v1"
+    weblogic.resourceVersion: "operator-v2"
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]
@@ -21,11 +21,8 @@ rules:
   resources: ["customresourcedefinitions"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: ["weblogic.oracle"]
-  resources: ["domains"]
+  resources: ["domains", "domains/status"]
   verbs: ["get", "list", "watch", "update", "patch"]
-- apiGroups: ["weblogic.oracle"]
-  resources: ["domains/status"]
-  verbs: ["update"]
 - apiGroups: ["extensions"]
   resources: ["ingresses"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]

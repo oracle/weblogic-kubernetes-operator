@@ -1,19 +1,20 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_IF_NEEDED;
-import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
-
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v1.ServerSpec;
+import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -21,6 +22,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** The effective configuration for a server configured by the version 2 domain model. */
 public abstract class ServerSpecV2Impl extends ServerSpec {
   private final Server server;
+  private final Cluster cluster;
   private Integer clusterLimit;
 
   /**
@@ -32,12 +34,13 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
    * @param configurations the additional configurations to search for values if the server lacks
    *     them
    */
-  ServerSpecV2Impl(
-      DomainSpec spec, Server server, Integer clusterLimit, BaseConfiguration... configurations) {
+  ServerSpecV2Impl(DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
     super(spec);
     this.server = getBaseConfiguration(server);
     this.clusterLimit = clusterLimit;
-    for (BaseConfiguration configuration : configurations) this.server.fillInFrom(configuration);
+    this.server.fillInFrom(cluster);
+    this.server.fillInFrom(spec);
+    this.cluster = cluster;
   }
 
   private Server getBaseConfiguration(Server server) {
@@ -50,6 +53,38 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   }
 
   @Override
+  public List<V1Volume> getAdditionalVolumes() {
+    return server.getAdditionalVolumes();
+  }
+
+  @Override
+  public List<V1VolumeMount> getAdditionalVolumeMounts() {
+    return server.getAdditionalVolumeMounts();
+  }
+
+  @Override
+  @Nonnull
+  public Map<String, String> getPodLabels() {
+    return server.getPodLabels();
+  }
+
+  @Override
+  @Nonnull
+  public Map<String, String> getPodAnnotations() {
+    return server.getPodAnnotations();
+  }
+
+  @Override
+  public Map<String, String> getServiceLabels() {
+    return server.getServiceLabels();
+  }
+
+  @Override
+  public Map<String, String> getServiceAnnotations() {
+    return server.getServiceAnnotations();
+  }
+
+  @Override
   public String getDesiredState() {
     return Optional.ofNullable(getConfiguredDesiredState()).orElse("RUNNING");
   }
@@ -59,21 +94,14 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   }
 
   @Override
-  public Integer getNodePort() {
-    return server.getNodePort();
-  }
-
-  @Override
   public boolean shouldStart(int currentReplicas) {
     switch (getEffectiveServerStartPolicy()) {
-      case START_NEVER:
-        return false;
-      case START_ALWAYS:
+      case ALWAYS:
         return true;
-      case START_IF_NEEDED:
+      case IF_NEEDED:
         return clusterLimit == null || currentReplicas < clusterLimit;
       default:
-        return clusterLimit == null;
+        return false;
     }
   }
 
@@ -81,8 +109,10 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
     return domainSpec.isStartAdminServerOnly();
   }
 
-  private String getEffectiveServerStartPolicy() {
-    return Optional.ofNullable(server.getServerStartPolicy()).orElse("undefined");
+  private ServerStartPolicy getEffectiveServerStartPolicy() {
+    return Optional.ofNullable(server.getServerStartPolicy())
+        .map(ServerStartPolicy::valueOf)
+        .orElse(ServerStartPolicy.getDefaultPolicy());
   }
 
   @Nonnull
@@ -97,12 +127,49 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
     return server.getReadinessProbe();
   }
 
+  @Nonnull
+  @Override
+  public Map<String, String> getNodeSelectors() {
+    return server.getNodeSelector();
+  }
+
+  @Override
+  public V1ResourceRequirements getResources() {
+    return server.getResources();
+  }
+
+  @Override
+  public V1PodSecurityContext getPodSecurityContext() {
+    return server.getPodSecurityContext();
+  }
+
+  @Override
+  public V1SecurityContext getContainerSecurityContext() {
+    return server.getContainerSecurityContext();
+  }
+
+  @Override
+  public String getDomainRestartVersion() {
+    return domainSpec.getRestartVersion();
+  }
+
+  @Override
+  public String getClusterRestartVersion() {
+    return cluster != null ? cluster.getRestartVersion() : null;
+  }
+
+  @Override
+  public String getServerRestartVersion() {
+    return server.getRestartVersion();
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("server", server)
         .append("clusterLimit", clusterLimit)
+        .append("cluster", cluster)
         .toString();
   }
 
@@ -120,6 +187,7 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.equals(o))
         .append(server, that.server)
         .append(clusterLimit, that.clusterLimit)
+        .append(cluster, that.cluster)
         .isEquals();
   }
 
@@ -129,6 +197,7 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
         .appendSuper(super.hashCode())
         .append(server)
         .append(clusterLimit)
+        .append(cluster)
         .toHashCode();
   }
 }

@@ -19,7 +19,8 @@ public class WlsDynamicServerConfigTest {
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
     WlsServerConfig template =
-        new WlsServerConfig("template1", 1000, null, 2000, true, null, networkAccessPointList);
+        new WlsServerConfig(
+            "template1", 1000, null, 2000, true, null, networkAccessPointList, null, false);
 
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", false, template);
@@ -37,7 +38,8 @@ public class WlsDynamicServerConfigTest {
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
     WlsServerConfig template =
-        new WlsServerConfig("template1", null, null, null, true, null, networkAccessPointList);
+        new WlsServerConfig(
+            "template1", null, null, null, true, null, networkAccessPointList, null, false);
 
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", false, template);
@@ -55,7 +57,8 @@ public class WlsDynamicServerConfigTest {
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
     WlsServerConfig template =
-        new WlsServerConfig("template1", 1000, null, 2000, true, null, networkAccessPointList);
+        new WlsServerConfig(
+            "template1", 1000, null, 2000, true, null, networkAccessPointList, null, false);
 
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", true, template);
@@ -73,7 +76,8 @@ public class WlsDynamicServerConfigTest {
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
     WlsServerConfig template =
-        new WlsServerConfig("template1", null, null, null, true, null, networkAccessPointList);
+        new WlsServerConfig(
+            "template1", null, null, null, true, null, networkAccessPointList, null, false);
 
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", true, template);

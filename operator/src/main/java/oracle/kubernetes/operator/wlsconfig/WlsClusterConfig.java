@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -16,10 +16,12 @@ import oracle.kubernetes.operator.work.Step;
 public class WlsClusterConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final String clusterName;
-  private List<WlsServerConfig> serverConfigs = new ArrayList<>();
-  private final WlsDynamicServersConfig dynamicServersConfig;
+  private String name;
+  private List<WlsServerConfig> servers = new ArrayList<>();
+  private WlsDynamicServersConfig dynamicServersConfig;
   private WlsDomainConfig wlsDomainConfig;
+
+  public WlsClusterConfig() {}
 
   /**
    * Constructor for a static cluster when Json result is not available
@@ -27,7 +29,7 @@ public class WlsClusterConfig {
    * @param clusterName Name of the WLS cluster
    */
   public WlsClusterConfig(String clusterName) {
-    this.clusterName = clusterName;
+    this.name = clusterName;
     this.dynamicServersConfig = null;
   }
 
@@ -39,7 +41,7 @@ public class WlsClusterConfig {
    *     configuration for this cluster
    */
   public WlsClusterConfig(String clusterName, WlsDynamicServersConfig dynamicServersConfig) {
-    this.clusterName = clusterName;
+    this.name = clusterName;
     this.dynamicServersConfig = dynamicServersConfig;
   }
 
@@ -76,13 +78,23 @@ public class WlsClusterConfig {
   }
 
   /**
+   * Returns true if one of the servers in the cluster has the specified name.
+   *
+   * @param serverName the name to look for
+   * @return true or false
+   */
+  public boolean hasNamedServer(String serverName) {
+    return getServerConfigs().stream().anyMatch(c -> serverName.equals(c.getName()));
+  }
+
+  /**
    * Add a statically configured WLS server to this cluster
    *
    * @param wlsServerConfig A WlsServerConfig object containing the configuration of the statically
    *     configured WLS server that belongs to this cluster
    */
   public synchronized void addServerConfig(WlsServerConfig wlsServerConfig) {
-    serverConfigs.add(wlsServerConfig);
+    servers.add(wlsServerConfig);
   }
 
   /**
@@ -91,7 +103,7 @@ public class WlsClusterConfig {
    * @return The number of servers that are statically configured in this cluster
    */
   public synchronized int getClusterSize() {
-    return serverConfigs.size();
+    return servers.size();
   }
 
   public synchronized int getMaxClusterSize() {
@@ -104,7 +116,28 @@ public class WlsClusterConfig {
    * @return the name of the cluster that this WlsClusterConfig is created for
    */
   public String getClusterName() {
-    return clusterName;
+    return name;
+  }
+
+  /**
+   * Returns the name of the cluster that this WlsClusterConfig is created for
+   *
+   * @return the name of the cluster that this WlsClusterConfig is created for
+   */
+  public String getName() {
+    return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  public WlsDynamicServersConfig getDynamicServersConfig() {
+    return this.dynamicServersConfig;
+  }
+
+  public void setDynamicServersConfig(WlsDynamicServersConfig dynamicServersConfig) {
+    this.dynamicServersConfig = dynamicServersConfig;
   }
 
   /**
@@ -137,12 +170,20 @@ public class WlsClusterConfig {
   public synchronized List<WlsServerConfig> getServerConfigs() {
     if (dynamicServersConfig != null) {
       List<WlsServerConfig> result =
-          new ArrayList<>(dynamicServersConfig.getDynamicClusterSize() + serverConfigs.size());
+          new ArrayList<>(dynamicServersConfig.getDynamicClusterSize() + servers.size());
       result.addAll(dynamicServersConfig.getServerConfigs());
-      result.addAll(serverConfigs);
+      result.addAll(servers);
       return result;
     }
-    return serverConfigs;
+    return servers;
+  }
+
+  public List<WlsServerConfig> getServers() {
+    return this.servers;
+  }
+
+  public void setServers(List<WlsServerConfig> servers) {
+    this.servers = servers;
   }
 
   /**
@@ -151,7 +192,7 @@ public class WlsClusterConfig {
    * @return True if the cluster contains any statically configured servers
    */
   public synchronized boolean hasStaticServers() {
-    return !serverConfigs.isEmpty();
+    return !servers.isEmpty();
   }
 
   /**
@@ -317,7 +358,7 @@ public class WlsClusterConfig {
    * @return The REST URL path for updating cluster size of dynamic servers for this cluster
    */
   public String getUpdateDynamicClusterSizeUrl() {
-    return "/management/weblogic/latest/edit/clusters/" + clusterName + "/dynamicServers";
+    return "/management/weblogic/latest/edit/clusters/" + name + "/dynamicServers";
   }
 
   /**
@@ -335,11 +376,11 @@ public class WlsClusterConfig {
   @Override
   public String toString() {
     return "WlsClusterConfig{"
-        + "clusterName='"
-        + clusterName
+        + "name='"
+        + name
         + '\''
-        + ", serverConfigs="
-        + serverConfigs
+        + ", servers="
+        + servers
         + ", dynamicServersConfig="
         + dynamicServersConfig
         + '}';
@@ -381,7 +422,7 @@ public class WlsClusterConfig {
      */
     @Override
     public Step createStep(Step next) {
-      return new WlsRetriever.UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
+      return new UpdateDynamicClusterStep(wlsClusterConfig, targetClusterSize, next);
     }
   }
 }
