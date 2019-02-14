@@ -24,6 +24,12 @@ public class ProbeTuning {
 
   public ProbeTuning() {}
 
+  void copyValues(ProbeTuning fromProbe) {
+    if (initialDelaySeconds == null) initialDelaySeconds(fromProbe.initialDelaySeconds);
+    if (timeoutSeconds == null) timeoutSeconds(fromProbe.timeoutSeconds);
+    if (periodSeconds == null) periodSeconds(fromProbe.periodSeconds);
+  }
+
   public Integer getInitialDelaySeconds() {
     return initialDelaySeconds;
   }

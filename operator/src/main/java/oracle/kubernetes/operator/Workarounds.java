@@ -15,5 +15,5 @@ public class Workarounds {
   // This breaks some K8s model comparisons.
 
   // Reported to https://github.com/kubernetes-client/java as issue #282
-  public static final boolean INTORSTRING_BAD_EQUALS = true;
+  public static final boolean INTORSTRING_BAD_EQUALS = false;
 }

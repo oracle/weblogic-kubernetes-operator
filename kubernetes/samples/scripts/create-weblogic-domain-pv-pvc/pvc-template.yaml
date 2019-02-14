@@ -7,7 +7,7 @@ metadata:
   name: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pvc
   namespace: %NAMESPACE%
   labels:
-    weblogic.resourceVersion: domain-v1
+    weblogic.resourceVersion: domain-v2
     %DOMAIN_UID_LABEL_PREFIX%weblogic.domainUID: %DOMAIN_UID%
 spec:
   storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class

@@ -15,9 +15,9 @@ public class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
   private final AtomicReference<String> lastKnownStatus = new AtomicReference<>(null);
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
-  private ConcurrentMap<String, V1Service> channels = null;
+  private final ConcurrentMap<String, V1Service> channels = new ConcurrentHashMap<>();
 
-  ServerKubernetesObjects() {}
+  public ServerKubernetesObjects() {}
 
   /**
    * The Pod
@@ -52,9 +52,6 @@ public class ServerKubernetesObjects {
    * @return Map from channel name to Service
    */
   public ConcurrentMap<String, V1Service> getChannels() {
-    if (channels == null) {
-      channels = new ConcurrentHashMap<String, V1Service>();
-    }
     return channels;
   }
 }

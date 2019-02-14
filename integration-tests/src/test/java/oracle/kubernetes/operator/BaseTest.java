@@ -11,6 +11,8 @@ import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -148,6 +150,7 @@ public class BaseTest {
    */
   public void testAdminServerExternalService(Domain domain) throws Exception {
     logger.info("Inside testAdminServerExternalService");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     logger.info("Done - testAdminServerExternalService");
   }
@@ -159,6 +162,7 @@ public class BaseTest {
    */
   public void testAdminT3Channel(Domain domain) throws Exception {
     logger.info("Inside testAdminT3Channel");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     Map<String, Object> domainMap = domain.getDomainMap();
     // check if the property is set to true
     Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
@@ -177,6 +181,23 @@ public class BaseTest {
     logger.info("Done - testAdminT3Channel");
   }
 
+  /**
+   * Verify t3channel port by a JMS connection.
+   *
+   * @throws Exception
+   */
+  public void testAdminT3ChannelWithJMS(Domain domain) throws Exception {
+    logger.info("Inside testAdminT3ChannelWithJMS");
+    ConnectionFactory cf = domain.createJMSConnectionFactory();
+    Connection c = cf.createConnection();
+    logger.info("Connection created successfully before cycle.");
+    domain.shutdownUsingServerStartPolicy();
+    domain.restartUsingServerStartPolicy();
+    c = cf.createConnection();
+    logger.info("Connection created successfully after cycle");
+    c.close();
+    logger.info("Done - testAdminT3ChannelWithJMS");
+  }
   /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
    * balancing and node port service
@@ -203,6 +224,7 @@ public class BaseTest {
    */
   public void testClusterScaling(Operator operator, Domain domain) throws Exception {
     logger.info("Inside testClusterScaling");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
     String domainNS = domainMap.get("namespace").toString();
@@ -263,6 +285,7 @@ public class BaseTest {
    */
   public void testWLDFScaling(Operator operator, Domain domain) throws Exception {
     logger.info("Inside testWLDFScaling");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();

@@ -13,6 +13,8 @@ import java.nio.file.Path;
 /** Parses a generated weblogic-operator.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
 
+  private static String OPERATOR_RELEASE = "weblogic-operator";
+
   private OperatorValues inputs;
 
   ParsedWeblogicOperatorYaml(Path yamlPath, OperatorValues inputs) throws Exception {
@@ -46,7 +48,7 @@ public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
   }
 
   public int getExpectedObjectCount() {
-    int rtn = 4;
+    int rtn = 6;
     if (inputs.getRemoteDebugNodePortEnabled().equals("true")
         || !(inputs.getExternalRestEnabled().equals("true"))) {
       // the external operator service is enabled if the remote debug port is enabled or external

@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<domain xmlns="http://xmlns.oracle.com/weblogic/domain" xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+  <name>${env:DOMAIN_NAME}</name>
+  <server>
+    <name>${ADMIN_NAME}</name>
+    <max-message-size f:combine-mode="replace">78787878</max-message-size>
+    <network-access-point>
+      <name>T3Channel1</name>
+      <public-address f:combine-mode="replace">${TEST_HOST}</public-address>
+      <public-port f:combine-mode="replace">40012</public-port>
+    </network-access-point>
+    <network-access-point>
+      <name>T3Channel2</name>
+      <public-address f:combine-mode="replace">${TEST_HOST}</public-address>
+      <public-port f:combine-mode="replace">40013</public-port>
+    </network-access-point>
+    <network-access-point>
+      <name>T3Channel3</name>
+      <public-address f:combine-mode="add">${TEST_HOST}</public-address>
+      <public-port f:combine-mode="add">40014</public-port>
+    </network-access-point>
+  </server>
+  <server>
+    <name>standalone1</name>
+    <max-message-size f:combine-mode="replace">1111111</max-message-size>
+  </server>
+  <server>
+    <name>standalone2</name>
+    <max-message-size f:combine-mode="add">2222222</max-message-size>
+  </server>
+</domain>

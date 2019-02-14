@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -8,32 +8,39 @@ import static java.net.HttpURLConnection.HTTP_ENTITY_TOO_LARGE;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.operator.builders.EventMatcher.*;
+import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
+import static oracle.kubernetes.operator.builders.EventMatcher.deleteEvent;
+import static oracle.kubernetes.operator.builders.EventMatcher.errorEvent;
+import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
 import static oracle.kubernetes.operator.builders.WatchBuilderTest.JsonServletAction.withResponses;
 import static oracle.kubernetes.operator.builders.WatchBuilderTest.ParameterValidation.parameter;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.fail;
 
 import com.meterware.pseudoserver.HttpUserAgentTest;
 import com.meterware.pseudoserver.PseudoServlet;
 import com.meterware.pseudoserver.WebResource;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1beta1Ingress;
-import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.BiFunction;
+import java.util.Queue;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.helpers.Pool;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,14 +52,12 @@ import org.junit.Test;
  */
 public class WatchBuilderTest extends HttpUserAgentTest {
 
-  private static final String API_VERSION = "weblogic.oracle/v1";
+  private static final String API_VERSION = "weblogic.oracle/v2";
   private static final String NAMESPACE = "testspace";
   private static final String DOMAIN_RESOURCE =
-      "/apis/weblogic.oracle/v1/namespaces/" + NAMESPACE + "/domains";
+      "/apis/weblogic.oracle/v2/namespaces/" + NAMESPACE + "/domains";
   private static final String SERVICE_RESOURCE = "/api/v1/namespaces/" + NAMESPACE + "/services";
   private static final String POD_RESOURCE = "/api/v1/namespaces/" + NAMESPACE + "/pods";
-  private static final String INGRESS_RESOURCE =
-      "/apis/extensions/v1beta1/namespaces/" + NAMESPACE + "/ingresses";
   private static final String EOL = "\n";
   private static final int INITIAL_RESOURCE_VERSION = 123;
 
@@ -64,12 +69,12 @@ public class WatchBuilderTest extends HttpUserAgentTest {
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(TestServerWatchFactory.install(getHostPath()));
+    mementos.add(ClientPoolStub.install(getHostPath()));
     validationErrors = new ArrayList<>();
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     for (Memento memento : mementos) memento.revert();
     if (!validationErrors.isEmpty()) throw validationErrors.get(0);
   }
@@ -88,7 +93,35 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     assertThat(domainWatch, contains(addEvent(domain)));
   }
 
-  @SuppressWarnings("unchecked")
+  @Test
+  public void afterWatchClosed_returnClientToPool() throws Exception {
+    Domain domain =
+        new Domain()
+            .withApiVersion(API_VERSION)
+            .withKind("Domain")
+            .withMetadata(createMetaData("domain1", NAMESPACE));
+    defineHttpResponse(DOMAIN_RESOURCE, withResponses(createAddedResponse(domain)));
+
+    try (WatchI<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE)) {
+      domainWatch.next();
+    }
+
+    assertThat(ClientPoolStub.getPooledClients(), not(empty()));
+  }
+
+  @Test
+  public void afterWatchError_closeDoesNotReturnClientToPool() throws Exception {
+    defineHttpResponse(DOMAIN_RESOURCE, withResponses());
+
+    try (WatchI<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE)) {
+      domainWatch.next();
+      fail("Should have thrown an exception");
+    } catch (Throwable ignore) {
+    }
+
+    assertThat(ClientPoolStub.getPooledClients(), is(empty()));
+  }
+
   @Test
   public void whenDomainWatchReceivesModifyAndDeleteResponses_returnBothFromIterator()
       throws Exception {
@@ -177,30 +210,6 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     assertThat(podWatch.hasNext(), is(false));
   }
 
-  @Test
-  public void whenIngressWatchSpecifiesParameters_verifyAndReturnResponse() throws Exception {
-    V1beta1Ingress ingress =
-        new V1beta1Ingress()
-            .apiVersion(API_VERSION)
-            .kind("Ingress")
-            .metadata(createMetaData("ingress", NAMESPACE));
-    defineHttpResponse(
-        INGRESS_RESOURCE,
-        withResponses(createDeletedResponse(ingress))
-            .andValidations(
-                parameter("pretty").withValue("true"),
-                parameter("timeoutSeconds").withValue("15"),
-                parameter("limit").withValue("500")));
-
-    WatchI<V1beta1Ingress> ingressWatch =
-        new WatchBuilder()
-            .withTimeoutSeconds(15)
-            .withPrettyPrinting()
-            .createIngressWatch(NAMESPACE);
-
-    assertThat(ingressWatch, contains(deleteEvent(ingress)));
-  }
-
   private void defineHttpResponse(String resourceName, JsonServletAction... responses) {
     defineResource(resourceName, new JsonServlet(responses));
   }
@@ -266,7 +275,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     }
 
     @Override
-    public WebResource getGetResponse() throws IOException {
+    public WebResource getGetResponse() {
       if (requestNum >= actions.size())
         return new WebResource("Unexpected Request #" + requestNum, HTTP_UNAVAILABLE);
 
@@ -278,6 +287,7 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     }
   }
 
+  @SuppressWarnings("SameParameterValue")
   private V1ObjectMeta createMetaData(String name, String namespace) {
     return new V1ObjectMeta()
         .name(name)
@@ -301,45 +311,38 @@ public class WatchBuilderTest extends HttpUserAgentTest {
     return WatchEvent.createDeleteEvent(object).toJson();
   }
 
+  @SuppressWarnings("SameParameterValue")
   private String createErrorResponse(int statusCode) {
     return WatchEvent.createErrorEvent(statusCode).toJson();
   }
 
-  static class TestServerWatchFactory extends WatchBuilder.WatchFactoryImpl {
+  static class ClientPoolStub extends ClientPool {
+    private String basePath;
+    private static Queue<ApiClient> queue;
+
     static Memento install(String basePath) throws NoSuchFieldException {
-      return StaticStubSupport.install(
-          WatchBuilder.class, "FACTORY", new TestServerWatchFactory(basePath));
+      queue = new ArrayDeque<>();
+      return StaticStubSupport.install(ClientPool.class, "SINGLETON", new ClientPoolStub(basePath));
     }
 
-    private String basePath;
+    static Collection<ApiClient> getPooledClients() {
+      return Collections.unmodifiableCollection(queue);
+    }
 
-    private TestServerWatchFactory(String basePath) {
+    ClientPoolStub(String basePath) {
       this.basePath = basePath;
     }
 
     @Override
-    public <T> WatchI<T> createWatch(
-        Pool<ApiClient> pool,
-        CallParams callParams,
-        Class<?> responseBodyType,
-        BiFunction<ApiClient, CallParams, Call> function)
-        throws ApiException {
-      Pool<ApiClient> testPool =
-          new Pool<ApiClient>() {
+    protected ApiClient create() {
+      ApiClient apiClient = super.create();
+      apiClient.setBasePath(basePath);
+      return apiClient;
+    }
 
-            @Override
-            protected ApiClient create() {
-              Memento memento = TestUtils.silenceOperatorLogger();
-              try {
-                ApiClient client = pool.take();
-                client.setBasePath(basePath);
-                return client;
-              } finally {
-                memento.revert();
-              }
-            }
-          };
-      return super.createWatch(testPool, callParams, responseBodyType, function);
+    @Override
+    protected Queue<ApiClient> getQueue() {
+      return queue;
     }
   }
 }

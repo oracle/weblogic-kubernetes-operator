@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 apiVersion: batch/v1
 kind: Job
@@ -9,7 +9,7 @@ spec:
   template:
     metadata:
       labels:
-        weblogic.resourceVersion: domain-v1
+        weblogic.resourceVersion: domain-v2
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
         app: %DOMAIN_UID%-create-weblogic-sample-domain-job
@@ -44,7 +44,7 @@ spec:
             - name: CLUSTER_NAME
               value: "%CLUSTER_NAME%"
             - name: CLUSTER_TYPE
-              value: "%CLUSTER_TYPE%"
+              value: "DYNAMIC"
             - name: T3_CHANNEL_PORT
               value: "%T3_CHANNEL_PORT%"
             - name: T3_PUBLIC_ADDRESS
@@ -64,7 +64,7 @@ spec:
             - name: DOMAIN_ROOT_DIR
               value: "%DOMAIN_ROOT_DIR%"
             - name: DOMAIN_HOME_DIR
-              value: "%DOMAIN_ROOT_DIR%/domains/%DOMAIN_UID%"
+              value: "%DOMAIN_HOME%"
             - name: DOMAIN_LOGS_DIR
               value: "%DOMAIN_ROOT_DIR%/logs/%DOMAIN_UID%"
       volumes:

@@ -24,7 +24,7 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.After;
 import org.junit.Before;

@@ -1,8 +1,6 @@
 #!/bin/bash
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-
-set -x
 
 export PATH=$PATH:/operator
 
@@ -18,6 +16,8 @@ function relay_SIGTERM {
 trap relay_SIGTERM SIGTERM
 
 /operator/initialize-internal-operator-identity.sh
+
+/operator/initialize-external-operator-identity.sh
 
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
   DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=$HOSTNAME:$REMOTE_DEBUG_PORT"
@@ -50,8 +50,12 @@ if [[ ! -z "$JAVA_LOGGING_LEVEL" ]]; then
      [ $JAVA_LOGGING_LEVEL != $FINEST  ]; then
     echo "WARNING: Ignoring invalid JAVA_LOGGING_LEVEL: \"${JAVA_LOGGING_LEVEL}\". Valid values are $SEVERE, $WARNING, $INFO, $CONFIG, $FINE, $FINER and $FINEST."
   else
-    sed -i -e "s|\(.*\.level=\).*|\1${JAVA_LOGGING_LEVEL}|g" $LOGGING_CONFIG
+    sed -i -e "s|INFO|${JAVA_LOGGING_LEVEL}|g" $LOGGING_CONFIG
   fi
+fi
+
+if [ "${MOCK_WLS}" == 'true' ]; then
+  MOCKING_WLS="-DmockWLS=true"
 fi
 
 LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
@@ -60,7 +64,10 @@ cp /operator/logstash.conf /logs/logstash.conf
 # assumption is that we have mounted a volume on /logs which is also visible to
 # the logstash container/pod.
 
+# Container memory optimizaton flags
+HEAP="-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=1 -XshowSettings:vm"
+
 # Start operator
-java $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
+java $HEAP $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
 PID=$!
 wait $PID

@@ -1,58 +1,67 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.v2;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.weblogic.domain.v1.ExportedNetworkAccessPoint;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@Description("AdminServer represents the operator configuration for the admin server.")
 public class AdminServer extends Server {
 
-  public static final AdminServer NULL_ADMIN_SERVER = new AdminServer();
+  @Description(
+      "Configures which of the admin server's WebLogic admin channels should be exposed outside"
+          + " the Kubernetes cluster via a node port service.")
+  private AdminService adminService;
 
-  /**
-   * List of T3 network access points to export, along with label and annotations to apply to
-   * corresponding channel services.
-   *
-   * @since 2.0
-   */
-  @Description("T3 network access points to export")
-  private Map<String, ExportedNetworkAccessPoint> exportedNetworkAccessPoints = new HashMap<>();
-
-  /**
-   * Configures an exported T3 network access point.
-   *
-   * @param name the name of the NAP
-   */
-  ExportedNetworkAccessPoint addExportedNetworkAccessPoint(String name) {
-    if (exportedNetworkAccessPoints == null) exportedNetworkAccessPoints = new HashMap<>();
-
-    ExportedNetworkAccessPoint exportedNetworkAccessPoint = new ExportedNetworkAccessPoint();
-    exportedNetworkAccessPoints.put(name, exportedNetworkAccessPoint);
-    return exportedNetworkAccessPoint;
+  public AdminServer withChannel(String channelName, int nodePort) {
+    if (adminService == null) {
+      adminService = new AdminService();
+    }
+    adminService.withChannel(channelName, nodePort);
+    return this;
   }
 
-  public List<String> getExportedNetworkAccessPointNames() {
-    return new ArrayList<>(exportedNetworkAccessPoints.keySet());
+  public List<String> getChannelNames() {
+    if (adminService == null) {
+      return Collections.emptyList();
+    }
+    List<String> channelNames = new ArrayList<>();
+    for (Channel c : adminService.getChannels()) {
+      channelNames.add(c.getChannelName());
+    }
+    return channelNames;
   }
 
-  public ExportedNetworkAccessPoint getExportedNetworkAccessPoint(String napName) {
-    return exportedNetworkAccessPoints.get(napName);
+  public List<Channel> getChannels() {
+    if (adminService == null) {
+      return Collections.emptyList();
+    }
+    return adminService.getChannels();
+  }
+
+  public Channel getChannel(String channelName) {
+    if (adminService != null) {
+      for (Channel c : adminService.getChannels()) {
+        if (channelName.equals(c.getChannelName())) {
+          return c;
+        }
+      }
+    }
+    return null;
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
-        .append("exportedNetworkAccessPoints", exportedNetworkAccessPoints)
+        .append("adminService", adminService)
         .toString();
   }
 
@@ -66,7 +75,7 @@ public class AdminServer extends Server {
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
-        .append(exportedNetworkAccessPoints, that.exportedNetworkAccessPoints)
+        .append(adminService, that.adminService)
         .isEquals();
   }
 
@@ -74,7 +83,15 @@ public class AdminServer extends Server {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
-        .append(exportedNetworkAccessPoints)
+        .append(adminService)
         .toHashCode();
+  }
+
+  public AdminService getAdminService() {
+    return adminService;
+  }
+
+  public void setAdminService(AdminService adminService) {
+    this.adminService = adminService;
   }
 }

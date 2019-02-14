@@ -26,7 +26,7 @@ public class ServerDownStep extends Step {
     return doNext(
         PodHelper.deletePodStep(
             sko,
-            ServiceHelper.deleteServiceStep(
+            ServiceHelper.deleteServicesStep(
                 sko, new ServerDownFinalizeStep(serverName, getNext()))),
         packet);
   }

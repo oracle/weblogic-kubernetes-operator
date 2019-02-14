@@ -1,10 +1,10 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import java.lang.ref.WeakReference;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -14,7 +14,7 @@ public abstract class Pool<T> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   // volatile since multiple threads may access queue reference
-  private volatile WeakReference<ConcurrentLinkedQueue<T>> queue;
+  private volatile Queue<T> queue = new ConcurrentLinkedQueue<>();
 
   /**
    * Gets a new object from the pool. If no object is available in the pool, this method creates a
@@ -36,20 +36,8 @@ public abstract class Pool<T> {
     return instance;
   }
 
-  private ConcurrentLinkedQueue<T> getQueue() {
-    WeakReference<ConcurrentLinkedQueue<T>> referenceQueue = queue;
-    if (referenceQueue != null) {
-      ConcurrentLinkedQueue<T> returnQueue = referenceQueue.get();
-      if (returnQueue != null) {
-        return returnQueue;
-      }
-    }
-
-    // overwrite the queue
-    ConcurrentLinkedQueue<T> d = new ConcurrentLinkedQueue<>();
-    queue = new WeakReference<>(d);
-
-    return d;
+  protected Queue<T> getQueue() {
+    return queue;
   }
 
   /**
@@ -58,10 +46,14 @@ public abstract class Pool<T> {
    * @param instance Pool object to recycle
    */
   public final void recycle(T instance) {
-    getQueue().offer(instance);
+    getQueue().offer(onRecycle(instance));
     if (LOGGER.isFinerEnabled()) {
       LOGGER.finer("Recycling instance to pool, instances now in pool: " + getQueue().size());
     }
+  }
+
+  protected T onRecycle(T instance) {
+    return instance;
   }
 
   /**
@@ -72,9 +64,4 @@ public abstract class Pool<T> {
    * @return Created instance
    */
   protected abstract T create();
-
-  /** Drains pool of all entries; useful for unit-testing */
-  public void drain() {
-    getQueue().clear();
-  }
 }

@@ -5,13 +5,15 @@
 package oracle.kubernetes.json;
 
 import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.TYPE;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/** Supplies a description for a field to be inserted into the generated JSON schema. */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(FIELD)
+@Target({TYPE, FIELD})
 public @interface Description {
   String value();
 }

@@ -76,8 +76,10 @@ public class LoggingFacade {
    * @param thrown an Exception to include in the logged message
    */
   public void config(String msg, Throwable thrown) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.CONFIG, details.clazz, details.method, msg, thrown);
+    if (isConfigEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.CONFIG, details.clazz, details.method, msg, thrown);
+    }
   }
 
   /** Logs a method entry. The calling class and method names will be inferred. */
@@ -155,8 +157,10 @@ public class LoggingFacade {
    * @param thrown an Exception to include in the logged message
    */
   public void fine(String msg, Throwable thrown) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.FINE, details.clazz, details.method, msg, thrown);
+    if (isFineEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.FINE, details.clazz, details.method, msg, thrown);
+    }
   }
 
   /**
@@ -191,8 +195,10 @@ public class LoggingFacade {
    * @param thrown an Exception to include in the logged message
    */
   public void finer(String msg, Throwable thrown) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.FINER, details.clazz, details.method, msg, thrown);
+    if (isFinerEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.FINER, details.clazz, details.method, msg, thrown);
+    }
   }
 
   /**
@@ -227,8 +233,10 @@ public class LoggingFacade {
    * @param thrown an Exception to include in the logged message
    */
   public void finest(String msg, Throwable thrown) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.FINEST, details.clazz, details.method, msg, thrown);
+    if (isFinestEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.FINEST, details.clazz, details.method, msg, thrown);
+    }
   }
 
   /**
@@ -265,8 +273,10 @@ public class LoggingFacade {
    * @param msg the message to log
    */
   public void info(String msg) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.INFO, details.clazz, details.method, msg);
+    if (isInfoEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.INFO, details.clazz, details.method, msg);
+    }
   }
 
   /**
@@ -276,8 +286,10 @@ public class LoggingFacade {
    * @param params varargs list of objects to include in the log message
    */
   public void info(String msg, Object... params) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.INFO, details.clazz, details.method, msg, params);
+    if (isInfoEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.INFO, details.clazz, details.method, msg, params);
+    }
   }
 
   /**
@@ -287,8 +299,10 @@ public class LoggingFacade {
    * @param thrown an Exception to include in the logged message
    */
   public void info(String msg, Throwable thrown) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.INFO, details.clazz, details.method, msg, thrown);
+    if (isInfoEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.INFO, details.clazz, details.method, msg, thrown);
+    }
   }
 
   /**
@@ -416,8 +430,10 @@ public class LoggingFacade {
    * @param msg the message to log
    */
   public void severe(String msg) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.SEVERE, details.clazz, details.method, msg);
+    if (isSevereEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.SEVERE, details.clazz, details.method, msg);
+    }
   }
 
   /**
@@ -427,8 +443,10 @@ public class LoggingFacade {
    * @param params varargs list of objects to include in the log message
    */
   public void severe(String msg, Object... params) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.SEVERE, details.clazz, details.method, msg, params);
+    if (isSevereEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.SEVERE, details.clazz, details.method, msg, params);
+    }
   }
 
   /**
@@ -438,8 +456,10 @@ public class LoggingFacade {
    * @param thrown an Exception to include in the logged message
    */
   public void severe(String msg, Throwable thrown) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.SEVERE, details.clazz, details.method, msg, thrown);
+    if (isSevereEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.SEVERE, details.clazz, details.method, msg, thrown);
+    }
   }
 
   /**
@@ -460,8 +480,10 @@ public class LoggingFacade {
    * @param msg the message to log
    */
   public void warning(String msg) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.WARNING, details.clazz, details.method, msg);
+    if (isWarningEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.WARNING, details.clazz, details.method, msg);
+    }
   }
 
   /**
@@ -471,8 +493,10 @@ public class LoggingFacade {
    * @param params varargs list of objects to include in the log message
    */
   public void warning(String msg, Object... params) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.WARNING, details.clazz, details.method, msg, params);
+    if (isWarningEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.WARNING, details.clazz, details.method, msg, params);
+    }
   }
 
   /**
@@ -482,8 +506,10 @@ public class LoggingFacade {
    * @param thrown an Exception to include in the logged message
    */
   public void warning(String msg, Throwable thrown) {
-    CallerDetails details = inferCaller();
-    logger.logp(Level.WARNING, details.clazz, details.method, msg, thrown);
+    if (isWarningEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.WARNING, details.clazz, details.method, msg, thrown);
+    }
   }
 
   /**

@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -8,6 +8,7 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.watcher.WatchListener;
@@ -23,10 +24,11 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<V1ConfigMap> listener,
       AtomicBoolean isStopping) {
     ConfigMapWatcher watcher =
-        new ConfigMapWatcher(ns, initialResourceVersion, listener, isStopping);
+        new ConfigMapWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -34,9 +36,10 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
   private ConfigMapWatcher(
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<V1ConfigMap> listener,
       AtomicBoolean isStopping) {
-    super(initialResourceVersion, isStopping, listener);
+    super(initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
   }
 

@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -11,8 +11,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,21 +23,20 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import javax.annotation.Nonnull;
+import org.joda.time.DateTime;
 
-@SuppressWarnings("WeakerAccess")
 public class SchemaGenerator {
-  public static final String DEFAULT_KUBERNETES_VERSION = "1.9.0";
 
   private static final String EXTERNAL_CLASS = "external";
 
   private static final List<Class<?>> PRIMITIVE_NUMBERS =
       Arrays.asList(byte.class, short.class, int.class, long.class, float.class, double.class);
 
-  private static final String K8S_SCHEMA_URL =
-      "https://github.com/garethr/kubernetes-json-schema/blob/master/v%s/_definitions.json";
-  private static final String K8S_SCHEMA_CACHE = "caches/kubernetes-%s.json";
+  private static final String JSON_SCHEMA_REFERENCE = "http://json-schema.org/draft-04/schema#";
 
   // A map of classes to their $ref values
   private Map<Class<?>, String> references = new HashMap<>();
@@ -46,7 +46,18 @@ public class SchemaGenerator {
 
   // a map of external class names to the external schema that defines them
   private Map<String, String> schemaUrls = new HashMap<>();
+
+  // true if deprecated fields should be included in the schema
   private boolean includeDeprecated;
+
+  // if true generate the additionalProperties field for each object. Defaults to true
+  private boolean includeAdditionalProperties = true;
+
+  // if true, the object fields are implemented as references to definitions
+  private boolean supportObjectReferences = true;
+
+  // if true, generate the top-level schema version reference
+  private boolean includeSchemaReference = true;
 
   /**
    * Returns a pretty-printed string corresponding to a generated schema
@@ -65,36 +76,35 @@ public class SchemaGenerator {
    * @throws IOException if no schema for that version is cached.
    */
   public void useKubernetesVersion(String version) throws IOException {
-    addExternalSchema(getKubernetesSchemaUrl(version), getKubernetesSchemaCache(version));
-  }
+    KubernetesSchemaReference reference = KubernetesSchemaReference.create(version);
+    URL cacheUrl = reference.getKubernetesSchemaCacheUrl();
+    if (cacheUrl == null) throw new IOException("No schema cached for Kubernetes " + version);
 
-  URL getKubernetesSchemaUrl(String version) throws MalformedURLException {
-    return new URL(String.format(K8S_SCHEMA_URL, version));
-  }
-
-  private URL getKubernetesSchemaCache(String version) {
-    return getClass().getResource(String.format(K8S_SCHEMA_CACHE, version));
-  }
-
-  public void addExternalSchema(URL schemaUrl) throws IOException {
-    addExternalSchema(schemaUrl, new BufferedReader(new InputStreamReader(schemaUrl.openStream())));
+    addExternalSchema(reference.getKubernetesSchemaUrl(), cacheUrl);
   }
 
   public void addExternalSchema(URL schemaUrl, URL cacheUrl) throws IOException {
-    addExternalSchema(schemaUrl, new BufferedReader(new InputStreamReader(cacheUrl.openStream())));
-  }
-
-  private void addExternalSchema(URL schemaUrl, BufferedReader schemaReader) throws IOException {
-    StringBuilder sb = new StringBuilder();
-    String inputLine;
-    while ((inputLine = schemaReader.readLine()) != null) sb.append(inputLine).append('\n');
-    schemaReader.close();
-
-    Map<String, Map<String, Object>> map = fromJson(sb.toString());
-    Map<String, Object> definitions = map.get("definitions");
+    Map<String, Map<String, Object>> objectObjectMap = loadCachedSchema(cacheUrl);
+    Map<String, Object> definitions = objectObjectMap.get("definitions");
     for (Map.Entry<String, Object> entry : definitions.entrySet()) {
       if (isDefinitionToUse(entry.getValue())) schemaUrls.put(entry.getKey(), schemaUrl.toString());
     }
+  }
+
+  static <T, S> Map<T, S> loadCachedSchema(URL cacheUrl) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    try (BufferedReader schemaReader =
+        new BufferedReader(new InputStreamReader(cacheUrl.openStream()))) {
+      String inputLine;
+      while ((inputLine = schemaReader.readLine()) != null) sb.append(inputLine).append('\n');
+    }
+
+    return fromJson(sb.toString());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T, S> Map<T, S> fromJson(String json) {
+    return new Gson().fromJson(json, HashMap.class);
   }
 
   @SuppressWarnings("unchecked")
@@ -107,11 +117,6 @@ public class SchemaGenerator {
     return description != null && description.toString().contains("Deprecated");
   }
 
-  @SuppressWarnings("unchecked")
-  private <T, S> Map<T, S> fromJson(String json) {
-    return new Gson().fromJson(json, HashMap.class);
-  }
-
   /**
    * Specifies whether deprecated fields should be included in the schema
    *
@@ -122,17 +127,49 @@ public class SchemaGenerator {
   }
 
   /**
+   * Specifies whether the "additionalProperties" property will be specified to forbid properties
+   * not in the schema
+   *
+   * @param includeAdditionalProperties true to forbid unknown properties
+   */
+  public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
+    this.includeAdditionalProperties = includeAdditionalProperties;
+  }
+
+  /**
+   * Specifies whether object fields will be implemented as references to existing definitions. If
+   * false, nested objects will be described inline.
+   *
+   * @param supportObjectReferences true to reference definitions of object
+   */
+  public void setSupportObjectReferences(boolean supportObjectReferences) {
+    this.supportObjectReferences = supportObjectReferences;
+  }
+
+  /**
+   * Specifies whether top-level schema reference is included
+   *
+   * @param includeSchemaReference true to include schema reference
+   */
+  public void setIncludeSchemaReference(boolean includeSchemaReference) {
+    this.includeSchemaReference = includeSchemaReference;
+  }
+
+  /**
    * Generates an object representing a JSON schema for the specified class.
    *
    * @param aClass the class for which the schema should be generated
    * @return a map of maps, representing the computed JSON
    */
-  public Object generate(Class aClass) {
+  public Map<String, Object> generate(Class aClass) {
     Map<String, Object> result = new HashMap<>();
 
+    if (includeSchemaReference) {
+      result.put("$schema", JSON_SCHEMA_REFERENCE);
+    }
     generateObjectTypeIn(result, aClass);
     if (!definedObjects.isEmpty()) {
-      Map<String, Object> definitions = new HashMap<>();
+      Map<String, Object> definitions = new TreeMap<>();
       result.put("definitions", definitions);
       for (Class<?> type : definedObjects.keySet())
         if (!definedObjects.get(type).equals(EXTERNAL_CLASS))
@@ -149,11 +186,15 @@ public class SchemaGenerator {
   }
 
   private boolean includeInSchema(Field field) {
-    return !isStatic(field) && !ignoreAsDeprecated(field);
+    return !isStatic(field) && !isVolatile(field) && !ignoreAsDeprecated(field);
   }
 
   private boolean isStatic(Field field) {
     return Modifier.isStatic(field.getModifiers());
+  }
+
+  private boolean isVolatile(Field field) {
+    return Modifier.isVolatile(field.getModifiers());
   }
 
   private boolean ignoreAsDeprecated(Field field) {
@@ -175,13 +216,63 @@ public class SchemaGenerator {
     sub.generateTypeIn(result, field.getType());
     String description = getDescription(field);
     if (description != null) result.put("description", description);
+    if (isString(field.getType())) addStringRestrictions(result, field);
+    if (isNumeric(field.getType())) addRange(result, field);
 
     return result;
+  }
+
+  private boolean isString(Class<?> type) {
+    return type.equals(String.class);
+  }
+
+  private boolean isDateTime(Class<?> type) {
+    return type.equals(DateTime.class);
+  }
+
+  private boolean isNumeric(Class<?> type) {
+    return Number.class.isAssignableFrom(type) || PRIMITIVE_NUMBERS.contains(type);
   }
 
   private String getDescription(Field field) {
     Description description = field.getAnnotation(Description.class);
     return description != null ? description.value() : null;
+  }
+
+  private void addStringRestrictions(Map<String, Object> result, Field field) {
+    Class<? extends Enum> enumClass = getEnumClass(field);
+    if (enumClass != null) addEnumValues(result, enumClass, getEnumQualifier(field));
+
+    String pattern = getPattern(field);
+    if (pattern != null) result.put("pattern", pattern);
+  }
+
+  private Class<? extends java.lang.Enum> getEnumClass(Field field) {
+    EnumClass annotation = field.getAnnotation(EnumClass.class);
+    return annotation != null ? annotation.value() : null;
+  }
+
+  private String getEnumQualifier(Field field) {
+    EnumClass annotation = field.getAnnotation(EnumClass.class);
+    return annotation != null ? annotation.qualifier() : "";
+  }
+
+  private void addEnumValues(
+      Map<String, Object> result, Class<? extends Enum> enumClass, String qualifier) {
+    result.put("enum", getEnumValues(enumClass, qualifier));
+  }
+
+  private String getPattern(Field field) {
+    Pattern pattern = field.getAnnotation(Pattern.class);
+    return pattern == null ? null : pattern.value();
+  }
+
+  private void addRange(Map<String, Object> result, Field field) {
+    Range annotation = field.getAnnotation(Range.class);
+    if (annotation == null) return;
+
+    if (annotation.minimum() > Integer.MIN_VALUE) result.put("minimum", annotation.minimum());
+    if (annotation.maximum() < Integer.MAX_VALUE) result.put("maximum", annotation.maximum());
   }
 
   private class SubSchemaGenerator {
@@ -191,18 +282,26 @@ public class SchemaGenerator {
       this.field = field;
     }
 
+    @SuppressWarnings("unchecked")
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
       if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) result.put("type", "boolean");
-      else if (Number.class.isAssignableFrom(type) || PRIMITIVE_NUMBERS.contains(type))
-        result.put("type", "number");
-      else if (type.equals(String.class)) result.put("type", "string");
-      else if (type.isEnum()) generateEnumTypeIn(result, type);
+      else if (isNumeric(type)) result.put("type", "number");
+      else if (isString(type)) result.put("type", "string");
+      else if (type.isEnum()) generateEnumTypeIn(result, (Class<? extends Enum>) type);
       else if (type.isArray()) this.generateArrayTypeIn(result, type);
       else if (Collection.class.isAssignableFrom(type)) generateCollectionTypeIn(result);
       else generateObjectFieldIn(result, type);
     }
 
     private void generateObjectFieldIn(Map<String, Object> result, Class<?> type) {
+      if (supportObjectReferences) {
+        generateObjectReferenceIn(result, type);
+      } else {
+        generateObjectTypeIn(result, type);
+      }
+    }
+
+    private void generateObjectReferenceIn(Map<String, Object> result, Class<?> type) {
       addReference(type);
       result.put("$ref", getReferencePath(type));
     }
@@ -265,36 +364,71 @@ public class SchemaGenerator {
     return type.getSimpleName();
   }
 
-  private void generateEnumTypeIn(Map<String, Object> result, Class<?> enumType) {
+  private void generateEnumTypeIn(Map<String, Object> result, Class<? extends Enum> enumType) {
     result.put("type", "string");
-    result.put("enum", getEnumValues(enumType));
+    addEnumValues(result, enumType, "");
   }
 
-  private String[] getEnumValues(Class<?> enumType) {
+  private String[] getEnumValues(Class<?> enumType, String qualifier) {
     List<String> values = new ArrayList<>();
+    Method qualifierMethod = getQualifierMethod(enumType, qualifier);
 
     for (Object enumConstant : enumType.getEnumConstants()) {
-      values.add(enumConstant.toString());
+      if (satisfiesQualifier(enumConstant, qualifierMethod)) values.add(enumConstant.toString());
     }
 
     return values.toArray(new String[0]);
   }
 
-  private void generateObjectTypeIn(Map<String, Object> result, Class<?> type) {
-    Map<String, Object> properties = new HashMap<>();
-    List<String> requiredFields = new ArrayList<>();
-    result.put("type", "object");
-    result.put("additionalProperties", "false");
-    result.put("properties", properties);
-
-    for (Field field : getPropertyFields(type)) {
-      if (!isSelfReference(field)) generateFieldIn(properties, field);
-      if (isRequired(field) && includeInSchema(field)) {
-        requiredFields.add(getPropertyName(field));
-      }
+  private Method getQualifierMethod(Class<?> enumType, String methodName) {
+    try {
+      Method method = enumType.getDeclaredMethod(methodName);
+      if (!isBooleanMethod(method)) return null;
+      return method;
+    } catch (NoSuchMethodException e) {
+      return null;
     }
+  }
 
-    if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+  private boolean isBooleanMethod(Method method) {
+    return method.getReturnType().equals(Boolean.class)
+        || method.getReturnType().equals(boolean.class);
+  }
+
+  private boolean satisfiesQualifier(Object enumConstant, Method qualifier) {
+    try {
+      return qualifier == null || (Boolean) qualifier.invoke(enumConstant);
+    } catch (IllegalAccessException | InvocationTargetException e) {
+      return true;
+    }
+  }
+
+  private void generateObjectTypeIn(Map<String, Object> result, Class<?> type) {
+    if (isDateTime(type)) {
+      result.put("type", "string");
+      result.put("format", "date-time");
+    } else {
+      Map<String, Object> properties = new HashMap<>();
+      List<String> requiredFields = new ArrayList<>();
+      result.put("type", "object");
+      if (includeAdditionalProperties) result.put("additionalProperties", "false");
+      Optional.ofNullable(getDescription(type)).ifPresent(s -> result.put("description", s));
+      result.put("properties", properties);
+
+      for (Field field : getPropertyFields(type)) {
+        if (!isSelfReference(field)) generateFieldIn(properties, field);
+        if (isRequired(field) && includeInSchema(field)) {
+          requiredFields.add(getPropertyName(field));
+        }
+      }
+
+      if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+    }
+  }
+
+  private String getDescription(Class<?> aClass) {
+    Description description = aClass.getAnnotation(Description.class);
+    return description != null ? description.value() : null;
   }
 
   private Collection<Field> getPropertyFields(Class<?> type) {

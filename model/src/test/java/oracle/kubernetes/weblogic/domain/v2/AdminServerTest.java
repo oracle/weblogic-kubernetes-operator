@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -21,41 +21,55 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenExportedAccessPointsAreTheSame_objectsAreEqual() {
-    server1
-        .addExportedNetworkAccessPoint("nap1")
-        .addLabel("label1", "value1")
-        .addAnnotation("annotation1", "value2");
-    server1.addExportedNetworkAccessPoint("nap2");
-    server2.addExportedNetworkAccessPoint("nap2");
-    server2
-        .addExportedNetworkAccessPoint("nap1")
-        .addAnnotation("annotation1", "value2")
-        .addLabel("label1", "value1");
+  public void whenChannelsLabelsAnnotationsAreTheSame_objectsAreEqual() {
+    server1.withChannel("nap1", 0);
+    server1.addPodLabel("label1", "value1");
+    server1.addPodAnnotation("annotation1", "value2");
+    server1.withChannel("nap2", 1);
+    server2.withChannel("nap2", 1);
+    server2.withChannel("nap1", 0);
+    server2.addPodAnnotation("annotation1", "value2");
+    server2.addPodLabel("label1", "value1");
 
-    assertThat(server1, equalTo(server1));
+    assertThat(server1, equalTo(server2));
   }
 
   @Test
-  public void whenExportedAccessPointsDifferByName_objectsAreNotEqual() {
-    server1.addExportedNetworkAccessPoint("nap1");
-    server2.addExportedNetworkAccessPoint("nap2");
+  public void whenChannelsDifferByName_objectsAreNotEqual() {
+    server1.withChannel("nap1", 0);
+    server2.withChannel("nap2", 0);
 
     assertThat(server1, not(equalTo(server2)));
   }
 
   @Test
-  public void whenExportedAccessPointsDifferByLabel_objectsAreNotEqual() {
-    server1.addExportedNetworkAccessPoint("nap1").addLabel("a", "b");
-    server2.addExportedNetworkAccessPoint("nap1").addLabel("a", "c");
+  public void whenDifferByPodLabel_objectsAreNotEqual() {
+    server1.addPodLabel("a", "b");
+    server2.addPodLabel("a", "c");
 
     assertThat(server1, not(equalTo(server2)));
   }
 
   @Test
-  public void whenExportedAccessPointsDifferByAnnotation_objectsAreNotEqual() {
-    server1.addExportedNetworkAccessPoint("nap1").addAnnotation("a", "b");
-    server2.addExportedNetworkAccessPoint("nap1").addAnnotation("a", "c");
+  public void whenDifferByPodAnnotation_objectsAreNotEqual() {
+    server1.addPodAnnotation("a", "b");
+    server2.addPodAnnotation("a", "c");
+
+    assertThat(server1, not(equalTo(server2)));
+  }
+
+  @Test
+  public void whenDifferByServiceLabel_objectsAreNotEqual() {
+    server1.addServiceLabel("a", "b");
+    server2.addServiceLabel("a", "c");
+
+    assertThat(server1, not(equalTo(server2)));
+  }
+
+  @Test
+  public void whenDifferByServiceAnnotation_objectsAreNotEqual() {
+    server1.addServiceAnnotation("a", "b");
+    server2.addServiceAnnotation("a", "c");
 
     assertThat(server1, not(equalTo(server2)));
   }

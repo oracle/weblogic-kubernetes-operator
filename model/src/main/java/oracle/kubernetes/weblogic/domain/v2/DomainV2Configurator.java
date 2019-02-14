@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -9,15 +9,15 @@ import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
 
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1SecurityContext;
+import java.util.Arrays;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
-import oracle.kubernetes.weblogic.domain.ConfigurationNotSupportedException;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.ExportedNetworkAccessPoint;
 
 public class DomainV2Configurator extends DomainConfigurator {
 
@@ -39,8 +39,8 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   @Override
-  public AdminServerConfigurator configureAdminServer(String adminServerName) {
-    return new AdminServerConfiguratorImpl(getOrCreateAdminServer(adminServerName));
+  public AdminServerConfigurator configureAdminServer() {
+    return new AdminServerConfiguratorImpl(getOrCreateAdminServer());
   }
 
   @Override
@@ -62,13 +62,57 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withStartupControl(String startupControl) {
-    throw new ConfigurationNotSupportedException("domain", "startupControl");
+  public DomainConfigurator withEnvironmentVariable(String name, String value) {
+    ((BaseConfiguration) getDomainSpec()).addEnvironmentVariable(name, value);
+    return this;
   }
 
   @Override
-  public DomainConfigurator withEnvironmentVariable(String name, String value) {
-    ((BaseConfiguration) getDomainSpec()).addEnvironmentVariable(name, value);
+  public DomainConfigurator withAdditionalVolume(String name, String path) {
+    ((BaseConfiguration) getDomainSpec()).addAdditionalVolume(name, path);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withAdditionalVolumeMount(String name, String path) {
+    ((BaseConfiguration) getDomainSpec()).addAdditionalVolumeMount(name, path);
+    return this;
+  }
+
+  @Override
+  /**
+   * Sets the WebLogic configuration overrides config map name for the domain
+   *
+   * @param configMapName Name of the Kubernetes config map that contains the configuration
+   *     overrides
+   * @return this object
+   */
+  public DomainConfigurator withConfigOverrides(String configMapName) {
+    getDomainSpec().setConfigOverrides(configMapName);
+    return this;
+  }
+
+  @Override
+  /**
+   * Sets the WebLogic configuration overrides secret names for the domain
+   *
+   * @param secretNames a list of secret names
+   * @return this object
+   */
+  public DomainConfigurator withConfigOverrideSecrets(String... secretNames) {
+    getDomainSpec().setConfigOverrideSecrets(Arrays.asList(secretNames));
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withPodLabel(String name, String value) {
+    ((BaseConfiguration) getDomainSpec()).addPodLabel(name, value);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withPodAnnotation(String name, String value) {
+    ((BaseConfiguration) getDomainSpec()).addPodAnnotation(name, value);
     return this;
   }
 
@@ -82,33 +126,16 @@ public class DomainV2Configurator extends DomainConfigurator {
     }
 
     @Override
-    public AdminServerConfigurator withPort(int port) {
-      getDomainSpec().setAsPort(port);
-      return this;
-    }
-
-    @Override
-    public AdminServerConfigurator withNodePort(int nodePort) {
-      adminServer.setNodePort(nodePort);
-      return this;
-    }
-
-    @Override
-    public AdminServerConfigurator withExportedNetworkAccessPoints(String... names) {
-      for (String name : names) {
-        adminServer.addExportedNetworkAccessPoint(name);
+    public AdminService configureAdminService() {
+      if (adminServer.getAdminService() == null) {
+        adminServer.setAdminService(new AdminService());
       }
-      return this;
-    }
-
-    @Override
-    public ExportedNetworkAccessPoint configureExportedNetworkAccessPoint(String channelName) {
-      return adminServer.addExportedNetworkAccessPoint(channelName);
+      return adminServer.getAdminService();
     }
   }
 
-  private AdminServer getOrCreateAdminServer(String adminServerName) {
-    return getDomainSpec().getOrCreateAdminServer(adminServerName);
+  private AdminServer getOrCreateAdminServer() {
+    return getDomainSpec().getOrCreateAdminServer();
   }
 
   @Override
@@ -117,8 +144,9 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   private Server getOrCreateManagedServer(@Nonnull String serverName) {
-    for (ManagedServer server : getDomainSpec().getManagedServers()) {
-      if (serverName.equals(server.getServerName())) return server;
+    ManagedServer server = getDomainSpec().getManagedServer(serverName);
+    if (server != null) {
+      return server;
     }
 
     return createManagedServer(serverName);
@@ -130,16 +158,48 @@ public class DomainV2Configurator extends DomainConfigurator {
     return server;
   }
 
+  @Override
+  public DomainConfigurator withNodeSelector(String labelKey, String labelValue) {
+    ((BaseConfiguration) getDomainSpec()).addNodeSelector(labelKey, labelValue);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withRequestRequirement(String resource, String quantity) {
+    ((BaseConfiguration) getDomainSpec()).addRequestRequirement(resource, quantity);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withLimitRequirement(String resource, String quantity) {
+    ((BaseConfiguration) getDomainSpec()).addLimitRequirement(resource, quantity);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withContainerSecurityContext(
+      V1SecurityContext containerSecurityContext) {
+    ((BaseConfiguration) getDomainSpec()).setContainerSecurityContext(containerSecurityContext);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+    ((BaseConfiguration) getDomainSpec()).setPodSecurityContext(podSecurityContext);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withRestartVersion(String restartVersion) {
+    ((BaseConfiguration) getDomainSpec()).setRestartVersion(restartVersion);
+    return this;
+  }
+
   class ServerConfiguratorImpl implements ServerConfigurator {
     private Server server;
 
     ServerConfiguratorImpl(Server server) {
       this.server = server;
-    }
-
-    @Override
-    public ServerConfigurator withNodePort(int nodePort) {
-      throw new ConfigurationNotSupportedException("managedServer", "nodePort");
     }
 
     @Override
@@ -178,6 +238,79 @@ public class DomainV2Configurator extends DomainConfigurator {
       server.setReadinessProbe(initialDelay, timeout, period);
       return this;
     }
+
+    @Override
+    public ServerConfigurator withRequestRequirement(String resource, String quantity) {
+      server.addRequestRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withNodeSelector(String labelKey, String labelValue) {
+      server.addNodeSelector(labelKey, labelValue);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withLimitRequirement(String resource, String quantity) {
+      server.addLimitRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withContainerSecurityContext(
+        V1SecurityContext containerSecurityContext) {
+      server.setContainerSecurityContext(containerSecurityContext);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+      server.setPodSecurityContext(podSecurityContext);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withAdditionalVolume(String name, String path) {
+      server.addAdditionalVolume(name, path);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withAdditionalVolumeMount(String name, String path) {
+      server.addAdditionalVolumeMount(name, path);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withPodLabel(String name, String value) {
+      server.addPodLabel(name, value);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withPodAnnotation(String name, String value) {
+      server.addPodAnnotation(name, value);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withServiceLabel(String name, String value) {
+      server.addServiceLabel(name, value);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withServiceAnnotation(String name, String value) {
+      server.addServiceAnnotation(name, value);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withRestartVersion(String restartVersion) {
+      server.setRestartVersion(restartVersion);
+      return this;
+    }
   }
 
   @Override
@@ -186,8 +319,9 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   private Cluster getOrCreateCluster(@Nonnull String clusterName) {
-    for (Cluster cluster : getDomainSpec().getClusters()) {
-      if (clusterName.equals(cluster.getClusterName())) return cluster;
+    Cluster cluster = getDomainSpec().getCluster(clusterName);
+    if (cluster != null) {
+      return cluster;
     }
 
     return createCluster(clusterName);
@@ -201,12 +335,7 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   @Override
   public void setShuttingDown(boolean shuttingDown) {
-    configureAdminServer("").withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
-  }
-
-  @Override
-  public boolean useDomainV1() {
-    return false;
+    configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
@@ -219,6 +348,12 @@ public class DomainV2Configurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withReplicas(int replicas) {
       cluster.setReplicas(replicas);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withMaxUnavailable(int maxUnavailable) {
+      cluster.setMaxUnavailable(maxUnavailable);
       return this;
     }
 
@@ -256,6 +391,79 @@ public class DomainV2Configurator extends DomainConfigurator {
     public ClusterConfigurator withLivenessProbeSettings(
         Integer initialDelay, Integer timeout, Integer period) {
       cluster.setLivenessProbe(initialDelay, timeout, period);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withNodeSelector(String labelKey, String labelValue) {
+      cluster.addNodeSelector(labelKey, labelValue);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withRequestRequirement(String resource, String quantity) {
+      cluster.addRequestRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withLimitRequirement(String resource, String quantity) {
+      cluster.addLimitRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withContainerSecurityContext(
+        V1SecurityContext containerSecurityContext) {
+      cluster.setContainerSecurityContext(containerSecurityContext);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+      cluster.setPodSecurityContext(podSecurityContext);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withAdditionalVolume(String name, String path) {
+      cluster.addAdditionalVolume(name, path);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withAdditionalVolumeMount(String name, String path) {
+      cluster.addAdditionalVolumeMount(name, path);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withPodLabel(String name, String value) {
+      cluster.addPodLabel(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withPodAnnotation(String name, String value) {
+      cluster.addPodAnnotation(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withServiceLabel(String name, String value) {
+      cluster.addClusterLabel(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withServiceAnnotation(String name, String value) {
+      cluster.addClusterAnnotation(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withRestartVersion(String restartVersion) {
+      cluster.setRestartVersion(restartVersion);
       return this;
     }
   }

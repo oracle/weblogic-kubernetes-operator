@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +19,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.HealthCheckHelper.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.KubernetesVersion;
 
 /**
  * Support for writing unit tests that use a fiber to run steps. Such tests can call #runStep to
@@ -35,6 +36,7 @@ public class FiberTestSupport {
   private CompletionCallbackStub completionCallback = new CompletionCallbackStub();
   private ScheduledExecutorStub schedule = ScheduledExecutorStub.create();
 
+  private static Container container = new Container();
   private Engine engine = new Engine(schedule);
   private Fiber fiber = engine.createFiber();
   private Packet packet = new Packet();
@@ -105,6 +107,11 @@ public class FiberTestSupport {
     return this;
   }
 
+  public <T> FiberTestSupport addContainerComponent(String key, Class<T> aClass, T component) {
+    container.getComponents().put(key, Component.createFor(aClass, component));
+    return this;
+  }
+
   public FiberTestSupport addVersion(KubernetesVersion kubernetesVersion) {
     packet
         .getComponents()
@@ -119,6 +126,24 @@ public class FiberTestSupport {
    */
   public Packet runSteps(Step step) {
     fiber.start(step, packet, completionCallback);
+
+    return packet;
+  }
+
+  /**
+   * Starts a unit-test fiber with the specified step and runs until the fiber is done
+   *
+   * @param step the first step to run
+   */
+  public Packet runStepsToCompletion(Step step) {
+    fiber.start(step, packet, completionCallback);
+
+    // Wait for fiber to finish
+    try {
+      fiber.get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
     return packet;
   }
 
@@ -187,7 +212,13 @@ public class FiberTestSupport {
 
     private void runNextRunnable() {
       while (null != (current = queue.poll())) {
-        current.run();
+        ThreadLocalContainerResolver cr = ContainerResolver.getDefault();
+        Container old = cr.enterContainer(container);
+        try {
+          current.run();
+        } finally {
+          cr.exitContainer(old);
+        }
         current = null;
       }
     }
