@@ -43,7 +43,7 @@ public class ITOperator extends BaseTest {
   private static String domainrecyclepolicyFile = "domainrecyclepolicy.yaml";
   private static String domainsampledefaultsFile = "domainsampledefaults.yaml";
 
- // property file used to configure constants for integration tests
+  // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
 
   private static Operator operator1, operator2;
