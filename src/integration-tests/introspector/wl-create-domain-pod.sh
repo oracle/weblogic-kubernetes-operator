@@ -25,6 +25,9 @@ while [ 1 -eq 1 ] ; do
 
   echo "CREATE_DOMAIN_EXIT=0"
 
+  # The pod's readiness probe checks for this file:
+  touch /tmp/ready
+
   while [ 1 -eq 1 ] ; do
     sleep 10
   done

@@ -3,9 +3,14 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 /weblogic-operator/scripts/introspectDomain.sh
+ret="$?"
 
-# the introspectTest.sh script looks for this exact line:
-echo "INTROSPECT_DOMAIN_EXIT=$?"
+echo "INTROSPECT_DOMAIN_EXIT=$ret"
+
+if [ "$ret" = "0" ]; then
+  # The pod's readiness probe check for this file
+  touch /tmp/ready
+fi
 
 echo In "$0" SLEEPING
 
