@@ -4,12 +4,7 @@
 
 package oracle.kubernetes.weblogic.domain.v2;
 
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1PodSecurityContext;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1SecurityContext;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,6 +77,11 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   @Override
   public Map<String, String> getServiceAnnotations() {
     return server.getServiceAnnotations();
+  }
+
+  @Override
+  public List<V1Container> getInitContainers() {
+    return server.getInitContainers();
   }
 
   @Override
