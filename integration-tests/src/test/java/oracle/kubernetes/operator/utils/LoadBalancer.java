@@ -34,14 +34,10 @@ public class LoadBalancer {
         createTraefikLoadBalancer();
       }
 
-      if (lbMap.get("ingressPerDomain") == null
-          || !((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
+      if (!((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
         logger.info("Is going to createTraefikHostRouting");
         createTraefikHostRouting();
-      }
-
-      if (lbMap.get("ingressPerDomain") != null
-          && ((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
+      } else {
         logger.info("Is going to createTraefikIngressPerDomain");
         createTraefikIngressPerDomain();
       }
