@@ -79,7 +79,7 @@ spec:
       - name: JAVA_OPTIONS
         value: "-server"
       - name: USER_MEM_ARGS
-        value: "-Xms64m -Xmx256m "
+        value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
       nodeSelector:
         os_arch: arm64
       resources:

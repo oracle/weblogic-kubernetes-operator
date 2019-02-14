@@ -65,8 +65,12 @@ public class Domain {
   private static int waitTime = BaseTest.getWaitTimePod();
 
   public Domain(String inputYaml) throws Exception {
+    // read input domain yaml to test
+    this(TestUtils.loadYaml(inputYaml));
+  }
 
-    initialize(inputYaml);
+  public Domain(Map<String, Object> inputDomainMap) throws Exception {
+    initialize(inputDomainMap);
     createPV();
     createSecret();
     generateInputYaml();
@@ -699,16 +703,8 @@ public class Domain {
     weblogicDomainStorageReclaimPolicy = (String) pvMap.get("weblogicDomainStorageReclaimPolicy");
     weblogicDomainStorageSize = (String) pvMap.get("weblogicDomainStorageSize");
 
-    // test NFS for domain5 on JENKINS
-    if (domainUid.equals("domain6")
-        && (System.getenv("JENKINS") != null
-            && System.getenv("JENKINS").equalsIgnoreCase("true"))) {
-      pvMap.put("weblogicDomainStorageType", "NFS");
-      pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
-    } else {
-      pvMap.put("weblogicDomainStorageType", "HOST_PATH");
-      pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
-    }
+    pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
+
     // set pv path
     domainMap.put(
         "weblogicDomainStoragePath",
@@ -837,7 +833,7 @@ public class Domain {
       lbMap.put("name", "traefik-ingress-" + domainUid);
     }
 
-    if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
+    if (loadBalancer.equals("APACHE")) {
       /* lbMap.put("loadBalancerAppPrepath", "/weblogic");
       lbMap.put("loadBalancerExposeAdminPort", new Boolean(true)); */
     }
@@ -960,12 +956,11 @@ public class Domain {
     }
   }
 
-  private void initialize(String inputYaml) throws Exception {
+  private void initialize(Map<String, Object> inputDomainMap) throws Exception {
+    domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
 
-    // read input domain yaml to test
-    domainMap = TestUtils.loadYaml(inputYaml);
     domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
@@ -1000,7 +995,7 @@ public class Domain {
     clusterName = (String) domainMap.get("clusterName");
     clusterType = (String) domainMap.get("clusterType");
     serverStartPolicy = (String) domainMap.get("serverStartPolicy");
-    /*
+    /*TODO remove mhe
     if (domainMap.containsKey("ingressPerDomain")) {
       ingressPerDomain = ((Boolean) domainMap.get("ingressPerDomain")).booleanValue();
     }
@@ -1014,9 +1009,9 @@ public class Domain {
 
     domainMap.put("domainHome", "/shared/domains/" + domainUid);
     domainMap.put("logHome", "/shared/logs/" + domainUid);
-    domainMap.put(
-        "createDomainFilesDir",
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
+    /* domainMap.put(
+    "createDomainFilesDir",
+    BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv"); */
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
