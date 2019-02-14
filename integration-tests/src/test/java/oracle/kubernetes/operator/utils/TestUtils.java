@@ -239,10 +239,11 @@ public class TestUtils {
     String stdoutlines[] = stdout.split("\\r?\\n");
     if (result.exitValue() == 0 && stdoutlines.length > 0) {
       for (String stdoutline : stdoutlines) {
-        if (stdoutline.contains(service) && stdoutline.contains(port + "/" + protocol)) {}
+        if (stdoutline.contains(service) && stdoutline.contains(port + "/" + protocol)) {
+          return true;
+        }
       }
     }
-    logger.warning(" -> checkHasServiceChannelPort: has neither: YES ");
     return false;
   }
 
