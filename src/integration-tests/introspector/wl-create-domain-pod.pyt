@@ -48,7 +48,6 @@ set('ListenPort', ${ADMIN_PORT})
 set('Name', '${ADMIN_NAME}')
 set('AdministrationPort', ${ADMINISTRATION_PORT})
 set('AdministrationPortEnabled', 'true')
-adminServerMBean=cmo
 
 cd('/Servers/${ADMIN_NAME}')
 set('MaxMessageSize',999999)
@@ -141,35 +140,40 @@ def createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL,
   jdbcSystemResource = create(dsName, "JDBCSystemResource")
   jdbcSystemResource.setTargets(jarray.array([dsTarget], weblogic.management.configuration.TargetMBean))
 
+  # JDBCDataSourceParams
+
   cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
-
-  dataSourceParams = create('dataSourceParams', 'JDBCDataSourceParams')
-  dataSourceParams.setGlobalTransactionsProtocol(java.lang.String(dsGlobalTX))
-
+  create('dataSourceParams', 'JDBCDataSourceParams')
   cd('JDBCDataSourceParams/NO_NAME_0')
 
-  set('JNDIName', java.lang.String(dsJNDI))
+  set('GlobalTransactionsProtocol',java.lang.String(dsGlobalTX))
+  set('JNDIName',java.lang.String(dsJNDI))
+
+  # JDBCConnectionPoolParams
 
   cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+  create('connPoolParams', 'JDBCConnectionPoolParams')
+  cd('JDBCConnectionPoolParams/connPoolParams')
 
-  connPoolParams = create('connPoolParams', 'JDBCConnectionPoolParams')
-  connPoolParams.setInitialCapacity(dsMinSize)
-  connPoolParams.setMinCapacity(dsMinSize)
-  connPoolParams.setMaxCapacity(dsMaxSize)
-  connPoolParams.setCapacityIncrement(1)
-  connPoolParams.setTestConnectionsOnReserve(true)
-  connPoolParams.setTestTableName(dsTest)
+  set('InitialCapacity',dsMinSize)
+  set('MinCapacity',dsMinSize)
+  set('MaxCapacity',dsMaxSize)
+  set('CapacityIncrement',1)
+  set('TestConnectionsOnReserve',true)
+  set('TestTableName',dsTest)
 
-  driverParams = create('driverParams', 'JDBCDriverParams')
-  driverParams.setUrl(dsURL)
-  driverParams.setDriverName(dsDriver)
-  driverParams.setPasswordEncrypted(dsPass)
-  driverParams.setUseXaDataSourceInterface(dsXAInterface)
+  # JDBCDriverParams
 
+  cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
+  create('driverParams', 'JDBCDriverParams')
   cd('JDBCDriverParams/NO_NAME_0')
 
-  create('testProperties','Properties')
+  set('Url',dsURL)
+  set('DriverName',dsDriver)
+  set('PasswordEncrypted',dsPass)
+  set('UseXaDataSourceInterface',dsXAInterface)
 
+  create('testProperties','Properties')
   cd('Properties/NO_NAME_0')
 
   property = create('user','Property')
@@ -186,14 +190,17 @@ def createOracleDataSource(dsName,dsJNDI,dsGlobalTX,dsXAInterface,dsHost,dsPort,
   dsTest='SQL SELECT 1 FROM DUAL'
   createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL, dsUser, dsPass, dsMinSize, dsMaxSize, dsTest, dsTarget)
 
-def createMySQLDataSource(dsName,dsJNDI,dsGlobalTX,dsXAInterface,dsHost,dsPort,dsUser,dsPass,dsMinSize,dsMaxSize,dsTarget):
+def createMySQLDataSource(dsName,dsJNDI,dsGlobalTX,dsXAInterface,dsHost,dsPort,dsDB,dsUser,dsPass,dsMinSize,dsMaxSize,dsTarget):
   dsDriver='com.mysql.cj.jdbc.Driver'
-  dsURL='jdbc:mysql://' + dsHost + ':' + dsPort + '/mysql'
+  dsURL='jdbc:mysql://' + dsHost + ':' + dsPort + '/' + dsDB
   dsTest='SQL SELECT 1'
   createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL, dsUser, dsPass, dsMinSize, dsMaxSize, dsTest, dsTarget)
+
+cd('/Servers/${ADMIN_NAME}')
+adminServerMBean=cmo
   
 createOracleDataSource('testDS','testDS','None',false,'invalid-host','1521','invalid-sid','invalid-user','invalid-pass',0,10,adminServerMBean)
-createMySQLDataSource('mysqlDS','mysqlDS','None',false,'invalid-host','3306','invalid-user','invalid-pass',0,10,adminServerMBean)
+createMySQLDataSource('mysqlDS','mysqlDS','None',false,'invalid-host','3306','invalid-db-name','invalid-user','invalid-pass',0,10,adminServerMBean)
 
 # Create a cluster
 # ======================
