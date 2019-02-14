@@ -402,10 +402,7 @@ function deployMySQL() {
     cat ${test_home}/docker_build.out
     exit 1
   fi
-  deployYamlTemplate mysql-secret.yamlt mysql-secret.yaml
-  deployYamlTemplate mysql-pv.yamlt     mysql-pv.yaml
-  deployYamlTemplate mysql-pvc.yamlt    mysql-pvc.yaml 
-  deployYamlTemplate mysql-pod.yamlt    mysql-pod.yaml
+  deployYamlTemplate mysql.yamlt mysql.yaml
 }
 
 #############################################################################
@@ -437,29 +434,6 @@ function deployCreateDomainJobPod() {
   # Wait for pod to come up successfully
 
   waitForPod $pod_name
-
-  # TODO: We can eliminate the following code if we (1) have job pod script touch
-  #       a file upon completion, and (2) have job pod ready check look for this file
-
-  local startSecs=$SECONDS
-  local maxsecs=30
-  local exitString=""
-  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' to run the wl-create-domain-pod.py script."
-  printdots_start
-  while [ $((SECONDS - startSecs)) -lt $maxsecs ] && [ "$exitString" = "" ]; do
-    exitString="`kubectl -n $NAMESPACE logs $pod_name 2>&1 | grep CREATE_DOMAIN_EXIT`"
-    sleep 1
-  done
-  printdots_end
-  if [ "$exitString" = "" ]; then
-    trace "Error: Timed out, see 'kubectl -n $NAMESPACE logs $pod_name'."
-    exit 1
-  fi
-  if [ ! "$exitString" = "CREATE_DOMAIN_EXIT=0" ]; then
-    trace "Error: Pod script failed, see 'kubectl -n $NAMESPACE logs $pod_name'."
-    exit 1
-  fi
-
 }
 
 #############################################################################
@@ -490,16 +464,8 @@ function deployIntrospectJobPod() {
   trace "Info: Deploying job pod '$pod_name' and waiting for it to be ready."
 
   (
-    export SERVER_NAME=introspect
     export JOB_NAME=${DOMAIN_UID}--introspect-domain-pod
     export JOB_SCRIPT=/test-scripts/wl-introspect-pod.sh
-    export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
-    export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
-    if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
-      export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
-    else
-      export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
-    fi
     ${SCRIPTPATH}/util_subst.sh -g wl-introspect-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
@@ -509,28 +475,6 @@ function deployIntrospectJobPod() {
   # Wait for pod to come up successfully
 
   waitForPod $pod_name
-
-  # TODO: We can eliminate the following code if we (1) have job pod script touch
-  #       a file upon completion, and (2) have job pod ready check look for this file
-
-  local startSecs=$SECONDS
-  local maxsecs=30
-  local exitString=""
-  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' to run the introspectDomain.py script."
-  printdots_start
-  while [ $((SECONDS - startSecs)) -lt $maxsecs ] && [ "$exitString" = "" ]; do
-    exitString="`kubectl -n $NAMESPACE logs $pod_name 2>&1 | grep INTROSPECT_DOMAIN_EXIT`"
-    sleep 1
-  done
-  printdots_end
-  if [ "$exitString" = "" ]; then
-    trace "Error: Introspector timed out, see 'kubectl -n $NAMESPACE logs $pod_name'."
-    exit 1
-  fi
-  if [ ! "$exitString" = "INTROSPECT_DOMAIN_EXIT=0" ]; then
-    trace "Error: Introspector pod script failed, see 'kubectl -n $NAMESPACE logs $pod_name'."
-    exit 1
-  fi
 
   # parse job pod's output files
 
