@@ -25,7 +25,6 @@ function createVoyager() {
     helm install appscode/voyager --name voyager-operator --version 7.4.0 \
       --namespace voyager \
       --set cloudProvider=baremetal \
-      --set apiserver.ca="$(${MYDIR}/onessl get kube-ca)" \
       --set apiserver.enableValidatingWebhook=false
   else
     echo "Voyager operator is already installed."
@@ -77,11 +76,43 @@ function createTraefik() {
   exit 1
 }
 
+
+function purgeCRDs() {
+  # get rid of Voyager crd deletion deadlock:  https://github.com/kubernetes/kubernetes/issues/60538
+  crds=(certificates ingresses)
+  for crd in "${crds[@]}"; do
+    pairs=($(kubectl get ${crd}.voyager.appscode.com --all-namespaces -o jsonpath='{range .items[*]}{.metadata.name} {.metadata.namespace} {end}' || true))
+    total=${#pairs[*]}
+
+    # save objects
+    if [ $total -gt 0 ]; then
+      echo "dumping ${crd} objects into ${crd}.yaml"
+      kubectl get ${crd}.voyager.appscode.com --all-namespaces -o yaml >${crd}.yaml
+    fi
+
+    for ((i = 0; i < $total; i += 2)); do
+      name=${pairs[$i]}
+      namespace=${pairs[$i + 1]}
+      # remove finalizers
+      kubectl patch ${crd}.voyager.appscode.com $name -n $namespace -p '{"metadata":{"finalizers":[]}}' --type=merge
+      # delete crd object
+      echo "deleting ${crd} $namespace/$name"
+      kubectl delete ${crd}.voyager.appscode.com $name -n $namespace
+    done
+
+    # delete crd
+    kubectl delete crd ${crd}.voyager.appscode.com || true
+  done
+  # delete user roles
+  kubectl delete clusterroles appscode:voyager:edit appscode:voyager:view
+}
+
 function deleteVoyager() {
   if [ "$(helm list | grep voyager-operator |  wc -l)" = 1 ]; then
     echo "Delete Voyager Operator. "
     helm delete --purge voyager-operator
     kubectl delete ns voyager
+    purgeCRDs
   else
     echo "Voyager operator has already been deleted." 
   fi

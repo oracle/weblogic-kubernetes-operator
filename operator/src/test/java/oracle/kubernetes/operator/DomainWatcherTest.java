@@ -12,8 +12,8 @@ import io.kubernetes.client.util.Watch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import org.junit.Test;
 
 /** This test class verifies the behavior of the DomainWatcher. */
@@ -55,6 +55,6 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
 
   @Override
   protected DomainWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
-    return DomainWatcher.create(this, ns, Integer.toString(rv), this, stopping);
+    return DomainWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
   }
 }

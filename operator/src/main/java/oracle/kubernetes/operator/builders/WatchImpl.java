@@ -1,4 +1,4 @@
-// Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -8,6 +8,7 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.util.Iterator;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.helpers.Pool;
 
 /**
@@ -15,7 +16,7 @@ import oracle.kubernetes.operator.helpers.Pool;
  */
 public class WatchImpl<T> implements WatchI<T> {
   private final Pool<ApiClient> pool;
-  private final ApiClient client;
+  private ApiClient client;
   private Watch<T> impl;
 
   WatchImpl(Pool<ApiClient> pool, ApiClient client, Watch<T> impl) {
@@ -27,10 +28,11 @@ public class WatchImpl<T> implements WatchI<T> {
   @Override
   public void close() throws IOException {
     impl.close();
-    pool.recycle(client);
+    if (client != null) pool.recycle(client);
   }
 
   @Override
+  @Nonnull
   public Iterator<Watch.Response<T>> iterator() {
     return impl.iterator();
   }
@@ -42,6 +44,11 @@ public class WatchImpl<T> implements WatchI<T> {
 
   @Override
   public Watch.Response<T> next() {
-    return impl.next();
+    try {
+      return impl.next();
+    } catch (Exception e) {
+      client = null;
+      throw e;
+    }
   }
 }

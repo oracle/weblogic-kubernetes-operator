@@ -4,24 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.nio.file.StandardWatchEventKinds.*;
-
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -37,19 +28,17 @@ public class ConfigMapConsumer implements Map<String, String> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final File mountPointDir;
-  private final WatchService watcher;
   private final ScheduledExecutorService threadPool;
   private final AtomicReference<ScheduledFuture<?>> future = new AtomicReference<>(null);
   private final Runnable onUpdate;
 
-  public ConfigMapConsumer(ThreadFactory factory, String mountPoint, Runnable onUpdate)
+  public ConfigMapConsumer(
+      ScheduledExecutorService executorService, String mountPoint, Runnable onUpdate)
       throws IOException {
-    this.threadPool = Executors.newScheduledThreadPool(2, factory);
+    this.threadPool = executorService;
     this.mountPointDir = new File(mountPoint);
-    this.watcher = FileSystems.getDefault().newWatchService();
     this.onUpdate = onUpdate;
     if (mountPointDir.exists()) {
-      mountPointDir.toPath().register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
       schedule();
     }
   }
@@ -61,20 +50,7 @@ public class ConfigMapConsumer implements Map<String, String> {
         future.getAndSet(
             threadPool.scheduleWithFixedDelay(
                 () -> {
-                  // wait for key to be signaled
-                  WatchKey key;
-                  try {
-                    key = watcher.take();
-                  } catch (InterruptedException x) {
-                    return;
-                  }
-                  List<WatchEvent<?>> events = key.pollEvents();
-                  if (events != null && !events.isEmpty()) {
-                    onUpdate.run();
-                    schedule();
-                    return;
-                  }
-                  key.reset();
+                  onUpdate.run();
                 },
                 initialDelay,
                 delay,

@@ -1,0 +1,30 @@
+{
+    "type": "object",
+    "javaType": "oracle.kubernetes.weblogic.domain.v1.ServerStartup",
+    "description": "ServerStarup describes the desired startup state and passed environment variables for a specific managed server.",
+    "required": [
+     "serverName"
+    ],
+    "properties": {
+     "desiredState": {
+      "description": "Desired startup state.  Legal values are RUNNING or ADMIN.",
+      "type": "string"
+     },
+     "serverName": {
+      "description": "Managed server name of instance to start.",
+      "type": "string"
+     },
+     "nodePort": {
+      "description": "Managed server NodePort port.  The port on each node on which this managed server will be exposed.  If specified, this value must be an unused port.  By default, the server will not be exposed outside the Kubernetes cluster.",
+      "type": "integer"
+     },
+     "env": {
+      "description": "Environment variables to pass while starting this managed server.",
+      "type": "array",
+      "items": {
+       "javaType": "io.kubernetes.client.models.V1EnvVar",
+       "type": "object"
+      }
+     }
+    }
+ }

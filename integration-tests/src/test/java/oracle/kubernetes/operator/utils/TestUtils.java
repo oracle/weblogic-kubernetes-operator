@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -22,12 +22,15 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import oracle.kubernetes.operator.BaseTest;
+import oracle.kubernetes.operator.utils.Operator.RESTCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 public class TestUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+
+  private static K8sTestUtils k8sTestUtils = new K8sTestUtils();
 
   /**
    * @param cmd - kubectl get pod <podname> -n namespace
@@ -113,7 +116,8 @@ public class TestUtils {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
     } else {
-      ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
+      // ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
+      ExecResult result = ExecCommand.exec("hostname");
       return result.stdout().trim();
     }
   }
@@ -125,7 +129,7 @@ public class TestUtils {
         .append(domainUid)
         .append(" -n ")
         .append(domainNS)
-        .append(" -o jsonpath='{.spec.clusterStartup[?(@.clusterName == \"")
+        .append(" -o jsonpath='{.spec.clusters[?(@.clusterName == \"")
         .append(clusterName)
         .append("\")].replicas }'");
     logger.fine("getClusterReplicas cmd =" + cmd);
@@ -174,7 +178,11 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer("kubectl delete pvc ");
     cmd.append(pvcName).append(" -n ").append(namespace);
     logger.info("Deleting PVC " + cmd);
-    ExecCommand.exec(cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: delete PVC failed with " + result.stderr() + " \n " + result.stdout());
+    }
   }
 
   public static boolean checkPVReleased(String pvBaseName, String namespace) throws Exception {
@@ -183,7 +191,7 @@ public class TestUtils {
 
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
-      logger.info("Checking if PV is Released " + cmd);
+      logger.info("Iteration " + i + " Checking if PV is Released " + cmd);
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0
           || result.exitValue() == 0 && !result.stdout().contains("Released")) {
@@ -229,7 +237,10 @@ public class TestUtils {
 
     // kill server process 3 times
     for (int i = 0; i < 3; i++) {
-      kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      ExecResult result = kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      logger.info("kill server process command exitValue " + result.exitValue());
+      logger.info(
+          "kill server process command result " + result.stdout() + " stderr " + result.stderr());
       Thread.sleep(2 * 1000);
     }
     // one more time so that liveness probe restarts
@@ -240,6 +251,7 @@ public class TestUtils {
     while (true) {
       long currentTime = System.currentTimeMillis();
       int finalRestartCnt = getPodRestartCount(podName, namespace);
+      logger.info("initialRestartCnt " + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
       if ((finalRestartCnt - initialRestartCnt) == 1) {
         logger.info("WLS liveness probe test is successful.");
         break;
@@ -300,6 +312,8 @@ public class TestUtils {
         .append(" ")
         .append(scriptPath);
 
+    ExecResult result = ExecCommand.exec("kubectl get pods -n " + namespace);
+    logger.info("get pods before killing the server " + result.stdout() + "\n " + result.stderr());
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     return ExecCommand.exec(cmdKubectlSh.toString());
   }
@@ -313,29 +327,28 @@ public class TestUtils {
     }
   }
 
-  public static int makeOperatorPostRestCall(
-      String operatorNS, String url, String jsonObjStr, String userProjectsDir) throws Exception {
-    return makeOperatorRestCall(operatorNS, url, jsonObjStr, userProjectsDir);
-  }
-
-  public static int makeOperatorGetRestCall(String operatorNS, String url, String userProjectsDir)
+  public static int makeOperatorPostRestCall(Operator operator, String url, String jsonObjStr)
       throws Exception {
-    return makeOperatorRestCall(operatorNS, url, null, userProjectsDir);
+    return makeOperatorRestCall(operator, url, jsonObjStr);
   }
 
-  private static int makeOperatorRestCall(
-      String operatorNS, String url, String jsonObjStr, String userProjectsDir) throws Exception {
+  public static int makeOperatorGetRestCall(Operator operator, String url) throws Exception {
+    return makeOperatorRestCall(operator, url, null);
+  }
+
+  private static int makeOperatorRestCall(Operator operator, String url, String jsonObjStr)
+      throws Exception {
     // get access token
-    String token = getAccessToken(operatorNS);
+    String token = getAccessToken(operator);
     logger.info("token =" + token);
 
-    KeyStore myKeyStore = createKeyStore(operatorNS, userProjectsDir);
+    KeyStore myKeyStore = createKeyStore(operator);
 
     Builder request = createRESTRequest(myKeyStore, url, token);
 
     Response response = null;
     int i = 0;
-    while (i < BaseTest.getMaxIterationsPod() / 2) {
+    while (i < BaseTest.getMaxIterationsPod()) {
       try {
         // Post scaling request to Operator
         if (jsonObjStr != null) {
@@ -344,17 +357,22 @@ public class TestUtils {
           response = request.get();
         }
       } catch (Exception ex) {
-        logger.info("Got exception " + ex.getMessage());
+        logger.info("Got exception, iteration " + i + " " + ex.getMessage());
         i++;
         if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
+          if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+            throw ex;
+          }
           logger.info("Sleeping 5 more seconds and try again");
           Thread.sleep(5 * 1000);
           continue;
+        } else {
+          throw ex;
         }
       }
       break;
     }
-    logger.info("response: " + response.toString());
+    logger.info("response: " + response);
 
     int returnCode = response.getStatus();
     // Verify
@@ -364,16 +382,21 @@ public class TestUtils {
     } else {
       throw new RuntimeException("Response " + response.readEntity(String.class));
     }
-
     response.close();
     // javaClient.close();
-
     return returnCode;
   }
 
-  public static String getAccessToken(String operatorNS) throws Exception {
+  public static String getLegacyAccessToken(Operator operator) throws Exception {
+    return null;
+  }
+
+  public static String getAccessToken(Operator operator) throws Exception {
     StringBuffer secretCmd = new StringBuffer("kubectl get serviceaccount weblogic-operator ");
-    secretCmd.append(" -n ").append(operatorNS).append(" -o jsonpath='{.secrets[0].name}'");
+    secretCmd
+        .append(" -n ")
+        .append(operator.getOperatorNamespace())
+        .append(" -o jsonpath='{.secrets[0].name}'");
 
     ExecResult result = ExecCommand.exec(secretCmd.toString());
     if (result.exitValue() != 0) {
@@ -386,7 +409,7 @@ public class TestUtils {
     etokenCmd
         .append(secretName)
         .append(" -n ")
-        .append(operatorNS)
+        .append(operator.getOperatorNamespace())
         .append(" -o jsonpath='{.data.token}'");
     result = ExecCommand.exec(etokenCmd.toString());
     if (result.exitValue() != 0) {
@@ -397,17 +420,28 @@ public class TestUtils {
     return ExecCommand.exec("echo " + etoken + " | base64 --decode").stdout().trim();
   }
 
-  public static String getExternalOperatorCertificate(String operatorNS, String userProjectsDir)
-      throws Exception {
+  public static String getExternalOperatorCertificate(Operator operator) throws Exception {
 
     File certFile =
-        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.cert.pem");
+        new File(
+            operator.getUserProjectsDir()
+                + "/weblogic-operators/"
+                + operator.getOperatorNamespace()
+                + "/operator.cert.pem");
 
-    StringBuffer opCertCmd = new StringBuffer("kubectl get cm -n ");
-    opCertCmd
-        .append(operatorNS)
-        .append(" weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'");
-
+    StringBuffer opCertCmd;
+    if (RESTCertType.LEGACY == operator.getRestCertType()) {
+      opCertCmd = new StringBuffer("kubectl get cm -n ");
+      opCertCmd
+          .append(operator.getOperatorNamespace())
+          .append(" weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'");
+    } else {
+      opCertCmd = new StringBuffer("kubectl get secret -n ");
+      opCertCmd
+          .append(operator.getOperatorNamespace())
+          .append(
+              " weblogic-operator-external-rest-identity -o yaml | grep tls.crt | cut -d':' -f 2");
+    }
     ExecResult result = ExecCommand.exec(opCertCmd.toString());
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -424,21 +458,23 @@ public class TestUtils {
         .append(" | base64 --decode > ")
         .append(certFile.getAbsolutePath());
 
-    String decodedOpCert = ExecCommand.exec(opCertDecodeCmd.toString()).stdout().trim();
+    ExecCommand.exec(opCertDecodeCmd.toString()).stdout().trim();
     return certFile.getAbsolutePath();
   }
 
-  public static String getExternalOperatorKey(String operatorNS, String userProjectsDir)
-      throws Exception {
+  public static String getExternalOperatorKey(Operator operator) throws Exception {
     File keyFile =
-        new File(userProjectsDir + "/weblogic-operators/" + operatorNS + "/operator.key.pem");
+        new File(
+            operator.getUserProjectsDir()
+                + "/weblogic-operators/"
+                + operator.getOperatorNamespace()
+                + "/operator.key.pem");
 
-    StringBuffer opKeyCmd = new StringBuffer("grep externalOperatorKey: ");
+    StringBuffer opKeyCmd = new StringBuffer("kubectl get secret -n ");
     opKeyCmd
-        .append(userProjectsDir)
-        .append("/weblogic-operators/")
-        .append(operatorNS)
-        .append("/weblogic-operator-values.yaml | awk '{ print $2 }'");
+        .append(operator.getOperatorNamespace())
+        .append(
+            " weblogic-operator-external-rest-identity -o yaml | grep tls.key | cut -d':' -f 2");
 
     ExecResult result = ExecCommand.exec(opKeyCmd.toString());
     if (result.exitValue() != 0) {
@@ -451,7 +487,7 @@ public class TestUtils {
     StringBuffer opKeyDecodeCmd = new StringBuffer("echo ");
     opKeyDecodeCmd.append(opKey).append(" | base64 --decode > ").append(keyFile.getAbsolutePath());
 
-    String decodedOpKey = ExecCommand.exec(opKeyDecodeCmd.toString()).stdout().trim();
+    ExecCommand.exec(opKeyDecodeCmd.toString()).stdout().trim();
     return keyFile.getAbsolutePath();
   }
 
@@ -464,9 +500,10 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
-  public static Operator createOperator(String opYamlFile) throws Exception {
+  public static Operator createOperator(String opYamlFile, RESTCertType restCertType)
+      throws Exception {
     // create op
-    Operator operator = new Operator(opYamlFile);
+    Operator operator = new Operator(opYamlFile, restCertType);
 
     logger.info("Check Operator status");
     operator.verifyPodCreated();
@@ -476,11 +513,18 @@ public class TestUtils {
     return operator;
   }
 
+  public static Operator createOperator(String opYamlFile) throws Exception {
+    return createOperator(opYamlFile, RESTCertType.SELF_SIGNED);
+  }
+
   public static Domain createDomain(String inputYaml) throws Exception {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
-    Domain domain = new Domain(inputYaml);
-    domain.verifyDomainCreated();
-    return domain;
+    return new Domain(inputYaml);
+  }
+
+  public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
+    logger.info("Creating domain with Map, waiting for the script to complete execution");
+    return new Domain(inputDomainMap);
   }
 
   public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
@@ -525,11 +569,11 @@ public class TestUtils {
                 + " to try renew the lease. "
                 + "Some of the potential reasons for this failure are that another run"
                 + "may have obtained the lease, the lease may have been externally "
-                + "deleted, or the caller of run.sh may have forgotten to obtain the"
-                + "lease before calling run.sh (using 'lease.sh -o \"$LEASE_ID\"'). "
+                + "deleted, or the caller of the test may have forgotten to obtain the "
+                + "lease before calling the test (using 'lease.sh -o \"$LEASE_ID\"'). "
                 + "To force delete a lease no matter who owns the lease,"
                 + "call 'lease.sh -f' or 'kubernetes delete cm acceptance-test-lease'"
-                + "(this should only be done when sure there's no current run.sh "
+                + "(this should only be done when sure there's no current java tests "
                 + "that owns the lease).  To view the current lease holder,"
                 + "use 'lease.sh -s'.  To disable this lease check, do not set"
                 + "the LEASE_ID environment variable.");
@@ -716,27 +760,101 @@ public class TestUtils {
     logger.info("Command returned " + outputStr);
   }
 
-  private static KeyStore createKeyStore(String operatorNS, String userProjectsDir)
-      throws Exception {
+  public static void deleteWeblogicDomainResources(String domainUid) throws Exception {
+    StringBuilder cmd =
+        new StringBuilder(BaseTest.getProjectRoot())
+            .append(
+                "/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh ")
+            .append("-d ")
+            .append(domainUid);
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
+  public static void verifyBeforeDeletion(Domain domain) throws Exception {
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+
+    logger.info("Before deletion of domain: " + domainUid);
+
+    k8sTestUtils.verifyDomainCrd();
+    k8sTestUtils.verifyDomain(domainNs, domainUid, true);
+    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 4);
+    k8sTestUtils.verifyJobs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    k8sTestUtils.verifyServices(domain1LabelSelector, 5);
+    k8sTestUtils.verifyPvcs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 2);
+    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    k8sTestUtils.verifySecrets(credentialsName, 1);
+    k8sTestUtils.verifyPvs(domain1LabelSelector, 1);
+    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+  }
+
+  public static void verifyAfterDeletion(Domain domain) throws Exception {
+    final String domainNs = String.class.cast(domain.getDomainMap().get("namespace"));
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String credentialsName =
+        String.class.cast(domain.getDomainMap().get("weblogicCredentialsSecretName"));
+
+    logger.info("After deletion of domain: " + domainUid);
+    k8sTestUtils.verifyDomainCrd();
+    k8sTestUtils.verifyDomain(domainNs, domainUid, false);
+    k8sTestUtils.verifyPods(domainNs, domain1LabelSelector, 0);
+    k8sTestUtils.verifyJobs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoDeployments(domain1LabelSelector);
+    k8sTestUtils.verifyNoReplicaSets(domain1LabelSelector);
+    k8sTestUtils.verifyServices(domain1LabelSelector, 0);
+    k8sTestUtils.verifyPvcs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyConfigMaps(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoServiceAccounts(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoRoleBindings(domain1LabelSelector);
+    k8sTestUtils.verifySecrets(credentialsName, 0);
+    k8sTestUtils.verifyPvs(domain1LabelSelector, 0);
+    k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
+    k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+  }
+
+  private static KeyStore createKeyStore(Operator operator) throws Exception {
     // get operator external certificate from weblogic-operator.yaml
-    String opExtCertFile = getExternalOperatorCertificate(operatorNS, userProjectsDir);
+    String opExtCertFile = getExternalOperatorCertificate(operator);
     // logger.info("opExtCertFile =" + opExtCertFile);
 
+    // NOTE: Operator's private key should not be added to a keystore
+    // used for the client connection
     // get operator external key from weblogic-operator.yaml
-    String opExtKeyFile = getExternalOperatorKey(operatorNS, userProjectsDir);
+    //    String opExtKeyFile = getExternalOperatorKey(operator);
     // logger.info("opExternalKeyFile =" + opExtKeyFile);
 
     if (!new File(opExtCertFile).exists()) {
       throw new RuntimeException("File " + opExtCertFile + " doesn't exist");
     }
-    if (!new File(opExtKeyFile).exists()) {
-      throw new RuntimeException("File " + opExtKeyFile + " doesn't exist");
-    }
+    //    if (!new File(opExtKeyFile).exists()) {
+    //      throw new RuntimeException("File " + opExtKeyFile + " doesn't exist");
+    //    }
     logger.info("opExtCertFile " + opExtCertFile);
     // Create a java Keystore obj and verify it's not null
-    KeyStore myKeyStore =
-        PEMImporter.createKeyStore(
-            new File(opExtKeyFile), new File(opExtCertFile), "temp_password");
+    KeyStore myKeyStore = PEMImporter.createKeyStore(new File(opExtCertFile), "temp_password");
     if (myKeyStore == null) {
       throw new RuntimeException("Keystore Obj is null");
     }

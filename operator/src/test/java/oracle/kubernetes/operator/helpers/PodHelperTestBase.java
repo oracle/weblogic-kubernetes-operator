@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -7,69 +7,49 @@ package oracle.kubernetes.operator.helpers;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
-import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
-import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.*;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.ProbeMatcher.hasExpectedTuning;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.writableVolumeMount;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.nullValue;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ExecAction;
-import io.kubernetes.client.models.V1Handler;
-import io.kubernetes.client.models.V1Lifecycle;
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1PersistentVolume;
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.models.V1PersistentVolumeList;
-import io.kubernetes.client.models.V1PersistentVolumeSpec;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1SecretReference;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
+import io.kubernetes.client.models.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v1.Domain;
-import oracle.kubernetes.weblogic.domain.v1.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v2.DomainV2Configurator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -85,8 +65,9 @@ public abstract class PodHelperTestBase {
   private static final String UID = "uid1";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
+  private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
-  private static final String ADMIN_SECRET_NAME = "adminSecretName";
+  private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
   private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
   private static final String LATEST_IMAGE = "image:latest";
   static final String VERSIONED_IMAGE = "image:1.2.3";
@@ -99,12 +80,11 @@ public abstract class PodHelperTestBase {
   private static final int CONFIGURED_DELAY = 21;
   private static final int CONFIGURED_TIMEOUT = 27;
   private static final int CONFIGURED_PERIOD = 35;
-  private static final String DOMAIN_HOME = "/shared/domains/uid1";
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
-  private static final String CREDENTIALS_VOLUME_NAME = "weblogic-credentials-volume";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
+  private static final String INSTRUCTION = "{\"op\":\"%s\",\"path\":\"%s\",\"value\":\"%s\"}";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -144,13 +124,21 @@ public abstract class PodHelperTestBase {
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(TuningParametersStub.install());
 
-    testSupport.addDomainPresenceInfo(domainPresenceInfo);
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
+    configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
+    configSupport.setAdminServerName(ADMIN_SERVER);
+
+    WlsDomainConfig domainConfig = configSupport.createDomainConfig();
+    testSupport
+        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
+        .addToPacket(SERVER_SCAN, domainConfig.getServerConfig(ADMIN_SERVER))
+        .addDomainPresenceInfo(domainPresenceInfo);
     onAdminExpectListPersistentVolume();
   }
 
   private String[] getMessageKeys() {
     return new String[] {
-      getPodCreatedMessageKey(), getPodExistsMessageKey(), getPodReplacedMessageKey()
+      getCreatedMessageKey(), getExistsMessageKey(), getPatchedMessageKey(), getReplacedMessageKey()
     };
   }
 
@@ -163,23 +151,18 @@ public abstract class PodHelperTestBase {
   }
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
-    DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
-    domainPresenceInfo.setClaims(new V1PersistentVolumeClaimList());
-    return domainPresenceInfo;
+    return new DomainPresenceInfo(domain);
   }
 
   private Domain createDomain() {
     return new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(createDomainSpec());
   }
 
-  @SuppressWarnings("deprecation")
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
-        .withDomainName(DOMAIN_NAME)
         .withDomainUID(UID)
-        .withAsName(ADMIN_SERVER)
-        .withAsPort(ADMIN_PORT)
-        .withAdminSecret(new V1SecretReference().name(ADMIN_SECRET_NAME))
+        .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
+        .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
         .withImage(LATEST_IMAGE);
   }
 
@@ -195,7 +178,6 @@ public abstract class PodHelperTestBase {
     return body -> body instanceof V1Pod && getPodName((V1Pod) body).equals(podName);
   }
 
-  @SuppressWarnings("deprecation")
   private void defineDomainImage(String image) {
     configureDomain().withDefaultImage(image);
   }
@@ -219,7 +201,7 @@ public abstract class PodHelperTestBase {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsInfo(getPodCreatedMessageKey()));
+    assertThat(logRecords, containsInfo(getCreatedMessageKey()));
   }
 
   @Test
@@ -262,12 +244,13 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodCreated_containerHasExpectedVolumeMounts() {
+  public void whenPodCreated_withNoPVC_containerHasExpectedVolumeMounts() {
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
-            writableVolumeMount("weblogic-domain-storage-volume", "/shared"),
-            readOnlyVolumeMount("weblogic-credentials-volume", "/weblogic-operator/secrets"),
+            writableVolumeMount(
+                UID + SIT_CONFIG_MAP_VOLUME_SUFFIX, "/weblogic-operator/introspector"),
+            readOnlyVolumeMount("weblogic-domain-debug-cm-volume", "/weblogic-operator/debug"),
             readOnlyVolumeMount("weblogic-domain-cm-volume", "/weblogic-operator/scripts")));
   }
 
@@ -294,9 +277,9 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_readinessProbeHasReadinessCommand() {
-    assertThat(
-        getCreatedPodSpecContainer().getReadinessProbe().getExec().getCommand(),
-        contains("/weblogic-operator/scripts/readinessProbe.sh"));
+    V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
+    assertThat(getAction.getPath(), equalTo("/weblogic"));
+    assertThat(getAction.getPort().getIntValue(), equalTo(listenPort));
   }
 
   @Test
@@ -328,6 +311,31 @@ public abstract class PodHelperTestBase {
     return getServerConfigurator(new DomainV2Configurator(domain), getServerName());
   }
 
+  protected abstract void verifyReplacePodWhen(PodMutator mutator);
+
+  protected abstract void verifyPodNotReplacedWhen(PodMutator mutator);
+
+  private void verifyPatchPod(PodMutator mutator, String... patchInstructions) {
+    testSupport.addComponent(
+        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+        PodAwaiterStepFactory.class,
+        (pod, next) -> terminalStep);
+
+    V1Pod existingPod = createPodModel();
+    mutator.mutate(existingPod);
+    initializeExistingPod(existingPod);
+    testSupport
+        .createCannedResponse("patchPod")
+        .withName(getPodName())
+        .withNamespace(NS)
+        .withBody(expect(patchInstructions))
+        .returning(createPodModel());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
+  }
+
   protected abstract ServerConfigurator getServerConfigurator(
       DomainConfigurator configurator, String serverName);
 
@@ -338,7 +346,7 @@ public abstract class PodHelperTestBase {
         getCreatedPodSpecContainer().getEnv(),
         allOf(
             hasEnvVar("DOMAIN_NAME", DOMAIN_NAME),
-            hasEnvVar("DOMAIN_HOME", DOMAIN_HOME),
+            hasEnvVar("DOMAIN_HOME", "/u01/oracle/user_projects/domains"),
             hasEnvVar("ADMIN_NAME", ADMIN_SERVER),
             hasEnvVar("ADMIN_PORT", Integer.toString(ADMIN_PORT)),
             hasEnvVar("SERVER_NAME", getServerName()),
@@ -346,50 +354,44 @@ public abstract class PodHelperTestBase {
             hasEnvVar("ADMIN_PASSWORD", null),
             hasEnvVar("DOMAIN_UID", UID),
             hasEnvVar("NODEMGR_HOME", NODEMGR_HOME),
-            hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID),
+            hasEnvVar("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)),
+            hasEnvVar("LOG_HOME", null),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
-            hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
+            hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)),
+            hasEnvVar("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom")));
+  }
+
+  @Test
+  public void whenPodCreated_withLogHomeSpecified_hasLogHomeEnvVariable() {
+    final String MY_LOG_HOME = "/shared/mylogs";
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs");
+    assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", MY_LOG_HOME)));
+  }
+
+  @Test
+  public void whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeEnvVariable() {
+    domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
+    domainPresenceInfo.getDomain().getSpec().setLogHome(null);
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID)));
   }
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
     return hasItem(new V1EnvVar().name(name).value(value));
   }
 
+  static Matcher<Iterable<? super V1VolumeMount>> hasVolumeMount(String name, String path) {
+    return hasItem(new V1VolumeMount().name(name).mountPath(path));
+  }
+
+  static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
+    return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
+  }
+
   @Test
   public void whenDomainPresenceLacksClaims_adminPodSpecHasNoDomainStorageVolume() {
     assertThat(getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME), nullValue());
-  }
-
-  @Test
-  public void whenDomainPresenceHasClaim_podSpecHasDomainStorageVolume() {
-    domainPresenceInfo
-        .getClaims()
-        .addItemsItem(
-            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
-
-    V1Volume storageVolume = getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME);
-
-    assertThat(storageVolume.getPersistentVolumeClaim().getClaimName(), equalTo("claim-name"));
-  }
-
-  @Test
-  public void whenDomainSpecifiesClaimName_podSpecUsesIt() {
-    configurator.withPredefinedClaim("predefined");
-    domainPresenceInfo
-        .getClaims()
-        .addItemsItem(
-            new V1PersistentVolumeClaim().metadata(new V1ObjectMeta().name("claim-name")));
-
-    V1Volume storageVolume = getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME);
-
-    assertThat(storageVolume.getPersistentVolumeClaim().getClaimName(), equalTo("predefined"));
-  }
-
-  @Test
-  public void createdPod_hasCredentialsVolume() {
-    V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CREDENTIALS_VOLUME_NAME);
-
-    assertThat(credentialsVolume.getSecret().getSecretName(), equalTo(ADMIN_SECRET_NAME));
   }
 
   @Test
@@ -414,7 +416,8 @@ public abstract class PodHelperTestBase {
     assertThat(
         getCreatedPod().getMetadata().getLabels(),
         allOf(
-            hasEntry(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1),
+            hasEntry(
+                LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION),
             hasEntry(LabelConstants.DOMAINUID_LABEL, UID),
             hasEntry(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME),
             hasEntry(LabelConstants.SERVERNAME_LABEL, getServerName()),
@@ -426,7 +429,7 @@ public abstract class PodHelperTestBase {
     assertThat(
         getCreatedPod().getMetadata().getAnnotations(),
         allOf(
-            hasEntry("prometheus.io/port", "" + Integer.toString(listenPort)),
+            hasEntry("prometheus.io/port", Integer.toString(listenPort)),
             hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
             hasEntry("prometheus.io/scrape", "true")));
   }
@@ -443,7 +446,7 @@ public abstract class PodHelperTestBase {
 
   abstract void expectStepsAfterCreation();
 
-  abstract String getPodCreatedMessageKey();
+  abstract String getCreatedMessageKey();
 
   abstract FiberTestSupport.StepFactory getStepFactory();
 
@@ -473,6 +476,120 @@ public abstract class PodHelperTestBase {
         .withLabelSelectors("weblogic.domainUID=" + UID);
   }
 
+  @Test
+  public void whenPodHasBadVersion_replaceIt() {
+    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
+  }
+
+  @Test
+  public void whenPodHasUnknownCustomerLabel_ignoreIt() {
+    verifyPodNotReplacedWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
+  }
+
+  @Test
+  public void whenPodLacksExpectedCustomerLabel_addIt() {
+    configurator.withPodLabel("expected.label", "value");
+
+    verifyPatchPod(pod -> {}, "add", "/metadata/labels/expected.label", "value");
+  }
+
+  @Test
+  public void whenPodCustomerLabelHasBadValue_replaceIt() {
+    configurator.withPodLabel("customer.label", "value");
+
+    verifyPatchPod(
+        pod -> pod.getMetadata().putLabelsItem("customer.label", "badvalue"),
+        "replace",
+        "/metadata/labels/customer.label",
+        "value");
+  }
+
+  @Test
+  public void whenPodLacksExpectedCustomerLabelAndRequestRequirement_replaceIt() {
+    configurator.withPodLabel("expected.label", "value").withRequestRequirement("widgets", "10");
+
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodHasUnknownCustomerAnnotations_ignoreIt() {
+    verifyPodNotReplacedWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation", "value"));
+  }
+
+  @Test
+  public void whenPodLacksExpectedCustomerAnnotations_addIt() {
+    configurator.withPodAnnotation("expected.annotation", "value");
+
+    verifyPatchPod(pod -> {}, "add", "/metadata/annotations/expected.annotation", "value");
+  }
+
+  @Test
+  public void whenPodCustomerAnnotationHasBadValue_replaceIt() {
+    configurator.withPodAnnotation("customer.annotation", "value");
+
+    verifyPatchPod(
+        pod -> pod.getMetadata().putAnnotationsItem("customer.annotation", "badvalue"),
+        "replace",
+        "/metadata/annotations/customer.annotation",
+        "value");
+  }
+
+  @Test
+  public void whenPodSecurityContextIsDifferent_replaceIt() {
+    configurator.withPodSecurityContext(new V1PodSecurityContext().runAsGroup(12345L));
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodHasDifferentNodeSelector_replaceIt() {
+    configurator.withNodeSelector("key", "value");
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenNullVsEmptyNodeSelector_dontReplaceIt() {
+    verifyPodNotReplacedWhen(pod -> pod.getSpec().setNodeSelector(null));
+  }
+
+  @Test
+  public void whenPodContainerSecurityContextIsDifferent_replaceIt() {
+    configurator.withContainerSecurityContext(new V1SecurityContext().runAsGroup(9876L));
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodLivenessProbeSettingsAreDifferent_replaceIt() {
+    configurator.withDefaultLivenessProbeSettings(8, 7, 6);
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodReadinessProbeSettingsAreDifferent_replaceIt() {
+    configurator.withDefaultReadinessProbeSettings(5, 4, 3);
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodRequestRequirementIsDifferent_replaceIt() {
+    configurator.withRequestRequirement("resource", "5");
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodRequestRequirementsEmptyVsNull_dontReplaceIt() {
+    verifyPodNotReplacedWhen(pod -> pod.getSpec().getContainers().get(0).resources(null));
+  }
+
+  @Test
+  public void whenPodLimitRequirementIsDifferent_replaceIt() {
+    configurator.withLimitRequirement("limit", "7");
+    verifyReplacePodWhen(pod -> {});
+  }
+
+  private BodyMatcher expect(String[] patchInstructions) {
+    return new PatchMatcher(patchInstructions);
+  }
+
   protected void onAdminExpectListPersistentVolume() {
     // default is no-op
   }
@@ -495,21 +612,27 @@ public abstract class PodHelperTestBase {
     initializeExistingPod(createPodModel());
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsFine(getPodExistsMessageKey()));
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
     ServerKubernetesObjects sko =
-        ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, getServerName());
+        domainPresenceInfo
+            .getServers()
+            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
     assertThat(sko.getPod().get(), equalTo(createPodModel()));
   }
 
   void initializeExistingPod(V1Pod pod) {
     ServerKubernetesObjects sko =
-        ServerKubernetesObjectsManager.getOrCreate(domainPresenceInfo, getServerName());
+        domainPresenceInfo
+            .getServers()
+            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
     sko.getPod().set(pod);
   }
 
-  abstract String getPodExistsMessageKey();
+  abstract String getExistsMessageKey();
 
-  abstract String getPodReplacedMessageKey();
+  abstract String getPatchedMessageKey();
+
+  abstract String getReplacedMessageKey();
 
   abstract V1Pod createPodModel();
 
@@ -544,12 +667,16 @@ public abstract class PodHelperTestBase {
   }
 
   V1ObjectMeta createPodMetadata() {
-    return new V1ObjectMeta()
-        .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
-        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID)
-        .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME)
-        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
-        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    V1ObjectMeta meta =
+        new V1ObjectMeta()
+            .putLabelsItem(RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
+            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID)
+            .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, DOMAIN_NAME)
+            .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/u01/oracle/user_projects/domains")
+            .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
+            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    AnnotationHelper.annotateForPrometheus(meta, listenPort);
+    return meta;
   }
 
   V1Container createPodSpecContainer() {
@@ -557,23 +684,14 @@ public abstract class PodHelperTestBase {
         .name(CONTAINER_NAME)
         .image(LATEST_IMAGE)
         .imagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
-        .addPortsItem(new V1ContainerPort().protocol("TCP").containerPort(listenPort))
+        .securityContext(new V1SecurityContext())
+        .addPortsItem(
+            new V1ContainerPort().name("default").containerPort(listenPort).protocol("TCP"))
         .lifecycle(createLifecycle())
-        .addVolumeMountsItem(
-            new V1VolumeMount().name("weblogic-domain-storage-volume").mountPath("/shared"))
-        .addVolumeMountsItem(
-            new V1VolumeMount()
-                .name("weblogic-credentials-volume")
-                .mountPath("/weblogic-operator/secrets")
-                .readOnly(true))
-        .addVolumeMountsItem(
-            new V1VolumeMount()
-                .name("weblogic-domain-cm-volume")
-                .mountPath("/weblogic-operator/scripts")
-                .readOnly(true))
+        .volumeMounts(PodDefaults.getStandardVolumeMounts(UID))
         .command(createStartCommand())
         .addEnvItem(envItem("DOMAIN_NAME", DOMAIN_NAME))
-        .addEnvItem(envItem("DOMAIN_HOME", DOMAIN_HOME))
+        .addEnvItem(envItem("DOMAIN_HOME", "/u01/oracle/user_projects/domains"))
         .addEnvItem(envItem("ADMIN_NAME", ADMIN_SERVER))
         .addEnvItem(envItem("ADMIN_PORT", Integer.toString(ADMIN_PORT)))
         .addEnvItem(envItem("SERVER_NAME", getServerName()))
@@ -581,15 +699,22 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("ADMIN_PASSWORD", null))
         .addEnvItem(envItem("DOMAIN_UID", UID))
         .addEnvItem(envItem("NODEMGR_HOME", NODEMGR_HOME))
-        .addEnvItem(envItem("LOG_HOME", LOG_HOME + "/" + UID))
+        .addEnvItem(
+            envItem("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)))
+        .addEnvItem(envItem("LOG_HOME", null))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
+        .addEnvItem(envItem("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
   }
 
   V1PodSpec createPodSpec() {
-    return new V1PodSpec().containers(Collections.singletonList(createPodSpecContainer()));
+    return new V1PodSpec()
+        .securityContext(new V1PodSecurityContext())
+        .containers(Collections.singletonList(createPodSpecContainer()))
+        .nodeSelector(Collections.emptyMap())
+        .volumes(PodDefaults.getStandardVolumes(UID));
   }
 
   abstract List<String> createStartCommand();
@@ -663,6 +788,7 @@ public abstract class PodHelperTestBase {
     }
   }
 
+  @SuppressWarnings("unused")
   static class VolumeMountMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1VolumeMount> {
     private String expectedName;
@@ -709,6 +835,7 @@ public abstract class PodHelperTestBase {
     }
   }
 
+  @SuppressWarnings("unused")
   static class ProbeMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Probe> {
     private static final Integer EXPECTED_FAILURE_THRESHOLD = 1;
@@ -760,6 +887,33 @@ public abstract class PodHelperTestBase {
           .appendValue(expectedPeriod)
           .appendText(" and failureThreshold ")
           .appendValue(EXPECTED_FAILURE_THRESHOLD);
+    }
+  }
+
+  protected static class PatchMatcher implements BodyMatcher {
+    private Set<String> expectedInstructions = new HashSet<>();
+    private int index = 0;
+
+    PatchMatcher(String[] patchInstructions) {
+      while (index < patchInstructions.length) addExpectedInstruction(patchInstructions);
+    }
+
+    private void addExpectedInstruction(String[] strings) {
+      expectedInstructions.add(
+          String.format(INSTRUCTION, strings[index], strings[index + 1], strings[index + 2]));
+      index += 3;
+    }
+
+    @Override
+    public boolean matches(Object actualBody) {
+      if (!(actualBody instanceof List)) return false;
+      List<?> instructions = (List<?>) actualBody;
+      Set<String> actualInstructions = new HashSet<>();
+
+      for (Object instruction : instructions)
+        actualInstructions.add(new Gson().toJson((JsonElement) instruction));
+
+      return actualInstructions.equals(expectedInstructions);
     }
   }
 }

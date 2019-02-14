@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -16,25 +16,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjectsManager;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /** Watches for Pods to become Ready or leave Ready state */
-public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
+public class PodWatcher extends Watcher<V1Pod>
+    implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String ns;
@@ -50,6 +49,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
    * @param factory thread factory
    * @param ns Namespace
    * @param initialResourceVersion Initial resource version or empty string
+   * @param tuning Watch tuning parameters
    * @param listener Callback for watch events
    * @param isStopping Stop signal
    * @return Pod watcher for the namespace
@@ -58,9 +58,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<V1Pod> listener,
       AtomicBoolean isStopping) {
-    PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, listener, isStopping);
+    PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -68,9 +69,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
   private PodWatcher(
       String ns,
       String initialResourceVersion,
+      WatchTuning tuning,
       WatchListener<V1Pod> listener,
       AtomicBoolean isStopping) {
-    super(initialResourceVersion, isStopping);
+    super(initialResourceVersion, tuning, isStopping);
     setListener(this);
     this.ns = ns;
     this.listener = listener;
@@ -92,22 +94,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
         V1Pod pod = item.object;
         Boolean isReady = isReady(pod);
         String podName = pod.getMetadata().getName();
-        Container c = ContainerResolver.getInstance().getContainer();
-        ServerKubernetesObjects sko = ServerKubernetesObjectsManager.lookup(podName);
-        if (sko != null) {
-          sko.getLastKnownStatus().set(isReady ? WebLogicConstants.RUNNING_STATE : null);
-        }
         if (isReady) {
-          if (sko != null) {
-            sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
-          }
           OnReady ready = readyCallbackRegistrations.remove(podName);
           if (ready != null) {
             ready.onReady();
-          }
-        } else {
-          if (sko != null) {
-            sko.getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
           }
         }
         break;
@@ -121,11 +111,18 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
     LOGGER.exiting();
   }
 
-  static boolean isReady(V1Pod pod) {
-    return isReady(pod, false);
+  static boolean isTerminating(V1Pod pod) {
+    return pod.getMetadata().getDeletionTimestamp() != null
+        || pod.getMetadata().getDeletionGracePeriodSeconds() != null;
   }
 
-  static boolean isReady(V1Pod pod, boolean isStatusCheck) {
+  static boolean isReady(V1Pod pod) {
+    boolean ready = getReadyStatus(pod);
+    if (ready) LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+    return ready;
+  }
+
+  static boolean getReadyStatus(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
       if ("Running".equals(status.getPhase())) {
@@ -134,10 +131,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod> {
           for (V1PodCondition cond : conds) {
             if ("Ready".equals(cond.getType())) {
               if ("True".equals(cond.getStatus())) {
-                // Pod is Ready!
-                if (!isStatusCheck) {
-                  LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
-                }
                 return true;
               }
             }

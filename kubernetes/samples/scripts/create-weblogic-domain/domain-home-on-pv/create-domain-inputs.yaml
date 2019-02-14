@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file.  Do not modify.
@@ -14,19 +14,19 @@ adminServerName: admin-server
 # This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
 domainUID: domain1
 
-# Type of WebLogic Cluster
-# Legal values are "CONFIGURED" or "DYNAMIC" 
-clusterType: DYNAMIC
+# Home of the WebLogic domain
+# If not specified, the value is derived from the domainUID as /shared/domains/<domainUID>
+domainHome: /shared/domains/domain1
 
-# Determines which WebLogic Servers the Operator will start up
-# Legal values are "NONE", "ALL", "ADMIN", "SPECIFIED", or "AUTO"
-startupControl: AUTO
+# Determines which WebLogic Servers the operator will start up
+# Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
+serverStartPolicy: IF_NEEDED
 
 # Cluster name
 clusterName: cluster-1
 
 # Number of managed servers to generate for the domain
-configuredManagedServerCount: 2
+configuredManagedServerCount: 5
 
 # Number of managed servers to initially start for the domain
 initialManagedServerReplicas: 2
@@ -37,7 +37,12 @@ managedServerNameBase: managed-server
 # Port number for each managed server
 managedServerPort: 8001
 
-# WebLogic Docker image
+# WebLogic Server Docker image.
+# The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied.
+# The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019,
+# and has all the necessary patches applied; a `docker pull` is required if you already have this image.
+# Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how
+# to obtain or create the image.
 image: store/oracle/weblogic:12.2.1.3
 
 # Image pull policy
@@ -52,8 +57,17 @@ imagePullPolicy: IfNotPresent
 productionModeEnabled: true
 
 # Name of the Kubernetes secret for the Admin Server's username and password
-# The name must be lowercase
+# The name must be lowercase.
+# If not specified, the value is derived from the domainUID as <domainUID>-weblogic-credentials
 weblogicCredentialsSecretName: domain1-weblogic-credentials
+
+# Whether to include server .out to the pod's stdout.
+# The default is true.
+includeServerOutInPodLog: true
+
+# The in-pod location for domain log, server logs, server out, and node manager log files
+# If not specified, the value is derived from the domainUID as /shared/logs/<domainUID>
+logHome: /shared/logs/domain1
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012
@@ -76,23 +90,47 @@ exposeAdminNodePort: false
 # Name of the domain namespace
 namespace: default
 
-#Java Option for Weblogic Server
+#Java Option for WebLogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false
 
-# Name of the persistent volume claim 
-persistentVolumeClaimName: weblogic-sample-pvc
+# Name of the persistent volume claim
+# If not specified, the value is derived from the domainUID as <domainUID>-weblogic-sample-pvc
+persistentVolumeClaimName: domain1-weblogic-sample-pvc
 
-# Mount path of the domain persistent volume. 
+# Mount path of the domain persistent volume.
 domainPVMountPath: /shared
 
-# Mount path of the directory where the create domain scripts are located inside the pod
+# Mount path where the create domain scripts are located inside a pod
+#
+# The `create-domain.sh` script creates a Kubernetes job to run the script (specified in the
+# `createDomainScriptName` property) in a Kubernetes pod to create a WebLogic home. Files
+# in the `createDomainFilesDir` directory are mounted to this location in the pod, so that
+# a Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainScriptsMountPath: /u01/weblogic
 
-# Script that creates the domain. 
+# Script that the create domain script uses to create a WebLogic domain
+#
+# The `create-domain.sh` script creates a Kubernetes job to run this script to create a
+# domain home. The script is located in the in-pod directory that is specified in the
+# `createDomainScriptsMountPath` property.
+#
+# If you need to provide your own scripts to create the domain home, instead of using the
+# built-it scripts, you must use this property to set the name of the script that you want
+# the create domain job to run.
 createDomainScriptName: create-domain-job.sh
 
-# Directory to get all the create domain scripts and supporting files, including 
-# the script that is specified by the createDomainScriptName property.
-# The default is the "wlst" subdirectory under the directory where the 
-# create-domain.sh script is located.
+# Directory on the host machine to locate all the files to create a WebLogic domain
+# It contains the script that is specified in the `createDomainScriptName` property.
+#
+# By default, this directory is set to the relative path `wlst`, and the create script will
+# use the built-in WLST offline scripts in the `wlst` directory to create the WebLogic domain.
+# It can also be set to the relative path `wdt`, and then the built-in WDT scripts will be
+# used instead.
+#
+# An absolute path is also supported to point to an arbitrary directory in the file system.
+#
+# The built-in scripts can be replaced by the user-provided scripts or model files as long
+# as those files are in the specified directory. Files in this directory are put into a
+# Kubernetes config map, which in turn is mounted to the `createDomainScriptsMountPath`,
+# so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainFilesDir: wlst

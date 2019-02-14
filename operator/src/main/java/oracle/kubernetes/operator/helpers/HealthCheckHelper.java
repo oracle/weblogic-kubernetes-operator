@@ -12,7 +12,6 @@ import io.kubernetes.client.models.VersionInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -65,8 +64,6 @@ public final class HealthCheckHelper {
 
   // default namespace or svc account name
   private static final String DEFAULT_NAMESPACE = "default";
-
-  private static final String MINIMUM_K8S_VERSION = "v1.7.5";
 
   static {
     // CRUD resources
@@ -121,7 +118,7 @@ public final class HealthCheckHelper {
     AuthorizationProxy ap = new AuthorizationProxy();
     LOGGER.info(MessageKeys.VERIFY_ACCESS_START);
 
-    if (version.major > 1 || version.minor >= 8) {
+    if (version.isRulesReviewSupported()) {
       boolean rulesReviewSuccessful = true;
       V1SelfSubjectRulesReview review = ap.review(ns);
       if (review == null) {
@@ -198,94 +195,33 @@ public final class HealthCheckHelper {
     return ruleApiGroups != null && ruleApiGroups.contains(apiGroup);
   }
 
-  /** Major and minor version of Kubernetes API Server */
-  public static class KubernetesVersion {
-    final int major;
-    final int minor;
-
-    public KubernetesVersion(int major, int minor) {
-      this.major = major;
-      this.minor = minor;
-    }
-
-    boolean isPublishNotReadyAddressesSupported() {
-      return this.major > 1 || (this.major == 1 && this.minor >= 8);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      return this == o || o instanceof KubernetesVersion && equals((KubernetesVersion) o);
-    }
-
-    private boolean equals(KubernetesVersion o) {
-      return major == o.major && minor == o.minor;
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(major, minor);
-    }
-
-    @Override
-    public String toString() {
-      return "KubernetesVersion{" + "major=" + major + ", minor=" + minor + '}';
-    }
-  }
-
   /**
    * Verify the k8s version.
    *
    * @return Major and minor version information
    */
   public static KubernetesVersion performK8sVersionCheck() {
-
-    // k8s version must be 1.7.5 or greater
     LOGGER.info(MessageKeys.VERIFY_K8S_MIN_VERSION);
-    boolean k8sMinVersion = true;
-    VersionInfo info;
 
-    int major = 0;
-    int minor = 0;
     try {
-      info = new CallBuilder().readVersionCode();
-
-      String gitVersion = info.getGitVersion();
-      major = Integer.parseInt(info.getMajor());
-      if (major < 1) {
-        k8sMinVersion = false;
-      } else if (major == 1) {
-        // The Minor version can be also 8+
-        String minor_string = info.getMinor();
-        // It will check if it is a number.
-        // If not it will remove the last part of the string in order to have just a number
-        while (!minor_string.chars().allMatch(Character::isDigit)) {
-          minor_string = minor_string.substring(0, minor_string.length() - 1);
-        }
-        minor = Integer.parseInt(minor_string);
-        if (minor < 7) {
-          k8sMinVersion = false;
-        } else if (minor == 7) {
-          // git version is of the form v1.7.5
-          // Check the 3rd part of the version.
-          String[] splitVersion = gitVersion.split("\\.");
-          // issue-36: gitVersion can be not just "v1.7.9" but also values like "v1.7.9+coreos.0"
-          splitVersion = splitVersion[2].split("\\+");
-          if (Integer.parseInt(splitVersion[0]) < 5) {
-            k8sMinVersion = false;
-          }
-        }
-      }
-
-      // Minimum k8s version not satisfied.
-      if (!k8sMinVersion) {
-        LOGGER.warning(MessageKeys.K8S_MIN_VERSION_CHECK_FAILED, MINIMUM_K8S_VERSION, gitVersion);
-      } else {
-        LOGGER.info(MessageKeys.K8S_VERSION_CHECK, gitVersion);
-      }
+      return createAndValidateKubernetesVersion(new CallBuilder().readVersionCode());
     } catch (ApiException ae) {
       LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, ae);
+      return KubernetesVersion.UNREADABLE;
     }
+  }
 
-    return new KubernetesVersion(major, minor);
+  private static KubernetesVersion createAndValidateKubernetesVersion(VersionInfo info) {
+    KubernetesVersion kubernetesVersion = new KubernetesVersion(info);
+
+    if (!kubernetesVersion.isCompatible()) {
+      LOGGER.warning(
+          MessageKeys.K8S_VERSION_TOO_LOW,
+          KubernetesVersion.getSupportedVersions(),
+          kubernetesVersion.asDisplayString());
+    } else {
+      LOGGER.info(MessageKeys.K8S_VERSION_CHECK, kubernetesVersion.asDisplayString());
+    }
+    return kubernetesVersion;
   }
 }

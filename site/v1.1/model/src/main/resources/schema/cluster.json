@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "javaType": "oracle.kubernetes.weblogic.domain.v1.Cluster",
+  "description": "Cluster describes the desired state of a cluster.",
+  "extends" : {
+    "$ref": "cluster-params.json"
+  },
+  "properties": {
+    "servers": {
+      "description": "Maps the name of a server in this cluster to its desired state.<p>The server property values use the following defaulting rules:<ol><li>If there is an entry for the cluster in the DomainSpec's clusters property, and there is an entry for the server in that cluster's servers property, and the property has been specified on that server, then use its value. <li>If not, if there is an entry for the cluster in the  DomainSpec's clusters property, and the property has been specified on that cluster's serverDefaults property, then use its value. <li>If not, and the property has been specified on the DomainSpec's clusterDefaults property's serverDefaults property, then use its value. <li>If not, and the property value has been specified on the DomainSpec's serverDefaults property, then use its value. <li>If not, then use the default value for the property.</ol>",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "nonclustered-server.json"
+      }
+    }
+  }
+}

@@ -30,12 +30,16 @@ public class OperatorValues {
   private String externalRestEnabled = "";
   private String externalRestHttpsPort = "";
   private String externalOperatorCert = "";
+  private String externalOperatorSecret = "";
   private String externalOperatorKey = "";
   private String remoteDebugNodePortEnabled = "";
   private String internalDebugHttpPort = "";
   private String externalDebugHttpPort = "";
   private String javaLoggingLevel = "";
   private String elkIntegrationEnabled = "";
+  private String logStashImage = "";
+  private String elasticSearchHost = "";
+  private String elasticSearchPort = "";
 
   public OperatorValues withTestDefaults() {
     return this.namespace("test-operator-namespace")
@@ -43,7 +47,10 @@ public class OperatorValues {
         .targetNamespaces("test-target-namespace1,test-target-namespace2")
         .weblogicOperatorImage("test-operator-image")
         .weblogicOperatorImagePullPolicy("Never")
-        .javaLoggingLevel("FINEST");
+        .javaLoggingLevel("FINEST")
+        .logStashImage("test-logstash-image")
+        .elasticSearchHost("test-elastic-search_host")
+        .elasticSearchPort("9200");
   }
 
   public OperatorValues enableDebugging() {
@@ -184,6 +191,14 @@ public class OperatorValues {
     return this;
   }
 
+  public String getExternalOperatorSecret() {
+    return externalOperatorSecret;
+  }
+
+  public void setExternalOperatorSecret(String val) {
+    externalOperatorSecret = convertNullToEmptyString(val);
+  }
+
   public String getExternalOperatorCert() {
     return externalOperatorCert;
   }
@@ -272,6 +287,45 @@ public class OperatorValues {
 
   public OperatorValues elkIntegrationEnabled(String val) {
     setElkIntegrationEnabled(val);
+    return this;
+  }
+
+  public String getLogStashImage() {
+    return logStashImage;
+  }
+
+  public void setLogStashImage(String val) {
+    logStashImage = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues logStashImage(String val) {
+    setLogStashImage(val);
+    return this;
+  }
+
+  public String getElasticSearchHost() {
+    return elasticSearchHost;
+  }
+
+  public void setElasticSearchHost(String val) {
+    elasticSearchHost = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues elasticSearchHost(String val) {
+    setElasticSearchHost(val);
+    return this;
+  }
+
+  public String getElasticSearchPort() {
+    return elasticSearchPort;
+  }
+
+  public void setElasticSearchPort(String val) {
+    elasticSearchPort = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues elasticSearchPort(String val) {
+    setElasticSearchPort(val);
     return this;
   }
 

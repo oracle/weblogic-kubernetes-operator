@@ -16,11 +16,6 @@ public abstract class DomainValues {
   public static final String STORAGE_RECLAIM_POLICY_RETAIN = "Retain";
   public static final String STORAGE_RECLAIM_POLICY_DELETE = "Delete";
   public static final String STORAGE_RECLAIM_POLICY_RECYCLE = "Recycle";
-  public static final String STARTUP_CONTROL_NONE = "NONE";
-  public static final String STARTUP_CONTROL_ALL = "ALL";
-  public static final String STARTUP_CONTROL_ADMIN = "ADMIN";
-  public static final String STARTUP_CONTROL_SPECIFIED = "SPECIFIED";
-  public static final String STARTUP_CONTROL_AUTO = "AUTO";
   public static final String CLUSTER_TYPE_CONFIGURED = "CONFIGURED";
   public static final String CLUSTER_TYPE_DYNAMIC = "DYNAMIC";
 
@@ -29,7 +24,7 @@ public abstract class DomainValues {
   private String adminServerName = "";
   private String domainName = "";
   private String domainUID = "";
-  private String startupControl = "";
+  private String serverStartPolicy = "";
   private String clusterName = "";
   private String clusterType = "";
   private String configuredManagedServerCount = "";
@@ -92,17 +87,17 @@ public abstract class DomainValues {
   public DomainValues withTestDefaults() {
     return this.adminNodePort("30702")
         .adminPort("7002")
-        .adminServerName("TestAdminServer")
-        .clusterName("TestCluster")
+        .adminServerName("test-admin-server")
+        .clusterName("test-cluster")
         .clusterType(CLUSTER_TYPE_DYNAMIC)
         .domainName("TestDomain")
-        .weblogicImage("store/oracle/weblogic:12.2.1.3")
+        .weblogicImage("store/oracle/weblogic:19.1.0.0")
         .domainUID("test-domain-uid")
         .javaOptions("TestJavaOptions")
         .loadBalancerDashboardPort("31315")
         .loadBalancerWebPort("31305")
         .configuredManagedServerCount("4")
-        .managedServerNameBase("TestManagedServer")
+        .managedServerNameBase("test-managed-server")
         .managedServerPort("8002")
         .initialManagedServerReplicas("3")
         .weblogicDomainStorageNFSServer("TestDomainStorageNFSServer")
@@ -111,7 +106,7 @@ public abstract class DomainValues {
         .weblogicDomainStorageSize("20Gi")
         .productionModeEnabled("false")
         .weblogicCredentialsSecretName("test-weblogic-credentials")
-        .startupControl(STARTUP_CONTROL_ALL)
+        .serverStartPolicy("IF_NEEDED")
         .t3PublicAddress("TestT3PublicAddress")
         .t3ChannelPort("30013");
   }
@@ -188,16 +183,16 @@ public abstract class DomainValues {
     return this;
   }
 
-  public String getStartupControl() {
-    return startupControl;
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
   }
 
-  public void setStartupControl(String startupControl) {
-    this.startupControl = convertNullToEmptyString(startupControl);
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = convertNullToEmptyString(serverStartPolicy);
   }
 
-  public DomainValues startupControl(String startupControl) {
-    setStartupControl(startupControl);
+  public DomainValues serverStartPolicy(String serverStartPolicy) {
+    setServerStartPolicy(serverStartPolicy);
     return this;
   }
 

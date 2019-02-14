@@ -1,5 +1,6 @@
-<!-- Copyright 2017, Oracle Corporation. All Rights Reserved. -->
-<!-- This is unreleased proprietary source code of Oracle Corporation -->
+<!-- Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+     Licensed under the Universal Permissive License v 1.0 as shown at
+     http://oss.oracle.com/licenses/upl. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -7,7 +8,7 @@
     <parent>
        <groupId>oracle.kubernetes</groupId>
        <artifactId>operator-parent</artifactId>
-       <version>2.0-SNAPSHOT</version>
+       <version>2.1-SNAPSHOT</version>
      </parent>
 
     <artifactId>operator-swagger</artifactId>
@@ -76,4 +77,17 @@
         </profile>
     </profiles>
 
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>operator-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava-version}</version>
+        </dependency>
+    </dependencies>
+    
 </project>
