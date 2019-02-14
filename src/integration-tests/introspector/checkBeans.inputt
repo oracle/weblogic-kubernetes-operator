@@ -29,6 +29,6 @@
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,PasswordEncrypted,*,!
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS/Properties/testDS/Properties/user,Value,invalid-user,supersecret
 
-/JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS,Url,jdbc:mysql://invalid-host:3306/mysql,jdbc:mysql://${DOMAIN_UID}-mysql:3306/mysql
+/JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS,Url,jdbc:mysql://invalid-host:3306/invalid-db-name,jdbc:mysql://${DOMAIN_UID}-mysql:3306/mysql
 /JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS,PasswordEncrypted,*,!
 /JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS/Properties/mysqlDS/Properties/user,Value,invalid-user,root
