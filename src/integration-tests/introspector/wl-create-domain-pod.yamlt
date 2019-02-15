@@ -7,8 +7,7 @@ metadata:
   labels:
     weblogic.createdByOperator: "true"
     weblogic.domainUID: ${DOMAIN_UID}
-    weblogic.resourceVersion: domain-v2
-  name: ${JOB_NAME}
+  name: ${DOMAIN_UID}-create-domain-pod
   namespace: ${NAMESPACE}
 spec:
   containers:
@@ -42,14 +41,11 @@ spec:
       initialDelaySeconds: 5
       periodSeconds: 1
     volumeMounts:
-    - name: weblogic-credentials-volume
-      mountPath: /weblogic-operator/secrets
-      readOnly: true
-    - name: mysql-secret-volume
-      mountPath: /weblogic-operator/config-overrides-secrets/${DOMAIN_UID}-mysql-secret
-      readOnly: true
     - name: my-secret-volume
       mountPath: /weblogic-operator/config-overrides-secrets/my-secret
+      readOnly: true
+    - name: weblogic-credentials-volume
+      mountPath: /weblogic-operator/secrets
       readOnly: true
     - name: weblogic-domain-cm-volume
       mountPath: /weblogic-operator/scripts
@@ -60,21 +56,17 @@ spec:
     - name: test-script-cm-volume
       mountPath: /test-scripts
       readOnly: true
-    - name: weblogic-domain-storage-volume
-      mountPath: /shared
+    - mountPath: /shared
+      name: weblogic-domain-storage-volume
   volumes:
-  - name: weblogic-credentials-volume
-    secret:
-      defaultMode: 420
-      secretName:  ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
-  - name: mysql-secret-volume
-    secret:
-      defaultMode: 420
-      secretName:  ${DOMAIN_UID}-mysql-secret
   - name: my-secret-volume
     secret:
       defaultMode: 420
       secretName:  my-secret
+  - name: weblogic-credentials-volume
+    secret:
+      defaultMode: 420
+      secretName:  ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
   - name: weblogic-domain-cm-volume
     configMap:
       defaultMode: 365

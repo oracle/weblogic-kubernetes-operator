@@ -25,7 +25,10 @@
 # Note that a customer/admin should never override a port, they must stay fixed
 /ServerTemplates/mycluster-template,ListenPort,8001,8001
 
-/JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,Url,jdbc:oracle:thin:@myoriginalhostname:1521:myoriginalsid,jdbc:oracle:thin:@mynewhost:1521:mynewsid
+/JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,Url,jdbc:oracle:thin:@invalid-host:1521:invalid-sid,jdbc:oracle:thin:@mynewhost:1521:mynewsid
 /JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS,PasswordEncrypted,*,!
-/JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS/Properties/testDS/Properties/user,Value,scott,supersecret
+/JDBCSystemResources/testDS/JDBCResource/testDS/JDBCDriverParams/testDS/Properties/testDS/Properties/user,Value,invalid-user,supersecret
 
+/JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS,Url,jdbc:mysql://invalid-host:3306/invalid-db-name,jdbc:mysql://${DOMAIN_UID}-mysql:3306/mysql
+/JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS,PasswordEncrypted,*,!
+/JDBCSystemResources/mysqlDS/JDBCResource/mysqlDS/JDBCDriverParams/mysqlDS/Properties/mysqlDS/Properties/user,Value,invalid-user,root

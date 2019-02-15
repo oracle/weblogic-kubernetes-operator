@@ -88,6 +88,7 @@ ${SCRIPTPATH}/startNodeManager.sh || exit 1
 
 trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
 
+
 ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 
 trace "Domain introspection complete"
