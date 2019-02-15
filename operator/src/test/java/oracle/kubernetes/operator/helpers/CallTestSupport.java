@@ -95,7 +95,6 @@ public class CallTestSupport {
     return !cannedResponse.optional && !cannedResponses.get(cannedResponse);
   }
 
-  @SuppressWarnings("unchecked")
   CannedResponse getMatchingResponse(
       RequestParams requestParams, String fieldSelector, String labelSelector) {
     AdditionalParams params = new AdditionalParams(fieldSelector, labelSelector);
@@ -248,7 +247,7 @@ public class CallTestSupport {
      *
      * @param function the specified function
      */
-    public void computingResult(Function<RequestParams, Object> function) {
+    void computingResult(Function<RequestParams, Object> function) {
       this.function = function;
     }
 

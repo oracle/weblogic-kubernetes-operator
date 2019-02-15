@@ -65,8 +65,6 @@ running in Kubernetes.
 * _Log File Locations:_ The operator can automatically override WebLogic domain and server log locations using situational
   configuration overrides.  This occurs if the domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeInImage` is explicitly set to `false`.   When overriding, the log location will be the location specified by the `logHome` setting.
-* _Listen Address Configuration:_  Channel listen addresses in a configuration either must be left completely unset (for example, not set to anything), or must be set to the exact required value, which will be in the form of the `domainUID`
-  followed by a hyphen and then the server name (with all lower case, underscores converted to hyphens), for example, `domain1-admin-server`. This includes default, SSL, admin, and custom channels.
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
   SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
   hyphen and then the server name, all lower case, and underscores converted to hyphens.  For example, if `domainUID=domain1` and
@@ -86,6 +84,8 @@ running in Kubernetes.
   is usually accomplished by setting up an external load balancer that can access internal (non-NodePort) services.
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
   that many cloud provider's volume providers may not support volumes across availability zones.  You may want to use NFS or a clustered file system to work around this limitation.
+
+* _Security Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 
 The following features are not certified or supported in this release:
 

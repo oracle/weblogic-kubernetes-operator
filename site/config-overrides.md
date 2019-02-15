@@ -190,10 +190,12 @@ The secret macro `SECRETNAME` field must reference the name of a Kubernetes secr
     * See the `max-message-size` stanza in [Override template samples](#override-template-samples) below for an example.
   * If you are changing the value of an existing attribute within a domain home `config.xml`, the attribute needs a `replace` verb.
     * See the `public-address` stanza in  [Override template samples](#override-template-samples) below for an example.
-* When overriding `config.xml`, XML namespace `xmlns` abbreviations must be exactly as specified.
-  * When overriding `config.xml`, the XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
-  * For example, use `d:` to reference `config.xml` beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational config schema.
-* It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF (diagnostics) module override files.
+* When overriding `config.xml`:
+  * The XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
+    * For example, use `d:` to reference `config.xml` beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational configuration schema.
+  * Avoid specifying the domain name stanza, as this may cause some overrides to be ignored (for example, server-template scoped overrides).
+* When overriding modules:
+  * It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF (diagnostics) module override files.
 
 ## Override template samples
 
@@ -212,7 +214,6 @@ The following `config.xml` override file demonstrates:
 <d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain"
           xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
           xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
-    <d:name>${env:DOMAIN_NAME}</d:name>
     <d:server>
         <d:name>admin-server</d:name>
         <d:max-message-size f:combine-mode="add">78787878</d:max-message-size>
@@ -290,7 +291,7 @@ The following `jdbc-testDS.xml` override template demonstrates setting the URL, 
 * Any override changes require stopping all WebLogic pods, applying your domain resource (if it changed), and restarting the WebLogic pods before they can take effect.
   * Custom override changes on an existing running domain, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted with your new domain resource (if it changed), or with your existing domain resource (if you haven't changed it).
   * To stop all running WebLogic Server pods in your domain, apply a changed resource, and then start/restart the domain:
-    * Set your domain resource `serverRestartPolicy` to `NEVER`, wait, and apply your latest domain resource with the `serverRestartPolicy` restored back to `ALWAYS` or `IF_NEEDED` (see [Server Lifecycle](server-lifecycle.md) and [Restarting WebLogic servers](restart.md).)
+    * Set your domain resource `serverStartPolicy` to `NEVER`, wait, and apply your latest domain resource with the `serverStartPolicy` restored back to `ALWAYS` or `IF_NEEDED` (see [Server Lifecycle](server-lifecycle.md) and [Restarting WebLogic servers](restart.md).)
     * Or delete your domain resource, wait, and apply your (potentially changed) domain resource.
 * See [Debugging](#debugging) for ways to check if the situational configuration is taking effect or if there are errors.
 

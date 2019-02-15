@@ -17,6 +17,16 @@ import oracle.kubernetes.operator.BaseTest;
 /** Operator class with all the utility methods for Operator. */
 public class Operator {
 
+  public static enum RESTCertType {
+    /*self-signed certificate and public key stored in a kubernetes tls secret*/
+    SELF_SIGNED,
+    /*Certificate signed by an auto-created CA signed by an auto-created root certificate,
+     * both and stored in a kubernetes tls secret*/
+    CHAIN,
+    /*Certificate and public key, and stored in a kubernetes tls secret*/
+    LEGACY
+  };
+
   public static final String CREATE_OPERATOR_SCRIPT_MESSAGE =
       "The Oracle WebLogic Server Kubernetes Operator is deployed";
 
@@ -36,6 +46,7 @@ public class Operator {
 
   private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTimeOp = BaseTest.getWaitTimePod();
+  private static RESTCertType restCertType = RESTCertType.SELF_SIGNED;
 
   /**
    * Takes operator input properties which needs to be customized and generates a operator input
@@ -44,9 +55,10 @@ public class Operator {
    * @param inputYaml
    * @throws Exception
    */
-  public Operator(String inputYaml, boolean useLegacyRESTIdentity) throws Exception {
+  public Operator(String inputYaml, RESTCertType restCertType) throws Exception {
+    this.restCertType = restCertType;
     initialize(inputYaml);
-    generateInputYaml(useLegacyRESTIdentity);
+    generateInputYaml();
     callHelmInstall();
   }
 
@@ -195,8 +207,7 @@ public class Operator {
             .append(clusterName)
             .append("/scale");
 
-    TestUtils.makeOperatorPostRestCall(
-        operatorNS, myOpRestApiUrl.toString(), myJsonObjStr, userProjectsDir);
+    TestUtils.makeOperatorPostRestCall(this, myOpRestApiUrl.toString(), myJsonObjStr);
     // give sometime to complete
     logger.info("Wait 30 sec for scaling to complete...");
     Thread.sleep(30 * 1000);
@@ -217,7 +228,23 @@ public class Operator {
             .append(externalRestHttpsPort)
             .append("/operator/latest/domains/")
             .append(domainUid);
-    TestUtils.makeOperatorGetRestCall(operatorNS, myOpRestApiUrl.toString(), userProjectsDir);
+    TestUtils.makeOperatorGetRestCall(this, myOpRestApiUrl.toString());
+  }
+
+  /**
+   * Verify the Operator's REST Api is working fine over TLS
+   *
+   * @throws Exception
+   */
+  public void verifyOperatorExternalRESTEndpoint() throws Exception {
+    // Operator REST external API URL to scale
+    StringBuffer myOpRestApiUrl =
+        new StringBuffer("https://")
+            .append(TestUtils.getHostName())
+            .append(":")
+            .append(externalRestHttpsPort)
+            .append("/operator/");
+    TestUtils.makeOperatorGetRestCall(this, myOpRestApiUrl.toString());
   }
 
   public Map<String, Object> getOperatorMap() {
@@ -258,23 +285,28 @@ public class Operator {
   }
 
   private void generateInputYaml() throws Exception {
-    generateInputYaml(false);
-  }
-
-  private void generateInputYaml(boolean useLegacyRESTIdentity) throws Exception {
     Path parentDir =
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-operators/" + operatorNS));
     generatedInputYamlFile = parentDir + "/weblogic-operator-values.yaml";
     TestUtils.createInputFile(operatorMap, generatedInputYamlFile);
     StringBuilder sb = new StringBuilder(200);
     sb.append(BaseTest.getProjectRoot());
-    if (useLegacyRESTIdentity) {
-      sb.append(
-          "/integration-tests/src/test/resources/scripts/legacy-generate-external-rest-identity.sh ");
-    } else {
-      sb.append("/kubernetes/samples/scripts/rest/generate-external-rest-identity.sh ");
-      sb.append(" -n ");
-      sb.append(operatorNS);
+    switch (restCertType) {
+      case LEGACY:
+        sb.append(
+            "/integration-tests/src/test/resources/scripts/legacy-generate-external-rest-identity.sh ");
+        break;
+      case CHAIN:
+        sb.append(
+            "/integration-tests/src/test/resources/scripts/generate-external-rest-identity-chain.sh ");
+        sb.append(" -n ");
+        sb.append(operatorNS);
+        break;
+      case SELF_SIGNED:
+        sb.append("/kubernetes/samples/scripts/rest/generate-external-rest-identity.sh ");
+        sb.append(" -n ");
+        sb.append(operatorNS);
+        break;
     }
     sb.append(" DNS:");
     sb.append(TestUtils.getHostName());
@@ -394,5 +426,17 @@ public class Operator {
           System.getenv("REPO_EMAIL"),
           operatorNS);
     }
+  }
+
+  public String getOperatorNamespace() {
+    return operatorNS;
+  }
+
+  public String getUserProjectsDir() {
+    return userProjectsDir;
+  }
+
+  public RESTCertType getRestCertType() {
+    return restCertType;
   }
 }
