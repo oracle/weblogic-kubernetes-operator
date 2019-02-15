@@ -23,6 +23,10 @@ spec:
         env:
         - name: DOMAIN_UID
           value: "${DOMAIN_UID}"
+        - name: JAVA_OPTIONS
+          value: "-Djava.security.egd=file:/dev/./urandom "
+        - name: USER_MEM_ARGS
+          value: "-Xms64m -Xmx256m "
         image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
         imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
         name: weblogic-server
