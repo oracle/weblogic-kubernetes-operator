@@ -17,3 +17,5 @@ exposeAdminNodePort: true
 adminNodePort: 30705
 namespace: default
 serverStartPolicy: ADMIN_ONLY
+loadBalancer: TRAEFIK
+ingressPerDomain: true
