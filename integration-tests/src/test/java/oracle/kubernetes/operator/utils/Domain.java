@@ -995,7 +995,7 @@ public class Domain {
     clusterName = (String) domainMap.get("clusterName");
     clusterType = (String) domainMap.get("clusterType");
     serverStartPolicy = (String) domainMap.get("serverStartPolicy");
-   
+
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
