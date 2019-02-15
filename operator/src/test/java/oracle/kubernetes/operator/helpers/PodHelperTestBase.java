@@ -278,7 +278,7 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenPodCreated_readinessProbeHasReadinessCommand() {
     V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
-    assertThat(getAction.getPath(), equalTo("/weblogic"));
+    assertThat(getAction.getPath(), equalTo("/weblogic/"));
     assertThat(getAction.getPort().getIntValue(), equalTo(listenPort));
   }
 
