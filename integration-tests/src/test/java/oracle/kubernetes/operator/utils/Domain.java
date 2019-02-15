@@ -212,7 +212,7 @@ public class Domain {
 
     // logger.info("Inside verifyAdminServerExternalService");
     if (exposeAdminNodePort) {
-      String nodePortHost = TestUtils.getHostName();
+      String nodePortHost = getHostNameForCurl();
       String nodePort = getNodePort();
       logger.info("nodePortHost " + nodePortHost + " nodePort " + nodePort);
 
@@ -363,11 +363,7 @@ public class Domain {
     if (!loadBalancer.equals("NONE")) {
       // url
       StringBuffer testAppUrl = new StringBuffer("http://");
-      testAppUrl
-          .append(TestUtils.getHostName())
-          .append(":")
-          .append(loadBalancerWebPort)
-          .append("/");
+      testAppUrl.append(getHostNameForCurl()).append(":").append(loadBalancerWebPort).append("/");
       if (loadBalancer.equals("APACHE")) {
         testAppUrl.append("weblogic/");
       }
@@ -599,7 +595,7 @@ public class Domain {
       logger.info("This check is done only for APACHE load balancer");
       return;
     }
-    String nodePortHost = TestUtils.getHostName();
+    String nodePortHost = getHostNameForCurl();
     int nodePort = getAdminSericeLBNodePort();
     String responseBodyFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/testconsole.response.body";
@@ -1110,6 +1106,27 @@ public class Domain {
               + domainUid
               + " does not exist or no NodePort is not configured "
               + "for the admin server in domain.");
+    }
+  }
+
+  private String getHostNameForCurl() throws Exception {
+    if (System.getenv("K8S_NODEPORT_HOST") != null) {
+      return System.getenv("K8S_NODEPORT_HOST");
+    } else {
+      // ExecResult result = ExecCommand.exec("hostname | awk -F. '{print $1}'");
+      ExecResult result1 =
+          ExecCommand.exec("kubectl get nodes -o=jsonpath='{range .items[0]}{.metadata.name}'");
+      if (result1.exitValue() != 0) {
+        throw new RuntimeException("FAILURE: Could not get K8s Node name");
+      }
+      ExecResult result2 =
+          ExecCommand.exec(
+              "nslookup " + result1.stdout() + " | grep \"^Name\" | awk '{ print $2 }'");
+      if (result2.stdout().trim().equals("")) {
+        return result1.stdout().trim();
+      } else {
+        return result2.stdout().trim();
+      }
     }
   }
 }
