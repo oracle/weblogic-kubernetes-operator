@@ -66,14 +66,13 @@ public class Domain {
   private static int waitTime = BaseTest.getWaitTimePod();
 
   public Domain(String inputYaml) throws Exception {
+    // read input domain yaml to test
+    this(TestUtils.loadYaml(inputYaml));
+  }
 
-    initialize(inputYaml);
-    if (!domainMap.containsKey("domainHomeImageBase")
-        || (domainMap.containsKey("domainHomeImageBase")
-            && domainMap.containsKey("logHomeOnPV")
-            && ((Boolean) domainMap.get("logHomeOnPV")).booleanValue())) {
-      createPV();
-    }
+  public Domain(Map<String, Object> inputDomainMap) throws Exception {
+    initialize(inputDomainMap);
+    createPV();
     createSecret();
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
@@ -771,16 +770,8 @@ public class Domain {
     weblogicDomainStorageReclaimPolicy = (String) pvMap.get("weblogicDomainStorageReclaimPolicy");
     weblogicDomainStorageSize = (String) pvMap.get("weblogicDomainStorageSize");
 
-    // test NFS for domain5 on JENKINS
-    if (domainUid.equals("domain6")
-        && (System.getenv("JENKINS") != null
-            && System.getenv("JENKINS").equalsIgnoreCase("true"))) {
-      pvMap.put("weblogicDomainStorageType", "NFS");
-      pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
-    } else {
-      pvMap.put("weblogicDomainStorageType", "HOST_PATH");
-      pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
-    }
+    pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
+
     // set pv path
     domainMap.put(
         "weblogicDomainStoragePath",
@@ -882,7 +873,7 @@ public class Domain {
 
     loadBalancer = (String) lbMap.get("loadBalancer");
 
-    if (domainUid.equals("domain7") && loadBalancer.equals("APACHE")) {
+    if (loadBalancer.equals("APACHE")) {
       /* lbMap.put("loadBalancerAppPrepath", "/weblogic");
       lbMap.put("loadBalancerExposeAdminPort", new Boolean(true)); */
     }
@@ -1015,12 +1006,11 @@ public class Domain {
     }
   }
 
-  private void initialize(String inputYaml) throws Exception {
+  private void initialize(Map<String, Object> inputDomainMap) throws Exception {
+    domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
 
-    // read input domain yaml to test
-    domainMap = TestUtils.loadYaml(inputYaml);
     domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs

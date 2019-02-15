@@ -62,7 +62,7 @@ fi
 sfilename="$2"
 tfilename="$3"
 
-trace "Info: Converting template '${sfilename}' to '${tfilename}'"
+# trace "Debug: Converting template '${sfilename}' to '${tfilename}'"
 
 if [ ! -e "$sfilename" ]; then
   if [ ! -e "${SCRIPTPATH}/$sfilename" ]; then
@@ -102,7 +102,7 @@ sed -i -e 's;${[a-zA-Z0-9_][a-zA-Z0-9_]*:-\([^}]*\)};\1;g' $tfilename
 
 count="`grep -v 'subst-ignore-missing' $tfilename | grep -v 'env:' | grep -v 'secret:' | grep -v '\${id}' | grep -c '\${'`"
 if [ $count -gt 0 ]; then
-  trace "Debug: Error, found unresolved variables in file '$sfilename':"
+  trace "Error: Found unresolved variables in file '$sfilename':"
   grep -n "\${" $tfilename | sed 's/^/@  line /' | grep -v 'subst-ignore-missing'
   exit 1
 fi
