@@ -11,17 +11,11 @@
 #   introspector is working correctly, and for quickly testing changes to
 #   its overall flow.
 #
+#   The test calls the integration test 'cleanup.sh' when it starts, which
+#   will delete all test resources and the domain_home that might
+#   have been left over from a previous run.
+#
 #   See the README in this directory for overall flow and usage.
-#
-# Notes:
-#
-#   The test can optionally work with any arbitrary exiting domain home, or
-#   it can create a domain_home for you.  See CREATE_DOMAIN in the implementation
-#   below, (default true).
-#
-#   The test calls the integration test 'cleanup.sh' when it starts.  It
-#   passes a special parameter to cleanup.sh to skip domain_home deletion if
-#   the test's CREATE_DOMAIN parameter is set to false.
 #
 # Internal design:
 #
@@ -62,31 +56,7 @@ export PV_ROOT=${PV_ROOT:-/scratch/$USER/wl_k8s_test_results}
 
 #############################################################################
 #
-# Set CREATE_DOMAIN to false to use an existing domain instead 
-# of creating a new one.  
-#   - If setting to true (the default), see "extra env var" section below
-#     for additional related env vars.
-#   - If setting to false, remember to also set PVCOMMENT if the 
-#     pre-existing domain is not in a PV.
-#
-
-CREATE_DOMAIN=${CREATE_DOMAIN:-true}
-
-#############################################################################
-#
-# Set PVCOMMENT to "#" to remove PV from wl-job/wl-pod yaml.
-#   - Do this when the introspector job or wl-pod already has
-#     the domain home burned into the image and so doesn't need
-#     to mount a PV.
-#   - Do not do this when CREATE_DOMAIN is true (create domain
-#     depends on the PV).
-#
-
-export PVCOMMENT=${PVCOMMENT:-""}
-
-#############################################################################
-#
-# Set env vars for an existing domain and/or a to-be-created domain:
+# Set env vars for to-be-created domain:
 #
 
 export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-store/oracle/weblogic}
@@ -110,11 +80,6 @@ export ADMIN_PORT=${ADMIN_PORT:-7001}
 export MANAGED_SERVER_NAME_BASE=${MANAGED_SERVER_NAME_BASE:-"managed-server"}
 export DOMAIN_NAME=${DOMAIN_NAME:-"base_domain"}
 export ADMINISTRATION_PORT=${ADMINISTRATION_PORT:-7099}
-
-#############################################################################
-#
-# Set extra env vars needed when CREATE_DOMAIN == true
-#
 
 #publicip="`kubectl cluster-info | grep KubeDNS | sed 's;.*//\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\):.*;\1;'`"
 #export TEST_HOST="`nslookup $publicip | grep 'name =' | sed 's/.*name = \(.*\)./\1/'`"
@@ -159,11 +124,10 @@ function cleanupMajor() {
   #
   #   1 - delete all operator related k8s artifacts
   #   2 - delete contents of k8s weblogic domain PV/PVC
-  #       (if CREATE_DOMAIN has been set to "true")
 
   tracen "Info: Waiting for cleanup.sh to complete."
   printdots_start
-  DELETE_FILES=${CREATE_DOMAIN:-false} \
+  FAST_DELETE="--grace-period=1 --timeout=1s" \
     ${SOURCEPATH}/src/integration-tests/bash/cleanup.sh 2>&1 > \
     ${test_home}/cleanup.out
   status=$?
@@ -340,14 +304,12 @@ function deployTestScriptConfigMap() {
   mkdir -p ${test_home}/test-scripts
 
   cp ${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils* ${test_home}/test-scripts || exit 1
-  cp ${SCRIPTPATH}/createDomain.sh ${test_home}/test-scripts || exit 1
+  cp ${SCRIPTPATH}/wl-create-domain-pod.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/createTestRoot.sh ${test_home}/test-scripts || exit 1
-  cp ${SCRIPTPATH}/introspectDomainProxy.sh ${test_home}/test-scripts || exit 1
+  cp ${SCRIPTPATH}/wl-introspect-pod.sh ${test_home}/test-scripts || exit 1
 
-  if [ "$CREATE_DOMAIN" = "true" ]; then
-    rm -f ${test_home}/test-scripts/createDomain.py
-    ${SCRIPTPATH}/util_subst.sh -g createDomain.pyt ${test_home}/test-scripts/createDomain.py || exit 1
-  fi
+  rm -f ${test_home}/test-scripts/wl-create-domain-pod.py
+  ${SCRIPTPATH}/util_subst.sh -g wl-create-domain-pod.pyt ${test_home}/test-scripts/wl-create-domain-pod.py || exit 1
   
   kubectl -n $NAMESPACE delete cm test-script-cm \
     --ignore-not-found  \
@@ -394,12 +356,9 @@ function deployCustomOverridesConfigMap() {
 #############################################################################
 #
 # Create base directory for PV (uses a job)
-# (Skip if PVCOMMENT="#".)
 #
 
 function createTestRootPVDir() {
-
-  [ "$PVCOMMENT" = "#" ] && return
 
   trace "Info: Creating k8s cluster physical directory 'PV_ROOT/acceptance_test_pv/domain-${DOMAIN_UID}-storage'."
   trace "Info: PV_ROOT='$PV_ROOT'"
@@ -424,83 +383,72 @@ function createTestRootPVDir() {
 #############################################################################
 #
 # Deploy WebLogic pv, pvc, & admin user/pass secret
-# (Skip pv/pvc if PVCOMMENT="#".)
 #
 
 function deployWebLogic_PV_PVC_and_Secret() {
   trace "Info: Deploying WebLogic domain's pv, pvc, & secret."
 
-  [ "$PVCOMMENT" = "#" ] || deployYamlTemplate wl-pv.yamlt wl-pv.yaml
-  [ "$PVCOMMENT" = "#" ] || deployYamlTemplate wl-pvc.yamlt wl-pvc.yaml
+  deployYamlTemplate wl-pv.yamlt wl-pv.yaml
+  deployYamlTemplate wl-pvc.yamlt wl-pvc.yaml
   deployYamlTemplate wl-secret.yamlt wl-secret.yaml
 }
 
-#############################################################################
-#
-# Run create domain job if CREATE_DOMAIN is true
-#
-
-function deployCreateDomainJob() {
-  [ ! "$CREATE_DOMAIN" = "true" ] && return 0
-
-  trace "Info: Run create domain job."
-
-  [ "$PVCOMMENT" = "#" ] \
-    && trace "Error: Cannot run create domain job, PV is disabled via PVCOMMENT." \
-    && exit 1
-
-  runJob ${DOMAIN_UID}-create-domain-job \
-         /test-scripts/createDomain.sh \
-         wl-job.yamlt \
-         wl-create-domain-job.yaml
+function deployMySQL() {
+  trace "Info: Deploying MySQL secret, pv, pvc, & pod."
+  # Create local custom mysql image that runs as 'oracle' user with uid/gid 1000/1000:
+  docker build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser . 2>&1 > ${test_home}/docker_build.out 2>&1
+  if [ $? -ne 0 ]; then
+    trace "Error: 'docker build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser .' failed, results in ${test_home}/docker_build.out:"
+    cat ${test_home}/docker_build.out
+    exit 1
+  fi
+  deployYamlTemplate mysql.yamlt mysql.yaml
 }
 
 #############################################################################
 #
-# Run introspection job, parse its output to files, and put files in a cm
+# Run create domain "JobPod" - This is a pod that acts somewhat like a job
+#
+
+function deployCreateDomainJobPod() {
+  trace "Info: Run create domain pod."
+
+  local target_yaml=${test_home}/wl-create-domain-pod.yaml
+  local pod_name=${DOMAIN_UID}-create-domain-pod
+
+  # delete anything left over from a previous invocation of this function, assume all pods
+  # have already been cleaned up
+
+  rm -f ${target_yaml}
+
+  trace "Info: Deploying job pod '$pod_name' and waiting for it to be ready."
+
+  (
+    export JOB_SCRIPT=/test-scripts/wl-create-domain-pod.sh
+    ${SCRIPTPATH}/util_subst.sh -g wl-create-domain-pod.yamlt ${target_yaml}  || exit 1
+  ) || exit 1
+
+  kubectl create -f ${target_yaml} \
+    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+
+  # Wait for pod to come up successfully
+
+  waitForPod $pod_name
+}
+
+#############################################################################
+#
+# Run introspection "JobPod", parse its output to files, and put files in a cm
 #   - this emulates what the operator pod would do prior to start wl-pods
 #
 
-# Alternatively, run deployIntrospectJobPod() instead.
-function deployIntrospectJob() {
-  local introspect_output_cm_name=${DOMAIN_UID}-weblogic-domain-introspect-cm
-
-  trace "Info: Run introspection job, parse its output to files, and put files in configmap '$introspect_output_cm_name'."
-
-  # delete anything left over from a previous invocation of this function
-
-  kubectl -n $NAMESPACE delete cm $introspect_output_cm_name \
-    --ignore-not-found  \
-    2>&1 | tracePipe "Info: kubectl output: "
-
-  # run introspection job
-
-  runJob ${DOMAIN_UID}-introspect-domain-job \
-         /weblogic-operator/scripts/introspectDomain.sh \
-         wl-job.yamlt \
-         wl-introspect-domain-job.yaml 
-
-  # parse job's output files
-
-  ${SCRIPTPATH}/util_fsplit.sh \
-    ${test_home}/job-${DOMAIN_UID}-introspect-domain-job.out \
-    ${test_home}/jobfiles || exit 1
-
-  # put the outputfile in a cm
-
-  createConfigMapFromDir $introspect_output_cm_name ${test_home}/jobfiles 
-
-}
-
 # Here we emulate the introspect job by directly starting an introspect pod and monitoring it.
-# deployIntrospectJob() does about the same thing, but starts a pod via a job
 # (Running a pod directly is helpful for debugging.)
 
 function deployIntrospectJobPod() {
   local introspect_output_cm_name=${DOMAIN_UID}-weblogic-domain-introspect-cm
   local target_yaml=${test_home}/wl-introspect-pod.yaml
   local pod_name=${DOMAIN_UID}--introspect-domain-pod
-  local job_name=$pod_name
 
   trace "Info: Run introspection job, parse its output to files, and put files in configmap '$introspect_output_cm_name'."
 
@@ -516,16 +464,8 @@ function deployIntrospectJobPod() {
   trace "Info: Deploying job pod '$pod_name' and waiting for it to be ready."
 
   (
-    export SERVER_NAME=introspect
     export JOB_NAME=${DOMAIN_UID}--introspect-domain-pod
-    export JOB_SCRIPT=/test-scripts/introspectDomainProxy.sh
-    export SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${server_name}`
-    export AS_SERVICE_NAME=`toDNS1123Legal ${DOMAIN_UID}-${ADMIN_NAME}`
-    if [ "${SERVER_NAME}" = "${ADMIN_NAME}" ]; then
-      export LOCAL_SERVER_DEFAULT_PORT=$ADMIN_PORT
-    else
-      export LOCAL_SERVER_DEFAULT_PORT=$MANAGED_SERVER_PORT
-    fi
+    export JOB_SCRIPT=/test-scripts/wl-introspect-pod.sh
     ${SCRIPTPATH}/util_subst.sh -g wl-introspect-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
@@ -534,45 +474,7 @@ function deployIntrospectJobPod() {
 
   # Wait for pod to come up successfully
 
-  # TBD make the following a helper fn since this is the second place
-  #     we wait for a pod to start, and the code is exactly the same...
-  local status="0/1"
-  local startsecs=$SECONDS
-  local maxsecs=180
-  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
-  while [ "${status}" != "1/1" ] ; do
-    if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
-      echo
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl describe:"
-      kubectl -n $NAMESPACE describe pod $pod_name
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl log:"
-      kubectl -n $NAMESPACE logs $pod_name
-      exit 1
-    fi
-    echo -n "."
-    sleep 1
-    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
-  done
-  echo "  ($((SECONDS - startsecs)) seconds)"
-
-  local startSecs=$SECONDS
-  local maxsecs=30
-  local exitString=""
-  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' to run the introspectDomain.py script."
-  printdots_start
-  while [ $((SECONDS - startSecs)) -lt $maxsecs ] && [ "$exitString" = "" ]; do
-    exitString="`kubectl -n $NAMESPACE logs $pod_name 2>&1 | grep INTROSPECT_DOMAIN_EXIT`"
-    sleep 1
-  done
-  printdots_end
-  if [ "$exitString" = "" ]; then
-    trace "Error: Introspector timed out, see 'kubectl -n $NAMESPACE logs $pod_name'."
-    exit 1
-  fi
-  if [ ! "$exitString" = "INTROSPECT_DOMAIN_EXIT=0" ]; then
-    trace "Error: Introspector pod script failed, see 'kubectl -n $NAMESPACE logs $pod_name'."
-    exit 1
-  fi
+  waitForPod $pod_name
 
   # parse job pod's output files
 
@@ -594,12 +496,34 @@ function deployIntrospectJobPod() {
 #   - this emulates what the operator pod would do after running the introspect job
 #
 
+function waitForPod() {
+  local pod_name=${1?}
+  local status="0/1"
+  local startsecs=$SECONDS
+  local maxsecs=180
+  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
+  while [ "${status}" != "1/1" ] ; do
+    if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
+      echo
+      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl describe:"
+      kubectl -n $NAMESPACE describe pod $pod_name
+      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl log:"
+      kubectl -n $NAMESPACE logs $pod_name
+      exit 1
+    fi
+    echo -n "."
+    sleep 1
+    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
+  done
+  echo "  ($((SECONDS - startsecs)) seconds)"
+}
+
 function deployPod() {
   local server_name=${1?}
   local pod_name=${DOMAIN_UID}-${server_name}
   local target_yaml=${test_home}/wl-${server_name}-pod.yaml 
 
-  trace "Info: Deploying pod '$pod_name' and waiting for it to be ready."
+  trace "Info: Deploying pod '$pod_name'."
 
   # delete anything left over from a previous invocation of this function
 
@@ -626,27 +550,6 @@ function deployPod() {
 
   kubectl create -f ${target_yaml} \
     2>&1 | tracePipe "Info: kubectl output: " || exit 1 
-
-  # Wait for pod to come up successfully
-
-  local status="0/1"
-  local startsecs=$SECONDS
-  local maxsecs=180
-  tracen "Info: Waiting up to $maxsecs seconds for pod '$pod_name' readiness"
-  while [ "${status}" != "1/1" ] ; do
-    if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
-      echo
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl describe:"
-      kubectl -n $NAMESPACE describe pod $pod_name
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl log:"
-      kubectl -n $NAMESPACE logs $pod_name
-      exit 1
-    fi
-    echo -n "."
-    sleep 1
-    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
-  done
-  echo "  ($((SECONDS - startsecs)) seconds)"
 }
 
 function deploySinglePodService() {
@@ -704,11 +607,11 @@ function checkOverrides() {
   # Check for exactly 3 occurances of Info.*.BEA.*situational lines -- one for each file we're overriding.
   #   the awk expression below gets the tail of the log, everything after the last occurance of 'Starting WebLogic...'
   
-  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'Info.*BEA.*situational'`"
+  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
 
-  if [ "$linecount" != "3" ]; then
-    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 3 lines that match ' grep 'Info.*BEA.*situational' ', this probably means that it's reporting situational config problems."
+  if [ "$linecount" != "5" ]; then
+    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
   fi
   
@@ -742,14 +645,69 @@ function checkOverrides() {
   fi
 }
 
+#############################################################################
+#
+# Check if datasource is working
+#
+
+function checkDataSource() {
+
+  local pod_name=${1?}
+  local admin_url=${2?}
+  local wl_server_name=${3?}
+  local data_source_name=${4?}
+  local script_file=checkDataSource.py
+  local out_file=$test_home/checkDataSource-${pod_name}-${data_source_name}.out
+
+  local script_cmd="wlst.sh /shared/${script_file} ${admin_url} ${wl_server_name} ${data_source_name}"
+
+  trace "Info: Checking datasource via '$script_cmd' on pod '$pod_name'."
+  
+  kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/${script_file} ${pod_name}:/shared/${script_file} || exit 1
+
+  tracen "Info: Waiting for script to complete"
+  printdots_start
+  kubectl exec -it ${pod_name} ${script_cmd} > ${out_file} 2>&1
+  status=$?
+  printdots_end
+  if [ $status -ne 0 ]; then
+    trace "Error: The '$script_cmd' failed, see '$out_file'."
+    exit 1
+  fi
+}
+
 
 #############################################################################
 #
 # Main
 #
-# Some of the following calls will be a partial or complete no-op if
-# PVCOMMENT is set, or if CREATE_DOMAIN is set to false.
-#
+
+if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
+  cleanupMajor
+else
+  # This path assumes we've already run the test succesfully once, it re-uses
+  # the existing domain-home/pv/pvc/secret/etc, deletes wl pods, deletes introspect job, then
+  # redeploys the custom overrides, reruns the introspect job, and restarts the admin server pod.
+  cleanupMinor
+fi
+
+deployDomainConfigMap
+deployTestScriptConfigMap
+deployCustomOverridesConfigMap
+
+if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
+  createTestRootPVDir
+  deployMySQL
+  deployWebLogic_PV_PVC_and_Secret
+  deployCreateDomainJobPod
+fi
+
+kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
+kubectl -n $NAMESPACE create secret generic my-secret \
+        --from-literal=key1=supersecret  \
+        --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
+
+deployIntrospectJobPod
 
 #
 # TBD ADMIN_NAME, ADMIN_PORT, and MANAGED_SERVER_NAME_BASE, etc env vars
@@ -757,58 +715,22 @@ function checkOverrides() {
 #     matches
 #
 
+deployPod ${ADMIN_NAME?}
+deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
+waitForPod ${DOMAIN_UID}-${ADMIN_NAME?}
 
-kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
-kubectl -n $NAMESPACE create secret generic my-secret \
-        --from-literal=key1=supersecret  \
-        --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
+deployPod ${MANAGED_SERVER_NAME_BASE?}1
+deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
+waitForPod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1
 
-
-if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
-
-  cleanupMajor
-
-  deployDomainConfigMap
-  deployTestScriptConfigMap
-  deployCustomOverridesConfigMap
-  createTestRootPVDir
-  deployWebLogic_PV_PVC_and_Secret
-  deployCreateDomainJob
-  #deployIntrospectJob
-  deployIntrospectJobPod
-  deployPod ${ADMIN_NAME?}
-  deploySinglePodService ${ADMIN_NAME?} ${ADMIN_PORT?} 30701
-  deployPod ${MANAGED_SERVER_NAME_BASE?}1
-  deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
-
-else
-
-  # This path assumes we've already run the test succesfully once, it re-uses
-  # the existing domain-home/pv/pvc/secret/etc, deletes wl pods, deletes introspect job, then
-  # redeploys the custom overrides, reruns the introspect job, and restarts the admin server pod.
-
-  cleanupMinor
-
-  deployDomainConfigMap
-  deployTestScriptConfigMap
-  deployCustomOverridesConfigMap
-  #deployIntrospectJob
-  deployIntrospectJobPod
-  deployPod ${ADMIN_NAME?}
-  deployPod ${MANAGED_SERVER_NAME_BASE?}1
-
-fi
-
-#
-# Check admin-server pod log and also Call on-line WLST to check
-# if automatic and custom overrides are taking effect in the bean
-# tree.
-#
+# Check admin-server pod log and also call on-line WLST to check if
+# automatic and custom overrides are taking effect in the bean tree:
 
 checkOverrides
 
-#
-# TBD potentially add additional checks to verify wl pods are healthy
-#
+# Check DS to see if it can contact the DB.  This will only pass if the
+# overrides actually took effect:
+
+checkDataSource ${DOMAIN_UID}-${ADMIN_NAME?} t3://${DOMAIN_UID}-${ADMIN_NAME}:${ADMIN_PORT} ${ADMIN_NAME?} mysqlDS
 
 trace "Info: Success!"

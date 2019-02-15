@@ -200,11 +200,12 @@ public class ITOperator extends BaseTest {
   }
 
   /**
-   * Create two operators if they are not running. Create domain domain4 with dynamic cluster in
-   * default namespace, managed by operator1. Create domain domain5 with Configured cluster using
-   * WDT in test2 namespace, managed by operator2 Verify scaling for domain5 cluster from 2 to 3
-   * servers and back to 2, plus verify no impact on domain4 Cycle domain4 down and back up, plus
-   * verify no impact on domain5 shutdown by deleting both domain4 and domain5 CRD's
+   * Create two operators if they are not running. Create domain domain1 with dynamic cluster in
+   * default namespace, managed by operator1. Create domain domain2 with Configured cluster using
+   * WDT in test2 namespace, managed by operator2. Verify scaling for domain2 cluster from 2 to 3
+   * servers and back to 2, plus verify no impact on domain1. Cycle domain1 down and back up, plus
+   * verify no impact on domain2. shutdown by the domains using the delete resource script from
+   * samples.
    *
    * <p>ToDo: configured cluster support is removed from samples, modify the test to create
    *
@@ -215,7 +216,7 @@ public class ITOperator extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    logger.info("Creating Domain domain4 & verifing the domain creation");
+    logger.info("Creating Domain domain1 & verifing the domain creation");
 
     logger.info("Checking if operator1 and domain1 are running, if not creating");
     if (operator1 == null) {
@@ -237,7 +238,7 @@ public class ITOperator extends BaseTest {
       if (operator2 == null) {
         operator2 = TestUtils.createOperator(operator2File);
       }
-      // create domain5 with configured cluster
+      // create domain2 with configured cluster
       // ToDo: configured cluster support is removed from samples, modify the test to create
       // configured cluster
       Map<String, Object> wdtDomainMap = TestUtils.loadYaml(domainonpvwdtFile);
@@ -256,7 +257,7 @@ public class ITOperator extends BaseTest {
       logger.info("Verify the only remaining running domain domain1 is unaffected");
       domain1.verifyDomainCreated();
 
-      logger.info("Destroy and create domain4 and verify no impact on domain2");
+      logger.info("Destroy and create domain1 and verify no impact on domain2");
       domain1.destroy();
       domain1.create();
 
@@ -299,7 +300,7 @@ public class ITOperator extends BaseTest {
       operator1 = TestUtils.createOperator(operator1File);
     }
     logger.info("Creating Domain domain6 & verifing the domain creation");
-    // create domain6
+    // create domain
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
@@ -332,8 +333,8 @@ public class ITOperator extends BaseTest {
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(operator1File);
     }
-    logger.info("Creating Domain domain7 & verifing the domain creation");
-    // create domain7
+    logger.info("Creating Domain domain & verifing the domain creation");
+    // create domain
     Domain domain = null;
 
     try {
