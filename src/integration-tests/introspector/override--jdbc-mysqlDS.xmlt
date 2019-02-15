@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source" xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config">
+  <name>mysqlDS</name>
+    <jdbc-driver-params>
+      <url f:combine-mode="replace">jdbc:mysql://${env:DOMAIN_UID}-mysql:3306/mysql</url>
+      <properties>
+         <property>
+            <name>user</name>
+            <value f:combine-mode="replace">${secret:${env:DOMAIN_UID}-mysql-secret.root-user}</value>
+         </property>
+      </properties>
+      <password-encrypted f:combine-mode="add">${secret:${env:DOMAIN_UID}-mysql-secret.root-password:encrypt}</password-encrypted>
+    </jdbc-driver-params>
+</jdbc-data-source>

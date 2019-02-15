@@ -24,6 +24,9 @@
 #   DELETE_FILES Delete local test files, and launch a job to delete PV 
 #                hosted test files (default true).
 #
+#   FAST_DELETE  Set to "--grace-period=1 --timeout=1" to speedup
+#                deletes and skip phase 2.
+#
 # --------------------
 # Detailed Description
 # --------------------
@@ -98,13 +101,13 @@ function deleteWithOneLabel {
   getResWithLabel $1
   # delete namespaced types
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
-    kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+    kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   done
 
   # delete non-namespaced types
   local no_namespace_count=`grep -c -v " -n " $1`
   if [ ! "$no_namespace_count" = "0" ]; then
-    kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+    kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   fi
 
   echo "@@ Waiting for pods to stop running."
@@ -136,7 +139,7 @@ function deleteWithOneLabel {
 function deleteNamespaces {
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
     if [ "$line" != "default" ]; then
-      kubectl delete namespace $line --ignore-not-found
+      kubectl $FAST_DELETE delete namespace $line --ignore-not-found
     fi
   done
 
@@ -246,7 +249,7 @@ function genericDelete {
         return 0
       fi
 
-      if [ "$iteration" = "first" ]; then
+      if [ "$iteration" = "first" ] && [ "$FAST_DELETE" = "" ]; then
         # in the first iteration we just wait to see if artifacts go away on there own
 
         echo "@@ Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
@@ -269,8 +272,8 @@ function genericDelete {
 
         if [ ${artcount_no} -gt 0 ]; then
           cat "$resfile_no" | while read line; do
-            echo "kubectl delete $line --ignore-not-found"
-            kubectl delete $line --ignore-not-found
+            echo "kubectl $FAST_DELETE delete $line --ignore-not-found"
+            kubectl $FAST_DELETE delete $line --ignore-not-found
           done
         fi
 
@@ -292,9 +295,9 @@ function genericDelete {
 }
 
 function cleanup_tiller {
-  kubectl -n kube-system delete deployment tiller-deploy --ignore-not-found=true
-  kubectl delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
-  kubectl -n kube-system delete serviceaccount tiller --ignore-not-found=true
+  kubectl $FAST_DELETE -n kube-system delete deployment tiller-deploy --ignore-not-found=true
+  kubectl $FAST_DELETE delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
+  kubectl $FAST_DELETE -n kube-system delete serviceaccount tiller --ignore-not-found=true
 }
 
 function fail {
