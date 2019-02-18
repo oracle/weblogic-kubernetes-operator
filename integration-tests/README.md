@@ -16,45 +16,51 @@ Wercker runs only Quick test use cases, Jenkins run both Quick and Full test use
 
 Java integration tests cover the below use cases:
 
-Quick test use cases. 
+Quick test use cases - 
+
+|  |  |
+| --- | --- |
+| Operator Configuration | operator1 deployed in weblogic-operator1 namespace and manages domains in default and test1 namespaces |
+| Domain Configuration | Domain on PV using WLST, traefik load balancer |
+
+Basic Use Cases
 
 1. create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
 2. create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
 3. verify admin external service by accessing admin REST endpoint with nodeport in URL
 4. verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
 5. verify web app load balancing by accessing the webapp using loadBalancerWebPort
+
+Advanced Use Cases
+
 6. verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
 7. cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly.
 8. Operator life cycle(destroy and create) should not impact the running domain
+
+Also the below use cases are covered for Quick test
+
 9. verify liveness probe by killing managed server 1 process 3 times to kick pod auto-restart
 10. shutdown the domain by changing domain serverStartPolicy to NEVER
 
-Full test use cases
+Full test use cases -
 
-* keep the first operator running
-* create another domain domain2 in default namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-* shutdown and delete domain domain2
-* create another domain domain3 with dynamic cluster using WDT in test1 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-* verify cluster scaling by doing scale up for domain3 using WLDF scaling 
-* shutdown and delete domain domain3
-* create another operator operator2 which manages test2 namespace and verify domain1 is not affected
-* create another domain domain4 with dynamic cluster in default namespace and domain domain5 with Configured cluster using WDT in test2 namespace and verify the domain by doing the checks 2 - 5 listed in quick test
-* verify scaling for domain5 cluster from 2 to 3 servers and back to 2, plus verify no impact on domain4
-* cycle domain4 down and back up, plus verify no impact on domain5
-* shutdown and delete both domain4 and domain5 
-* create domain6 in the default namespace with serverStartPolicy="ADMIN_ONLY", and verify that only admin server is created. on Jenkins, this domain will also test NFS instead of HOSTPATH PV storage
-* shutdown and delete domain6
-* create domain7 in the default namespace with pvReclaimPolicy="Recycle", and verify that the PV is deleted once the domain and PVC are deleted
-* shutdown and delete domain7
-* create domain domain8 and test that create domain fails when its pv is already populated by a shutdown domain
-* create another domain domain9 with APACHE load balancer and access admin console via LB port. shutdown domain.
-* create another domain domain10 with mostly default values from sample domain inputs, mainly exposeAdminT3Channel and exposeAdminNodePort which are false by default and verify domain startup and cluster scaling using operator rest endpoint works.
-* create another domain domain11 with listen address not set for admin server and t3 channel and incorrect file for admin server log
-* verify automatic situational config override works by bringing up the domain and by doing checks 2 - 5 listed in quick test
-* create another domain domain12 with some junk value for t3 channel public address and using custom situational config override replace with valid public address
-* verify the domain by doing checks 2 - 5 listed in quick test
- 
+|  |  |
+| --- | --- |
+| Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
+| Domain Configuration | Domain on PV using WDT, Domain with serverStartPolicy ADMIN_ONLY, Domain with auto and custom situational configuration, Two domains managed by two operators, Domain with Recycle weblogicDomainStorageReclaimPolicy, Domain with default sample values |
 
+
+Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
+
+| Domain | Use Case |
+| --- | --- |
+| Domain on PV using WDT | WLDF scaling |
+| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
+| Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage |	
+| Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
+| Domain with Recycle policy | create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted once the domain and PVC are deleted |
+| Domain with default sample values | create domain using mostly default values for inputs |					
+						
 
 # Directory Configuration and Structure
 
@@ -85,6 +91,7 @@ Defaults for RESULT_ROOT & PV_ROOT:
 
 
 'Physical' subdirectories created by test:
+
     Local tmp files:      RESULT_ROOT/acceptance_test_tmp/...
 
     PV dirs K8S NFS:      PV_ROOT/acceptance_test_pv/persistentVolume-${domain_uid}/...
@@ -108,14 +115,13 @@ Below configuration files are used from src/integration-tests/resources:
 OperatorIT.properties
 operator1.yaml
 operator2.yaml
-domain1.yaml
-domain2.yaml
-domain3.yaml
-domain4.yaml
-domain5.yaml
-domain6.yaml
-domain7.yaml
-domain8.yaml
+operator_bc.yaml
+operator_chain.yaml
+domainonpvwlst.yaml
+domainonpvwdt.yaml
+domainadminonly.yaml
+domainrecyclepolicy.yaml
+domainsampledefaults.yaml
 ```
 
 src/integration-tests/resources/OperatorIT.properties - This file is used for configuring common attributes for all integration tests
@@ -138,12 +144,11 @@ externalRestEnabled: true
 javaLoggingLevel: FINE
 ```
 
-src/integration-tests/resources/domain1.yaml - input/customized properties for PV/Load Balancer/WebLogic Domain. Any property can be provided here from kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml and kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml. For all the properties that are not defined here, the default values in the sample inputs are used while generating inputs yaml.
+src/integration-tests/resources/domainonpvwlst.yaml - input/customized properties for PV/Load Balancer/WebLogic Domain. Any property can be provided here from kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml and kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml. For all the properties that are not defined here, the default values in the sample inputs are used while generating inputs yaml.
 
 ```
 adminServerName: admin-server
-domainName: base_domain
-domainUID: domain1
+domainUID: domainonpvwlst
 clusterName: cluster-1
 configuredManagedServerCount: 4
 initialManagedServerReplicas: 2
@@ -172,7 +177,7 @@ staticPrepare() - initializes the application properties from OperatorIT.propert
 
 staticUnPrepare() - releases the cluster lease on wercker env.
 
-test methods - test1CreateFirstOperatorAndDomain, test2CreateAnotherDomainInDefaultNS, test3CreateDomainInTest1NS, etc
+test methods -  testDomainOnPVUsingWLST, testDomainOnPVUsingWDT, testTwoDomainsManagedByTwoOperators, testCreateDomainWithStartPolicyAdminOnly, testCreateDomainPVReclaimPolicyRecycle, testCreateDomainWithDefaultValuesInSampleInputs, testAutoAndCustomSitConfigOverrides, testOperatorRESTIdentityBackwardCompatibility, testOperatorRESTUsingCertificateChain
 
 Utility classes:
 
@@ -235,46 +240,48 @@ Successful run will have the output like below:
 [INFO] Final Memory: 60M/1236M
 
 ```
-Failed run will have the output
+Failed run will have the output like
 ```
 
 [INFO] 
 [INFO] Results:
 [INFO] 
 [ERROR] Errors: 
-[ERROR]   ITOperator.testBCreateDomainWithDefaultValuesInSampleInputs:287->testAllUseCasesForADomain:303->BaseTest.testClusterScaling:241 ? Runtime
+[ERROR]   ITOperator.testDomainOnPVUsingWLST:145 ? Runtime FAILURE: Couldn't create serv...
 [INFO] 
-[ERROR] Tests run: 11, Failures: 0, Errors: 1, Skipped: 0
+[ERROR] Tests run: 9, Failures: 0, Errors: 1, Skipped: 0
 [INFO] 
 [INFO] 
 [INFO] --- maven-failsafe-plugin:2.20.1:verify (integration-tests) @ operator-integration-tests ---
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary:
 [INFO] 
-[INFO] weblogic-kubernetes-operator ....................... SUCCESS [  1.669 s]
-[INFO] operator-model ..................................... SUCCESS [ 22.159 s]
-[INFO] operator-swagger ................................... SUCCESS [  1.426 s]
-[INFO] operator-runtime ................................... SUCCESS [ 54.559 s]
-[INFO] operator-integration-tests ......................... FAILURE [  01:03 h]
+[INFO] Build Tools ........................................ SUCCESS [  1.193 s]
+[INFO] weblogic-kubernetes-operator ....................... SUCCESS [  2.671 s]
+[INFO] json-schema ........................................ SUCCESS [ 14.917 s]
+[INFO] jsonschema-maven-plugin Maven Mojo ................. SUCCESS [  8.600 s]
+[INFO] operator-model ..................................... SUCCESS [ 23.065 s]
+[INFO] operator-swagger ................................... SUCCESS [  4.487 s]
+[INFO] operator-runtime ................................... SUCCESS [ 53.675 s]
+[INFO] operator-integration-tests ......................... FAILURE [41:09 min]
 [INFO] installation-tests ................................. SKIPPED
+[INFO] Project Reports .................................... SKIPPED
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD FAILURE
 [INFO] ------------------------------------------------------------------------
-[INFO] Total time: 01:04 h
-[INFO] Finished at: 2018-10-31T15:19:46-07:00
-[INFO] Final Memory: 48M/1275M
-[INFO] ------------------------------------------------------------------------
-
+[INFO] Total time: 42:58 min
+[INFO] Finished at: 2019-02-11T09:42:08-08:00
+[INFO] Final Memory: 124M/1534M
 ```
 JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITOperator.xml". This file shows how much time each test case took to run and the failed test results if any.
 
 # How to run a single test
 
-mvn -Dit.test="ITOperator#test6CreateConfiguredDomainInTest2NS" -DfailIfNoTests=false integration-test -P java-integration-tests
+mvn -Dit.test="ITOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P java-integration-tests
 
 # How to run multiple tests
 
-mvn -Dit.test="ITOperator#test6CreateConfiguredDomainInTest2NS+test7CreateDomainPVReclaimPolicyRecycle" -DfailIfNoTests=false integration-test -P java-integration-tests
+mvn -Dit.test="ITOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P java-integration-tests
 
 # How to run cleanup script
 
