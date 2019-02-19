@@ -5,33 +5,43 @@
 # When the customer enables the operator's external REST api (by setting
 # externalRestEnabled to true when installing the operator helm chart), the customer needs
 # to provide the certificate and private key for api's SSL identity too (by creating a 
-# tls secret befor the installation of the operator helm chart).
+# tls secret before the installation of the operator helm chart).
 #
 # This sample script generates a self-signed certificate and private key that can be used
 # for the operator's external REST api when experimenting with the operator.  They should
 # not be used in a production environment.
 #
 # The sytax of the script is:
-#   kubernetes/samples/scripts/rest/generate-external-rest-identity.sh <subject alternative names>
 #
-# <subject alternative names> lists the subject alternative names to put into the generated
-# self-signed certificate for the external WebLogic Operator REST https interface,
-# for example:
+#   kubernetes/samples/scripts/rest/generate-external-rest-identity.sh -a <SANs> -n <namespace>
+#
+# Where <SANs> lists the subject alternative names to put into the generated self-signed 
+# certificate for the external WebLogic Operator REST https interface, for example:
+#
 #   DNS:myhost,DNS:localhost,IP:127.0.0.1
 #
-# The script creates the weblogic-operator-certificate secret in the weblogic-operator namespace with 
-# the self-signed certificate and private key
+# You should include the addresses of all masters and load balancers in this list.  The certificate
+# cannot be conveniently changed after installation of the operator.
+#
+# The script creates the secret in the weblogic-operator namespace with the self-signed 
+# certificate and private key
 #
 # Example usage:
-#   generate-external-rest-identity.sh IP:127.0.0.1 > my_values.yaml
+#   generate-external-rest-identity.sh -a IP:127.0.0.1 -n weblogic-operator > my_values.yaml
 #   echo "externalRestEnabled: true" >> my_values.yaml
 #   ...
 #   helm install kubernetes/charts/weblogic-operator --name my_operator --namespace my_operator-ns --values my_values.yaml --wait
-
-if [ "$#" != 1 ] ; then
-  1>&2 echo "Syntax: ${BASH_SOURCE[0]} <subject alternative names>"
-  exit 1
-fi
+usage(){
+cat <<EOF
+Usage: $0 [options] -a <subject alternative names> -n <namespace>
+Options:
+-a  SANS           Required, the SANs for the certificate
+-n  NAMESPACE      Required, the namespace where the secret will be created.
+-s  SECRET_NAME    Optional, the name of the kubernetes secret. Default is: weblogic-operator-external-rest-identity.
+-h, --help         Display this help text.
+EOF
+exit 1
+}
 
 if [ ! -x "$(command -v keytool)" ]; then
   echo "Can't find keytool.  Please add it to the path."
@@ -67,12 +77,58 @@ function cleanup {
 }
 
 set -e
+#set -x
 
 trap "cleanup" EXIT
 
-#set -x
+SECRET_NAME="weblogic-operator-external-rest-identity"
 
-SANS=$1
+while [ $# -gt 0 ]
+  do 
+    key="$1"
+    case $key in
+      -a)
+      shift # past argument
+      if [ $# -eq 0 ] || [ ${1:0:1} == "-" ]; then echo "SANs is required and is missing"; usage; fi
+      SANS=$1
+      shift # past value
+      ;;
+      -n)
+      shift # past argument
+      if [ $# -eq 0 ] || [ ${1:0:1} == "-" ]; then echo "Namespace is required and is missing"; usage; fi
+      NAMESPACE=$1
+      shift # past value
+      ;;
+      -s)
+      shift # past argument
+      if [ $# -eq 0 ] || [ ${1:0:1} == "-" ]; then echo "Invalid secret name $1"; usage; fi
+      SECRET_NAME=$1
+      shift # past value
+      ;;
+      -h)
+      shift # past argument
+      ;;
+      *)
+      SANS=$1
+      shift # past argument
+      ;;  
+    esac    
+done
+
+if [ -z "$SANS" ]
+then
+  1>&2
+  echo "SANs is required and is missing"
+  usage
+fi
+
+if [ -z "$NAMESPACE" ]
+then
+  1>&2
+  echo "Namespace is required and is missing"
+  usage
+fi
+
 DAYS_VALID="3650"
 TEMP_PW="temp_password"
 OP_PREFIX="weblogic-operator"
@@ -129,17 +185,17 @@ openssl \
   -out ${OP_KEY_PEM} \
 2> /dev/null
 
-# Create the secret with the self-signed certificate and private key in the weblogic-operator namespace
-# kubectl create secret tls "weblogic-operator-certificate" --cert=${OP_CERT_PEM} --key=${OP_KEY_PEM} -n weblogic-operator
-# echo "externalCertificateSecret: weblogic-operator-certificate"
-
-# base64 encode the cert and private key pem
-CERT_DATA=`base64 -i ${OP_CERT_PEM} | tr -d '\n'`
-KEY_DATA=`base64 -i ${OP_KEY_PEM} | tr -d '\n'`
-
-# print out the cert and pem in the form that can be added to
-# the operator helm chart's values.yaml
-echo "externalOperatorCert: ${CERT_DATA}"
-echo "externalOperatorKey: ${KEY_DATA}"
+set +e
+# Check if namespace exist
+kubectl get namespace $NAMESPACE >/dev/null 2>/dev/null
+if [ $? -eq 1 ]; then
+  echo "Namespace $NAMESPACE does not exist"
+  exit 1
+fi
+kubectl get secret $SECRET_NAME -n $NAMESPACE >/dev/null 2>/dev/null
+if [ $? -eq 1 ]; then
+  kubectl create secret tls "$SECRET_NAME" --cert=${OP_CERT_PEM} --key=${OP_KEY_PEM} -n $NAMESPACE >/dev/null
+fi
+echo "externalRestIdentitySecret: $SECRET_NAME"
 
 SUCCEEDED=true

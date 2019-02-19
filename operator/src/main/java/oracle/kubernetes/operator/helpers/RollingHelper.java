@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -222,8 +222,15 @@ public class RollingHelper {
           while (countReady-- > dom.getMinAvailable(clusterName)) {
             current = it.next();
             serverConfig = (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
-            servers.add(
-                serverConfig != null ? serverConfig.getName() : config.getAdminServerName());
+            String serverName = null;
+            if (serverConfig != null) {
+              serverName = serverConfig.getName();
+            } else if (config != null) {
+              serverName = config.getAdminServerName();
+            }
+            if (serverName != null) {
+              servers.add(serverName);
+            }
             serversThatCanRestartNow.add(current);
             if (!it.hasNext()) {
               break;

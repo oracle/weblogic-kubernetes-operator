@@ -216,7 +216,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
     if (other == this) {
       return true;
     }
-    if ((other instanceof ServerStatus) == false) {
+    if (!(other instanceof ServerStatus)) {
       return false;
     }
     ServerStatus rhs = ((ServerStatus) other);

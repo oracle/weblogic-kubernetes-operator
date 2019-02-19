@@ -18,9 +18,9 @@ spec:
     - /weblogic-operator/scripts/startServer.sh
     env:
     - name: JAVA_OPTIONS
-      value: "-Dweblogic.StdoutDebugEnabled=false "
+      value: "-Djava.security.egd=file:/dev/./urandom "
     - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
     - name: DOMAIN_NAME
       value: "${DOMAIN_NAME}"
     - name: DOMAIN_HOME
@@ -89,8 +89,8 @@ spec:
     terminationMessagePath: /dev/termination-log
     terminationMessagePolicy: File
     volumeMounts:
-  ${PVCOMMENT}  - mountPath: /shared
-  ${PVCOMMENT}    name: weblogic-domain-storage-volume
+    - name: weblogic-domain-storage-volume
+      mountPath: /shared
   # WL Pods shouldn't need secrets if the introspector is working:
   #  - mountPath: /weblogic-operator/secrets
   #    name: weblogic-credentials-volume
@@ -119,6 +119,6 @@ spec:
       defaultMode: 365
       name: ${DOMAIN_UID}-weblogic-domain-introspect-cm
     name: introspect-domain-cm-volume
-  ${PVCOMMENT}- name: weblogic-domain-storage-volume
-  ${PVCOMMENT}  persistentVolumeClaim:
-  ${PVCOMMENT}    claimName: ${DOMAIN_UID}-weblogic-domain-pvc
+  - name: weblogic-domain-storage-volume
+    persistentVolumeClaim:
+      claimName: ${DOMAIN_UID}-weblogic-domain-pvc

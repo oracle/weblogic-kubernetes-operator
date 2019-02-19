@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -75,6 +75,16 @@ public class WlsClusterConfig {
       dynamicServersConfig = null;
     }
     return new WlsClusterConfig(clusterName, dynamicServersConfig);
+  }
+
+  /**
+   * Returns true if one of the servers in the cluster has the specified name.
+   *
+   * @param serverName the name to look for
+   * @return true or false
+   */
+  public boolean hasNamedServer(String serverName) {
+    return getServerConfigs().stream().anyMatch(c -> serverName.equals(c.getName()));
   }
 
   /**
