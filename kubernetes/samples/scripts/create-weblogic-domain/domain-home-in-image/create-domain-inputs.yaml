@@ -47,6 +47,8 @@ productionModeEnabled: true
 # If this property is set, the create domain scripts will use the value specified, instead of the
 # default value, to tag the generated image and set the `image` in the domain YAML file.
 #
+# A unique value is required for each domain that is created using the scripts.
+#
 # If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where
 # the domain is going to be running, you need to set this property to the image name that is intended
 # to be used in a registry local to that Kubernetes cluster. You also need to push the `image` to

@@ -1,0 +1,91 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${DOMAIN_UID}-mysql-secret
+  labels:
+    weblogic.domainUID: ${DOMAIN_UID}
+data:
+  # echo -n "root" | base64
+  root-user: cm9vdA==
+  # echo -n "password" | base64 
+  root-password: cGFzc3dvcmQ=
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  labels:
+    weblogic.domainUID: ${DOMAIN_UID}
+  name: ${DOMAIN_UID}-mysql-pv
+spec:
+  accessModes:
+  - ReadWriteMany
+  capacity:
+    storage: 10Gi
+  hostPath:
+    path: ${PV_ROOT}/acceptance_test_pv/domain-${DOMAIN_UID}-storage/mysql
+    type: ""
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ${DOMAIN_UID}-mysql-storage-class
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    weblogic.domainUID: ${DOMAIN_UID}
+  name: ${DOMAIN_UID}-mysql-pvc
+  namespace: ${NAMESPACE}
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: ${DOMAIN_UID}-mysql-storage-class
+  volumeName: ${DOMAIN_UID}-mysql-pv
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    weblogic.domainUID: ${DOMAIN_UID}
+    app: ${DOMAIN_UID}-mysql
+  name: ${DOMAIN_UID}-mysql
+  namespace: ${NAMESPACE}
+spec:
+  terminationGracePeriodSeconds: 5
+  containers:
+  - image: mysql:5.6o
+    name: mysql
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: ${DOMAIN_UID}-mysql-secret
+          key: root-password
+    ports:
+    - containerPort: 3306
+      name: mysql
+    volumeMounts:
+    - name: mysql-storage-volume
+      mountPath: /var/lib/mysql
+  volumes:
+  - name: mysql-storage-volume
+    persistentVolumeClaim:
+      claimName: ${DOMAIN_UID}-mysql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    weblogic.domainUID: ${DOMAIN_UID}
+  name: ${DOMAIN_UID}-mysql
+  namespace: ${NAMESPACE}
+spec:
+  ports:
+  - port: 3306
+  selector:
+    app: ${DOMAIN_UID}-mysql
+  clusterIP: None
