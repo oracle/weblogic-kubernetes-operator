@@ -17,6 +17,8 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiException;
@@ -24,13 +26,16 @@ import io.kubernetes.client.models.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
@@ -61,8 +66,6 @@ public abstract class PodHelperTestBase {
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
   private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
-  private static final String INCLUDE_SERVER_OUT_IN_POD_LOG_STRING =
-      Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG);
 
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
   private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
@@ -81,6 +84,7 @@ public abstract class PodHelperTestBase {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-domain-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
+  private static final String INSTRUCTION = "{\"op\":\"%s\",\"path\":\"%s\",\"value\":\"%s\"}";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -134,7 +138,7 @@ public abstract class PodHelperTestBase {
 
   private String[] getMessageKeys() {
     return new String[] {
-      getPodCreatedMessageKey(), getPodExistsMessageKey(), getPodReplacedMessageKey()
+      getCreatedMessageKey(), getExistsMessageKey(), getPatchedMessageKey(), getReplacedMessageKey()
     };
   }
 
@@ -197,7 +201,7 @@ public abstract class PodHelperTestBase {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsInfo(getPodCreatedMessageKey()));
+    assertThat(logRecords, containsInfo(getCreatedMessageKey()));
   }
 
   @Test
@@ -274,7 +278,7 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenPodCreated_readinessProbeHasReadinessCommand() {
     V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
-    assertThat(getAction.getPath(), equalTo("/weblogic"));
+    assertThat(getAction.getPath(), equalTo("/weblogic/ready"));
     assertThat(getAction.getPort().getIntValue(), equalTo(listenPort));
   }
 
@@ -311,6 +315,27 @@ public abstract class PodHelperTestBase {
 
   protected abstract void verifyPodNotReplacedWhen(PodMutator mutator);
 
+  private void verifyPatchPod(PodMutator mutator, String... patchInstructions) {
+    testSupport.addComponent(
+        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+        PodAwaiterStepFactory.class,
+        (pod, next) -> terminalStep);
+
+    V1Pod existingPod = createPodModel();
+    mutator.mutate(existingPod);
+    initializeExistingPod(existingPod);
+    testSupport
+        .createCannedResponse("patchPod")
+        .withName(getPodName())
+        .withNamespace(NS)
+        .withBody(expect(patchInstructions))
+        .returning(createPodModel());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
+  }
+
   protected abstract ServerConfigurator getServerConfigurator(
       DomainConfigurator configurator, String serverName);
 
@@ -332,7 +357,8 @@ public abstract class PodHelperTestBase {
             hasEnvVar("SERVER_OUT_IN_POD_LOG", Boolean.toString(INCLUDE_SERVER_OUT_IN_POD_LOG)),
             hasEnvVar("LOG_HOME", null),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
-            hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER))));
+            hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)),
+            hasEnvVar("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom")));
   }
 
   @Test
@@ -420,7 +446,7 @@ public abstract class PodHelperTestBase {
 
   abstract void expectStepsAfterCreation();
 
-  abstract String getPodCreatedMessageKey();
+  abstract String getCreatedMessageKey();
 
   abstract FiberTestSupport.StepFactory getStepFactory();
 
@@ -456,14 +482,56 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasUnknownCustomerLabel_replaceIt() {
-    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
+  public void whenPodHasUnknownCustomerLabel_ignoreIt() {
+    verifyPodNotReplacedWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
   }
 
   @Test
-  public void whenPodLacksExpectedCustomerLabel_replaceIt() {
+  public void whenPodLacksExpectedCustomerLabel_addIt() {
     configurator.withPodLabel("expected.label", "value");
+
+    verifyPatchPod(pod -> {}, "add", "/metadata/labels/expected.label", "value");
+  }
+
+  @Test
+  public void whenPodCustomerLabelHasBadValue_replaceIt() {
+    configurator.withPodLabel("customer.label", "value");
+
+    verifyPatchPod(
+        pod -> pod.getMetadata().putLabelsItem("customer.label", "badvalue"),
+        "replace",
+        "/metadata/labels/customer.label",
+        "value");
+  }
+
+  @Test
+  public void whenPodLacksExpectedCustomerLabelAndRequestRequirement_replaceIt() {
+    configurator.withPodLabel("expected.label", "value").withRequestRequirement("widgets", "10");
+
     verifyReplacePodWhen(pod -> {});
+  }
+
+  @Test
+  public void whenPodHasUnknownCustomerAnnotations_ignoreIt() {
+    verifyPodNotReplacedWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation", "value"));
+  }
+
+  @Test
+  public void whenPodLacksExpectedCustomerAnnotations_addIt() {
+    configurator.withPodAnnotation("expected.annotation", "value");
+
+    verifyPatchPod(pod -> {}, "add", "/metadata/annotations/expected.annotation", "value");
+  }
+
+  @Test
+  public void whenPodCustomerAnnotationHasBadValue_replaceIt() {
+    configurator.withPodAnnotation("customer.annotation", "value");
+
+    verifyPatchPod(
+        pod -> pod.getMetadata().putAnnotationsItem("customer.annotation", "badvalue"),
+        "replace",
+        "/metadata/annotations/customer.annotation",
+        "value");
   }
 
   @Test
@@ -518,6 +586,10 @@ public abstract class PodHelperTestBase {
     verifyReplacePodWhen(pod -> {});
   }
 
+  private BodyMatcher expect(String[] patchInstructions) {
+    return new PatchMatcher(patchInstructions);
+  }
+
   protected void onAdminExpectListPersistentVolume() {
     // default is no-op
   }
@@ -540,7 +612,7 @@ public abstract class PodHelperTestBase {
     initializeExistingPod(createPodModel());
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsFine(getPodExistsMessageKey()));
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
     ServerKubernetesObjects sko =
         domainPresenceInfo
             .getServers()
@@ -556,9 +628,11 @@ public abstract class PodHelperTestBase {
     sko.getPod().set(pod);
   }
 
-  abstract String getPodExistsMessageKey();
+  abstract String getExistsMessageKey();
 
-  abstract String getPodReplacedMessageKey();
+  abstract String getPatchedMessageKey();
+
+  abstract String getReplacedMessageKey();
 
   abstract V1Pod createPodModel();
 
@@ -630,6 +704,7 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("LOG_HOME", null))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
+        .addEnvItem(envItem("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
   }
@@ -812,6 +887,33 @@ public abstract class PodHelperTestBase {
           .appendValue(expectedPeriod)
           .appendText(" and failureThreshold ")
           .appendValue(EXPECTED_FAILURE_THRESHOLD);
+    }
+  }
+
+  protected static class PatchMatcher implements BodyMatcher {
+    private Set<String> expectedInstructions = new HashSet<>();
+    private int index = 0;
+
+    PatchMatcher(String[] patchInstructions) {
+      while (index < patchInstructions.length) addExpectedInstruction(patchInstructions);
+    }
+
+    private void addExpectedInstruction(String[] strings) {
+      expectedInstructions.add(
+          String.format(INSTRUCTION, strings[index], strings[index + 1], strings[index + 2]));
+      index += 3;
+    }
+
+    @Override
+    public boolean matches(Object actualBody) {
+      if (!(actualBody instanceof List)) return false;
+      List<?> instructions = (List<?>) actualBody;
+      Set<String> actualInstructions = new HashSet<>();
+
+      for (Object instruction : instructions)
+        actualInstructions.add(new Gson().toJson((JsonElement) instruction));
+
+      return actualInstructions.equals(expectedInstructions);
     }
   }
 }
