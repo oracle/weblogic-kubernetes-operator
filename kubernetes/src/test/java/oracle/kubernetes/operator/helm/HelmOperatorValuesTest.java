@@ -476,11 +476,11 @@ public class HelmOperatorValuesTest {
         .append("externalDebugHttpPort: 30999\n")
         .append("externalRestEnabled: false\n")
         .append("externalRestHttpsPort: 31001\n")
-        .append("image: oracle/weblogic-kubernetes-operator:2.0\n")
+        .append("image: oracle/weblogic-kubernetes-operator:2.1\n")
         .append("imagePullPolicy: IfNotPresent\n")
         .append("internalDebugHttpPort: 30999\n")
         .append("javaLoggingLevel: INFO\n")
-        .append("logStashImage: logstash:5\n")
+        .append("logStashImage: logstash:6.6.0\n")
         .append("remoteDebugNodePortEnabled: false\n")
         .append("serviceAccount: default\n");
     return sb.toString();

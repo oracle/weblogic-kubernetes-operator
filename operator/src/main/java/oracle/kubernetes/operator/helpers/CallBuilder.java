@@ -39,6 +39,7 @@ import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.VersionInfo;
 import java.util.Optional;
 import java.util.function.Consumer;
+import javax.json.JsonPatch;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
@@ -51,6 +52,7 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.utils.PatchUtils;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
@@ -830,6 +832,39 @@ public class CallBuilder {
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("deletePod", namespace, name, deleteOptions), DELETE_POD);
+  }
+
+  private com.squareup.okhttp.Call patchPodAsync(
+      ApiClient client, String name, String namespace, Object patch, ApiCallback<V1Pod> callback)
+      throws ApiException {
+    return new CoreV1Api(client).patchNamespacedPodAsync(name, namespace, patch, pretty, callback);
+  }
+
+  private final CallFactory<V1Pod> PATCH_POD =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchPodAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  requestParams.body,
+                  callback));
+
+  /**
+   * Asynchronous step for patching a pod
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param patchBody instructions on what to patch
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step patchPodAsync(
+      String name, String namespace, JsonPatch patchBody, ResponseStep<V1Pod> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("patchPod", namespace, name, PatchUtils.toKubernetesPatch(patchBody)),
+        PATCH_POD);
   }
 
   private com.squareup.okhttp.Call deleteCollectionPodAsync(

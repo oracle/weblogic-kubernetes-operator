@@ -1,8 +1,10 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
+# This domain inputs file is used to create domain on pv using wlst option and with recyle reclaim policy.
+
 adminServerName: admin-server
-domainUID: domain5
+domainUID: domainrecyclepolicy
 clusterName: cluster-1
 configuredManagedServerCount: 4
 initialManagedServerReplicas: 2
@@ -10,8 +12,8 @@ managedServerNameBase: managed-server
 #weblogicDomainStoragePath will be ignored, PV dir will be created at /<baseDir>/<USER>/acceptance_test_pv
 #weblogicDomainStoragePath: /scratch/external-domain-home/pv001/
 exposeAdminT3Channel: true
-t3ChannelPort: 30051
+t3ChannelPort: 30071
 exposeAdminNodePort: true
-adminNodePort: 30704
-namespace: test2
-createDomainFilesDir: wdt
+adminNodePort: 30706
+namespace: default
+weblogicDomainStorageReclaimPolicy: Recycle
