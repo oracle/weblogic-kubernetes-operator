@@ -183,7 +183,7 @@ respectively, as shown in the example.
 
 1. The secret that you create for the credentials.
 2. The properties files in the sample project you choose to create the Docker image from.
-3. The parameters you supply to the `createDomain.sh` script.
+3. The parameters you supply to the `create-domain.sh` script.
 
 If you specify the `-e` option, the script will generate the
 Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the
