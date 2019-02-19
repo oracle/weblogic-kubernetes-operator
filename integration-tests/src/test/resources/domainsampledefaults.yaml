@@ -1,10 +1,7 @@
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-adminServerName: admin-server
-domainUID: domain8
-clusterName: cluster-1
+# This domain inputs file is used to create domain using default values from samples for most of the input values
+
+domainUID: domainsampledefaults
 configuredManagedServerCount: 4
-initialManagedServerReplicas: 2
-managedServerNameBase: managed-server
-namespace: default

@@ -15,6 +15,7 @@ import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -656,6 +657,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
+  private static final Map<String, JobWatcher> jws = new ConcurrentHashMap<>();
+
   private void internalMakeRightDomainPresence(
       @Nullable DomainPresenceInfo info, boolean isDeleting, boolean isWillInterrupt) {
     String ns = info.getNamespace();
@@ -999,7 +1002,11 @@ public class DomainProcessorImpl implements DomainProcessor {
         JobHelper.deleteDomainIntrospectorJobStep(
             dom.getDomainUID(), dom.getMetadata().getNamespace(), null));
     resources.add(
-        JobHelper.createDomainIntrospectorJobStep(Main.tuningAndConfig.getWatchTuning(), next));
+        JobHelper.createDomainIntrospectorJobStep(
+            Main.tuningAndConfig.getWatchTuning(),
+            next,
+            jws,
+            Main.isNamespaceStopping(dom.getMetadata().getNamespace())));
     return resources.toArray(new Step[resources.size()]);
   }
 

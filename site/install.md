@@ -293,7 +293,7 @@ elkIntegrationEnabled:  true
 
 Specifies the Docker image containing Logstash.  This parameter is ignored if `elkIntegrationEnabled` is false.
 
-Defaults to `logstash:5`.
+Defaults to `logstash:6.6.0`.
 
 Example:
 ```
