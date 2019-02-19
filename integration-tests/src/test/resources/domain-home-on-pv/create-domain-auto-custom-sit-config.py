@@ -120,7 +120,7 @@ else:
   create(templateChannelName, 'NetworkAccessPoint')
   cd('NetworkAccessPoints/%s' % templateChannelName)
   set('PublicPort', server_port + 10)
-  set('ListenAddress', 'not-a-real-dns-address')
+  set('ListenAddress', '%s-%s${id}' % (domain_uid, managed_server_name_base_svc))
   set('ListenPort', server_port + 10)
 
   cd('/Clusters/%s' % cluster_name)
