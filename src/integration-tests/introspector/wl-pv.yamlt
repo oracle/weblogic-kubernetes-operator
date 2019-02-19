@@ -15,7 +15,7 @@ spec:
   capacity:
     storage: 10Gi
   hostPath:
-    path: ${PV_ROOT}/acceptance_test_pv/domain-${DOMAIN_UID}-storage
+    path: ${PV_ROOT}/acceptance_test_pv/domain-${DOMAIN_UID}-storage/domains
     type: ""
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ${DOMAIN_UID}-weblogic-domain-storage-class

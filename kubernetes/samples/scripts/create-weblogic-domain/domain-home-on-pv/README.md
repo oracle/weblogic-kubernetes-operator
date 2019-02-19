@@ -8,9 +8,9 @@ Before you begin, read this guide, [Domain Resource](../../../../../site/domain-
 
 The following prerequisites must be handled prior to running the create domain script:
 * Make sure the WebLogic operator is running.
-* The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you already have this image. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to obtain or create the image.
+* The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you pulled the image prior to that date. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to obtain or create the image.
 * Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.
-* In the same Kubernetes namespace, create the Kubernetes persistent volume where the domain home will be hosted, and the Kubernetes persistent volume claim for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md).
+* In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC](../../create-weblogic-domain-pv-pvc/README.md). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes secrets `username` and `password` of the admin account in the same Kubernetes namespace as the domain.
 
 ## Use the script to create a domain
@@ -82,13 +82,13 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Kubernetes domain resource. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
-| `image` | WebLogic Docker image. The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you already have this image. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to obtain or create the image. | `store/oracle/weblogic:12.2.1.3` |
-| `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are "IfNotPresent", "Always", or "Never" | `IfNotPresent` |
+| `image` | WebLogic Docker image. The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you pulled the image prior to that date. Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how to obtain or create the image. | `store/oracle/weblogic:12.2.1.3` |
+| `imagePullPolicy` | WebLogic Docker image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never` | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image. The presence of the secret will be validated when this parameter is specified |  |
-| `includeServerOutInPodLog` | Boolean indicating whether to include server .out to the pod's stdout. | `true` |
+| `includeServerOutInPodLog` | Boolean indicating whether to include the server .out to the pod's stdout. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to initially start for the domain. | `2` |
 | `javaOptions` | Java options for starting the Administration and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
-| `logHome` | The in-pod location for domain log, server logs, server out, and node manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
+| `logHome` | The in-pod location for domain log, server logs, server out, and Node Manager log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `namespace` | Kubernetes namespace in which to create the domain. | `default` |
@@ -149,7 +149,7 @@ spec:
   includeServerOutInPodLog: true
   # Whether to enable log home
   logHomeEnabled: true
-  # The in-pod name location for domain log, server logs, server out, and node manager log files
+  # The in-pod name location for domain log, server logs, server out, and Node Manager log files
   logHome: /shared/logs/domain1
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the operator will start up when it discovers this Domain
@@ -163,7 +163,7 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-Xms64m -Xmx256m "
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
     volumes:
     - name: weblogic-domain-storage-volume
       persistentVolumeClaim:

@@ -1,14 +1,15 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
+
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.Exec;
 import io.kubernetes.client.models.V1Pod;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -27,6 +29,9 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.ReadHealthStep;
+import oracle.kubernetes.operator.utils.KubernetesExec;
+import oracle.kubernetes.operator.utils.KubernetesExecFactory;
+import oracle.kubernetes.operator.utils.KubernetesExecFactoryImpl;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -35,10 +40,12 @@ import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
 /** Creates an asynchronous step to read the WebLogic server state from a particular pod */
 public class ServerStatusReader {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
+  private static Function<Step, Step> STEP_FACTORY = ReadHealthStep::createReadHealthStep;
 
   private ServerStatusReader() {}
 
-  public static Step createDomainStatusReaderStep(
+  static Step createDomainStatusReaderStep(
       DomainPresenceInfo info, long timeoutSeconds, Step next) {
     return new DomainStatusReaderStep(info, timeoutSeconds, next);
   }
@@ -47,7 +54,7 @@ public class ServerStatusReader {
     private final DomainPresenceInfo info;
     private final long timeoutSeconds;
 
-    public DomainStatusReaderStep(DomainPresenceInfo info, long timeoutSeconds, Step next) {
+    DomainStatusReaderStep(DomainPresenceInfo info, long timeoutSeconds, Step next) {
       super(next);
       this.info = info;
       this.timeoutSeconds = timeoutSeconds;
@@ -65,13 +72,13 @@ public class ServerStatusReader {
       for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
         String serverName = entry.getKey();
         ServerKubernetesObjects sko = entry.getValue();
-        if (sko != null) {
+        if (sko != null) { // !! Impossible to have a null value in a concurrent map
           V1Pod pod = sko.getPod().get();
           if (pod != null) {
             Packet p = packet.clone();
             startDetails.add(
                 new StepAndPacket(
-                    createServerStatusReaderStep(sko, pod, serverName, timeoutSeconds, null), p));
+                    createServerStatusReaderStep(sko, pod, serverName, timeoutSeconds), p));
           }
         }
       }
@@ -90,13 +97,12 @@ public class ServerStatusReader {
    * @param pod The pod
    * @param serverName Server name
    * @param timeoutSeconds Timeout in seconds
-   * @param next Next step
    * @return Created step
    */
-  public static Step createServerStatusReaderStep(
-      ServerKubernetesObjects sko, V1Pod pod, String serverName, long timeoutSeconds, Step next) {
+  private static Step createServerStatusReaderStep(
+      ServerKubernetesObjects sko, V1Pod pod, String serverName, long timeoutSeconds) {
     return new ServerStatusReaderStep(
-        sko, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, next));
+        sko, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, null));
   }
 
   private static class ServerStatusReaderStep extends Step {
@@ -105,7 +111,7 @@ public class ServerStatusReader {
     private final String serverName;
     private final long timeoutSeconds;
 
-    public ServerStatusReaderStep(
+    ServerStatusReaderStep(
         ServerKubernetesObjects sko, V1Pod pod, String serverName, long timeoutSeconds, Step next) {
       super(next);
       this.sko = sko;
@@ -120,7 +126,7 @@ public class ServerStatusReader {
       ConcurrentMap<String, String> serverStateMap =
           (ConcurrentMap<String, String>) packet.get(ProcessingConstants.SERVER_STATE_MAP);
 
-      if (PodWatcher.isReady(pod, true)) {
+      if (PodWatcher.getReadyStatus(pod)) {
         sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
         serverStateMap.put(serverName, WebLogicConstants.RUNNING_STATE);
         return doNext(packet);
@@ -145,14 +151,10 @@ public class ServerStatusReader {
             ClientPool helper = ClientPool.getInstance();
             ApiClient client = helper.take();
             try {
-              proc =
-                  new Exec(client)
-                      .exec(
-                          pod,
-                          new String[] {"/weblogic-operator/scripts/readState.sh"},
-                          KubernetesConstants.CONTAINER_NAME,
-                          stdin,
-                          tty);
+              KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
+              kubernetesExec.setStdin(stdin);
+              kubernetesExec.setTty(tty);
+              proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");
 
               InputStream in = proc.getInputStream();
               if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
@@ -160,7 +162,9 @@ public class ServerStatusReader {
                   state = CharStreams.toString(reader);
                 }
               }
-            } catch (IOException | ApiException | InterruptedException e) {
+            } catch (InterruptedException ignore) {
+              Thread.currentThread().interrupt();
+            } catch (IOException | ApiException e) {
               LOGGER.warning(MessageKeys.EXCEPTION, e);
             } finally {
               helper.recycle(client);
@@ -179,7 +183,7 @@ public class ServerStatusReader {
   private static class ServerHealthStep extends Step {
     private final String serverName;
 
-    public ServerHealthStep(String serverName, Step next) {
+    ServerHealthStep(String serverName, Step next) {
       super(next);
       this.serverName = serverName;
     }
@@ -193,7 +197,7 @@ public class ServerStatusReader {
 
       if (WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
-        return doNext(ReadHealthStep.createReadHealthStep(getNext()), packet);
+        return doNext(STEP_FACTORY.apply(getNext()), packet);
       }
 
       return doNext(packet);

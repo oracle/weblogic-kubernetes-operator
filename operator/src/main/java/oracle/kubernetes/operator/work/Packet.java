@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -65,5 +65,10 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
   @Override
   public Object put(String key, Object value) {
     return value != null ? delegate.put(key, value) : delegate.remove(key);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> T getValue(String key) {
+    return (T) get(key);
   }
 }
