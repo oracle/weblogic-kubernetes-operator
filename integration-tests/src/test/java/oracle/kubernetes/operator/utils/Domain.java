@@ -290,9 +290,9 @@ public class Domain {
    */
   public void verifyHasClusterServiceChannelPort(String protocol, int port) throws Exception {
     if (!TestUtils.checkHasServiceChannelPort(
-        this.getDomainUid() + "-cluster-" + this.clusterName, protocol, port)) {
+        this.getDomainUid() + "-cluster-" + this.clusterName, domainNS, protocol, port)) {
       throw new RuntimeException(
-          "FAILURE: Cannot find channel port in cluster, but expecting one"
+          "FAILURE: Cannot find channel port in cluster, but expecting one: "
               + port
               + "/"
               + protocol);
