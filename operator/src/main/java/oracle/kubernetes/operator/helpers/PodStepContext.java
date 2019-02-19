@@ -69,7 +69,7 @@ public abstract class PodStepContext extends StepContextBase {
   private static final String START_SERVER = "/weblogic-operator/scripts/startServer.sh";
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
-  private static final String READINESS_PATH = "/weblogic/";
+  private static final String READINESS_PATH = "/weblogic/ready";
 
   private final DomainPresenceInfo info;
   private final WlsDomainConfig domainTopology;
