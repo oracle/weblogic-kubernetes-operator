@@ -20,7 +20,7 @@ domainNamespaces:
   - "default"
 
 # image specifies the docker image containing the operator code.
-image: "oracle/weblogic-kubernetes-operator:2.0"
+image: "oracle/weblogic-kubernetes-operator:2.1"
 
 # imagePullPolicy specifies the image pull policy for the operator docker image.
 imagePullPolicy: "IfNotPresent"
@@ -87,7 +87,7 @@ elkIntegrationEnabled: false
 
 # logStashImage specifies the docker image containing logstash.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
-logStashImage: "logstash:5"
+logStashImage: "logstash:6.6.0"
 
 # elasticSearchHost specifies the hostname of where elasticsearch is running.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.

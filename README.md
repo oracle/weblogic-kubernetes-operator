@@ -18,7 +18,7 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 * Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](kubernetes/samples/README.md).
+The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/fusionmiddlewaresupport/updated-weblogic-kubernetes-support-with-operator-20-v2), or try out the [samples](kubernetes/samples/README.md).
 
 ```diff
 + The current release of the operator is 2.0-rc2, a release candidate for our 2.0 release.
@@ -81,7 +81,7 @@ The [User guide](site/user-guide.md) provides detailed information about all asp
 
 Please refer to our [samples](kubernetes/samples/README.md) for information about the available sample code.
 
-# Need more help? Have a suggestion? Come and say "Hello!"
+# Need more help? Have a suggestion? Come and say, "Hello!"
 
 We have a **public Slack channel** where you can get in touch with us to ask questions about using the operator or give us feedback
 or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
@@ -100,7 +100,7 @@ Please take a look at our [wish list](https://github.com/oracle/weblogic-kuberne
 
 ## API documentation
 
-Documentation for APIs is provided here:
+Documentation for APIs:
 
 * The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md).
 
@@ -145,3 +145,31 @@ Only pull requests from committers that can be verified as having signed the OCA
 ## Introducing a new dependency
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.
+
+## Use Helm Chart from Github chart repository
+
+Add this repo to Helm installation:
+
+```
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
+```
+
+Verify repository was added correctly:
+
+````
+$ helm repo list
+NAME           URL
+weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
+```
+
+Update with latest information about charts from chart repositories:
+
+```
+$ helm repo update
+```
+
+Install Operator from the repo:
+
+```
+$ helm install helm install weblogic-operator/weblogic-operator --name weblogic-operator
+```
