@@ -398,8 +398,8 @@ and look for lines similar to
 ```
 weblogic-operator1   pod/weblogic-operator-
 ```
-If you do not find something similar in the output, the WebLogic Operator for Kubernetes may not have been installed completely. Review the operator installation instructions in 
-2. Message: "ERROR: Unable to create folder /shared/domains"
+If you do not find something similar in the output, the WebLogic Operator for Kubernetes may not have been installed completely. Review the operator installation instructions in
+2. Message: "ERROR: Unable to create folder /shared/domains"  
 The most common cause is a poor choice of value for weblogicDomainStoragePath in the input file used when you executed 
 ```
 create-pv-pvc.sh
