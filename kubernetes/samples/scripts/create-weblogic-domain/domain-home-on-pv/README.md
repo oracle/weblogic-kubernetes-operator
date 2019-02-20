@@ -399,7 +399,7 @@ and look for lines similar to
 weblogic-operator1   pod/weblogic-operator-
 ```
 If you do not find something similar in the output, the WebLogic Operator for Kubernetes may not have been installed completely. Review the operator installation instructions in 
-1. Message: "ERROR: Unable to create folder /shared/domains"
+2. Message: "ERROR: Unable to create folder /shared/domains"
 The most common cause is a poor choice of value for weblogicDomainStoragePath in the input file used when you executed 
 ```
 create-pv-pvc.sh
@@ -412,5 +412,5 @@ A correct values for weblogicDomainStoragePath will meet the following requireme
 * owned by the useer that started the operator
 * exists
 * is a directory
-1. Message: "ERROR: The create domain job will not overwrite an existing domain. The domain folder /shared/domains/domain1 already exists"  
+3. Message: "ERROR: The create domain job will not overwrite an existing domain. The domain folder /shared/domains/domain1 already exists"  
 You will see this message if the directory domains/domain1 exists in the directory named as the value of weblogicDomainStoragePath in create-pv-pvc-inputs.yaml. For example, if the value of  weblogicDomainStoragePath is `/tmp/wls-op-4-k8s`, you would need to remove (or move) `/tmp/wls-op-4-k8s/domains/domain1`
