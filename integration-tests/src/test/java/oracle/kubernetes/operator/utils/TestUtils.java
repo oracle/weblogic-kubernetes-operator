@@ -305,6 +305,14 @@ public class TestUtils {
     }
   }
 
+  public static void copyFileViaCat(
+      String srcFileOnHost, String destLocationInPod, String podName, String namespace)
+      throws Exception {
+
+    TestUtils.kubectlexec(
+        podName, namespace, " -- bash -c 'cat > " + destLocationInPod + "' < " + srcFileOnHost);
+  }
+
   public static ExecResult kubectlexecNoCheck(String podName, String namespace, String scriptPath)
       throws Exception {
 

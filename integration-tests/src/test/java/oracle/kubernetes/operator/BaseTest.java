@@ -331,13 +331,6 @@ public class BaseTest {
         break;
       }
     }
-    // Debug for https://bug.oraclecorp.com/pls/bug/webbug_edit.edit_info_top?rptno=29325139
-    logger.info("***************Adding debug**************");
-    ExecResult result = ExecCommand.exec("kubectl describe service -n " + domainNS);
-    logger.info("kubectl describe service outpout " + result.stdout());
-
-    logger.info("***************Adding debug**************");
-
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
 
     replicas = 2;
@@ -509,15 +502,11 @@ public class BaseTest {
     TestUtils.createDirUnderDomainPV(dirPathToCreate);
 
     // copy script to pod
-    TestUtils.kubectlexec(
+    TestUtils.copyFileViaCat(
+        getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
+        "/shared/domains/" + domainUID + "/bin/scripts/scalingAction.sh",
         podName,
-        domainNS,
-        " -- bash -c 'cat > "
-            + "/shared/domains/"
-            + domainUID
-            + "/bin/scripts/scalingAction.sh' < "
-            + getProjectRoot()
-            + "/src/scripts/scaling/scalingAction.sh");
+        domainNS);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
