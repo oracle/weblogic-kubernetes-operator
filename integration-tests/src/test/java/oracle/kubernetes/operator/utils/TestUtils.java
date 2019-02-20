@@ -233,7 +233,7 @@ public class TestUtils {
     new File(filePath).setExecutable(true, false);
 
     // copy file to pod
-    kubectlexec(podName, namespace, " -- bash -c 'cat > /shared/killserver.sh' < " + filePath);
+    copyFileViaCat(filePath, "/shared/killserver.sh", podName, namespace);
 
     // kill server process 3 times
     for (int i = 0; i < 3; i++) {
@@ -724,20 +724,18 @@ public class TestUtils {
       throws Exception {
 
     // copy wldf.py script tp pod
-    TestUtils.kubectlexec(
+    copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
+        "/shared/wldf.py",
         adminPodName,
-        domainNS,
-        " -- bash -c 'cat > /shared/wldf.py' < "
-            + BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/wldf/wldf.py");
+        domainNS);
 
     // copy callpyscript.sh to pod
-    TestUtils.kubectlexec(
+    copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
+        "/shared/callpyscript.sh",
         adminPodName,
-        domainNS,
-        " -- bash -c 'cat > /shared/callpyscript.sh' < "
-            + BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/callpyscript.sh");
+        domainNS);
 
     // arguments to shell script to call py script
     String arguments =
