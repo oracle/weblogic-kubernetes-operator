@@ -69,10 +69,10 @@ public class ITOperator extends BaseTest {
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
     }
-    INGRESSPERDOMAIN =
-        System.getenv("INGRESSPERDOMAIN") != null
-            && System.getenv("INGRESSPERDOMAIN").equalsIgnoreCase("false");
-  }
+    if (System.getenv("INGRESSPERDOMAIN") != null) {
+    	INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
+      }
+   }
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
