@@ -43,8 +43,8 @@ public class ITOperator extends BaseTest {
   private static String domainadminonlyFile = "domainadminonly.yaml";
   private static String domainrecyclepolicyFile = "domainrecyclepolicy.yaml";
   private static String domainsampledefaultsFile = "domainsampledefaults.yaml";
-  private static String domain13YamlFile = "DomainHomeInImageUsingWLST.yaml";
-  private static String domain14YamlFile = "DomainHomeInImageUsingWDT.yaml";
+  private static String domaininimagewlstFile = "domaininimagewlst.yaml";
+  private static String domaininimagewdtFile = "domaininimagewdt.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -504,27 +504,28 @@ public class ITOperator extends BaseTest {
   @Test
   public void testDomainInImageUsingWLST() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    logTestBegin("testDomainInImageUsingWLST");
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
 
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(operator1File);
     }
-    logger.info("Creating Domain domain13 & verifing the domain creation");
-    // create domain13
-    Domain domain13 = null;
+    logger.info("Creating Domain & verifing the domain creation");
+    // create domain
+    Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain13 = TestUtils.createDomain(domain13YamlFile);
-      domain13.verifyDomainCreated();
+      domain = TestUtils.createDomain(domaininimagewlstFile);
+      domain.verifyDomainCreated();
 
-      testBasicUseCases(domain13);
-      testClusterScaling(operator1, domain13);
+      testBasicUseCases(domain);
+      testClusterScaling(operator1, domain);
       testCompletedSuccessfully = true;
     } finally {
-      if (domain13 != null && (JENKINS || testCompletedSuccessfully)) domain13.destroy();
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
     }
-    logger.info("SUCCESS - testDomainInImageUsingWLST");
+    logger.info("SUCCESS - " + testMethodName);
   }
   /**
    * Create Operator and create domain using domain-in-image option. Verify the domain is started
@@ -535,27 +536,28 @@ public class ITOperator extends BaseTest {
   @Test
   public void testDomainInImageUsingWDT() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    logTestBegin("testDomainInImageUsingWDT");
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
 
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(operator1File);
     }
-    logger.info("Creating Domain domain14 & verifing the domain creation");
-    // create domain14
-    Domain domain14 = null;
+    logger.info("Creating Domain & verifing the domain creation");
+    // create domain
+    Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain14 = TestUtils.createDomain(domain14YamlFile);
-      domain14.verifyDomainCreated();
+      domain = TestUtils.createDomain(domaininimagewdtFile);
+      domain.verifyDomainCreated();
 
-      testBasicUseCases(domain14);
-      testClusterScaling(operator1, domain14);
+      testBasicUseCases(domain);
+      testClusterScaling(operator1, domain);
       testCompletedSuccessfully = true;
     } finally {
-      if (domain14 != null && (JENKINS || testCompletedSuccessfully)) domain14.destroy();
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
     }
-    logger.info("SUCCESS - testDomainInImageUsingWDT");
+    logger.info("SUCCESS - " + testMethodName);
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
