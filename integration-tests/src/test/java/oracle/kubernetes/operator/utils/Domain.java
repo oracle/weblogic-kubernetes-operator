@@ -333,27 +333,20 @@ public class Domain {
       throws Exception {
     String adminPod = domainUid + "-" + adminServerName;
 
-    String cmd =
-        " -- bash -c 'cat > " + appLocationInPod + "/" + webappName + ".war' < " + webappLocation;
+    TestUtils.copyFileViaCat(
+        webappLocation, appLocationInPod + "/" + webappName + ".war", adminPod, domainNS);
 
-    TestUtils.kubectlexec(adminPod, domainNS, cmd);
+    TestUtils.copyFileViaCat(
+        projectRoot + "/integration-tests/src/test/resources/deploywebapp.py",
+        appLocationInPod + "/deploywebapp.py",
+        adminPod,
+        domainNS);
 
-    TestUtils.kubectlexec(
+    TestUtils.copyFileViaCat(
+        projectRoot + "/integration-tests/src/test/resources/callpyscript.sh",
+        appLocationInPod + "/callpyscript.sh",
         adminPod,
-        domainNS,
-        " -- bash -c 'cat > "
-            + appLocationInPod
-            + "/deploywebapp.py' < "
-            + projectRoot
-            + "/integration-tests/src/test/resources/deploywebapp.py");
-    TestUtils.kubectlexec(
-        adminPod,
-        domainNS,
-        " -- bash -c 'cat > "
-            + appLocationInPod
-            + "/callpyscript.sh' < "
-            + projectRoot
-            + "/integration-tests/src/test/resources/callpyscript.sh");
+        domainNS);
 
     callShellScriptByExecToPod(username, password, webappName, appLocationInPod);
   }

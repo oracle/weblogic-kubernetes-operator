@@ -212,7 +212,7 @@ The tests accepts optional env var overrides:
 | QUICKTEST  | When set to "true", limits testing to a subset of the tests. |
 | WERCKER    | Set to true if invoking from Wercker, set to false or "" if running stand-alone or from Jenkins. Default is "". |
 | JENKINS    | Set to true if invoking from Jenkins, set to false or "" if running stand-alone or from Wercker. Default is "". |
-| NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
+| K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
 | BRANCH_NAME  | Git branch name.   Default is determined by calling 'git branch'. |
 | LEASE_ID   |   Set to a unique value to (A) periodically renew a lease on the k8s cluster that indicates that no other test run should attempt to use the cluster, and (B) delete this lease when the test completes. |
 
