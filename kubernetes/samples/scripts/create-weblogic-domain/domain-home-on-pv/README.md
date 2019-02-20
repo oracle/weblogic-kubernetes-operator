@@ -405,7 +405,7 @@ The most common cause is a poor choice of value for weblogicDomainStoragePath in
 ```
 create-pv-pvc.sh
 ```
-The you should delete the resources for your sample domain, correct the value in that file and rerun the commands to create the pv/pvc and the credential before you attampt to rerun
+Then you should [delete the resources for your sample domain](../../delete-domain/README.md), correct the value in that file and rerun the commands to create the pv/pvc and the credential before you attempt to rerun
 ```
 create-domain.sh
 ```
@@ -414,4 +414,4 @@ A correct values for weblogicDomainStoragePath will meet the following requireme
 * exists
 * is a directory
 3. Message: "ERROR: The create domain job will not overwrite an existing domain. The domain folder /shared/domains/domain1 already exists"  
-You will see this message if the directory domains/domain1 exists in the directory named as the value of weblogicDomainStoragePath in create-pv-pvc-inputs.yaml. For example, if the value of  weblogicDomainStoragePath is `/tmp/wls-op-4-k8s`, you would need to remove (or move) `/tmp/wls-op-4-k8s/domains/domain1`
+You will see this message if the directory domains/domain1 exists in the directory named as the value of weblogicDomainStoragePath in create-pv-pvc-inputs.yaml. For example, if the value of  weblogicDomainStoragePath is `/tmp/wls-op-4-k8s`, you would need to remove (or move) `/tmp/wls-op-4-k8s/domains/domain1`.
