@@ -804,7 +804,6 @@ public class Domain {
 
   private void createLoadBalancer() throws Exception {
     Map<String, Object> lbMap = new HashMap<String, Object>();
-    // lbMap.put("name", "traefik-hostrouting-" + domainUid);
     lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);
     lbMap.put("host", domainUid + ".org");
