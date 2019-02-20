@@ -98,8 +98,6 @@ public class LoadBalancer {
 
   private void upgradeTraefikNamespace() throws Exception {
 
-    String chartDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/charts";
-
     StringBuffer cmd = new StringBuffer("helm upgrade ");
     cmd.append("--reuse-values ")
         .append("--set ")
