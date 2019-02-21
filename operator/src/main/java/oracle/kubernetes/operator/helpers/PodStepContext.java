@@ -372,8 +372,6 @@ public abstract class PodStepContext extends StepContextBase {
     return isCurrentPodValid(getPodModel(), currentPod);
   }
 
-  // TODO mark: ^^^ walk down and see what it does & does not check
-
   // We want to detect changes that would require replacing an existing Pod
   // however, we've also found that Pod.equals(Pod) isn't right because k8s
   // returns fields, such as nodeName, even when export=true is specified.
@@ -755,10 +753,6 @@ public abstract class PodStepContext extends StepContextBase {
                     .securityContext(getServerSpec().getContainerSecurityContext()))
             .nodeSelector(getServerSpec().getNodeSelectors())
             .securityContext(getServerSpec().getPodSecurityContext())
-            // TODO mark add it in here ...
-            // need to think about what to do if there is already a pod in the wild
-            // need to check when/how initContainers are run normally by k8s
-            // look at equals() too - default vs missing values .. anything k8s adds at runtime
             .initContainers(getServerSpec().getInitContainers());
 
     podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());

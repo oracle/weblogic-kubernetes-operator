@@ -36,8 +36,6 @@ class KubernetesResource {
     kubernetesResource1.getAnnotations().forEach(this::addAnnotationIfMissing);
   }
 
-  // TODO mark: ^^^ will need something like this for the initContainers too
-
   private void addLabelIfMissing(String name, String value) {
     if (!labels.containsKey(name)) labels.put(name, value);
   }

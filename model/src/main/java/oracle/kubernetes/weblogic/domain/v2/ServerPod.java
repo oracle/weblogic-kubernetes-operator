@@ -7,7 +7,15 @@ package oracle.kubernetes.weblogic.domain.v2;
 import static java.util.Collections.emptyList;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1Capabilities;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -81,8 +89,6 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Pod-level security attributes.")
   private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
-
-  // TODO mark: can probably add the initContainers here using the same method as ^^^^
 
   /**
    * InitContainers holds a list of initialization containers that should be run before starting the
@@ -233,8 +239,12 @@ class ServerPod extends KubernetesResource {
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
-      from.getRequests().forEach(to.getRequests()::putIfAbsent);
-      from.getLimits().forEach(to.getLimits()::putIfAbsent);
+      if (from.getRequests() != null) {
+        from.getRequests().forEach(to.getRequests()::putIfAbsent);
+      }
+      if (from.getLimits() != null) {
+        from.getLimits().forEach(to.getLimits()::putIfAbsent);
+      }
     }
   }
 
