@@ -29,7 +29,7 @@ public interface ClusterConfigurator {
       Integer initialDelay, Integer timeout, Integer period);
 
   /**
-   * Add a node label to the Cluster's node selector
+   * Add a node label to the Cluster's node selector.
    *
    * @param labelKey the pod label key
    * @param labelValue the pod label value
@@ -41,7 +41,7 @@ public interface ClusterConfigurator {
    * Add a resource requirement at cluster level. The requests for memory are measured in bytes. You
    * can express memory as a plain integer or as a fixed-point integer using one of these suffixes:
    * E, P, T, G, M, K. You can also use the power-of-two equivalents: Ei, Pi, Ti, Gi, Mi, Ki. The
-   * requests for cpu are mesured in cpu units and can be expressed in millicores i.e. 100m is the
+   * requests for cpu are measured in cpu units and can be expressed in millicores i.e. 100m is the
    * same as 0.1
    *
    * @param resource the resource to be added as requirement cpu or memory
@@ -54,7 +54,7 @@ public interface ClusterConfigurator {
    * Add a resource limit at cluster level, the requests for memory are measured in bytes. You can
    * express memory as a plain integer or as a fixed-point integer using one of these suffixes: E,
    * P, T, G, M, K. You can also use the power-of-two equivalents: Ei, Pi, Ti, Gi, Mi, Ki. The
-   * requests for cpu are mesured in cpu units and can be expressed in millicores i.e. 100m is the
+   * requests for cpu are measured in cpu units and can be expressed in millicores i.e. 100m is the
    * same as 0.1
    *
    * @param resource the resource to be added as requirement cpu or memory
@@ -65,7 +65,7 @@ public interface ClusterConfigurator {
 
   /**
    * Add security constraints at container level, if the same constraint is also defined at pod
-   * level then container constraint take precedence
+   * level then container constraint take precedence.
    *
    * @param containerSecurityContext the security context object
    * @return this object
@@ -74,7 +74,7 @@ public interface ClusterConfigurator {
 
   /**
    * Add security constraints at container level, if the same constraint is also defined at pod
-   * level then container constraint take precedence
+   * level then container constraint take precedence.
    *
    * @param podSecurityContext pod-level security attributes to be added to this ClusterConfigurator
    * @return this object
