@@ -4,7 +4,7 @@
 
 package oracle.kubernetes.operator.http;
 
-/** Exception when a HTTP status code is received that indicates the request was not successful */
+/** Exception when a HTTP status code is received that indicates the request was not successful. */
 public class HTTPException extends Exception {
 
   final int statusCode;

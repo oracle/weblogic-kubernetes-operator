@@ -14,7 +14,18 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(FIELD)
 public @interface Range {
+
+  /**
+   * Minimum value.
+   *
+   * @return minimum value
+   */
   int minimum() default Integer.MIN_VALUE;
 
+  /**
+   * Maximum value.
+   *
+   * @return maximum value
+   */
   int maximum() default Integer.MAX_VALUE;
 }
