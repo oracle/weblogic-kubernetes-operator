@@ -49,12 +49,11 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
 
   private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /** Construct an AuthenticationFilter */
+  /** Construct an AuthenticationFilter. */
   public AuthenticationFilter() {
     // nothing to do
   }
 
-  /** {@inheritDoc} */
   @Override
   public void filter(ContainerRequestContext req) throws IOException {
     LOGGER.entering();

@@ -11,7 +11,7 @@ import oracle.kubernetes.operator.LabelConstants;
 /** Helper methods for managing versions. */
 public class VersionHelper {
   /**
-   * Determines whether a resource matches a version
+   * Determines whether a resource matches a version.
    *
    * @param meta Metadata
    * @param resourceVersion resource version

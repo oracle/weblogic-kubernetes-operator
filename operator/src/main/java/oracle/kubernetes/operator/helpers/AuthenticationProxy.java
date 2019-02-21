@@ -19,7 +19,7 @@ public class AuthenticationProxy {
   private static final AuthorizationProxy authorizationProxy = new AuthorizationProxy();
 
   /**
-   * Check if the specified access token can be authenticated
+   * Check if the specified access token can be authenticated.
    *
    * @param principal The user, group or service account.
    * @param token The access token that identifies the user.

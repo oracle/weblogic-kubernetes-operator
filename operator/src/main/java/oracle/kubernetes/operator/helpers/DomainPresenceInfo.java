@@ -39,7 +39,7 @@ public class DomainPresenceInfo {
   private DateTime lastCompletionTime;
 
   /**
-   * Create presence for a domain
+   * Create presence for a domain.
    *
    * @param domain Domain
    */
@@ -51,7 +51,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Create presence for a domain
+   * Create presence for a domain.
    *
    * @param namespace Namespace
    * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
@@ -92,7 +92,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Last completion time
+   * Last completion time.
    *
    * @return Last completion time
    */
@@ -100,14 +100,14 @@ public class DomainPresenceInfo {
     return lastCompletionTime;
   }
 
-  /** Sets the last completion time to now */
+  /** Sets the last completion time to now. */
   public void complete() {
     this.lastCompletionTime = new DateTime();
     resetFailureCount();
   }
 
   /**
-   * Gets the domain. Except the instance to change frequently based on status updates
+   * Gets the domain. Except the instance to change frequently based on status updates.
    *
    * @return Domain
    */
@@ -125,7 +125,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Gets the Domain UID
+   * Gets the Domain UID.
    *
    * @return Domain UID
    */
@@ -134,7 +134,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Gets the namespace
+   * Gets the namespace.
    *
    * @return Namespace
    */
@@ -143,7 +143,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Map from server name to server objects (Pods and Services)
+   * Map from server name to server objects (Pods and Services).
    *
    * @return Server object map
    */
@@ -152,7 +152,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Map from cluster name to Service objects
+   * Map from cluster name to Service objects.
    *
    * @return Cluster object map
    */
@@ -161,7 +161,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Server startup info
+   * Server startup info.
    *
    * @return Server startup info
    */
@@ -170,7 +170,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Sets server startup info
+   * Sets server startup info.
    *
    * @param serverStartupInfo Server startup info
    */
@@ -195,14 +195,14 @@ public class DomainPresenceInfo {
     return sb.toString();
   }
 
-  /** Details about a specific managed server that will be started up */
+  /** Details about a specific managed server that will be started up. */
   public static class ServerStartupInfo {
     public final WlsServerConfig serverConfig;
     private String clusterName;
     private ServerSpec serverSpec;
 
     /**
-     * Create server startup info
+     * Create server startup info.
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
