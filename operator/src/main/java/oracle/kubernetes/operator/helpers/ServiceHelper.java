@@ -57,7 +57,7 @@ public class ServiceHelper {
   private ServiceHelper() {}
 
   /**
-   * Create asynchronous step for internal cluster service
+   * Create asynchronous step for internal cluster service.
    *
    * @param next Next processing step
    * @return Step for internal service creation
@@ -477,7 +477,7 @@ public class ServiceHelper {
   }
 
   /**
-   * Factory for {@link Step} that deletes per-managed server and channel services
+   * Factory for {@link Step} that deletes per-managed server and channel services.
    *
    * @param sko Server Kubernetes Objects
    * @param next Next processing step
@@ -582,7 +582,7 @@ public class ServiceHelper {
   }
 
   /**
-   * Create asynchronous step for internal cluster service
+   * Create asynchronous step for internal cluster service.
    *
    * @param next Next processing step
    * @return Step for internal service creation
@@ -783,7 +783,7 @@ public class ServiceHelper {
   }
 
   /**
-   * Create asynchronous step for external, NodePort service
+   * Create asynchronous step for external, NodePort service.
    *
    * @param next Next processing step
    * @return Step for creating external service

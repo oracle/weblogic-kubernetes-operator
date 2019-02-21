@@ -102,10 +102,10 @@ public class RestServer {
    * <p>If a port has not been configured, then it logs that fact, does not start that port, and
    * continues (v.s. throwing an exception and not starting any ports).
    *
+   * @param container Container
    * @throws Exception if the REST api could not be started for reasons other than a port was not
    *     configured. When an exception is thrown, then none of the ports will be leftrunning,
    *     however it is still OK to call stop (which will be a no-op).
-   * @param container Container
    */
   public void start(Container container) throws Exception {
     LOGGER.entering();

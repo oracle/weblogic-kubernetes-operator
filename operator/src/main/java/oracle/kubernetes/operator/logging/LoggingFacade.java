@@ -513,7 +513,7 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a trace message with the ID FMW-TRACE at the FINER level
+   * Logs a trace message with the ID FMW-TRACE at the FINER level.
    *
    * @param msg the message to log
    */
@@ -522,7 +522,7 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a trace message with the ID FMW-TRACE at the FINER level
+   * Logs a trace message with the ID FMW-TRACE at the FINER level.
    *
    * @param msg the message to log
    * @param args parameters to the trace message
@@ -550,10 +550,9 @@ public class LoggingFacade {
       if (Object[].class.isAssignableFrom(value.getClass())) {
         Object[] array = Object[].class.cast(value);
         result = Arrays.toString(array);
-      }
-      // Any other arrays are primitive arrays which must be cast to
-      // the correct primitive type.
-      else if (value.getClass().isArray()) {
+      } else if (value.getClass().isArray()) {
+        // Any other arrays are primitive arrays which must be cast to
+        // the correct primitive type.
         Class<?> type = value.getClass().getComponentType();
         if (type == boolean.class) {
           result = Arrays.toString((boolean[]) value);

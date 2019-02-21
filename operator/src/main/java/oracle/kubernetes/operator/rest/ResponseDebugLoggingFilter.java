@@ -22,12 +22,11 @@ public class ResponseDebugLoggingFilter extends BaseDebugLoggingFilter
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /** Construct a ResponseDebugLoggingFilter */
+  /** Construct a ResponseDebugLoggingFilter. */
   public ResponseDebugLoggingFilter() {
     // nothing to do
   }
 
-  /** {@inheritDoc} */
   @Override
   public void filter(ContainerRequestContext req, ContainerResponseContext res) throws IOException {
     if (!LOGGER.isFineEnabled()) {

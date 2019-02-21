@@ -37,8 +37,8 @@ public class AsyncRequestStep<T> extends Step {
   private static final int LOW = 10;
   private static final int SCALE = 100;
   private static final int MAX = 10000;
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final ClientPool helper;
   private final RequestParams requestParams;
   private final CallFactory<T> factory;
@@ -48,6 +48,19 @@ public class AsyncRequestStep<T> extends Step {
   private final String labelSelector;
   private final String resourceVersion;
 
+  /**
+   * Construct async step.
+   *
+   * @param next Next
+   * @param requestParams Request parameters
+   * @param factory Factory
+   * @param helper Client pool
+   * @param timeoutSeconds Timeout
+   * @param maxRetryCount Max retry count
+   * @param fieldSelector Field selector
+   * @param labelSelector Label selector
+   * @param resourceVersion Resource version
+   */
   public AsyncRequestStep(
       ResponseStep<T> next,
       RequestParams requestParams,
@@ -91,12 +104,12 @@ public class AsyncRequestStep<T> extends Step {
 
       retry = oldResponse.getSPI(RetryStrategy.class);
     }
-    String _continue = (cont != null) ? cont : "";
+    String c = (cont != null) ? cont : "";
     if (retry == null) {
       retry = new DefaultRetryStrategy();
       retry.setRetryStep(this);
     }
-    RetryStrategy _retry = retry;
+    RetryStrategy r = retry;
 
     LOGGER.fine(
         MessageKeys.ASYNC_REQUEST,
@@ -140,7 +153,7 @@ public class AsyncRequestStep<T> extends Step {
                             RESPONSE_COMPONENT_NAME,
                             Component.createFor(
                                 RetryStrategy.class,
-                                _retry,
+                                r,
                                 new CallResponse<Void>(null, e, statusCode, responseHeaders)));
                     fiber.resume(packet);
                   }
@@ -165,7 +178,7 @@ public class AsyncRequestStep<T> extends Step {
               };
 
           try {
-            CancellableCall c = factory.generate(requestParams, client, _continue, callback);
+            CancellableCall cc = factory.generate(requestParams, client, c, callback);
 
             // timeout handling
             fiber
@@ -175,7 +188,7 @@ public class AsyncRequestStep<T> extends Step {
                     () -> {
                       if (didResume.compareAndSet(false, true)) {
                         try {
-                          c.cancel();
+                          cc.cancel();
                         } finally {
                           LOGGER.info(
                               MessageKeys.ASYNC_TIMEOUT,
@@ -190,7 +203,7 @@ public class AsyncRequestStep<T> extends Step {
                               .getComponents()
                               .put(
                                   RESPONSE_COMPONENT_NAME,
-                                  Component.createFor(RetryStrategy.class, _retry));
+                                  Component.createFor(RetryStrategy.class, r));
                           fiber.resume(packet);
                         }
                       }
@@ -213,7 +226,7 @@ public class AsyncRequestStep<T> extends Step {
             if (didResume.compareAndSet(false, true)) {
               packet
                   .getComponents()
-                  .put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, _retry));
+                  .put(RESPONSE_COMPONENT_NAME, Component.createFor(RetryStrategy.class, r));
               fiber.resume(packet);
             }
           }

@@ -20,6 +20,13 @@ public class AdminServer extends Server {
           + " the Kubernetes cluster via a node port service.")
   private AdminService adminService;
 
+  /**
+   * Add channel.
+   *
+   * @param channelName Channel name
+   * @param nodePort Node port
+   * @return this
+   */
   public AdminServer withChannel(String channelName, int nodePort) {
     if (adminService == null) {
       adminService = new AdminService();
@@ -28,6 +35,11 @@ public class AdminServer extends Server {
     return this;
   }
 
+  /**
+   * Gets channel names.
+   *
+   * @return Channel names
+   */
   public List<String> getChannelNames() {
     if (adminService == null) {
       return Collections.emptyList();
@@ -39,6 +51,11 @@ public class AdminServer extends Server {
     return channelNames;
   }
 
+  /**
+   * Gets channels.
+   *
+   * @return Channels
+   */
   public List<Channel> getChannels() {
     if (adminService == null) {
       return Collections.emptyList();
@@ -46,6 +63,12 @@ public class AdminServer extends Server {
     return adminService.getChannels();
   }
 
+  /**
+   * Gets channel.
+   *
+   * @param channelName Channel name
+   * @return Channel
+   */
   public Channel getChannel(String channelName) {
     if (adminService != null) {
       for (Channel c : adminService.getChannels()) {
@@ -67,9 +90,13 @@ public class AdminServer extends Server {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     AdminServer that = (AdminServer) o;
 
