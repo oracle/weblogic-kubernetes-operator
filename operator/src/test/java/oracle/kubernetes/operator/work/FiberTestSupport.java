@@ -1,3 +1,7 @@
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.work;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -42,7 +46,7 @@ public class FiberTestSupport {
   private Packet packet = new Packet();
 
   /** Creates a single-threaded FiberGate instance. */
-  public FiberGate createFiberGateStub() {
+  FiberGate createFiberGateStub() {
     return new FiberGate(engine);
   }
 
@@ -80,6 +84,10 @@ public class FiberTestSupport {
   /** Returns an unmodifiable map of the components in the test packet. */
   public Map<String, Component> getPacketComponents() {
     return Collections.unmodifiableMap(packet.getComponents());
+  }
+
+  public Packet getPacket() {
+    return packet;
   }
 
   public FiberTestSupport addToPacket(String key, Object value) {

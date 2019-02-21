@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
@@ -92,7 +91,7 @@ public abstract class PodStepContext extends StepContextBase {
     substitutionVariables.put("ADMIN_PORT", getAsPort().toString());
   }
 
-  private V1Pod getPodModel() {
+  V1Pod getPodModel() {
     return podModel;
   }
 
@@ -166,10 +165,6 @@ public abstract class PodStepContext extends StepContextBase {
 
   private String getLogHome() {
     return getDomain().getLogHome();
-  }
-
-  protected boolean isDomainHomeInImage() {
-    return getDomain().isDomainHomeInImage();
   }
 
   private String getEffectiveLogHome() {
@@ -280,7 +275,15 @@ public abstract class PodStepContext extends StepContextBase {
    * @return a step to be scheduled.
    */
   Step createPod(Step next) {
-    return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), createResponse(next));
+    return createPodAsync(createResponse(next));
+  }
+
+  private Step createPodAsync(ResponseStep<V1Pod> response) {
+    return new CallBuilder().createPodAsync(getNamespace(), getPodModelWithChecksum(), response);
+  }
+
+  private V1Pod getPodModelWithChecksum() {
+    return AnnotationHelper.withSha256Hash(getPodModel());
   }
 
   /**
@@ -298,7 +301,7 @@ public abstract class PodStepContext extends StepContextBase {
    * @return a step to be scheduled.
    */
   private Step replacePod(Step next) {
-    return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), replaceResponse(next));
+    return createPodAsync(replaceResponse(next));
   }
 
   private Step patchCurrentPod(V1Pod currentPod, Step next) {
@@ -364,45 +367,13 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
-    List<String> ignoring = getVolumesToIgnore(currentPod);
-
-    PodCompatibility compatibility = new PodCompatibility(getPodModel(), currentPod, ignoring);
-    return compatibility.isCompatible();
+    return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
   }
 
   private String getReasonToRecycle(V1Pod currentPod) {
-    List<String> ignoring = getVolumesToIgnore(currentPod);
 
-    PodCompatibility compatibility = new PodCompatibility(getPodModel(), currentPod, ignoring);
+    PodCompatibility compatibility = new PodCompatibility(getPodModel(), currentPod);
     return compatibility.getIncompatibility();
-  }
-
-  private static List<String> getVolumesToIgnore(V1Pod current) {
-    List<String> k8sVolumeNames = new ArrayList<>();
-    for (V1Container container : getContainers(current))
-      for (V1VolumeMount mount : getVolumeMounts(container))
-        if (PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH.equals(mount.getMountPath()))
-          k8sVolumeNames.add(mount.getName());
-
-    return k8sVolumeNames;
-  }
-
-  private static List<V1Container> getContainers(V1Pod current) {
-    return Optional.ofNullable(current.getSpec().getContainers()).orElse(Collections.emptyList());
-  }
-
-  private static List<V1VolumeMount> getVolumeMounts(V1Container container) {
-    return Optional.ofNullable(container.getVolumeMounts()).orElse(Collections.emptyList());
-  }
-
-  private static boolean isRestartVersionValid(V1ObjectMeta build, V1ObjectMeta current) {
-    return isLabelSame(build, current, LabelConstants.DOMAINRESTARTVERSION_LABEL)
-        && isLabelSame(build, current, LabelConstants.CLUSTERRESTARTVERSION_LABEL)
-        && isLabelSame(build, current, LabelConstants.SERVERRESTARTVERSION_LABEL);
-  }
-
-  private static boolean isLabelSame(V1ObjectMeta build, V1ObjectMeta current, String labelName) {
-    return Objects.equals(build.getLabels().get(labelName), current.getLabels().get(labelName));
   }
 
   private class VerifyPodStep extends Step {
@@ -602,16 +573,36 @@ public abstract class PodStepContext extends StepContextBase {
   // ---------------------- model methods ------------------------------
 
   private V1Pod createPodModel() {
+    return withPatchableElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
+  }
+
+  // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
+  private V1Pod withPatchableElements(V1Pod pod) {
+    V1ObjectMeta metadata = pod.getMetadata();
+    getPodLabels()
+        .entrySet()
+        .stream()
+        .filter(PodStepContext::isCustomerItem)
+        .forEach(e -> metadata.putLabelsItem(e.getKey(), e.getValue()));
+    getPodAnnotations()
+        .entrySet()
+        .stream()
+        .filter(PodStepContext::isCustomerItem)
+        .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
+    return pod;
+  }
+
+  private static boolean isCustomerItem(Map.Entry<String, String> entry) {
+    return !entry.getKey().startsWith("weblogic.");
+  }
+
+  // Creates a pod model containing elements which are not patchable.
+  private V1Pod createPodRecipe() {
     return new V1Pod().metadata(createMetadata()).spec(createSpec(TuningParameters.getInstance()));
   }
 
   protected V1ObjectMeta createMetadata() {
     V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
-    // Add custom labels
-    getPodLabels().forEach(metadata::putLabelsItem);
-
-    // Add internal labels. This will overwrite any custom labels that conflict with internal
-    // labels.
     metadata
         .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
         .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
@@ -624,9 +615,6 @@ public abstract class PodStepContext extends StepContextBase {
             LabelConstants.CLUSTERRESTARTVERSION_LABEL, getServerSpec().getClusterRestartVersion())
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
-
-    // Add custom annotations
-    getPodAnnotations().forEach(metadata::putAnnotationsItem);
 
     // Add prometheus annotations. This will overwrite any custom annotations with same name.
     AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort());

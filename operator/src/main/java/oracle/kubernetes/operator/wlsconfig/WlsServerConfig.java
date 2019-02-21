@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -91,6 +91,11 @@ public class WlsServerConfig {
     return networkAccessPoints;
   }
 
+  public void addNetworkAccessPoint(NetworkAccessPoint networkAccessPoint) {
+    if (networkAccessPoints == null) networkAccessPoints = new ArrayList<>();
+    networkAccessPoints.add(networkAccessPoint);
+  }
+
   public String getClusterName() {
     return this.clusterName;
   }
@@ -105,6 +110,10 @@ public class WlsServerConfig {
 
   public void setAdminPort(Integer adminPort) {
     this.adminPort = adminPort;
+  }
+
+  public void setListenPort(Integer listenPort) {
+    this.listenPort = listenPort;
   }
 
   public boolean isAdminPortEnabled() {
