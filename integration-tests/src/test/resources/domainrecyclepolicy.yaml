@@ -17,3 +17,5 @@ exposeAdminNodePort: true
 adminNodePort: 30706
 namespace: default
 weblogicDomainStorageReclaimPolicy: Recycle
+loadBalancer: TRAEFIK
+ingressPerDomain: true
