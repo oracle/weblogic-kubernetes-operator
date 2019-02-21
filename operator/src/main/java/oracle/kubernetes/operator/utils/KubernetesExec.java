@@ -29,7 +29,7 @@ public abstract class KubernetesExec {
   }
 
   /**
-   * Executes the command
+   * Executes the command.
    *
    * @param command the shell script command to run
    * @return the process which mediates the execution

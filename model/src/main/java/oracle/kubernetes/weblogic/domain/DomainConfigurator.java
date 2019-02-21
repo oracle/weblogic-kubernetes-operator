@@ -27,8 +27,12 @@ public abstract class DomainConfigurator {
 
   protected DomainConfigurator(Domain domain) {
     this.domain = domain;
-    if (domain.getSpec() == null) domain.setSpec(new DomainSpec());
-    if (domain.getMetadata() == null) domain.setMetadata(new V1ObjectMeta());
+    if (domain.getSpec() == null) {
+      domain.setSpec(new DomainSpec());
+    }
+    if (domain.getMetadata() == null) {
+      domain.setMetadata(new V1ObjectMeta());
+    }
   }
 
   public abstract DomainConfigurator createFor(Domain domain);
@@ -45,7 +49,7 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Specifies whether the domain home is stored in the image
+   * Specifies whether the domain home is stored in the image.
    *
    * @param domainHomeInImage boolean indicating if the domain home is stored in the image
    * @return this object
@@ -55,7 +59,11 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  /** @return An AdminServerConfigurator object for configuring an admin server */
+  /**
+   * Configure admin server.
+   *
+   * @return An AdminServerConfigurator object for configuring an admin server
+   */
   public abstract AdminServerConfigurator configureAdminServer();
 
   public void withDefaultReplicaCount(int replicas) {
@@ -85,7 +93,7 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets the default image pull secret for the domain
+   * Sets the default image pull secret for the domain.
    *
    * @param secretReference the object referring to the secret
    * @return this object
@@ -96,7 +104,7 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets the image pull secrets for the domain
+   * Sets the image pull secrets for the domain.
    *
    * @param secretReferences a list of objects referring to secrets
    * @return this object
@@ -108,7 +116,7 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets the log home value
+   * Sets the log home value.
    *
    * @param logHome the log home value
    * @return this object
@@ -119,7 +127,7 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets the log home enabled flag
+   * Sets the log home enabled flag.
    *
    * @param logHomeEnabled true if log home is enabled, false otherwise
    * @return this object
@@ -130,7 +138,7 @@ public abstract class DomainConfigurator {
   }
 
   /**
-   * Sets the WebLogic configuration overrides configmap name for the domain
+   * Sets the WebLogic configuration overrides configmap name for the domain.
    *
    * @param configMapName Name of the Kubernetes configmap that contains the config overrides
    * @return this object
@@ -138,7 +146,7 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withConfigOverrides(String configMapName);
 
   /**
-   * Sets the WebLogic configuration overrides secret names for the domain
+   * Sets the WebLogic configuration overrides secret names for the domain.
    *
    * @param secretNames a list of secret names
    * @return this object
@@ -176,7 +184,7 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
 
   /**
-   * Add an environment variable to the domain
+   * Add an environment variable to the domain.
    *
    * @param name variable name
    * @param value value
@@ -215,7 +223,7 @@ public abstract class DomainConfigurator {
   public abstract void setShuttingDown(boolean start);
 
   /**
-   * Add a node label to the Domain's node selector
+   * Add a node label to the Domain's node selector.
    *
    * @param labelKey the pod label key
    * @param labelValue the pod label value
@@ -227,7 +235,7 @@ public abstract class DomainConfigurator {
    * Add a resource requirement at domain level. The requests for memory are measured in bytes. You
    * can express memory as a plain integer or as a fixed-point integer using one of these suffixes:
    * E, P, T, G, M, K. You can also use the power-of-two equivalents: Ei, Pi, Ti, Gi, Mi, Ki. The
-   * requests for cpu are mesured in cpu units and can be expressed in millicores i.e. 100m is the
+   * requests for cpu are measured in cpu units and can be expressed in millicores i.e. 100m is the
    * same as 0.1
    *
    * @param resource the resource to be added as requirement cpu or memory
@@ -240,7 +248,7 @@ public abstract class DomainConfigurator {
    * Add a resource limit at domain level, the requests for memory are measured in bytes. You can
    * express memory as a plain integer or as a fixed-point integer using one of these suffixes: E,
    * P, T, G, M, K. You can also use the power-of-two equivalents: Ei, Pi, Ti, Gi, Mi, Ki. The
-   * requests for cpu are mesured in cpu units and can be expressed in millicores i.e. 100m is the
+   * requests for cpu are measured in cpu units and can be expressed in millicores i.e. 100m is the
    * same as 0.1
    *
    * @param resource the resource to be added as requirement cpu or memory
@@ -251,7 +259,7 @@ public abstract class DomainConfigurator {
 
   /**
    * Add security constraints at container level, if the same constraint is also defined at pod
-   * level then container constraint take precedence
+   * level then container constraint take precedence.
    *
    * @param containerSecurityContext the security context object
    * @return this object
@@ -261,7 +269,7 @@ public abstract class DomainConfigurator {
 
   /**
    * Add security constraints at container level, if the same constraint is also defined at pod
-   * level then container constraint take precedence
+   * level then container constraint take precedence.
    *
    * @param podSecurityContext pod-level security attributes to be added to this DomainConfigurator
    * @return this object

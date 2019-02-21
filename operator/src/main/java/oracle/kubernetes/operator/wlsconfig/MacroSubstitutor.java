@@ -36,7 +36,7 @@ public class MacroSubstitutor {
   private final String machineName;
 
   /**
-   * Creates a MacroSubstitutor with the given macro values that will be used in macro substitution
+   * Creates a MacroSubstitutor with the given macro values that will be used in macro substitution.
    *
    * @param id Value for replacing values in ${id} macro
    * @param serverName Value for replacing values in ${serverName} macro
@@ -54,7 +54,7 @@ public class MacroSubstitutor {
   }
 
   /**
-   * Perform macro substitution. Extracts the macro name and resolves its macro value using values
+   * Perform macro substitution. Extracts the macro name and resolves its macro value using values.
    * specified in this MacroSubstitutor.
    *
    * @param inputValue String containing macros
