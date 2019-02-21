@@ -14,7 +14,6 @@ public class BaseModel {
     return "";
   }
 
-  /** {@inheritDoc} */
   @Override
   public String toString() {
     return getClass().getSimpleName() + "(" + propertiesToString() + ")";

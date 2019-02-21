@@ -178,7 +178,9 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private String getEffectiveLogHome() {
-    if (!getDomain().getLogHomeEnabled()) return null;
+    if (!getDomain().getLogHomeEnabled()) {
+      return null;
+    }
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
       // logHome not specified, use default value
@@ -400,7 +402,9 @@ public abstract class PodStepContext extends StepContextBase {
   private static boolean areCompatible(
       List<V1Container> build, List<V1Container> current, List<String> ignoring) {
     if (build != null) {
-      if (current == null) return false;
+      if (current == null) {
+        return false;
+      }
 
       for (V1Container bc : build) {
         V1Container fcc = getContainerWithName(current, bc.getName());
@@ -414,7 +418,7 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   /**
-   * Compares two pod spec containers for equality
+   * Compares two pod spec containers for equality.
    *
    * @param build the desired container model
    * @param current the current container, obtained from Kubernetes
@@ -457,8 +461,11 @@ public abstract class PodStepContext extends StepContextBase {
   private static List<V1Volume> volumesWithout(
       List<V1Volume> volumeMounts, List<String> volumesToIgnore) {
     List<V1Volume> result = new ArrayList<>(volumeMounts);
-    for (Iterator<V1Volume> each = result.iterator(); each.hasNext(); )
-      if (volumesToIgnore.contains(each.next().getName())) each.remove();
+    for (Iterator<V1Volume> each = result.iterator(); each.hasNext(); ) {
+      if (volumesToIgnore.contains(each.next().getName())) {
+        each.remove();
+      }
+    }
 
     return result;
   }
@@ -466,18 +473,24 @@ public abstract class PodStepContext extends StepContextBase {
   private static List<V1VolumeMount> mountsWithout(
       List<V1VolumeMount> volumeMounts, List<String> volumesToIgnore) {
     List<V1VolumeMount> result = new ArrayList<>(volumeMounts);
-    for (Iterator<V1VolumeMount> each = result.iterator(); each.hasNext(); )
-      if (volumesToIgnore.contains(each.next().getName())) each.remove();
+    for (Iterator<V1VolumeMount> each = result.iterator(); each.hasNext(); ) {
+      if (volumesToIgnore.contains(each.next().getName())) {
+        each.remove();
+      }
+    }
 
     return result;
   }
 
   private static List<String> getVolumesToIgnore(V1Pod current) {
     List<String> k8sVolumeNames = new ArrayList<>();
-    for (V1Container container : getContainers(current))
-      for (V1VolumeMount mount : getVolumeMounts(container))
-        if (PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH.equals(mount.getMountPath()))
+    for (V1Container container : getContainers(current)) {
+      for (V1VolumeMount mount : getVolumeMounts(container)) {
+        if (PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH.equals(mount.getMountPath())) {
           k8sVolumeNames.add(mount.getName());
+        }
+      }
+    }
 
     return k8sVolumeNames;
   }
@@ -510,7 +523,9 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private static <T> boolean equalSets(List<T> first, List<T> second) {
-    if (first == second) return true;
+    if (first == second) {
+      return true;
+    }
     return asSet(first).equals(asSet(second));
   }
 

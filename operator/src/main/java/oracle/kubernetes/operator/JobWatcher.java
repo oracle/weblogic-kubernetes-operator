@@ -30,7 +30,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-/** Watches for Jobs to become Ready or leave Ready state */
+/** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -41,7 +41,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       new ConcurrentHashMap<>();
 
   /**
-   * Factory for JobWatcher
+   * Factory for JobWatcher.
    *
    * @param factory thread factory
    * @param ns Namespace
@@ -133,7 +133,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   /**
-   * Waits until the Job is Ready
+   * Waits until the Job is Ready.
    *
    * @param job Job to watch
    * @param next Next processing step once Job is ready

@@ -13,7 +13,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class AdminService {
-  /** */
   @SerializedName("channels")
   @Description(
       "Specifies which of the admin server's WebLogic channels should be exposed outside "
@@ -22,6 +21,12 @@ public class AdminService {
           + "not be created.")
   private List<Channel> channels = new ArrayList<>();
 
+  /**
+   * Add channel.
+   *
+   * @param port Port
+   * @return this
+   */
   public AdminService withChannel(Channel port) {
     channels.add(port);
     return this;
@@ -37,7 +42,7 @@ public class AdminService {
 
   @Override
   public String toString() {
-    return new ToStringBuilder(this).append("channles", channels).toString();
+    return new ToStringBuilder(this).append("channels", channels).toString();
   }
 
   @Override

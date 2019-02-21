@@ -1,6 +1,7 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1EnvVar;
@@ -17,7 +18,7 @@ public abstract class StepContextBase implements StepContextConstants {
 
   /**
    * Abstract method to be implemented by subclasses to return a list of configured and additional
-   * environment variables to be set up in the pod
+   * environment variables to be set up in the pod.
    *
    * @param tuningParameters TuningParameters that can be used when obtaining
    * @return A list of configured and additional environment variables

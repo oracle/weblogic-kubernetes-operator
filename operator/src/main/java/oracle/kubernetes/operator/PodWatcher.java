@@ -31,7 +31,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-/** Watches for Pods to become Ready or leave Ready state */
+/** Watches for Pods to become Ready or leave Ready state. */
 public class PodWatcher extends Watcher<V1Pod>
     implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -44,7 +44,7 @@ public class PodWatcher extends Watcher<V1Pod>
       new ConcurrentHashMap<>();
 
   /**
-   * Factory for PodWatcher
+   * Factory for PodWatcher.
    *
    * @param factory thread factory
    * @param ns Namespace
@@ -118,7 +118,9 @@ public class PodWatcher extends Watcher<V1Pod>
 
   static boolean isReady(V1Pod pod) {
     boolean ready = getReadyStatus(pod);
-    if (ready) LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+    if (ready) {
+      LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+    }
     return ready;
   }
 
@@ -171,7 +173,7 @@ public class PodWatcher extends Watcher<V1Pod>
   }
 
   /**
-   * Waits until the Pod is Ready
+   * Waits until the Pod is Ready.
    *
    * @param pod Pod to watch
    * @param next Next processing step once Pod is ready

@@ -152,7 +152,6 @@ public class RestBackendImpl implements RestBackend {
     return userInfo;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getDomainUIDs() {
     LOGGER.entering();
@@ -182,7 +181,6 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isDomainUID(String domainUID) {
     LOGGER.entering(domainUID);
@@ -192,7 +190,6 @@ public class RestBackendImpl implements RestBackend {
     return result;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getClusters(String domainUID) {
     LOGGER.entering(domainUID);
@@ -209,7 +206,6 @@ public class RestBackendImpl implements RestBackend {
     return result;
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isCluster(String domainUID, String cluster) {
     LOGGER.entering(domainUID, cluster);
@@ -219,7 +215,6 @@ public class RestBackendImpl implements RestBackend {
     return result;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void scaleCluster(String domainUID, String cluster, int managedServerCount) {
     LOGGER.entering(domainUID, cluster, managedServerCount);
@@ -287,13 +282,13 @@ public class RestBackendImpl implements RestBackend {
     WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domain.getDomainUID(), cluster);
 
     // Verify the current configured cluster size
-    int MaxClusterSize = wlsClusterConfig.getMaxClusterSize();
-    if (requestedSize > MaxClusterSize) {
+    int maxClusterSize = wlsClusterConfig.getMaxClusterSize();
+    if (requestedSize > maxClusterSize) {
       throw createWebApplicationException(
           Status.BAD_REQUEST,
           MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED,
           requestedSize,
-          MaxClusterSize,
+          maxClusterSize,
           cluster,
           cluster);
     }
@@ -314,7 +309,9 @@ public class RestBackendImpl implements RestBackend {
   static final TopologyRetriever INSTANCE =
       (String ns, String domainUID) -> {
         Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUID);
-        if (s != null) return s.getWlsDomainConfig();
+        if (s != null) {
+          return s.getWlsDomainConfig();
+        }
         return null;
       };
 
@@ -328,7 +325,9 @@ public class RestBackendImpl implements RestBackend {
   WlsDomainConfig getWlsDomainConfig(String domainUID) {
     for (String ns : targetNamespaces) {
       WlsDomainConfig config = INSTANCE.getWlsDomainConfig(ns, domainUID);
-      if (config != null) return config;
+      if (config != null) {
+        return config;
+      }
     }
     return new WlsDomainConfig(null);
   }
