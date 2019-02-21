@@ -48,7 +48,7 @@ public class ConfigMapHelper {
   private ConfigMapHelper() {}
 
   /**
-   * Factory for {@link Step} that creates config map containing scripts
+   * Factory for {@link Step} that creates config map containing scripts.
    *
    * @param operatorNamespace the operator's namespace
    * @param domainNamespace the domain's namespace
@@ -241,7 +241,7 @@ public class ConfigMapHelper {
   }
 
   /**
-   * Factory for {@link Step} that creates config map containing sit config
+   * Factory for {@link Step} that creates config map containing sit config.
    *
    * @param next Next step
    * @return Step for creating config map containing sit config
@@ -433,7 +433,7 @@ public class ConfigMapHelper {
   }
 
   /**
-   * Factory for {@link Step} that deletes introspector config map
+   * Factory for {@link Step} that deletes introspector config map.
    *
    * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
    * @param namespace Namespace

@@ -5,7 +5,7 @@
 package oracle.kubernetes.operator.http;
 
 /**
- * Holder of response received from REST requests invoked using methods in {@link HttpClient} class
+ * Holder of response received from REST requests invoked using methods in {@link HttpClient} class.
  */
 public class Result {
 

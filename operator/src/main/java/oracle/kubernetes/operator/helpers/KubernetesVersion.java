@@ -7,7 +7,7 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.models.VersionInfo;
 import java.util.Objects;
 
-/** Major and minor version of Kubernetes API Server */
+/** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion {
   static KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   private static final String[] MINIMUM_K8S_VERSIONS = {"1.10.11", "1.11.5", "1.12.3"};
@@ -77,6 +77,8 @@ public class KubernetesVersion {
           return false;
         case VERSION_HIGHER:
           numHigher++;
+          break;
+        default:
       }
     }
 
@@ -86,12 +88,20 @@ public class KubernetesVersion {
   private Compatibility getCompatibilityWith(String minimumVersion) {
     String[] parts = minimumVersion.split("\\.");
     int allowedMajor = asInteger(parts[0]);
-    if (major < allowedMajor) return Compatibility.VERSION_LOWER;
-    if (major > allowedMajor) return Compatibility.VERSION_HIGHER;
+    if (major < allowedMajor) {
+      return Compatibility.VERSION_LOWER;
+    }
+    if (major > allowedMajor) {
+      return Compatibility.VERSION_HIGHER;
+    }
 
     int allowedMinor = asInteger(parts[1]);
-    if (minor < allowedMinor) return Compatibility.VERSION_LOWER;
-    if (minor > allowedMinor) return Compatibility.VERSION_HIGHER;
+    if (minor < allowedMinor) {
+      return Compatibility.VERSION_LOWER;
+    }
+    if (minor > allowedMinor) {
+      return Compatibility.VERSION_HIGHER;
+    }
 
     int allowedRevision = asInteger(parts[2]);
     return (revision >= allowedRevision)

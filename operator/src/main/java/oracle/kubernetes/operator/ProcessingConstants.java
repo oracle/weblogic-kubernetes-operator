@@ -4,7 +4,7 @@
 
 package oracle.kubernetes.operator;
 
-/** Constants used in asynchronous processing */
+/** Constants used in asynchronous processing. */
 public interface ProcessingConstants {
 
   public static final String MAIN_COMPONENT_NAME = "main";

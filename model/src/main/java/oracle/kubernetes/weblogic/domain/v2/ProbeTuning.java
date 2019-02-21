@@ -25,9 +25,15 @@ public class ProbeTuning {
   public ProbeTuning() {}
 
   void copyValues(ProbeTuning fromProbe) {
-    if (initialDelaySeconds == null) initialDelaySeconds(fromProbe.initialDelaySeconds);
-    if (timeoutSeconds == null) timeoutSeconds(fromProbe.timeoutSeconds);
-    if (periodSeconds == null) periodSeconds(fromProbe.periodSeconds);
+    if (initialDelaySeconds == null) {
+      initialDelaySeconds(fromProbe.initialDelaySeconds);
+    }
+    if (timeoutSeconds == null) {
+      timeoutSeconds(fromProbe.timeoutSeconds);
+    }
+    if (periodSeconds == null) {
+      periodSeconds(fromProbe.periodSeconds);
+    }
   }
 
   public Integer getInitialDelaySeconds() {
@@ -68,9 +74,13 @@ public class ProbeTuning {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     ProbeTuning that = (ProbeTuning) o;
 
