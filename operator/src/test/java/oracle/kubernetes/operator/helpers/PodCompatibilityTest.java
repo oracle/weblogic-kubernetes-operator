@@ -6,13 +6,15 @@ package oracle.kubernetes.operator.helpers;
 
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1ResourceRequirements;
 import org.junit.Test;
@@ -67,10 +69,91 @@ public class PodCompatibilityTest {
 
     assertThat(
         compatibility.getIncompatibility(),
-        both(containsString("1100")).and(containsString("1234")));
+        both(containsString("1100")).and(not(containsString("1234"))));
   }
 
-  private V1Pod podWithContainer(V1Container container) {
-    return new V1Pod().spec(new V1PodSpec().addContainersItem(container));
+  @Test
+  public void whenExpectedSubsetOfActual_reportCompatible() {
+    CompatibilityCheck check =
+        new CompatibleSets<>("letters", ImmutableSet.of("a", "b"), ImmutableSet.of("b", "c", "a"));
+
+    assertThat(check.isCompatible(), is(true));
+  }
+
+  @Test
+  public void whenExpectedNotSubsetOfActual_reportNotCompatible() {
+    CompatibilityCheck check =
+        new CompatibleSets<>(
+            "letters", ImmutableSet.of("a", "b", "d"), ImmutableSet.of("b", "c", "a"));
+
+    assertThat(check.isCompatible(), is(false));
+  }
+
+  @Test
+  public void whenExpectedNotSubsetOfActual_reportMissingElements() {
+    CompatibilityCheck check =
+        new CompatibleSets<>(
+            "letters",
+            ImmutableSet.of("alpha", "beta", "delta"),
+            ImmutableSet.of("beta", "gamma", "alpha"));
+
+    assertThat(check.getIncompatibility(), containsString("delta"));
+    assertThat(check.getIncompatibility(), not(containsString("alpha")));
+    assertThat(check.getIncompatibility(), not(containsString("gamma")));
+  }
+
+  @Test
+  public void whenExpectedSubmapOfActual_reportCompatible() {
+    CompatibilityCheck check =
+        new CompatibleMaps<>(
+            "letters", ImmutableMap.of("a", 1, "b", 2), ImmutableMap.of("b", 2, "c", 3, "a", 1));
+
+    assertThat(check.isCompatible(), is(true));
+  }
+
+  @Test
+  public void whenExpectedNotSubmapOfActual_reportNotCompatible() {
+    CompatibilityCheck check =
+        new CompatibleMaps<>(
+            "letters",
+            ImmutableMap.of("a", 1, "b", 2, "d", 4),
+            ImmutableMap.of("b", 2, "c", 3, "a", 1));
+
+    assertThat(check.isCompatible(), is(false));
+  }
+
+  @Test
+  public void whenExpectedNotSubmapOfActual_reportMissingElements() {
+    CompatibilityCheck check =
+        new CompatibleMaps<>(
+            "letters",
+            ImmutableMap.of("alpha", 1, "beta", 2, "delta", 4),
+            ImmutableMap.of("beta", 2, "gamma", 3, "alpha", 1));
+
+    assertThat(check.getIncompatibility(), containsString("delta"));
+    assertThat(check.getIncompatibility(), not(containsString("alpha")));
+    assertThat(check.getIncompatibility(), not(containsString("gamma")));
+  }
+
+  @Test
+  public void whenActualKeysHaveDifferentValues_reportNotCompatible() {
+    CompatibilityCheck check =
+        new CompatibleMaps<>(
+            "letters", ImmutableMap.of("a", 1, "b", 2), ImmutableMap.of("b", 5, "c", 3, "a", 1));
+
+    assertThat(check.isCompatible(), is(false));
+  }
+
+  @Test
+  public void whenActualKeysHaveDifferentValues_reportMissingElements() {
+    CompatibilityCheck check =
+        new CompatibleMaps<>(
+            "letters",
+            ImmutableMap.of("alpha", 1, "beta", 2),
+            ImmutableMap.of("beta", 5, "gamma", 3, "alpha", 1));
+
+    assertThat(check.getIncompatibility(), both(containsString("beta")).and(containsString("5")));
+    assertThat(check.getIncompatibility(), not(containsString("alpha")));
+    assertThat(check.getIncompatibility(), not(containsString("gamma")));
   }
 }
