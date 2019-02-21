@@ -217,4 +217,9 @@ Events:        <none>
 ## Troubleshooting
 
 1. Message: "[ERROR] The weblogicDomainStoragePath parameter in kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml is missing, null or empty"  
-Edit the file and set the value of the field.  This value must be a world-writable directory
+Edit the file and set the value of the field.  This value must be a directory that is writable for the uid==1000 and gid==1000.
+Take the following steps to resolve the error:
+* become the root user
+** mkdir -e $value-of-weblogicDomainStoragePath
+** chmod 755 $value-of-weblogicDomainStoragePath
+** chown 1000:1000 $value-of-weblogicDomainStoragePath
