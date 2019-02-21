@@ -29,11 +29,11 @@ public abstract class ResponseStep<T> extends Step {
 
   private Step previousStep = null;
 
-  /** Constructor specifying no next step */
+  /** Constructor specifying no next step. */
   public ResponseStep() {}
 
   /**
-   * Constructor specifying next step
+   * Constructor specifying next step.
    *
    * @param nextStep Next step
    */

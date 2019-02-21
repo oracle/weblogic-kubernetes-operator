@@ -48,7 +48,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for createWebLogicOracleV2NamespacedDomain
+   * Build call for createWebLogicOracleV2NamespacedDomain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
@@ -146,7 +146,7 @@ public class WeblogicApi {
   }
 
   /**
-   * create a Domain
+   * create a Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
@@ -163,7 +163,7 @@ public class WeblogicApi {
   }
 
   /**
-   * create a Domain
+   * create a Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
@@ -182,7 +182,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) create a Domain
+   * (asynchronously) create a Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
@@ -217,7 +217,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for deleteWebLogicOracleV2CollectionNamespacedDomain
+   * Build call for deleteWebLogicOracleV2CollectionNamespacedDomain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
@@ -401,7 +401,7 @@ public class WeblogicApi {
   }
 
   /**
-   * delete collection of Domain
+   * delete collection of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
@@ -477,7 +477,7 @@ public class WeblogicApi {
   }
 
   /**
-   * delete collection of Domain
+   * delete collection of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
@@ -556,7 +556,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) delete collection of Domain
+   * (asynchronously) delete collection of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
@@ -651,7 +651,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for deleteWebLogicOracleV2NamespacedDomain
+   * Build call for deleteWebLogicOracleV2NamespacedDomain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -797,7 +797,7 @@ public class WeblogicApi {
   }
 
   /**
-   * delete a Domain
+   * delete a Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -835,7 +835,7 @@ public class WeblogicApi {
   }
 
   /**
-   * delete a Domain
+   * delete a Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -882,7 +882,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) delete a Domain
+   * (asynchronously) delete a Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -945,7 +945,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for listWebLogicOracleV2DomainForAllNamespaces
+   * Build call for listWebLogicOracleV2DomainForAllNamespaces.
    *
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
@@ -1118,7 +1118,7 @@ public class WeblogicApi {
   }
 
   /**
-   * list or watch objects of kind Domain
+   * list or watch objects of kind Domain.
    *
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
@@ -1191,7 +1191,7 @@ public class WeblogicApi {
   }
 
   /**
-   * list or watch objects of kind Domain
+   * list or watch objects of kind Domain.
    *
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
@@ -1267,7 +1267,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) list or watch objects of kind Domain
+   * (asynchronously) list or watch objects of kind Domain.
    *
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
@@ -1359,7 +1359,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for listWebLogicOracleV2NamespacedDomain
+   * Build call for listWebLogicOracleV2NamespacedDomain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
@@ -1546,7 +1546,7 @@ public class WeblogicApi {
   }
 
   /**
-   * list or watch objects of kind Domain
+   * list or watch objects of kind Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
@@ -1622,7 +1622,7 @@ public class WeblogicApi {
   }
 
   /**
-   * list or watch objects of kind Domain
+   * list or watch objects of kind Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
@@ -1701,7 +1701,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) list or watch objects of kind Domain
+   * (asynchronously) list or watch objects of kind Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
@@ -1796,7 +1796,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for patchWebLogicOracleV2NamespacedDomain
+   * Build call for patchWebLogicOracleV2NamespacedDomain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1908,7 +1908,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update the specified Domain
+   * partially update the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1926,7 +1926,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update the specified Domain
+   * partially update the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1946,7 +1946,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) partially update the specified Domain
+   * (asynchronously) partially update the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1982,7 +1982,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for patchWebLogicOracleV2NamespacedDomainScale
+   * Build call for patchWebLogicOracleV2NamespacedDomainScale.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2094,7 +2094,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update scale of the specified Domain
+   * partially update scale of the specified Domain.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2112,7 +2112,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update scale of the specified Domain
+   * partially update scale of the specified Domain.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2132,7 +2132,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) partially update scale of the specified Domain
+   * (asynchronously) partially update scale of the specified Domain.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2168,7 +2168,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for patchWebLogicOracleV2NamespacedDomainStatus
+   * Build call for patchWebLogicOracleV2NamespacedDomainStatus.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2280,7 +2280,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update status of the specified Domain
+   * partially update status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2298,7 +2298,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update status of the specified Domain
+   * partially update status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2318,7 +2318,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) partially update status of the specified Domain
+   * (asynchronously) partially update status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2354,7 +2354,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for readWebLogicOracleV2NamespacedDomain
+   * Build call for readWebLogicOracleV2NamespacedDomain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2469,7 +2469,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read the specified Domain
+   * read the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2491,7 +2491,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read the specified Domain
+   * read the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2515,7 +2515,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) read the specified Domain
+   * (asynchronously) read the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2559,7 +2559,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for readWebLogicOracleV2NamespacedDomainScale
+   * Build call for readWebLogicOracleV2NamespacedDomainScale.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2658,7 +2658,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read scale of the specified Domain
+   * read scale of the specified Domain.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2675,7 +2675,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read scale of the specified Domain
+   * read scale of the specified Domain.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2694,7 +2694,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) read scale of the specified Domain
+   * (asynchronously) read scale of the specified Domain.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2729,7 +2729,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for readWebLogicOracleV2NamespacedDomainStatus
+   * Build call for readWebLogicOracleV2NamespacedDomainStatus.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2828,7 +2828,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read status of the specified Domain
+   * read status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2845,7 +2845,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read status of the specified Domain
+   * read status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2864,7 +2864,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) read status of the specified Domain
+   * (asynchronously) read status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2899,7 +2899,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for replaceWebLogicOracleV2NamespacedDomain
+   * Build call for replaceWebLogicOracleV2NamespacedDomain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3007,7 +3007,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace the specified Domain
+   * replace the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3025,7 +3025,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace the specified Domain
+   * replace the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3045,7 +3045,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) replace the specified Domain
+   * (asynchronously) replace the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3081,7 +3081,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for replaceWebLogicOracleV2NamespacedDomainScale
+   * Build call for replaceWebLogicOracleV2NamespacedDomainScale.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3189,7 +3189,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace scale of the specified Domain
+   * replace scale of the specified Domain.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3207,7 +3207,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace scale of the specified Domain
+   * replace scale of the specified Domain.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3227,7 +3227,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) replace scale of the specified Domain
+   * (asynchronously) replace scale of the specified Domain.
    *
    * @param name name of the Scale (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3267,7 +3267,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for replaceWebLogicOracleV2NamespacedDomainStatus
+   * Build call for replaceWebLogicOracleV2NamespacedDomainStatus.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3375,7 +3375,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace status of the specified Domain
+   * replace status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3393,7 +3393,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace status of the specified Domain
+   * replace status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3413,7 +3413,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) replace status of the specified Domain
+   * (asynchronously) replace status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -3449,7 +3449,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for watchWebLogicOracleV2DomainListForAllNamespaces
+   * Build call for watchWebLogicOracleV2DomainListForAllNamespaces.
    *
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
@@ -3623,7 +3623,7 @@ public class WeblogicApi {
   }
 
   /**
-   * watch individual changes to a list of Domain
+   * watch individual changes to a list of Domain.
    *
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
@@ -3696,7 +3696,7 @@ public class WeblogicApi {
   }
 
   /**
-   * watch individual changes to a list of Domain
+   * watch individual changes to a list of Domain.
    *
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
@@ -3772,7 +3772,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) watch individual changes to a list of Domain
+   * (asynchronously) watch individual changes to a list of Domain.
    *
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
@@ -3864,7 +3864,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for watchWebLogicOracleV2NamespacedDomain
+   * Build call for watchWebLogicOracleV2NamespacedDomain.
    *
    * @param name name of the Pod (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -4062,7 +4062,7 @@ public class WeblogicApi {
   }
 
   /**
-   * watch changes to an object of kind Domain
+   * watch changes to an object of kind Domain.
    *
    * @param name name of the Pod (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -4141,7 +4141,7 @@ public class WeblogicApi {
   }
 
   /**
-   * watch changes to an object of kind Domain
+   * watch changes to an object of kind Domain.
    *
    * @param name name of the Pod (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -4223,7 +4223,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) watch changes to an object of kind Domain
+   * (asynchronously) watch changes to an object of kind Domain.
    *
    * @param name name of the Pod (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -4321,7 +4321,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for watchWebLogicOracleV2NamespacedDomainList
+   * Build call for watchWebLogicOracleV2NamespacedDomainList.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param _continue The continue option should be set when retrieving more results from the
@@ -4508,7 +4508,7 @@ public class WeblogicApi {
   }
 
   /**
-   * watch individual changes to a list of Domain
+   * watch individual changes to a list of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param _continue The continue option should be set when retrieving more results from the
@@ -4584,7 +4584,7 @@ public class WeblogicApi {
   }
 
   /**
-   * watch individual changes to a list of Domain
+   * watch individual changes to a list of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param _continue The continue option should be set when retrieving more results from the
@@ -4663,7 +4663,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) watch individual changes to a list of Domain
+   * (asynchronously) watch individual changes to a list of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param _continue The continue option should be set when retrieving more results from the

@@ -88,7 +88,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain status to indicate WebLogic server status
+   * Asynchronous step to set Domain status to indicate WebLogic server status.
    *
    * @param timeoutSeconds Timeout in seconds
    * @param next Next step
@@ -150,8 +150,9 @@ public class DomainStatusUpdater {
       // This will control if we need to re-check states soon or if we can slow down checks
       packet.put(ProcessingConstants.STATUS_UNCHANGED, !status.isModified());
 
-      if (status.isModified())
+      if (status.isModified()) {
         LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUID(), status);
+      }
       LOGGER.exiting();
 
       return status.isModified()
@@ -222,8 +223,11 @@ public class DomainStatusUpdater {
 
       Integer getReplicaSetting() {
         Collection<Long> values = getClusterCounts().values();
-        if (values.size() == 1) return values.iterator().next().intValue();
-        else return null;
+        if (values.size() == 1) {
+          return values.iterator().next().intValue();
+        } else {
+          return null;
+        }
       }
 
       private Map<String, Long> getClusterCounts() {
@@ -256,7 +260,9 @@ public class DomainStatusUpdater {
 
       private Collection<String> getServerNames() {
         Set<String> result = new HashSet<>(getServers().keySet());
-        if (config != null) result.addAll(config.getServerConfigs().keySet());
+        if (config != null) {
+          result.addAll(config.getServerConfigs().keySet());
+        }
         return result;
       }
 
@@ -267,7 +273,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Progressing
+   * Asynchronous step to set Domain condition to Progressing.
    *
    * @param reason Progressing reason
    * @param isPreserveAvailable true, if existing Available=True condition should be preserved
@@ -329,7 +335,9 @@ public class DomainStatusUpdater {
 
       status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
       status.removeConditionIf(c -> c.getType() == Failed);
-      if (!isPreserveAvailable) status.removeConditionIf(c -> c.getType() == Available);
+      if (!isPreserveAvailable) {
+        status.removeConditionIf(c -> c.getType() == Available);
+      }
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
       LOGGER.exiting();
@@ -342,7 +350,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition end Progressing and set Available, if needed
+   * Asynchronous step to set Domain condition end Progressing and set Available, if needed.
    *
    * @param next Next step
    * @return Step
@@ -377,7 +385,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Available
+   * Asynchronous step to set Domain condition to Available.
    *
    * @param reason Available reason
    * @param next Next step
@@ -500,7 +508,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Failed
+   * Asynchronous step to set Domain condition to Failed.
    *
    * @param throwable Throwable that caused failure
    * @param next Next step
@@ -560,8 +568,9 @@ public class DomainStatusUpdater {
               .withStatus(TRUE)
               .withReason("Exception")
               .withMessage(throwable.getMessage()));
-      if (status.hasConditionWith(c -> c.hasType(Progressing)))
+      if (status.hasConditionWith(c -> c.hasType(Progressing))) {
         status.addCondition(new DomainCondition(Progressing).withStatus(FALSE));
+      }
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
       LOGGER.exiting();

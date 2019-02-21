@@ -103,7 +103,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * WebLogic cluster name, if the server is part of a cluster
+   * WebLogic cluster name, if the server is part of a cluster.
    *
    * @return cluster name
    */
@@ -112,7 +112,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * WebLogic cluster name, if the server is part of a cluster
+   * WebLogic cluster name, if the server is part of a cluster.
    *
    * @param clusterName cluster name
    */
@@ -121,7 +121,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * WebLogic cluster name, if the server is part of a cluster
+   * WebLogic cluster name, if the server is part of a cluster.
    *
    * @param clusterName cluster name
    * @return this

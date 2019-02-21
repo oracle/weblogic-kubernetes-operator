@@ -17,7 +17,9 @@ class DomainPresenceControl {
   }
 
   private static void normalizeImage(DomainSpec spec) {
-    if (Strings.isNullOrEmpty(spec.getImage())) spec.setImage(KubernetesConstants.DEFAULT_IMAGE);
+    if (Strings.isNullOrEmpty(spec.getImage())) {
+      spec.setImage(KubernetesConstants.DEFAULT_IMAGE);
+    }
   }
 
   private static void normalizeImagePullPolicy(DomainSpec spec) {
