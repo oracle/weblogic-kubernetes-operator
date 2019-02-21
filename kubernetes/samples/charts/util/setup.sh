@@ -5,7 +5,7 @@
 #  This script is to create or delete Ingress controllers. We support two ingress controllers: traefik and voyager.
 
 MYDIR="$(dirname "$(readlink -f "$0")")"
-VNAME=operator-v  # release name of Voyager
+VNAME=voyager-operator  # release name of Voyager
 TNAME=traefik-operator  # release name of Traefik
 
 function createVoyager() {
