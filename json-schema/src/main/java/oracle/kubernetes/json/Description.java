@@ -15,5 +15,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({TYPE, FIELD})
 public @interface Description {
+
+  /**
+   * Description value.
+   *
+   * @return description value
+   */
   String value();
 }

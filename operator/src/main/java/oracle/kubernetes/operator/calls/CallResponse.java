@@ -10,20 +10,28 @@ import java.util.Map;
 
 public final class CallResponse<T> {
   private final T result;
-  private final ApiException e;
+  private final ApiException ex;
   private final int statusCode;
   private final Map<String, List<String>> responseHeaders;
 
+  /**
+   * Constructor for CallResponse.
+   *
+   * @param result Result
+   * @param ex API exception
+   * @param statusCode Status code
+   * @param responseHeaders Response headers
+   */
   public CallResponse(
-      T result, ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
+      T result, ApiException ex, int statusCode, Map<String, List<String>> responseHeaders) {
     this.result = result;
-    this.e = e;
+    this.ex = ex;
     this.statusCode = statusCode;
     this.responseHeaders = responseHeaders;
   }
 
   public boolean isFailure() {
-    return e != null;
+    return ex != null;
   }
 
   public T getResult() {
@@ -31,7 +39,7 @@ public final class CallResponse<T> {
   }
 
   public ApiException getE() {
-    return e;
+    return ex;
   }
 
   public int getStatusCode() {

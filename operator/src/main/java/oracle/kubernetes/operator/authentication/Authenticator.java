@@ -29,8 +29,8 @@ public class Authenticator {
   private final Helpers helper;
   private String serviceToken;
 
-  private final String _SERVICE_HOST = "KUBERNETES_SERVICE_HOST";
-  private final String _SERVICE_PORT = "KUBERNETES_SERVICE_PORT";
+  private static final String SERVICE_HOST = "KUBERNETES_SERVICE_HOST";
+  private static final String SERVICE_PORT = "KUBERNETES_SERVICE_PORT";
   // private final String _TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
   // private final String _CACERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -161,8 +161,8 @@ public class Authenticator {
     }
     serviceToken = token;
 
-    String serviceHost = System.getenv(_SERVICE_HOST);
-    String servicePort = System.getenv(_SERVICE_PORT);
+    String serviceHost = System.getenv(SERVICE_HOST);
+    String servicePort = System.getenv(SERVICE_PORT);
     String serviceUrl = "https://" + serviceHost + ":" + servicePort;
 
     ApiClient newClient = new ApiClient();
