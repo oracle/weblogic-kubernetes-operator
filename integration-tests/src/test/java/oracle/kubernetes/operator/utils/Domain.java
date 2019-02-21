@@ -1077,6 +1077,11 @@ public class Domain {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
 
+    domainMap.put("domainHome", "/shared/domains/" + domainUid);
+    domainMap.put("logHome", "/shared/logs/" + domainUid);
+    domainMap.put(
+        "createDomainFilesDir",
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
     String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
