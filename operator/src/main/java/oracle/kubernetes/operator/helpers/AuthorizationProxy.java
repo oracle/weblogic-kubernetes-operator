@@ -160,6 +160,16 @@ public class AuthorizationProxy {
     return result;
   }
 
+  /**
+   * Check access.
+   *
+   * @param operation Operator
+   * @param resource Resource
+   * @param resourceName Resource name
+   * @param scope Scope
+   * @param namespaceName Namespace
+   * @return True, if authorization is allowed
+   */
   public boolean check(
       Operation operation,
       Resource resource,

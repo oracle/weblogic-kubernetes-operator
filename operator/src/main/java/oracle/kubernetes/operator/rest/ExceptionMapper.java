@@ -25,7 +25,6 @@ public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exceptio
     // nothing to do
   }
 
-  /** {@inheritDoc} */
   @Override
   public Response toResponse(Exception e) {
     LOGGER.entering(e);

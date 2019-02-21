@@ -7,7 +7,7 @@ package oracle.kubernetes.operator.watcher;
 import io.kubernetes.client.util.Watch;
 
 /**
- * This interface is used for the final destination to deliver watch events
+ * This interface is used for the final destination to deliver watch events.
  *
  * @param <T> The type of the object that is being watched.
  */

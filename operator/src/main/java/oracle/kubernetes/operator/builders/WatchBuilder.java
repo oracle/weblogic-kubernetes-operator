@@ -68,7 +68,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track service calls
+   * Creates a web hook object to track service calls.
    *
    * @param namespace the namespace
    * @return the active web hook
@@ -116,7 +116,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track pods
+   * Creates a web hook object to track pods.
    *
    * @param namespace the namespace
    * @return the active web hook
@@ -161,7 +161,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track jobs
+   * Creates a web hook object to track jobs.
    *
    * @param namespace the namespace
    * @return the active web hook
@@ -206,7 +206,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track events
+   * Creates a web hook object to track events.
    *
    * @param namespace the namespace
    * @return the active web hook
@@ -251,7 +251,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track changes to weblogic domains in one namespaces
+   * Creates a web hook object to track changes to weblogic domains in one namespaces.
    *
    * @param namespace the namespace in which to track domains
    * @return the active web hook
@@ -296,7 +296,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track config map calls
+   * Creates a web hook object to track config map calls.
    *
    * @param namespace the namespace
    * @return the active web hook

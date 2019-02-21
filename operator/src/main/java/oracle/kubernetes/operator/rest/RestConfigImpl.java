@@ -46,73 +46,61 @@ public class RestConfigImpl implements RestConfig {
     LOGGER.exiting();
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getHost() {
     return "0.0.0.0";
   }
 
-  /** {@inheritDoc} */
   @Override
   public int getExternalHttpsPort() {
     return 8081;
   }
 
-  /** {@inheritDoc} */
   @Override
   public int getInternalHttpsPort() {
     return 8082;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalCertificateData() {
     return getCertificate(EXTERNAL_CERTIFICATE);
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalCertificateData() {
     return getCertificate(INTERNAL_CERTIFICATE);
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalCertificateFile() {
     return null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalCertificateFile() {
     return null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalKeyData() {
     return null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalKeyData() {
     return null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalKeyFile() {
     return getKey(EXTERNAL_CERTIFICATE_KEY);
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalKeyFile() {
     return getKey(INTERNAL_CERTIFICATE_KEY);
   }
 
-  /** {@inheritDoc} */
   @Override
   public RestBackend getBackend(String accessToken) {
     LOGGER.entering();
