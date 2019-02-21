@@ -233,11 +233,15 @@ public class TestUtils {
     new File(filePath).setExecutable(true, false);
 
     // copy file to pod
-    kubectlcp(filePath, "/shared/killserver.sh", podName, namespace);
+    copyFileViaCat(filePath, "/shared/killserver.sh", podName, namespace);
 
     // kill server process 3 times
     for (int i = 0; i < 3; i++) {
-      ExecResult result = kubectlexecNoCheck(podName, namespace, "/shared/killserver.sh");
+      ExecResult result =
+          kubectlexecNoCheck(
+              podName,
+              namespace,
+              "-- bash -c 'chmod +x /shared/killserver.sh && /shared/killserver.sh'");
       logger.info("kill server process command exitValue " + result.exitValue());
       logger.info(
           "kill server process command result " + result.stdout() + " stderr " + result.stderr());
@@ -301,6 +305,14 @@ public class TestUtils {
     }
   }
 
+  public static void copyFileViaCat(
+      String srcFileOnHost, String destLocationInPod, String podName, String namespace)
+      throws Exception {
+
+    TestUtils.kubectlexec(
+        podName, namespace, " -- bash -c 'cat > " + destLocationInPod + "' < " + srcFileOnHost);
+  }
+
   public static ExecResult kubectlexecNoCheck(String podName, String namespace, String scriptPath)
       throws Exception {
 
@@ -312,8 +324,9 @@ public class TestUtils {
         .append(" ")
         .append(scriptPath);
 
-    ExecResult result = ExecCommand.exec("kubectl get pods -n " + namespace);
-    logger.info("get pods before killing the server " + result.stdout() + "\n " + result.stderr());
+    // ExecResult result = ExecCommand.exec("kubectl get pods -n " + namespace);
+    // logger.info("get pods before killing the server " + result.stdout() + "\n " +
+    // result.stderr());
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     return ExecCommand.exec(cmdKubectlSh.toString());
   }
@@ -674,10 +687,11 @@ public class TestUtils {
         .append(namespace)
         .append(" exec -it ")
         .append(podName)
-        .append(" ")
+        .append(" -- bash -c 'chmod +x -R /shared && ")
         .append(scriptPath)
         .append(" ")
-        .append(arguments);
+        .append(arguments)
+        .append("'");
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
     if (result.exitValue() != 0) {
@@ -710,14 +724,14 @@ public class TestUtils {
       throws Exception {
 
     // copy wldf.py script tp pod
-    TestUtils.kubectlcp(
+    copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
         "/shared/wldf.py",
         adminPodName,
         domainNS);
 
     // copy callpyscript.sh to pod
-    TestUtils.kubectlcp(
+    copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
         "/shared/callpyscript.sh",
         adminPodName,
