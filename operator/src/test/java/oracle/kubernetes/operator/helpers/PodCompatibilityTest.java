@@ -15,7 +15,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1ResourceRequirements;
-import java.util.Collections;
 import org.junit.Test;
 
 public class PodCompatibilityTest {
@@ -23,9 +22,7 @@ public class PodCompatibilityTest {
   public void whenImagesDontMatch_createErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
-            new V1Container().image("abcde"),
-            new V1Container().image("cdefg"),
-            Collections.emptyList());
+            new V1Container().image("abcde"), new V1Container().image("cdefg"));
 
     assertThat(
         compatibility.getIncompatibility(),
@@ -41,8 +38,7 @@ public class PodCompatibilityTest {
                     new V1Probe().initialDelaySeconds(1).timeoutSeconds(5).periodSeconds(3)),
             new V1Container()
                 .livenessProbe(
-                    new V1Probe().initialDelaySeconds(1).timeoutSeconds(2).periodSeconds(3)),
-            Collections.emptyList());
+                    new V1Probe().initialDelaySeconds(1).timeoutSeconds(2).periodSeconds(3)));
 
     assertThat(
         compatibility.getIncompatibility(),
@@ -55,8 +51,7 @@ public class PodCompatibilityTest {
         new PodCompatibility.ContainerCompatibility(
             new V1Container()
                 .resources(new V1ResourceRequirements().putLimitsItem("time", new Quantity("20"))),
-            new V1Container(),
-            Collections.emptyList());
+            new V1Container());
 
     assertThat(
         compatibility.getIncompatibility(),
@@ -68,8 +63,7 @@ public class PodCompatibilityTest {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().name("test").addPortsItem(new V1ContainerPort().containerPort(1100)),
-            new V1Container().addPortsItem(new V1ContainerPort().containerPort(1234)),
-            Collections.emptyList());
+            new V1Container().addPortsItem(new V1ContainerPort().containerPort(1234)));
 
     assertThat(
         compatibility.getIncompatibility(),

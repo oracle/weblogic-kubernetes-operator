@@ -16,8 +16,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,14 +26,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import oracle.kubernetes.operator.LabelConstants;
 
 /** A class which defines the compatability rules for existing vs. specified pods. */
 class PodCompatibility extends CollectiveCompatibility {
-  PodCompatibility(V1Pod expected, V1Pod actual, List<String> volumesToIgnore) {
+  PodCompatibility(V1Pod expected, V1Pod actual) {
     add(new PodMetadataCompatibility(expected.getMetadata(), actual.getMetadata()));
-    add(new PodSpecCompatibility(expected.getSpec(), actual.getSpec(), volumesToIgnore));
+    add(new PodSpecCompatibility(expected.getSpec(), actual.getSpec()));
   }
 
   static class PodMetadataCompatibility extends CollectiveCompatibility {
@@ -101,23 +98,13 @@ class PodCompatibility extends CollectiveCompatibility {
   }
 
   static class PodSpecCompatibility extends CollectiveCompatibility {
-    private List<String> volumesToIgnore;
 
-    PodSpecCompatibility(V1PodSpec expected, V1PodSpec actual, List<String> volumesToIgnore) {
-      this.volumesToIgnore = volumesToIgnore;
+    PodSpecCompatibility(V1PodSpec expected, V1PodSpec actual) {
       add("securityContext", expected.getSecurityContext(), actual.getSecurityContext());
       add(new EqualsMaps<>("nodeSelector", expected.getNodeSelector(), actual.getNodeSelector()));
-      addSets("volumes", expected.getVolumes(), relevantVolumes(actual.getVolumes()));
+      addSets("volumes", expected.getVolumes(), actual.getVolumes());
       addSets("imagePullSecrets", expected.getImagePullSecrets(), actual.getImagePullSecrets());
       addContainerChecks(expected.getContainers(), actual.getContainers());
-    }
-
-    private List<V1Volume> relevantVolumes(List<V1Volume> volumes) {
-      if (volumes == null) return volumes;
-      return volumes
-          .stream()
-          .filter(m -> !volumesToIgnore.contains(m.getName()))
-          .collect(Collectors.toList());
     }
 
     private void addContainerChecks(
@@ -142,7 +129,7 @@ class PodCompatibility extends CollectiveCompatibility {
 
     private ContainerCompatibility createCompatibilityCheck(
         V1Container expected, V1Container actual) {
-      return new ContainerCompatibility(expected, actual, volumesToIgnore);
+      return new ContainerCompatibility(expected, actual);
     }
 
     private Map<String, V1Container> createMap(List<V1Container> containers) {
@@ -156,10 +143,8 @@ class PodCompatibility extends CollectiveCompatibility {
 
   static class ContainerCompatibility extends CollectiveCompatibility {
     private final String name;
-    private List<String> volumesToIgnore;
 
-    ContainerCompatibility(V1Container expected, V1Container actual, List<String> volumesToIgnore) {
-      this.volumesToIgnore = volumesToIgnore;
+    ContainerCompatibility(V1Container expected, V1Container actual) {
       this.name = expected.getName();
 
       add("image", expected.getImage(), actual.getImage());
@@ -168,7 +153,7 @@ class PodCompatibility extends CollectiveCompatibility {
       add(new Probes("liveness", expected.getLivenessProbe(), actual.getLivenessProbe()));
       add(new Probes("readiness", expected.getReadinessProbe(), actual.getReadinessProbe()));
       add(new EqualResources(expected.getResources(), actual.getResources()));
-      addSets("volumeMounts", expected.getVolumeMounts(), relevantMounts(actual.getVolumeMounts()));
+      addSets("volumeMounts", expected.getVolumeMounts(), actual.getVolumeMounts());
       addSets("ports", expected.getPorts(), actual.getPorts());
       addSets("env", expected.getEnv(), actual.getEnv());
       addSets("envFrom", expected.getEnvFrom(), actual.getEnvFrom());
@@ -182,14 +167,6 @@ class PodCompatibility extends CollectiveCompatibility {
     @Override
     String getIndent() {
       return "  ";
-    }
-
-    private List<V1VolumeMount> relevantMounts(List<V1VolumeMount> volumeMounts) {
-      if (volumeMounts == null) return volumeMounts;
-      return volumeMounts
-          .stream()
-          .filter(m -> !volumesToIgnore.contains(m.getName()))
-          .collect(Collectors.toList());
     }
   }
 
