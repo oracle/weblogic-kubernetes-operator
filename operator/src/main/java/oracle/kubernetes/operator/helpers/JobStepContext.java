@@ -118,7 +118,9 @@ public abstract class JobStepContext extends StepContextBase {
   }
 
   String getEffectiveLogHome() {
-    if (!getDomain().getLogHomeEnabled()) return null;
+    if (!getDomain().getLogHomeEnabled()) {
+      return null;
+    }
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
       // logHome not specified, use default value

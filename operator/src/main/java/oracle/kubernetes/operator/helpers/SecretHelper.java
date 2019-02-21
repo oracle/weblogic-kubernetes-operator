@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-/** A Helper Class for retrieving Kubernetes Secrets used by the WebLogic Operator */
+/** A Helper Class for retrieving Kubernetes Secrets used by the WebLogic Operator. */
 public class SecretHelper {
   public static final String SECRET_DATA_KEY = "secretData";
 
@@ -44,7 +44,7 @@ public class SecretHelper {
   }
 
   /**
-   * Get Data for Specified Secret
+   * Get Data for Specified Secret.
    *
    * @param secretType the secret to retrieve
    * @param secretName the name of the secret.
@@ -82,7 +82,7 @@ public class SecretHelper {
   }
 
   /**
-   * Factory for {@link Step} that asynchronously acquires secret data
+   * Factory for {@link Step} that asynchronously acquires secret data.
    *
    * @param secretType Secret type
    * @param secretName Secret name

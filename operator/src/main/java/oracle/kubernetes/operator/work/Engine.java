@@ -9,6 +9,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Collection of {@link Fiber}s. Owns an {@link Executor} to run them. */
 public class Engine {
@@ -21,28 +22,28 @@ public class Engine {
     return wrap(container, threadPool);
   }
 
-  private volatile ScheduledExecutorService threadPool;
+  private final AtomicReference<ScheduledExecutorService> threadPool = new AtomicReference();
 
   /**
-   * Returns the executor
+   * Returns the executor.
    *
    * @return executor
    */
   public ScheduledExecutorService getExecutor() {
-    return threadPool;
+    return threadPool.get();
   }
 
   /**
-   * Creates engine with the specified executor
+   * Creates engine with the specified executor.
    *
    * @param threadPool Executor
    */
   public Engine(ScheduledExecutorService threadPool) {
-    this.threadPool = threadPool;
+    this.threadPool.set(threadPool);
   }
 
   /**
-   * Creates engine with the specified id and default container and executor
+   * Creates engine with the specified id and default container and executor.
    *
    * @param id Engine id
    */
