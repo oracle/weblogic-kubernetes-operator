@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
@@ -160,6 +161,8 @@ public abstract class PodHelperTestBase {
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(TuningParametersStub.install());
+    mementos.add(
+        StaticStubSupport.install(AnnotationHelper.class, "HASH_FUNCTION", new UnitTestHash()));
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
@@ -1107,6 +1110,13 @@ public abstract class PodHelperTestBase {
         actualInstructions.add(new Gson().toJson((JsonElement) instruction));
 
       return actualInstructions.equals(expectedInstructions);
+    }
+  }
+
+  static class UnitTestHash implements Function<V1Pod, String> {
+    @Override
+    public String apply(V1Pod v1Pod) {
+      return Integer.toString(v1Pod.hashCode());
     }
   }
 }
