@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.Map;
 
-/** Contains configuration for a Network Access Point */
+/** Contains configuration for a Network Access Point. */
 public class NetworkAccessPoint {
 
   String name;
