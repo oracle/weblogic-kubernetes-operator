@@ -26,13 +26,13 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   private Integer clusterLimit;
 
   /**
-   * Constructs an object to return the effective configuration
+   * Constructs an object to return the effective configuration.
    *
+   * @param spec Domain spec
    * @param server the server whose configuration is to be returned
+   * @param cluster the cluster to which the server belongs
    * @param clusterLimit the number of servers desired for the cluster, or null if not a clustered
    *     server
-   * @param configurations the additional configurations to search for values if the server lacks
-   *     them
    */
   ServerSpecV2Impl(DomainSpec spec, Server server, Cluster cluster, Integer clusterLimit) {
     super(spec);
@@ -175,11 +175,17 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
-    if (!(o instanceof ServerSpecV2Impl)) return false;
+    if (!(o instanceof ServerSpecV2Impl)) {
+      return false;
+    }
 
     ServerSpecV2Impl that = (ServerSpecV2Impl) o;
 

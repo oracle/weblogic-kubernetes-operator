@@ -33,7 +33,14 @@ public class LoadBalancer {
       if (result.exitValue() != 0) {
         createTraefikLoadBalancer();
       }
-      createTraefikHostRouting();
+
+      if (!((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
+        logger.info("Is going to createTraefikHostRouting");
+        createTraefikHostRouting();
+      } else {
+        logger.info("Is going to createTraefikIngressPerDomain");
+        createTraefikIngressPerDomain();
+      }
     }
   }
 
@@ -82,6 +89,76 @@ public class LoadBalancer {
               + result.stdout()
               + result.stderr());
     }
+  }
+
+  private void createTraefikIngressPerDomain() throws Exception {
+    upgradeTraefikNamespace();
+    createTraefikIngress();
+  }
+
+  private void upgradeTraefikNamespace() throws Exception {
+
+    StringBuffer cmd = new StringBuffer("helm upgrade ");
+    cmd.append("--reuse-values ")
+        .append("--set ")
+        .append("\"")
+        .append("kubernetes.namespaces={traefik,")
+        .append(lbMap.get("namespace"))
+        .append("}")
+        .append("\"")
+        .append(" traefik-operator")
+        .append(" stable/traefik ");
+
+    logger.info(" upgradeTraefikNamespace() Running " + cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      reportHelmInstallFailure(cmd.toString(), result);
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
+  private void createTraefikIngress() throws Exception {
+
+    String chartDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/charts";
+
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(chartDir).append(" && helm install ingress-per-domain ");
+    cmd.append(" --name ")
+        .append(lbMap.get("name"))
+        .append(" --namespace ")
+        .append(lbMap.get("namespace"))
+        .append(" --set ")
+        .append("wlsDomain.domainUID=")
+        .append(lbMap.get("domainUID"))
+        .append(" --set ")
+        .append("wlsDomain.clusterName=")
+        .append(lbMap.get("clusterName"))
+        .append(" --set ")
+        .append("traefik.hostname=")
+        .append(lbMap.get("domainUID"))
+        .append(".org");
+
+    logger.info("createTraefikIngress() Running " + cmd.toString());
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      reportHelmInstallFailure(cmd.toString(), result);
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
+  private void reportHelmInstallFailure(String cmd, ExecResult result) throws Exception {
+    throw new RuntimeException(getExecFailure(cmd, result));
+  }
+
+  private String getExecFailure(String cmd, ExecResult result) throws Exception {
+    return "FAILURE: command "
+        + cmd
+        + " failed, stdout:\n"
+        + result.stdout()
+        + "stderr:\n"
+        + result.stderr();
   }
 
   public Map<String, Object> getLBMap() {

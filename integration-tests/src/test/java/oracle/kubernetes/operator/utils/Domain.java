@@ -55,6 +55,7 @@ public class Domain {
   private int loadBalancerWebPort = 30305;
   private String userProjectsDir = "";
   private String projectRoot = "";
+  private boolean ingressPerDomain = false;
 
   private String createDomainScript = "";
   private String inputTemplateFile = "";
@@ -803,14 +804,29 @@ public class Domain {
 
   private void createLoadBalancer() throws Exception {
     Map<String, Object> lbMap = new HashMap<String, Object>();
-    lbMap.put("name", "traefik-hostrouting-" + domainUid);
     lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);
     lbMap.put("host", domainUid + ".org");
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
     lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
+    lbMap.put("ingressPerDomain", domainMap.getOrDefault("ingressPerDomain", ingressPerDomain));
+    lbMap.put("clusterName", domainMap.get("clusterName"));
 
     loadBalancer = (String) lbMap.get("loadBalancer");
+    ingressPerDomain = ((Boolean) lbMap.get("ingressPerDomain")).booleanValue();
+    logger.info(
+        "For this domain loadBalancer is: "
+            + loadBalancer
+            + " ingressPerDomain is: "
+            + ingressPerDomain);
+
+    if (loadBalancer.equals("TRAEFIK") && !ingressPerDomain) {
+      lbMap.put("name", "traefik-hostrouting-" + domainUid);
+    }
+
+    if (loadBalancer.equals("TRAEFIK") && ingressPerDomain) {
+      lbMap.put("name", "traefik-ingress-" + domainUid);
+    }
 
     if (loadBalancer.equals("APACHE")) {
       /* lbMap.put("loadBalancerAppPrepath", "/weblogic");

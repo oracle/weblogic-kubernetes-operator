@@ -90,7 +90,7 @@ public class WlsDomainConfigSupport {
   }
 
   /**
-   * Returns the configuration for the named clustered server
+   * Returns the configuration for the named clustered server.
    *
    * @param clusterName the name of the cluster containing the server
    * @param serverName the name of the server
@@ -98,10 +98,14 @@ public class WlsDomainConfigSupport {
    */
   public WlsServerConfig getWlsServer(String clusterName, String serverName) {
     WlsClusterConfig wlsClusterConfig = this.wlsClusters.get(clusterName);
-    if (wlsClusterConfig == null) return null;
+    if (wlsClusterConfig == null) {
+      return null;
+    }
 
     for (WlsServerConfig serverConfig : wlsClusterConfig.getServerConfigs()) {
-      if (serverConfig.getName().equals(serverName)) return serverConfig;
+      if (serverConfig.getName().equals(serverName)) {
+        return serverConfig;
+      }
     }
 
     return null;

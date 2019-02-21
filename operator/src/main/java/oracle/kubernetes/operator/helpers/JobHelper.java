@@ -114,12 +114,12 @@ public class JobHelper {
   }
 
   /**
-   * Factory for {@link Step} that creates WebLogic domain introspector job
+   * Factory for {@link Step} that creates WebLogic domain introspector job.
    *
    * @param tuning Watch tuning parameters
    * @param next Next processing step
    * @param jws Map of JobWatcher objects, keyed by the string value of the name of a namespace
-   * @param isStopping
+   * @param isStopping Stop signal
    * @return Step for creating job
    */
   public static Step createDomainIntrospectorJobStep(
@@ -179,10 +179,10 @@ public class JobHelper {
   }
 
   /**
-   * TODO: Enhance determination of when we believe we're creating WLS managed server pods
+   * TODO: Enhance determination of when we believe we're creating WLS managed server pods.
    *
    * @param info
-   * @return
+   * @return True, if creating servers
    */
   static boolean creatingServers(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
@@ -232,7 +232,7 @@ public class JobHelper {
   }
 
   /**
-   * Factory for {@link Step} that deletes WebLogic domain introspector job
+   * Factory for {@link Step} that deletes WebLogic domain introspector job.
    *
    * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
    * @param namespace Namespace
@@ -287,7 +287,7 @@ public class JobHelper {
   }
 
   /**
-   * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log
+   * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log.
    *
    * @param tuning Watch tuning parameters
    * @param next Next processing step
@@ -372,7 +372,7 @@ public class JobHelper {
   }
 
   /**
-   * Factory for {@link Step} that reads WebLogic domain introspector pod
+   * Factory for {@link Step} that reads WebLogic domain introspector pod.
    *
    * @param next Next processing step
    * @return Step for reading WebLogic domain introspector pod

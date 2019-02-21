@@ -39,8 +39,11 @@ class KubernetesUtils {
 
   private static Map<String, String> getCustomerLabels(V1ObjectMeta metadata) {
     Map<String, String> result = new HashMap<>();
-    for (Map.Entry<String, String> entry : metadata.getLabels().entrySet())
-      if (!isOperatorLabel(entry)) result.put(entry.getKey(), entry.getValue());
+    for (Map.Entry<String, String> entry : metadata.getLabels().entrySet()) {
+      if (!isOperatorLabel(entry)) {
+        result.put(entry.getKey(), entry.getValue());
+      }
+    }
     return result;
   }
 
@@ -70,9 +73,14 @@ class KubernetesUtils {
    * @return true if there is a problem that must be fixed by patching
    */
   static boolean isMissingValues(Map<String, String> current, Map<String, String> required) {
-    if (!hasAllRequiredNames(current, required)) return true;
-    for (String name : required.keySet())
-      if (!Objects.equals(current.get(name), required.get(name))) return true;
+    if (!hasAllRequiredNames(current, required)) {
+      return true;
+    }
+    for (String name : required.keySet()) {
+      if (!Objects.equals(current.get(name), required.get(name))) {
+        return true;
+      }
+    }
 
     return false;
   }
@@ -96,8 +104,11 @@ class KubernetesUtils {
       Map<String, String> current,
       Map<String, String> required) {
     for (String name : required.keySet()) {
-      if (!current.containsKey(name)) patchBuilder.add(basePath + name, required.get(name));
-      else patchBuilder.replace(basePath + name, required.get(name));
+      if (!current.containsKey(name)) {
+        patchBuilder.add(basePath + name, required.get(name));
+      } else {
+        patchBuilder.replace(basePath + name, required.get(name));
+      }
     }
   }
 }
