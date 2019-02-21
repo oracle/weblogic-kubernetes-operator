@@ -14,4 +14,6 @@ managedServerNameBase: managed-server
 exposeAdminT3Channel: true
 exposeAdminNodePort: true
 namespace: default
+loadBalancer: TRAEFIK
+ingressPerDomain: true
 

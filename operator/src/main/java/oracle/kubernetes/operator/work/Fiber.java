@@ -33,27 +33,27 @@ import oracle.kubernetes.operator.work.NextAction.Kind;
  *
  * <h2>Suspend/Resume</h2>
  *
- * Fiber can be {@link NextAction#suspend(Consumer) suspended} by a {@link Step}. When a fiber is
+ * <p>Fiber can be {@link NextAction#suspend(Consumer) suspended} by a {@link Step}. When a fiber is
  * suspended, it will be kept on the side until it is {@link #resume(Packet) resumed}. This allows
  * threads to go execute other runnable fibers, allowing efficient utilization of smaller number of
  * threads.
  *
  * <h2>Context ClassLoader</h2>
  *
- * Just like thread, a fiber has a context class loader (CCL.) A fiber's CCL becomes the thread's
+ * <p>Just like thread, a fiber has a context class loader (CCL.) A fiber's CCL becomes the thread's
  * CCL when it's executing the fiber. The original CCL of the thread will be restored when the
  * thread leaves the fiber execution.
  *
  * <h2>Debugging Aid</h2>
  *
- * Setting the {@link #LOGGER} for FINE would give you basic start/stop/resume/suspend level
+ * <p>Setting the {@link #LOGGER} for FINE would give you basic start/stop/resume/suspend level
  * logging. Using FINER would cause more detailed logging, which includes what steps are executed in
  * what order and how they behaved.
  */
 public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /** The next action for this Fiber */
+  /** The next action for this Fiber. */
   private NextAction na;
 
   public final Engine owner;
@@ -75,7 +75,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
 
   /**
    * Replace uses of synchronized(this) with this lock so that we can control unlocking for resume
-   * use cases
+   * use cases.
    */
   private final ReentrantLock lock = new ReentrantLock();
 
@@ -630,8 +630,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
           break;
         case SUSPEND:
           addBreadCrumb(new SuspendMarkerBreadCrumb());
-          if (suspend(isRequireUnlock, result.onExit))
+          if (suspend(isRequireUnlock, result.onExit)) {
             return true; // explicitly exiting control loop
+          }
           break;
         case THROW:
           addBreadCrumb(result);
@@ -685,7 +686,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   }
 
   /**
-   * Returns completion callback associated with this {@link Fiber}
+   * Returns completion callback associated with this {@link Fiber}.
    *
    * @return Completion callback
    */
@@ -694,7 +695,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   }
 
   /**
-   * Updates completion callback associated with this {@link Fiber}
+   * Updates completion callback associated with this {@link Fiber}.
    *
    * @param completionCallback Completion callback
    */
