@@ -11,7 +11,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-/** Contains configuration of a WebLogic server */
+/** Contains configuration of a WebLogic server. */
 public class WlsServerConfig {
   String name;
   Integer listenPort;
@@ -27,7 +27,7 @@ public class WlsServerConfig {
   public WlsServerConfig() {}
 
   /**
-   * Return the name of this WLS server
+   * Return the name of this WLS server.
    *
    * @return The name of this WLS server
    */
@@ -36,7 +36,7 @@ public class WlsServerConfig {
   }
 
   /**
-   * Return the configured listen port of this WLS server
+   * Return the configured listen port of this WLS server.
    *
    * @return The configured listen port of this WLS server
    */
@@ -45,7 +45,7 @@ public class WlsServerConfig {
   }
 
   /**
-   * Return the configured listen address of this WLS server
+   * Return the configured listen address of this WLS server.
    *
    * @return The configured listen address of this WLS server
    */
@@ -54,7 +54,7 @@ public class WlsServerConfig {
   }
 
   /**
-   * Return the configured SSL listen port of this WLS server
+   * Return the configured SSL listen port of this WLS server.
    *
    * @return The configured SSL listen port of this WLS server
    */
@@ -63,7 +63,7 @@ public class WlsServerConfig {
   }
 
   /**
-   * Return whether the SSL listen port is configured to be enabled or not
+   * Return whether the SSL listen port is configured to be enabled or not.
    *
    * @return True if the SSL listen port should be enabled, false otherwise
    */
@@ -72,7 +72,7 @@ public class WlsServerConfig {
   }
 
   /**
-   * Return the machine name configured for this WLS server
+   * Return the machine name configured for this WLS server.
    *
    * @return The configured machine name for this WLS server
    */
@@ -81,7 +81,7 @@ public class WlsServerConfig {
   }
 
   /**
-   * Returns an array containing all network access points configured in this WLS server
+   * Returns an array containing all network access points configured in this WLS server.
    *
    * @return An array of NetworkAccessPoint containing configured network access points in this WLS
    *     server. If there are no network access points configured in this server, an empty array is
@@ -113,7 +113,7 @@ public class WlsServerConfig {
 
   /**
    * Creates a WLSServerConfig object using an "servers" or "serverTemplates" item parsed from JSON
-   * result from WLS REST call
+   * result from WLS REST call.
    *
    * @param serverConfigMap A Map containing the parsed "servers" or "serverTemplates" element for a
    *     WLS server or WLS server template.
@@ -158,7 +158,7 @@ public class WlsServerConfig {
   }
 
   /**
-   * Construct a WlsServerConfig object using values provided
+   * Construct a WlsServerConfig object using values provided.
    *
    * @param name Name of the WLS server
    * @param listenPort Configured listen port for this WLS server
@@ -193,7 +193,7 @@ public class WlsServerConfig {
 
   /**
    * Helper method to parse the cluster name from an item from the Json "servers" or
-   * "serverTemplates" element
+   * "serverTemplates" element.
    *
    * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
    * @return Cluster name contained in the Json element
@@ -216,7 +216,7 @@ public class WlsServerConfig {
 
   /**
    * Helper method to parse the machine name from an item from the Json "servers" or
-   * "serverTemplates" element
+   * "serverTemplates" element.
    *
    * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
    * @return Machine name contained in the Json element
@@ -238,7 +238,7 @@ public class WlsServerConfig {
   }
 
   /**
-   * Whether this server is a dynamic server, ie, not statically configured
+   * Whether this server is a dynamic server, ie, not statically configured.
    *
    * @return True if this server is a dynamic server, false if this server is configured statically
    */
@@ -276,7 +276,7 @@ public class WlsServerConfig {
 
   /**
    * Return the fields from server or server template WLS configuration that should be retrieved
-   * from the WLS REST request
+   * from the WLS REST request.
    *
    * @return A string containing server or server template fields that should be retrieved from the
    *     WLS REST request, in a format that can be used in the REST request payload
@@ -286,7 +286,8 @@ public class WlsServerConfig {
   }
 
   /**
-   * Return the fields from SSL WLS configuration that should be retrieved from the WLS REST request
+   * Return the fields from SSL WLS configuration that should be retrieved from the WLS REST
+   * request.
    *
    * @return A string containing SSL fields that should be retrieved from the WLS REST request, in a
    *     format that can be used in the REST request payload
@@ -297,9 +298,13 @@ public class WlsServerConfig {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     WlsServerConfig that = (WlsServerConfig) o;
 

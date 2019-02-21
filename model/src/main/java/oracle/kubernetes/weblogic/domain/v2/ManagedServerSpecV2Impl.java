@@ -21,7 +21,9 @@ public class ManagedServerSpecV2Impl extends ServerSpecV2Impl {
 
   @Override
   public boolean shouldStart(int currentReplicas) {
-    if (isStartAdminServerOnly()) return false;
+    if (isStartAdminServerOnly()) {
+      return false;
+    }
     return super.shouldStart(currentReplicas);
   }
 }
