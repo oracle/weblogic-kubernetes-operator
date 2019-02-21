@@ -13,8 +13,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 public abstract class Pool<T> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  // volatile since multiple threads may access queue reference
-  private volatile Queue<T> queue = new ConcurrentLinkedQueue<>();
+  private final Queue<T> queue = new ConcurrentLinkedQueue<>();
 
   /**
    * Gets a new object from the pool. If no object is available in the pool, this method creates a

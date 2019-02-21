@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /**
  * BaseDebugLoggingFilter provides utilities shared by RequestDebugLoggingFilter and
- * ResponseDebugLoggingFilter
+ * ResponseDebugLoggingFilter.
  */
 public abstract class BaseDebugLoggingFilter {
 

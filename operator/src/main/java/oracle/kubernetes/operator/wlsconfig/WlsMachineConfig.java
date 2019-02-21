@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.Map;
 
-/** Contains values from a WLS machine configuration */
+/** Contains values from a WLS machine configuration. */
 public class WlsMachineConfig {
 
   final String name;
@@ -27,7 +27,7 @@ public class WlsMachineConfig {
 
   /**
    * Creates a WlsMachineConfig object using an "machines" item parsed from JSON result from WLS
-   * REST call
+   * REST call.
    *
    * @param machineConfigMap Map containing "machine" item parsed from JSON result from WLS REST
    *     call

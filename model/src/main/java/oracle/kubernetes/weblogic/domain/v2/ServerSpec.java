@@ -85,7 +85,7 @@ public abstract class ServerSpec {
   }
 
   /**
-   * The Kubernetes config map name used in WebLogic configuration overrides
+   * The Kubernetes config map name used in WebLogic configuration overrides.
    *
    * @return configMapName. May be empty.
    */
@@ -94,7 +94,7 @@ public abstract class ServerSpec {
   }
 
   /**
-   * The secret names used in WebLogic configuration overrides
+   * The secret names used in WebLogic configuration overrides.
    *
    * @return a list of secret names. May be empty.
    */
@@ -105,7 +105,9 @@ public abstract class ServerSpec {
   @SuppressWarnings("SameParameterValue")
   private V1EnvVar getOrCreateVar(List<V1EnvVar> env, String name) {
     for (V1EnvVar var : env) {
-      if (var.getName().equals(name)) return var;
+      if (var.getName().equals(name)) {
+        return var;
+      }
     }
     V1EnvVar var = new V1EnvVar().name(name);
     env.add(var);
@@ -228,11 +230,17 @@ public abstract class ServerSpec {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
-    if (!(o instanceof ServerSpec)) return false;
+    if (!(o instanceof ServerSpec)) {
+      return false;
+    }
 
     ServerSpec that = (ServerSpec) o;
 

@@ -146,7 +146,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
     if (other == this) {
       return true;
     }
-    if ((other instanceof SubsystemHealth) == false) {
+    if (!(other instanceof SubsystemHealth)) {
       return false;
     }
     SubsystemHealth rhs = ((SubsystemHealth) other);
@@ -159,6 +159,6 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
 
   @Override
   public int compareTo(SubsystemHealth o) {
-    return subsystemName.compareTo(subsystemName);
+    return subsystemName.compareTo(o.subsystemName);
   }
 }
