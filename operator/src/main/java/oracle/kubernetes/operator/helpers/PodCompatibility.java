@@ -8,6 +8,8 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERRESTARTVERSION_LA
 import static oracle.kubernetes.operator.LabelConstants.DOMAINRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LABEL;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.helpers.PodCompatibility.asSet;
+import static oracle.kubernetes.operator.helpers.PodCompatibility.getMissingElements;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Container;
@@ -31,6 +33,7 @@ import oracle.kubernetes.operator.LabelConstants;
 /** A class which defines the compatability rules for existing vs. specified pods. */
 class PodCompatibility extends CollectiveCompatibility {
   PodCompatibility(V1Pod expected, V1Pod actual) {
+    add("sha256Hash", AnnotationHelper.getHash(expected), AnnotationHelper.getHash(actual));
     add(new PodMetadataCompatibility(expected.getMetadata(), actual.getMetadata()));
     add(new PodSpecCompatibility(expected.getSpec(), actual.getSpec()));
   }
@@ -101,7 +104,9 @@ class PodCompatibility extends CollectiveCompatibility {
 
     PodSpecCompatibility(V1PodSpec expected, V1PodSpec actual) {
       add("securityContext", expected.getSecurityContext(), actual.getSecurityContext());
-      add(new EqualsMaps<>("nodeSelector", expected.getNodeSelector(), actual.getNodeSelector()));
+      add(
+          new CompatibleMaps<>(
+              "nodeSelector", expected.getNodeSelector(), actual.getNodeSelector()));
       addSets("volumes", expected.getVolumes(), actual.getVolumes());
       addSets("imagePullSecrets", expected.getImagePullSecrets(), actual.getImagePullSecrets());
       addContainerChecks(expected.getContainers(), actual.getContainers());
@@ -188,28 +193,6 @@ class PodCompatibility extends CollectiveCompatibility {
     }
   }
 
-  static class EqualsMaps<K, V> implements CompatibilityCheck {
-    private final String description;
-    private final Map<K, V> expected;
-    private final Map<K, V> actual;
-
-    EqualsMaps(String description, Map<K, V> expected, Map<K, V> actual) {
-      this.description = description;
-      this.expected = expected;
-      this.actual = actual;
-    }
-
-    @Override
-    public boolean isCompatible() {
-      return KubernetesUtils.mapEquals(expected, actual);
-    }
-
-    @Override
-    public String getIncompatibility() {
-      return description + " expected: " + expected + " but was: " + actual;
-    }
-  }
-
   static class Probes implements CompatibilityCheck {
     private final String description;
     private final V1Probe expected;
@@ -283,6 +266,16 @@ class PodCompatibility extends CollectiveCompatibility {
       return sb.toString();
     }
   }
+
+  static <T> Set<T> asSet(Collection<T> collection) {
+    return (collection == null) ? Collections.emptySet() : new HashSet<>(collection);
+  }
+
+  static <T> Set<T> getMissingElements(Collection<T> expected, Collection<T> actual) {
+    Set<T> missing = asSet(expected);
+    missing.removeAll(actual);
+    return missing;
+  }
 }
 
 interface CompatibilityCheck {
@@ -318,7 +311,7 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
   }
 
   <T> void addSets(String description, List<T> expected, List<T> actual) {
-    add(new EqualSets<>(description, expected, actual));
+    add(new CompatibleSets<>(description, expected, actual));
   }
 
   protected <T> void add(String description, T expected, T actual) {
@@ -356,12 +349,12 @@ class Equality implements CompatibilityCheck {
   }
 }
 
-class EqualSets<T> implements CompatibilityCheck {
+class CompatibleSets<T> implements CompatibilityCheck {
   private String description;
   private final Collection<T> expected;
   private final Collection<T> actual;
 
-  EqualSets(String description, Collection<T> expected, Collection<T> actual) {
+  CompatibleSets(String description, Collection<T> expected, Collection<T> actual) {
     this.description = description;
     this.expected = expected;
     this.actual = actual;
@@ -370,15 +363,50 @@ class EqualSets<T> implements CompatibilityCheck {
   @Override
   public boolean isCompatible() {
     if (expected == actual) return true;
-    return asSet(expected).equals(asSet(actual));
-  }
-
-  private static <T> Set<T> asSet(Collection<T> collection) {
-    return (collection == null) ? Collections.emptySet() : new HashSet<>(collection);
+    return asSet(actual).containsAll(asSet(expected));
   }
 
   @Override
   public String getIncompatibility() {
-    return String.format("%s expected: %s but was: %s", description, expected, actual);
+    return String.format(
+        "actual %s does not have %s", description, getMissingElements(expected, actual));
+  }
+}
+
+class CompatibleMaps<K, V> implements CompatibilityCheck {
+  private final String description;
+  private final Map<K, V> expected;
+  private final Map<K, V> actual;
+
+  CompatibleMaps(String description, Map<K, V> expected, Map<K, V> actual) {
+    this.description = description;
+    this.expected = expected;
+    this.actual = actual;
+  }
+
+  @Override
+  public boolean isCompatible() {
+    for (K key : expected.keySet())
+      if (!actual.containsKey(key) || !Objects.equals(expected.get(key), actual.get(key)))
+        return false;
+    return true;
+  }
+
+  @Override
+  public String getIncompatibility() {
+    StringBuilder sb = new StringBuilder();
+
+    Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
+    if (!missingKeys.isEmpty())
+      sb.append(String.format("%s has no entry for %s%n", description, missingKeys));
+
+    for (K key : expected.keySet())
+      if (actual.containsKey(key) && !Objects.equals(expected.get(key), actual.get(key)))
+        sb.append(
+            String.format(
+                "%s has entry %s with value %s rather than %s%n",
+                description, key, actual.get(key), expected.get(key)));
+
+    return sb.toString();
   }
 }
