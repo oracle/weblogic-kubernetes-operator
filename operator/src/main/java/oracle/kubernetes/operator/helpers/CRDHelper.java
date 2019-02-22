@@ -12,11 +12,14 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinitionVersion;
 import io.kubernetes.client.models.V1beta1CustomResourceSubresourceScale;
 import io.kubernetes.client.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -28,8 +31,8 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v2.DomainStatus;
+import oracle.kubernetes.weblogic.domain.v3.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v3.DomainStatus;
 
 /** Helper class to ensure Domain CRD is created. */
 public class CRDHelper {
@@ -93,7 +96,7 @@ public class CRDHelper {
       V1beta1CustomResourceDefinitionSpec spec =
           new V1beta1CustomResourceDefinitionSpec()
               .group(KubernetesConstants.DOMAIN_GROUP)
-              .version(KubernetesConstants.DOMAIN_VERSION)
+              .versions(getCRDVersions())
               .scope("Namespaced")
               .names(getCRDNames())
               .validation(createSchemaValidation());
@@ -110,6 +113,18 @@ public class CRDHelper {
         // .status(new HashMap<String, Object>()));
       }
       return spec;
+    }
+
+    static List<V1beta1CustomResourceDefinitionVersion> getCRDVersions() {
+      return Arrays.asList(
+          new V1beta1CustomResourceDefinitionVersion()
+              .name(KubernetesConstants.DOMAIN_VERSION)
+              .served(true)
+              .storage(true),
+          new V1beta1CustomResourceDefinitionVersion()
+              .name("v3")
+              .served(true)
+      );
     }
 
     static V1beta1CustomResourceDefinitionNames getCRDNames() {
@@ -252,7 +267,7 @@ public class CRDHelper {
       // of the version, supporting alpha and beta variants, e.g. v3alpha1 format, but
       // for now we just need to replace v1.
       return actual.getSpec().getVersion().equals("v1")
-          || (actual.getSpec().getVersion().equals("v2")
+          || (actual.getSpec().getVersion().equals("v3")
               && (getSchemaValidation(actual) == null
                   || !getSchemaValidation(expected).equals(getSchemaValidation(actual))
                   || !getSchemaSubresources(expected).equals(getSchemaSubresources(actual))));

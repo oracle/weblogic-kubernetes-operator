@@ -4,8 +4,8 @@
 
 package oracle.kubernetes.weblogic.domain;
 
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainV2Configurator;
+import oracle.kubernetes.weblogic.domain.v3.Domain;
+import oracle.kubernetes.weblogic.domain.v3.DomainV2Configurator;
 
 public class DomainConfiguratorFactory {
 

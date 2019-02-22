@@ -40,7 +40,7 @@ public class VersionHelperTest {
   @Test
   public void different_version_returns_false() throws Exception {
     assertThat(
-        matchesResourceVersion(newObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, "v2"), V1),
+        matchesResourceVersion(newObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, "v3"), V1),
         equalTo(false));
   }
 
