@@ -39,12 +39,12 @@ public class DomainSpec extends BaseConfiguration {
   private String domainUID;
 
   /**
-   * Domain home
+   * Domain home.
    *
    * @since 2.0
    */
   @Description(
-      "The folder for the Weblogic Domain. Not required."
+      "The folder for the WebLogic Domain. Not required."
           + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
           + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
   private String domainHome;
@@ -105,7 +105,7 @@ public class DomainSpec extends BaseConfiguration {
    * <p>Defaults to store/oracle/weblogic:12.2.1.3
    */
   @Description(
-      "The Weblogic Docker image; required when domainHomeInImage is true; "
+      "The WebLogic Docker image; required when domainHomeInImage is true; "
           + "otherwise, defaults to store/oracle/weblogic:12.2.1.3.")
   private String image;
 
@@ -194,7 +194,7 @@ public class DomainSpec extends BaseConfiguration {
   protected List<Cluster> clusters = new ArrayList<>();
 
   /**
-   * Adds a Cluster to the DomainSpec
+   * Adds a Cluster to the DomainSpec.
    *
    * @param cluster The cluster to be added to this DomainSpec
    * @return this object
@@ -205,7 +205,9 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   AdminServer getOrCreateAdminServer() {
-    if (adminServer != null) return adminServer;
+    if (adminServer != null) {
+      return adminServer;
+    }
 
     return createAdminServer();
   }
@@ -253,7 +255,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain home
+   * Domain home.
    *
    * @since 2.0
    * @return domain home
@@ -263,7 +265,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain home
+   * Domain home.
    *
    * @since 2.0
    * @param domainHome domain home
@@ -337,10 +339,18 @@ public class DomainSpec extends BaseConfiguration {
     return imagePullSecrets != null && imagePullSecrets.size() != 0;
   }
 
+  /**
+   * Gets image pull secrets.
+   *
+   * @return image pull secrets
+   */
   @Nullable
   public List<V1LocalObjectReference> getImagePullSecrets() {
-    if (hasImagePullSecrets()) return imagePullSecrets;
-    else return Collections.emptyList();
+    if (hasImagePullSecrets()) {
+      return imagePullSecrets;
+    } else {
+      return Collections.emptyList();
+    }
   }
 
   public void setImagePullSecret(@Nullable V1LocalObjectReference imagePullSecret) {
@@ -352,7 +362,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Log Home
+   * Log Home.
    *
    * @return The in-pod name of the directory to store the domain, node manager, server logs, and
    *     server .out files in.
@@ -366,7 +376,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Log home enabled
+   * Log home enabled.
    *
    * @since 2.0
    * @return log home enabled
@@ -376,7 +386,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Log home enabled
+   * Log home enabled.
    *
    * @since 2.0
    * @param logHomeEnabled log home enabled
@@ -386,7 +396,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Whether to include server .out to the pod's stdout
+   * Whether to include server .out to the pod's stdout.
    *
    * @return whether server .out should be included in pod's stdout.
    * @since 2.0
@@ -412,7 +422,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Specifies whether the domain home is stored in the image
+   * Specifies whether the domain home is stored in the image.
    *
    * @param domainHomeInImage true if the domain home is in the image
    */
@@ -462,12 +472,12 @@ public class DomainSpec extends BaseConfiguration {
     return configOverrides;
   }
 
-  void setConfigOverrides(@Nullable String overridess) {
-    this.configOverrides = overridess;
+  void setConfigOverrides(@Nullable String overrides) {
+    this.configOverrides = overrides;
   }
 
-  public DomainSpec withConfigOverrides(@Nullable String overridess) {
-    this.configOverrides = overridess;
+  public DomainSpec withConfigOverrides(@Nullable String overrides) {
+    this.configOverrides = overrides;
     return this;
   }
 
@@ -477,8 +487,11 @@ public class DomainSpec extends BaseConfiguration {
 
   @Nullable
   List<String> getConfigOverrideSecrets() {
-    if (hasConfigOverrideSecrets()) return configOverrideSecrets;
-    else return Collections.emptyList();
+    if (hasConfigOverrideSecrets()) {
+      return configOverrideSecrets;
+    } else {
+      return Collections.emptyList();
+    }
   }
 
   public void setConfigOverrideSecrets(@Nullable List<String> overridesSecretNames) {
@@ -539,8 +552,12 @@ public class DomainSpec extends BaseConfiguration {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) return true;
-    if (!(other instanceof DomainSpec)) return false;
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof DomainSpec)) {
+      return false;
+    }
 
     DomainSpec rhs = ((DomainSpec) other);
     EqualsBuilder builder =
@@ -570,7 +587,9 @@ public class DomainSpec extends BaseConfiguration {
   ManagedServer getManagedServer(String serverName) {
     if (serverName != null) {
       for (ManagedServer s : managedServers) {
-        if (serverName.equals(s.getServerName())) return s;
+        if (serverName.equals(s.getServerName())) {
+          return s;
+        }
       }
     }
     return null;
@@ -579,7 +598,9 @@ public class DomainSpec extends BaseConfiguration {
   Cluster getCluster(String clusterName) {
     if (clusterName != null) {
       for (Cluster c : clusters) {
-        if (clusterName.equals(c.getClusterName())) return c;
+        if (clusterName.equals(c.getClusterName())) {
+          return c;
+        }
       }
     }
     return null;
@@ -680,7 +701,9 @@ public class DomainSpec extends BaseConfiguration {
 
     private Cluster getOrCreateCluster(String clusterName) {
       Cluster cluster = getCluster(clusterName);
-      if (cluster != null) return cluster;
+      if (cluster != null) {
+        return cluster;
+      }
 
       return createClusterWithName(clusterName);
     }

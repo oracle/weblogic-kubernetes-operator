@@ -44,11 +44,17 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
-    if (!(o instanceof ManagedServer)) return false;
+    if (!(o instanceof ManagedServer)) {
+      return false;
+    }
 
     ManagedServer that = (ManagedServer) o;
 

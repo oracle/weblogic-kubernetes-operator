@@ -243,10 +243,10 @@ function printSummary {
   echo "Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
   echo ""
   if [ "${exposeAdminNodePort}" = true ]; then
-    echo "Administration console access is available at http:${K8S_IP}:${adminNodePort}/console"
+    echo "Administration console access is available at http://${K8S_IP}:${adminNodePort}/console"
   fi
   if [ "${exposeAdminT3Channel}" = true ]; then
-    echo "T3 access is available at t3:${K8S_IP}:${t3ChannelPort}"
+    echo "T3 access is available at t3://${K8S_IP}:${t3ChannelPort}"
   fi
   echo "The following files were generated:"
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"

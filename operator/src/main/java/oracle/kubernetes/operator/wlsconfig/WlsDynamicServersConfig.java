@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
 /**
- * Contains values from a WLS dynamic servers configuration, which configures a WLS dynamic cluster
+ * Contains values from a WLS dynamic servers configuration, which configures a WLS dynamic cluster.
  */
 public class WlsDynamicServersConfig {
 
@@ -31,7 +31,7 @@ public class WlsDynamicServersConfig {
 
   /**
    * Creates a WlsDynamicServersConfig object using an "dynamicServers" item parsed from JSON result
-   * from WLS REST call
+   * from WLS REST call.
    *
    * @param dynamicServerConfig Map containing "dynamicServers" item parsed from JSON result from
    *     WLS REST call
@@ -91,7 +91,7 @@ public class WlsDynamicServersConfig {
   public WlsDynamicServersConfig() {}
 
   /**
-   * Constructor
+   * Constructor.
    *
    * @param dynamicClusterSize current size of the dynamic cluster
    * @param maxDynamicClusterSize maximum size of the dynamic cluster
@@ -122,7 +122,7 @@ public class WlsDynamicServersConfig {
 
   /**
    * Create a list of WlsServerConfig objects for dynamic servers that corresponds to the current
-   * cluster size
+   * cluster size.
    *
    * @param serverNames Names of the servers corresponding to the current cluster size
    * @param serverTemplate WlsServerConfig object containing template used for creating dynamic
@@ -161,7 +161,7 @@ public class WlsDynamicServersConfig {
   }
 
   /**
-   * Return current size of the dynamic cluster
+   * Return current size of the dynamic cluster.
    *
    * @return current size of the dynamic cluster
    */
@@ -174,7 +174,7 @@ public class WlsDynamicServersConfig {
   }
 
   /**
-   * Return maximum size of the dynamic cluster
+   * Return maximum size of the dynamic cluster.
    *
    * @return maximum size of the dynamic cluster
    */
@@ -187,7 +187,7 @@ public class WlsDynamicServersConfig {
   }
 
   /**
-   * Return the expression used in matching machine names assigned to dynamic servers
+   * Return the expression used in matching machine names assigned to dynamic servers.
    *
    * @return the expression used in matching machine names assigned to dynamic servers
    */
@@ -201,7 +201,7 @@ public class WlsDynamicServersConfig {
 
   /**
    * Return list of WlsServerConfig objects containing configurations of WLS dynamic server that can
-   * be started under the current cluster size
+   * be started under the current cluster size.
    *
    * @return A list of WlsServerConfig objects containing configurations of WLS dynamic server that
    *     can be started under the current cluster size
@@ -237,7 +237,7 @@ public class WlsDynamicServersConfig {
   }
 
   /**
-   * Return the server template associated with this dynamic servers configuration
+   * Return the server template associated with this dynamic servers configuration.
    *
    * @return The server template associated with this dynamic servers configuration
    */
@@ -299,7 +299,7 @@ public class WlsDynamicServersConfig {
 
   /**
    * Returns a String containing the fields that we are interested in from the dynamic servers
-   * configuration which will used in the payload to the REST call to WLS admin server
+   * configuration which will used in the payload to the REST call to WLS admin server.
    *
    * @return a String containing the fields that we are interested in from the dynamic servers
    *     configuration which will used in the payload to the REST call to WLS admin server

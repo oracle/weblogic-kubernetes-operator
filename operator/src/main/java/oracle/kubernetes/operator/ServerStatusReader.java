@@ -37,7 +37,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
 
-/** Creates an asynchronous step to read the WebLogic server state from a particular pod */
+/** Creates an asynchronous step to read the WebLogic server state from a particular pod. */
 public class ServerStatusReader {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
@@ -91,7 +91,7 @@ public class ServerStatusReader {
   }
 
   /**
-   * Creates asynchronous step to read WebLogic server state from a particular pod
+   * Creates asynchronous step to read WebLogic server state from a particular pod.
    *
    * @param sko Server objects
    * @param pod The pod

@@ -4,7 +4,15 @@
 
 package oracle.kubernetes.operator.steps;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -51,8 +59,9 @@ public class ManagedServersUpStep extends Step {
 
     void addServerIfNeeded(@Nonnull WlsServerConfig serverConfig, WlsClusterConfig clusterConfig) {
       String serverName = serverConfig.getName();
-      if (servers.contains(serverName) || serverName.equals(domainTopology.getAdminServerName()))
+      if (servers.contains(serverName) || serverName.equals(domainTopology.getAdminServerName())) {
         return;
+      }
 
       String clusterName = clusterConfig == null ? null : clusterConfig.getClusterName();
       ServerSpec server = domain.getServer(serverName, clusterName);
@@ -76,8 +85,11 @@ public class ManagedServersUpStep extends Step {
     }
 
     private Step createNextStep(Step next) {
-      if (servers.isEmpty()) return next;
-      else return new ManagedServerUpIteratorStep(getStartupInfos(), next);
+      if (servers.isEmpty()) {
+        return next;
+      } else {
+        return new ManagedServerUpIteratorStep(getStartupInfos(), next);
+      }
     }
 
     Collection<ServerStartupInfo> getStartupInfos() {
@@ -85,12 +97,16 @@ public class ManagedServersUpStep extends Step {
     }
 
     private void addStartupInfo(ServerStartupInfo startupInfo) {
-      if (startupInfos == null) startupInfos = new ArrayList<>();
+      if (startupInfos == null) {
+        startupInfos = new ArrayList<>();
+      }
       startupInfos.add(startupInfo);
     }
 
     private void addToCluster(String clusterName) {
-      if (clusterName != null) replicas.put(clusterName, 1 + getReplicaCount(clusterName));
+      if (clusterName != null) {
+        replicas.put(clusterName, 1 + getReplicaCount(clusterName));
+      }
     }
 
     private Integer getReplicaCount(String clusterName) {
@@ -136,8 +152,9 @@ public class ManagedServersUpStep extends Step {
     }
 
     for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
-      if (!clusteredServers.contains(serverConfig.getName()))
+      if (!clusteredServers.contains(serverConfig.getName())) {
         factory.addServerIfNeeded(serverConfig, null);
+      }
     }
 
     info.setServerStartupInfo(factory.getStartupInfos());

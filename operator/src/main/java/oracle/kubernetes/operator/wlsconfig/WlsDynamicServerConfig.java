@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-/** Contains configuration of a WLS server that belongs to a dynamic cluster */
+/** Contains configuration of a WLS server that belongs to a dynamic cluster. */
 public class WlsDynamicServerConfig extends WlsServerConfig {
 
   // default listen ports per WebLogic DynamicServersMBean
@@ -17,7 +17,7 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
   static final int DEFAULT_NAP_LISTEN_PORT_RANGE_BASE = 9100;
 
   /**
-   * Create a dynamic server config using server template and index number of this server
+   * Create a dynamic server config using server template and index number of this server.
    *
    * @param name Name of the server
    * @param index index of this server within the cluster, for example, the index of dserver-2 would
@@ -110,7 +110,7 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
   }
 
   /**
-   * Whether this server is a dynamic server, ie, not statically configured
+   * Whether this server is a dynamic server, ie, not statically configured.
    *
    * @return True if this server is a dynamic server, false if this server is configured statically
    */

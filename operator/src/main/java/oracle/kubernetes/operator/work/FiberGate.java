@@ -25,7 +25,7 @@ public class FiberGate {
   private final Fiber PLACEHOLDER;
 
   /**
-   * Constructor taking Engine for running Fibers
+   * Constructor taking Engine for running Fibers.
    *
    * @param engine Engine
    */

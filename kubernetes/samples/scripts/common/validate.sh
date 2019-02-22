@@ -342,7 +342,6 @@ function validateCommonInputs {
     clusterName \
     managedServerNameBase \
     namespace \
-    t3PublicAddress \
     includeServerOutInPodLog \
     version
 

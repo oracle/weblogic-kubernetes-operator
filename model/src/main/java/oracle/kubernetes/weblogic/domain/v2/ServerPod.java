@@ -63,7 +63,7 @@ class ServerPod extends KubernetesResource {
 
   /**
    * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
-   * indicated key-value pairs as labels
+   * indicated key-value pairs as labels.
    *
    * @since 2.0
    */
@@ -72,7 +72,7 @@ class ServerPod extends KubernetesResource {
   private Map<String, String> nodeSelector = new HashMap<>();
 
   /**
-   * Defines the requirements and limits for the pod server
+   * Defines the requirements and limits for the pod server.
    *
    * @since 2.0
    */
@@ -149,11 +149,17 @@ class ServerPod extends KubernetesResource {
   }
 
   void fillInFrom(ServerPod serverPod1) {
-    for (V1EnvVar var : serverPod1.getV1EnvVars()) addIfMissing(var);
+    for (V1EnvVar var : serverPod1.getV1EnvVars()) {
+      addIfMissing(var);
+    }
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
-    for (V1Volume var : serverPod1.getAdditionalVolumes()) addIfMissing(var);
-    for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) addIfMissing(var);
+    for (V1Volume var : serverPod1.getAdditionalVolumes()) {
+      addIfMissing(var);
+    }
+    for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) {
+      addIfMissing(var);
+    }
     fillInFrom((KubernetesResource) serverPod1);
     serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
     copyValues(resources, serverPod1.resources);
@@ -164,31 +170,62 @@ class ServerPod extends KubernetesResource {
 
   @SuppressWarnings("Duplicates")
   private void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
-    if (to.isRunAsNonRoot() == null) to.runAsNonRoot(from.isRunAsNonRoot());
-    if (to.getFsGroup() == null) to.fsGroup(from.getFsGroup());
-    if (to.getRunAsGroup() == null) to.runAsGroup(from.getRunAsGroup());
-    if (to.getRunAsUser() == null) to.runAsUser(from.getRunAsUser());
-    if (to.getSeLinuxOptions() == null) to.seLinuxOptions(from.getSeLinuxOptions());
-    if (to.getSupplementalGroups() == null) to.supplementalGroups(from.getSupplementalGroups());
-    if (to.getSysctls() == null) to.sysctls(from.getSysctls());
+    if (to.isRunAsNonRoot() == null) {
+      to.runAsNonRoot(from.isRunAsNonRoot());
+    }
+    if (to.getFsGroup() == null) {
+      to.fsGroup(from.getFsGroup());
+    }
+    if (to.getRunAsGroup() == null) {
+      to.runAsGroup(from.getRunAsGroup());
+    }
+    if (to.getRunAsUser() == null) {
+      to.runAsUser(from.getRunAsUser());
+    }
+    if (to.getSeLinuxOptions() == null) {
+      to.seLinuxOptions(from.getSeLinuxOptions());
+    }
+    if (to.getSupplementalGroups() == null) {
+      to.supplementalGroups(from.getSupplementalGroups());
+    }
+    if (to.getSysctls() == null) {
+      to.sysctls(from.getSysctls());
+    }
   }
 
   @SuppressWarnings("Duplicates")
   private void copyValues(V1SecurityContext to, V1SecurityContext from) {
-    if (to.isAllowPrivilegeEscalation() == null)
+    if (to.isAllowPrivilegeEscalation() == null) {
       to.allowPrivilegeEscalation(from.isAllowPrivilegeEscalation());
-    if (to.isPrivileged() == null) to.privileged(from.isPrivileged());
-    if (to.isReadOnlyRootFilesystem() == null)
+    }
+    if (to.isPrivileged() == null) {
+      to.privileged(from.isPrivileged());
+    }
+    if (to.isReadOnlyRootFilesystem() == null) {
       to.readOnlyRootFilesystem(from.isReadOnlyRootFilesystem());
-    if (to.isRunAsNonRoot() == null) to.runAsNonRoot(from.isRunAsNonRoot());
+    }
+    if (to.isRunAsNonRoot() == null) {
+      to.runAsNonRoot(from.isRunAsNonRoot());
+    }
     if (to.getCapabilities() == null) {
       to.setCapabilities(from.getCapabilities());
     } else {
       copyValues(to.getCapabilities(), from.getCapabilities());
     }
-    if (to.getRunAsGroup() == null) to.runAsGroup(from.getRunAsGroup());
-    if (to.getRunAsUser() == null) to.runAsUser(from.getRunAsUser());
-    if (to.getSeLinuxOptions() == null) to.seLinuxOptions(from.getSeLinuxOptions());
+    if (to.getRunAsGroup() == null) {
+      to.runAsGroup(from.getRunAsGroup());
+    }
+    if (to.getRunAsUser() == null) {
+      to.runAsUser(from.getRunAsUser());
+    }
+    if (to.getSeLinuxOptions() == null) {
+      to.seLinuxOptions(from.getSeLinuxOptions());
+    }
+  }
+
+  private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
+    from.getRequests().forEach(to.getRequests()::putIfAbsent);
+    from.getLimits().forEach(to.getLimits()::putIfAbsent);
   }
 
   private void copyValues(V1Capabilities to, V1Capabilities from) {
@@ -221,18 +258,36 @@ class ServerPod extends KubernetesResource {
     }
   }
 
+  private void addIfMissing(V1Volume var) {
+    if (!hasVolumeName(var.getName())) {
+      addAdditionalVolume(var);
+    }
+  }
+
+  private void addIfMissing(V1EnvVar var) {
+    if (!hasEnvVar(var.getName())) {
+      addEnvVar(var);
+    }
+  }
+
+  private void addIfMissing(V1VolumeMount var) {
+    if (!hasVolumeMountName(var.getName())) {
+      addAdditionalVolumeMount(var);
+    }
+  }
+
   private List<V1EnvVar> getV1EnvVars() {
     return Optional.ofNullable(getEnv()).orElse(emptyList());
   }
 
-  private void addIfMissing(V1EnvVar var) {
-    if (!hasEnvVar(var.getName())) addEnvVar(var);
-  }
-
   private boolean hasEnvVar(String name) {
-    if (env == null) return false;
+    if (env == null) {
+      return false;
+    }
     for (V1EnvVar var : env) {
-      if (var.getName().equals(name)) return true;
+      if (var.getName().equals(name)) {
+        return true;
+      }
     }
     return false;
   }
@@ -250,24 +305,20 @@ class ServerPod extends KubernetesResource {
 
   private boolean hasVolumeName(String name) {
     for (V1Volume var : volumes) {
-      if (var.getName().equals(name)) return true;
+      if (var.getName().equals(name)) {
+        return true;
+      }
     }
     return false;
-  }
-
-  private void addIfMissing(V1Volume var) {
-    if (!hasVolumeName(var.getName())) addAdditionalVolume(var);
   }
 
   private boolean hasVolumeMountName(String name) {
     for (V1VolumeMount var : volumeMounts) {
-      if (var.getName().equals(name)) return true;
+      if (var.getName().equals(name)) {
+        return true;
+      }
     }
     return false;
-  }
-
-  private void addIfMissing(V1VolumeMount var) {
-    if (!hasVolumeMountName(var.getName())) addAdditionalVolumeMount(var);
   }
 
   List<V1EnvVar> getEnv() {
@@ -275,7 +326,9 @@ class ServerPod extends KubernetesResource {
   }
 
   void addEnvVar(V1EnvVar var) {
-    if (this.env == null) setEnv(new ArrayList<>());
+    if (this.env == null) {
+      setEnv(new ArrayList<>());
+    }
     this.env.add(var);
   }
 
@@ -371,9 +424,13 @@ class ServerPod extends KubernetesResource {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     ServerPod that = (ServerPod) o;
 

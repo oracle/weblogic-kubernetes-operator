@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.operator.work;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * This class determines an instance of {@link Container} for the runtime.
  *
@@ -15,7 +17,8 @@ public abstract class ContainerResolver {
 
   private static final ThreadLocalContainerResolver DEFAULT = new ThreadLocalContainerResolver();
 
-  private static volatile ContainerResolver theResolver = DEFAULT;
+  private static final AtomicReference<ContainerResolver> theResolver =
+      new AtomicReference(DEFAULT);
 
   /**
    * Sets the custom container resolver which can be used to get client's {@link Container}.
@@ -26,7 +29,7 @@ public abstract class ContainerResolver {
     if (resolver == null) {
       resolver = DEFAULT;
     }
-    theResolver = resolver;
+    theResolver.set(resolver);
   }
 
   /**
@@ -35,7 +38,7 @@ public abstract class ContainerResolver {
    * @return container resolver instance
    */
   public static ContainerResolver getInstance() {
-    return theResolver;
+    return theResolver.get();
   }
 
   /**

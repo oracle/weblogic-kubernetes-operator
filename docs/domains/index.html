@@ -1097,7 +1097,7 @@ window.onload = function() {
           ]
         },
         "image": {
-          "description": "The Weblogic Docker image; required when domainHomeInImage is true; otherwise, defaults to store/oracle/weblogic:12.2.1.3.",
+          "description": "The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to store/oracle/weblogic:12.2.1.3.",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -1159,7 +1159,7 @@ window.onload = function() {
           "$ref": "#/definitions/KubernetesResource"
         },
         "domainHome": {
-          "description": "The folder for the Weblogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true",
+          "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true",
           "type": "string"
         },
         "logHomeEnabled": {
