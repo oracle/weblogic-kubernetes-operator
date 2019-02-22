@@ -7,14 +7,28 @@ package oracle.kubernetes.operator.helpers;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.KubernetesConstants.*;
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
+import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.ProbeMatcher.hasExpectedTuning;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.writableVolumeMount;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.google.gson.Gson;
@@ -22,7 +36,27 @@ import com.google.gson.JsonElement;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1ContainerPort;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ExecAction;
+import io.kubernetes.client.models.V1HTTPGetAction;
+import io.kubernetes.client.models.V1Handler;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1Lifecycle;
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolume;
+import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Probe;
+import io.kubernetes.client.models.V1SecretReference;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
@@ -41,8 +76,11 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -50,7 +88,6 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v2.DomainV2Configurator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.After;
@@ -70,7 +107,7 @@ public abstract class PodHelperTestBase {
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
   private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
   private static final String LATEST_IMAGE = "image:latest";
-  static final String VERSIONED_IMAGE = "image:1.2.3";
+  private static final String VERSIONED_IMAGE = "image:1.2.3";
   private static final int READINESS_INITIAL_DELAY = 1;
   private static final int READINESS_TIMEOUT = 2;
   private static final int READINESS_PERIOD = 3;
@@ -97,6 +134,7 @@ public abstract class PodHelperTestBase {
 
   private String serverName;
   private int listenPort;
+  private WlsDomainConfig domainTopology;
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
@@ -123,18 +161,23 @@ public abstract class PodHelperTestBase {
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(TuningParametersStub.install());
+    mementos.add(
+        StaticStubSupport.install(AnnotationHelper.class, "HASH_FUNCTION", new UnitTestHash()));
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
+    if (!ADMIN_SERVER.equals(serverName)) configSupport.addWlsServer(serverName, listenPort);
     configSupport.setAdminServerName(ADMIN_SERVER);
 
-    WlsDomainConfig domainConfig = configSupport.createDomainConfig();
+    domainTopology = configSupport.createDomainConfig();
     testSupport
-        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
-        .addToPacket(SERVER_SCAN, domainConfig.getServerConfig(ADMIN_SERVER))
+        .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainTopology)
+        .addToPacket(SERVER_SCAN, domainTopology.getServerConfig(serverName))
         .addDomainPresenceInfo(domainPresenceInfo);
     onAdminExpectListPersistentVolume();
   }
+
+  abstract V1Pod createPod(Packet packet);
 
   private String[] getMessageKeys() {
     return new String[] {
@@ -153,6 +196,12 @@ public abstract class PodHelperTestBase {
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
     return new DomainPresenceInfo(domain);
   }
+
+  WlsServerConfig getServerTopology() {
+    return domainTopology.getServerConfig(getServerName());
+  }
+
+  abstract void setServerPort(int port);
 
   private Domain createDomain() {
     return new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(createDomainSpec());
@@ -196,7 +245,7 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenNoPod_createIt() {
-    expectCreatePod(podWithName(getPodName())).returning(createPodModel());
+    expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
     expectStepsAfterCreation();
 
     testSupport.runSteps(getStepFactory(), terminalStep);
@@ -207,6 +256,11 @@ public abstract class PodHelperTestBase {
   @Test
   public void whenPodCreated_specHasOneContainer() {
     assertThat(getCreatedPod().getSpec().getContainers(), hasSize(1));
+  }
+
+  @Test
+  public void whenPodCreated_hasSha256HashAnnotationForRecipe() {
+    assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
   }
 
   @Test
@@ -291,7 +345,7 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
-    configureDomainV2Server()
+    configureServer()
         .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe(),
@@ -299,44 +353,45 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodCreatedWithDomainV2Settings_readinessProbeHasConfiguredTuning() {
-    configureDomainV2Server()
+  public void whenPodCreated_readinessProbeHasConfiguredTuning() {
+    configureServer()
         .withReadinessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe(),
         hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD));
   }
 
-  private ServerConfigurator configureDomainV2Server() {
-    return getServerConfigurator(new DomainV2Configurator(domain), getServerName());
-  }
-
-  protected abstract void verifyReplacePodWhen(PodMutator mutator);
+  protected abstract void verifyPodReplaced();
 
   protected abstract void verifyPodNotReplacedWhen(PodMutator mutator);
 
   private void verifyPatchPod(PodMutator mutator, String... patchInstructions) {
+    V1Pod existingPod = createPodModel();
+    mutator.mutate(existingPod);
+    initializeExistingPod(existingPod);
+
+    verifyPatchPod(patchInstructions);
+  }
+
+  private void verifyPatchPod(String... patchInstructions) {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
         (pod, next) -> terminalStep);
 
-    V1Pod existingPod = createPodModel();
-    mutator.mutate(existingPod);
-    initializeExistingPod(existingPod);
     testSupport
         .createCannedResponse("patchPod")
         .withName(getPodName())
         .withNamespace(NS)
         .withBody(expect(patchInstructions))
-        .returning(createPodModel());
+        .returning(createTestPodModel());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getPatchedMessageKey()));
   }
 
-  protected abstract ServerConfigurator getServerConfigurator(
+  protected abstract ServerConfigurator configureServer(
       DomainConfigurator configurator, String serverName);
 
   @SuppressWarnings("unchecked")
@@ -452,7 +507,7 @@ public abstract class PodHelperTestBase {
 
   V1Pod getCreatedPod() {
     PodFetcher podFetcher = new PodFetcher(getPodName());
-    expectCreatePod(podFetcher).returning(createPodModel());
+    expectCreatePod(podFetcher).returning(createTestPodModel());
     expectStepsAfterCreation();
 
     testSupport.runSteps(getStepFactory(), terminalStep);
@@ -477,20 +532,17 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasBadVersion_replaceIt() {
-    verifyReplacePodWhen(pod -> pod.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, "??"));
-  }
-
-  @Test
   public void whenPodHasUnknownCustomerLabel_ignoreIt() {
     verifyPodNotReplacedWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
   }
 
   @Test
   public void whenPodLacksExpectedCustomerLabel_addIt() {
+    initializeExistingPod();
+
     configurator.withPodLabel("expected.label", "value");
 
-    verifyPatchPod(pod -> {}, "add", "/metadata/labels/expected.label", "value");
+    verifyPatchPod("add", "/metadata/labels/expected.label", "value");
   }
 
   @Test
@@ -506,9 +558,19 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodLacksExpectedCustomerLabelAndRequestRequirement_replaceIt() {
+    initializeExistingPod();
+
     configurator.withPodLabel("expected.label", "value").withRequestRequirement("widgets", "10");
 
-    verifyReplacePodWhen(pod -> {});
+    verifyPodReplaced();
+  }
+
+  void initializeExistingPod() {
+    initializeExistingPod(createPodModel());
+  }
+
+  private V1Pod createPodModel() {
+    return createPod(testSupport.getPacket());
   }
 
   @Test
@@ -518,9 +580,11 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodLacksExpectedCustomerAnnotations_addIt() {
+    initializeExistingPod();
+
     configurator.withPodAnnotation("expected.annotation", "value");
 
-    verifyPatchPod(pod -> {}, "add", "/metadata/annotations/expected.annotation", "value");
+    verifyPatchPod("add", "/metadata/annotations/expected.annotation", "value");
   }
 
   @Test
@@ -535,15 +599,21 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodSecurityContextIsDifferent_replaceIt() {
+  public void whenConfigurationModifiesPodSecurityContext_replacePod() {
+    initializeExistingPod();
+
     configurator.withPodSecurityContext(new V1PodSecurityContext().runAsGroup(12345L));
-    verifyReplacePodWhen(pod -> {});
+
+    verifyPodReplaced();
   }
 
   @Test
-  public void whenPodHasDifferentNodeSelector_replaceIt() {
+  public void whenConfigurationAddsNodeSelector_replacePod() {
+    initializeExistingPod();
+
     configurator.withNodeSelector("key", "value");
-    verifyReplacePodWhen(pod -> {});
+
+    verifyPodReplaced();
   }
 
   @Test
@@ -552,27 +622,39 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodContainerSecurityContextIsDifferent_replaceIt() {
+  public void whenConfigurationModifiesContainerSecurityContext_replacePod() {
+    initializeExistingPod();
+
     configurator.withContainerSecurityContext(new V1SecurityContext().runAsGroup(9876L));
-    verifyReplacePodWhen(pod -> {});
+
+    verifyPodReplaced();
   }
 
   @Test
-  public void whenPodLivenessProbeSettingsAreDifferent_replaceIt() {
+  public void whenPodLivenessProbeSettingsChanged_replacePod() {
+    initializeExistingPod();
+
     configurator.withDefaultLivenessProbeSettings(8, 7, 6);
-    verifyReplacePodWhen(pod -> {});
+
+    verifyPodReplaced();
   }
 
   @Test
-  public void whenPodReadinessProbeSettingsAreDifferent_replaceIt() {
+  public void whenPodReadinessProbeSettingsChanged_replacePod() {
+    initializeExistingPod();
+
     configurator.withDefaultReadinessProbeSettings(5, 4, 3);
-    verifyReplacePodWhen(pod -> {});
+
+    verifyPodReplaced();
   }
 
   @Test
-  public void whenPodRequestRequirementIsDifferent_replaceIt() {
+  public void whenPodRequestRequirementChanged_replacePod() {
+    initializeExistingPod();
+
     configurator.withRequestRequirement("resource", "5");
-    verifyReplacePodWhen(pod -> {});
+
+    verifyPodReplaced();
   }
 
   @Test
@@ -581,13 +663,127 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodLimitRequirementIsDifferent_replaceIt() {
+  public void whenPodLimitRequirementChanged_replacePod() {
+    initializeExistingPod();
+
     configurator.withLimitRequirement("limit", "7");
-    verifyReplacePodWhen(pod -> {});
+
+    verifyPodReplaced();
   }
 
   private BodyMatcher expect(String[] patchInstructions) {
     return new PatchMatcher(patchInstructions);
+  }
+
+  private V1Container getSpecContainer(V1Pod pod) {
+    return pod.getSpec().getContainers().get(0);
+  }
+
+  @Test
+  public void whenExistingPodSpecHasK8sVolume_ignoreIt() {
+    verifyPodNotReplacedWhen(
+        (pod) -> {
+          pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
+          getSpecContainer(pod)
+              .addVolumeMountsItem(
+                  new V1VolumeMount()
+                      .name("k8s")
+                      .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH));
+        });
+  }
+
+  @Test
+  public void whenExistingPodSpecHasK8sVolumeMount_ignoreIt() {
+    verifyPodNotReplacedWhen(
+        (pod) ->
+            getSpecContainer(pod)
+                .addVolumeMountsItem(
+                    new V1VolumeMount()
+                        .name("dummy")
+                        .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenPodConfigurationAddsVolume_replacePod() {
+    initializeExistingPod();
+
+    configureServer().withAdditionalVolume("dummy", "/dummy");
+
+    verifyPodReplaced();
+  }
+
+  abstract ServerConfigurator configureServer();
+
+  @Test
+  public void whenPodConfigurationAddsImagePullSecret_replacePod() {
+    initializeExistingPod();
+
+    configureDomain().withDefaultImagePullSecrets(new V1LocalObjectReference().name("secret"));
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenPodConfigurationAddsVolumeMount_replacePod() {
+    initializeExistingPod();
+
+    configureServer().withAdditionalVolumeMount("dummy", "/dummy");
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenPodConfigurationChangesImageName_replacePod() {
+    initializeExistingPod();
+
+    configureDomain().withDefaultImage(VERSIONED_IMAGE);
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenPodConfigurationChangesImagePullPolicy_replacePod() {
+    initializeExistingPod();
+
+    configureDomain().withDefaultImagePullPolicy("NONE");
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenDomainConfigurationAddsRestartVersion_replacePod() {
+    initializeExistingPod();
+
+    configureDomain().withRestartVersion("123");
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenServerConfigurationAddsRestartVersion_replacePod() {
+    initializeExistingPod();
+
+    configureServer().withRestartVersion("123");
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenServerListenPortChanged_replacePod() {
+    initializeExistingPod();
+
+    setServerPort(12345);
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenServerAddsNap_replacePod() {
+    initializeExistingPod();
+
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("nap1", "TCP", 1234, 9001));
+
+    verifyPodReplaced();
   }
 
   protected void onAdminExpectListPersistentVolume() {
@@ -609,7 +805,7 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenCompliantPodExists_recordIt() {
-    initializeExistingPod(createPodModel());
+    initializeExistingPod();
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsFine(getExistsMessageKey()));
@@ -634,7 +830,7 @@ public abstract class PodHelperTestBase {
 
   abstract String getReplacedMessageKey();
 
-  abstract V1Pod createPodModel();
+  abstract V1Pod createTestPodModel();
 
   V1EnvVar envItem(String name, String value) {
     return new V1EnvVar().name(name).value(value);
@@ -725,6 +921,8 @@ public abstract class PodHelperTestBase {
 
     assertThat(getCreatedPodSpecContainer().getImage(), equalTo(DEFAULT_IMAGE));
   }
+
+  // todo test that changing a label or annotation does not change the hash
 
   interface PodMutator {
     void mutate(V1Pod pod);
@@ -914,6 +1112,13 @@ public abstract class PodHelperTestBase {
         actualInstructions.add(new Gson().toJson((JsonElement) instruction));
 
       return actualInstructions.equals(expectedInstructions);
+    }
+  }
+
+  static class UnitTestHash implements Function<V1Pod, String> {
+    @Override
+    public String apply(V1Pod v1Pod) {
+      return Integer.toString(v1Pod.hashCode());
     }
   }
 }
