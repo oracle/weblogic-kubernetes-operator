@@ -9,7 +9,7 @@ metadata:
   name: {{ .Values.wlsDomain.domainUID }}-traefik
   namespace: {{ .Release.Namespace }}
   labels:
-    weblogic.resourceVersion: domain-v2
+    weblogic.resourceVersion: domain-v3
 spec:
   annotations:
     kubernetes.io/ingress.class: traefik

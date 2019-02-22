@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Queue;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v3.Domain;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,10 +52,10 @@ import org.junit.Test;
  */
 public class WatchBuilderTest extends HttpUserAgentTest {
 
-  private static final String API_VERSION = "weblogic.oracle/v2";
+  private static final String API_VERSION = "weblogic.oracle/v3";
   private static final String NAMESPACE = "testspace";
   private static final String DOMAIN_RESOURCE =
-      "/apis/weblogic.oracle/v2/namespaces/" + NAMESPACE + "/domains";
+      "/apis/weblogic.oracle/v3/namespaces/" + NAMESPACE + "/domains";
   private static final String SERVICE_RESOURCE = "/api/v1/namespaces/" + NAMESPACE + "/services";
   private static final String POD_RESOURCE = "/api/v1/namespaces/" + NAMESPACE + "/pods";
   private static final String EOL = "\n";

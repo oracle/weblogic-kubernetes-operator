@@ -5,9 +5,9 @@
 package oracle.kubernetes.weblogic.domain;
 
 import java.util.List;
-import oracle.kubernetes.weblogic.domain.v2.Channel;
-import oracle.kubernetes.weblogic.domain.v2.ClusterSpec;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.v3.Channel;
+import oracle.kubernetes.weblogic.domain.v3.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.v3.ServerSpec;
 
 /**
  * The interface for the class used by the domain model to return effective configurations to the
