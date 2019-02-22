@@ -19,14 +19,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1ContainerPort;
-import io.kubernetes.client.models.V1EnvFromSource;
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,11 +31,11 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
-import org.junit.Before;
 import org.junit.Test;
 
 public class ManagedPodHelperTest extends PodHelperTestBase {
@@ -60,11 +54,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   public ManagedPodHelperTest() {
     super(SERVER_NAME, LISTEN_PORT);
-  }
-
-  @Before
-  public void augmentPacket() {
-    testSupport.addToPacket(ProcessingConstants.SERVER_SCAN, createServerConfig());
   }
 
   private WlsServerConfig createServerConfig() {
@@ -102,6 +91,11 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     return PodHelper::createManagedPodStep;
   }
 
+  @Override
+  ServerConfigurator configureServer() {
+    return configureServer(getConfigurator(), SERVER_NAME);
+  }
+
   private void expectReplaceDomainStatus() {
     testSupport
         .createCannedResponse("replaceDomainStatus")
@@ -119,7 +113,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  V1Pod createPodModel() {
+  V1Pod createTestPodModel() {
     return new V1Pod().metadata(createPodMetadata()).spec(createPodSpec());
   }
 
@@ -180,111 +174,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenExistingManagedPodSpecHasNoContainers_replaceIt() {
-    verifyReplacePodWhen((pod) -> pod.getSpec().setContainers(null));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecHasSuperfluousVolume_replaceIt() {
-    verifyReplacePodWhen((pod) -> pod.getSpec().addVolumesItem(new V1Volume().name("dummy")));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecHasK8sVolume_ignoreIt() {
-    verifyPodNotReplacedWhen(
-        (pod) -> {
-          pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
-          getSpecContainer(pod)
-              .addVolumeMountsItem(
-                  new V1VolumeMount()
-                      .name("k8s")
-                      .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH));
-        });
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecHasExtraImagePullSecret_replaceIt() {
-    verifyReplacePodWhen(
-        (pod) ->
-            pod.getSpec().addImagePullSecretsItem(new V1LocalObjectReference().name("secret")));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecHasNoContainersWithExpectedName_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setName("???"));
-  }
-
-  private V1Container getSpecContainer(V1Pod pod) {
-    return pod.getSpec().getContainers().get(0);
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecHasExtraVolumeMount_replaceIt() {
-    verifyReplacePodWhen(
-        (pod) -> getSpecContainer(pod).addVolumeMountsItem(new V1VolumeMount().name("dummy")));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecHasK8sVolumeMount_ignoreIt() {
-    verifyPodNotReplacedWhen(
-        (pod) ->
-            getSpecContainer(pod)
-                .addVolumeMountsItem(
-                    new V1VolumeMount()
-                        .name("dummy")
-                        .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH)));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecContainerHasWrongImage_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecContainerHasWrongImagePullPolicy_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecContainerHasNoPorts_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecContainerHasExtraPort_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private V1ContainerPort definePort(int port) {
-    return new V1ContainerPort().protocol("TCP").containerPort(port);
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecContainerHasIncorrectPort_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecContainerHasWrongEnvVariable_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
-  }
-
-  @Test
-  public void whenExistingManagedPodSpecContainerHasWrongEnvFrom_replaceIt() {
-    verifyReplacePodWhen(
-        (pod) -> getSpecContainer(pod).envFrom(Collections.singletonList(new V1EnvFromSource())));
-  }
-
-  @Test
-  public void whenExistingManagedPodRestartVersionChange() {
-    verifyReplacePodWhen(
-        (pod) ->
-            pod.getMetadata()
-                .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "serverRestartV1"));
-  }
-
-  @Test
   public void whenDomainHasAdditionalVolumes_createManagedPodWithThem() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/source-path1")
@@ -337,7 +226,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenServerHasAdditionalVolumes_createManagedPodWithThem() {
-    getServerConfigurator(getConfigurator(), SERVER_NAME)
+    configureServer(getConfigurator(), SERVER_NAME)
         .withAdditionalVolume("volume1", "/source-path1")
         .withAdditionalVolume("volume2", "/source-path2");
 
@@ -348,7 +237,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenServerHasAdditionalVolumeMounts_createManagedPodWithThem() {
-    getServerConfigurator(getConfigurator(), SERVER_NAME)
+    configureServer(getConfigurator(), SERVER_NAME)
         .withAdditionalVolumeMount("volume1", "/destination-path1")
         .withAdditionalVolumeMount("volume2", "/destination-path2");
 
@@ -474,7 +363,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenServerHasLabels_createManagedPodWithThem() {
-    getServerConfigurator(getConfigurator(), SERVER_NAME)
+    configureServer(getConfigurator(), SERVER_NAME)
         .withPodLabel("label1", "server-label-value1")
         .withPodLabel("label2", "server-label-value2");
 
@@ -485,7 +374,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenServerHasAnnotations_createManagedPodWithThem() {
-    getServerConfigurator(getConfigurator(), SERVER_NAME)
+    configureServer(getConfigurator(), SERVER_NAME)
         .withPodAnnotation("annotation1", "server-annotation-value1")
         .withPodAnnotation("annotation2", "server-annotation-value2");
 
@@ -551,19 +440,18 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  protected void verifyReplacePodWhen(PodMutator mutator) {
-    Map<String, StepAndPacket> rolling = computePodsToRoll(mutator);
-
-    assertThat(rolling, not(anEmptyMap()));
+  void setServerPort(int port) {
+    getServerTopology().setListenPort(port);
   }
 
-  private Map<String, StepAndPacket> computePodsToRoll(PodMutator mutator) {
+  @Override
+  protected void verifyPodReplaced() {
+    assertThat(computePodsToRoll(), not(anEmptyMap()));
+  }
+
+  private Map<String, StepAndPacket> computePodsToRoll() {
     Map<String, StepAndPacket> rolling = new HashMap<>();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
-
-    V1Pod existingPod = createPodModel();
-    mutator.mutate(existingPod);
-    initializeExistingPod(existingPod);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
     return rolling;
@@ -571,15 +459,27 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Override
   protected void verifyPodNotReplacedWhen(PodMutator mutator) {
-    Map<String, StepAndPacket> rolling = computePodsToRoll(mutator);
+    /**/
+    V1Pod existingPod = createPod(testSupport.getPacket());
+    /*/
+    V1Pod existingPod = createPodModel();
+    /**/
+    mutator.mutate(existingPod);
+    initializeExistingPod(existingPod);
+
+    Map<String, StepAndPacket> rolling = computePodsToRoll();
 
     assertThat(rolling, is(anEmptyMap()));
     assertThat(logRecords, containsFine(getExistsMessageKey()));
   }
 
   @Override
-  protected ServerConfigurator getServerConfigurator(
-      DomainConfigurator configurator, String serverName) {
+  V1Pod createPod(Packet packet) {
+    return new PodHelper.ManagedPodStepContext(null, packet).getPodModel();
+  }
+
+  @Override
+  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
     return configurator.configureServer(serverName);
   }
 }
