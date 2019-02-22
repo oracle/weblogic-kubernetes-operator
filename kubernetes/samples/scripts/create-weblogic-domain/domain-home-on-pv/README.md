@@ -395,7 +395,7 @@ To find out if this is the problem, do the following:
     * execute  `kubectl describe pod <name-of-create-weblogic-sample-domain-job>` to see if there is an Event that has text similar to `persistentvolumeclaim "domain1-weblogic-sample-pvc" not found`
     * find the name of the pvc that was created by executing [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md), using `kubectl describe pvc`. It is likely to be `weblogic-sample-pvc`
 
-Change the value of persistentVolumeClaimName to match the name created when you executed [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md).
+Change the value of persistentVolumeClaimName to match the name created when you executed [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md). Rerun the `create-domain.sh` script with the same arguments as you did before.
 * Verify that the operator is deployed. Use the command
 ```
 kubectl  get all --all-namespaces
