@@ -100,26 +100,18 @@ public class Helpers {
 
     V1ServiceAccountList serviceAccountList = null;
 
-    String _continue = "";
+    String cont = "";
 
     serviceAccountList =
         coreApi.listServiceAccountForAllNamespaces(
-            _continue // continue option
-            ,
-            "" // field selector
-            ,
-            Boolean.FALSE // includeUninitialized
-            ,
-            "" // labelSelector
-            ,
-            4096 // limit size for list
-            ,
-            "false" // pretty
-            ,
-            "" // resourceVersion
-            ,
-            0 // timeout (seconds)
-            ,
+            cont, // continue option
+            "", // field selector
+            Boolean.FALSE, // includeUninitialized
+            "", // labelSelector
+            4096, // limit size for list
+            "false", // pretty
+            "", // resourceVersion
+            0, // timeout (seconds)
             Boolean.FALSE // watch indicator
             );
 
@@ -127,7 +119,7 @@ public class Helpers {
   }
 
   /**
-   * Find the service account by supplied token
+   * Find the service account by supplied token.
    *
    * @param token authentication token to search for
    * @return V1ServiceAccount where token is secreted

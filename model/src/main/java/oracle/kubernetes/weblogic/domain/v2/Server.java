@@ -16,7 +16,7 @@ public class Server extends BaseConfiguration {
   /**
    * Tells the operator whether the customer wants the server to be running. For clustered servers -
    * the operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server
-   * needs to be started to get to the cluster's replica count..
+   * needs to be started to get to the cluster's replica count.
    *
    * @since 2.0
    */
@@ -43,11 +43,17 @@ public class Server extends BaseConfiguration {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
-    if (!(o instanceof Server)) return false;
+    if (!(o instanceof Server)) {
+      return false;
+    }
 
     Server that = (Server) o;
 
