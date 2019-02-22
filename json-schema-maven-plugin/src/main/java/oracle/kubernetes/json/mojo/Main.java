@@ -20,7 +20,7 @@ public interface Main {
   void setKubernetesVersion(String kubernetesVersion) throws IOException;
 
   /**
-   * Defines an external schema URL to be used for object definitions
+   * Defines an external schema URL to be used for object definitions.
    *
    * @param schemaURL the schema URL
    * @param cacheUrl a file url specifying a local cache of the schema
@@ -38,7 +38,7 @@ public interface Main {
 
   /**
    * Specifies that the "additionalProperties" property will be added to the schema for each object
-   * and set to false, to forbid any unspecified properties
+   * and set to false, to forbid any unspecified properties.
    *
    * @param includeAdditionalProperties true if unspecified properties should cause validation to
    *     fail
@@ -55,7 +55,7 @@ public interface Main {
   void setSupportObjectReferences(boolean supportObjectReferences);
 
   /**
-   * Specify the classpath for the class whose schema is to be built
+   * Specify the classpath for the class whose schema is to be built.
    *
    * @param classpathElements a list of elements of a classpath
    */
@@ -82,9 +82,9 @@ public interface Main {
   /**
    * Generates markdown for the newly-generated schema to the specified output file.
    *
-   * @param rootName
+   * @param rootName Root name
    * @param outputFile the file to generate
-   * @param schema
+   * @param schema Schema
    * @throws MojoExecutionException if an exception occurred during the markdown generation
    */
   void generateMarkdown(String rootName, File outputFile, Map<String, Object> schema)

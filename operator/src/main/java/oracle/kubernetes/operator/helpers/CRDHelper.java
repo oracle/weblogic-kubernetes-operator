@@ -31,7 +31,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
 import oracle.kubernetes.weblogic.domain.v2.DomainStatus;
 
-/** Helper class to ensure Domain CRD is created */
+/** Helper class to ensure Domain CRD is created. */
 public class CRDHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -40,7 +40,7 @@ public class CRDHelper {
   private CRDHelper() {}
 
   /**
-   * Factory for {@link Step} that creates Domain CRD
+   * Factory for {@link Step} that creates Domain CRD.
    *
    * @param version Version of the Kubernetes API Server
    * @param next Next step

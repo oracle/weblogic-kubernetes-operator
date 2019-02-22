@@ -207,9 +207,10 @@ function getKubernetesClusterIP {
   local SVR_ADDR=`eval ${SVR_ADDR_CMD}`
 
   # Server address is expected to be of the form http://address:port.  Delimit
-  # string on the colon to obtain the address.  Leave the "//" on the resulting string.
+  # string on the colon to obtain the address. 
   local array=(${SVR_ADDR//:/ })
-  K8S_IP="${array[1]}"
+  K8S_IP="${array[1]/\/\//}"
+
 }
 
 #
@@ -245,6 +246,11 @@ function createFiles {
   if [ "${exposeAdminT3Channel}" = true ]; then
     exposeAdminT3ChannelPrefix="${enabledPrefix}"
     exposeAnyChannelPrefix="${enabledPrefix}"
+    # set t3PublicAddress if not set
+    if [ -z "${t3PublicAddress}" ]; then
+      getKubernetesClusterIP
+      t3PublicAddress="${K8S_IP}"
+    fi
   else
     exposeAdminT3ChannelPrefix="${disabledPrefix}"
   fi

@@ -89,7 +89,6 @@ public class ReadHealthStep extends Step {
       this.service = service;
     }
 
-    /** {@inheritDoc} */
     @Override
     public NextAction apply(Packet packet) {
       try {

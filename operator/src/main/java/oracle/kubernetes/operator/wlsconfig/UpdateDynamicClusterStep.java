@@ -14,7 +14,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-/** Step for updating the cluster size of a WebLogic dynamic cluster */
+/** Step for updating the cluster size of a WebLogic dynamic cluster. */
 public class UpdateDynamicClusterStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -23,7 +23,7 @@ public class UpdateDynamicClusterStep extends Step {
   final int targetClusterSize;
 
   /**
-   * Constructor
+   * Constructor.
    *
    * @param wlsClusterConfig The WlsClusterConfig object for the WebLogic dynamic cluster to be
    *     updated
@@ -37,7 +37,6 @@ public class UpdateDynamicClusterStep extends Step {
     this.targetClusterSize = targetClusterSize;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NextAction apply(Packet packet) {
 

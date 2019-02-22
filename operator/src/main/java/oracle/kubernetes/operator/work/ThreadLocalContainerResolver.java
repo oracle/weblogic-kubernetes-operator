@@ -53,7 +53,7 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
   }
 
   /**
-   * Enters container
+   * Enters container.
    *
    * @param container Container to set
    * @return Previous container; must be remembered and passed to exitContainer
@@ -65,7 +65,7 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
   }
 
   /**
-   * Exits container
+   * Exits container.
    *
    * @param old Container returned from enterContainer
    */
