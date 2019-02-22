@@ -107,7 +107,6 @@ else:
   create(templateChannelName, 'NetworkAccessPoint')
   cd('NetworkAccessPoints/%s' % templateChannelName)
   set('PublicPort', server_port + 10)
-  set('ListenAddress', '%s-%s${id}' % (domain_uid, managed_server_name_base_svc))
   set('ListenPort', server_port + 10)
   print('Done creating Server Template NAP: %s' % cluster_name + "-NAP")
 
