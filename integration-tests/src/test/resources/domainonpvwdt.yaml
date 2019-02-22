@@ -20,3 +20,5 @@ createDomainFilesDir: wdt
 #loadBalancer: APACHE
 #loadBalancerWebPort: 30311
 #loadBalancerDashboardPort: 30321
+loadBalancer: TRAEFIK
+ingressPerDomain: true

@@ -49,55 +49,48 @@ public class NonClusteredServerConfig extends ServerConfig {
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withServerName(String serverName) {
     super.withServerName(serverName);
     return this;
   }
-  /** {@inheritDoc} */
+
   @Override
   public NonClusteredServerConfig withStartedServerState(String startedServerState) {
     super.withStartedServerState(startedServerState);
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withRestartedLabel(String restartedLabel) {
     super.withRestartedLabel(restartedLabel);
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withNodePort(int nodePort) {
     super.withNodePort(nodePort);
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withEnv(List<V1EnvVar> env) {
     super.withEnv(env);
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withImage(String image) {
     super.withImage(image);
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withImagePullPolicy(String imagePullPolicy) {
     super.withImagePullPolicy(imagePullPolicy);
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withImagePullSecrets(
       List<V1LocalObjectReference> imagePullSecrets) {
@@ -105,21 +98,18 @@ public class NonClusteredServerConfig extends ServerConfig {
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withShutdownPolicy(String shutdownPolicy) {
     super.withShutdownPolicy(shutdownPolicy);
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withGracefulShutdownTimeout(int gracefulShutdownTimeout) {
     super.withGracefulShutdownTimeout(gracefulShutdownTimeout);
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withGracefulShutdownIgnoreSessions(
       boolean gracefulShutdownIgnoreSessions) {
@@ -127,7 +117,6 @@ public class NonClusteredServerConfig extends ServerConfig {
     return this;
   }
 
-  /** {@inheritDoc} */
   @Override
   public NonClusteredServerConfig withGracefulShutdownWaitForSessions(
       boolean gracefulShutdownWaitForSessions) {

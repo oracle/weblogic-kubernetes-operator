@@ -102,8 +102,11 @@ abstract class Watcher<T> {
     setIsDraining(false);
 
     while (!isDraining()) {
-      if (isStopping()) setIsDraining(true);
-      else watchForEvents();
+      if (isStopping()) {
+        setIsDraining(true);
+      } else {
+        watchForEvents();
+      }
     }
   }
 
@@ -143,11 +146,18 @@ abstract class Watcher<T> {
       while (watch.hasNext()) {
         Watch.Response<T> item = watch.next();
 
-        if (isStopping()) setIsDraining(true);
-        if (isDraining()) continue;
+        if (isStopping()) {
+          setIsDraining(true);
+        }
+        if (isDraining()) {
+          continue;
+        }
 
-        if (isError(item)) handleErrorResponse(item);
-        else handleRegularUpdate(item);
+        if (isError(item)) {
+          handleErrorResponse(item);
+        } else {
+          handleRegularUpdate(item);
+        }
       }
     } catch (Throwable ex) {
       LOGGER.warning(MessageKeys.EXCEPTION, ex);
@@ -155,7 +165,7 @@ abstract class Watcher<T> {
   }
 
   /**
-   * Initiates a watch by using the watch builder to request any updates for the specified watcher
+   * Initiates a watch by using the watch builder to request any updates for the specified watcher.
    *
    * @param watchBuilder the watch builder, initialized with the current resource version.
    * @return Watch object or null if the operation should end
@@ -170,7 +180,9 @@ abstract class Watcher<T> {
   private void handleRegularUpdate(Watch.Response<T> item) {
     LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
     trackResourceVersion(item.type, item.object);
-    if (listener != null) listener.receivedResponse(item);
+    if (listener != null) {
+      listener.receivedResponse(item);
+    }
   }
 
   private void handleErrorResponse(Watch.Response<T> item) {
@@ -202,8 +214,11 @@ abstract class Watcher<T> {
 
   private long getNewResourceVersion(String type, Object object) {
     long newResourceVersion = getResourceVersionFromMetadata(object);
-    if (type.equalsIgnoreCase("DELETED")) return 1 + newResourceVersion;
-    else return newResourceVersion;
+    if (type.equalsIgnoreCase("DELETED")) {
+      return 1 + newResourceVersion;
+    } else {
+      return newResourceVersion;
+    }
   }
 
   private long getResourceVersionFromMetadata(Object object) {
@@ -219,8 +234,11 @@ abstract class Watcher<T> {
   }
 
   private void updateResourceVersion(long newResourceVersion) {
-    if (resourceVersion == 0) resourceVersion = newResourceVersion;
-    else if (newResourceVersion > resourceVersion) resourceVersion = newResourceVersion;
+    if (resourceVersion == 0) {
+      resourceVersion = newResourceVersion;
+    } else if (newResourceVersion > resourceVersion) {
+      resourceVersion = newResourceVersion;
+    }
   }
 
   private static boolean isNullOrEmptyString(String s) {

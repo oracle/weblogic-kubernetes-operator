@@ -28,7 +28,9 @@ public class WatchImpl<T> implements WatchI<T> {
   @Override
   public void close() throws IOException {
     impl.close();
-    if (client != null) pool.recycle(client);
+    if (client != null) {
+      pool.recycle(client);
+    }
   }
 
   @Override
