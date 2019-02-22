@@ -279,11 +279,7 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private Step createPodAsync(ResponseStep<V1Pod> response) {
-    return new CallBuilder().createPodAsync(getNamespace(), getPodModelWithChecksum(), response);
-  }
-
-  private V1Pod getPodModelWithChecksum() {
-    return AnnotationHelper.withSha256Hash(getPodModel());
+    return new CallBuilder().createPodAsync(getNamespace(), getPodModel(), response);
   }
 
   /**
@@ -367,11 +363,18 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
-    return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
+    boolean useCurrent =
+        AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
+    if (!useCurrent && AnnotationHelper.getDebugString(currentPod) != null)
+      LOGGER.info(
+          MessageKeys.POD_DUMP,
+          AnnotationHelper.getDebugString(currentPod),
+          AnnotationHelper.getDebugString(getPodModel()));
+
+    return useCurrent;
   }
 
   private String getReasonToRecycle(V1Pod currentPod) {
-
     PodCompatibility compatibility = new PodCompatibility(getPodModel(), currentPod);
     return compatibility.getIncompatibility();
   }
@@ -573,11 +576,11 @@ public abstract class PodStepContext extends StepContextBase {
   // ---------------------- model methods ------------------------------
 
   private V1Pod createPodModel() {
-    return withPatchableElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
+    return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
   }
 
   // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
-  private V1Pod withPatchableElements(V1Pod pod) {
+  V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
     getPodLabels()
         .entrySet()
