@@ -223,11 +223,6 @@ class ServerPod extends KubernetesResource {
     }
   }
 
-  private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
-    from.getRequests().forEach(to.getRequests()::putIfAbsent);
-    from.getLimits().forEach(to.getLimits()::putIfAbsent);
-  }
-
   private void copyValues(V1Capabilities to, V1Capabilities from) {
     if (from.getAdd() != null) {
       List<String> allAddCapabilities = new ArrayList<>();
