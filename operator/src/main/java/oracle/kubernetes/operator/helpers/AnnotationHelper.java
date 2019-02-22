@@ -12,7 +12,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 /** Annotates pods, services with details about the Domain instance and checks these annotations. */
 public class AnnotationHelper {
-  private static final boolean DEBUG = true;
+  private static final boolean DEBUG = false;
   static final String SHA256_ANNOTATION = "weblogic.sha256";
   private static final String HASHED_STRING = "hashedString";
   private static Function<V1Pod, String> HASH_FUNCTION =
@@ -34,9 +34,18 @@ public class AnnotationHelper {
   }
 
   static V1Pod withSha256Hash(V1Pod pod) {
+    return DEBUG ? addHashAndDebug(pod) : addHash(pod);
+  }
+
+  private static V1Pod addHashAndDebug(V1Pod pod) {
     String dump = Yaml.dump(pod);
+    addHash(pod);
+    pod.getMetadata().putAnnotationsItem(HASHED_STRING, dump);
+    return pod;
+  }
+
+  private static V1Pod addHash(V1Pod pod) {
     pod.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(pod));
-    if (DEBUG) pod.getMetadata().putAnnotationsItem(HASHED_STRING, dump);
     return pod;
   }
 
