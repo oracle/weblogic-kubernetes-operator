@@ -137,7 +137,7 @@ public class PodHelper {
   }
 
   /**
-   * Factory for {@link Step} that creates admin server pod
+   * Factory for {@link Step} that creates admin server pod.
    *
    * @param next Next processing step
    * @return Step for creating admin server pod
@@ -173,7 +173,7 @@ public class PodHelper {
   }
 
   /**
-   * Factory for {@link Step} that creates managed server pod
+   * Factory for {@link Step} that creates managed server pod.
    *
    * @param next Next processing step
    * @return Step for creating managed server pod
@@ -313,7 +313,7 @@ public class PodHelper {
   }
 
   /**
-   * Factory for {@link Step} that deletes server pod
+   * Factory for {@link Step} that deletes server pod.
    *
    * @param sko Server Kubernetes Objects
    * @param next Next processing step

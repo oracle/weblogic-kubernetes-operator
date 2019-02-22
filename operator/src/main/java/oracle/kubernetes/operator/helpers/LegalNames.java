@@ -35,8 +35,9 @@ public class LegalNames {
   static String toExternalServiceName(String domainUID, String serverName) {
     return toDNS1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUID, serverName));
   }
+
   /**
-   * Converts value to nearest DNS-1123 legal name, which can be used as a Kubernetes identifier
+   * Converts value to nearest DNS-1123 legal name, which can be used as a Kubernetes identifier.
    *
    * @param value Input value
    * @return nearest DNS-1123 legal name

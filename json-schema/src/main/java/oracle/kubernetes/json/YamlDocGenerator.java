@@ -30,10 +30,23 @@ public class YamlDocGenerator {
     this.schema = schema;
   }
 
+  /**
+   * Generate YAML documentation.
+   *
+   * @param schemaName Schema name
+   * @return documentation
+   */
   public String generate(String schemaName) {
     return generate(schemaName, schema);
   }
 
+  /**
+   * Generate YAML documentation.
+   *
+   * @param reference Reference
+   * @param schema Schema
+   * @return documentation
+   */
   public String generate(String reference, Map<String, Object> schema) {
     referencesNeeded.remove(reference);
     StringBuilder sb = new StringBuilder("### ");
@@ -48,6 +61,13 @@ public class YamlDocGenerator {
 
   private String getDescription(Map<String, Object> schema) {
     return (String) schema.get("description");
+  }
+
+  private String getDescription(String fieldName, Map<String, Object> subSchema) {
+    if (subSchema == null) return "";
+    Map<String, Object> fieldMap = subMap(subSchema, fieldName);
+    String rawDescription = (String) fieldMap.get("description");
+    return rawDescription == null ? "" : rawDescription.replace("\n", "<br/>");
   }
 
   private void generateForDefinition(StringBuilder sb, String reference) {
@@ -99,13 +119,12 @@ public class YamlDocGenerator {
     return type.getString();
   }
 
-  private String getDescription(String fieldName, Map<String, Object> subSchema) {
-    if (subSchema == null) return "";
-    Map<String, Object> fieldMap = subMap(subSchema, fieldName);
-    String rawDescription = (String) fieldMap.get("description");
-    return rawDescription == null ? "" : rawDescription.replace("\n", "<br/>");
-  }
-
+  /**
+   * Assigns kubernetes version to use.
+   *
+   * @param k8sVersion Kubernetes version
+   * @throws IOException IO exception
+   */
   public void useKubernetesVersion(String k8sVersion) throws IOException {
     kubernetesReference = KubernetesSchemaReference.create(k8sVersion);
     URL cacheUrl = kubernetesReference.getKubernetesSchemaCacheUrl();
@@ -273,7 +292,7 @@ public class YamlDocGenerator {
     return (Map<String, Object>) Optional.ofNullable(schemaMap.get(name)).orElse(new HashMap<>());
   }
 
-  private String emptyIfNull(String aString) {
-    return aString == null ? "" : aString;
+  private String emptyIfNull(String someString) {
+    return someString == null ? "" : someString;
   }
 }

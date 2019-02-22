@@ -67,17 +67,25 @@ public abstract class BaseConfiguration {
    * @param other the other configuration which can override this one
    */
   void fillInFrom(BaseConfiguration other) {
-    if (other == null) return;
+    if (other == null) {
+      return;
+    }
 
-    if (serverStartState == null) serverStartState = other.getServerStartState();
-    if (overrideStartPolicyFrom(other)) setServerStartPolicy(other.getServerStartPolicy());
+    if (serverStartState == null) {
+      serverStartState = other.getServerStartState();
+    }
+    if (overrideStartPolicyFrom(other)) {
+      setServerStartPolicy(other.getServerStartPolicy());
+    }
 
     serverPod.fillInFrom(other.serverPod);
     serverService.fillInFrom(other.serverService);
   }
 
   private boolean overrideStartPolicyFrom(BaseConfiguration other) {
-    if (other.isStartAdminServerOnly()) return false;
+    if (other.isStartAdminServerOnly()) {
+      return false;
+    }
     return getServerStartPolicy() == null || other.isStartNever();
   }
 
@@ -252,9 +260,13 @@ public abstract class BaseConfiguration {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     BaseConfiguration that = (BaseConfiguration) o;
 

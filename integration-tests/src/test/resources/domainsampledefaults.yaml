@@ -5,3 +5,5 @@
 
 domainUID: domainsampledefaults
 configuredManagedServerCount: 4
+loadBalancer: TRAEFIK
+ingressPerDomain: true
