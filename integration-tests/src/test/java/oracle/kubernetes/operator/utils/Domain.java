@@ -810,15 +810,20 @@ public class Domain {
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
     lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
     lbMap.put("ingressPerDomain", domainMap.getOrDefault("ingressPerDomain", ingressPerDomain));
+    lbMap.put(
+        "loadBalancerWebPort", domainMap.getOrDefault("loadBalancerWebPort", loadBalancerWebPort));
     lbMap.put("clusterName", domainMap.get("clusterName"));
 
     loadBalancer = (String) lbMap.get("loadBalancer");
+    loadBalancerWebPort = ((Integer) lbMap.get("loadBalancerWebPort")).intValue();
     ingressPerDomain = ((Boolean) lbMap.get("ingressPerDomain")).booleanValue();
     logger.info(
         "For this domain loadBalancer is: "
             + loadBalancer
             + " ingressPerDomain is: "
-            + ingressPerDomain);
+            + ingressPerDomain
+            + " loadBalancerWebPort is: "
+            + loadBalancerWebPort);
 
     if (loadBalancer.equals("TRAEFIK") && !ingressPerDomain) {
       lbMap.put("name", "traefik-hostrouting-" + domainUid);
@@ -826,6 +831,10 @@ public class Domain {
 
     if (loadBalancer.equals("TRAEFIK") && ingressPerDomain) {
       lbMap.put("name", "traefik-ingress-" + domainUid);
+    }
+
+    if (loadBalancer.equals("VOYAGER") && ingressPerDomain) {
+      lbMap.put("name", "voyager-ingress-" + domainUid);
     }
 
     if (loadBalancer.equals("APACHE")) {
@@ -926,11 +935,11 @@ public class Domain {
                 + " \n "
                 + result.stdout());
       } else {
-        logger.info("webapp invoked successfully");
+        logger.info("webapp invoked successfully for curlCmd:" + curlCmd);
       }
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
-        // logger.info("response "+ response);
+        logger.info("response: " + response); // TODO remove later!
         for (String key : managedServers.keySet()) {
           if (response.contains(key)) {
             managedServers.put(key, new Boolean(true));
@@ -943,6 +952,7 @@ public class Domain {
     // error if any managedserver value is false
     if (verifyLoadBalancing) {
       for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
+        logger.info("Load balancer will try to reach server " + entry.getKey());
         if (!entry.getValue().booleanValue()) {
           throw new RuntimeException(
               "FAILURE: Load balancer can not reach server " + entry.getKey());
