@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -12,7 +13,9 @@ import io.kubernetes.client.models.V1PodSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -31,7 +34,7 @@ public class PodHelper {
 
   static class AdminPodStepContext extends PodStepContext {
     private static final String INTERNAL_OPERATOR_CERT_FILE = "internalOperatorCert";
-    private static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
+    static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
 
     AdminPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
@@ -85,6 +88,28 @@ public class PodHelper {
     }
 
     @Override
+    V1Pod withNonHashedElements(V1Pod pod) {
+      V1Pod v1Pod = super.withNonHashedElements(pod);
+      getContainer(v1Pod).ifPresent(c -> c.addEnvItem(internalCertEnvValue()));
+
+      return v1Pod;
+    }
+
+    private V1EnvVar internalCertEnvValue() {
+      return new V1EnvVar()
+          .name(INTERNAL_OPERATOR_CERT_ENV)
+          .value(getInternalOperatorCertFile(TuningParameters.getInstance()));
+    }
+
+    private Optional<V1Container> getContainer(V1Pod v1Pod) {
+      return v1Pod.getSpec().getContainers().stream().filter(this::isK8sContainer).findFirst();
+    }
+
+    private boolean isK8sContainer(V1Container c) {
+      return KubernetesConstants.CONTAINER_NAME.equals(c.getName());
+    }
+
+    @Override
     protected V1PodSpec createSpec(TuningParameters tuningParameters) {
       return super.createSpec(tuningParameters).hostname(getPodName());
     }
@@ -92,7 +117,6 @@ public class PodHelper {
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> vars = new ArrayList<>(getServerSpec().getEnvironmentVariables());
-      addEnvVar(vars, INTERNAL_OPERATOR_CERT_ENV, getInternalOperatorCertFile(tuningParameters));
       overrideContainerWeblogicEnvVars(vars);
       return vars;
     }
