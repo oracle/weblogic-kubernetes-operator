@@ -23,7 +23,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.v3.ServerSpec;
 
 public class PodHelper {
 

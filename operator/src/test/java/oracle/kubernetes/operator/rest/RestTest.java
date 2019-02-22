@@ -155,7 +155,7 @@ public class RestTest {
 
   @Test
   public void testNonExistingVersion() {
-    String href = OPERATOR_HREF + "/v2";
+    String href = OPERATOR_HREF + "/v3";
     Response r = request(href).get();
     verifyNotFound(r);
     ErrorModel want = new ErrorModel(Status.NOT_FOUND.getStatusCode(), href);
