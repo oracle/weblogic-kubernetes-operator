@@ -18,6 +18,8 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1ResourceRequirements;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -311,7 +313,7 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
   }
 
   <T> void addSets(String description, List<T> expected, List<T> actual) {
-    add(new CompatibleSets<>(description, expected, actual));
+    add(CheckFactory.create(description, expected, actual));
   }
 
   protected <T> void add(String description, T expected, T actual) {
@@ -346,6 +348,39 @@ class Equality implements CompatibilityCheck {
   @Override
   public String getIncompatibility() {
     return description + " expected: " + expected + " but was: " + actual;
+  }
+}
+
+class CheckFactory {
+  static <T> CompatibilityCheck create(String description, List<T> expected, List<T> actual) {
+    if (canBeMap(expected) && canBeMap(actual))
+      return new CompatibleMaps<>(description, asMap(expected), asMap(actual));
+    else return new CompatibleSets<>(description, expected, actual);
+  }
+
+  private static <T> boolean canBeMap(List<T> list) {
+    return asMap(list) != null;
+  }
+
+  private static <T> Map<String, T> asMap(List<T> values) {
+    if (values == null) return null;
+    Map<String, T> result = new HashMap<>();
+    for (T value : values) {
+      String key = getKey(value);
+      if (key == null) return null;
+      result.put(key, value);
+    }
+
+    return result;
+  }
+
+  private static <T> String getKey(T value) {
+    try {
+      Method getKey = value.getClass().getDeclaredMethod("getName");
+      return (String) getKey.invoke(value);
+    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+      return null;
+    }
   }
 }
 
@@ -398,13 +433,13 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
 
     Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
     if (!missingKeys.isEmpty())
-      sb.append(String.format("%s has no entry for %s%n", description, missingKeys));
+      sb.append(String.format("actual %s has no entry for '%s'%n", description, missingKeys));
 
     for (K key : expected.keySet())
       if (actual.containsKey(key) && !Objects.equals(expected.get(key), actual.get(key)))
         sb.append(
             String.format(
-                "%s has entry %s with value %s rather than %s%n",
+                "actual %s has entry '%s' with value '%s' rather than '%s'%n",
                 description, key, actual.get(key), expected.get(key)));
 
     return sb.toString();
