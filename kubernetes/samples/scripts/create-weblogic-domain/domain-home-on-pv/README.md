@@ -393,7 +393,7 @@ The create domain job is not showing status completed after waiting 300 seconds.
 To find out if this is the problem, do the following:
     * execute `kubectl get all --all-namespaces` to find the name of the create weblogic sample domain job.
     * execute  `kubectl describe pod <name-of-create-weblogic-sample-domain-job>` to see if there is an Event that has text similar to `persistentvolumeclaim "domain1-weblogic-sample-pvc" not found`
-    * find the name of the pvc that was created by executing [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md), using `kubectl describe pvc`. It is likely to be `weblogic-sample-pvc`  
+    * find the name of the pvc that was created by executing [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md), using `kubectl describe pvc`. It is likely to be `weblogic-sample-pvc`
 Change the value of persistentVolumeClaimName to match the name created when you executed [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md).
 * Verify that the operator is deployed. Use the command
 ```
