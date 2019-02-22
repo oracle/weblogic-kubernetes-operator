@@ -17,6 +17,9 @@ import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1ResourceRequirements;
+import java.util.Arrays;
+import java.util.Objects;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.junit.Test;
 
 public class PodCompatibilityTest {
@@ -100,6 +103,55 @@ public class PodCompatibilityTest {
     assertThat(check.getIncompatibility(), containsString("delta"));
     assertThat(check.getIncompatibility(), not(containsString("alpha")));
     assertThat(check.getIncompatibility(), not(containsString("gamma")));
+  }
+
+  @Test
+  public void whenCanBeMapsAndExpectedAndActualDifferentValues_reportChangedElements() {
+    CompatibilityCheck check =
+        CheckFactory.create(
+            "letters",
+            Arrays.asList(object("alpha", 1), object("beta", 2), object("gamma", 3)),
+            Arrays.asList(object("beta", 222), object("gamma", 3), object("alpha", 1)));
+
+    assertThat(check.getIncompatibility(), both(containsString("beta")).and(containsString("222")));
+    assertThat(check.getIncompatibility(), not(containsString("alpha")));
+  }
+
+  private Object object(String name, int value) {
+    return new ObjectWithName(name, value);
+  }
+
+  static class ObjectWithName {
+    private String name;
+    private int value;
+
+    ObjectWithName(String name, int value) {
+      this.name = name;
+      this.value = value;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return (o instanceof ObjectWithName) && equals((ObjectWithName) o);
+    }
+
+    private boolean equals(ObjectWithName that) {
+      return value == that.value && Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder(17, 37).append(name).append(value).toHashCode();
+    }
+
+    @Override
+    public String toString() {
+      return String.format("<%s = %d>", name, value);
+    }
   }
 
   @Test

@@ -12,6 +12,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 /** Annotates pods, services with details about the Domain instance and checks these annotations. */
 public class AnnotationHelper {
+  private static final boolean DEBUG = true;
   static final String SHA256_ANNOTATION = "weblogic.sha256";
   private static Function<V1Pod, String> HASH_FUNCTION =
       pod -> DigestUtils.sha256Hex(Yaml.dump(pod));
@@ -32,7 +33,9 @@ public class AnnotationHelper {
   }
 
   static V1Pod withSha256Hash(V1Pod pod) {
+    String dump = Yaml.dump(pod);
     pod.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(pod));
+    if (DEBUG) pod.getMetadata().putAnnotationsItem("hashedString", dump);
     return pod;
   }
 
