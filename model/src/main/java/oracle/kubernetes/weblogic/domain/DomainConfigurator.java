@@ -10,8 +10,8 @@ import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v3.Domain;
+import oracle.kubernetes.weblogic.domain.v3.DomainSpec;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
