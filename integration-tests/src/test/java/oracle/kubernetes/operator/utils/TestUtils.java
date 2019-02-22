@@ -174,15 +174,26 @@ public class TestUtils {
     checkCmdInLoopForDelete(cmd.toString(), "\"" + domainUid + "\" not found", domainUid);
   }
 
-  public static void deletePVC(String pvcName, String namespace) throws Exception {
-    StringBuffer cmd = new StringBuffer("kubectl delete pvc ");
-    cmd.append(pvcName).append(" -n ").append(namespace);
-    logger.info("Deleting PVC " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
+  public static void deletePVC(String pvcName, String namespace, String domainUid)
+      throws Exception {
+    StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
+    cmdDelJob.append(domainUid).append("-create-weblogic-sample-domain-job -n ").append(namespace);
+    logger.info("Deleting job " + cmdDelJob);
+    exec(cmdDelJob.toString());
+
+    StringBuffer cmdDelPVC = new StringBuffer("kubectl delete pvc ");
+    cmdDelPVC.append(pvcName).append(" -n ").append(namespace);
+    logger.info("Deleting PVC " + cmdDelPVC);
+    exec(cmdDelPVC.toString());
+  }
+
+  public static ExecResult exec(String cmd) throws Exception {
+    ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
-          "FAILURE: delete PVC failed with " + result.stderr() + " \n " + result.stdout());
+          "FAILURE: Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
     }
+    return result;
   }
 
   public static boolean checkPVReleased(String pvBaseName, String namespace) throws Exception {
