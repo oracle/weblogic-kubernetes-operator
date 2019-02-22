@@ -25,7 +25,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.v3.Domain;
 
 public abstract class JobStepContext extends StepContextBase {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
