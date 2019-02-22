@@ -14,6 +14,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 public class AnnotationHelper {
   private static final boolean DEBUG = true;
   static final String SHA256_ANNOTATION = "weblogic.sha256";
+  private static final String HASHED_STRING = "hashedString";
   private static Function<V1Pod, String> HASH_FUNCTION =
       pod -> DigestUtils.sha256Hex(Yaml.dump(pod));
 
@@ -35,11 +36,15 @@ public class AnnotationHelper {
   static V1Pod withSha256Hash(V1Pod pod) {
     String dump = Yaml.dump(pod);
     pod.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(pod));
-    if (DEBUG) pod.getMetadata().putAnnotationsItem("hashedString", dump);
+    if (DEBUG) pod.getMetadata().putAnnotationsItem(HASHED_STRING, dump);
     return pod;
   }
 
   static String getHash(V1Pod pod) {
     return pod.getMetadata().getAnnotations().get(SHA256_ANNOTATION);
+  }
+
+  static String getDebugString(V1Pod pod) {
+    return pod.getMetadata().getAnnotations().get(HASHED_STRING);
   }
 }
