@@ -10,6 +10,7 @@ import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LAB
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.helpers.PodCompatibility.asSet;
 import static oracle.kubernetes.operator.helpers.PodCompatibility.getMissingElements;
+import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.INTERNAL_OPERATOR_CERT_ENV;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Container;
@@ -21,6 +22,7 @@ import io.kubernetes.client.models.V1ResourceRequirements;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -162,7 +164,7 @@ class PodCompatibility extends CollectiveCompatibility {
       add(new EqualResources(expected.getResources(), actual.getResources()));
       addSets("volumeMounts", expected.getVolumeMounts(), actual.getVolumeMounts());
       addSets("ports", expected.getPorts(), actual.getPorts());
-      addSets("env", expected.getEnv(), actual.getEnv());
+      addSetsIgnoring("env", expected.getEnv(), actual.getEnv(), INTERNAL_OPERATOR_CERT_ENV);
       addSets("envFrom", expected.getEnvFrom(), actual.getEnvFrom());
     }
 
@@ -275,7 +277,7 @@ class PodCompatibility extends CollectiveCompatibility {
 
   static <T> Set<T> getMissingElements(Collection<T> expected, Collection<T> actual) {
     Set<T> missing = asSet(expected);
-    missing.removeAll(actual);
+    if (actual != null) missing.removeAll(actual);
     return missing;
   }
 }
@@ -284,6 +286,10 @@ interface CompatibilityCheck {
   boolean isCompatible();
 
   String getIncompatibility();
+
+  default CompatibilityCheck ignoring(String... keys) {
+    return this;
+  }
 }
 
 abstract class CollectiveCompatibility implements CompatibilityCheck {
@@ -314,6 +320,11 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
 
   <T> void addSets(String description, List<T> expected, List<T> actual) {
     add(CheckFactory.create(description, expected, actual));
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  <T> void addSetsIgnoring(String description, List<T> expected, List<T> actual, String... keys) {
+    add(CheckFactory.create(description, expected, actual).ignoring(keys));
   }
 
   protected <T> void add(String description, T expected, T actual) {
@@ -363,7 +374,7 @@ class CheckFactory {
   }
 
   private static <T> Map<String, T> asMap(List<T> values) {
-    if (values == null) return null;
+    if (values == null) return Collections.emptyMap();
     Map<String, T> result = new HashMap<>();
     for (T value : values) {
       String key = getKey(value);
@@ -412,6 +423,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
   private final String description;
   private final Map<K, V> expected;
   private final Map<K, V> actual;
+  private List<String> ignoredKeys = new ArrayList<>();
 
   CompatibleMaps(String description, Map<K, V> expected, Map<K, V> actual) {
     this.description = description;
@@ -421,10 +433,20 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
 
   @Override
   public boolean isCompatible() {
-    for (K key : expected.keySet())
-      if (!actual.containsKey(key) || !Objects.equals(expected.get(key), actual.get(key)))
-        return false;
+    for (K key : expected.keySet()) if (isKeyToCheck(key) && isIncompatible(key)) return false;
     return true;
+  }
+
+  private boolean isKeyToCheck(K key) {
+    return !ignoredKeys.contains(key.toString());
+  }
+
+  private boolean isIncompatible(K key) {
+    return !actual.containsKey(key) || valuesDiffer(key);
+  }
+
+  private boolean valuesDiffer(K key) {
+    return !Objects.equals(expected.get(key), actual.get(key));
   }
 
   @Override
@@ -436,12 +458,18 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
       sb.append(String.format("actual %s has no entry for '%s'%n", description, missingKeys));
 
     for (K key : expected.keySet())
-      if (actual.containsKey(key) && !Objects.equals(expected.get(key), actual.get(key)))
+      if (isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key))
         sb.append(
             String.format(
                 "actual %s has entry '%s' with value '%s' rather than '%s'%n",
                 description, key, actual.get(key), expected.get(key)));
 
     return sb.toString();
+  }
+
+  @Override
+  public CompatibilityCheck ignoring(String... keys) {
+    ignoredKeys.addAll(Arrays.asList(keys));
+    return this;
   }
 }
