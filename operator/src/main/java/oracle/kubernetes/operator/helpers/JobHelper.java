@@ -32,11 +32,11 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Cluster;
-import oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v2.ManagedServer;
+import oracle.kubernetes.weblogic.domain.v3.Cluster;
+import oracle.kubernetes.weblogic.domain.v3.ConfigurationConstants;
+import oracle.kubernetes.weblogic.domain.v3.Domain;
+import oracle.kubernetes.weblogic.domain.v3.DomainSpec;
+import oracle.kubernetes.weblogic.domain.v3.ManagedServer;
 
 public class JobHelper {
 

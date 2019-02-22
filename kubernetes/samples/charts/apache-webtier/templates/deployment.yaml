@@ -8,18 +8,18 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "apache.fullname" . }}
-    weblogic.resourceVersion: "loadbalancer-v2"
+    weblogic.resourceVersion: "loadbalancer-v3"
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: {{ template "apache.fullname" . }}
-      weblogic.resourceVersion: "loadbalancer-v2"
+      weblogic.resourceVersion: "loadbalancer-v3"
   template:
     metadata:
       labels:
         app: {{ template "apache.fullname" . }}
-        weblogic.resourceVersion: "loadbalancer-v2"
+        weblogic.resourceVersion: "loadbalancer-v3"
     spec:
       serviceAccountName: {{ template "apache.serviceAccountName" . }}
       terminationGracePeriodSeconds: 60
