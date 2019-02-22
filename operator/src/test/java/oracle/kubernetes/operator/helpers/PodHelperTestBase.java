@@ -922,6 +922,8 @@ public abstract class PodHelperTestBase {
     assertThat(getCreatedPodSpecContainer().getImage(), equalTo(DEFAULT_IMAGE));
   }
 
+  // todo test that changing a label or annotation does not change the hash
+
   interface PodMutator {
     void mutate(V1Pod pod);
   }

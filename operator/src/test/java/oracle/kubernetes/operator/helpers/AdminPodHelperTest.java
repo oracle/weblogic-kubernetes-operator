@@ -458,4 +458,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
     return configurator.configureAdminServer();
   }
+
+  // todo test that changing the cert in tuning parameters does not change the hash
 }
