@@ -187,7 +187,7 @@ public class ITOperator extends BaseTest {
       domain = TestUtils.createDomain(domainonpvwdtFile);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
-      testWLDFScaling(operator2, domain);
+      // testWLDFScaling(operator2, domain);
       // TODO: Test Apache LB
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
