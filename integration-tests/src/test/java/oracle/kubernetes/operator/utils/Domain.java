@@ -286,9 +286,13 @@ public class Domain {
    *
    * @param protocol
    * @param port
+   * @param path
    * @throws Exception
    */
-  public void verifyHasClusterServiceChannelPort(String protocol, int port) throws Exception {
+  public void verifyHasClusterServiceChannelPort(String protocol, int port, String path)
+      throws Exception {
+
+    /* Make sure the service exists in k8s */
     if (!TestUtils.checkHasServiceChannelPort(
         this.getDomainUid() + "-cluster-" + this.clusterName, domainNS, protocol, port)) {
       throw new RuntimeException(
@@ -297,6 +301,35 @@ public class Domain {
               + "/"
               + protocol);
     }
+
+    /* Make sure we can reach the port */
+    StringBuffer testAppUrl = new StringBuffer("http://");
+    testAppUrl
+        .append(this.getDomainUid() + "-cluster-" + this.clusterName)
+        .append(":")
+        .append(port)
+        .append("/");
+    testAppUrl.append(path);
+    // curl cmd to call webapp
+    StringBuffer curlCmd =
+        new StringBuffer(
+            "kubectl exec " + this.getDomainUid() + "-" + this.adminServerName + " /usr/bin/curl ");
+    curlCmd.append(testAppUrl.toString());
+
+    // curl cmd to get response code
+    StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
+    //  -- means pass trailing args to command in exec, not exec itself
+    curlCmdResCode.append(" -- --write-out %{http_code} -o /dev/null");
+
+    logger.info("Curl cmd with response code " + curlCmdResCode);
+    logger.info("Curl cmd " + curlCmd);
+
+    // call webapp iteratively till its deployed/ready
+    callWebAppAndWaitTillReady(curlCmdResCode.toString());
+
+    // execute curl and look for the managed server name in response
+    callWebAppAndCheckForServerNameInResponse(curlCmd.toString(), true);
+    logger.info("curlCmd " + curlCmd);
   }
 
   /**
@@ -435,8 +468,8 @@ public class Domain {
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
       curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
 
-      logger.info("Curd cmd with response code " + curlCmdResCode);
-      logger.info("Curd cmd " + curlCmd);
+      logger.info("Curl cmd with response code " + curlCmdResCode);
+      logger.info("Curl cmd " + curlCmd);
 
       // call webapp iteratively till its deployed/ready
       callWebAppAndWaitTillReady(curlCmdResCode.toString());

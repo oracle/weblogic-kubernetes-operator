@@ -275,7 +275,7 @@ public class BaseTest {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     }
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
-    domain.verifyHasClusterServiceChannelPort("TCP", 8011);
+    domain.verifyHasClusterServiceChannelPort("TCP", 8011, TESTWEBAPP + "/");
     logger.info("Done - testDomainLifecyle");
   }
 
