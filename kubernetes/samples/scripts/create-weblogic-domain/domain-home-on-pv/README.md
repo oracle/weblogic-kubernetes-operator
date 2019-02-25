@@ -415,7 +415,7 @@ Then you should [delete the resources for your sample domain](../../delete-domai
 ```
 create-domain.sh
 ```
-A correct values for weblogicDomainStoragePath will meet the following requirements
+A correct value for weblogicDomainStoragePath will meet the following requirements
 * owned by the user that started the operator
 * exists
 * is a directory
