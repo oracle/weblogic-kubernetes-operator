@@ -149,7 +149,15 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(domainonpvwlstFile);
+      // domain = TestUtils.createDomain(domainonpvwlstFile);TODO
+      if (VOYAGER) {
+        Map<String, Object> wlstDomainMap = TestUtils.loadYaml(domainonpvwlstFile);
+        wlstDomainMap.put("loadBalancer", "VOYAGER");
+        logger.info("domain1onpvwlst loadBalancer is set to: " + wlstDomainMap.get("loadBalancer"));
+        domain = TestUtils.createDomain(wlstDomainMap);
+      } else {
+        domain = TestUtils.createDomain(domainonpvwlstFile);
+      }
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       testAdvancedUseCasesForADomain(operator1, domain);
@@ -189,7 +197,16 @@ public class ITOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       // create domain
-      domain = TestUtils.createDomain(domainonpvwdtFile);
+      // domain = TestUtils.createDomain(domainonpvwdtFile); TODO
+      if (VOYAGER) {
+        Map<String, Object> wdtDomainMap = TestUtils.loadYaml(domainonpvwdtFile);
+        wdtDomainMap.put("loadBalancer", "VOYAGER");
+        logger.info(
+            "domainonpvwdtFile loadBalancer is set to: " + wdtDomainMap.get("loadBalancer"));
+        domain = TestUtils.createDomain(wdtDomainMap);
+      } else {
+        domain = TestUtils.createDomain(domainonpvwdtFile);
+      }
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       testWLDFScaling(operator2, domain);
@@ -337,7 +354,15 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(domainadminonlyFile);
+      // domain = TestUtils.createDomain(domainadminonlyFile);TODO
+      if (VOYAGER) {
+        Map<String, Object> domainMap = TestUtils.loadYaml(domainadminonlyFile);
+        domainMap.put("loadBalancer", "VOYAGER");
+        logger.info("domainadminonlyFile loadBalancer is set to: " + domainMap.get("loadBalancer"));
+        domain = TestUtils.createDomain(domainMap);
+      } else {
+        domain = TestUtils.createDomain(domainadminonlyFile);
+      }
       domain.verifyDomainCreated();
 
     } finally {
@@ -371,7 +396,16 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
 
     try {
-      domain = TestUtils.createDomain(domainrecyclepolicyFile);
+      // domain = TestUtils.createDomain(domainrecyclepolicyFile); TODO
+      if (VOYAGER) {
+        Map<String, Object> domainMap = TestUtils.loadYaml(domainrecyclepolicyFile);
+        domainMap.put("loadBalancer", "VOYAGER");
+        logger.info(
+            "domainrecyclepolicyFile loadBalancer is set to: " + domainMap.get("loadBalancer"));
+        domain = TestUtils.createDomain(domainMap);
+      } else {
+        domain = TestUtils.createDomain(domainrecyclepolicyFile);
+      }
       domain.verifyDomainCreated();
     } finally {
       if (domain != null) domain.shutdown();
@@ -404,7 +438,16 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(domainsampledefaultsFile);
+      // domain = TestUtils.createDomain(domainsampledefaultsFile);TODO
+      if (VOYAGER) {
+        Map<String, Object> domainMap = TestUtils.loadYaml(domainsampledefaultsFile);
+        domainMap.put("loadBalancer", "VOYAGER");
+        logger.info(
+            "domainsampledefaultsFile loadBalancer is set to: " + domainMap.get("loadBalancer"));
+        domain = TestUtils.createDomain(domainMap);
+      } else {
+        domain = TestUtils.createDomain(domainsampledefaultsFile);
+      }
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       // testAdvancedUseCasesForADomain(operator1, domain10);
@@ -449,6 +492,12 @@ public class ITOperator extends BaseTest {
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put("adminNodePort", new Integer("30704"));
       domainMap.put("t3ChannelPort", new Integer("30051"));
+      if (VOYAGER) {
+        domainMap.put("loadBalancer", "VOYAGER");
+        logger.info(
+            "testAutoAndCustomSitConfigOverrides loadBalancer is set to: "
+                + domainMap.get("loadBalancer"));
+      }
       // use NFS for this domain on Jenkins, defaultis HOST_PATH
       if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
         domainMap.put("weblogicDomainStorageType", "NFS");
