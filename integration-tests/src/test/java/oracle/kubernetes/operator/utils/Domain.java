@@ -939,7 +939,7 @@ public class Domain {
       }
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
-        logger.info("response: " + response); // TODO remove later!
+        //logger.info("response: " + response); 
         for (String key : managedServers.keySet()) {
           if (response.contains(key)) {
             managedServers.put(key, new Boolean(true));
