@@ -116,6 +116,7 @@ for i in json.load(sys.stdin)["spec"]["ports"]:
 INPUT
 port=`echo ${STATUS} | python cmds.py`
 echo "port: $port" >> scalingAction.log
+echo “STATUS: $STATUS” >> scalingAction.log
 
 # Reteive Custom Resource Domain 
 DOMAIN=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" $kubernetes_master/apis/weblogic.oracle/v2/namespaces/$wls_domain_namespace/domains/$domain_uid`
