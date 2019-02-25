@@ -31,6 +31,7 @@ import org.junit.runners.MethodSorters;
 public class ITOperator extends BaseTest {
 
   // property file used to customize operator properties for operator inputs yaml
+
   private static String operator1File = "operator1.yaml";
   private static String operator2File = "operator2.yaml";
   private static final String operator_bcFile = "operator_bc.yaml";
@@ -42,6 +43,8 @@ public class ITOperator extends BaseTest {
   private static String domainadminonlyFile = "domainadminonly.yaml";
   private static String domainrecyclepolicyFile = "domainrecyclepolicy.yaml";
   private static String domainsampledefaultsFile = "domainsampledefaults.yaml";
+  private static String domaininimagewlstFile = "domaininimagewlst.yaml";
+  private static String domaininimagewdtFile = "domaininimagewdt.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -507,6 +510,71 @@ public class ITOperator extends BaseTest {
     operatorForRESTCertChain.verifyOperatorExternalRESTEndpoint();
     logger.info("Operator using legacy REST identity created successfully");
     logger.info("SUCCESS - testOperatorRESTUsingCertificateChain");
+  }
+
+  /**
+   * Create Operator and create domain using domain-in-image option. Verify the domain is started
+   * successfully and web application can be deployed and accessed.
+   *
+   * @throws Exception
+   */
+  // @Test
+  public void testDomainInImageUsingWLST() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    logger.info("Checking if operator1 is running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(operator1File);
+    }
+    logger.info("Creating Domain & verifing the domain creation");
+    // create domain
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      domain = TestUtils.createDomain(domaininimagewlstFile);
+      domain.verifyDomainCreated();
+
+      testBasicUseCases(domain);
+      testClusterScaling(operator1, domain);
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+  /**
+   * Create Operator and create domain using domain-in-image option. Verify the domain is started
+   * successfully and web application can be deployed and accessed.
+   *
+   * @throws Exception
+   */
+  // @Test
+  public void testDomainInImageUsingWDT() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    logger.info("Checking if operator1 is running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(operator1File);
+    }
+    logger.info("Creating Domain & verifing the domain creation");
+    // create domain
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      domain = TestUtils.createDomain(domaininimagewdtFile);
+      domain.verifyDomainCreated();
+
+      testBasicUseCases(domain);
+      testClusterScaling(operator1, domain);
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
+    }
+    logger.info("SUCCESS - " + testMethodName);
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
