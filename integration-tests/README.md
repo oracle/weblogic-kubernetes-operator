@@ -316,7 +316,7 @@ Add functional tests
 
 The integration tests are not completely independent of the environment.
 
-You may run into one or more of the following errors when you attempt to execute the command
+You may run into one or more of the following errors when you attempt to execute the command:
 ```
 mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
 ```
