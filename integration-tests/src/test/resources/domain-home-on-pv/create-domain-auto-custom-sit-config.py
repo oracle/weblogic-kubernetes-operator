@@ -116,6 +116,7 @@ else:
   cmo.setCluster(cl)
   print('Done setting attributes for Server Template: %s' % templateName);
 
+
   cd('/Clusters/%s' % cluster_name)
   create(cluster_name, 'DynamicServers')
   cd('DynamicServers/%s' % cluster_name)
