@@ -166,7 +166,7 @@ Certain properties like weblogicDomainStoragePath, image, externalOperatorCert a
 
 # How does it work
 
-When the tests are run manually with mvn command on hosted Linux, WebLogic image and server jre images are pulled from a local repository wlsldi-v2.docker.oraclecorp.com. Operator image is built with the git branch from where the mvn command is executed.
+When the tests are run manually with mvn command on hosted Linux, WebLogic image store/oracle/weblogic:12.2.1.3 is pulled from docker hub or uses local image if one exists. Server jre images are pulled from a local repository wlsldi-v2.docker.oraclecorp.com. Operator image is built with the git branch from where the mvn command is executed.
 All the tests that start with IT*.java are run. The test builds the operator, runs a series of tests and archives the results into tar.gz files upon completion.
 
 Integration test classes:
@@ -194,6 +194,12 @@ Secret - to create secret
 
 Command to run the tests:
 ```
+export DOCKER_USERNAME=<docker_username>
+export DOCKER_PASSWORD=<docker_password>
+export DOCKER_EMAIL=<docker_email>
+or
+make sure the weblogic image i.e. store/oracle/weblogic:12.2.1.3 already exists locally
+
 mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
 ```
 
@@ -208,7 +214,7 @@ The tests accepts optional env var overrides:
 | INGRESSPERDOMAIN  | The defult value is true. If you want to test creating LB by kubectl yaml for multiple domains, set it to false. |
 | WERCKER    | Set to true if invoking from Wercker, set to false or "" if running stand-alone or from Jenkins. Default is "". |
 | JENKINS    | Set to true if invoking from Jenkins, set to false or "" if running stand-alone or from Wercker. Default is "". |
-| NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
+| K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
 | BRANCH_NAME  | Git branch name.   Default is determined by calling 'git branch'. |
 | LEASE_ID   |   Set to a unique value to (A) periodically renew a lease on the k8s cluster that indicates that no other test run should attempt to use the cluster, and (B) delete this lease when the test completes. |
 
