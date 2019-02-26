@@ -1,0 +1,12 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+domainUID: domaininimagewlst
+namespace: test1
+configuredManagedServerCount: 4
+initialManagedServerReplicas: 2
+exposeAdminT3Channel: true
+exposeAdminNodePort: true
+domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image
+domainHomeImageBase: "store/oracle/weblogic:12.2.1.3"
+logHomeOnPV: true
