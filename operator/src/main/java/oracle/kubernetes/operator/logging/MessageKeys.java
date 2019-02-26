@@ -150,4 +150,5 @@ public class MessageKeys {
   public static final String CYCLING_POD = "WLSKO-0145";
   public static final String REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT = "WLSKO-0146";
   public static final String SYNC_RETRY = "WLSKO-0147";
+  public static final String POD_DUMP = "WLSKO-0148";
 }
