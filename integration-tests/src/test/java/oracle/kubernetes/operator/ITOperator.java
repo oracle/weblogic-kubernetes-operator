@@ -56,12 +56,13 @@ public class ITOperator extends BaseTest {
   private static boolean JENKINS;
   private static boolean INGRESSPERDOMAIN = true;
   private static boolean VOYAGER;
+  private static String LB_TYPE;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset
   // of tests, plus leave domain1 up and running when the test completes.
   // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  // set VOYAGER to true to use it as loadBalancer
+  // set LB_TYPE to "VOYAGER" to use it as loadBalancer
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
@@ -74,7 +75,8 @@ public class ITOperator extends BaseTest {
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
-    VOYAGER = System.getenv("VOYAGER") != null && System.getenv("VOYAGER").equalsIgnoreCase("true");
+    VOYAGER =
+        System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER");
   }
 
   /**
