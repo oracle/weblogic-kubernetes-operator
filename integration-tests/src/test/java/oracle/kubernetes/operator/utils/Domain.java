@@ -302,34 +302,50 @@ public class Domain {
               + protocol);
     }
 
-    /* Make sure we can reach the port */
-    StringBuffer testAppUrl = new StringBuffer("http://");
-    testAppUrl
+    /*
+     * Construct a curl command that will be run via kubectl exec on the admin server
+     */
+    StringBuffer curlCmd =
+        new StringBuffer(
+            "kubectl exec " + this.getDomainUid() + "-" + this.adminServerName + " /usr/bin/curl ");
+
+    /*
+     * Make sure we can reach the port,
+     * first via each managed server URL
+     */
+    for (int i = 1; i <= TestUtils.getClusterReplicas(domainUid, clusterName, domainNS); i++) {
+      StringBuffer serverAppUrl = new StringBuffer("http://");
+      serverAppUrl
+          .append(this.getDomainUid() + "-" + managedServerNameBase + i)
+          .append(":")
+          .append(port)
+          .append("/");
+      serverAppUrl.append(path);
+
+      callWebAppAndWaitTillReady(
+          new StringBuffer(curlCmd.toString())
+              .append(serverAppUrl.toString())
+              .append(" -- --write-out %{http_code} -o /dev/null")
+              .toString());
+    }
+
+    /*
+     * Make sure we can reach the port,
+     * second via cluster URL which should round robin through each managed server.
+     * Use the callWebAppAndCheckForServerNameInResponse method with verifyLoadBalancing
+     * enabled to verify each managed server is responding.
+     */
+    StringBuffer clusterAppUrl = new StringBuffer("http://");
+    clusterAppUrl
         .append(this.getDomainUid() + "-cluster-" + this.clusterName)
         .append(":")
         .append(port)
         .append("/");
-    testAppUrl.append(path);
-    // curl cmd to call webapp
-    StringBuffer curlCmd =
-        new StringBuffer(
-            "kubectl exec " + this.getDomainUid() + "-" + this.adminServerName + " /usr/bin/curl ");
-    curlCmd.append(testAppUrl.toString());
+    clusterAppUrl.append(path);
 
-    // curl cmd to get response code
-    StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
-    //  -- means pass trailing args to command in exec, not exec itself
-    curlCmdResCode.append(" -- --write-out %{http_code} -o /dev/null");
-
-    logger.info("Curl cmd with response code " + curlCmdResCode);
-    logger.info("Curl cmd " + curlCmd);
-
-    // call webapp iteratively till its deployed/ready
-    callWebAppAndWaitTillReady(curlCmdResCode.toString());
-
-    // execute curl and look for the managed server name in response
-    callWebAppAndCheckForServerNameInResponse(curlCmd.toString(), true);
-    logger.info("curlCmd " + curlCmd);
+    // execute curl and look for each managed server name in response
+    callWebAppAndCheckForServerNameInResponse(
+        new StringBuffer(curlCmd.toString()).append(clusterAppUrl.toString()).toString(), true);
   }
 
   /**
