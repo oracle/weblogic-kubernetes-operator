@@ -76,19 +76,34 @@ public class DomainStatus {
    * @return this object.
    */
   public DomainStatus addCondition(DomainCondition condition) {
-    if (!isNewCondition(condition)) return this;
+    if (!isNewCondition(condition)) {
+      return this;
+    }
 
     conditions.add(condition);
     modified = true;
     return this;
   }
 
+  /**
+   * True, if condition present based on predicate.
+   *
+   * @param predicate Predicate
+   * @return True, if predicate is satisfied
+   */
   public boolean hasConditionWith(Predicate<DomainCondition> predicate) {
     return !getConditionsMatching(predicate).isEmpty();
   }
 
+  /**
+   * Removes condition based on predicate.
+   *
+   * @param predicate Predicate
+   */
   public void removeConditionIf(Predicate<DomainCondition> predicate) {
-    for (DomainCondition condition : getConditionsMatching(predicate)) removeCondition(condition);
+    for (DomainCondition condition : getConditionsMatching(predicate)) {
+      removeCondition(condition);
+    }
   }
 
   private List<DomainCondition> getConditionsMatching(Predicate<DomainCondition> predicate) {
@@ -96,20 +111,30 @@ public class DomainStatus {
   }
 
   private void removeCondition(DomainCondition condition) {
-    if (condition != null && conditions.remove(condition)) modified = true;
+    if (condition != null && conditions.remove(condition)) {
+      modified = true;
+    }
   }
 
   private DomainCondition getConditionWithType(DomainConditionType type) {
-    for (DomainCondition condition : conditions) if (type == condition.getType()) return condition;
+    for (DomainCondition condition : conditions) {
+      if (type == condition.getType()) {
+        return condition;
+      }
+    }
 
     return null;
   }
 
   private boolean isNewCondition(DomainCondition condition) {
     DomainCondition oldCondition = getConditionWithType(condition.getType());
-    if (oldCondition == null) return true;
+    if (oldCondition == null) {
+      return true;
+    }
 
-    if (oldCondition.equals(condition)) return false;
+    if (oldCondition.equals(condition)) {
+      return false;
+    }
 
     conditions.remove(oldCondition);
     return true;
@@ -223,7 +248,9 @@ public class DomainStatus {
    * @param servers servers
    */
   public void setServers(List<ServerStatus> servers) {
-    if (isEqualIgnoringOrder(servers, this.servers)) return;
+    if (isEqualIgnoringOrder(servers, this.servers)) {
+      return;
+    }
 
     this.servers = servers;
     modified = true;
@@ -290,7 +317,7 @@ public class DomainStatus {
     if (other == this) {
       return true;
     }
-    if ((other instanceof DomainStatus) == false) {
+    if (!(other instanceof DomainStatus)) {
       return false;
     }
     DomainStatus rhs = ((DomainStatus) other);

@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public interface ComponentRegistry extends Component {
   /**
-   * Returns the map of {@link Component}s registered with this object, keyed by name
+   * Returns the map of {@link Component}s registered with this object, keyed by name.
    *
    * @return map of registered components
    */

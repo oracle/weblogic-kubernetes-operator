@@ -14,7 +14,18 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(FIELD)
 public @interface EnumClass {
+
+  /**
+   * Enum class.
+   *
+   * @return enum class
+   */
   Class<? extends java.lang.Enum> value();
 
+  /**
+   * Enum qualifier.
+   *
+   * @return enum qualifier
+   */
   String qualifier() default "";
 }

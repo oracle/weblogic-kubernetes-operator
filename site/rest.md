@@ -12,7 +12,7 @@ All of the REST services require authentication.  Callers must pass in a valid t
 To protect against Cross Site Request Forgery (CSRF) attacks, the operator REST API requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example when you POST to the `/scale` endpoint).  The value is an arbitrary name such as `MyClient`. For example, when using curl:
 
 ```
-curl ... -H X-RequestedBy:MyClient ... -X POST .../scaling
+curl ... -H X-Requested-By:MyClient ... -X POST .../scaling
 ```
 
 If you do not pass in the `X-Requested-By` header, then you'll get a 400 (bad request) response without any details explaining why the request is bad.

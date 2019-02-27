@@ -25,7 +25,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-/** HTTP Client */
+/** HTTP Client. */
 public class HttpClient {
   public static final String KEY = "httpClient";
 
@@ -49,7 +49,7 @@ public class HttpClient {
 
   /**
    * Constructs a URL using the provided service URL and request URL, and use the resulting URL to
-   * issue a HTTP GET request
+   * issue a HTTP GET request.
    *
    * @param requestUrl The request URL containing the request of the REST call
    * @param serviceURL The service URL containing the host and port of the server where the HTTP
@@ -104,7 +104,7 @@ public class HttpClient {
 
   /**
    * Constructs a URL using the provided service URL and request URL, and use the resulting URL and
-   * the payload provided to issue a HTTP POST request
+   * the payload provided to issue a HTTP POST request.
    *
    * @param requestUrl The request URL containing the request of the REST call
    * @param serviceURL The service URL containing the host and port of the server where the HTTP
@@ -148,7 +148,7 @@ public class HttpClient {
 
   /**
    * Asynchronous {@link Step} for creating an authenticated HTTP client targeted at a server
-   * instance
+   * instance.
    *
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
@@ -206,7 +206,7 @@ public class HttpClient {
   }
 
   /**
-   * Create authenticated client specifically targeted at an admin server
+   * Create authenticated client specifically targeted at an admin server.
    *
    * @param namespace Namespace
    * @param adminSecretName Admin secret name
@@ -228,7 +228,7 @@ public class HttpClient {
   }
 
   /**
-   * Create authenticated HTTP client
+   * Create authenticated HTTP client.
    *
    * @param username Username
    * @param password Password
@@ -270,7 +270,7 @@ public class HttpClient {
   }
 
   /**
-   * Returns the URL to access the Service; using the Service clusterIP and port
+   * Returns the URL to access the Service; using the Service clusterIP and port.
    *
    * @param service The name of the Service that you want the URL for.
    * @return The URL of the Service or null if the URL cannot be found.
