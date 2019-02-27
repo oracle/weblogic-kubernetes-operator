@@ -352,12 +352,14 @@ if [ "${DELETE_FILES:-true}" = "true" ]; then
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
   $SCRIPTPATH/krun.sh -i store/oracle/weblogic:12.2.1.3 -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
   [ "$?" = "0" ] || SUCCESS="1"
+  echo @@ SUCCESS=$SUCCESS
 
   # Delete old test files owned by the current user.  
 
   echo @@ Deleting local $RESULT_DIR contents.
   rm -fr $RESULT_ROOT/acceptance_test_tmp
   [ "$?" = "0" ] || SUCCESS="1"
+  echo @@ SUCCESS=$SUCCESS
 
   echo @@ Deleting /tmp/test_suite.\* files.
   rm -f /tmp/test_suite.*
