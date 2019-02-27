@@ -158,7 +158,12 @@ public class ITOperator extends BaseTest {
       if (VOYAGER) {
         Map<String, Object> wlstDomainMap = TestUtils.loadYaml(domainonpvwlstFile);
         wlstDomainMap.put("loadBalancer", "VOYAGER");
-        logger.info("domain1onpvwlst loadBalancer is set to: " + wlstDomainMap.get("loadBalancer"));
+        wlstDomainMap.put("loadBalancerWebPort", new Integer("30305"));
+        logger.info(
+            "domainonpvwlst loadBalancer is set to: "
+                + wlstDomainMap.get("loadBalancer")
+                + " with loadBalancerWebPort:"
+                + wlstDomainMap.get("loadBalancerWebPort"));
         domain = TestUtils.createDomain(wlstDomainMap);
       } else {
         domain = TestUtils.createDomain(domainonpvwlstFile);
@@ -206,8 +211,12 @@ public class ITOperator extends BaseTest {
       if (VOYAGER) {
         Map<String, Object> wdtDomainMap = TestUtils.loadYaml(domainonpvwdtFile);
         wdtDomainMap.put("loadBalancer", "VOYAGER");
+        wdtDomainMap.put("loadBalancerWebPort", new Integer("30306"));
         logger.info(
-            "domainonpvwdtFile loadBalancer is set to: " + wdtDomainMap.get("loadBalancer"));
+            "domainonpvwdt loadBalancer is set to: "
+                + wdtDomainMap.get("loadBalancer")
+                + " with loadBalancerWebPort:"
+                + wdtDomainMap.get("loadBalancerWebPort"));
         domain = TestUtils.createDomain(wdtDomainMap);
       } else {
         domain = TestUtils.createDomain(domainonpvwdtFile);
@@ -263,7 +272,12 @@ public class ITOperator extends BaseTest {
       wlstDomainMap.put("t3ChannelPort", new Integer("30031"));
       if (VOYAGER) {
         wlstDomainMap.put("loadBalancer", "VOYAGER");
-        logger.info("domain1onpvwlst loadBalancer is set to: " + wlstDomainMap.get("loadBalancer"));
+        wlstDomainMap.put("loadBalancerWebPort", new Integer("30307"));
+        logger.info(
+            "domain1onpvwlst loadBalancer is set to: "
+                + wlstDomainMap.get("loadBalancer")
+                + " with loadBalancerWebPort:"
+                + wlstDomainMap.get("loadBalancerWebPort"));
       }
       if (!INGRESSPERDOMAIN) {
         wlstDomainMap.put("ingressPerDomain", new Boolean("false"));
@@ -288,7 +302,7 @@ public class ITOperator extends BaseTest {
       // wdtDomainMap.put("clusterType", "Configured");
       if (VOYAGER) {
         wdtDomainMap.put("loadBalancer", "VOYAGER");
-        wdtDomainMap.put("loadBalancerWebPort", new Integer("30306"));
+        wdtDomainMap.put("loadBalancerWebPort", new Integer("30308"));
         logger.info(
             "domain2onpvwdt loadBalancer is set to: "
                 + wdtDomainMap.get("loadBalancer")
@@ -363,7 +377,12 @@ public class ITOperator extends BaseTest {
       if (VOYAGER) {
         Map<String, Object> domainMap = TestUtils.loadYaml(domainadminonlyFile);
         domainMap.put("loadBalancer", "VOYAGER");
-        logger.info("domainadminonlyFile loadBalancer is set to: " + domainMap.get("loadBalancer"));
+        domainMap.put("loadBalancerWebPort", new Integer("30309"));
+        logger.info(
+            "domainadminonly loadBalancer is set to: "
+                + domainMap.get("loadBalancer")
+                + " with loadBalancerWebPort:"
+                + domainMap.get("loadBalancerWebPort"));
         domain = TestUtils.createDomain(domainMap);
       } else {
         domain = TestUtils.createDomain(domainadminonlyFile);
@@ -405,8 +424,12 @@ public class ITOperator extends BaseTest {
       if (VOYAGER) {
         Map<String, Object> domainMap = TestUtils.loadYaml(domainrecyclepolicyFile);
         domainMap.put("loadBalancer", "VOYAGER");
+        domainMap.put("loadBalancerWebPort", new Integer("30310"));
         logger.info(
-            "domainrecyclepolicyFile loadBalancer is set to: " + domainMap.get("loadBalancer"));
+            "domainrecyclepolicy loadBalancer is set to: "
+                + domainMap.get("loadBalancer")
+                + " with loadBalancerWebPort:"
+                + domainMap.get("loadBalancerWebPort"));
         domain = TestUtils.createDomain(domainMap);
       } else {
         domain = TestUtils.createDomain(domainrecyclepolicyFile);
@@ -447,8 +470,12 @@ public class ITOperator extends BaseTest {
       if (VOYAGER) {
         Map<String, Object> domainMap = TestUtils.loadYaml(domainsampledefaultsFile);
         domainMap.put("loadBalancer", "VOYAGER");
+        domainMap.put("loadBalancerWebPort", new Integer("30311"));
         logger.info(
-            "domainsampledefaultsFile loadBalancer is set to: " + domainMap.get("loadBalancer"));
+            "domainsampledefaultsFile loadBalancer is set to: "
+                + domainMap.get("loadBalancer")
+                + " with loadBalancerWebPort:"
+                + domainMap.get("loadBalancerWebPort"));
         domain = TestUtils.createDomain(domainMap);
       } else {
         domain = TestUtils.createDomain(domainsampledefaultsFile);
@@ -499,9 +526,12 @@ public class ITOperator extends BaseTest {
       domainMap.put("t3ChannelPort", new Integer("30051"));
       if (VOYAGER) {
         domainMap.put("loadBalancer", "VOYAGER");
+        domainMap.put("loadBalancerWebPort", new Integer("30312"));
         logger.info(
-            "testAutoAndCustomSitConfigOverrides loadBalancer is set to: "
-                + domainMap.get("loadBalancer"));
+            " AutoAndCustomSitConfigOverrides loadBalancer is set to: "
+                + domainMap.get("loadBalancer")
+                + " with loadBalancerWebPort:"
+                + domainMap.get("loadBalancerWebPort"));
       }
       // use NFS for this domain on Jenkins, defaultis HOST_PATH
       if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
