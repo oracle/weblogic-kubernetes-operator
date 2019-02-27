@@ -16,6 +16,9 @@ function state_dump {
      local PROJECT_ROOT="$PROJECT_ROOT"
      local SCRIPTPATH="$PROJECT_ROOT/src/integration-tests/bash"
      local LEASE_ID="$LEASE_ID"
+     local ARCHIVE_DIR="$RESULT_ROOT/acceptance_test_pv_archive"
+     local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.jar"
+     local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
 
      if [ ! -d "$RESULT_DIR" ]; then
         echo State dump exiting early.  RESULT_DIR \"$RESULT_DIR\" does not exist or is not a directory.
@@ -60,16 +63,34 @@ function state_dump {
     done
   done
 
-  # use a job to archive PV, /scratch mounts to PV_ROOT in the K8S cluster
-  echo "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
-  local outfile=${DUMP_DIR}/archive_pv_job.out
-  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" 2>&1 | tee ${outfile}
+
+  mkdir -p $ARCHIVE_DIR || fail Could not archive, could not create target directory \'$ARCHIVE_DIR\'.
+  
+  # use a run to archive PV, /sharedparent mounts to PV_ROOT in the K8S cluster
+  echo "Archiving pv directory using a kubernetes run.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
+  local outfile=${DUMP_DIR}/archive_pv_run.out
+  $SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
   if [ "$?" = "0" ]; then
-     echo Job complete.
+     id
+     $SCRIPTPATH/krun.sh -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_ROOT/pvarchive.b64 2>&1
+	 if [ "$?" = "0" ]; then
+   		base64 -di $RESULT_ROOT/pvarchive.b64 > $ARCHIVE
+   		if [ "$?" = "0" ]; then
+   			echo Run complete. Archived to $ARCHIVE
+   		else 
+   			echo Run failed. 
+   		fi
+	 else
+     	# command failed
+  		cat $RESULT_ROOT/pvarchive.b64 | head -30
+	 fi
+	 # rm $RESULT_ROOT/pvarchive.b64
   else
      echo Job failed.  See ${outfile}.
   fi
+  
 
+  
   if [ ! "$LEASE_ID" = "" ]; then
     # release the lease if we own it
     ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" 2>&1 | tee ${RESULT_DIR}/release_lease.out
@@ -86,7 +107,7 @@ function state_dump {
   
   # now archive all the local test files
   $SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
-
+  
   echo Done with state dump
 }
 
