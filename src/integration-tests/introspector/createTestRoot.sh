@@ -2,7 +2,7 @@
 
 # This script runs in a pod via krun.sh, it sets up the top
 # level directory for this test that in turn is mounted as /shared by the 
-# test's wl-pvc, wl-pv, wl-job, and wl-pod yamlt (plus similar 'mysql' yamlt).
+# test's wl-pvc, wl-pv, and wl-pod yamlt (plus similar 'mysql' yamlt).
 
 # The 'acceptance_test_pv' directory it creates matches the directory 
 # expected by the integration test 'cleanup.sh' script.
