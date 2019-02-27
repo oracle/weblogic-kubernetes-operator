@@ -103,3 +103,4 @@ docker rmi domain1:v1
 kubectl delete secret -n sample-domain1-ns domain1-uid-weblogic-credentials
 rm domain1-lb.yaml
 rm -r domain1-def
+rm domain1.zip
