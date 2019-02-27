@@ -107,6 +107,14 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion).toWatchResponse();
   }
 
+  private Watch.Response createHttpGoneErrorWithoutResourceVersionResponse() {
+    return WatchEvent.createErrorEvent(HTTP_GONE).toWatchResponse();
+  }
+
+  private Watch.Response createErrorWithoutStatusResponse() {
+    return WatchEvent.createErrorEventWithoutStatus().toWatchResponse();
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void receivedEvents_areSentToListeners() {
@@ -147,6 +155,36 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
       assertThat(
           StubWatchFactory.getRequestParameters().get(1),
           hasEntry("resourceVersion", Integer.toString(NEXT_RESOURCE_VERSION)));
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @Test
+  public void afterHttpGoneErrorWithoutResourceVersion_nextRequestSendsResourceVersionZero() {
+    try {
+      StubWatchFactory.addCallResponses(createHttpGoneErrorWithoutResourceVersionResponse());
+      scheduleDeleteResponse(createObjectWithMetaData());
+
+      createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
+
+      assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @Test
+  public void afterErrorWithoutStatus_nextRequestSendsResourceVersionZero() {
+    try {
+      StubWatchFactory.addCallResponses(createErrorWithoutStatusResponse());
+      scheduleDeleteResponse(createObjectWithMetaData());
+
+      createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
+
+      assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
     } catch (Throwable t) {
       t.printStackTrace();
     }

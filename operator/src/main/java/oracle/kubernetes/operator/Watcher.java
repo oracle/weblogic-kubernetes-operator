@@ -187,14 +187,22 @@ abstract class Watcher<T> {
 
   private void handleErrorResponse(Watch.Response<T> item) {
     V1Status status = item.status;
-    if (status != null && status.getCode() == HTTP_GONE) {
+    if (status == null) {
+      // The kubernetes client parsing logic can mistakenly parse a status as a type
+      // with similar fields, such as V1ConfigMap. In this case, the actual status is
+      // not available to our layer, so respond defensively by resetting resource version.
+      resourceVersion = 0l;
+    } else if (status.getCode() == HTTP_GONE) {
+      resourceVersion = 0l;
       String message = status.getMessage();
       int index1 = message.indexOf('(');
       if (index1 > 0) {
         int index2 = message.indexOf(')', index1 + 1);
         if (index2 > 0) {
           String val = message.substring(index1 + 1, index2);
-          resourceVersion = !isNullOrEmptyString(val) ? Long.parseLong(val) : 0;
+          if (!isNullOrEmptyString(val)) {
+            resourceVersion = Long.parseLong(val);
+          }
         }
       }
     }
