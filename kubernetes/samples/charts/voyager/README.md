@@ -10,7 +10,7 @@ As a demonstration, the following are the detailed steps to install the Voyager 
 $ helm repo add appscode https://charts.appscode.com/stable/
 $ helm repo update
 ```
-Verify the chart repository has been added.
+Verify that the chart repository has been added.
 ```
 $ helm search appscode/voyager
 NAME            	CHART VERSION	APP VERSION	DESCRIPTION                                       
@@ -26,7 +26,7 @@ $ helm install appscode/voyager --name voyager-operator --version 7.4.0 \
   --set cloudProvider=baremetal \
   --set apiserver.enableValidatingWebhook=false
 ```
-Wait until Voyager Operator is running.
+Wait until the Voyager Operator is running.
 ```
 $ kubectl -n voyager get all
 NAME                                            READY     STATUS    RESTARTS   AGE
@@ -41,7 +41,7 @@ deployment.apps/voyager-voyager-operator   1         1         1            1   
 NAME                                                  DESIRED   CURRENT   READY     AGE
 replicaset.apps/voyager-voyager-operator-77cbfdcb86   1         1         1         46m
 ```
-> NOTE: All the generated Kubernetes resources of Voyager operator have names with pattern 'voyager-<releaseName>XXX'. This is the logic controlled by Voyager Helm chart. In our case we use releaseName 'voyager-operator', so all the generated resources have name like 'voyager-voyager-operatorXXX'.
+> **NOTE**: All the generated Kubernetes resources of the Voyager operator have names with the pattern `voyager-<releaseName>XXX`. This logic is controlled by the Voyager Helm chart. In our case, we use `releaseName` `voyager-operator`, so all the generated resources have names like `voyager-voyager-operatorXXX`.
 
 ## Optionally, download the Voyager Helm chart
 If you want, you can download the Voyager Helm chart and untar it into a local folder:
