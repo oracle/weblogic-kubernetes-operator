@@ -1,7 +1,7 @@
 # Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-FROM  oracle/weblogic:12213-patch-wls-for-k8s
+FROM store/oracle/weblogic:12.2.1.3
 
 ENV DOMAIN_NAME="domain1" \
     BUILD_TMP="${ORACLE_HOME}/docker-build-tmp" \
@@ -25,21 +25,22 @@ COPY weblogic-deploy.zip ${BUILD_TMP}
 
 RUN cd ${BUILD_TMP} && \
     ${JAVA_HOME}/bin/jar xf weblogic-deploy.zip && \
-    rm weblogic-deploy.zip && \
     chmod +x weblogic-deploy/bin/*.sh && \
-    chmod -R +x weblogic-deploy/lib/python && \
     ${BUILD_TMP}/weblogic-deploy/bin/createDomain.sh \
-    -oracle_home ${ORACLE_HOME} \
-    -java_home ${JAVA_HOME} \
-    -domain_home ${DOMAIN_HOME} \
-    -domain_type WLS \
-    -model_file ${BUILD_TMP}/model.yaml && \
+      -oracle_home ${ORACLE_HOME} \
+      -java_home ${JAVA_HOME} \
+      -domain_home ${DOMAIN_HOME} \
+      -domain_type WLS \
+      -model_file ${BUILD_TMP}/model.yaml && \
+    cd ${DOMAIN_HOME} && \
+    chown -R oracle:oracle ${DOMAIN_HOME} && \
+    chmod -R a+xwr ${DOMAIN_HOME} && \
     cat ${DOMAIN_HOME}/config/config.xml && \
     rm -rf ${BUILD_TMP} && \
     rm -rf ${WLS_CREDENTIALS} && \
-    chown -R oracle:oracle ${DOMAIN_HOME} && \
-    chmod -R a+xwr ${DOMAIN_HOME}
+    ${JAVA_HOME}/bin/jar cf /u01/${DOMAIN_NAME}.zip . && \
+    echo "#/bin/bash" > /u01/wait.sh && \
+    echo "while true ; do sleep 60; done" >> /u01/wait.sh && \
+    chmod a+x /u01/wait.sh
 
-USER oracle
-
-WORKDIR ${DOMAIN_HOME}
+CMD /u01/wait.sh

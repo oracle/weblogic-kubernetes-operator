@@ -4,33 +4,29 @@
 FROM store/oracle/weblogic:12.2.1.3
 
 ENV DOMAIN_NAME="domain1" \
-    BUILD_TMP="${ORACLE_HOME}/docker-build-tmp" \
-    WLS_CREDENTIALS="/weblogic-credentials"
+    BUILD_TMP="${ORACLE_HOME}/docker-build-tmp"
 
 ENV DOMAIN_HOME="${ORACLE_HOME}/user_projects/domains/${DOMAIN_NAME}"
 
-ARG ENCODED_ADMIN_USERNAME
-ARG ENCODED_ADMIN_PASSWORD
-
 USER root
 
-RUN mkdir -p ${DOMAIN_HOME} && \
-    mkdir -p ${BUILD_TMP} && \
-    mkdir -p ${WLS_CREDENTIALS} && \
-    echo ${ENCODED_ADMIN_USERNAME} | base64 --decode > ${WLS_CREDENTIALS}/username && \
-    echo ${ENCODED_ADMIN_PASSWORD} | base64 --decode > ${WLS_CREDENTIALS}/password
+RUN mkdir -p ${BUILD_TMP}
 
 COPY model/model.yaml ${BUILD_TMP}
 COPY wlsdeploy ${BUILD_TMP}/wlsdeploy
 COPY weblogic-deploy.zip ${BUILD_TMP}
+COPY ${DOMAIN_NAME}.zip ${BUILD_TMP}
 
 RUN cd ${BUILD_TMP} && \
     ${JAVA_HOME}/bin/jar xf weblogic-deploy.zip && \
     chmod +x weblogic-deploy/bin/*.sh && \
     ${JAVA_HOME}/bin/jar cf apps.zip wlsdeploy && \
-    ${BUILD_TMP}/weblogic-deploy/bin/createDomain.sh \
+    mkdir -p ${DOMAIN_HOME} && \
+    cd ${DOMAIN_HOME} && \
+    ${JAVA_HOME}/bin/jar xf ${BUILD_TMP}/${DOMAIN_NAME}.zip && \
+    cd ${BUILD_TMP} && \
+    ${BUILD_TMP}/weblogic-deploy/bin/updateDomain.sh \
       -oracle_home ${ORACLE_HOME} \
-      -java_home ${JAVA_HOME} \
       -domain_home ${DOMAIN_HOME} \
       -domain_type WLS \
       -model_file ${BUILD_TMP}/model.yaml \
@@ -39,8 +35,7 @@ RUN cd ${BUILD_TMP} && \
     chown -R oracle:oracle ${DOMAIN_HOME} && \
     chmod -R a+xwr ${DOMAIN_HOME} && \
     cat ${DOMAIN_HOME}/config/config.xml && \
-    rm -rf ${BUILD_TMP} && \
-    rm -rf ${WLS_CREDENTIALS}
+    rm -rf ${BUILD_TMP}
 
 USER oracle
 
