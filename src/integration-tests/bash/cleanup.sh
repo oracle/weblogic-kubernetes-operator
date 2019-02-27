@@ -350,7 +350,7 @@ if [ "${DELETE_FILES:-true}" = "true" ]; then
 
   echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
-  $SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
+  $SCRIPTPATH/krun.sh -i store/oracle/weblogic:12.2.1.3 -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
   [ "$?" = "0" ] || SUCCESS="1"
 
   # Delete old test files owned by the current user.  
