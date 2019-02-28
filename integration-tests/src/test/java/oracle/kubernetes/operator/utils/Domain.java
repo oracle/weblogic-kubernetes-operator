@@ -930,6 +930,7 @@ public class Domain {
           "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
     }
     String output = result.stdout().trim();
+    logger.info("Command returned " + output);
     if (!output.contains("Deployment State : completed")) {
       throw new RuntimeException("Failure: webapp deployment failed." + output);
     }
