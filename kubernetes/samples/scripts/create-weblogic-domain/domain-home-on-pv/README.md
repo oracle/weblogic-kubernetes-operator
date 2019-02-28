@@ -418,17 +418,17 @@ create-domain.sh
 ```
    A correct value for `weblogicDomainStoragePath` will meet the following requirements:
 
-    * Must be the name of a directory.
-    * The directory must be world writable.  
+  * Must be the name of a directory.
+  * The directory must be world writable.  
 
    Optionally, follow these steps to tighten permissions on the named directory after you run the sample the first time:
 
-    * Become the root user.
-    * `ls -nd $value-of-weblogicDomainStoragePath`
-      * Note the values of the third and fourth field of the output.
-    * `chown $third-field:$fourth-field $value-of-weblogicDomainStoragePath`
-    * `chmod 755 $value-of-weblogicDomainStoragePath`
-    * Return to your normal user ID.
+  * Become the root user.
+  * `ls -nd $value-of-weblogicDomainStoragePath`
+    * Note the values of the third and fourth field of the output.
+  * `chown $third-field:$fourth-field $value-of-weblogicDomainStoragePath`
+  * `chmod 755 $value-of-weblogicDomainStoragePath`
+  * Return to your normal user ID.
 
 3. Message: `ERROR: The create domain job will not overwrite an existing domain. The domain folder /shared/domains/domain1 already exists`  
 You will see this message if the directory `domains/domain1` exists in the directory named as the value of `weblogicDomainStoragePath` in `create-pv-pvc-inputs.yaml`. For example, if the value of  `weblogicDomainStoragePath` is `/tmp/wls-op-4-k8s`, you would need to remove (or move) `/tmp/wls-op-4-k8s/domains/domain1`.
