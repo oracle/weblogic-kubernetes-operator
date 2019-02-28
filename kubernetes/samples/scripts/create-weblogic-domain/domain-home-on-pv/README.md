@@ -391,13 +391,12 @@ pod domain1-create-weblogic-sample-domain-job-4qwt2 status is Pending
 The create domain job is not showing status completed after waiting 300 seconds.`  
 The most likely cause is related to the value of `persistentVolumeClaimName`, defined in `domain-home-on-pv/create-domain-inputs.yaml`.  To determine if this is the problem:
 
-  * Execute `kubectl get all --all-namespaces` to find the name of the `create-weblogic-sample-domain-job`.
-  * Execute  `kubectl describe pod <name-of-create-weblogic-sample-domain-job>` to see if there is an event that has text similar to `persistentvolumeclaim "domain1-weblogic-sample-pvc" not found`.
-  * Find the name of the PVC that was created by executing [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md), using `kubectl describe pvc`. It is likely to be `weblogic-sample-pvc`.
-
-  * Change the value of `persistentVolumeClaimName` to match the name created when you executed [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md).
-  * Rerun the `create-domain.sh` script with the same arguments as you did before.
-  * Verify that the operator is deployed. Use the command:
+    * Execute `kubectl get all --all-namespaces` to find the name of the `create-weblogic-sample-domain-job`.
+    * Execute  `kubectl describe pod <name-of-create-weblogic-sample-domain-job>` to see if there is an event that has text similar to `persistentvolumeclaim "domain1-weblogic-sample-pvc" not found`.
+    * Find the name of the PVC that was created by executing [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md), using `kubectl describe pvc`. It is likely to be `weblogic-sample-pvc`.
+    * Change the value of `persistentVolumeClaimName` to match the name created when you executed [create-pv-pvc.sh](../../create-weblogic-domain-pv-pvc/README.md).
+    * Rerun the `create-domain.sh` script with the same arguments as you did before.
+    * Verify that the operator is deployed. Use the command:
 ```
 kubectl  get all --all-namespaces
 ```
@@ -405,7 +404,7 @@ Look for lines similar to:
 ```
 weblogic-operator1   pod/weblogic-operator-
 ```
- If you do not find something similar in the output, the WebLogic Operator for Kubernetes may not have been installed completely. Review the operator [installation instructions](../../../../../site/install.md).
+   If you do not find something similar in the output, the WebLogic Operator for Kubernetes may not have been installed completely. Review the operator [installation instructions](../../../../../site/install.md).
 
 
 2. Message: `ERROR: Unable to create folder /shared/domains`  
@@ -419,17 +418,17 @@ create-domain.sh
 ```
    A correct value for `weblogicDomainStoragePath` will meet the following requirements:
 
-  * Must be the name of a directory.
-  * The directory must be world writable.  
+    * Must be the name of a directory.
+    * The directory must be world writable.  
 
    Optionally, follow these steps to tighten permissions on the named directory after you run the sample the first time:
 
-  * Become the root user.
-  * `ls -nd $value-of-weblogicDomainStoragePath`
+    * Become the root user.
+    * `ls -nd $value-of-weblogicDomainStoragePath`
       * Note the values of the third and fourth field of the output.
-  * `chown $third-field:$fourth-field $value-of-weblogicDomainStoragePath`
-  * `chmod 755 $value-of-weblogicDomainStoragePath`
-  * Return to your normal user ID.
+    * `chown $third-field:$fourth-field $value-of-weblogicDomainStoragePath`
+    * `chmod 755 $value-of-weblogicDomainStoragePath`
+    * Return to your normal user ID.
 
 3. Message: `ERROR: The create domain job will not overwrite an existing domain. The domain folder /shared/domains/domain1 already exists`  
 You will see this message if the directory `domains/domain1` exists in the directory named as the value of `weblogicDomainStoragePath` in `create-pv-pvc-inputs.yaml`. For example, if the value of  `weblogicDomainStoragePath` is `/tmp/wls-op-4-k8s`, you would need to remove (or move) `/tmp/wls-op-4-k8s/domains/domain1`.
