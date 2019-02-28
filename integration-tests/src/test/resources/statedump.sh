@@ -69,9 +69,31 @@ function state_dump {
   # use a run to archive PV, /sharedparent mounts to PV_ROOT in the K8S cluster
   echo "Archiving pv directory using a kubernetes run.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_run.out
-  $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
+  
+  if [ "$WERCKER" = "true" ]; then
+  	echo @@ Creating Repo Secret 
+  	kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
+	    --docker-server=$REPO_SERVER \
+	    --docker-username=$REPO_USERNAME \
+	    --docker-password=$REPO_PASSWORD \
+	    --docker-email=$REPO_EMAIL 
+	  
+	echo "Checking Repo Secret"
+	SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+	if [ "$SECRET" != "1" ]; then
+	  echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
+	  exit 1
+	fi
+	
+	IMAGE_TO_USE_IN_KRUN = "phx.ocir.io/weblogick8s/serverjre:8"
+	
+  else
+  	IMAGE_TO_USE_IN_KRUN = "store/oracle/serverjre:8"
+  fi
+  
+  $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -i ${IMAGE_TO_USE_IN_KRUN} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
   if [ "$?" = "0" ]; then
-     $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
+     $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -i ${IMAGE_TO_USE_IN_KRUN} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
 	 if [ "$?" = "0" ]; then
    		base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE
    		if [ "$?" = "0" ]; then
