@@ -193,19 +193,25 @@ abstract class Watcher<T> {
       // not available to our layer, so respond defensively by resetting resource version.
       resourceVersion = 0l;
     } else if (status.getCode() == HTTP_GONE) {
-      resourceVersion = 0l;
-      String message = status.getMessage();
+      resourceVersion = computeNextResourceVersionFromMessage(status);
+    }
+  }
+
+  private long computeNextResourceVersionFromMessage(V1Status status) {
+    String message = status.getMessage();
+    if (message != null) {
       int index1 = message.indexOf('(');
       if (index1 > 0) {
         int index2 = message.indexOf(')', index1 + 1);
         if (index2 > 0) {
           String val = message.substring(index1 + 1, index2);
           if (!isNullOrEmptyString(val)) {
-            resourceVersion = Long.parseLong(val);
+            return Long.parseLong(val);
           }
         }
       }
     }
+    return 0l;
   }
 
   /**
