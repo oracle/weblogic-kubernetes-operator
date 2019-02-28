@@ -358,6 +358,14 @@ if [ "${DELETE_FILES:-true}" = "true" ]; then
 	    --docker-username=$REPO_USERNAME \
 	    --docker-password=$REPO_PASSWORD \
 	    --docker-email=$REPO_EMAIL 
+	  
+	echo "Checking Repo Secret"
+	SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+	if [ "$SECRET" != "1" ]; then
+	  echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
+	  exit 1
+	fi
+	  
     $SCRIPTPATH/krun.sh -i phx.ocir.io/weblogick8s/serverjre:8 -s ${IMAGE_PULL_SECRET_WEBLOGIC} -m "${PV_ROOT}:/sharedparent" -c 'id && rm -fr /sharedparent/acceptance_test_pv'
   else 
   	$SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
