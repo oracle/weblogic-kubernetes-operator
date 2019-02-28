@@ -69,10 +69,9 @@ function state_dump {
   # use a run to archive PV, /sharedparent mounts to PV_ROOT in the K8S cluster
   echo "Archiving pv directory using a kubernetes run.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_run.out
-  $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_ROOT} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
+  $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
   if [ "$?" = "0" ]; then
-     id
-     $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_ROOT} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_ROOT/pvarchive.b64 2>&1
+     $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_ROOT/pvarchive.b64 2>&1
 	 if [ "$?" = "0" ]; then
    		base64 -di $RESULT_ROOT/pvarchive.b64 > $ARCHIVE
    		if [ "$?" = "0" ]; then
