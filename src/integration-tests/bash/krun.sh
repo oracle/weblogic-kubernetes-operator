@@ -30,32 +30,39 @@ VCOMMA=''
 CMFILES=''
 VOLUMECOUNT=0
 
+TMPDIR='/tmp'
+
 EXITCODE=0
 
 usage_exit() {
 cat << EOF
 
-  Usage: $(basename $0) [-i image] [-n namespace] [-c command]
-                        [-m pvc-name:mount-path]
-                        [-f local-file-name]
-                        [-t timeout]
+  Usage: $(basename $0) ...options...
 
-  Run a 'one-off' command on a kubernetes cluster via a temporary pod, 
-  optionally specify pvc mounts and additional files to load.
+    Runs a 'one-off' command on a kubernetes cluster via a temporary pod.
+    Provides options to specify pvc mounts, hostpath mounts, or additional
+    files to load.
 
   Parameters:
 
     -i imagename           - Image, default is "$IMAGE".
     -l imagepullpolicy     - Image pull policy, default is "$IMAGEPULLPOLICY".
     -s imagesecret         - Image pull secret. No default.
+
     -n namespace           - Namespace, default is "$NAMESPACE".
     -p podname             - Pod name, default is "$PODNAME".
+
     -c command             - Command, default is "$COMMAND".
-    -t timeout             - Timeout in seconds, default is $MAXSECS seconds.
+
     -m pvc-name:mount-path - PVC name and mount location. No default.
     -m host-path:mount-path- Remote host-path and mount location. No default.
                              Host-path must begin with a '/'. 
     -f /path/filename      - Copies local file to pod at /tmpmount/filename
+
+    -t timeout             - Timeout in seconds, default is $MAXSECS seconds.
+
+    -d tmpdir              - Location to put tmp file(s).  Default is "$TMPDIR".
+                             Use this if your command's output might be large.
 
     You can specify -f, -m, and -s more than once.
 
@@ -103,7 +110,7 @@ delete_pod_and_cm() {
   kubectl delete -n ${NAMESPACE} cm ${PODNAME}-cm --ignore-not-found > /dev/null 2>&1
 }
 
-while getopts m:t:i:c:n:f:p: OPT
+while getopts m:t:i:c:n:f:p:l:s:d: OPT
 do
   case $OPT in
   i) IMAGE=$OPTARG
@@ -120,6 +127,8 @@ do
   n) NAMESPACE=$OPTARG
      ;;
   t) MAXSECS=$OPTARG
+     ;;
+  d) TMPDIR=$OPTARG
      ;;
   f) # local file to make available in /tmpmount
      if [ "$CMFILES" = "" ]; then
@@ -161,7 +170,9 @@ shift $(($OPTIND - 1))
 
 # setup a tmp file /tmp/[script-file-name].[name-space].[pod-name].tmp.[pid]
 
-TEMPFILE="/tmp/$(basename $0).${NAMESPACE}.${PODNAME}.tmp.$$"  
+[ ! -d "$TMPDIR" ] && echo "Error: temp dir \"$TMPDIR\" not found. Check parameters." && exit 1
+
+TEMPFILE="${TMPDIR}/$(basename $0).${NAMESPACE}.${PODNAME}.tmp.$$"  
 
 # cleanup anything from previous run
 
