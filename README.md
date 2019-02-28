@@ -32,7 +32,6 @@ The fastest way to experience the operator is to follow the [Quick Start guide](
 
 | Issue | Description |
 | --- | --- |
-| [#726](https://github.com/oracle/weblogic-kubernetes-operator/issues/726) | Clusters only support default channel. |
 
 ## Operator version 1.1
 
