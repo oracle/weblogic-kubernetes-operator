@@ -352,7 +352,7 @@ if [ "${DELETE_FILES:-true}" = "true" ]; then
   echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
   if [ "$WERCKER" = "true" ]; then
-    $SCRIPTPATH/krun.sh -i phx.ocir.io/weblogick8s/serverjre:8 -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
+    $SCRIPTPATH/krun.sh -i phx.ocir.io/weblogick8s/serverjre:8 -s ${IMAGE_PULL_SECRET_WEBLOGIC} -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
   else 
   	$SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
   fi
