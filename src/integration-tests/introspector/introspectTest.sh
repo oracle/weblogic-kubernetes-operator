@@ -164,54 +164,6 @@ function cleanupMinor() {
 
 #############################################################################
 #
-# Helper function for running a job
-#
-
-function runJob() {
-  trace "Info: Running job '${1?}' for script '${2?}'."
-
-  local job_name=${1?}
-  local job_script=${2?}
-  local yaml_template=${3?}
-  local yaml_file=${4?}
-
-  # Remove old job yaml in case its leftover from a previous run
-
-  rm -f ${test_home}/${yaml_file}
-
-  # Create the job yaml from its template
-
-  env \
-    JOB_SCRIPT=${job_script} \
-    JOB_NAME=${job_name} \
-    ${SCRIPTPATH}/util_subst.sh -g ${yaml_template} ${test_home}/${yaml_file} \
-    || exit 1
-
-  # Run the job
-
-  tracen "Info: Waiting for job '$job_name' to complete."
-  printdots_start
-  env \
-    KUBECONFIG=$KUBECONFIG \
-    JOB_YAML=${test_home}/${yaml_file} \
-    JOB_NAME=${job_name} \
-    NAMESPACE=$NAMESPACE \
-    ${SCRIPTPATH}/util_job.sh \
-    2>&1 > ${test_home}/job-${1}.out
-  local status=$?
-  printdots_end
-
-  if [ ! $status -eq 0 ]; then
-    printdots_end
-    trace "Error:  job failed, job contents"
-    cat ${test_home}/job-${1}.out
-    trace "Error:  end of failed job contents"
-    exit 1
-  fi
-}
-
-#############################################################################
-#
 # Helper function for deploying a yaml template.  Template $1 is converted
 # to ${test_home}/$2, and then ${test_home}/$2 is deployed.
 #
@@ -359,25 +311,23 @@ function deployCustomOverridesConfigMap() {
 #
 
 function createTestRootPVDir() {
-
-  trace "Info: Creating k8s cluster physical directory 'PV_ROOT/acceptance_test_pv/domain-${DOMAIN_UID}-storage'."
   trace "Info: PV_ROOT='$PV_ROOT'"
-  trace "Info: Test k8s resources use this physical directory via a PV/PVC '/shared' logical directory."
 
   # TBD on Wercker/Jenkins PV_ROOT will differ and may already exist or be remote
   #     so we need to add logic/booleans to skip the following mkdir/chmod as needed
+
   mkdir -p ${PV_ROOT} || exit 1
   chmod 777 ${PV_ROOT} || exit 1
 
-  # Create test root within PV_ROOT via a job
+  trace "Info: Creating k8s cluster physical directory 'PV_ROOT/acceptance_test_pv/domain-${DOMAIN_UID}-storage' via 'kubectl run'."
+  trace "Info: Test k8s resources use this physical directory via a PV/PVC '/shared' logical directory."
 
-  deployYamlTemplate create-test-root-pv.yamlt create-test-root-pv.yaml
-  deployYamlTemplate create-test-root-pvc.yamlt create-test-root-pvc.yaml
-
-  runJob ${DOMAIN_UID}-create-test-root-job \
-         /test-scripts/createTestRoot.sh \
-         create-test-root-job.yamlt \
-         create-test-root-job.yaml
+  ${SCRIPTPATH}/util_krun.sh -m ${PV_ROOT}:/pv-root \
+                             -i ${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG} \
+                             -l ${WEBLOGIC_IMAGE_PULL_POLICY} \
+                             -f ${SCRIPTPATH}/createTestRoot.sh \
+                             -c "sh /tmpmount/createTestRoot.sh ${DOMAIN_UID}" \
+                             || exit 1
 }
 
 #############################################################################
@@ -695,17 +645,17 @@ deployDomainConfigMap
 deployTestScriptConfigMap
 deployCustomOverridesConfigMap
 
+kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
+kubectl -n $NAMESPACE create secret generic my-secret \
+        --from-literal=key1=supersecret  \
+        --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
+
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
   createTestRootPVDir
   deployMySQL
   deployWebLogic_PV_PVC_and_Secret
   deployCreateDomainJobPod
 fi
-
-kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
-kubectl -n $NAMESPACE create secret generic my-secret \
-        --from-literal=key1=supersecret  \
-        --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
 
 deployIntrospectJobPod
 

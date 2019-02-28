@@ -37,12 +37,11 @@ Internal Test Flow:
 
    <operator-src>/src/integration-tests/bash/cleanup.sh 
 
-() Create a test directory in the k8s cluster via a k8s pv, pvc, and a job.
+() Create a test directory in the k8s cluster via kubectl run. 
 
-   create-test-root-pv.yamlt, create-test-root-pvc.yamlt
-   create-test-root.sh, create-test-root-job.yamlt
+   See createTestRoot.sh
 
-() Deploy pv/pvc for use by introspector job, the domain create step, and wl pods.  (If PV_COMMENT != "#").
+() Deploy pv/pvc for use by introspector job pod, the domain create step, and wl pods.  (If PV_COMMENT != "#").
 
    wl-pv.yamlt, wl-pvc.yamlt
 
@@ -54,7 +53,7 @@ Internal Test Flow:
 
    wl-create-domain-pod.yamlt, wl-create-domain-pod.sh, wl-create-domain-pod.pyt
 
-() Run the introspector job (as a direct pod instead of a job)
+() Run the introspector job pod (as a direct pod instead of a job)
 
    wl-instrospect-pod.yamlt
    wl-instrospect-pod.sh
@@ -62,7 +61,7 @@ Internal Test Flow:
    <operator-src>/operator/src/main/resources/scripts/startNodeManager.sh
    <operator-src>/operator/src/main/resources/scripts/introspectDomain.py
 
-() Parse the introspector job's output into files and deploy them in a configmap.
+() Parse the introspector job pod's output into files and deploy them in a configmap.
 
 () Start the admin server pod.   The startServer.sh and start-server.py
    scripts will use files from the configmap for situational config and login 
