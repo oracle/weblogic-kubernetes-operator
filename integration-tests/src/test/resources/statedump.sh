@@ -71,9 +71,9 @@ function state_dump {
   local outfile=${DUMP_DIR}/archive_pv_run.out
   $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
   if [ "$?" = "0" ]; then
-     $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_ROOT/pvarchive.b64 2>&1
+     $SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
 	 if [ "$?" = "0" ]; then
-   		base64 -di $RESULT_ROOT/pvarchive.b64 > $ARCHIVE
+   		base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE
    		if [ "$?" = "0" ]; then
    			echo Run complete. Archived to $ARCHIVE
    		else 
@@ -81,9 +81,9 @@ function state_dump {
    		fi
 	 else
      	# command failed
-  		cat $RESULT_ROOT/pvarchive.b64 | head -30
+  		cat $RESULT_DIR/pvarchive.b64 | head -30
 	 fi
-	 # rm $RESULT_ROOT/pvarchive.b64
+	 # rm $RESULT_DIR/pvarchive.b64
   else
      echo Job failed.  See ${outfile}.
   fi
