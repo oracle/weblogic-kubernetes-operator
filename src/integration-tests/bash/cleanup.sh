@@ -61,6 +61,7 @@ USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 TMP_DIR="$RESULT_DIR/cleanup_tmp"
 JOB_NAME="weblogic-command-job"
 
+
 function fail {
   echo @@ cleanup.sh: Error "$@"
   exit 1
@@ -350,7 +351,11 @@ if [ "${DELETE_FILES:-true}" = "true" ]; then
 
   echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
-  $SCRIPTPATH/krun.sh -i store/oracle/weblogic:12.2.1.3 -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
+  if [ "$WERCKER" = "true" ]; then
+    $SCRIPTPATH/krun.sh -i phx.ocir.io/weblogick8s/serverjre:8 -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
+  else 
+  	$SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
+  fi
   [ "$?" = "0" ] || SUCCESS="1"
   echo @@ SUCCESS=$SUCCESS
 
