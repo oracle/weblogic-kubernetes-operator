@@ -561,6 +561,18 @@ public class TestUtils {
     return map;
   }
 
+  // This method is to set a certain LB type with an unique lbWebPort
+  public static void domainMapUpdateWithLbInfor(
+      Map<String, Object> domainMap, String lbType, Integer lbWebPort) throws Exception {
+    domainMap.put("loadBalancer", lbType);
+    domainMap.put("loadBalancerWebPort", lbWebPort);
+    logger.info(
+        " loadBalancer is set to: "
+            + domainMap.get("loadBalancer")
+            + " with loadBalancerWebPort:"
+            + domainMap.get("loadBalancerWebPort"));
+  }
+
   public static Properties loadProps(String propsFile) throws Exception {
     Properties props = new Properties();
     // check file exists
