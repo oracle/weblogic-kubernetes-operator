@@ -57,15 +57,10 @@ public class ITOperator extends BaseTest {
   private static boolean QUICKTEST;
   private static boolean SMOKETEST;
   private static boolean JENKINS;
-  private static boolean INGRESSPERDOMAIN = true;
-  private static boolean VOYAGER;
-  private static String LB_TYPE;
-
+ 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset
   // of tests, plus leave domain1 up and running when the test completes.
-  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  // set LB_TYPE to "VOYAGER" to use it as loadBalancer
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
@@ -78,8 +73,6 @@ public class ITOperator extends BaseTest {
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
-    VOYAGER =
-        System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER");
   }
 
   /**
@@ -154,13 +147,7 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      if (VOYAGER) {
-        Map<String, Object> wlstDomainMap = TestUtils.loadYaml(domainonpvwlstFile);
-        TestUtils.domainMapUpdateWithLbInfor(wlstDomainMap, "VOYAGER", new Integer("30305"));
-        domain = TestUtils.createDomain(wlstDomainMap);
-      } else {
-        domain = TestUtils.createDomain(domainonpvwlstFile);
-      }
+      domain = TestUtils.createDomain(domainonpvwlstFile);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       testAdvancedUseCasesForADomain(operator1, domain);
@@ -200,13 +187,7 @@ public class ITOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       // create domain
-      if (VOYAGER) {
-        Map<String, Object> wdtDomainMap = TestUtils.loadYaml(domainonpvwdtFile);
-        TestUtils.domainMapUpdateWithLbInfor(wdtDomainMap, "VOYAGER", new Integer("30306"));
-        domain = TestUtils.createDomain(wdtDomainMap);
-      } else {
-        domain = TestUtils.createDomain(domainonpvwdtFile);
-      }
+      domain = TestUtils.createDomain(domainonpvwdtFile);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       testWLDFScaling(operator2, domain);
@@ -256,15 +237,7 @@ public class ITOperator extends BaseTest {
       wlstDomainMap.put("domainUID", "domain1onpvwlst");
       wlstDomainMap.put("adminNodePort", new Integer("30702"));
       wlstDomainMap.put("t3ChannelPort", new Integer("30031"));
-      if (VOYAGER) {
-        TestUtils.domainMapUpdateWithLbInfor(wlstDomainMap, "VOYAGER", new Integer("30307"));
-      }
-      if (!INGRESSPERDOMAIN) {
-        wlstDomainMap.put("ingressPerDomain", new Boolean("false"));
-        logger.info(
-            "domain1onpvwlst ingressPerDomain is set to: "
-                + ((Boolean) wlstDomainMap.get("ingressPerDomain")).booleanValue());
-      }
+      wlstDomainMap.put("voyagerWebPort", new Integer("30307"));
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1);
@@ -280,15 +253,7 @@ public class ITOperator extends BaseTest {
       wdtDomainMap.put("adminNodePort", new Integer("30703"));
       wdtDomainMap.put("t3ChannelPort", new Integer("30041"));
       // wdtDomainMap.put("clusterType", "Configured");
-      if (VOYAGER) {
-        TestUtils.domainMapUpdateWithLbInfor(wdtDomainMap, "VOYAGER", new Integer("30308"));
-      }
-      if (!INGRESSPERDOMAIN) {
-        wdtDomainMap.put("ingressPerDomain", new Boolean("false"));
-        logger.info(
-            "domain2onpvwdt ingressPerDomain is set to: "
-                + ((Boolean) wdtDomainMap.get("ingressPerDomain")).booleanValue());
-      }
+      wdtDomainMap.put("voyagerWebPort", new Integer("30308"));
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
@@ -347,15 +312,8 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      if (VOYAGER) {
-        Map<String, Object> domainMap = TestUtils.loadYaml(domainadminonlyFile);
-        TestUtils.domainMapUpdateWithLbInfor(domainMap, "VOYAGER", new Integer("30309"));
-        domain = TestUtils.createDomain(domainMap);
-      } else {
-        domain = TestUtils.createDomain(domainadminonlyFile);
-      }
+      domain = TestUtils.createDomain(domainadminonlyFile);
       domain.verifyDomainCreated();
-
     } finally {
       if (domain != null) {
         // create domain on existing dir
@@ -387,13 +345,7 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
 
     try {
-      if (VOYAGER) {
-        Map<String, Object> domainMap = TestUtils.loadYaml(domainrecyclepolicyFile);
-        TestUtils.domainMapUpdateWithLbInfor(domainMap, "VOYAGER", new Integer("30310"));
-        domain = TestUtils.createDomain(domainMap);
-      } else {
-        domain = TestUtils.createDomain(domainrecyclepolicyFile);
-      }
+      domain = TestUtils.createDomain(domainrecyclepolicyFile);
       domain.verifyDomainCreated();
     } finally {
       if (domain != null) domain.shutdown();
@@ -426,13 +378,7 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      if (VOYAGER) {
-        Map<String, Object> domainMap = TestUtils.loadYaml(domainsampledefaultsFile);
-        TestUtils.domainMapUpdateWithLbInfor(domainMap, "VOYAGER", new Integer("30311"));
-        domain = TestUtils.createDomain(domainMap);
-      } else {
-        domain = TestUtils.createDomain(domainsampledefaultsFile);
-      }
+      domain = TestUtils.createDomain(domainsampledefaultsFile);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       // testAdvancedUseCasesForADomain(operator1, domain10);
@@ -477,9 +423,7 @@ public class ITOperator extends BaseTest {
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put("adminNodePort", new Integer("30704"));
       domainMap.put("t3ChannelPort", new Integer("30051"));
-      if (VOYAGER) {
-        TestUtils.domainMapUpdateWithLbInfor(domainMap, "VOYAGER", new Integer("30312"));
-      }
+      domainMap.put("voyagerWebPort", new Integer("30312"));
       // use NFS for this domain on Jenkins, defaultis HOST_PATH
       if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
         domainMap.put("weblogicDomainStorageType", "NFS");
