@@ -352,21 +352,7 @@ if [ "${DELETE_FILES:-true}" = "true" ]; then
   echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
   if [ "$WERCKER" = "true" ]; then
-    echo @@ Creating Repo Secret 
-    kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=$REPO_SERVER \
-	    --docker-username=$REPO_USERNAME \
-	    --docker-password=$REPO_PASSWORD \
-	    --docker-email=$REPO_EMAIL 
-	  
-	echo "Checking Repo Secret"
-	SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-	if [ "$SECRET" != "1" ]; then
-	  echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-	  exit 1
-	fi
-	  
-    $SCRIPTPATH/krun.sh -i phx.ocir.io/weblogick8s/serverjre:8 -s ${IMAGE_PULL_SECRET_WEBLOGIC} -m "${PV_ROOT}:/sharedparent" -c 'id && rm -fr /sharedparent/acceptance_test_pv'
+	$SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
   else 
   	$SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
   fi
