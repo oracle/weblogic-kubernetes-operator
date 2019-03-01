@@ -107,6 +107,14 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
     return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion).toWatchResponse();
   }
 
+  private Watch.Response createHttpGoneErrorWithoutResourceVersionResponse() {
+    return WatchEvent.createErrorEvent(HTTP_GONE).toWatchResponse();
+  }
+
+  private Watch.Response createErrorWithoutStatusResponse() {
+    return WatchEvent.createErrorEventWithoutStatus().toWatchResponse();
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void receivedEvents_areSentToListeners() {
@@ -138,18 +146,36 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   @SuppressWarnings({"unchecked", "rawtypes"})
   @Test
   public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() {
-    try {
-      StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
-      scheduleDeleteResponse(createObjectWithMetaData());
+    StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
+    scheduleDeleteResponse(createObjectWithMetaData());
 
-      createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
+    createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
-      assertThat(
-          StubWatchFactory.getRequestParameters().get(1),
-          hasEntry("resourceVersion", Integer.toString(NEXT_RESOURCE_VERSION)));
-    } catch (Throwable t) {
-      t.printStackTrace();
-    }
+    assertThat(
+        StubWatchFactory.getRequestParameters().get(1),
+        hasEntry("resourceVersion", Integer.toString(NEXT_RESOURCE_VERSION)));
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @Test
+  public void afterHttpGoneErrorWithoutResourceVersion_nextRequestSendsResourceVersionZero() {
+    StubWatchFactory.addCallResponses(createHttpGoneErrorWithoutResourceVersionResponse());
+    scheduleDeleteResponse(createObjectWithMetaData());
+
+    createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
+
+    assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  @Test
+  public void afterErrorWithoutStatus_nextRequestSendsResourceVersionZero() {
+    StubWatchFactory.addCallResponses(createErrorWithoutStatusResponse());
+    scheduleDeleteResponse(createObjectWithMetaData());
+
+    createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
+
+    assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
