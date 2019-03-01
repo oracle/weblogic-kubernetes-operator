@@ -16,7 +16,7 @@ Wercker runs only Quick test use cases, Jenkins run both Quick and Full test use
 
 Java integration tests cover the below use cases:
 
-Quick test use cases - 
+Quick test Configuration & Use Cases - 
 
 |  |  |
 | --- | --- |
@@ -42,12 +42,12 @@ Also the below use cases are covered for Quick test
 9. verify liveness probe by killing managed server 1 process 3 times to kick pod auto-restart
 10. shutdown the domain by changing domain serverStartPolicy to NEVER
 
-Full test use cases -
+Full test Configuration & Use Cases - Runs Quick test Configuration & Use cases and the below
 
 |  |  |
 | --- | --- |
 | Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
-| Domain Configuration | Domain on PV using WDT, Domain with serverStartPolicy ADMIN_ONLY, Domain with auto and custom situational configuration, Two domains managed by two operators, Domain with Recycle weblogicDomainStorageReclaimPolicy, Domain with default sample values |
+| Domain Configuration | Domain on PV using WDT <p> Domain with serverStartPolicy ADMIN_ONLY <p> Domain with auto and custom situational configuration <p> Two domains managed by two operators <p> Domain with Recycle weblogicDomainStorageReclaimPolicy <p> Domain with default sample values |
 
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
@@ -167,7 +167,7 @@ Certain properties like weblogicDomainStoragePath, image, externalOperatorCert a
 # How does it work
 
 When the tests are run manually with mvn command on hosted Linux, WebLogic image store/oracle/weblogic:12.2.1.3 is pulled from docker hub or uses local image if one exists. Server jre images are pulled from a local repository wlsldi-v2.docker.oraclecorp.com. Operator image is built with the git branch from where the mvn command is executed.
-All the tests that start with IT*.java are run. The test builds the operator, runs a series of tests and archives the results into tar.gz files upon completion.
+All the tests that start with IT*.java in integration-tests/src/test/java are run. The test runs a series of tests and archives the results into jar files upon completion.
 
 Integration test classes:
 
@@ -181,11 +181,15 @@ test methods -  testDomainOnPVUsingWLST, testDomainOnPVUsingWDT, testTwoDomainsM
 
 Utility classes:
 
-Operator - contains methods to create/destroy operator, verify operator created, scale using rest api, etc
-Domain - contains methods to create/destroy domain, verify domain created,deploy webapp, load balancing, etc
-PersistentVolume - to create PV
-LoadBalancer - to create load balancer
-Secret - to create secret
+Operator - contructor takes yaml file with operator properties and generates operator valus yaml with required properties and certs,  creates service account, namespace and calls helm install using the generated values yaml file. Also contains methods to delete operator release, verify operator created and ready, scale using rest api, verify a given domain via rest, verify external rest service, etc  <p>
+Domain - constructor takes Map with domain, LB, PV properties and creates domain crd, LB operator/ingress and PV artifacts using the sample scripts provided in the project. Also contains helper methods to destroy domain by deleting domain crd, verify domain created and servers are ready,deploy webapp, verify load balancing of http requests, etc <p>
+PersistentVolume - runs k8s job to create PV directory and creates PV and PVC using sample scripts  <p>
+LoadBalancer - creates load balancer, currently TREFIK and VOYAGER are supported <p>
+Secret - creates a k8s secret <p>
+TestUtils - monstly runs kubectl commands. Contains utility methods to check if a pod is created, ready, deleted, service created, get pod restart cnt, get cluster replica, delete PVC, check PV released, create rbac policy, create wldf module, etc. <p>
+ExecCommand - Class for executing shell commands from java <p>
+ExecResult - Class that holds the results of using java to exec a command (i.e. exit value, stdout and stderr) <p>
+K8sTestUtils - uses kubernetes java client api, this is used only for delete domain use cases for now. <p>
 
 # How to run the Java integration tests
 
