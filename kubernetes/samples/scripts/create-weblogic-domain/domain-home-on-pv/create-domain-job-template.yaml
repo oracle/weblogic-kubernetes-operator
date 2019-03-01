@@ -13,6 +13,8 @@ spec:
         weblogic.domainUID: %DOMAIN_UID%
         weblogic.domainName: %DOMAIN_NAME%
         app: %DOMAIN_UID%-create-weblogic-sample-domain-job
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       restartPolicy: Never
       containers:

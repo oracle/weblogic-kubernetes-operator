@@ -1,53 +1,53 @@
 # Integration Tests for Oracle WebLogic Server Kubernetes Operator
 
-This documentation describes the functional use cases that are covered in integration testing for the Oracle WebLogic Server Kubernetes Operator. The tests are written in Java (JUnit tests) and driven by Maven profile. 
+This documentation describes the functional use cases that are covered in integration testing for the Oracle WebLogic Server Kubernetes Operator. The tests are written in Java (JUnit tests) and driven by Maven profile.
 
 # Environments
 
-The tests currently run in three modes: "Wercker", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the WERCKER and JENKINS environment variables described below. The default is "standalone".
+The tests currently run in three modes: "Wercker", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the `WERCKER` and `JENKINS` environment variables described below. The default is "standalone".
 
-* "Standalone" Oracle Linux, i.e, run the tests manually with mvn command. 
-* Wercker - https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs - integration-test-java is the pipeline name
-* Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development Process
+* "Standalone" Oracle Linux, i.e, run the tests manually with the `mvn` command.
+* Wercker - https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs - `integration-test-java` is the pipeline name.
+* Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development process.
 
-Wercker runs only Quick test use cases, Jenkins run both Quick and Full test use cases.
+Wercker runs only Quick test use cases, Jenkins runs both Quick and Full test use cases.
 
 # Use Cases
 
 Java integration tests cover the below use cases:
 
-Quick test use cases - 
+Quick test use cases
 
 |  |  |
 | --- | --- |
-| Operator Configuration | operator1 deployed in weblogic-operator1 namespace and manages domains in default and test1 namespaces |
-| Domain Configuration | Domain on PV using WLST, traefik load balancer |
+| Operator Configuration | operator1 deployed in `weblogic-operator1` namespace and manages domains in `default` and `test1` namespaces |
+| Domain Configuration | Domain on PV using WLST, Traefik load balancer |
 
 Basic Use Cases
 
-1. create operator operator1 which manages default and test1 namespaces, verify its deployed successfully, pod created, operator Ready and verify external REST service if configured
-2. create domain domain1 in default namespace and verify the pods, services are created and servers are in Ready
-3. verify admin external service by accessing admin REST endpoint with nodeport in URL
-4. verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST
-5. verify web app load balancing by accessing the webapp using loadBalancerWebPort
+1. Create operator `operator1` which manages `default` and `test1` namespaces, verify it's deployed successfully, pods created, operator ready and verify external REST service, if configured.
+2. Create domain `domain1` in `default` namespace and verify the pods, services are created and servers are in ready state.
+3. Verify the admin external service by accessing the admin REST endpoint with `nodeport` in URL.
+4. Verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST.
+5. Verify web app load balancing by accessing the webapp using `loadBalancerWebPort`.
 
 Advanced Use Cases
 
-6. verify domain life cycle(destroy and create) should not any impact on Operator managing the domain and web app load balancing and admin external service
-7. cluster scale up/down using Operator REST endpoint, webapp load balancing should adjust accordingly.
-8. Operator life cycle(destroy and create) should not impact the running domain
+6. Verify domain life cycle (destroy and create) should not have any impact on operator managing the domain and web app load balancing and admin external service.
+7. Cluster scale up/down using operator REST endpoint, webapp load balancing should adjust accordingly.
+8. Operator life cycle (destroy and create) should not impact the running domain.
 
-Also the below use cases are covered for Quick test
+Also the below use cases are covered for Quick test:
 
-9. verify liveness probe by killing managed server 1 process 3 times to kick pod auto-restart
-10. shutdown the domain by changing domain serverStartPolicy to NEVER
+9. Verify the liveness probe by killing managed server 1 process 3 times to kick pod auto-restart.
+10. Shutdown the domain by changing domain `serverStartPolicy` to `NEVER`.
 
-Full test use cases -
+Full test use cases
 
 |  |  |
 | --- | --- |
-| Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
-| Domain Configuration | Domain on PV using WDT, Domain with serverStartPolicy ADMIN_ONLY, Domain with auto and custom situational configuration, Two domains managed by two operators, Domain with Recycle weblogicDomainStorageReclaimPolicy, Domain with default sample values |
+| Operator Configuration | operator2 deployed in `weblogic-operator2` namespace and manages domains `test2` namespace. |
+| Domain Configuration | Domain on PV using WDT; domain with `serverStartPolicy` `ADMIN_ONLY`; domain with auto and custom situational configuration; two domains managed by two operators; domain with recycle `weblogicDomainStorageReclaimPolicy`; domain with default sample values. |
 
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
@@ -55,33 +55,33 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Domain | Use Case |
 | --- | --- |
 | Domain on PV using WDT | WLDF scaling |
-| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
-| Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage |	
-| Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
-| Domain with Recycle policy | create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted once the domain and PVC are deleted |
-| Domain with default sample values | create domain using mostly default values for inputs |					
-						
+| Domain with ADMIN_ONLY | Making sure only admin server is started and managed servers are not started. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
+| Domain with situational config | Create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage. |
+| Two domains managed by two operators | Verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
+| Domain with Recycle policy | Create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted once the domain and PVC are deleted. |
+| Domain with default sample values | Create domain using mostly default values for inputs. |					
+
 
 # Directory Configuration and Structure
 
 Directory structure of source code:
 
-A new module "integration-tests" is added to the Maven project weblogic-kubernetes-operator.
+A new module "integration-tests" is added to the Maven project `weblogic-kubernetes-operator`.
 
-weblogic-kubernetes-operator/integration-tests - location of module pom.xml  
-weblogic-kubernetes-operator/integration-tests/src/test/java - integration test(JUnit) classes and utility classes  
-weblogic-kubernetes-operator/integration-tests/src/test/resources - properties, yaml files(see Configuration Files section) and other scripts
+`weblogic-kubernetes-operator/integration-tests` - location of module pom.xml  
+`weblogic-kubernetes-operator/integration-tests/src/test/java` - integration test(JUnit) classes and utility classes  
+`weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files (see Configuration Files section) and other scripts.
 
 Directory structure used for the test run:
 
-Main external env vars:
+Main external `env vars`:
 
 | Variable | Description |
 | --- | --- |
 | RESULT_ROOT  | Root path for local test files. |
 | PV_ROOT      | Root NFS path behind PV/C directories.  This must have permissions suitable for WL pods to add files |
 
-Defaults for RESULT_ROOT & PV_ROOT:
+Defaults for `RESULT_ROOT` & `PV_ROOT`:
 
 | Test Mode  |	RESULT_ROOT |	PV_ROOT |	Where initialized |
 | --- | --- | --- | --- |
@@ -173,7 +173,7 @@ Integration test classes:
 
 When the integration test class ITOperator is executed, staticPrepare() method is called once before any of the test methods in the class and staticUnPrepare() method once at the end.
 
-staticPrepare() - initializes the application properties from OperatorIT.properties and creates resultRoot, pvRoot, userprojectsDir directories by calling initialize() method from the base class BaseTest. 
+staticPrepare() - initializes the application properties from OperatorIT.properties and creates resultRoot, pvRoot, userprojectsDir directories by calling initialize() method from the base class BaseTest.
 
 staticUnPrepare() - releases the cluster lease on wercker env.
 
@@ -233,7 +233,7 @@ WERCKER=true:
 Successful run will have the output like below:
 ```
 [INFO] Reactor Summary:
-[INFO] 
+[INFO]
 [INFO] weblogic-kubernetes-operator ....................... SUCCESS [  0.305 s]
 [INFO] operator-model ..................................... SUCCESS [ 10.274 s]
 [INFO] operator-swagger ................................... SUCCESS [  0.436 s]
@@ -251,19 +251,19 @@ Successful run will have the output like below:
 Failed run will have the output like
 ```
 
-[INFO] 
+[INFO]
 [INFO] Results:
-[INFO] 
-[ERROR] Errors: 
+[INFO]
+[ERROR] Errors:
 [ERROR]   ITOperator.testDomainOnPVUsingWLST:145 ? Runtime FAILURE: Couldn't create serv...
-[INFO] 
+[INFO]
 [ERROR] Tests run: 9, Failures: 0, Errors: 1, Skipped: 0
-[INFO] 
-[INFO] 
+[INFO]
+[INFO]
 [INFO] --- maven-failsafe-plugin:2.20.1:verify (integration-tests) @ operator-integration-tests ---
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary:
-[INFO] 
+[INFO]
 [INFO] Build Tools ........................................ SUCCESS [  1.193 s]
 [INFO] weblogic-kubernetes-operator ....................... SUCCESS [  2.671 s]
 [INFO] json-schema ........................................ SUCCESS [ 14.917 s]
@@ -306,7 +306,7 @@ $RESULT_ROOT/acceptance_test_tmp is archived under $RESULT_ROOT/acceptance_test_
 
 $PV_ROOT/acceptance_test_pv is archived under $PV_ROOT/acceptance_test_pv_archive
 
-On Wercker, these logs can be downloaded by clicking "Download artifact" on cleanup and store step. 
+On Wercker, these logs can be downloaded by clicking "Download artifact" on cleanup and store step.
 
 # How to add a new test
 
@@ -319,3 +319,18 @@ ITOperator.java - take a look at this test for reference
 # Future enhancement
 
 Add functional tests
+
+## Troubleshooting
+
+The integration tests are not completely independent of the environment.
+
+You may run into one or more of the following errors when you attempt to execute the command:
+```
+mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
+```
+1. `[ERROR] No permision to create directory /scratch/...`  
+
+  There are a couple ways to resolve this issue:
+
+  * Create a world writable directory named `/scratch`.
+  * Create some other world writable directory and then define the environment variables `RESULT_ROOT` and `PV_ROOT` to point to that directory. If you want, you can create two directories to keep things separated. See [Directory Configuration and Structure](#directory-configuration-and-structure) for more details.

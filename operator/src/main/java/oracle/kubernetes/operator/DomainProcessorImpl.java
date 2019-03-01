@@ -1012,8 +1012,8 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static Step[] bringAdminServerUpSteps(DomainPresenceInfo info, Step next) {
     List<Step> resources = new ArrayList<>();
-    resources.add(PodHelper.createAdminPodStep(null));
     resources.add(new BeforeAdminServiceStep(null));
+    resources.add(PodHelper.createAdminPodStep(null));
 
     Domain dom = info.getDomain();
     AdminServer adminServer = dom.getSpec().getAdminServer();
