@@ -82,6 +82,7 @@ cp $sfilename $tfilename || exit 1
 # First, resolve macros that have corresponding env var values
 
 env | awk -F= '{ print $1 }' | sort -r | while read ii; do
+  [ "$ii" = "KHELP" ] && continue
   varstr1="\${$ii:-[^}]*}"
   varstr2="\${$ii}"
   newstr="${!ii}"

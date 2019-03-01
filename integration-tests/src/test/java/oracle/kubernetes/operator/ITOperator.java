@@ -433,6 +433,9 @@ public class ITOperator extends BaseTest {
       // load input yaml to map and add configOverrides
       Map<String, Object> domainMap = TestUtils.loadYaml(domainonpvwlstFile);
       domainMap.put("configOverrides", "sitconfigcm");
+      domainMap.put(
+          "configOverridesFile",
+          "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig");
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put("adminNodePort", new Integer("30704"));
       domainMap.put("t3ChannelPort", new Integer("30051"));
