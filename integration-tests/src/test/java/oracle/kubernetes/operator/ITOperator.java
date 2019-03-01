@@ -57,7 +57,7 @@ public class ITOperator extends BaseTest {
   private static boolean QUICKTEST;
   private static boolean SMOKETEST;
   private static boolean JENKINS;
- 
+
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset
   // of tests, plus leave domain1 up and running when the test completes.
@@ -69,9 +69,6 @@ public class ITOperator extends BaseTest {
     if (SMOKETEST) QUICKTEST = true;
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
-    }
-    if (System.getenv("INGRESSPERDOMAIN") != null) {
-      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
   }
 
