@@ -116,7 +116,7 @@ public class PodHelper {
 
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
-      List<V1EnvVar> vars = new ArrayList<>(getServerSpec().getEnvironmentVariables());
+      List<V1EnvVar> vars = createCopy(getServerSpec().getEnvironmentVariables());
       overrideContainerWeblogicEnvVars(vars);
       return vars;
     }
@@ -288,7 +288,7 @@ public class PodHelper {
     @Override
     @SuppressWarnings("unchecked")
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
-      List<V1EnvVar> envVars = (List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS);
+      List<V1EnvVar> envVars = createCopy((List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS));
 
       List<V1EnvVar> vars = new ArrayList<>();
       if (envVars != null) {
@@ -354,5 +354,15 @@ public class PodHelper {
       return new CallBuilder()
           .deletePodAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(next));
     }
+  }
+
+  public static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
+    ArrayList<V1EnvVar> copy = new ArrayList<>();
+    if (envVars != null) {
+      for (V1EnvVar envVar : envVars) {
+        copy.add(new V1EnvVar().name(envVar.getName()).value(envVar.getValue()));
+      }
+    }
+    return copy;
   }
 }
