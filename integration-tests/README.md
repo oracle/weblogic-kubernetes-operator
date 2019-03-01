@@ -181,15 +181,15 @@ test methods -  testDomainOnPVUsingWLST, testDomainOnPVUsingWDT, testTwoDomainsM
 
 Utility classes:
 
-Operator - contructor takes yaml file with operator properties and generates operator valus yaml with required properties and certs,  creates service account, namespace and calls helm install using the generated values yaml file. Also contains methods to delete operator release, verify operator created and ready, scale using rest api, verify a given domain via rest, verify external rest service, etc  <p>
-Domain - constructor takes Map with domain, LB, PV properties and creates domain crd, LB operator/ingress and PV artifacts using the sample scripts provided in the project. Also contains helper methods to destroy domain by deleting domain crd, verify domain created and servers are ready,deploy webapp, verify load balancing of http requests, etc <p>
+Operator - constructor takes yaml file with operator properties and generates operator valus yaml with required properties and certs,  creates service account, namespace and calls helm install using the generated values yaml file. Also contains methods to delete operator release, verify operator created and ready, scale using rest api, verify a given domain via rest, verify external rest service, etc  <p>
+Domain - constructor takes Map with domain, LB, PV properties and creates domain crd, LB operator/ingress and PV artifacts using the sample scripts provided in the project. Also contains helper methods to destroy domain by deleting domain crd, verify domain created and servers are ready, deploy webapp, verify load balancing of http requests, etc <p>
 PersistentVolume - runs k8s job to create PV directory and creates PV and PVC using sample scripts  <p>
 LoadBalancer - creates load balancer, currently TREFIK and VOYAGER are supported <p>
 Secret - creates a k8s secret <p>
-TestUtils - monstly runs kubectl commands. Contains utility methods to check if a pod is created, ready, deleted, service created, get pod restart cnt, get cluster replica, delete PVC, check PV released, create rbac policy, create wldf module, etc. <p>
+TestUtils - mostly runs kubectl commands. Contains utility methods to check if a pod is created, ready, deleted, service created, get pod restart cnt, get cluster replica, delete PVC, check PV released, create rbac policy, create wldf module, etc. <p>
 ExecCommand - Class for executing shell commands from java <p>
 ExecResult - Class that holds the results of using java to exec a command (i.e. exit value, stdout and stderr) <p>
-K8sTestUtils - uses kubernetes java client api, this is used only for delete domain use cases for now. <p>
+K8sTestUtils - uses k8s java client api, this is used only for delete domain use cases for now. <p>
 
 # How to run the Java integration tests
 
