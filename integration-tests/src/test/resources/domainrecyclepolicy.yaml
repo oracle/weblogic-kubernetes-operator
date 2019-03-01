@@ -19,3 +19,4 @@ namespace: default
 weblogicDomainStorageReclaimPolicy: Recycle
 loadBalancer: TRAEFIK
 ingressPerDomain: true
+voyagerWebPort: 30311

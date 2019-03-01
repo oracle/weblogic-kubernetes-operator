@@ -57,7 +57,7 @@ public class Domain {
   private int loadBalancerWebPort = 30305;
   private String userProjectsDir = "";
   private String projectRoot = "";
-  private boolean ingressPerDomain = false;
+  private boolean ingressPerDomain = true;
 
   private String createDomainScript = "";
   private String inputTemplateFile = "";
@@ -65,6 +65,12 @@ public class Domain {
 
   private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTime = BaseTest.getWaitTimePod();
+
+  private boolean voyager;
+  // LB_TYPE is an evn var. Set to "VOYAGER" to use it as loadBalancer
+  private static String LB_TYPE;
+  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
+  private static boolean INGRESSPERDOMAIN = true;
 
   public Domain(String inputYaml) throws Exception {
     // read input domain yaml to test
@@ -858,10 +864,23 @@ public class Domain {
     lbMap.put("namespace", domainNS);
     lbMap.put("host", domainUid + ".org");
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
-    lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
-    lbMap.put("ingressPerDomain", domainMap.getOrDefault("ingressPerDomain", ingressPerDomain));
-    lbMap.put(
-        "loadBalancerWebPort", domainMap.getOrDefault("loadBalancerWebPort", loadBalancerWebPort));
+    if (voyager) {
+      lbMap.put("loadBalancer", "VOYAGER");
+      lbMap.put("loadBalancerWebPort", domainMap.get("voyagerWebPort"));
+    } else {
+      lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
+      lbMap.put(
+          "loadBalancerWebPort",
+          domainMap.getOrDefault("loadBalancerWebPort", new Integer(loadBalancerWebPort)));
+    }
+    if (!INGRESSPERDOMAIN) {
+      lbMap.put("ingressPerDomain", new Boolean("false"));
+      logger.info("For this domain, INGRESSPERDOMAIN is set to false");
+    } else {
+      lbMap.put(
+          "ingressPerDomain",
+          domainMap.getOrDefault("ingressPerDomain", new Boolean(ingressPerDomain)));
+    }
     lbMap.put("clusterName", domainMap.get("clusterName"));
 
     loadBalancer = (String) lbMap.get("loadBalancer");
@@ -1025,7 +1044,11 @@ public class Domain {
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
-
+    this.voyager =
+        System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER");
+    if (System.getenv("INGRESSPERDOMAIN") != null) {
+      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
+    }
     domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
