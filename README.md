@@ -20,10 +20,10 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 
 The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/fusionmiddlewaresupport/updated-weblogic-kubernetes-support-with-operator-20-v2), or try out the [samples](kubernetes/samples/README.md).
 
-```diff
-+ The current release of the operator is 2.0.1.
-+ This release was published on March 1, 2019.
-```
+***
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.0.1.
+This release was published on March 1, 2019.
+***
 
 ## Known issues
 
