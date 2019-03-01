@@ -64,7 +64,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private CompletionCallback completionCallback;
 
   /** The thread on which this Fiber is currently executing, if applicable. */
-  private Thread currentThread;
+  private volatile Thread currentThread;
 
   private ExitCallback exitCallback;
 
@@ -658,11 +658,10 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       sb.append(parent.getName());
       sb.append("-child-");
     } else {
-      synchronized (this) {
-        if (currentThread != null) {
-          sb.append(currentThread.getName());
-          sb.append("-");
-        }
+      Thread thread = currentThread;
+      if (thread != null) {
+        sb.append(thread.getName());
+        sb.append("-");
       }
       sb.append("fiber-");
     }
