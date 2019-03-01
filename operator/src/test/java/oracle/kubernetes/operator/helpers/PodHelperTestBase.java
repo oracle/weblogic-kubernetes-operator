@@ -88,7 +88,6 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.v3.Domain;
 import oracle.kubernetes.weblogic.domain.v3.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v3.DomainV2Configurator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.After;
