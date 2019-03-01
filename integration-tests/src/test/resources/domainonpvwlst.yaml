@@ -16,4 +16,5 @@ exposeAdminNodePort: true
 namespace: default
 loadBalancer: TRAEFIK
 ingressPerDomain: true
+voyagerWebPort: 30305
 
