@@ -57,6 +57,8 @@ import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -151,6 +153,17 @@ public abstract class PodHelperTestBase {
 
   DomainConfigurator getConfigurator() {
     return configurator;
+  }
+
+  Method getDomainSpec;
+
+  DomainSpec getConfiguredDomainSpec()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    if (getDomainSpec == null) {
+      getDomainSpec = DomainConfigurator.class.getDeclaredMethod("getDomainSpec");
+      getDomainSpec.setAccessible(true);
+    }
+    return (DomainSpec) getDomainSpec.invoke(configurator);
   }
 
   @Before
