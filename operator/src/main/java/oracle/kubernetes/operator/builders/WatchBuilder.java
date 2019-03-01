@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.v3.Domain;
 
 public class WatchBuilder {
   /** Always true for watches. */
@@ -276,7 +276,7 @@ public class WatchBuilder {
 
       try {
         return new WeblogicApi(client)
-            .listWebLogicOracleV2NamespacedDomainCall(
+            .listWebLogicOracleNamespacedDomainCall(
                 namespace,
                 callParams.getPretty(),
                 START_LIST,

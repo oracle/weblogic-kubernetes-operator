@@ -121,10 +121,7 @@ public class CRDHelper {
               .name(KubernetesConstants.DOMAIN_VERSION)
               .served(true)
               .storage(true),
-          new V1beta1CustomResourceDefinitionVersion()
-              .name("v3")
-              .served(true)
-      );
+          new V1beta1CustomResourceDefinitionVersion().name("v3").served(true));
     }
 
     static V1beta1CustomResourceDefinitionNames getCRDNames() {

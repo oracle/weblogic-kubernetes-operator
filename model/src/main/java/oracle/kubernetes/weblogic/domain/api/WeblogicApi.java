@@ -175,8 +175,7 @@ public class WeblogicApi {
   public ApiResponse<Domain> createWebLogicOracleNamespacedDomainWithHttpInfo(
       String namespace, Domain body, String pretty) throws ApiException {
     com.squareup.okhttp.Call call =
-        createWebLogicOracleNamespacedDomainValidateBeforeCall(
-            namespace, body, pretty, null, null);
+        createWebLogicOracleNamespacedDomainValidateBeforeCall(namespace, body, pretty, null, null);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     return apiClient.execute(call, localVarReturnType);
   }
@@ -361,21 +360,20 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call
-      deleteWebLogicOracleCollectionNamespacedDomainValidateBeforeCall(
-          String namespace,
-          String pretty,
-          String _continue,
-          String fieldSelector,
-          Boolean includeUninitialized,
-          String labelSelector,
-          Integer limit,
-          String resourceVersion,
-          Integer timeoutSeconds,
-          Boolean watch,
-          final ProgressResponseBody.ProgressListener progressListener,
-          final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-          throws ApiException {
+  private com.squareup.okhttp.Call deleteWebLogicOracleCollectionNamespacedDomainValidateBeforeCall(
+      String namespace,
+      String pretty,
+      String _continue,
+      String fieldSelector,
+      Boolean includeUninitialized,
+      String labelSelector,
+      Integer limit,
+      String resourceVersion,
+      Integer timeoutSeconds,
+      Boolean watch,
+      final ProgressResponseBody.ProgressListener progressListener,
+      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
+      throws ApiException {
 
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
@@ -3591,20 +3589,19 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call
-      watchWebLogicOracleDomainListForAllNamespacesValidateBeforeCall(
-          String _continue,
-          String fieldSelector,
-          Boolean includeUninitialized,
-          String labelSelector,
-          Integer limit,
-          String pretty,
-          String resourceVersion,
-          Integer timeoutSeconds,
-          Boolean watch,
-          final ProgressResponseBody.ProgressListener progressListener,
-          final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-          throws ApiException {
+  private com.squareup.okhttp.Call watchWebLogicOracleDomainListForAllNamespacesValidateBeforeCall(
+      String _continue,
+      String fieldSelector,
+      Boolean includeUninitialized,
+      String labelSelector,
+      Integer limit,
+      String pretty,
+      String resourceVersion,
+      Integer timeoutSeconds,
+      Boolean watch,
+      final ProgressResponseBody.ProgressListener progressListener,
+      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
+      throws ApiException {
 
     com.squareup.okhttp.Call call =
         watchWebLogicOracleDomainListForAllNamespacesCall(
