@@ -72,7 +72,7 @@ public class ServerStatusReader {
       for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
         String serverName = entry.getKey();
         ServerKubernetesObjects sko = entry.getValue();
-        if (sko != null) { // !! Impossible to have a null value in a concurrent map
+        if (sko != null) {
           V1Pod pod = sko.getPod().get();
           if (pod != null) {
             Packet p = packet.clone();
