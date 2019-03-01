@@ -57,7 +57,7 @@ public class Domain {
   private int loadBalancerWebPort = 30305;
   private String userProjectsDir = "";
   private String projectRoot = "";
-  private boolean ingressPerDomain = false;
+  private boolean ingressPerDomain = true;
 
   private String createDomainScript = "";
   private String inputTemplateFile = "";
