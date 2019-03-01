@@ -15,6 +15,8 @@ import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1JobSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -299,6 +301,30 @@ public class JobHelperTest {
   }
 
   @Test
+  public void whenDomainHasEnvironmentItemsWithVariable_introspectorPodStartupShouldNotChangeIt()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    DomainConfigurator domainConfigurator =
+        configureDomain(domainPresenceInfo).withEnvironmentVariable("item1", RAW_VALUE_1);
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID());
+
+    MatcherAssert.assertThat(
+        getConfiguredDomainSpec(domainConfigurator).getEnv(),
+        allOf(hasEnvVar("item1", RAW_VALUE_1)));
+  }
+
+  @Test
   public void verify_introspectorPodSpec_activeDeadlineSeconds_initial_values() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
@@ -384,5 +410,16 @@ public class JobHelperTest {
 
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
     return hasItem(new V1EnvVar().name(name).value(value));
+  }
+
+  Method getDomainSpec;
+
+  DomainSpec getConfiguredDomainSpec(DomainConfigurator domainConfigurator)
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    if (getDomainSpec == null) {
+      getDomainSpec = DomainConfigurator.class.getDeclaredMethod("getDomainSpec");
+      getDomainSpec.setAccessible(true);
+    }
+    return (DomainSpec) getDomainSpec.invoke(domainConfigurator);
   }
 }
