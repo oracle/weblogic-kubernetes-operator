@@ -301,8 +301,9 @@ public class JobHelperTest {
   }
 
   @Test
-  public void whenDomainHasEnvironmentItemsWithVariable_introspectorPodStartupShouldNotChangeIt()
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+  public void
+      whenDomainHasEnvironmentItemsWithVariable_createIntrospectorPodShouldNotChangeItsValue()
+          throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     DomainConfigurator domainConfigurator =
