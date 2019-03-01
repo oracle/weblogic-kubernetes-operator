@@ -10,9 +10,6 @@
 # Credit:
 #    - This script is an expansion of https://gist.github.com/yuanying/3aa7d59dcce65470804ab43def646ab6
 #
-# TBD:
-#    - Image secret parameter hasn't been tested.
-#
 
 IMAGE='store/oracle/serverjre:8'
 IMAGEPULLPOLICY='IfNotPresent'
@@ -105,11 +102,6 @@ EOF
   exit 1
 }
 
-delete_pod_and_cm() {
-  kubectl delete -n ${NAMESPACE} pod ${PODNAME} --ignore-not-found > /dev/null 2>&1
-  kubectl delete -n ${NAMESPACE} cm ${PODNAME}-cm --ignore-not-found > /dev/null 2>&1
-}
-
 while getopts m:t:i:c:n:f:p:l:s:d: OPT
 do
   case $OPT in
@@ -176,6 +168,11 @@ TEMPFILE="${TMPDIR}/$(basename $0).${NAMESPACE}.${PODNAME}.tmp.$$"
 
 # cleanup anything from previous run
 
+delete_pod_and_cm() {
+  kubectl delete -n ${NAMESPACE} pod ${PODNAME} --ignore-not-found > /dev/null 2>&1
+  kubectl delete -n ${NAMESPACE} cm ${PODNAME}-cm --ignore-not-found > /dev/null 2>&1
+}
+
 delete_pod_and_cm
 
 # create cm that contains any files the user specified on the command line:
@@ -199,7 +196,7 @@ fi
     \"containers\":[
       {
         \"command\": [\"bash\"],
-        \"args\": [\"-c\",\"${COMMAND} ; echo -n {EXITCODE=\$?}\"],
+        \"args\": [\"-c\",\"${COMMAND} ; echo -n {{EXITCODE=\$?=EXITCODE}} ; echo -n {{ID=\`id\`=ID}} ; echo -n {{PWD=\`pwd\`=PWD}}\"],
         \"stdin\": true,
         \"tty\": true,
         \"name\": \"${PODNAME}\",
@@ -237,11 +234,11 @@ do
   sleep 0.1
 done
 
-# If background task's out file doesn't contain '{EXITCODE=0}', 
+# If background task's out file doesn't contain '{{EXITCODE=0=EXITCODE}}', 
 # then it didn't finish or it failed...
 
 if [ $EXITCODE -eq 0 ]; then
-  if [ ! "`grep -c '{EXITCODE=0}' $TEMPFILE`" -eq 1 ]; then
+  if [ ! "`grep -c '{{EXITCODE=0=EXITCODE}}' $TEMPFILE`" -eq 1 ]; then
     EXITCODE=99
   fi
 fi
@@ -254,7 +251,18 @@ delete_pod_and_cm
 
 # Show output from pod (or from failing 'kubectl create cm' command above)
 
-cat $TEMPFILE | sed 's/{EXITCODE=0}//' \
+if [ $EXITCODE -eq 0 ]; then
+  IDFILTER="{{ID=.*=ID}}"
+  PWDFILTER="{{PWD=.*=PWD}}"
+else
+  # Don't filter out ID and PWD - leave it in for debugging purposes...
+  IDFILTER="{{DNE=DNE}}"
+  PWDFILTER="{{DNE=DNE}}"
+fi
+
+cat $TEMPFILE | sed "s/{{EXITCODE=0=EXITCODE}}//" \
+              | sed "s/$IDFILTER//" \
+              | sed "s/$PWDFILTER//" \
               | grep -v "Unable to use a TTY - input is not a terminal or the right kind of file" \
               | grep -v "If you don't see a command prompt, try pressing enter." \
               | grep -v "Error attaching, falling back to logs:"
