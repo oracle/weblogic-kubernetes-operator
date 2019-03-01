@@ -54,9 +54,9 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.PatchUtils;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.v3.Domain;
 import oracle.kubernetes.weblogic.domain.v3.DomainList;
-import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 
 /** Simplifies synchronous and asynchronous call patterns to the Kubernetes API Server. */
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
@@ -333,8 +333,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .readWebLogicOracleNamespacedDomainAsync(
-            name, namespace, pretty, exact, export, callback);
+        .readWebLogicOracleNamespacedDomainAsync(name, namespace, pretty, exact, export, callback);
   }
 
   private final CallFactory<Domain> READ_DOMAIN =
@@ -437,8 +436,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .replaceWebLogicOracleNamespacedDomainStatusAsync(
-            name, namespace, body, pretty, callback);
+        .replaceWebLogicOracleNamespacedDomainStatusAsync(name, namespace, body, pretty, callback);
   }
 
   private final CallFactory<Domain> REPLACE_DOMAIN_STATUS =
