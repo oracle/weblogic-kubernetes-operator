@@ -348,13 +348,13 @@
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
           "$ref": "#/definitions/KubernetesResource"
         },
-        "serverPod": {
-          "description": "Configuration affecting server pods",
-          "$ref": "#/definitions/ServerPod"
-        },
         "serverName": {
           "description": "The name of the server. Required",
           "type": "string"
+        },
+        "serverPod": {
+          "description": "Configuration affecting server pods",
+          "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED.",
@@ -434,6 +434,10 @@
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
           }
         },
+        "readinessProbe": {
+          "description": "Settings for the readiness probe associated with a server.",
+          "$ref": "#/definitions/ProbeTuning"
+        },
         "annotations": {
           "description": "The annotations to be attached to generated resources.",
           "$ref": "#/definitions/Map"
@@ -441,10 +445,6 @@
         "resources": {
           "description": "Memory and cpu minimum requirements and limits for the server.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
-        },
-        "readinessProbe": {
-          "description": "Settings for the readiness probe associated with a server.",
-          "$ref": "#/definitions/ProbeTuning"
         },
         "containerSecurityContext": {
           "description": "Container-level security attributes. Will override any matching pod-level attributes.",
@@ -526,7 +526,7 @@
       "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
     },
     "apiVersion": {
-      "description": "The API version for the Domain. Must be \u0027weblogic.oracle/v2\u0027.",
+      "description": "The API version for the Domain. Must be \u0027weblogic.oracle/v3\u0027.",
       "type": "string"
     },
     "kind": {
@@ -543,7 +543,7 @@
     }
   },
   "required": [
-    "spec",
-    "metadata"
+    "metadata",
+    "spec"
   ]
 }
