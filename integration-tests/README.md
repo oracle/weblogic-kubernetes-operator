@@ -47,7 +47,7 @@ Full test Configuration & Use Cases - Runs Quick test Configuration & Use cases 
 |  |  |
 | --- | --- |
 | Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
-| Domain Configuration | Domain on PV using WDT <p> Domain with serverStartPolicy ADMIN_ONLY <p> Domain with auto and custom situational configuration <p> Two domains managed by two operators <p> Domain with Recycle weblogicDomainStorageReclaimPolicy <p> Domain with default sample values |
+| Domain Configuration | Domain on PV using WDT <p> Domain home in image using WLST <p> Domain home in image using WDT <p> Domain with serverStartPolicy ADMIN_ONLY <p> Domain with auto and custom situational configuration <p> Two domains managed by two operators <p> Domain with Recycle weblogicDomainStorageReclaimPolicy <p> Domain with default sample values |
 
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
@@ -59,7 +59,9 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage |	
 | Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
 | Domain with Recycle policy | create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted once the domain and PVC are deleted |
-| Domain with default sample values | create domain using mostly default values for inputs |					
+| Domain with default sample values | create domain using mostly default values for inputs |	
+| Domain home in image using WLST | cluster scaling |
+| Domain home in image using WDT  | cluster scaling |
 						
 
 # Directory Configuration and Structure
