@@ -199,21 +199,24 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 * Maven and latest Git should be in PATH
 * export JAVA_HOME
 * export WEBLOGIC_IMAGE_NAME and WEBLOGIC_IMAGE_TAG if different from store/oracle/weblogic and 12.2.1.3
-* Setup docker access to WebLogic 12c Images <br>
-Method 1 <br>
-	* Setup a personal account on hub.docker.com
-	* Then sign in to hub.docker.com and signup for access to WebLogic 12c Images via https://hub.docker.com/_/oracle-weblogic-server-12c
-	* Then export the following before running the tests: 
+* Setup docker access to WebLogic 12c Images 
+
+ Method 1 
+  - Setup a personal account on hub.docker.com
+  - Then sign in to hub.docker.com and signup for access to WebLogic 12c Images via https://hub.docker.com/_/oracle-weblogic-server-12c
+  - Then export the following before running the tests: 
 	```
 	export DOCKER_USERNAME=<docker_username>
 	export DOCKER_PASSWORD=<docker_password>
 	export DOCKER_EMAIL=<docker_email>
 	```
-
-Method 2 <br>
-	* Make sure the weblogic image i.e. store/oracle/weblogic:12.2.1.3 already exists locally
-	* Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
-		* If not, see [https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s].
+ 
+ Method 2 
+ - Make sure the weblogic image i.e. store/oracle/weblogic:12.2.1.3 already exists locally
+ - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
+  	- If not, see [https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s].
+		
+		
 * Command to run the tests: 
 ```
 mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
