@@ -103,3 +103,7 @@ Oracle recommends careful consideration before deciding to expose any administra
 was updated on January 17, 2019, and has all the necessary patches applied.
    * A `docker pull` is required if you pulled the image prior to that date.
 * You must have the `cluster-admin` role to install the operator.
+
+### OpenShift
+
+When using the operator in OpenShift, the `anyuid` security context constraint is required to ensure that WebLogic containers run with a Unix UID that has the correct permissions on the domain filesystem.
