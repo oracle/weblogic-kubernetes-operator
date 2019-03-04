@@ -13,11 +13,17 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
+import io.kubernetes.client.models.V1beta1CustomResourceValidation;
+import io.kubernetes.client.models.V1beta1JSONSchemaProps;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
@@ -202,7 +208,8 @@ public class CRDHelperTest {
     }
 
     private boolean hasExpectedVersion(V1beta1CustomResourceDefinition actualBody) {
-      return expected.getSpec().getVersion().equals(actualBody.getSpec().getVersion());
+      return Objects.equals(expected.getSpec().getVersion(), actualBody.getSpec().getVersion()) &&
+          Objects.equals(expected.getSpec().getVersions(), actualBody.getSpec().getVersions());
     }
 
     private boolean hasSchemaVerification(V1beta1CustomResourceDefinition actualBody) {
