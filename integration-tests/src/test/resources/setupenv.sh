@@ -87,8 +87,8 @@ function pull_tag_images {
 	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
 	    exit 1
 	  fi
-	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-   	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+	  # docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+   	  # docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
   echo "Pull and tag the images we need"
