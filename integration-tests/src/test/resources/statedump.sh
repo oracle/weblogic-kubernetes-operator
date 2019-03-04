@@ -91,7 +91,7 @@ function state_dump {
    			fi
 	 	else
      		# command failed
-  			cat $RESULT_DIR/pvarchive.b64 | head -30
+  			cat $RESULT_DIR/pvarchive.b64 | head -100
 	 	fi
 	 	# rm $RESULT_DIR/pvarchive.b64
   	else
