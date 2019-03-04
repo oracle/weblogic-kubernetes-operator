@@ -204,11 +204,12 @@ Method 1 <br>
 	* Setup a personal account on hub.docker.com
 	* Then sign in to hub.docker.com and signup for access to WebLogic 12c Images via https://hub.docker.com/_/oracle-weblogic-server-12c
 	* Then export the following before running the tests: 
-```
-export DOCKER_USERNAME=<docker_username>
-export DOCKER_PASSWORD=<docker_password>
-export DOCKER_EMAIL=<docker_email>
-```
+	```
+	export DOCKER_USERNAME=<docker_username>
+	export DOCKER_PASSWORD=<docker_password>
+	export DOCKER_EMAIL=<docker_email>
+	```
+
 Method 2 <br>
 	* Make sure the weblogic image i.e. store/oracle/weblogic:12.2.1.3 already exists locally
 	* Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
