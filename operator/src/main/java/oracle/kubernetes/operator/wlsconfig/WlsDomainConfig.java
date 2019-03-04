@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -16,7 +16,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.WlsDomain;
 
-/** Contains a snapshot of configuration for a WebLogic Domain */
+/** Contains a snapshot of configuration for a WebLogic Domain. */
 public class WlsDomainConfig implements WlsDomain {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -35,7 +35,7 @@ public class WlsDomainConfig implements WlsDomain {
   private Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
 
   /**
-   * Create a new WlsDomainConfig object using the json result from the WLS REST call
+   * Create a new WlsDomainConfig object using the json result from the WLS REST call.
    *
    * @param jsonResult A String containing the JSON response from the WLS REST call
    * @return A new WlsDomainConfig object created with information from the JSON response
@@ -48,7 +48,7 @@ public class WlsDomainConfig implements WlsDomain {
   public WlsDomainConfig() {}
 
   /**
-   * Constructor when no JSON response is available
+   * Constructor when no JSON response is available.
    *
    * @param name Name of the WLS domain
    */
@@ -57,7 +57,7 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Constructor
+   * Constructor.
    *
    * @param name Name of this WLS domain
    * @param adminServerName Name of the admin server in this WLS domain
@@ -89,8 +89,17 @@ public class WlsDomainConfig implements WlsDomain {
     }
   }
 
+  public String getClusterName(String serverName) {
+    return getConfiguredClusters()
+        .stream()
+        .filter(c -> c.hasNamedServer(serverName))
+        .findFirst()
+        .map(WlsClusterConfig::getClusterName)
+        .orElse(null);
+  }
+
   /**
-   * Return the name of the WLS domain
+   * Return the name of the WLS domain.
    *
    * @return Name of the WLS domain
    */
@@ -99,7 +108,7 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Return the name of the WLS domain
+   * Return the name of the WLS domain.
    *
    * @return Name of the WLS domain
    */
@@ -112,7 +121,7 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Returns all cluster configurations found in the WLS domain
+   * Returns all cluster configurations found in the WLS domain.
    *
    * @return A Map of WlsClusterConfig, keyed by name, containing server configurations for all
    *     clusters found in the WLS domain
@@ -174,7 +183,7 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Returns the configuration for the WLS cluster with the given name
+   * Returns the configuration for the WLS cluster with the given name.
    *
    * @param clusterName name of the WLS cluster
    * @return The WlsClusterConfig object containing configuration of the WLS cluster with the given
@@ -235,7 +244,7 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Create a new WlsDomainConfig object based on the parsed JSON result from WLS admin server
+   * Create a new WlsDomainConfig object based on the parsed JSON result from WLS admin server.
    *
    * @param parsedResult ParsedJson object containing the parsed JSON result
    * @return A new WlsDomainConfig object based on the provided parsed JSON result
@@ -421,12 +430,14 @@ public class WlsDomainConfig implements WlsDomain {
 
   @Override
   public int getReplicaLimit(String clusterName) {
-    if (!getClusterConfigs().containsKey(clusterName)) return 0;
+    if (!getClusterConfigs().containsKey(clusterName)) {
+      return 0;
+    }
 
     return getClusterConfigs().get(clusterName).getMaxClusterSize();
   }
 
-  /** Object used by the {@link #parseJson(String)} method to return multiple parsed objects */
+  /** Object used by the {@link #parseJson(String)} method to return multiple parsed objects. */
   static class ParsedJson {
     String domainName;
     String adminServerName;

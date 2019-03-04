@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Kubernetes pods and services associated with a single WebLogic server */
+/** Kubernetes pods and services associated with a single WebLogic server. */
 public class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
   private final AtomicReference<String> lastKnownStatus = new AtomicReference<>(null);
@@ -20,7 +20,7 @@ public class ServerKubernetesObjects {
   public ServerKubernetesObjects() {}
 
   /**
-   * The Pod
+   * The Pod.
    *
    * @return Pod
    */
@@ -29,7 +29,7 @@ public class ServerKubernetesObjects {
   }
 
   /**
-   * Managed server status
+   * Managed server status.
    *
    * @return Status
    */
@@ -38,7 +38,7 @@ public class ServerKubernetesObjects {
   }
 
   /**
-   * The Service
+   * The Service.
    *
    * @return Service
    */
@@ -47,7 +47,7 @@ public class ServerKubernetesObjects {
   }
 
   /**
-   * Channel map
+   * Channel map.
    *
    * @return Map from channel name to Service
    */

@@ -144,7 +144,7 @@ public class ServerHealth {
     if (other == this) {
       return true;
     }
-    if ((other instanceof ServerHealth) == false) {
+    if (!(other instanceof ServerHealth)) {
       return false;
     }
     ServerHealth rhs = ((ServerHealth) other);

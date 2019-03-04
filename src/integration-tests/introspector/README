@@ -33,16 +33,15 @@ Internal Test Flow:
 
    Cleanup files in /tmp/introspect
 
-() Cleanup test k8s artifacts and (optionally) an old created domain.
+() Cleanup test k8s artifacts and any old created domain.
 
    <operator-src>/src/integration-tests/bash/cleanup.sh 
 
-() Create a test directory in the k8s cluster via a k8s pv, pvc, and a job.
+() Create a test directory in the k8s cluster via kubectl run. 
 
-   create-test-root-pv.yamlt, create-test-root-pvc.yamlt
-   create-test-root.sh, create-test-root-job.yamlt
+   See createTestRoot.sh
 
-() Optionally deploy pv/pvc for use by introspector job, the optional domain create step, and wl pods.  (If PV_COMMENT != "#").
+() Deploy pv/pvc for use by introspector job pod, the domain create step, and wl pods.  (If PV_COMMENT != "#").
 
    wl-pv.yamlt, wl-pvc.yamlt
 
@@ -50,18 +49,19 @@ Internal Test Flow:
 
    wl-secret.yamlt
                           
-() Optionally create a domain home.  (If CREATE_DOMAIN == "true").
+() Create a domain home. 
 
-   wl-job.yamlt, createDomain.sh, createDomain.pyt
+   wl-create-domain-pod.yamlt, wl-create-domain-pod.sh, wl-create-domain-pod.pyt
 
-() Run the introspector job.
+() Run the introspector job pod (as a direct pod instead of a job)
 
-   wl-job.yamlt
+   wl-instrospect-pod.yamlt
+   wl-instrospect-pod.sh
    <operator-src>/operator/src/main/resources/scripts/introspectDomain.sh
    <operator-src>/operator/src/main/resources/scripts/startNodeManager.sh
    <operator-src>/operator/src/main/resources/scripts/introspectDomain.py
 
-() Parse the introspector job's output into files and deploy them in a configmap.
+() Parse the introspector job pod's output into files and deploy them in a configmap.
 
 () Start the admin server pod.   The startServer.sh and start-server.py
    scripts will use files from the configmap for situational config and login 

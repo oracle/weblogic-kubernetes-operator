@@ -17,6 +17,8 @@ import org.junit.Test;
 
 public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
+  private static final String MUTEX = "%s can not be present when %s is defined";
+
   private static final String MISSING = "%s %s must be specified";
 
   private static final String WRONG_TYPE = "%s must be a %s : %s";
@@ -116,15 +118,15 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
     setProperty("externalRestEnabled", true);
 
     removeProperty("externalRestHttpsPort");
+    removeProperty("externalRestIdentitySecret");
     removeProperty("externalOperatorCert");
     removeProperty("externalOperatorKey");
 
     assertThat(
         getProcessingError(),
         allOf(
-            containsMissingIntParameterError("externalRestHttpsPort"),
-            containsMissingStringParameterError("externalOperatorCert"),
-            containsMissingStringParameterError("externalOperatorKey")));
+            containsMissingStringParameterError("externalRestIdentitySecret"),
+            containsMissingIntParameterError("externalRestHttpsPort")));
   }
 
   @Test
@@ -139,7 +141,7 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
-  public void whenExternalRestEnabled_reportRelatedParameterErrors() throws Exception {
+  public void whenExternalRestEnabled_reportRelatedParameterErrorsLegacy() throws Exception {
     setProperty("externalRestEnabled", true);
 
     setProperty("externalRestHttpsPort", "Not a number");
@@ -155,14 +157,43 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
   }
 
   @Test
+  public void whenExternalRestEnabled_reportRelatedParameterErrors() throws Exception {
+    setProperty("externalRestEnabled", true);
+    setProperty("externalRestHttpsPort", "Not a number");
+    setProperty("externalRestIdentitySecret", 1234);
+
+    assertThat(
+        getProcessingError(),
+        allOf(
+            containsTypeError("externalRestHttpsPort", "float64", "string"),
+            containsTypeError("externalRestIdentitySecret", "string", "float64")));
+  }
+
+  @Test
   public void whenExternalRestNotEnabled_ignoreRelatedParameterErrors() throws Exception {
     setProperty("externalRestEnabled", false);
 
     setProperty("externalRestHttpsPort", "Not a number");
+    setProperty("externalRestIdentitySecret", 1234);
     setProperty("externalOperatorCert", 1234);
     setProperty("externalOperatorKey", true);
 
     assertThat(getProcessingError(), emptyString());
+  }
+
+  @Test
+  public void whenExternalOperatorSecret_ExcludeCertKeyErrors() throws Exception {
+    setProperty("externalRestEnabled", true);
+
+    setProperty("externalRestIdentitySecret", "secretName");
+    setProperty("externalOperatorCert", "cert");
+    setProperty("externalOperatorKey", "key");
+
+    assertThat(
+        getProcessingError(),
+        allOf(
+            containsMutexParameterError("externalOperatorKey", "externalRestIdentitySecret"),
+            containsMutexParameterError("externalOperatorCert", "externalRestIdentitySecret")));
   }
 
   @Test
@@ -281,6 +312,10 @@ public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 
   private Matcher<String> containsTypeError(String name, String expectedType, String actualType) {
     return containsString(String.format(WRONG_TYPE, name, expectedType, actualType));
+  }
+
+  private Matcher<String> containsMutexParameterError(String excluded, String value) {
+    return containsString(String.format(MUTEX, excluded, value));
   }
 
   private Matcher<String> containsMissingEnumParameterError(String propertyName) {

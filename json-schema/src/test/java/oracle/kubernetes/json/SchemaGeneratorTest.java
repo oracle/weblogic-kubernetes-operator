@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -89,6 +89,16 @@ public class SchemaGeneratorTest {
 
   @SuppressWarnings("unused")
   private int[] intArray;
+
+  @Test
+  public void doNotGenerateSchemaForVolatileFields() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("ignoreMe"));
+
+    assertThat(schema, hasNoJsonPath("$.ignoreMe"));
+  }
+
+  @SuppressWarnings("unused")
+  private volatile boolean ignoreMe;
 
   @Test
   public void generateSchemaForEnum() throws NoSuchFieldException {
@@ -250,6 +260,7 @@ public class SchemaGeneratorTest {
   public void generateSchemaForDerivedObject() {
     Object schema = generator.generate(DerivedObject.class);
 
+    assertThat(schema, hasJsonPath("$.description", equalTo("A simple object used for testing")));
     assertThat(schema, hasJsonPath("$.type", equalTo("object")));
     assertThat(schema, hasJsonPath("$.additionalProperties", equalTo("false")));
     assertThat(schema, hasJsonPath("$.properties.aBoolean.type", equalTo("boolean")));
@@ -257,7 +268,7 @@ public class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.properties.anInt.type", equalTo("number")));
     assertThat(schema, hasJsonPath("$.properties.aBoolean.description", equalTo("A flag")));
     assertThat(schema, hasJsonPath("$.properties.aString.description", equalTo("A string")));
-    assertThat(schema, hasJsonPath("$.properties.anInt.description", equalTo("An int")));
+    assertThat(schema, hasJsonPath("$.properties.anInt.description", equalTo("An int\nvalue")));
     assertThat(schema, hasJsonPath("$.properties.depth.type", equalTo("number")));
     assertThat(
         schema, hasJsonPath("$.required", arrayContainingInAnyOrder("aBoolean", "anInt", "depth")));
@@ -379,6 +390,23 @@ public class SchemaGeneratorTest {
     Object schema = generator.generate(ExternalReferenceObject.class);
 
     assertThat(schema, hasNoJsonPath("$.definitions.V1EnvVar"));
+  }
+
+  @Test
+  public void whenK8sVersionSpecified_useFullReferenceForK8sObject() throws IOException {
+    generator.useKubernetesVersion("1.9.0");
+    Object schema = generator.generate(ExternalReferenceObject.class);
+
+    assertThat(
+        schema,
+        hasJsonPath(
+            "$.properties.env.items.$ref",
+            equalTo(schemaUrl + "#/definitions/io.k8s.api.core.v1.EnvVar")));
+  }
+
+  @Test(expected = IOException.class)
+  public void whenNonCachedK8sVersionSpecified_throwException() throws IOException {
+    generator.useKubernetesVersion("1.12.0");
   }
 
   // todo (future, maybe): generate $id nodes where they can simplify $ref urls
