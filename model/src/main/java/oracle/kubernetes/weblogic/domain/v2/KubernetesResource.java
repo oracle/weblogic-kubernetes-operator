@@ -20,7 +20,8 @@ class KubernetesResource {
    * @since 2.0
    */
   @Description(
-      "The labels to be attached to generated resources. The label names must not start with 'weblogic.'.")
+      "The labels to be attached to generated resources. The label names must "
+          + "not start with 'weblogic.'.")
   private Map<String, String> labels = new HashMap<>();
 
   /**
@@ -37,11 +38,15 @@ class KubernetesResource {
   }
 
   private void addLabelIfMissing(String name, String value) {
-    if (!labels.containsKey(name)) labels.put(name, value);
+    if (!labels.containsKey(name)) {
+      labels.put(name, value);
+    }
   }
 
   private void addAnnotationIfMissing(String name, String value) {
-    if (!annotations.containsKey(name)) annotations.put(name, value);
+    if (!annotations.containsKey(name)) {
+      annotations.put(name, value);
+    }
   }
 
   void addLabel(String name, String value) {
@@ -70,9 +75,13 @@ class KubernetesResource {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     KubernetesResource that = (KubernetesResource) o;
 

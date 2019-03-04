@@ -6,12 +6,24 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.logging.MessageKeys.*;
-import static org.hamcrest.Matchers.*;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Status;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +32,7 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
@@ -36,7 +49,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getPodCreatedMessageKey() {
+  String getCreatedMessageKey() {
     return ADMIN_POD_CREATED;
   }
 
@@ -46,34 +59,55 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
+  ServerConfigurator configureServer() {
+    return getConfigurator().configureAdminServer();
+  }
+
+  @Override
   void expectStepsAfterCreation() {}
 
   @Override
-  String getPodExistsMessageKey() {
+  String getExistsMessageKey() {
     return ADMIN_POD_EXISTS;
   }
 
   @Override
-  String getPodReplacedMessageKey() {
+  String getPatchedMessageKey() {
+    return ADMIN_POD_PATCHED;
+  }
+
+  @Override
+  String getReplacedMessageKey() {
     return ADMIN_POD_REPLACED;
   }
 
   @Override
-  protected void verifyReplacePodWhen(PodMutator mutator) {
+  void setServerPort(int port) {
+    getServerTopology().setAdminPort(port);
+  }
+
+  @Test // REG I don't understand why this is only true for the admin server
+  public void whenConfigurationAddsEnvironmentVariable_replacePod() {
+    initializeExistingPod();
+
+    configureServer().withEnvironmentVariable("test", "???");
+
+    verifyPodReplaced();
+  }
+
+  @Override
+  protected void verifyPodReplaced() {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
         (pod, next) -> terminalStep);
 
-    V1Pod existingPod = createPodModel();
-    mutator.mutate(existingPod);
-    initializeExistingPod(existingPod);
     expectDeletePod(getPodName()).returning(new V1Status());
-    expectCreatePod(podWithName(getPodName())).returning(createPodModel());
+    expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsInfo(getPodReplacedMessageKey()));
+    assertThat(logRecords, containsInfo(getReplacedMessageKey()));
   }
 
   @Override
@@ -83,13 +117,22 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         PodAwaiterStepFactory.class,
         (pod, next) -> terminalStep);
 
+    /**/
+    V1Pod existingPod = createPod(testSupport.getPacket());
+    /*/
     V1Pod existingPod = createPodModel();
+    /**/
     mutator.mutate(existingPod);
     initializeExistingPod(existingPod);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsFine(getPodExistsMessageKey()));
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
+  }
+
+  @Override
+  V1Pod createPod(Packet packet) {
+    return new PodHelper.AdminPodStepContext(null, packet).getPodModel();
   }
 
   private CallTestSupport.CannedResponse expectDeletePod(String podName) {
@@ -109,15 +152,15 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     initializeExistingPod(getIncompatiblePod());
     expectDeletePod(getPodName()).failingWithStatus(CallBuilder.NOT_FOUND);
-    expectCreatePod(podWithName(getPodName())).returning(createPodModel());
+    expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsInfo(getPodReplacedMessageKey()));
+    assertThat(logRecords, containsInfo(getReplacedMessageKey()));
   }
 
   private V1Pod getIncompatiblePod() {
-    V1Pod existingPod = createPodModel();
+    V1Pod existingPod = createTestPodModel();
     existingPod.getSpec().setContainers(null);
     return existingPod;
   }
@@ -149,115 +192,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(initialStep);
 
     testSupport.verifyCompletionThrowable(ApiException.class);
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecHasUnknownCustomerAnnotation_replaceIt() {
-    verifyReplacePodWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation1", "value"));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecHasUnknownAddedVolumes_replaceIt() {
-    verifyReplacePodWhen((pod) -> pod.getSpec().addVolumesItem(new V1Volume().name("dummy")));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecHasK8sVolume_ignoreIt() {
-    verifyPodNotReplacedWhen(
-        (pod) -> {
-          pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
-          getSpecContainer(pod)
-              .addVolumeMountsItem(
-                  new V1VolumeMount()
-                      .name("k8s")
-                      .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH));
-        });
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecHasUnusedImagePullSecret_replaceIt() {
-    verifyReplacePodWhen(
-        (pod) ->
-            pod.getSpec().addImagePullSecretsItem(new V1LocalObjectReference().name("secret")));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecHasNoContainers_replaceIt() {
-    verifyReplacePodWhen((pod) -> pod.getSpec().setContainers(null));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecHasNoContainersWithExpectedName_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setName("???"));
-  }
-
-  private V1Container getSpecContainer(V1Pod pod) {
-    return pod.getSpec().getContainers().get(0);
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecHasUnneededVolumeMount_replaceIt() {
-    verifyReplacePodWhen(
-        (pod) -> getSpecContainer(pod).addVolumeMountsItem(new V1VolumeMount().name("dummy")));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecHasK8sVolumeMount_ignoreIt() {
-    verifyPodNotReplacedWhen(
-        (pod) ->
-            getSpecContainer(pod)
-                .addVolumeMountsItem(
-                    new V1VolumeMount()
-                        .name("dummy")
-                        .mountPath(PodDefaults.K8S_SERVICE_ACCOUNT_MOUNT_PATH)));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecContainerHasWrongImage_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImage(VERSIONED_IMAGE));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecContainerHasWrongImagePullPolicy_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setImagePullPolicy("NONE"));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecContainerHasNoPorts_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).setPorts(Collections.emptyList()));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecContainerHasExtraPort_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).addPortsItem(definePort(1234)));
-  }
-
-  private V1ContainerPort definePort(int port) {
-    return new V1ContainerPort().protocol("TCP").containerPort(port);
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecContainerHasIncorrectPort_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getPorts().get(0).setContainerPort(1234));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecContainerHasWrongEnvVariable_replaceIt() {
-    verifyReplacePodWhen((pod) -> getSpecContainer(pod).getEnv().get(0).setValue("???"));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecContainerHasWrongEnvFrom_replaceIt() {
-    verifyReplacePodWhen(
-        (pod) -> getSpecContainer(pod).envFrom(Collections.singletonList(new V1EnvFromSource())));
-  }
-
-  @Test
-  public void whenExistingAdminPodSpecContainerHasRestartVersion_replaceIt() {
-    verifyReplacePodWhen(
-        (pod) ->
-            pod.getMetadata()
-                .putLabelsItem(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
   }
 
   @Test
@@ -311,6 +245,15 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         allOf(
             hasEnvVar("item1", "find uid1 at /u01/oracle/user_projects/domains"),
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
+  }
+
+  @Test
+  public void createAdminPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
+    configureAdminServer();
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
   }
 
   @Test
@@ -491,7 +434,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  V1Pod createPodModel() {
+  V1Pod createTestPodModel() {
     return new V1Pod().metadata(createPodMetadata()).spec(createPodSpec());
   }
 
@@ -512,8 +455,9 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  protected ServerConfigurator getServerConfigurator(
-      DomainConfigurator configurator, String serverName) {
+  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
     return configurator.configureAdminServer();
   }
+
+  // todo test that changing the cert in tuning parameters does not change the hash
 }

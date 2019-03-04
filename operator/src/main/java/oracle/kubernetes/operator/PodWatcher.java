@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -31,7 +31,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-/** Watches for Pods to become Ready or leave Ready state */
+/** Watches for Pods to become Ready or leave Ready state. */
 public class PodWatcher extends Watcher<V1Pod>
     implements WatchListener<V1Pod>, PodAwaiterStepFactory {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -44,7 +44,7 @@ public class PodWatcher extends Watcher<V1Pod>
       new ConcurrentHashMap<>();
 
   /**
-   * Factory for PodWatcher
+   * Factory for PodWatcher.
    *
    * @param factory thread factory
    * @param ns Namespace
@@ -117,10 +117,14 @@ public class PodWatcher extends Watcher<V1Pod>
   }
 
   static boolean isReady(V1Pod pod) {
-    return isReady(pod, false);
+    boolean ready = getReadyStatus(pod);
+    if (ready) {
+      LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+    }
+    return ready;
   }
 
-  static boolean isReady(V1Pod pod, boolean isStatusCheck) {
+  static boolean getReadyStatus(V1Pod pod) {
     V1PodStatus status = pod.getStatus();
     if (status != null) {
       if ("Running".equals(status.getPhase())) {
@@ -129,10 +133,6 @@ public class PodWatcher extends Watcher<V1Pod>
           for (V1PodCondition cond : conds) {
             if ("Ready".equals(cond.getType())) {
               if ("True".equals(cond.getStatus())) {
-                // Pod is Ready!
-                if (!isStatusCheck) {
-                  LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
-                }
                 return true;
               }
             }
@@ -173,7 +173,7 @@ public class PodWatcher extends Watcher<V1Pod>
   }
 
   /**
-   * Waits until the Pod is Ready
+   * Waits until the Pod is Ready.
    *
    * @param pod Pod to watch
    * @param next Next processing step once Pod is ready

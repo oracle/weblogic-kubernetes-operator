@@ -28,7 +28,7 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   public DomainV2Configurator() {}
 
-  public DomainV2Configurator(@Nonnull Domain domain) {
+  DomainV2Configurator(@Nonnull Domain domain) {
     super(domain);
     setApiVersion(domain);
   }
@@ -93,12 +93,6 @@ public class DomainV2Configurator extends DomainConfigurator {
   }
 
   @Override
-  /**
-   * Sets the WebLogic configuration overrides secret names for the domain
-   *
-   * @param secretNames a list of secret names
-   * @return this object
-   */
   public DomainConfigurator withConfigOverrideSecrets(String... secretNames) {
     getDomainSpec().setConfigOverrideSecrets(Arrays.asList(secretNames));
     return this;
@@ -106,13 +100,13 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator withPodLabel(String name, String value) {
-    ((BaseConfiguration) getDomainSpec()).addPodLabel(name, value);
+    getDomainSpec().addPodLabel(name, value);
     return this;
   }
 
   @Override
   public DomainConfigurator withPodAnnotation(String name, String value) {
-    ((BaseConfiguration) getDomainSpec()).addPodAnnotation(name, value);
+    getDomainSpec().addPodAnnotation(name, value);
     return this;
   }
 

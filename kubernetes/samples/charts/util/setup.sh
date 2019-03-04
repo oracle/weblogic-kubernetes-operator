@@ -5,6 +5,8 @@
 #  This script is to create or delete Ingress controllers. We support two ingress controllers: traefik and voyager.
 
 MYDIR="$(dirname "$(readlink -f "$0")")"
+VNAME=voyager-operator  # release name of Voyager
+TNAME=traefik-operator  # release name of Traefik
 
 function createVoyager() {
   echo "Creating Voyager operator on namespace 'voyager'."
@@ -19,10 +21,10 @@ function createVoyager() {
   fi
   echo
 
-  if [ "$(helm list | grep voyager-operator |  wc -l)" = 0 ]; then
+  if [ "$(helm list | grep $VNAME |  wc -l)" = 0 ]; then
     echo "Ihstall voyager operator."
     
-    helm install appscode/voyager --name voyager-operator --version 7.4.0 \
+    helm install appscode/voyager --name $VNAME --version 7.4.0 \
       --namespace voyager \
       --set cloudProvider=baremetal \
       --set apiserver.enableValidatingWebhook=false
@@ -52,9 +54,9 @@ function createTraefik() {
   echo "Creating Traefik operator on namespace 'traefik'." 
   echo
 
-  if [ "$(helm list | grep traefik-operator |  wc -l)" = 0 ]; then
+  if [ "$(helm list | grep $TNAME |  wc -l)" = 0 ]; then
     echo "Install Traefik Operator."
-    helm install --name traefik-operator --namespace traefik --values ${MYDIR}/../traefik/values.yaml stable/traefik
+    helm install --name $TNAME --namespace traefik --values ${MYDIR}/../traefik/values.yaml stable/traefik
   else
     echo "Traefik Operator is already installed."
   fi
@@ -108,9 +110,9 @@ function purgeCRDs() {
 }
 
 function deleteVoyager() {
-  if [ "$(helm list | grep voyager-operator |  wc -l)" = 1 ]; then
+  if [ "$(helm list | grep $VNAME |  wc -l)" = 1 ]; then
     echo "Delete Voyager Operator. "
-    helm delete --purge voyager-operator
+    helm delete --purge $VNAME 
     kubectl delete ns voyager
     purgeCRDs
   else
@@ -127,9 +129,9 @@ function deleteVoyager() {
 }
 
 function deleteTraefik() {
-  if [ "$(helm list | grep traefik-operator |  wc -l)" = 1 ]; then
+  if [ "$(helm list | grep $TNAME |  wc -l)" = 1 ]; then
     echo "Delete Traefik operator." 
-    helm delete --purge traefik-operator
+    helm delete --purge $TNAME
     kubectl delete ns traefik
   else
     echo "Traefik operator has already been deleted." 

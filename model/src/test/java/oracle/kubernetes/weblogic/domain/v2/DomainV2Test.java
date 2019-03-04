@@ -697,7 +697,7 @@ public class DomainV2Test extends DomainTestBase {
         serverSpec.getEnvironmentVariables(),
         containsInAnyOrder(
             envVar("JAVA_OPTIONS", "-server"),
-            envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "),
+            envVar("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "),
             envVar("var1", "value0")));
     assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(
@@ -1219,7 +1219,7 @@ public class DomainV2Test extends DomainTestBase {
     configureCluster("cluster1")
         .withPodLabel("label2", "cluster-label-value1")
         .withPodLabel("label3", "cluster-label-value2");
-    ;
+
     configureServer("server1").withPodLabel("label3", "server-label-value1");
 
     assertThat(

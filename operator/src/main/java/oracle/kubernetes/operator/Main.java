@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -150,7 +150,7 @@ public class Main {
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
 
   /**
-   * Entry point
+   * Entry point.
    *
    * @param args none, ignored
    */
@@ -360,7 +360,9 @@ public class Main {
         namespacesToStart.removeAll(isNamespaceStarted.keySet());
       }
 
-      if (!namespacesToStart.isEmpty()) runSteps(new StartNamespacesStep(namespacesToStart));
+      if (!namespacesToStart.isEmpty()) {
+        runSteps(new StartNamespacesStep(namespacesToStart));
+      }
     };
   }
 
@@ -424,7 +426,7 @@ public class Main {
   // -----------------------------------------------------------------------------
 
   /**
-   * Obtain the list of target namespaces
+   * Obtain the list of target namespaces.
    *
    * @return the collection of target namespace names
    */
@@ -478,7 +480,7 @@ public class Main {
     try {
       shutdownSignal.acquire();
     } catch (InterruptedException ignore) {
-      // ignoring
+      Thread.currentThread().interrupt();
     }
 
     isNamespaceStopping.forEach(
@@ -747,7 +749,9 @@ public class Main {
 
     @Override
     public void onCompletion(Packet packet) {
-      if (completionAction != null) completionAction.run();
+      if (completionAction != null) {
+        completionAction.run();
+      }
     }
 
     @Override

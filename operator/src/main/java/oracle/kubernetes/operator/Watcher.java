@@ -1,4 +1,4 @@
-// Copyright 2017, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -78,7 +78,8 @@ abstract class Watcher<T> {
       if (thread != null) {
         thread.join();
       }
-    } catch (InterruptedException ignored) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -101,8 +102,11 @@ abstract class Watcher<T> {
     setIsDraining(false);
 
     while (!isDraining()) {
-      if (isStopping()) setIsDraining(true);
-      else watchForEvents();
+      if (isStopping()) {
+        setIsDraining(true);
+      } else {
+        watchForEvents();
+      }
     }
   }
 
@@ -128,6 +132,7 @@ abstract class Watcher<T> {
         Thread.sleep(delay);
       } catch (InterruptedException ex) {
         LOGGER.warning(MessageKeys.EXCEPTION, ex);
+        Thread.currentThread().interrupt();
       }
       lastInitialize = System.currentTimeMillis();
     } else {
@@ -141,11 +146,18 @@ abstract class Watcher<T> {
       while (watch.hasNext()) {
         Watch.Response<T> item = watch.next();
 
-        if (isStopping()) setIsDraining(true);
-        if (isDraining()) continue;
+        if (isStopping()) {
+          setIsDraining(true);
+        }
+        if (isDraining()) {
+          continue;
+        }
 
-        if (isError(item)) handleErrorResponse(item);
-        else handleRegularUpdate(item);
+        if (isError(item)) {
+          handleErrorResponse(item);
+        } else {
+          handleRegularUpdate(item);
+        }
       }
     } catch (Throwable ex) {
       LOGGER.warning(MessageKeys.EXCEPTION, ex);
@@ -153,7 +165,7 @@ abstract class Watcher<T> {
   }
 
   /**
-   * Initiates a watch by using the watch builder to request any updates for the specified watcher
+   * Initiates a watch by using the watch builder to request any updates for the specified watcher.
    *
    * @param watchBuilder the watch builder, initialized with the current resource version.
    * @return Watch object or null if the operation should end
@@ -168,22 +180,38 @@ abstract class Watcher<T> {
   private void handleRegularUpdate(Watch.Response<T> item) {
     LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
     trackResourceVersion(item.type, item.object);
-    if (listener != null) listener.receivedResponse(item);
+    if (listener != null) {
+      listener.receivedResponse(item);
+    }
   }
 
   private void handleErrorResponse(Watch.Response<T> item) {
     V1Status status = item.status;
-    if (status != null && status.getCode() == HTTP_GONE) {
-      String message = status.getMessage();
+    if (status == null) {
+      // The kubernetes client parsing logic can mistakenly parse a status as a type
+      // with similar fields, such as V1ConfigMap. In this case, the actual status is
+      // not available to our layer, so respond defensively by resetting resource version.
+      resourceVersion = 0l;
+    } else if (status.getCode() == HTTP_GONE) {
+      resourceVersion = computeNextResourceVersionFromMessage(status);
+    }
+  }
+
+  private long computeNextResourceVersionFromMessage(V1Status status) {
+    String message = status.getMessage();
+    if (message != null) {
       int index1 = message.indexOf('(');
       if (index1 > 0) {
         int index2 = message.indexOf(')', index1 + 1);
         if (index2 > 0) {
           String val = message.substring(index1 + 1, index2);
-          resourceVersion = !isNullOrEmptyString(val) ? Long.parseLong(val) : 0;
+          if (!isNullOrEmptyString(val)) {
+            return Long.parseLong(val);
+          }
         }
       }
     }
+    return 0l;
   }
 
   /**
@@ -200,8 +228,11 @@ abstract class Watcher<T> {
 
   private long getNewResourceVersion(String type, Object object) {
     long newResourceVersion = getResourceVersionFromMetadata(object);
-    if (type.equalsIgnoreCase("DELETED")) return 1 + newResourceVersion;
-    else return newResourceVersion;
+    if (type.equalsIgnoreCase("DELETED")) {
+      return 1 + newResourceVersion;
+    } else {
+      return newResourceVersion;
+    }
   }
 
   private long getResourceVersionFromMetadata(Object object) {
@@ -217,8 +248,11 @@ abstract class Watcher<T> {
   }
 
   private void updateResourceVersion(long newResourceVersion) {
-    if (resourceVersion == 0) resourceVersion = newResourceVersion;
-    else if (newResourceVersion > resourceVersion) resourceVersion = newResourceVersion;
+    if (resourceVersion == 0) {
+      resourceVersion = newResourceVersion;
+    } else if (newResourceVersion > resourceVersion) {
+      resourceVersion = newResourceVersion;
+    }
   }
 
   private static boolean isNullOrEmptyString(String s) {

@@ -24,7 +24,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster. */
-@SuppressWarnings("deprecation")
+@Description(
+    "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
 public class Domain {
   /** The pattern for computing the default shared logs directory. */
   private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
@@ -188,7 +189,9 @@ public class Domain {
 
   private String getResourceVersion() {
     Map<String, String> labels = metadata.getLabels();
-    if (labels == null) return VersionConstants.DEFAULT_DOMAIN_VERSION;
+    if (labels == null) {
+      return VersionConstants.DEFAULT_DOMAIN_VERSION;
+    }
     return labels.get(LabelConstants.RESOURCE_VERSION_LABEL);
   }
 
@@ -204,7 +207,7 @@ public class Domain {
   }
 
   /**
-   * Returns the specification applicable to a particular cluster
+   * Returns the specification applicable to a particular cluster.
    *
    * @param clusterName the name of the cluster; may be null or empty if no applicable cluster.
    * @return the effective configuration for the cluster
@@ -290,6 +293,19 @@ public class Domain {
    * DomainStatus represents information about the status of a domain. Status may trail the actual
    * state of a system.
    *
+   * @return Status
+   */
+  public DomainStatus getOrCreateStatus() {
+    if (status == null) {
+      status = new DomainStatus();
+    }
+    return status;
+  }
+
+  /**
+   * DomainStatus represents information about the status of a domain. Status may trail the actual
+   * state of a system.
+   *
    * @param status Status
    */
   public void setStatus(DomainStatus status) {
@@ -332,15 +348,19 @@ public class Domain {
   }
 
   /**
-   * Returns the domain home
+   * Returns the domain home.
    *
    * <p>Defaults to either /u01/oracle/user_projects/domains or /shared/domains/domainUID
    *
    * @return domain home
    */
   public String getDomainHome() {
-    if (spec.getDomainHome() != null) return spec.getDomainHome();
-    if (spec.isDomainHomeInImage()) return "/u01/oracle/user_projects/domains";
+    if (spec.getDomainHome() != null) {
+      return spec.getDomainHome();
+    }
+    if (spec.isDomainHomeInImage()) {
+      return "/u01/oracle/user_projects/domains";
+    }
     return "/shared/domains/" + getDomainUID();
   }
 
