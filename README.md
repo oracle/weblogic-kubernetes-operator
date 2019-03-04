@@ -172,5 +172,5 @@ $ helm repo update
 Install Operator from the repo:
 
 ```
-$ helm install helm install weblogic-operator/weblogic-operator --name weblogic-operator
+$ helm install weblogic-operator/weblogic-operator --name weblogic-operator
 ```
