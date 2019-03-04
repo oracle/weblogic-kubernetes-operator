@@ -111,7 +111,7 @@ integration-test-java:
       mv epel-apache-maven.repo /etc/yum.repos.d/
       yum install -y apache-maven
       export M2_HOME="/usr/share/apache-maven"
-      export PATH=$M2_HOME/bin:$PATH
+      export PATH=$M2_HOME/bin:$PATH:$JAVA_HOME/bin
 
       # install opensll
       yum install -y openssl
