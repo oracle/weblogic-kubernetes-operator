@@ -9,7 +9,7 @@ import oracle.kubernetes.operator.work.Step;
 
 public interface PodAwaiterStepFactory {
   /**
-   * Waits until the Pod is Ready
+   * Waits until the Pod is Ready.
    *
    * @param pod Pod to watch
    * @param next Next processing step once Pod is ready

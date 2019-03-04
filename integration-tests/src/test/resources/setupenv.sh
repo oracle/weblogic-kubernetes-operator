@@ -62,14 +62,36 @@ function setup_wercker {
 }
 
 function pull_tag_images {
+
+  export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
+  set +x 
+  if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
+	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
+		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
+	  	exit 1
+	fi
+  fi
+  
+  if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ] && [ -n "$DOCKER_EMAIL" ]; then  
+	  echo "Creating Docker Secret"
+	  
+	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
+	    --docker-server=index.docker.io/v1/ \
+	    --docker-username=$DOCKER_USERNAME \
+	    --docker-password=$DOCKER_PASSWORD \
+	    --docker-email=$DOCKER_EMAIL 
+	  
+	  echo "Checking Secret"
+	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+	  if [ "$SECRET" != "1" ]; then
+	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
+	    exit 1
+	  fi
+	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+   	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+  fi
+  set -x
   echo "Pull and tag the images we need"
-
-  docker pull wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest
-  docker tag wlsldi-v2.docker.oraclecorp.com/store-weblogic-12.2.1.3:latest store/oracle/weblogic:12.2.1.3
-
-  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0
-  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic:19.1.0.0 store/oracle/weblogic:19.1.0.0
-
   docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
   docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
 
@@ -94,6 +116,12 @@ function create_image_pull_secret_jenkins {
   fi
 }
 
+function get_wlthint3client_from_image {
+  # Get wlthint3client.jar from image
+  id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
+  docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
+  docker rm -v $id
+}
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
@@ -101,7 +129,7 @@ export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
 export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
 export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-store/oracle/weblogic}"
-export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-19.1.0.0}"
+export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
     
 if [ -z "$BRANCH_NAME" ]; then
   export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
@@ -192,7 +220,8 @@ elif [ "$JENKINS" = "true" ]; then
 
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv_archive"
   /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv_archive"
-
+  
+  get_wlthint3client_from_image
 else
   pull_tag_images
     
@@ -203,4 +232,6 @@ else
 	
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+  
+  get_wlthint3client_from_image
 fi

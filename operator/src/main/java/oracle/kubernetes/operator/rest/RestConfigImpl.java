@@ -1,4 +1,4 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -22,6 +22,15 @@ public class RestConfigImpl implements RestConfig {
 
   private static final String OPERATOR_DIR = "/operator/";
   private static final String INTERNAL_REST_IDENTITY_DIR = OPERATOR_DIR + "internal-identity/";
+  private static final String INTERNAL_CERTIFICATE =
+      INTERNAL_REST_IDENTITY_DIR + "internalOperatorCert";
+  private static final String INTERNAL_CERTIFICATE_KEY =
+      INTERNAL_REST_IDENTITY_DIR + "internalOperatorKey";
+  private static final String EXTERNAL_REST_IDENTITY_DIR = OPERATOR_DIR + "external-identity/";
+  private static final String EXTERNAL_CERTIFICATE =
+      EXTERNAL_REST_IDENTITY_DIR + "externalOperatorCert";
+  private static final String EXTERNAL_CERTIFICATE_KEY =
+      EXTERNAL_REST_IDENTITY_DIR + "externalOperatorKey";
 
   /**
    * Constructs a RestConfigImpl.
@@ -37,73 +46,61 @@ public class RestConfigImpl implements RestConfig {
     LOGGER.exiting();
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getHost() {
     return "0.0.0.0";
   }
 
-  /** {@inheritDoc} */
   @Override
   public int getExternalHttpsPort() {
     return 8081;
   }
 
-  /** {@inheritDoc} */
   @Override
   public int getInternalHttpsPort() {
     return 8082;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalCertificateData() {
-    return getCertificate(OPERATOR_DIR + "config/externalOperatorCert");
+    return getCertificate(EXTERNAL_CERTIFICATE);
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalCertificateData() {
-    return getCertificate(INTERNAL_REST_IDENTITY_DIR + "internalOperatorCert");
+    return getCertificate(INTERNAL_CERTIFICATE);
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalCertificateFile() {
     return null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalCertificateFile() {
     return null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalKeyData() {
     return null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalKeyData() {
     return null;
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorExternalKeyFile() {
-    return getKey(OPERATOR_DIR + "secrets/externalOperatorKey");
+    return getKey(EXTERNAL_CERTIFICATE_KEY);
   }
 
-  /** {@inheritDoc} */
   @Override
   public String getOperatorInternalKeyFile() {
-    return getKey(INTERNAL_REST_IDENTITY_DIR + "internalOperatorKey");
+    return getKey(INTERNAL_CERTIFICATE_KEY);
   }
 
-  /** {@inheritDoc} */
   @Override
   public RestBackend getBackend(String accessToken) {
     LOGGER.entering();

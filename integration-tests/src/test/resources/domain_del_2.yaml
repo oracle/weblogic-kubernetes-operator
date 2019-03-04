@@ -1,9 +1,0 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-
-domainUID: domainuid4del2
-exposeAdminT3Channel: true
-t3ChannelPort: 30101
-exposeAdminNodePort: true
-adminNodePort: 30709
-namespace: domain-ns-4-del-2

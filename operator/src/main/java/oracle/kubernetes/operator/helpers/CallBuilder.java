@@ -1,8 +1,10 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
+
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiCallback;
@@ -37,6 +39,7 @@ import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.VersionInfo;
 import java.util.Optional;
 import java.util.function.Consumer;
+import javax.json.JsonPatch;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
@@ -46,6 +49,10 @@ import oracle.kubernetes.operator.calls.CancellableCall;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.utils.PatchUtils;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
@@ -55,8 +62,10 @@ import oracle.kubernetes.weblogic.domain.v2.api.WeblogicApi;
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
 public class CallBuilder {
 
-  /** HTTP status code for "Not Found" */
+  /** HTTP status code for "Not Found". */
   public static final int NOT_FOUND = 404;
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static SynchronousCallDispatcher DISPATCHER =
       new SynchronousCallDispatcher() {
@@ -135,7 +144,7 @@ public class CallBuilder {
   }
 
   /**
-   * Consumer for lambda-based builder pattern
+   * Consumer for lambda-based builder pattern.
    *
    * @param builderFunction Builder lambda function
    * @return this CallBuilder
@@ -148,7 +157,7 @@ public class CallBuilder {
   /* Version */
 
   /**
-   * Read Kubernetes version code
+   * Read Kubernetes version code.
    *
    * @return Version code
    * @throws ApiException API Exception
@@ -159,6 +168,65 @@ public class CallBuilder {
         requestParams, ((client, params) -> new VersionApi(client).getCode()));
   }
 
+  /**
+   * Class extended by callers to {@link
+   * #executeSynchronousCallWithConflictRetry(RequestParamsBuilder, SynchronousCallFactory,
+   * ConflictRetry)} for building the RequestParams to be passed to {@link
+   * #executeSynchronousCall(RequestParams, SynchronousCallFactory)}.
+   *
+   * @param <T> Type of kubernetes object to be passed to the API
+   */
+  abstract static class RequestParamsBuilder<T> {
+    T body;
+
+    public RequestParamsBuilder(T body) {
+      this.body = body;
+    }
+
+    abstract RequestParams buildRequestParams();
+
+    void setBody(T body) {
+      this.body = body;
+    }
+  }
+
+  private <T> T executeSynchronousCallWithConflictRetry(
+      RequestParamsBuilder requestParamsBuilder,
+      SynchronousCallFactory<T> factory,
+      ConflictRetry<T> conflictRetry)
+      throws ApiException {
+    int retryCount = 0;
+    while (retryCount == 0 || retryCount < maxRetryCount) {
+      retryCount++;
+      RequestParams requestParams = requestParamsBuilder.buildRequestParams();
+      try {
+        return executeSynchronousCall(requestParams, factory);
+      } catch (ApiException apiException) {
+        boolean retry = false;
+        if (apiException.getCode() == HTTP_CONFLICT
+            && conflictRetry != null
+            && retryCount < maxRetryCount) {
+          T body = conflictRetry.getUpdatedObject();
+          if (body != null) {
+            requestParamsBuilder.setBody(body);
+            retry = true;
+            LOGGER.fine(
+                MessageKeys.SYNC_RETRY,
+                requestParams.call,
+                apiException.getCode(),
+                apiException.getMessage(),
+                retryCount,
+                maxRetryCount);
+          }
+        }
+        if (!retry) {
+          throw apiException;
+        }
+      }
+    }
+    return null;
+  }
+
   private <T> T executeSynchronousCall(
       RequestParams requestParams, SynchronousCallFactory<T> factory) throws ApiException {
     return DISPATCHER.execute(factory, requestParams, helper);
@@ -167,7 +235,7 @@ public class CallBuilder {
   /* Namespaces */
 
   /**
-   * Read namespace
+   * Read namespace.
    *
    * @param name Name
    * @return Read service
@@ -183,7 +251,7 @@ public class CallBuilder {
   }
 
   /**
-   * Create namespace
+   * Create namespace.
    *
    * @param body Body
    * @return Created service
@@ -214,8 +282,9 @@ public class CallBuilder {
                   resourceVersion,
                   timeoutSeconds,
                   watch);
+
   /**
-   * List domains
+   * List domains.
    *
    * @param namespace Namespace
    * @return Domain list
@@ -227,13 +296,13 @@ public class CallBuilder {
   }
 
   private com.squareup.okhttp.Call listDomainAsync(
-      ApiClient client, String namespace, String _continue, ApiCallback<DomainList> callback)
+      ApiClient client, String namespace, String cont, ApiCallback<DomainList> callback)
       throws ApiException {
     return new WeblogicApi(client)
         .listWebLogicOracleV2NamespacedDomainAsync(
             namespace,
             pretty,
-            _continue,
+            cont,
             fieldSelector,
             includeUninitialized,
             labelSelector,
@@ -248,12 +317,8 @@ public class CallBuilder {
       (requestParams, usage, cont, callback) ->
           wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
 
-  private CancellableCall wrap(Call call) {
-    return new CallWrapper(call);
-  }
-
   /**
-   * Asynchronous step for listing domains
+   * Asynchronous step for listing domains.
    *
    * @param namespace Namespace
    * @param responseStep Response step for when call completes
@@ -277,7 +342,7 @@ public class CallBuilder {
           wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
 
   /**
-   * Asynchronous step for reading domain
+   * Asynchronous step for reading domain.
    *
    * @param name Name
    * @param namespace Namespace
@@ -296,7 +361,34 @@ public class CallBuilder {
                   requestParams.name, requestParams.namespace, (Domain) requestParams.body, pretty);
 
   /**
-   * Replace domain
+   * Replace domain.
+   *
+   * @param uid the domain uid (unique within the k8s cluster)
+   * @param namespace Namespace
+   * @param body Body
+   * @param conflictRetry ConflictRetry implementation to be called to obtain the latest version of
+   *     the Domain for retrying the replaceDomain synchronous call if previous call failed with
+   *     Conflict response code (409)
+   * @return Replaced domain
+   * @throws ApiException APIException
+   */
+  public Domain replaceDomainWithConflictRetry(
+      String uid, String namespace, Domain body, ConflictRetry<Domain> conflictRetry)
+      throws ApiException {
+    return executeSynchronousCallWithConflictRetry(
+        new RequestParamsBuilder<Domain>(body) {
+
+          @Override
+          RequestParams buildRequestParams() {
+            return new RequestParams("replaceDomain", namespace, uid, body);
+          }
+        },
+        REPLACE_DOMAIN_CALL,
+        conflictRetry);
+  }
+
+  /**
+   * Replace domain.
    *
    * @param uid the domain uid (unique within the k8s cluster)
    * @param namespace Namespace
@@ -327,7 +419,7 @@ public class CallBuilder {
                   callback));
 
   /**
-   * Asynchronous step for replacing domain
+   * Asynchronous step for replacing domain.
    *
    * @param name Name
    * @param namespace Namespace
@@ -360,7 +452,7 @@ public class CallBuilder {
                   callback));
 
   /**
-   * Asynchronous step for replacing domain status
+   * Asynchronous step for replacing domain status.
    *
    * @param name Name
    * @param namespace Namespace
@@ -390,7 +482,7 @@ public class CallBuilder {
           wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
 
   /**
-   * Asynchronous step for reading CRD
+   * Asynchronous step for reading CRD.
    *
    * @param name Name
    * @param responseStep Response step for when call completes
@@ -418,7 +510,7 @@ public class CallBuilder {
                   usage, (V1beta1CustomResourceDefinition) requestParams.body, callback));
 
   /**
-   * Asynchronous step for creating CRD
+   * Asynchronous step for creating CRD.
    *
    * @param body Body
    * @param responseStep Response step for when call completes
@@ -451,7 +543,7 @@ public class CallBuilder {
                   callback));
 
   /**
-   * Asynchronous step for replacing CRD
+   * Asynchronous step for replacing CRD.
    *
    * @param name Name
    * @param body Body
@@ -480,7 +572,7 @@ public class CallBuilder {
           wrap(readConfigMapAsync(usage, requestParams.name, requestParams.namespace, callback));
 
   /**
-   * Asynchronous step for reading config map
+   * Asynchronous step for reading config map.
    *
    * @param name Name
    * @param namespace Namespace
@@ -506,7 +598,7 @@ public class CallBuilder {
                   usage, requestParams.namespace, (V1ConfigMap) requestParams.body, callback));
 
   /**
-   * Asynchronous step for creating config map
+   * Asynchronous step for creating config map.
    *
    * @param namespace Namespace
    * @param body Body
@@ -551,7 +643,7 @@ public class CallBuilder {
                   callback));
 
   /**
-   * Asynchronous step for deleting config map
+   * Asynchronous step for deleting config map.
    *
    * @param name Name
    * @param namespace Namespace
@@ -592,7 +684,7 @@ public class CallBuilder {
                   callback));
 
   /**
-   * Asynchronous step for replacing config map
+   * Asynchronous step for replacing config map.
    *
    * @param name Name
    * @param namespace Namespace
@@ -611,13 +703,13 @@ public class CallBuilder {
   /* Pods */
 
   private com.squareup.okhttp.Call listPodAsync(
-      ApiClient client, String namespace, String _continue, ApiCallback<V1PodList> callback)
+      ApiClient client, String namespace, String cont, ApiCallback<V1PodList> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .listNamespacedPodAsync(
             namespace,
             pretty,
-            _continue,
+            cont,
             fieldSelector,
             includeUninitialized,
             labelSelector,
@@ -633,7 +725,7 @@ public class CallBuilder {
           wrap(listPodAsync(usage, requestParams.namespace, cont, callback));
 
   /**
-   * Asynchronous step for listing pods
+   * Asynchronous step for listing pods.
    *
    * @param namespace Namespace
    * @param responseStep Response step for when call completes
@@ -656,7 +748,7 @@ public class CallBuilder {
           wrap(readPodAsync(usage, requestParams.name, requestParams.namespace, callback));
 
   /**
-   * Asynchronous step for reading pod
+   * Asynchronous step for reading pod.
    *
    * @param name Name
    * @param namespace Namespace
@@ -680,7 +772,7 @@ public class CallBuilder {
               createPodAsync(usage, requestParams.namespace, (V1Pod) requestParams.body, callback));
 
   /**
-   * Asynchronous step for creating pod
+   * Asynchronous step for creating pod.
    *
    * @param namespace Namespace
    * @param body Body
@@ -722,7 +814,7 @@ public class CallBuilder {
                   callback));
 
   /**
-   * Asynchronous step for deleting pod
+   * Asynchronous step for deleting pod.
    *
    * @param name Name
    * @param namespace Namespace
@@ -739,14 +831,47 @@ public class CallBuilder {
         responseStep, new RequestParams("deletePod", namespace, name, deleteOptions), DELETE_POD);
   }
 
+  private com.squareup.okhttp.Call patchPodAsync(
+      ApiClient client, String name, String namespace, Object patch, ApiCallback<V1Pod> callback)
+      throws ApiException {
+    return new CoreV1Api(client).patchNamespacedPodAsync(name, namespace, patch, pretty, callback);
+  }
+
+  private final CallFactory<V1Pod> PATCH_POD =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchPodAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  requestParams.body,
+                  callback));
+
+  /**
+   * Asynchronous step for patching a pod.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param patchBody instructions on what to patch
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step patchPodAsync(
+      String name, String namespace, JsonPatch patchBody, ResponseStep<V1Pod> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("patchPod", namespace, name, PatchUtils.toKubernetesPatch(patchBody)),
+        PATCH_POD);
+  }
+
   private com.squareup.okhttp.Call deleteCollectionPodAsync(
-      ApiClient client, String namespace, String _continue, ApiCallback<V1Status> callback)
+      ApiClient client, String namespace, String cont, ApiCallback<V1Status> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .deleteCollectionNamespacedPodAsync(
             namespace,
             pretty,
-            _continue,
+            cont,
             fieldSelector,
             includeUninitialized,
             labelSelector,
@@ -762,7 +887,7 @@ public class CallBuilder {
           wrap(deleteCollectionPodAsync(usage, requestParams.namespace, cont, callback));
 
   /**
-   * Asynchronous step for deleting collection of pods
+   * Asynchronous step for deleting collection of pods.
    *
    * @param namespace Namespace
    * @param responseStep Response step for when call completes
@@ -789,7 +914,7 @@ public class CallBuilder {
               createJobAsync(usage, requestParams.namespace, (V1Job) requestParams.body, callback));
 
   /**
-   * Asynchronous step for creating job
+   * Asynchronous step for creating job.
    *
    * @param namespace Namespace
    * @param body Body
@@ -813,7 +938,7 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for reading job
+   * Asynchronous step for reading job.
    *
    * @param name Name
    * @param namespace Namespace
@@ -855,7 +980,7 @@ public class CallBuilder {
                   callback));
 
   /**
-   * Asynchronous step for deleting job
+   * Asynchronous step for deleting job.
    *
    * @param name Name
    * @param namespace Namespace
@@ -875,21 +1000,21 @@ public class CallBuilder {
   /* Services */
 
   /**
-   * List services
+   * List services.
    *
    * @param namespace Namespace
    * @return List of services
    * @throws ApiException API Exception
    */
   public V1ServiceList listService(String namespace) throws ApiException {
-    String _continue = "";
+    String cont = "";
     ApiClient client = helper.take();
     try {
       return new CoreV1Api(client)
           .listNamespacedService(
               namespace,
               pretty,
-              _continue,
+              cont,
               fieldSelector,
               includeUninitialized,
               labelSelector,
@@ -903,13 +1028,13 @@ public class CallBuilder {
   }
 
   private com.squareup.okhttp.Call listServiceAsync(
-      ApiClient client, String namespace, String _continue, ApiCallback<V1ServiceList> callback)
+      ApiClient client, String namespace, String cont, ApiCallback<V1ServiceList> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .listNamespacedServiceAsync(
             namespace,
             pretty,
-            _continue,
+            cont,
             fieldSelector,
             includeUninitialized,
             labelSelector,
@@ -925,7 +1050,7 @@ public class CallBuilder {
           wrap(listServiceAsync(usage, requestParams.namespace, cont, callback));
 
   /**
-   * Asynchronous step for listing services
+   * Asynchronous step for listing services.
    *
    * @param namespace Namespace
    * @param responseStep Response step for when call completes
@@ -937,7 +1062,7 @@ public class CallBuilder {
   }
 
   /**
-   * Read service
+   * Read service.
    *
    * @param name Name
    * @param namespace Namespace
@@ -965,7 +1090,7 @@ public class CallBuilder {
           wrap(readServiceAsync(usage, requestParams.name, requestParams.namespace, callback));
 
   /**
-   * Asynchronous step for reading service
+   * Asynchronous step for reading service.
    *
    * @param name Name
    * @param namespace Namespace
@@ -991,7 +1116,7 @@ public class CallBuilder {
                   usage, requestParams.namespace, (V1Service) requestParams.body, callback));
 
   /**
-   * Asynchronous step for creating service
+   * Asynchronous step for creating service.
    *
    * @param namespace Namespace
    * @param body Body
@@ -1005,7 +1130,7 @@ public class CallBuilder {
   }
 
   /**
-   * Delete service
+   * Delete service.
    *
    * @param name Name
    * @param namespace Namespace
@@ -1061,7 +1186,7 @@ public class CallBuilder {
                   callback));
 
   /**
-   * Asynchronous step for deleting service
+   * Asynchronous step for deleting service.
    *
    * @param name Name
    * @param namespace Namespace
@@ -1083,13 +1208,13 @@ public class CallBuilder {
   /* Events */
 
   private com.squareup.okhttp.Call listEventAsync(
-      ApiClient client, String namespace, String _continue, ApiCallback<V1EventList> callback)
+      ApiClient client, String namespace, String cont, ApiCallback<V1EventList> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .listNamespacedEventAsync(
             namespace,
             pretty,
-            _continue,
+            cont,
             fieldSelector,
             includeUninitialized,
             labelSelector,
@@ -1105,7 +1230,7 @@ public class CallBuilder {
           wrap(listEventAsync(usage, requestParams.namespace, cont, callback));
 
   /**
-   * Asynchronous step for listing events
+   * Asynchronous step for listing events.
    *
    * @param namespace Namespace
    * @param responseStep Response step for when call completes
@@ -1119,12 +1244,12 @@ public class CallBuilder {
   /* Persistent Volumes */
 
   private com.squareup.okhttp.Call listPersistentVolumeAsync(
-      ApiClient client, String _continue, ApiCallback<V1PersistentVolumeList> callback)
+      ApiClient client, String cont, ApiCallback<V1PersistentVolumeList> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .listPersistentVolumeAsync(
             pretty,
-            _continue,
+            cont,
             fieldSelector,
             includeUninitialized,
             labelSelector,
@@ -1140,7 +1265,7 @@ public class CallBuilder {
           wrap(listPersistentVolumeAsync(usage, cont, callback));
 
   /**
-   * Asynchronous step for listing persistent volumes
+   * Asynchronous step for listing persistent volumes.
    *
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
@@ -1236,14 +1361,14 @@ public class CallBuilder {
   private com.squareup.okhttp.Call listPersistentVolumeClaimAsync(
       ApiClient client,
       String namespace,
-      String _continue,
+      String cont,
       ApiCallback<V1PersistentVolumeClaimList> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .listNamespacedPersistentVolumeClaimAsync(
             namespace,
             pretty,
-            _continue,
+            cont,
             fieldSelector,
             includeUninitialized,
             labelSelector,
@@ -1259,7 +1384,7 @@ public class CallBuilder {
           wrap(listPersistentVolumeClaimAsync(usage, requestParams.namespace, cont, callback));
 
   /**
-   * Asynchronous step for listing persistent volume claims
+   * Asynchronous step for listing persistent volume claims.
    *
    * @param namespace Namespace
    * @param responseStep Response step for when call completes
@@ -1353,7 +1478,7 @@ public class CallBuilder {
   /* Secrets */
 
   /**
-   * Read secret
+   * Read secret.
    *
    * @param name Name
    * @param namespace Namespace
@@ -1381,7 +1506,7 @@ public class CallBuilder {
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
 
   /**
-   * Create secret
+   * Create secret.
    *
    * @param namespace Namespace
    * @param body Body
@@ -1398,7 +1523,7 @@ public class CallBuilder {
   }
 
   /**
-   * Delete secret
+   * Delete secret.
    *
    * @param name Name
    * @param namespace Namespace
@@ -1425,7 +1550,7 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for reading secret
+   * Asynchronous step for reading secret.
    *
    * @param name Name
    * @param namespace Namespace
@@ -1445,7 +1570,7 @@ public class CallBuilder {
               .createSubjectAccessReview((V1SubjectAccessReview) requestParams.body, pretty));
 
   /**
-   * Create subject access review
+   * Create subject access review.
    *
    * @param body Body
    * @return Created subject access review
@@ -1470,7 +1595,7 @@ public class CallBuilder {
                   usage, (V1SubjectAccessReview) requestParams.body, callback));
 
   /**
-   * Asynchronous step for creating subject access review
+   * Asynchronous step for creating subject access review.
    *
    * @param body Body
    * @param responseStep Response step for when call completes
@@ -1493,7 +1618,7 @@ public class CallBuilder {
                   (V1SelfSubjectAccessReview) requestParams.body, pretty);
 
   /**
-   * Create self subject access review
+   * Create self subject access review.
    *
    * @param body Body
    * @return Created self subject access review
@@ -1521,7 +1646,7 @@ public class CallBuilder {
                   usage, (V1SelfSubjectAccessReview) requestParams.body, callback));
 
   /**
-   * Asynchronous step for creating self subject access review
+   * Asynchronous step for creating self subject access review.
    *
    * @param body Body
    * @param responseStep Response step for when call completes
@@ -1543,7 +1668,7 @@ public class CallBuilder {
               .createSelfSubjectRulesReview((V1SelfSubjectRulesReview) requestParams.body, pretty);
 
   /**
-   * Create self subject rules review
+   * Create self subject rules review.
    *
    * @param body Body
    * @return Created self subject rules review
@@ -1570,7 +1695,7 @@ public class CallBuilder {
                   usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
 
   /**
-   * Asynchronous step for creating self subject rules review
+   * Asynchronous step for creating self subject rules review.
    *
    * @param body Body
    * @param responseStep Response step for when call completes
@@ -1592,7 +1717,7 @@ public class CallBuilder {
               .createTokenReview((V1TokenReview) requestParams.body, pretty);
 
   /**
-   * Create token review
+   * Create token review.
    *
    * @param body Body
    * @return Created token review
@@ -1680,5 +1805,9 @@ public class CallBuilder {
         fieldSelector,
         labelSelector,
         resourceVersion);
+  }
+
+  private CancellableCall wrap(Call call) {
+    return new CallWrapper(call);
   }
 }

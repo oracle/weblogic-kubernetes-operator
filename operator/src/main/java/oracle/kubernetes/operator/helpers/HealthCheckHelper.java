@@ -16,7 +16,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
-/** A Helper Class for checking the health of the WebLogic Operator */
+/** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");

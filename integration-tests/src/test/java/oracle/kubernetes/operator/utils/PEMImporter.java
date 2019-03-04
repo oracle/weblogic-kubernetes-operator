@@ -14,6 +14,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -34,12 +35,11 @@ public class PEMImporter {
    * @param certificatePem the certificate(s) PEM file
    * @param the password to set to protect the private key
    */
-  public static KeyStore createKeyStore(
-      File privateKeyPem, File certificatePem, final String password)
+  public static KeyStore createKeyStore(File certificatePem, final String password)
       throws Exception, KeyStoreException, IOException, NoSuchAlgorithmException,
           CertificateException {
     // Import certificate pem file
-    final X509Certificate[] cert = createCertificates(certificatePem);
+    final X509Certificate[] certChain = createCertificates(certificatePem);
 
     // Create a Keystore obj if the type "JKS"
     final KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -48,10 +48,13 @@ public class PEMImporter {
     keystore.load(null);
 
     // Import private key
-    final PrivateKey key = createPrivateKey(privateKeyPem);
+    //    final PrivateKey key = createPrivateKey(privateKeyPem);
 
     // Load cert and key files into the Keystore obj and create it
-    keystore.setKeyEntry(privateKeyPem.getName(), key, password.toCharArray(), cert);
+    //    keystore.setKeyEntry(privateKeyPem.getName(), key, password.toCharArray(), cert);
+    for (Certificate cert : certChain) {
+      keystore.setCertificateEntry("operator", cert);
+    }
 
     return keystore;
   }
