@@ -19,6 +19,7 @@ import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -270,6 +271,13 @@ public class CRDHelper {
                   || !getSchemaSubresources(expected).equals(getSchemaSubresources(actual))));
       // Similarly, we will later want to check:
       // VersionHelper.matchesResourceVersion(existingCRD.getMetadata(), DEFAULT_OPERATOR_VERSION)
+    }
+
+    // https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/#version-priority
+    static Comparator<String> compareVersions() {
+      return (left, right) -> {
+
+      };
     }
 
     private V1beta1JSONSchemaProps getSchemaValidation(V1beta1CustomResourceDefinition crd) {
