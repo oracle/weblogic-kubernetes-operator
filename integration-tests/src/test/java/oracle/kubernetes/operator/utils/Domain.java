@@ -992,6 +992,7 @@ public class Domain {
         .append(clusterName)
         .append("'");
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
     String resultStr =
         "Command= '"
             + cmdKubectlSh
