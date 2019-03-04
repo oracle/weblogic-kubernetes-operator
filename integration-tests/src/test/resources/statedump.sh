@@ -39,7 +39,7 @@ function state_dump {
   kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetmany.out
   kubectl get domains --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetdomains.out
 
-  # Get all pod logs and redirect/copy to files 
+  # Get all pod logs/describes and redirect/copy to files 
 
   set +x
   local namespaces="`kubectl get namespaces | egrep -v -e "(STATUS|kube)" | awk '{ print $1 }'`"
@@ -59,6 +59,32 @@ function state_dump {
       kubectl describe pod $pod -n $namespace > $descfile
     done
   done
+
+  # Get various k8s resource describes and redirect/copy to files 
+
+  set +x
+  local ktype
+  local kobj
+  local fname
+  for namespace in $namespaces; do
+    for ktype in pod job deploy rs service pvc ingress cm secret domain; do
+      for kobj in `kubectl get $ktype -n $namespace -o=jsonpath='{range .items[*]}{" "}{.metadata.name}{end}'`; do
+        fname="${DUMP_DIR}/kubectl.describe.$ktype.$kobj.ns-$namespace"
+        echo "Generating $fname"
+        kubectl describe $ktype $kobj -n $namespace > $fname
+      done
+    done
+  done
+
+  # treat pv differently as a pv is not namespaced:
+  for ktype in pv; do
+    for kobj in `kubectl get $ktype -o=jsonpath='{range .items[*]}{" "}{.metadata.name}{end}'`; do
+      fname="${DUMP_DIR}/kubectl.describe.$ktype.$kobj"
+      echo "Generating $fname"
+      kubectl describe $ktype $kobj > $fname
+    done
+  done
+  set -x
 
   # use a job to archive PV, /scratch mounts to PV_ROOT in the K8S cluster
   echo "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
