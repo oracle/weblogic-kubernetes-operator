@@ -20,19 +20,20 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 
 The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/fusionmiddlewaresupport/updated-weblogic-kubernetes-support-with-operator-20-v2), or try out the [samples](kubernetes/samples/README.md).
 
-```diff
-+ The current release of the operator is 2.0-rc2, a release candidate for our 2.0 release.
-+ This release candidate was published on Jan. 16, 2019.
-+ We expect to publish the final 2.0 release later in January, 2019.
-+ We expect that there will be some minor changes to documentation and samples in the final 2.0 release.
-+ However, this release candidate is suitable for testing and early adopters.
-```
+***
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.0.1.
+This release was published on March 4, 2019.
+***
 
 ## Known issues
 
 | Issue | Description |
 | --- | --- |
-| [#726](https://github.com/oracle/weblogic-kubernetes-operator/issues/726) | Clusters only support default channel. |
+|  |  |
+
+## Operator version 2.0
+
+Documentation for the 2.0 release of the operator is available [here](site/v2.0/README.md).
 
 ## Operator version 1.1
 
@@ -171,5 +172,5 @@ $ helm repo update
 Install Operator from the repo:
 
 ```
-$ helm install helm install weblogic-operator/weblogic-operator --name weblogic-operator
+$ helm install weblogic-operator/weblogic-operator --name weblogic-operator
 ```
