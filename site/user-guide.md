@@ -94,7 +94,7 @@ Oracle recommends careful consideration before deciding to expose any administra
 
 ## Prerequisites
 
-* Kubernetes 1.10.11+, 1.11.5+, and 1.12.3+  (check with `kubectl version`).
+* Kubernetes 1.10.11+, 1.11.5+, 1.12.3+, and 1.13.0+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
 * Docker 18.03.1.ce (check with `docker version`).
 * Helm 2.8.2+ (check with `helm version`).
@@ -103,3 +103,7 @@ Oracle recommends careful consideration before deciding to expose any administra
 was updated on January 17, 2019, and has all the necessary patches applied.
    * A `docker pull` is required if you pulled the image prior to that date.
 * You must have the `cluster-admin` role to install the operator.
+
+### OpenShift
+
+When using the operator in OpenShift, the `anyuid` security context constraint is required to ensure that WebLogic containers run with a Unix UID that has the correct permissions on the domain filesystem.
