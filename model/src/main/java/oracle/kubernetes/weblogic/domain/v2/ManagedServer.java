@@ -12,6 +12,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@Description("ManagedServer represents the operator configuration for a single managed server.")
 public class ManagedServer extends Server implements Comparable<ManagedServer> {
   /** The name of the managed server. Required. */
   @SerializedName("serverName")
@@ -43,11 +44,17 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
-    if (!(o instanceof ManagedServer)) return false;
+    if (!(o instanceof ManagedServer)) {
+      return false;
+    }
 
     ManagedServer that = (ManagedServer) o;
 

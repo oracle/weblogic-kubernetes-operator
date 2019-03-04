@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -123,6 +123,8 @@ public class MessageKeys {
   public static final String ROLLING_CLUSTERS_STARTING = "WLSKO-0117";
   public static final String CYCLING_SERVERS = "WLSKO-0118";
   public static final String ROLLING_SERVERS = "WLSKO-0119";
+  public static final String ADMIN_POD_PATCHED = "WLSKO-0120";
+  public static final String MANAGED_POD_PATCHED = "WLSKO-0121";
   public static final String POD_DELETED = "WLSKO-0122";
   public static final String SERVER_SERVICE_DELETED = "WLSKO-0123";
   public static final String CLUSTER_SERVICE_DELETED = "WLSKO-0124";
@@ -147,4 +149,6 @@ public class MessageKeys {
   public static final String CANNOT_START_DOMAIN_AFTER_MAX_RETRIES = "WLSKO-0144";
   public static final String CYCLING_POD = "WLSKO-0145";
   public static final String REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT = "WLSKO-0146";
+  public static final String SYNC_RETRY = "WLSKO-0147";
+  public static final String POD_DUMP = "WLSKO-0148";
 }

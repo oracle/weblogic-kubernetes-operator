@@ -22,6 +22,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * @since 2.0
  */
+@Description("An element representing a cluster in the domain configuration.")
 public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   /** The name of the cluster. Required. */
   @Description("The name of this cluster. Required")
@@ -36,7 +37,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   /**
    * Tells the operator whether the customer wants the server to be running. For clustered servers -
    * the operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server
-   * needs to be started to get to the cluster's replica count..
+   * needs to be started to get to the cluster's replica count.
    *
    * @since 2.0
    */
@@ -149,9 +150,13 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o) {
+      return true;
+    }
 
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     Cluster cluster = (Cluster) o;
 

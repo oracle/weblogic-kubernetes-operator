@@ -76,7 +76,7 @@ t3ChannelPort: 30012
 # kubernetes server address, which you can get by running "kubectl cluster-info".  If this
 # value is not set to that address, WLST will not be able to connect from outside the
 # kubernetes cluster.
-t3PublicAddress: kubernetes
+#t3PublicAddress: 
 
 # Boolean to indicate if the channel should be exposed as a service
 exposeAdminT3Channel: false

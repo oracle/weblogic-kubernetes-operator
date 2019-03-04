@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -33,6 +34,8 @@ public class JsonSchemaMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project.build.outputDirectory}/schema")
   private String targetDir;
 
+  @Parameter private String kubernetesVersion;
+
   @Parameter private List<ExternalSchema> externalSchemas = Collections.emptyList();
 
   @Parameter(required = true)
@@ -40,13 +43,15 @@ public class JsonSchemaMojo extends AbstractMojo {
 
   @Parameter private boolean includeDeprecated;
 
+  @Parameter private boolean generateMarkdown;
+
   @Parameter private boolean includeAdditionalProperties;
 
   @SuppressWarnings("FieldCanBeLocal")
   @Parameter
   private boolean supportObjectReferences = true;
 
-  @Parameter(defaultValue = "$project.basedir")
+  @Parameter(defaultValue = "${basedir}")
   private String baseDir;
 
   @Parameter private String outputFile;
@@ -68,14 +73,23 @@ public class JsonSchemaMojo extends AbstractMojo {
 
     if (updateNeeded(new File(classUrl.getPath()), getSchemaFile())) {
       getLog().info("Changes detected -- generating schema for " + rootClass + ".");
-      main.generateSchema(rootClass, getSchemaFile());
+      generate();
     } else {
       getLog().info("Schema up-to-date. Skipping generation.");
     }
   }
 
+  private void generate() throws MojoExecutionException {
+    Map<String, Object> generatedSchema = main.generateSchema(rootClass, getSchemaFile());
+    if (generateMarkdown) {
+      getLog().info(" -- generating markdown for " + rootClass + ".");
+      main.generateMarkdown("Domain", getMarkdownFile(), generatedSchema);
+    }
+  }
+
   private void addExternalSchemas() throws MojoExecutionException {
     try {
+      if (kubernetesVersion != null) main.setKubernetesVersion(kubernetesVersion);
       for (ExternalSchema externalSchema : externalSchemas)
         main.defineSchemaUrlAndContents(
             externalSchema.getUrl(), externalSchema.getCacheURL(baseDir));
@@ -97,6 +111,10 @@ public class JsonSchemaMojo extends AbstractMojo {
 
   private String getOutputFile() {
     return Optional.ofNullable(outputFile).orElse(classNameToFile(rootClass) + ".json");
+  }
+
+  private File getMarkdownFile() {
+    return new File(getSchemaFile().getAbsolutePath().replace(".json", ".md"));
   }
 
   private URL[] toUrls(List<String> paths) {

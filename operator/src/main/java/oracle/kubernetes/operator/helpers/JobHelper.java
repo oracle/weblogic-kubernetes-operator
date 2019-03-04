@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -13,6 +13,9 @@ import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import javax.validation.constraints.NotNull;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -92,41 +95,53 @@ public class JobHelper {
     }
 
     @Override
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
-      List<V1EnvVar> envVarList = new ArrayList<V1EnvVar>();
-      addEnvVar(envVarList, "NAMESPACE", getNamespace());
-      addEnvVar(envVarList, "DOMAIN_UID", getDomainUID());
-      addEnvVar(envVarList, "DOMAIN_HOME", getDomainHome());
-      addEnvVar(envVarList, "NODEMGR_HOME", getNodeManagerHome());
-      addEnvVar(envVarList, "LOG_HOME", getEffectiveLogHome());
-      addEnvVar(envVarList, "INTROSPECT_HOME", getIntrospectHome());
-      addEnvVar(envVarList, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-      addEnvVar(envVarList, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
+      // Pod for introspector job would use same environment variables as for admin server
+      List<V1EnvVar> vars =
+          new ArrayList<>(getDomain().getAdminServerSpec().getEnvironmentVariables());
 
-      return envVarList;
+      addEnvVar(vars, "NAMESPACE", getNamespace());
+      addEnvVar(vars, "DOMAIN_UID", getDomainUID());
+      addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
+      addEnvVar(vars, "NODEMGR_HOME", getNodeManagerHome());
+      addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
+      addEnvVar(vars, "INTROSPECT_HOME", getIntrospectHome());
+      addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
+      addEnvVar(vars, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
+
+      return vars;
     }
   }
 
   /**
-   * Factory for {@link Step} that creates WebLogic domain introspector job
+   * Factory for {@link Step} that creates WebLogic domain introspector job.
    *
    * @param tuning Watch tuning parameters
    * @param next Next processing step
+   * @param jws Map of JobWatcher objects, keyed by the string value of the name of a namespace
+   * @param isStopping Stop signal
    * @return Step for creating job
    */
-  public static Step createDomainIntrospectorJobStep(WatchTuning tuning, Step next) {
+  public static Step createDomainIntrospectorJobStep(
+      WatchTuning tuning,
+      Step next,
+      @NotNull Map<String, JobWatcher> jws,
+      @NotNull AtomicBoolean isStopping) {
 
-    // return new DomainIntrospectorJobStep(
-    //    readDomainIntrospectorPodLogStep(ConfigMapHelper.createSitConfigMapStep(next)));
-    return new DomainIntrospectorJobStep(tuning, next);
+    return new DomainIntrospectorJobStep(tuning, next, jws, isStopping);
   }
 
   static class DomainIntrospectorJobStep extends Step {
     private final WatchTuning tuning;
+    private final Map<String, JobWatcher> jws;
+    private final AtomicBoolean isStopping;
 
-    public DomainIntrospectorJobStep(WatchTuning tuning, Step next) {
+    DomainIntrospectorJobStep(
+        WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
       super(next);
       this.tuning = tuning;
+      this.jws = jws;
+      this.isStopping = isStopping;
     }
 
     @Override
@@ -140,7 +155,7 @@ public class JobHelper {
         return doNext(
             context.createNewJob(
                 readDomainIntrospectorPodLogStep(
-                    tuning, ConfigMapHelper.createSitConfigMapStep(getNext()))),
+                    tuning, ConfigMapHelper.createSitConfigMapStep(getNext()), jws, isStopping)),
             packet);
       }
 
@@ -164,12 +179,12 @@ public class JobHelper {
   }
 
   /**
-   * TODO: Enhance determination of when we believe we're creating WLS managed server pods
+   * TODO: Enhance determination of when we believe we're creating WLS managed server pods.
    *
    * @param info
-   * @return
+   * @return True, if creating servers
    */
-  private static boolean creatingServers(DomainPresenceInfo info) {
+  static boolean creatingServers(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
     DomainSpec spec = dom.getSpec();
     List<Cluster> clusters = spec.getClusters();
@@ -178,7 +193,7 @@ public class JobHelper {
     // Are we starting a cluster?
     // NOTE: clusterServerStartPolicy == null indicates default policy
     for (Cluster cluster : clusters) {
-      int replicaCount = cluster.getReplicas();
+      int replicaCount = dom.getReplicaCount(cluster.getClusterName());
       String clusterServerStartPolicy = cluster.getServerStartPolicy();
       LOGGER.fine(
           "Start Policy: "
@@ -217,7 +232,7 @@ public class JobHelper {
   }
 
   /**
-   * Factory for {@link Step} that deletes WebLogic domain introspector job
+   * Factory for {@link Step} that deletes WebLogic domain introspector job.
    *
    * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
    * @param namespace Namespace
@@ -266,20 +281,25 @@ public class JobHelper {
     }
   }
 
-  private static Step createWatchDomainIntrospectorJobReadyStep(WatchTuning tuning, Step next) {
-    return new WatchDomainIntrospectorJobReadyStep(tuning, next);
+  private static Step createWatchDomainIntrospectorJobReadyStep(
+      WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
+    return new WatchDomainIntrospectorJobReadyStep(tuning, next, jws, isStopping);
   }
 
   /**
-   * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log
+   * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log.
    *
    * @param tuning Watch tuning parameters
    * @param next Next processing step
    * @return Step for reading WebLogic domain introspector pod log
    */
-  public static Step readDomainIntrospectorPodLogStep(WatchTuning tuning, Step next) {
+  static Step readDomainIntrospectorPodLogStep(
+      WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
     return createWatchDomainIntrospectorJobReadyStep(
-        tuning, readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)));
+        tuning,
+        readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)),
+        jws,
+        isStopping);
   }
 
   private static class ReadDomainIntrospectorPodLogStep extends Step {
@@ -352,7 +372,7 @@ public class JobHelper {
   }
 
   /**
-   * Factory for {@link Step} that reads WebLogic domain introspector pod
+   * Factory for {@link Step} that reads WebLogic domain introspector pod.
    *
    * @param next Next processing step
    * @return Step for reading WebLogic domain introspector pod

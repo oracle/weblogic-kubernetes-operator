@@ -16,7 +16,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.ErrorModel;
 
 /**
- * ErrorFilter reformats string entities from non-success responses into arrays of message entities
+ * ErrorFilter reformats string entities from non-success responses into arrays of message entities.
  */
 @Provider
 @Priority(FilterPriorities.ERROR_FILTER_PRIORITY)
@@ -28,7 +28,6 @@ public class ErrorFilter implements ContainerResponseFilter {
     // nothing to do
   }
 
-  /** {@inheritDoc} */
   @Override
   public void filter(ContainerRequestContext req, ContainerResponseContext res) throws IOException {
     LOGGER.entering();

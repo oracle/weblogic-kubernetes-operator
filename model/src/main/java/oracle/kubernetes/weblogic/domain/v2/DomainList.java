@@ -211,7 +211,7 @@ public class DomainList {
     if (other == this) {
       return true;
     }
-    if ((other instanceof DomainList) == false) {
+    if (!(other instanceof DomainList)) {
       return false;
     }
     DomainList rhs = ((DomainList) other);
