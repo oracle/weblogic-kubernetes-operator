@@ -332,7 +332,7 @@ public class BaseTest {
               + replicas);
     }
     // commenting the load balance check, bug 29325139
-    // domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     logger.info("Done - testClusterScaling");
   }
 
