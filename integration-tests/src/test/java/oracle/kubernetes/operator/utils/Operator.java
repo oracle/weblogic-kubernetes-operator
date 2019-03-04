@@ -315,8 +315,8 @@ public class Operator {
     logger.info("Invoking " + sb.toString());
     ExecCommand.exec(sb.toString());
 
-    String content = new String(Files.readAllBytes(Paths.get(generatedInputYamlFile)));
-    logger.info("Content of weblogic-operator-values.yaml \n" + content);
+    /* String content = new String(Files.readAllBytes(Paths.get(generatedInputYamlFile)));
+    logger.info("Content of weblogic-operator-values.yaml \n" + content); */
   }
 
   private void runCommandInLoop(String command) throws Exception {
