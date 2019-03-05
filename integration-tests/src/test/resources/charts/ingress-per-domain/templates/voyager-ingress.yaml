@@ -9,7 +9,7 @@ metadata:
   name: {{ .Values.wlsDomain.domainUID }}-voyager
   namespace: {{ .Release.Namespace }}
   labels:
-    weblogic.resourceVersion: domain-v3
+    weblogic.resourceVersion: domain-v2
   annotations:
     ingress.appscode.com/type: 'NodePort'
     ingress.appscode.com/stats: 'true'
@@ -31,7 +31,7 @@ metadata:
   name: {{ .Values.wlsDomain.domainUID }}-voyager-stats
   namespace: {{ .Release.Namespace }}
   labels:
-    weblogic.resourceVersion: domain-v3
+    weblogic.resourceVersion: domain-v2
 spec:
   type: NodePort
   ports:
