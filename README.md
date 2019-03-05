@@ -157,7 +157,7 @@ $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-o
 
 Verify repository was added correctly:
 
-````
+```
 $ helm repo list
 NAME           URL
 weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
