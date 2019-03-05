@@ -24,6 +24,7 @@ import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Status;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -245,6 +246,20 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         allOf(
             hasEnvVar("item1", "find uid1 at /u01/oracle/user_projects/domains"),
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentItemsWithVariable_createPodShouldNotChangeItsValue()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    final String ITEM_RAW_VALUE = "find uid1 at $(DOMAIN_HOME)";
+    configureAdminServer().withEnvironmentVariable("item1", ITEM_RAW_VALUE);
+
+    getCreatedPod();
+
+    getConfiguredDomainSpec().getAdminServer().getEnv();
+    assertThat(
+        getConfiguredDomainSpec().getAdminServer().getEnv(),
+        allOf(hasEnvVar("item1", ITEM_RAW_VALUE)));
   }
 
   @Test
