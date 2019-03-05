@@ -133,6 +133,7 @@ public class FiberTestSupport {
    * @param step the first step to run
    */
   public Packet runSteps(Step step) {
+    fiber = engine.createFiber();
     fiber.start(step, packet, completionCallback);
 
     return packet;
@@ -144,6 +145,7 @@ public class FiberTestSupport {
    * @param step the first step to run
    */
   public Packet runStepsToCompletion(Step step) {
+    fiber = engine.createFiber();
     fiber.start(step, packet, completionCallback);
 
     // Wait for fiber to finish
@@ -161,6 +163,7 @@ public class FiberTestSupport {
    * @param nextStep the first step to run
    */
   public Packet runSteps(StepFactory factory, Step nextStep) {
+    fiber = engine.createFiber();
     fiber.start(factory.createStepList(nextStep), packet, completionCallback);
     return packet;
   }

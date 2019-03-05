@@ -19,13 +19,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
-import oracle.kubernetes.operator.helpers.CallBuilderFactory;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -184,13 +183,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
             completeCallbackRegistrations.put(metadata.getName(), complete);
 
             // Timing window -- job may have come ready before registration for callback
-            CallBuilderFactory factory =
-                ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
             fiber
                 .createChildFiber()
                 .start(
-                    factory
-                        .create()
+                    new CallBuilder()
                         .readJobAsync(
                             metadata.getName(),
                             metadata.getNamespace(),
