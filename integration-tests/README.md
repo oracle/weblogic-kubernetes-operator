@@ -223,7 +223,7 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 	```
  
  Method 2 
- - Make sure the weblogic image i.e. store/oracle/weblogic:12.2.1.3 already exists locally
+ - Make sure the weblogic image i.e. store/oracle/weblogic:12.2.1.3 already exists locally in a docker repository the k8s cluster can access
  - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
   	- If not, see [https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s].
 		
