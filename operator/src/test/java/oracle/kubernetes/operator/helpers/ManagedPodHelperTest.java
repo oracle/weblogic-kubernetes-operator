@@ -165,6 +165,16 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenPacketHasEnvironmentItemsWithVariable_createManagedPodShouldNotChangeItsValue() {
+    V1EnvVar ENVVAR = toEnvVar(ITEM1, RAW_VALUE_1);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(ENVVAR));
+
+    getCreatedPodSpecContainer();
+
+    assertThat(ENVVAR.getValue(), is(RAW_VALUE_1));
+  }
+
+  @Test
   public void whenPacketHasClusterConfig_managedPodHasClusterLabel() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
