@@ -387,7 +387,7 @@ public class Main {
   }
 
   private static Step readExistingDomains(String ns) {
-    LOGGER.info(MessageKeys.LISTING_DOMAINS);
+    LOGGER.fine(MessageKeys.LISTING_DOMAINS);
     return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
   }
 

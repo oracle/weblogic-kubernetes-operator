@@ -111,7 +111,7 @@ integration-test-java:
       mv epel-apache-maven.repo /etc/yum.repos.d/
       yum install -y apache-maven
       export M2_HOME="/usr/share/apache-maven"
-      export PATH=$M2_HOME/bin:$PATH
+      export PATH=$M2_HOME/bin:$PATH:$JAVA_HOME/bin
 
       # install opensll
       yum install -y openssl
@@ -169,6 +169,9 @@ integration-test-java:
 
       echo "Integration test suite running for test image: $IMAGE_NAME_OPERATOR:$IMAGE_TAG_OPERATOR"
       echo "WebLogic version is: $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
+
+      # Echo the image's WL version - we don't care if this fails...
+      $WERCKER_SOURCE_DIR/src/integration-tests/introspector/util_krun.sh -t 120 -i $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC -s $IMAGE_PULL_SECRET_WEBLOGIC -c 'source /u01/oracle/wlserver/server/bin/setWLSEnv.sh && java weblogic.version'
 
   - script:
     name: Install pre-reqs
