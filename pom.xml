@@ -72,7 +72,7 @@
           <notimestamp>true</notimestamp>
           <bottom>
             <![CDATA[<p>Copyright 2018, {currentYear}, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
-          <doctitle>Oracle WebLogic Server Kubernetes Operator v${project.version} API</doctitle>
+          <doctitle>Oracle WebLogic Server Kubernetes Operator API</doctitle>
         </configuration>
       </plugin>
       <plugin>
