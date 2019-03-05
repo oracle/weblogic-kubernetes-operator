@@ -57,7 +57,7 @@ public class Domain {
   private int loadBalancerWebPort = 30305;
   private String userProjectsDir = "";
   private String projectRoot = "";
-  private boolean ingressPerDomain = false;
+  private boolean ingressPerDomain = true;
 
   private String createDomainScript = "";
   private String inputTemplateFile = "";
@@ -234,6 +234,7 @@ public class Domain {
       }
     }
   }
+
   /**
    * verify nodeport by accessing admin REST endpoint
    *
@@ -278,6 +279,73 @@ public class Domain {
     } else {
       logger.info("exposeAdminNodePort is false, can not test adminNodePort");
     }
+  }
+
+  /**
+   * Verify that we have the channel set for the cluster
+   *
+   * @param protocol
+   * @param port
+   * @param path
+   * @throws Exception
+   */
+  public void verifyHasClusterServiceChannelPort(String protocol, int port, String path)
+      throws Exception {
+
+    /* Make sure the service exists in k8s */
+    if (!TestUtils.checkHasServiceChannelPort(
+        this.getDomainUid() + "-cluster-" + this.clusterName, domainNS, protocol, port)) {
+      throw new RuntimeException(
+          "FAILURE: Cannot find channel port in cluster, but expecting one: "
+              + port
+              + "/"
+              + protocol);
+    }
+
+    /*
+     * Construct a curl command that will be run via kubectl exec on the admin server
+     */
+    StringBuffer curlCmd =
+        new StringBuffer(
+            "kubectl exec " + this.getDomainUid() + "-" + this.adminServerName + " /usr/bin/curl ");
+
+    /*
+     * Make sure we can reach the port,
+     * first via each managed server URL
+     */
+    for (int i = 1; i <= TestUtils.getClusterReplicas(domainUid, clusterName, domainNS); i++) {
+      StringBuffer serverAppUrl = new StringBuffer("http://");
+      serverAppUrl
+          .append(this.getDomainUid() + "-" + managedServerNameBase + i)
+          .append(":")
+          .append(port)
+          .append("/");
+      serverAppUrl.append(path);
+
+      callWebAppAndWaitTillReady(
+          new StringBuffer(curlCmd.toString())
+              .append(serverAppUrl.toString())
+              .append(" -- --write-out %{http_code} -o /dev/null")
+              .toString());
+    }
+
+    /*
+     * Make sure we can reach the port,
+     * second via cluster URL which should round robin through each managed server.
+     * Use the callWebAppAndCheckForServerNameInResponse method with verifyLoadBalancing
+     * enabled to verify each managed server is responding.
+     */
+    StringBuffer clusterAppUrl = new StringBuffer("http://");
+    clusterAppUrl
+        .append(this.getDomainUid() + "-cluster-" + this.clusterName)
+        .append(":")
+        .append(port)
+        .append("/");
+    clusterAppUrl.append(path);
+
+    // execute curl and look for each managed server name in response
+    callWebAppAndCheckForServerNameInResponse(
+        new StringBuffer(curlCmd.toString()).append(clusterAppUrl.toString()).toString(), true);
   }
 
   /**
@@ -416,8 +484,8 @@ public class Domain {
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
       curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
 
-      logger.info("Curd cmd with response code " + curlCmdResCode);
-      logger.info("Curd cmd " + curlCmd);
+      logger.info("Curl cmd with response code " + curlCmdResCode);
+      logger.info("Curl cmd " + curlCmd);
 
       // call webapp iteratively till its deployed/ready
       callWebAppAndWaitTillReady(curlCmdResCode.toString());
@@ -925,14 +993,20 @@ public class Domain {
         .append("'");
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
-    }
-    String output = result.stdout().trim();
-    if (!output.contains("Deployment State : completed")) {
-      throw new RuntimeException("Failure: webapp deployment failed." + output);
-    }
+    String resultStr =
+        "Command= '"
+            + cmdKubectlSh
+            + "'"
+            + ", exitValue="
+            + result.exitValue()
+            + ", stdout='"
+            + result.stdout()
+            + "'"
+            + ", stderr='"
+            + result.stderr()
+            + "'";
+    if (result.exitValue() != 0 || !resultStr.contains("Deployment State : completed"))
+      throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
   }
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
@@ -1102,8 +1176,11 @@ public class Domain {
     domainMap.values().removeIf(Objects::isNull);
 
     // create config map and secret for custom sit config
-    if (domainMap.get("configOverrides") != null) {
+    if ((domainMap.get("configOverrides") != null)
+        && (domainMap.get("configOverridesFile") != null)) {
       // write hostname in config file for public address
+
+      String configOverridesFile = domainMap.get("configOverridesFile").toString();
 
       String cmd =
           "kubectl -n "
@@ -1114,7 +1191,7 @@ public class Domain {
               + domainMap.get("configOverrides")
               + " --from-file "
               + BaseTest.getProjectRoot()
-              + "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig";
+              + configOverridesFile;
       ExecResult result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
         throw new RuntimeException(

@@ -887,7 +887,13 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step strategy =
         Step.chain(
             domainIntrospectionSteps(
-                info, new DomainStatusStep(info, bringAdminServerUp(info, managedServerStrategy))));
+                info,
+                new DomainStatusStep(
+                    info,
+                    bringAdminServerUp(
+                        info,
+                        getPodAwaiterStepFactory(info.getNamespace()),
+                        managedServerStrategy))));
 
     strategy =
         DomainStatusUpdater.createProgressingStep(
@@ -899,6 +905,10 @@ public class DomainProcessorImpl implements DomainProcessor {
         new UpHeadStep(info),
         ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUID()),
         strategy);
+  }
+
+  private static PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
+    return Main.podWatchers.get(namespace);
   }
 
   static Step createDomainDownPlan(DomainPresenceInfo info) {
@@ -924,7 +934,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      PodWatcher pw = Main.podWatchers.get(info.getNamespace());
+      PodWatcher pw = (PodWatcher) Main.podWatchers.get(info.getNamespace());
       info.setDeleting(false);
       packet
           .getComponents()
@@ -969,7 +979,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     public NextAction apply(Packet packet) {
       info.setDeleting(true);
       unregisterStatusUpdater(ns, info.getDomainUID());
-      PodWatcher pw = Main.podWatchers.get(ns);
+      PodWatcher pw = (PodWatcher) Main.podWatchers.get(ns);
       packet
           .getComponents()
           .put(
@@ -991,8 +1001,9 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
-  private static Step bringAdminServerUp(DomainPresenceInfo info, Step next) {
-    return Step.chain(bringAdminServerUpSteps(info, next));
+  static Step bringAdminServerUp(
+      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
+    return Step.chain(bringAdminServerUpSteps(info, podAwaiterStepFactory, next));
   }
 
   private static Step[] domainIntrospectionSteps(DomainPresenceInfo info, Step next) {
@@ -1007,13 +1018,14 @@ public class DomainProcessorImpl implements DomainProcessor {
             next,
             jws,
             Main.isNamespaceStopping(dom.getMetadata().getNamespace())));
-    return resources.toArray(new Step[resources.size()]);
+    return resources.toArray(new Step[0]);
   }
 
-  private static Step[] bringAdminServerUpSteps(DomainPresenceInfo info, Step next) {
+  private static Step[] bringAdminServerUpSteps(
+      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
     List<Step> resources = new ArrayList<>();
-    resources.add(PodHelper.createAdminPodStep(null));
     resources.add(new BeforeAdminServiceStep(null));
+    resources.add(PodHelper.createAdminPodStep(null));
 
     Domain dom = info.getDomain();
     AdminServer adminServer = dom.getSpec().getAdminServer();
@@ -1024,8 +1036,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     resources.add(ServiceHelper.createForServerStep(null));
-    resources.add(new WatchPodReadyAdminStep(Main.podWatchers, next));
-    return resources.toArray(new Step[resources.size()]);
+    resources.add(new WatchPodReadyAdminStep(podAwaiterStepFactory, next));
+    return resources.toArray(new Step[0]);
   }
 
   private static Step bringManagedServersUp(Step next) {

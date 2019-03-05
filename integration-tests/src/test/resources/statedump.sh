@@ -16,6 +16,9 @@ function state_dump {
      local PROJECT_ROOT="$PROJECT_ROOT"
      local SCRIPTPATH="$PROJECT_ROOT/src/integration-tests/bash"
      local LEASE_ID="$LEASE_ID"
+     local ARCHIVE_DIR="$RESULT_ROOT/acceptance_test_pv_archive"
+     local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.jar"
+     local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
 
      if [ ! -d "$RESULT_DIR" ]; then
         echo State dump exiting early.  RESULT_DIR \"$RESULT_DIR\" does not exist or is not a directory.
@@ -39,7 +42,7 @@ function state_dump {
   kubectl get all,crd,cm,pv,pvc,ns,roles,rolebindings,clusterroles,clusterrolebindings,secrets --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetmany.out
   kubectl get domains --show-labels=true --all-namespaces=true > ${DUMP_DIR}/kgetdomains.out
 
-  # Get all pod logs and redirect/copy to files 
+  # Get all pod logs/describes and redirect/copy to files 
 
   set +x
   local namespaces="`kubectl get namespaces | egrep -v -e "(STATUS|kube)" | awk '{ print $1 }'`"
@@ -60,16 +63,71 @@ function state_dump {
     done
   done
 
+  mkdir -p $ARCHIVE_DIR || fail Could not archive, could not create target directory \'$ARCHIVE_DIR\'.
+  
+  # Get various k8s resource describes and redirect/copy to files 
+
+  set +x
+  local ktype
+  local kobj
+  local fname
+  for namespace in $namespaces; do
+    for ktype in pod job deploy rs service pvc ingress cm secret domain; do
+      for kobj in `kubectl get $ktype -n $namespace -o=jsonpath='{range .items[*]}{" "}{.metadata.name}{end}'`; do
+        fname="${DUMP_DIR}/kubectl.describe.$ktype.$kobj.ns-$namespace"
+        echo "Generating $fname"
+        kubectl describe $ktype $kobj -n $namespace > $fname
+      done
+    done
+  done
+
+  # treat pv differently as a pv is not namespaced:
+  for ktype in pv; do
+    for kobj in `kubectl get $ktype -o=jsonpath='{range .items[*]}{" "}{.metadata.name}{end}'`; do
+      fname="${DUMP_DIR}/kubectl.describe.$ktype.$kobj"
+      echo "Generating $fname"
+      kubectl describe $ktype $kobj > $fname
+    done
+  done
+  set -x
+  
   # use a job to archive PV, /scratch mounts to PV_ROOT in the K8S cluster
   echo "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_job.out
-  $SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" 2>&1 | tee ${outfile}
-  if [ "$?" = "0" ]; then
-     echo Job complete.
-  else
-     echo Job failed.  See ${outfile}.
-  fi
 
+  if [ "$WERCKER" = "true" ]; then
+	$SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" 2>&1 | tee ${outfile}
+	if [ "$?" = "0" ]; then
+     	echo Job complete.
+  	else
+    	echo Job failed.  See ${outfile}.
+  	fi
+  else
+  
+  	$SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
+  	if [ "$?" = "0" ]; then
+    	$SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
+	 	if [ "$?" = "0" ]; then
+   			base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE
+   			if [ "$?" = "0" ]; then
+   				echo Run complete. Archived to $ARCHIVE
+   			else 
+   				echo Run failed. 
+   			fi
+	 	else
+     		# command failed
+  			cat $RESULT_DIR/pvarchive.b64 | head -100
+	 	fi
+	 	# rm $RESULT_DIR/pvarchive.b64
+  	else
+    	 echo Job failed.  See ${outfile}.
+  	fi	
+  fi
+  
+  
+  
+
+  
   if [ ! "$LEASE_ID" = "" ]; then
     # release the lease if we own it
     ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" 2>&1 | tee ${RESULT_DIR}/release_lease.out
@@ -86,7 +144,7 @@ function state_dump {
   
   # now archive all the local test files
   $SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
-
+  
   echo Done with state dump
 }
 
