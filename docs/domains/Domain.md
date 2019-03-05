@@ -4,7 +4,7 @@ Domain represents a WebLogic domain and how it will be realized in the Kubernete
 
 | Name | Type | Description |
 | --- | --- | --- |
-| apiVersion | string | The API version for the Domain. Must be 'weblogic.oracle/v3'. |
+| apiVersion | string | The API version for the Domain. |
 | kind | string | The type of resource. Must be 'Domain'. |
 | metadata | [Object Meta](k8s1.9.0.md#object-meta) | The domain meta-data. Must include the name and namespace. |
 | spec | [Domain Spec](#domain-spec) | The specification of the domain. Required |
