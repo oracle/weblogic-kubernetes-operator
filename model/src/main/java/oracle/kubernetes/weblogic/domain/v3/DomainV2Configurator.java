@@ -35,7 +35,8 @@ public class DomainV2Configurator extends DomainConfigurator {
 
   private void setApiVersion(Domain domain) {
     domain.getMetadata().putLabelsItem(RESOURCE_VERSION_LABEL, DOMAIN_V2);
-    domain.setApiVersion(KubernetesConstants.API_VERSION_ORACLE_V2);
+    domain.setApiVersion(
+        KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION);
   }
 
   @Override
