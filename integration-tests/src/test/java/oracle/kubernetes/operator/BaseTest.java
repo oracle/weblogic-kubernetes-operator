@@ -315,6 +315,9 @@ public class BaseTest {
               + replicas);
     }
 
+    // print services (TODO- only if failed)
+    TestUtils.getServices(domainNS);
+
     // commenting the load balance check, bug 29325139
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
 
@@ -334,8 +337,12 @@ public class BaseTest {
               + "/"
               + replicas);
     }
+    // print services (TODO- only if failed)
+    TestUtils.getServices(domainNS);
+
     // commenting the load balance check, bug 29325139
-    // domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+
     logger.info("Done - testClusterScaling");
   }
 
