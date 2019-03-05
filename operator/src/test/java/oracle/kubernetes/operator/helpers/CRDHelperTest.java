@@ -208,8 +208,8 @@ public class CRDHelperTest {
     }
 
     private boolean hasExpectedVersion(V1beta1CustomResourceDefinition actualBody) {
-      return Objects.equals(expected.getSpec().getVersion(), actualBody.getSpec().getVersion()) &&
-          Objects.equals(expected.getSpec().getVersions(), actualBody.getSpec().getVersions());
+      return Objects.equals(expected.getSpec().getVersion(), actualBody.getSpec().getVersion())
+          && Objects.equals(expected.getSpec().getVersions(), actualBody.getSpec().getVersions());
     }
 
     private boolean hasSchemaVerification(V1beta1CustomResourceDefinition actualBody) {

@@ -17,10 +17,11 @@ import io.kubernetes.client.models.V1beta1CustomResourceSubresourceScale;
 import io.kubernetes.client.models.V1beta1CustomResourceSubresources;
 import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -117,12 +118,16 @@ public class CRDHelper {
     }
 
     static List<V1beta1CustomResourceDefinitionVersion> getCRDVersions() {
-      return Arrays.asList(
+      List<V1beta1CustomResourceDefinitionVersion> versions =
+          Arrays.stream(KubernetesConstants.DOMAIN_ALTERNATE_VERSIONS)
+              .map(e -> new V1beta1CustomResourceDefinitionVersion().name(e).served(true))
+              .collect(Collectors.toList());
+      versions.add(
           new V1beta1CustomResourceDefinitionVersion()
               .name(KubernetesConstants.DOMAIN_VERSION)
               .served(true)
-              .storage(true),
-          new V1beta1CustomResourceDefinitionVersion().name("v3").served(true));
+              .storage(true));
+      return versions;
     }
 
     static V1beta1CustomResourceDefinitionNames getCRDNames() {
@@ -261,11 +266,11 @@ public class CRDHelper {
     @Override
     public boolean isOutdatedCRD(
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected) {
-      // For later versions of the product, we will want to do a complete comparison
-      // of the version, supporting alpha and beta variants, e.g. v3alpha1 format, but
-      // for now we just need to replace v1.
-      return actual.getSpec().getVersion().equals("v1")
-          || (actual.getSpec().getVersion().equals("v3")
+      ResourceVersion expectedMax = maximum(getVersions(expected));
+      ResourceVersion actualMax = maximum(getVersions(actual));
+
+      return compareMaximums(expectedMax, actualMax) > 0
+          || (new ResourceVersion(KubernetesConstants.DOMAIN_VERSION).equals(actualMax)
               && (getSchemaValidation(actual) == null
                   || !getSchemaValidation(expected).equals(getSchemaValidation(actual))
                   || !getSchemaSubresources(expected).equals(getSchemaSubresources(actual))));
@@ -273,11 +278,38 @@ public class CRDHelper {
       // VersionHelper.matchesResourceVersion(existingCRD.getMetadata(), DEFAULT_OPERATOR_VERSION)
     }
 
-    // https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/#version-priority
-    static Comparator<String> compareVersions() {
-      return (left, right) -> {
+    private List<ResourceVersion> getVersions(V1beta1CustomResourceDefinition crd) {
+      List<ResourceVersion> versions = new ArrayList<>();
+      String v = crd.getSpec().getVersion();
+      if (v != null) {
+        versions.add(new ResourceVersion(v));
+      }
+      List<V1beta1CustomResourceDefinitionVersion> vs = crd.getSpec().getVersions();
+      if (vs != null) {
+        for (V1beta1CustomResourceDefinitionVersion vi : vs) {
+          versions.add(new ResourceVersion(vi.getName()));
+        }
+      }
 
-      };
+      return versions;
+    }
+
+    private ResourceVersion maximum(List<ResourceVersion> versions) {
+      if (versions.isEmpty()) {
+        return null;
+      }
+      return Collections.max(versions);
+    }
+
+    private int compareMaximums(ResourceVersion left, ResourceVersion right) {
+      if (left == null) {
+        return right == null ? 0 : -1;
+      }
+      if (right == null) {
+        return 1;
+      }
+
+      return left.compareTo(right);
     }
 
     private V1beta1JSONSchemaProps getSchemaValidation(V1beta1CustomResourceDefinition crd) {
