@@ -169,10 +169,21 @@ Certain properties like weblogicDomainStoragePath, image, externalOperatorCert a
 
 # How does it work
 
-When the tests are run manually with mvn command on hosted Linux, WebLogic image store/oracle/weblogic:12.2.1.3 is pulled from docker hub or uses local image if one exists. Server jre images are pulled from a local repository wlsldi-v2.docker.oraclecorp.com. Operator image is built with the git branch from where the mvn command is executed.
-All the tests that start with IT*.java in integration-tests/src/test/java are run. The test runs a series of tests and archives the results into jar files upon completion.
+When the tests are run with mvn command, 
+- cleanup the test tmp files, PV dir and k8s artifacts created for the test if any
+- creates the required secrets to pull the WL image from docker hub
+- Operator image is built with the git branch from where the mvn command is executed. 
+- creates Operator and verifies operator is running
+- creates Domain crd using samples
+- verifies the domain is started and servers are ready, services are created
+- executes the basic and advanced use cases 
+- shutdown the domain 
+- archive logs and results
+- cleanup the tmp files, PV dir and k8s artifacts created for the test
+	
+All the tests that start with IT*.java in integration-tests/src/test/java are run. 
 
-Integration test classes:
+**Integration test classes:**
 
 When the integration test class ITOperator is executed, staticPrepare() method is called once before any of the test methods in the class and staticUnPrepare() method once at the end.
 
@@ -182,7 +193,7 @@ staticUnPrepare() - releases the cluster lease on wercker env.
 
 test methods -  testDomainOnPVUsingWLST, testDomainOnPVUsingWDT, testTwoDomainsManagedByTwoOperators, testCreateDomainWithStartPolicyAdminOnly, testCreateDomainPVReclaimPolicyRecycle, testCreateDomainWithDefaultValuesInSampleInputs, testAutoAndCustomSitConfigOverrides, testOperatorRESTIdentityBackwardCompatibility, testOperatorRESTUsingCertificateChain
 
-Utility classes:
+**Utility classes:**
 
 Operator - constructor takes yaml file with operator properties and generates operator valus yaml with required properties and certs,  creates service account, namespace and calls helm install using the generated values yaml file. Also contains methods to delete operator release, verify operator created and ready, scale using rest api, verify a given domain via rest, verify external rest service, etc  <p>
 Domain - constructor takes Map with domain, LB, PV properties and creates domain crd, LB operator/ingress and PV artifacts using the sample scripts provided in the project. Also contains helper methods to destroy domain by deleting domain crd, verify domain created and servers are ready, deploy webapp, verify load balancing of http requests, etc <p>
