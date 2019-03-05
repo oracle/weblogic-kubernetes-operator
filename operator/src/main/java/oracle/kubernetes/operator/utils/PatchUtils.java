@@ -14,9 +14,7 @@ import javax.json.JsonValue;
 
 public class PatchUtils {
   public static List<JsonObject> toKubernetesPatch(JsonPatch jsonPatch) {
-    return jsonPatch
-        .toJsonArray()
-        .stream()
+    return jsonPatch.toJsonArray().stream()
         .map(PatchUtils::toJsonObject)
         .collect(Collectors.toList());
   }
