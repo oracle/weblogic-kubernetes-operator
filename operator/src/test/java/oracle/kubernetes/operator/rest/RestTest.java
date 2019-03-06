@@ -336,6 +336,11 @@ public class RestTest {
   }
 
   private static class TestRestConfigImpl implements RestConfig {
+    private final int randomPort;
+
+    public TestRestConfigImpl() {
+      randomPort = (int) (Math.random() * 8000) + 1000;
+    }
 
     @Override
     public String getHost() {
@@ -346,12 +351,12 @@ public class RestTest {
 
     @Override
     public int getExternalHttpsPort() {
-      return 8766;
+      return randomPort;
     }
 
     @Override
     public int getInternalHttpsPort() {
-      return 8767;
+      return randomPort + 1;
     }
 
     @Override
