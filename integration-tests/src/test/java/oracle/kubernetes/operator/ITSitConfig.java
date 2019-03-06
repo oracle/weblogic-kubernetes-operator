@@ -90,13 +90,13 @@ public class ITSitConfig extends BaseTest {
             operator1 = TestUtils.createOperator(OPERATOR1FILE);
         }
         TESTSRCDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/java/oracle/kubernetes/operator/";
-        TESTSCRIPTDIR = BaseTest.getProjectRoot() + " integration-tests/src/test/resources/";
+        TESTSCRIPTDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
         domain = createSitConfigDomain();
         Assert.assertNotNull(domain);
         ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
-        TestUtils.copyFileViaCat(TESTSRCDIR + "SitConfigTests.test", "SitConfigTests.java", ADMINPODNAME, domain.getDomainNS());
-        TestUtils.copyFileViaCat(TESTSCRIPTDIR + "sitconfig/scripts/runSitConfigTest.sh", "runSitConfigTest.sh", ADMINPODNAME, domain.getDomainNS());
-        fqdn = InetAddress.getLocalHost().getCanonicalHostName();
+        TestUtils.copyFileViaCat(TESTSRCDIR + "SitConfigTests.java.template", "SitConfigTests.java", ADMINPODNAME, domain.getDomainNS());
+        TestUtils.copyFileViaCat(TESTSCRIPTDIR + "sitconfig/scripts/runSitConfigTests.sh", "runSitConfigTests.sh", ADMINPODNAME, domain.getDomainNS());
+        fqdn = TestUtils.getHostName();
     }
 
     /**
@@ -149,8 +149,8 @@ public class ITSitConfig extends BaseTest {
         String testMethod = new Object() {
         }.getClass().getEnclosingMethod().getName();
         logTestBegin(testMethod);
-        //SitConfigTests tests = new SitConfigTests();
-        ExecResult result = TestUtils.kubectlexecNoCheck(ADMINPODNAME, domain.getDomainNS(), "runSitConfigTests.sh " + fqdn + " " + T3CHANNELPORT + " weblogic welcome1");
+        String stdout = callShellScriptByExecToPod("runSitConfigTests.sh", fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod, ADMINPODNAME, domain.getDomainNS());
+        Assert.assertFalse(stdout.toLowerCase().contains("error"));
         testCompletedSuccessfully = true;
         logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
     }
@@ -161,7 +161,8 @@ public class ITSitConfig extends BaseTest {
         String testMethod = new Object() {
         }.getClass().getEnclosingMethod().getName();
         logTestBegin(testMethod);
-        //SitConfigTests tests = new SitConfigTests();
+        String stdout = callShellScriptByExecToPod("runSitConfigTests.sh", fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod, ADMINPODNAME, domain.getDomainNS());
+        Assert.assertFalse(stdout.toLowerCase().contains("error"));
         testCompletedSuccessfully = true;
         logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
     }
@@ -172,7 +173,8 @@ public class ITSitConfig extends BaseTest {
         String testMethod = new Object() {
         }.getClass().getEnclosingMethod().getName();
         logTestBegin(testMethod);
-        //SitConfigTests tests = new SitConfigTests();
+        String stdout = callShellScriptByExecToPod("runSitConfigTests.sh", fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod, ADMINPODNAME, domain.getDomainNS());
+        Assert.assertFalse(stdout.toLowerCase().contains("error"));
         testCompletedSuccessfully = true;
         logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
     }
@@ -183,7 +185,8 @@ public class ITSitConfig extends BaseTest {
         String testMethod = new Object() {
         }.getClass().getEnclosingMethod().getName();
         logTestBegin(testMethod);
-        //SitConfigTests tests = new SitConfigTests();
+        String stdout = callShellScriptByExecToPod("runSitConfigTests.sh", fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod, ADMINPODNAME, domain.getDomainNS());
+        Assert.assertFalse(stdout.toLowerCase().contains("error"));
         testCompletedSuccessfully = true;
         logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
     }
@@ -193,9 +196,13 @@ public class ITSitConfig extends BaseTest {
         // load input yaml to map and add configOverrides
         Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPVWLSTFILE);
         domainMap.put("configOverrides", "sitconfigcm");
+        domainMap.put(
+                "configOverridesFile",
+                "/integration-tests/src/test/resources/sitconfig/configoverrides");
         domainMap.put("domainUID", DOMAINUID);
         domainMap.put("adminNodePort", new Integer(ADMINPORT));
         domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
+
         // use NFS for this domain on Jenkins, defaultis HOST_PATH
         if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
             domainMap.put("weblogicDomainStorageType", "NFS");
@@ -250,5 +257,28 @@ public class ITSitConfig extends BaseTest {
                     new File(overrideDstDir + file).toPath(),
                     StandardCopyOption.REPLACE_EXISTING);
         }
+    }
+
+    private static String callShellScriptByExecToPod(
+            String scriptPath, String arguments, String podName, String namespace) throws Exception {
+
+        StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+        cmdKubectlSh
+                .append(namespace)
+                .append(" exec -it ")
+                .append(podName)
+                .append(" -- bash -c 'sh ")
+                .append(scriptPath)
+                .append(" ")
+                .append(arguments)
+                .append("'");
+        logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+        ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+        if (result.exitValue() != 0) {
+            throw new RuntimeException(
+                    "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
+        }
+        logger.log(Level.INFO, result.stdout().trim());
+        return result.stdout().trim();
     }
 }
