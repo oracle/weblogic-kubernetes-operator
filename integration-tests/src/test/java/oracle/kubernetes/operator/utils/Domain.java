@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -741,9 +740,11 @@ public class Domain {
   public String getDomainUid() {
     return domainUid;
   }
+
   public String getAdminServerName() {
     return adminServerName;
   }
+
   public String getDomainNS() {
     return domainNS;
   }
@@ -1227,7 +1228,8 @@ public class Domain {
               + domainUid
               + "-"
               + "test-secrets"
-              + " --from-literal=hostname="+ TestUtils.getHostName()
+              + " --from-literal=hostname="
+              + TestUtils.getHostName()
               + " --from-literal=dbusername=scott"
               + " --from-literal=dbpassword=tiger";
       result = ExecCommand.exec(cmd);
@@ -1235,7 +1237,6 @@ public class Domain {
         throw new RuntimeException(
             "FAILURE: command " + cmd + " failed, returned " + result.stderr());
       }
-              
     }
   }
 
