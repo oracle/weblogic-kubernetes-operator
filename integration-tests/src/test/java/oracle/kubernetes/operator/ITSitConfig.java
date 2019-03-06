@@ -89,12 +89,11 @@ public class ITSitConfig extends BaseTest {
         if (operator1 == null) {
             operator1 = TestUtils.createOperator(OPERATOR1FILE);
         }
-        TESTSRCDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/java/oracle/kubernetes/operator/";
         TESTSCRIPTDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
         domain = createSitConfigDomain();
         Assert.assertNotNull(domain);
         ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
-        TestUtils.copyFileViaCat(TESTSRCDIR + "SitConfigTests.java.template", "SitConfigTests.java", ADMINPODNAME, domain.getDomainNS());
+        TestUtils.copyFileViaCat(TESTSCRIPTDIR + "sitconfig/javatemplates/SitConfigTests.java.template", "SitConfigTests.java", ADMINPODNAME, domain.getDomainNS());
         TestUtils.copyFileViaCat(TESTSCRIPTDIR + "sitconfig/scripts/runSitConfigTests.sh", "runSitConfigTests.sh", ADMINPODNAME, domain.getDomainNS());
         fqdn = TestUtils.getHostName();
     }
