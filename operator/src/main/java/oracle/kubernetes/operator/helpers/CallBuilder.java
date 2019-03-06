@@ -271,12 +271,12 @@ public class CallBuilder {
   private SynchronousCallFactory<DomainList> LIST_DOMAIN_CALL =
       (client, requestParams) ->
           new WeblogicApi(client)
-              .listWebLogicOracleV2NamespacedDomain(
+              .listNamespacedDomain(
                   requestParams.namespace,
+                  includeUninitialized,
                   pretty,
                   "",
                   fieldSelector,
-                  includeUninitialized,
                   labelSelector,
                   limit,
                   resourceVersion,
@@ -299,12 +299,12 @@ public class CallBuilder {
       ApiClient client, String namespace, String cont, ApiCallback<DomainList> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .listWebLogicOracleV2NamespacedDomainAsync(
+        .listNamespacedDomainAsync(
             namespace,
+            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -333,8 +333,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .readWebLogicOracleV2NamespacedDomainAsync(
-            name, namespace, pretty, exact, export, callback);
+        .readNamespacedDomainAsync(name, namespace, pretty, exact, export, callback);
   }
 
   private final CallFactory<Domain> READ_DOMAIN =
@@ -357,8 +356,12 @@ public class CallBuilder {
   private SynchronousCallFactory<Domain> REPLACE_DOMAIN_CALL =
       (client, requestParams) ->
           new WeblogicApi(client)
-              .replaceWebLogicOracleV2NamespacedDomain(
-                  requestParams.name, requestParams.namespace, (Domain) requestParams.body, pretty);
+              .replaceNamespacedDomain(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Domain) requestParams.body,
+                  pretty,
+                  null);
 
   /**
    * Replace domain.
@@ -405,7 +408,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .replaceWebLogicOracleV2NamespacedDomainAsync(name, namespace, body, pretty, callback);
+        .replaceNamespacedDomainAsync(name, namespace, body, pretty, null, callback);
   }
 
   private final CallFactory<Domain> REPLACE_DOMAIN =
@@ -437,8 +440,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .replaceWebLogicOracleV2NamespacedDomainStatusAsync(
-            name, namespace, body, pretty, callback);
+        .replaceNamespacedDomainStatusAsync(name, namespace, body, pretty, null, callback);
   }
 
   private final CallFactory<Domain> REPLACE_DOMAIN_STATUS =

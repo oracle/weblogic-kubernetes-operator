@@ -276,12 +276,12 @@ public class WatchBuilder {
 
       try {
         return new WeblogicApi(client)
-            .listWebLogicOracleV2NamespacedDomainCall(
+            .listNamespacedDomainCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
