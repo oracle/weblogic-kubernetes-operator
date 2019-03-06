@@ -740,6 +740,12 @@ public class Domain {
   public String getDomainUid() {
     return domainUid;
   }
+  public String getAdminServerName() {
+    return adminServerName;
+  }
+  public String getDomainNS() {
+    return domainNS;
+  }
   /**
    * test liveness probe for managed server 1
    *
