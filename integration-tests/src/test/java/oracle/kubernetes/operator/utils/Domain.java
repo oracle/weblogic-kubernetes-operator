@@ -1325,7 +1325,7 @@ public class Domain {
                 + " "
                 + result.stdout());
       }
-
+    }
   }
 
   private void appendToDomainYamlAndCreate(Map domainMap) throws Exception {
