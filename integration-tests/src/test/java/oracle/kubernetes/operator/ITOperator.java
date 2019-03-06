@@ -4,9 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
@@ -427,8 +424,6 @@ public class ITOperator extends BaseTest {
     }
     Domain domain11 = null;
     boolean testCompletedSuccessfully = false;
-    String createDomainScriptDir =
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
     try {
       // load input yaml to map and add configOverrides
       Map<String, Object> domainMap = TestUtils.loadYaml(domainonpvwlstFile);
@@ -439,20 +434,13 @@ public class ITOperator extends BaseTest {
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put("adminNodePort", new Integer("30704"));
       domainMap.put("t3ChannelPort", new Integer("30051"));
+      domainMap.put(
+          "createDomainPyScript",
+          "integration-tests/src/test/resources/domain-home-on-pv/create-domain-auto-custom-sit-config.py");
       // use NFS for this domain on Jenkins, defaultis HOST_PATH
       if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
         domainMap.put("weblogicDomainStorageType", "NFS");
       }
-
-      // cp py
-      Files.copy(
-          new File(createDomainScriptDir + "/create-domain.py").toPath(),
-          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
-      Files.copy(
-          new File(createDomainScriptDir + "/create-domain-auto-custom-sit-config.py").toPath(),
-          new File(createDomainScriptDir + "/create-domain.py").toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
 
       domain11 = TestUtils.createDomain(domainMap);
       domain11.verifyDomainCreated();
@@ -461,10 +449,6 @@ public class ITOperator extends BaseTest {
       testCompletedSuccessfully = true;
 
     } finally {
-      Files.copy(
-          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
-          new File(createDomainScriptDir + "/create-domain.py").toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
       if (domain11 != null && (JENKINS || testCompletedSuccessfully)) {
         domain11.destroy();
       }
