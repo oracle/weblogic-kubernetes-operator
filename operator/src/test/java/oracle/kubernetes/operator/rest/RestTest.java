@@ -339,7 +339,7 @@ public class RestTest {
     private final int randomPort;
 
     public TestRestConfigImpl() {
-      randomPort = (int) (Math.random() * 8000) + 1000;
+      randomPort = (int) (Math.random() * 8000) + 9000;
     }
 
     @Override
