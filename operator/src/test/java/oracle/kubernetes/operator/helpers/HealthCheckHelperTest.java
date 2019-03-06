@@ -291,8 +291,7 @@ public class HealthCheckHelperTest {
     }
 
     private List<String> getApiGroups(List<String> resourceStrings) {
-      return resourceStrings
-          .stream()
+      return resourceStrings.stream()
           .map(AccessChecks::getApiGroup)
           .distinct()
           .collect(Collectors.toList());

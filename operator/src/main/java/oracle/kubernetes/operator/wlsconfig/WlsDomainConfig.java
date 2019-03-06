@@ -90,8 +90,7 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   public String getClusterName(String serverName) {
-    return getConfiguredClusters()
-        .stream()
+    return getConfiguredClusters().stream()
         .filter(c -> c.hasNamedServer(serverName))
         .findFirst()
         .map(WlsClusterConfig::getClusterName)
