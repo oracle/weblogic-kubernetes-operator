@@ -1341,7 +1341,7 @@ public class Domain {
             + "\n"
             + "  configOverrideSecrets: [ \""
             + domainUid
-            + "-t3publicaddress\" ]"
+            + "-test-secrets\" ]"
             + "\n";
 
     String domainYaml =
