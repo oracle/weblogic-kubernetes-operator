@@ -64,7 +64,7 @@ def createJMSSystemResource(sysResTarget):
     myc.setJNDIName('jms/ClusterConnectionFactory')
     myc.setDefaultTargetingEnabled(true)
   
-def createDataSource(dsName, dsJNDI, dsUrl, dsTarget):
+def createDataSource(dsName, dsJNDI, dsUrl, dsUser, dsPassword, dsTarget):
     cd('/')
     print 'create JDBCSystemResource'
     create(dsName, 'JDBCSystemResource')
@@ -86,7 +86,7 @@ def createDataSource(dsName, dsJNDI, dsUrl, dsTarget):
     cd('JDBCDriverParams/NO_NAME_0')
     set('DriverName', 'oracle.jdbc.OracleDriver')
     set('URL', dsUrl)
-    set('PasswordEncrypted', 'bar')
+    set('PasswordEncrypted', dsPassword)
     set('UseXADataSourceInterface', 'false')
 
     print 'create JDBCDriverParams Properties'
@@ -95,7 +95,7 @@ def createDataSource(dsName, dsJNDI, dsUrl, dsTarget):
     create('user', 'Property')
     cd('Property')
     cd('user')
-    set('Value', 'foo')
+    set('Value', dsUser)
 
     print 'create JDBCConnectionPoolParams'
     cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
@@ -227,7 +227,7 @@ else:
 
     print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);
 
-createDataSource('JdbcTestDataSource-0', 'jdbc/JdbcTestDataSource-0', 'jdbc:oracle:thin:@slcai724.us.oracle.com:1583:w03ys12c', admin_server_name)
+createDataSource('JdbcTestDataSource-0', 'jdbc/JdbcTestDataSource-0', 'jdbc:oracle:thin:@slcai724.us.oracle.com:1583:w03ys12c', 'j2ee', 'j2ee', admin_server_name)
 createJMSSystemResource(cluster_name)
 createWLDFSystemResource("WLDF-MODULE-0", admin_server_name)
 

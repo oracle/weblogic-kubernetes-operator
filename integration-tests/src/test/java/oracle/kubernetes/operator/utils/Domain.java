@@ -1219,20 +1219,6 @@ public class Domain {
             "FAILURE: command " + cmd + " failed, returned " + result.stderr());
       }
       // create secret for custom sit config t3 public address
-      cmd =
-          "kubectl -n "
-              + domainNS
-              + " create secret generic "
-              + domainUid
-              + "-"
-              + "t3publicaddress "
-              + " --from-literal=hostname="
-              + TestUtils.getHostName();
-      result = ExecCommand.exec(cmd);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-      }
       // create datasource secret for user and password
       cmd =
           "kubectl -n "
@@ -1242,8 +1228,8 @@ public class Domain {
               + "-"
               + "test-secrets "
               + " --from-literal=hostname="+ TestUtils.getHostName()
-              + " --from-literal=dbusername="+ Base64.getEncoder().encodeToString("j2ee".getBytes())
-              + " --from-literal=dbpassword="+ Base64.getEncoder().encodeToString("j2ee".getBytes());
+              + " --from-literal=dbusername="+ Base64.getEncoder().encodeToString("scott".getBytes())
+              + " --from-literal=dbpassword="+ Base64.getEncoder().encodeToString("tiger".getBytes());
       result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
