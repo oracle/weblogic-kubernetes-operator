@@ -1104,7 +1104,7 @@ public class Domain {
 
     // copy samples to RESULT_DIR
     TestUtils.exec(
-        "cp -r " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
+        "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
 
     domainMap.put("domainName", domainMap.get("domainUID"));
 
