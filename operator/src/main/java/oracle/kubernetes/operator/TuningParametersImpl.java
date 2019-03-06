@@ -152,7 +152,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     return result;
   }
 
-  public boolean checkFileExists(String path) {
+  private boolean checkFileExists(String path) {
     File f = new File(path);
     boolean result = false;
     if (f.exists() && f.isFile()) {
