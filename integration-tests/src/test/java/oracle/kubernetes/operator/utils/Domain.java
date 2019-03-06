@@ -1226,7 +1226,7 @@ public class Domain {
               + " create secret generic "
               + domainUid
               + "-"
-              + "test-secrets "
+              + "test-secrets"
               + " --from-literal=hostname="+ TestUtils.getHostName()
               + " --from-literal=dbusername="+ Base64.getEncoder().encodeToString("scott".getBytes())
               + " --from-literal=dbpassword="+ Base64.getEncoder().encodeToString("tiger".getBytes());
