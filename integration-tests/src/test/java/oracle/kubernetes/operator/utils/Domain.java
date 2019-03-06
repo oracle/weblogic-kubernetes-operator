@@ -1068,10 +1068,14 @@ public class Domain {
       }
     }
     logger.info("ManagedServers " + managedServers);
+
     // error if any managedserver value is false
     if (verifyLoadBalancing) {
       for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
         if (!entry.getValue().booleanValue()) {
+          // print service and pods info for debugging
+          TestUtils.describeService(domainNS, domainUid + "-cluster-" + clusterName);
+          TestUtils.getPods(domainNS);
           throw new RuntimeException(
               "FAILURE: Load balancer can not reach server " + entry.getKey());
         }
