@@ -16,4 +16,5 @@ exposeAdminNodePort: true
 namespace: default
 loadBalancer: TRAEFIK
 ingressPerDomain: true
+javaOptions: -Dweblogic.StdoutDebugEnabled=false -Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true
 
