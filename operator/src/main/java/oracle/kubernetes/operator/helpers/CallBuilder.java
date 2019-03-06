@@ -260,7 +260,7 @@ public class CallBuilder {
   public V1Namespace createNamespace(V1Namespace body) throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new CoreV1Api(client).createNamespace(body, pretty);
+      return new CoreV1Api(client).createNamespace(body, null, pretty, null);
     } finally {
       helper.recycle(client);
     }
@@ -271,12 +271,12 @@ public class CallBuilder {
   private SynchronousCallFactory<DomainList> LIST_DOMAIN_CALL =
       (client, requestParams) ->
           new WeblogicApi(client)
-              .listWebLogicOracleNamespacedDomain(
+              .listNamespacedDomain(
                   requestParams.namespace,
+                  includeUninitialized,
                   pretty,
                   "",
                   fieldSelector,
-                  includeUninitialized,
                   labelSelector,
                   limit,
                   resourceVersion,
@@ -299,12 +299,12 @@ public class CallBuilder {
       ApiClient client, String namespace, String cont, ApiCallback<DomainList> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .listWebLogicOracleNamespacedDomainAsync(
+        .listNamespacedDomainAsync(
             namespace,
+            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -333,7 +333,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .readWebLogicOracleNamespacedDomainAsync(name, namespace, pretty, exact, export, callback);
+        .readNamespacedDomainAsync(name, namespace, pretty, exact, export, callback);
   }
 
   private final CallFactory<Domain> READ_DOMAIN =
@@ -356,8 +356,12 @@ public class CallBuilder {
   private SynchronousCallFactory<Domain> REPLACE_DOMAIN_CALL =
       (client, requestParams) ->
           new WeblogicApi(client)
-              .replaceWebLogicOracleNamespacedDomain(
-                  requestParams.name, requestParams.namespace, (Domain) requestParams.body, pretty);
+              .replaceNamespacedDomain(
+                  requestParams.name,
+                  requestParams.namespace,
+                  (Domain) requestParams.body,
+                  pretty,
+                  null);
 
   /**
    * Replace domain.
@@ -404,7 +408,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .replaceWebLogicOracleNamespacedDomainAsync(name, namespace, body, pretty, callback);
+        .replaceNamespacedDomainAsync(name, namespace, body, pretty, null, callback);
   }
 
   private final CallFactory<Domain> REPLACE_DOMAIN =
@@ -436,7 +440,7 @@ public class CallBuilder {
       ApiClient client, String name, String namespace, Domain body, ApiCallback<Domain> callback)
       throws ApiException {
     return new WeblogicApi(client)
-        .replaceWebLogicOracleNamespacedDomainStatusAsync(name, namespace, body, pretty, callback);
+        .replaceNamespacedDomainStatusAsync(name, namespace, body, pretty, null, callback);
   }
 
   private final CallFactory<Domain> REPLACE_DOMAIN_STATUS =
@@ -498,7 +502,7 @@ public class CallBuilder {
       ApiCallback<V1beta1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1beta1Api(client)
-        .createCustomResourceDefinitionAsync(body, pretty, callback);
+        .createCustomResourceDefinitionAsync(body, null, pretty, null, callback);
   }
 
   private final CallFactory<V1beta1CustomResourceDefinition> CREATE_CRD =
@@ -528,7 +532,7 @@ public class CallBuilder {
       ApiCallback<V1beta1CustomResourceDefinition> callback)
       throws ApiException {
     return new ApiextensionsV1beta1Api(client)
-        .replaceCustomResourceDefinitionAsync(name, body, pretty, callback);
+        .replaceCustomResourceDefinitionAsync(name, body, pretty, null, callback);
   }
 
   private final CallFactory<V1beta1CustomResourceDefinition> REPLACE_CRD =
@@ -586,7 +590,8 @@ public class CallBuilder {
   private com.squareup.okhttp.Call createConfigMapAsync(
       ApiClient client, String namespace, V1ConfigMap body, ApiCallback<V1ConfigMap> callback)
       throws ApiException {
-    return new CoreV1Api(client).createNamespacedConfigMapAsync(namespace, body, pretty, callback);
+    return new CoreV1Api(client)
+        .createNamespacedConfigMapAsync(namespace, body, null, pretty, null, callback);
   }
 
   private final CallFactory<V1ConfigMap> CREATE_CONFIGMAP =
@@ -624,6 +629,7 @@ public class CallBuilder {
             namespace,
             body,
             pretty,
+            null,
             gracePeriodSeconds,
             orphanDependents,
             propagationPolicy,
@@ -668,7 +674,7 @@ public class CallBuilder {
       ApiCallback<V1ConfigMap> callback)
       throws ApiException {
     return new CoreV1Api(client)
-        .replaceNamespacedConfigMapAsync(name, namespace, body, pretty, callback);
+        .replaceNamespacedConfigMapAsync(name, namespace, body, pretty, null, callback);
   }
 
   private final CallFactory<V1ConfigMap> REPLACE_CONFIGMAP =
@@ -706,10 +712,10 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedPodAsync(
             namespace,
+            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -761,7 +767,8 @@ public class CallBuilder {
   private com.squareup.okhttp.Call createPodAsync(
       ApiClient client, String namespace, V1Pod body, ApiCallback<V1Pod> callback)
       throws ApiException {
-    return new CoreV1Api(client).createNamespacedPodAsync(namespace, body, pretty, callback);
+    return new CoreV1Api(client)
+        .createNamespacedPodAsync(namespace, body, null, pretty, null, callback);
   }
 
   private final CallFactory<V1Pod> CREATE_POD =
@@ -795,6 +802,7 @@ public class CallBuilder {
             namespace,
             deleteOptions,
             pretty,
+            null,
             gracePeriodSeconds,
             orphanDependents,
             propagationPolicy,
@@ -832,7 +840,8 @@ public class CallBuilder {
   private com.squareup.okhttp.Call patchPodAsync(
       ApiClient client, String name, String namespace, Object patch, ApiCallback<V1Pod> callback)
       throws ApiException {
-    return new CoreV1Api(client).patchNamespacedPodAsync(name, namespace, patch, pretty, callback);
+    return new CoreV1Api(client)
+        .patchNamespacedPodAsync(name, namespace, patch, pretty, null, callback);
   }
 
   private final CallFactory<V1Pod> PATCH_POD =
@@ -868,10 +877,10 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .deleteCollectionNamespacedPodAsync(
             namespace,
+            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -903,7 +912,8 @@ public class CallBuilder {
   private com.squareup.okhttp.Call createJobAsync(
       ApiClient client, String namespace, V1Job body, ApiCallback<V1Job> callback)
       throws ApiException {
-    return new BatchV1Api(client).createNamespacedJobAsync(namespace, body, pretty, callback);
+    return new BatchV1Api(client)
+        .createNamespacedJobAsync(namespace, body, null, pretty, null, callback);
   }
 
   private final CallFactory<V1Job> CREATE_JOB =
@@ -961,6 +971,7 @@ public class CallBuilder {
             namespace,
             body,
             pretty,
+            null,
             gracePeriodSeconds,
             orphanDependents,
             propagationPolicy,
@@ -1011,10 +1022,10 @@ public class CallBuilder {
       return new CoreV1Api(client)
           .listNamespacedService(
               namespace,
+              includeUninitialized,
               pretty,
               cont,
               fieldSelector,
-              includeUninitialized,
               labelSelector,
               limit,
               resourceVersion,
@@ -1031,10 +1042,10 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedServiceAsync(
             namespace,
+            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -1104,7 +1115,8 @@ public class CallBuilder {
   private com.squareup.okhttp.Call createServiceAsync(
       ApiClient client, String namespace, V1Service body, ApiCallback<V1Service> callback)
       throws ApiException {
-    return new CoreV1Api(client).createNamespacedServiceAsync(namespace, body, pretty, callback);
+    return new CoreV1Api(client)
+        .createNamespacedServiceAsync(namespace, body, null, pretty, null, callback);
   }
 
   private final CallFactory<V1Service> CREATE_SERVICE =
@@ -1146,6 +1158,7 @@ public class CallBuilder {
               namespace,
               deleteOptions,
               pretty,
+              null,
               gracePeriodSeconds,
               orphanDependents,
               propagationPolicy);
@@ -1167,6 +1180,7 @@ public class CallBuilder {
             namespace,
             deleteOptions,
             pretty,
+            null,
             gracePeriodSeconds,
             orphanDependents,
             propagationPolicy,
@@ -1211,10 +1225,10 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedEventAsync(
             namespace,
+            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -1246,10 +1260,10 @@ public class CallBuilder {
       throws ApiException {
     return new CoreV1Api(client)
         .listPersistentVolumeAsync(
+            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -1278,7 +1292,7 @@ public class CallBuilder {
   private SynchronousCallFactory<V1PersistentVolume> CREATE_PV_CALL =
       (client, requestParams) ->
           new CoreV1Api(client)
-              .createPersistentVolume((V1PersistentVolume) requestParams.body, pretty);
+              .createPersistentVolume((V1PersistentVolume) requestParams.body, null, pretty, null);
 
   public V1PersistentVolume createPersistentVolume(V1PersistentVolume volume) throws ApiException {
     RequestParams requestParams = new RequestParams("createPV", null, null, volume);
@@ -1290,7 +1304,7 @@ public class CallBuilder {
           wrap(
               new CoreV1Api(client)
                   .createPersistentVolumeAsync(
-                      (V1PersistentVolume) requestParams.body, pretty, callback)));
+                      (V1PersistentVolume) requestParams.body, null, pretty, null, callback)));
 
   /**
    * Asynchronous step for creating persistent volumes.
@@ -1314,6 +1328,7 @@ public class CallBuilder {
                   requestParams.name,
                   (V1DeleteOptions) requestParams.body,
                   pretty,
+                  null,
                   gracePeriodSeconds,
                   orphanDependents,
                   propagationPolicy);
@@ -1333,6 +1348,7 @@ public class CallBuilder {
                       requestParams.name,
                       (V1DeleteOptions) requestParams.body,
                       pretty,
+                      null,
                       gracePeriodSeconds,
                       orphanDependents,
                       propagationPolicy,
@@ -1365,10 +1381,10 @@ public class CallBuilder {
     return new CoreV1Api(client)
         .listNamespacedPersistentVolumeClaimAsync(
             namespace,
+            includeUninitialized,
             pretty,
             cont,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -1400,7 +1416,11 @@ public class CallBuilder {
       (client, requestParams) ->
           new CoreV1Api(client)
               .createNamespacedPersistentVolumeClaim(
-                  requestParams.namespace, (V1PersistentVolumeClaim) requestParams.body, pretty);
+                  requestParams.namespace,
+                  (V1PersistentVolumeClaim) requestParams.body,
+                  null,
+                  pretty,
+                  null);
 
   public V1PersistentVolumeClaim createPersistentVolumeClaim(V1PersistentVolumeClaim claim)
       throws ApiException {
@@ -1419,7 +1439,9 @@ public class CallBuilder {
                   .createNamespacedPersistentVolumeClaimAsync(
                       requestParams.namespace,
                       (V1PersistentVolumeClaim) requestParams.body,
+                      null,
                       pretty,
+                      null,
                       callback));
 
   public Step createPersistentVolumeClaimAsync(
@@ -1438,6 +1460,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   pretty,
+                  null,
                   gracePeriodSeconds,
                   orphanDependents,
                   propagationPolicy);
@@ -1457,6 +1480,7 @@ public class CallBuilder {
                       requestParams.namespace,
                       (V1DeleteOptions) requestParams.body,
                       pretty,
+                      null,
                       gracePeriodSeconds,
                       orphanDependents,
                       propagationPolicy,
@@ -1514,7 +1538,7 @@ public class CallBuilder {
   public V1Secret createSecret(String namespace, V1Secret body) throws ApiException {
     ApiClient client = helper.take();
     try {
-      return new CoreV1Api(client).createNamespacedSecret(namespace, body, pretty);
+      return new CoreV1Api(client).createNamespacedSecret(namespace, body, null, pretty, null);
     } finally {
       helper.recycle(client);
     }
@@ -1539,6 +1563,7 @@ public class CallBuilder {
               namespace,
               deleteOptions,
               pretty,
+              null,
               gracePeriodSeconds,
               orphanDependents,
               propagationPolicy);
@@ -1565,7 +1590,8 @@ public class CallBuilder {
   private SynchronousCallFactory<V1SubjectAccessReview> CREATE_SUBJECTACCESSREVIEW_CALL =
       ((client, requestParams) ->
           new AuthorizationV1Api(client)
-              .createSubjectAccessReview((V1SubjectAccessReview) requestParams.body, pretty));
+              .createSubjectAccessReview(
+                  (V1SubjectAccessReview) requestParams.body, null, null, pretty));
 
   /**
    * Create subject access review.
@@ -1583,7 +1609,8 @@ public class CallBuilder {
   private com.squareup.okhttp.Call createSubjectAccessReviewAsync(
       ApiClient client, V1SubjectAccessReview body, ApiCallback<V1SubjectAccessReview> callback)
       throws ApiException {
-    return new AuthorizationV1Api(client).createSubjectAccessReviewAsync(body, pretty, callback);
+    return new AuthorizationV1Api(client)
+        .createSubjectAccessReviewAsync(body, null, null, pretty, callback);
   }
 
   private final CallFactory<V1SubjectAccessReview> CREATE_SUBJECTACCESSREVIEW =
@@ -1613,7 +1640,7 @@ public class CallBuilder {
       (client, requestParams) ->
           new AuthorizationV1Api(client)
               .createSelfSubjectAccessReview(
-                  (V1SelfSubjectAccessReview) requestParams.body, pretty);
+                  (V1SelfSubjectAccessReview) requestParams.body, null, null, pretty);
 
   /**
    * Create self subject access review.
@@ -1634,7 +1661,7 @@ public class CallBuilder {
       ApiCallback<V1SelfSubjectAccessReview> callback)
       throws ApiException {
     return new AuthorizationV1Api(client)
-        .createSelfSubjectAccessReviewAsync(body, pretty, callback);
+        .createSelfSubjectAccessReviewAsync(body, null, null, pretty, callback);
   }
 
   private final CallFactory<V1SelfSubjectAccessReview> CREATE_SELFSUBJECTACCESSREVIEW =
@@ -1663,7 +1690,8 @@ public class CallBuilder {
   private SynchronousCallFactory<V1SelfSubjectRulesReview> CREATE_SELFSUBJECTRULESREVIEW_CALL =
       (client, requestParams) ->
           new AuthorizationV1Api(client)
-              .createSelfSubjectRulesReview((V1SelfSubjectRulesReview) requestParams.body, pretty);
+              .createSelfSubjectRulesReview(
+                  (V1SelfSubjectRulesReview) requestParams.body, null, null, pretty);
 
   /**
    * Create self subject rules review.
@@ -1683,7 +1711,8 @@ public class CallBuilder {
       V1SelfSubjectRulesReview body,
       ApiCallback<V1SelfSubjectRulesReview> callback)
       throws ApiException {
-    return new AuthorizationV1Api(client).createSelfSubjectRulesReviewAsync(body, pretty, callback);
+    return new AuthorizationV1Api(client)
+        .createSelfSubjectRulesReviewAsync(body, null, null, pretty, callback);
   }
 
   private final CallFactory<V1SelfSubjectRulesReview> CREATE_SELFSUBJECTRULESREVIEW =
@@ -1712,7 +1741,7 @@ public class CallBuilder {
   private SynchronousCallFactory<V1TokenReview> CREATE_TOKEN_REVIEW_CALL =
       (client, requestParams) ->
           new AuthenticationV1Api(client)
-              .createTokenReview((V1TokenReview) requestParams.body, pretty);
+              .createTokenReview((V1TokenReview) requestParams.body, null, null, pretty);
 
   /**
    * Create token review.
