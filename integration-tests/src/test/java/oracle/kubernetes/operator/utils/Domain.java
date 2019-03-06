@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -1232,6 +1233,23 @@ public class Domain {
         throw new RuntimeException(
             "FAILURE: command " + cmd + " failed, returned " + result.stderr());
       }
+      // create datasource secret for user and password
+      cmd =
+          "kubectl -n "
+              + domainNS
+              + " create secret generic "
+              + domainUid
+              + "-"
+              + "test-secrets "
+              + " --from-literal=hostname="+ TestUtils.getHostName()
+              + " --from-literal=dbusername="+ Base64.getEncoder().encodeToString("j2ee".getBytes())
+              + " --from-literal=dbpassword="+ Base64.getEncoder().encodeToString("j2ee".getBytes());
+      result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+              
     }
   }
 

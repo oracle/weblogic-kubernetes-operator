@@ -11,7 +11,7 @@
         </d:server-debug>
         <d:network-access-point>
             <d:name>T3Channel</d:name>
-            <d:public-address f:combine-mode="replace">${secret:customsitdomain-t3publicaddress.hostname}</d:public-address>
+            <d:public-address f:combine-mode="replace">${secret:customsitdomain-test-secrets.hostname}</d:public-address>
         </d:network-access-point>
     </d:server>
 </d:domain>
