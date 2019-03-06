@@ -1228,8 +1228,8 @@ public class Domain {
               + "-"
               + "test-secrets"
               + " --from-literal=hostname="+ TestUtils.getHostName()
-              + " --from-literal=dbusername="+ Base64.getEncoder().encodeToString("scott".getBytes())
-              + " --from-literal=dbpassword="+ Base64.getEncoder().encodeToString("tiger".getBytes());
+              + " --from-literal=dbusername=scott"
+              + " --from-literal=dbpassword=tiger";
       result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
