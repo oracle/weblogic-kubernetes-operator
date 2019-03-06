@@ -11,4 +11,15 @@
         <jdbc:connection-harvest-max-count jdbcf:combine-mode="add">7</jdbc:connection-harvest-max-count>
         <jdbc:inactive-connection-timeout-seconds jdbcf:combine-mode="add">120</jdbc:inactive-connection-timeout-seconds>
     </jdbc:jdbc-connection-pool-params>
+    <jdbc:jdbc-driver-params>
+        <jdbc:url jdbcf:combine-mode="replace">jdbc:oracle:thin:@slcai724.us.oracle.com:1583:w03ys12c</jdbc:url>
+        <jdbc:driver-name>oracle.jdbc.OracleDriver</jdbc:driver-name>
+        <jdbc:properties>
+            <jdbc:property>
+                <jdbc:name>user</jdbc:name>
+                <jdbc:value jdbcf:combine-mode="replace">${secret:customsitdomain-test-secrets.dbusername}</jdbc:value>
+            </jdbc:property>
+        </jdbc:properties>
+        <jdbc:password-encrypted jdbcf:combine-mode="replace">${secret:customsitdomain-test-secrets.dbpassword:encrypt}</jdbc:password-encrypted>
+    </jdbc:jdbc-driver-params>
 </jdbc:jdbc-data-source>
