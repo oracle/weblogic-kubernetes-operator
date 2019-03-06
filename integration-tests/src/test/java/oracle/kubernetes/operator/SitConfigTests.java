@@ -37,6 +37,7 @@ import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.sql.DataSource;
+import weblogic.management.ManagementException;
 
 import weblogic.management.configuration.*;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
@@ -248,15 +249,20 @@ public class SitConfigTests {
 
         // Assert the connection pool properties
         JDBCConnectionPoolParamsBean jcpb = jdbcDataSourceBean.getJDBCConnectionPoolParams();
+        println("initialCapacity:" + jcpb.getInitialCapacity());
         assert initialCapacity == jcpb.getInitialCapacity() : "Didn't get the expected value " + initialCapacity + " for initialCapacity";
+        println("maxCapacity:" + jcpb.getMaxCapacity());
         assert maxCapacity == jcpb.getMaxCapacity() : "Didn't get the expected value " + maxCapacity + " for maxCapacity";
+        println("testConnectionsonReserve:" + jcpb.isTestConnectionsOnReserve());
         assert testConnectionsonReserve == jcpb.isTestConnectionsOnReserve() : "Didn't get the expected value " + testConnectionsonReserve + " for testConnectionsonReserve";
+        println("inactiveConnectionTimeoutSeconds:" + jcpb.getInactiveConnectionTimeoutSeconds());
         assert inactiveConnectionTimeoutSeconds == jcpb.getInactiveConnectionTimeoutSeconds() : "Didn't get the expected value " + inactiveConnectionTimeoutSeconds + " for inactiveConnectionTimeoutSeconds";
         //testMaxPoolSize(resourceName, jcpb.getMaxCapacity());
 
         // Assert the jdbc driver param properties
         JDBCDriverParamsBean jdbcDriverParams = jdbcDataSourceBean.getJDBCDriverParams();
-        //assert dsUrl.equals(jdbcDriverParams.getUrl()) : "Didn't get the expected url for datasource " + dsUrl;
+        println("Data Source URL:" + jdbcDriverParams.getUrl());
+        assert dsUrl.equals(jdbcDriverParams.getUrl()) : "Didn't get the expected url for datasource " + dsUrl;
 
         //println("jdbcDriverParams.getPasswordEncrypted()" + jdbcDriverParams.getPasswordEncrypted()[0]);
         // Assert datasource user property
@@ -304,7 +310,7 @@ public class SitConfigTests {
 
     }
 
-    public void testSystemResourcesJDBCAttributeChangeSecret(String jdbcResourceName) {
+    public void testSystemResourcesJDBCAttributeChangeSecret(String jdbcResourceName) throws ManagementException {
         String dsUrl = "jdbc:oracle:thin:@//slc11smq.us.oracle.com:1583/w18ys12c.us.oracle.com";
         String dbInstanceName = "w18ys12c";
         String dbHostName = "slc11smq";
@@ -318,7 +324,9 @@ public class SitConfigTests {
         JDBCDriverParamsBean jdbcDriverParams = jdbcDataSourceBean.getJDBCDriverParams();
         assert dsUrl.equals(jdbcDriverParams.getUrl()) : "Didn't get the expected url for datasource " + dsUrl;
 
-        // Assert datasource is working with overiridden value
+        //Restart system resourtces which needs restart
+        restartResource("jdbc/" + jdbcResourceName);
+        // Assert datasource is working with overiridden value        
         DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
 
         try {
@@ -354,10 +362,37 @@ public class SitConfigTests {
             Context ctx = new InitialContext(h);
             System.out.println("Looking up datasource :" + dataSourceName);
             ds = (javax.sql.DataSource) ctx.lookup(dataSourceName);
-        } catch (NamingException ex) {
+        } catch (Exception ex) {
             Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
         }
         return ds;
+    }
+
+    protected void restartResource(String resourceName) throws ManagementException {
+        JDBCSystemResourceMBean[] jdbcSystemResources = domainServiceMBean.getDomainConfiguration().getJDBCSystemResources();
+
+        println("Checking if any of the jdbc system resource needs restart");
+        ServerRuntimeMBean[] serverRuntimes = domainServiceMBean.getServerRuntimes();
+        for (ServerRuntimeMBean serverRuntime : serverRuntimes) {
+            String[] pendingRestartSystemResources = serverRuntime.getPendingRestartSystemResources();
+            for (String pendingRestartSystemResource : pendingRestartSystemResources) {
+                println("Resources pending restart :" + pendingRestartSystemResource + " in server :" + serverRuntime.getName());
+                for (JDBCSystemResourceMBean jdbcSystemResource : jdbcSystemResources) {
+                    if (jdbcSystemResource.getName().equals(pendingRestartSystemResource)) {
+                        println("JDBC System Resource:" + jdbcSystemResource.getName());
+                    }
+                }
+            }
+        }
+
+        for (JDBCSystemResourceMBean jdbcSystemResource : jdbcSystemResources) {
+            if (jdbcSystemResource.getName().equals(resourceName)) {
+                println("Restarting jdbc resource " + resourceName);
+                domainServiceMBean.getDomainRuntime().restartSystemResource(jdbcSystemResource);
+                break;
+            }
+        }
+
     }
 
     public void testSystemResourcesJMSAttributeChange() {
