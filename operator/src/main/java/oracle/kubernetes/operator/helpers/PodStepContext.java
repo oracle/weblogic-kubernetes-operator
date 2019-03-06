@@ -582,14 +582,10 @@ public abstract class PodStepContext extends StepContextBase {
   // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
-    getPodLabels()
-        .entrySet()
-        .stream()
+    getPodLabels().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putLabelsItem(e.getKey(), e.getValue()));
-    getPodAnnotations()
-        .entrySet()
-        .stream()
+    getPodAnnotations().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
     return pod;
