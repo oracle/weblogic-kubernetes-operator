@@ -239,7 +239,9 @@ public class TestUtils {
     logger.info(" Find services in namespage " + namespace + " with command: '" + cmd + "'");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
-    String stdout = getServices(namespace);
+    String stdout = result.stdout();
+    logger.info(" Services found: ");
+    logger.info(stdout);
     String stdoutlines[] = stdout.split("\\r?\\n");
     if (result.exitValue() == 0 && stdoutlines.length > 0) {
       for (String stdoutline : stdoutlines) {
@@ -251,18 +253,52 @@ public class TestUtils {
     return false;
   }
 
-  public static String getServices(String namespace) throws Exception {
-    StringBuffer cmd = new StringBuffer("kubectl get services ");
+  /**
+   * kubectl describe service serviceName -n namespace
+   *
+   * @param namespace namespace where the service is located
+   * @param serviceName name of the service to be described
+   * @return String containing output of the kubectl describe service command
+   * @throws Exception
+   */
+  public static String describeService(String namespace, String serviceName) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl describe service ");
+    cmd.append(serviceName);
     cmd.append(" -n ").append(namespace);
-    logger.info(" Find services in namespage " + namespace + " with command: '" + cmd + "'");
+    logger.info(
+        " Describe service "
+            + serviceName
+            + " in namespage "
+            + namespace
+            + " with command: '"
+            + cmd
+            + "'");
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     String stdout = result.stdout();
-    logger.info(" Services found: ");
+    logger.info(" Service " + serviceName + " found: ");
     logger.info(stdout);
     return stdout;
   }
 
+  /**
+   * kubectl get pods -o wide -n namespace
+   *
+   * @param namespace namespace in which the pods are to be listed
+   * @return String containing output of the kubectl get pods command
+   * @throws Exception
+   */
+  public static String getPods(String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl get pods -o wide ");
+    cmd.append(" -n ").append(namespace);
+    logger.info(" Get pods in namespage " + namespace + " with command: '" + cmd + "'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String stdout = result.stdout();
+    logger.info(" Pods found: ");
+    logger.info(stdout);
+    return stdout;
+  }
   /**
    * First, kill the mgd server process in the container three times to cause the node manager to
    * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
