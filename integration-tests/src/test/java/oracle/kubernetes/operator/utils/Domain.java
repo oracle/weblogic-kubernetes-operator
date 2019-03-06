@@ -1325,15 +1325,7 @@ public class Domain {
                 + " "
                 + result.stdout());
       }
-      // copy script to cloned location
-      Files.copy(
-          new File(
-                  BaseTest.getProjectRoot()
-                      + "/integration-tests/src/test/resources/domain-home-on-image/create-wls-domain.py")
-              .toPath(),
-          new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py").toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
+
   }
 
   private void appendToDomainYamlAndCreate(Map domainMap) throws Exception {
