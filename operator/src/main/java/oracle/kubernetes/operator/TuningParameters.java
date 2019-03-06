@@ -261,6 +261,4 @@ public interface TuningParameters extends Map<String, String> {
   public PodTuning getPodTuning();
 
   public String getFileContents(String path);
-
-  public boolean checkFileExists(String path);
 }
