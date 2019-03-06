@@ -203,8 +203,7 @@ public class DomainStatusUpdater {
       }
 
       Map<String, ServerStatus> getServerStatuses() {
-        return getServerNames()
-            .stream()
+        return getServerNames().stream()
             .collect(Collectors.toMap(Function.identity(), this::createServerStatus));
       }
 
@@ -231,8 +230,7 @@ public class DomainStatusUpdater {
       }
 
       private Map<String, Long> getClusterCounts() {
-        return getServerNames()
-            .stream()
+        return getServerNames().stream()
             .map(this::getClusterNameFromPod)
             .filter(Objects::nonNull)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
