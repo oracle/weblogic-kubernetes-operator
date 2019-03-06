@@ -41,7 +41,8 @@ import org.junit.Test;
 
 @SuppressWarnings("SameParameterValue")
 public class AdminPodHelperTest extends PodHelperTestBase {
-  private static final String INTERNAL_OPERATOR_CERT_FILE_PARAM = "internalOperatorCert";
+  private static final String INTERNAL_OPERATOR_CERT_FILE_PARAM =
+      "/operator/internal-identity/internalOperatorCert";
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
   private static final String CERTFILE = "certfile";
 

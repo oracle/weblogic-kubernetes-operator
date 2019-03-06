@@ -33,7 +33,10 @@ public class PodHelper {
   private PodHelper() {}
 
   static class AdminPodStepContext extends PodStepContext {
-    private static final String INTERNAL_OPERATOR_CERT_FILE = "internalOperatorCert";
+    private static final String OPERATOR_DIR = "/operator/";
+    private static final String INTERNAL_REST_IDENTITY_DIR = OPERATOR_DIR + "internal-identity/";
+    private static final String INTERNAL_OPERATOR_CERTIFICATE =
+        INTERNAL_REST_IDENTITY_DIR + "internalOperatorCert";
     static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
 
     AdminPodStepContext(Step conflictStep, Packet packet) {
@@ -132,7 +135,7 @@ public class PodHelper {
     }
 
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
-      return tuningParameters.get(INTERNAL_OPERATOR_CERT_FILE);
+      return tuningParameters.getFileContents(INTERNAL_OPERATOR_CERTIFICATE);
     }
   }
 
