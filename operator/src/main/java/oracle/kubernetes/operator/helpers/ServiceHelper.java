@@ -50,7 +50,6 @@ import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
-@SuppressWarnings("deprecation")
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -64,6 +63,10 @@ public class ServiceHelper {
    */
   public static Step createForServerStep(Step next) {
     return new ForServerStep(next);
+  }
+
+  static V1Service createServerServiceModel(Packet packet) {
+    return new ForServerStepContext(null, packet).createModel();
   }
 
   private static class ForServerStep extends ServiceHelperStep {
@@ -591,6 +594,10 @@ public class ServiceHelper {
     return new ForClusterStep(next);
   }
 
+  static V1Service createClusterServiceModel(Packet packet) {
+    return new ClusterStepContext(null, packet).createModel();
+  }
+
   private static class ForClusterStep extends ServiceHelperStep {
     ForClusterStep(Step next) {
       super(next);
@@ -790,6 +797,10 @@ public class ServiceHelper {
    */
   public static Step createForExternalServiceStep(Step next) {
     return new ForExternalServiceStep(next);
+  }
+
+  static V1Service createExternalServiceModel(Packet packet) {
+    return new ForExternalServiceStepContext(null, packet).createModel();
   }
 
   private static class ForExternalServiceStep extends ServiceHelperStep {

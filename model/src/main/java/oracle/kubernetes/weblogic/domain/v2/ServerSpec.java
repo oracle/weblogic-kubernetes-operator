@@ -191,16 +191,6 @@ public abstract class ServerSpec {
   public abstract Map<String, String> getServiceAnnotations();
 
   @Nonnull
-  public Map<String, String> getListenAddressServiceLabels() {
-    return Collections.emptyMap();
-  }
-
-  @Nonnull
-  public Map<String, String> getListenAddressServiceAnnotations() {
-    return Collections.emptyMap();
-  }
-
-  @Nonnull
   public Map<String, String> getNodeSelectors() {
     return Collections.emptyMap();
   }

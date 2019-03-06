@@ -51,6 +51,20 @@ public class WlsDomainConfigSupport {
     wlsServers.put(serverName, createServerConfig(serverName, listenPort));
   }
 
+  /**
+   * Adds a WLS server to the configuration. Any non-clustered server must be added explicitly.
+   * Clustered servers may be added, or may be added simply as part of their cluster.
+   *
+   * @param serverName the name of the server.
+   * @param listenPort the listen port
+   * @param adminPort the admin port
+   */
+  public void addWlsServer(String serverName, Integer listenPort, Integer adminPort) {
+    wlsServers.put(
+        serverName,
+        new ServerConfigBuilder(serverName, listenPort).withAdminPort(adminPort).build());
+  }
+
   private static WlsServerConfig createServerConfig(String serverName, Integer listenPort) {
     return new ServerConfigBuilder(serverName, listenPort).build();
   }
@@ -134,14 +148,20 @@ public class WlsDomainConfigSupport {
   static class ServerConfigBuilder {
     private String name;
     private Integer listenPort;
+    private Integer adminPort;
 
     ServerConfigBuilder(String name, Integer listenPort) {
       this.name = name;
       this.listenPort = listenPort;
     }
 
+    ServerConfigBuilder withAdminPort(Integer adminPort) {
+      this.adminPort = adminPort;
+      return this;
+    }
+
     WlsServerConfig build() {
-      return new WlsServerConfig(name, listenPort, null, null, false, null, null, null, false);
+      return new WlsServerConfig(name, null, null, listenPort, null, adminPort, null);
     }
   }
 

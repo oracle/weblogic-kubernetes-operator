@@ -1,5 +1,10 @@
+// Copyright 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.helpers;
 
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static org.hamcrest.Matchers.contains;
@@ -148,6 +153,25 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
+  public void whenHttpErrorAssociatedWithResource_callResponseIsError() {
+    testSupport.failOnResource("pod1", "ns2", HTTP_BAD_REQUEST);
+
+    TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().deletePodAsync("pod1", "ns2", null, responseStep));
+
+    testSupport.verifyCompletionThrowable(ApiException.class);
+    assertThat(responseStep.callResponse.getStatusCode(), equalTo(HTTP_BAD_REQUEST));
+  }
+
+  @Test
+  public void whenHttpErrorNotAssociatedWithResource_ignoreIt() {
+    testSupport.failOnResource("pod1", "ns2", HTTP_BAD_REQUEST);
+
+    TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().deletePodAsync("pod2", "ns2", null, responseStep));
+  }
+
+  @Test
   public void listPodSelectsByLabel() {
     V1Pod pod1 = createLabeledPod("ns1", "pod1", ImmutableMap.of("k1", "v1", "k2", "v2"));
     V1Pod pod2 = createLabeledPod("ns1", "pod2", ImmutableMap.of("k1", "v2"));
@@ -214,6 +238,12 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep() {
       super(null);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<T> callResponse) {
+      this.callResponse = callResponse;
+      return super.onFailure(packet, callResponse);
     }
 
     @Override

@@ -75,11 +75,13 @@ public abstract class ServerSpecV2Impl extends ServerSpec {
   }
 
   @Override
+  @Nonnull
   public Map<String, String> getServiceLabels() {
     return server.getServiceLabels();
   }
 
   @Override
+  @Nonnull
   public Map<String, String> getServiceAnnotations() {
     return server.getServiceAnnotations();
   }

@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -53,6 +54,7 @@ import oracle.kubernetes.weblogic.domain.v2.DomainList;
 public class KubernetesTestSupport extends FiberTestSupport {
   private Map<String, DataRepository<?>> repositories = new HashMap<>();
   private Map<Class<?>, String> dataTypes = new HashMap<>();
+  private Failure failure;
 
   public static final String CONFIG_MAP = "ConfigMap";
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
@@ -135,6 +137,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
   @SuppressWarnings("unchecked")
   private <T> DataRepository<T> getDataRepository(T resource) {
     return (DataRepository<T>) repositories.get(dataTypes.get(resource.getClass()));
+  }
+
+  public void failOnResource(String name, String namespace, int httpStatus) {
+    failure = new Failure(name, namespace, httpStatus);
   }
 
   private static class StepFactoryMemento implements Memento {
@@ -405,10 +411,13 @@ public class KubernetesTestSupport extends FiberTestSupport {
     @Override
     public NextAction apply(Packet packet) {
       try {
+        if (failure != null && failure.matches(requestParams)) throw failure.getException();
         Object callResult = operation.execute(this, repositories.get(resourceType));
         CallResponse callResponse = createResponse(callResult);
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(callResponse));
       } catch (NotFoundException e) {
+        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
+      } catch (HttpErrorException e) {
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
       } catch (Exception e) {
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
@@ -425,10 +434,43 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return new CallResponse<>(null, new ApiException(e), HTTP_NOT_FOUND, emptyMap());
     }
 
+    private CallResponse createResponse(HttpErrorException e) {
+      return new CallResponse<>(null, new ApiException(e), e.status, emptyMap());
+    }
+
     private CallResponse createResponse(Throwable t) {
       return new CallResponse<>(null, new ApiException(t), HTTP_UNAVAILABLE, emptyMap());
     }
   }
 
+  static class Failure {
+    String name;
+    String namespace;
+    int httpStatus;
+
+    public Failure(String name, String namespace, int httpStatus) {
+      this.name = name;
+      this.namespace = namespace;
+      this.httpStatus = httpStatus;
+    }
+
+    public boolean matches(RequestParams requestParams) {
+      return Objects.equals(name, requestParams.name)
+          && Objects.equals(namespace, requestParams.namespace);
+    }
+
+    public HttpErrorException getException() {
+      return new HttpErrorException(httpStatus);
+    }
+  }
+
   static class NotFoundException extends RuntimeException {}
+
+  static class HttpErrorException extends RuntimeException {
+    private int status;
+
+    public HttpErrorException(int status) {
+      this.status = status;
+    }
+  }
 }
