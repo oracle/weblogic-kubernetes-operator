@@ -227,7 +227,7 @@ else:
 
     print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);
 
-createDataSource('JdbcTestDataSource-0', 'jdbc/JdbcTestDataSource-0', 'jdbc:oracle:thin:@slcai724.us.oracle.com:1583:w03ys12c', 'j2ee', 'j2ee', admin_server_name)
+createDataSource('JdbcTestDataSource-0', 'jdbc/JdbcTestDataSource-0', 'jdbc:oracle:thin:@//slcai724.us.oracle.com:1583/w03ys12c', 'j2ee', 'j2ee', admin_server_name)
 createJMSSystemResource(cluster_name)
 createWLDFSystemResource("WLDF-MODULE-0", admin_server_name)
 
