@@ -315,11 +315,6 @@ public class BaseTest {
               + replicas);
     }
 
-    // print service (TODO- only if failed)
-    TestUtils.describeService(domainNS, domainUid + "-cluster-" + clusterName);
-    TestUtils.getPods(domainNS);
-
-    // commenting the load balance check, bug 29325139
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
 
     replicas = 2;
@@ -338,10 +333,7 @@ public class BaseTest {
               + "/"
               + replicas);
     }
-    // print services (TODO- only if failed)
-    TestUtils.describeService(domainNS, domainUid + "-cluster-" + clusterName);
 
-    // commenting the load balance check, bug 29325139
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
 
     logger.info("Done - testClusterScaling");
