@@ -274,6 +274,7 @@ public class ITSitConfig extends BaseTest {
                 .append("'");
         logger.info("Command to call kubectl sh file " + cmdKubectlSh);
         ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+        logger.log(Level.INFO, result.stdout().trim());
         if (result.exitValue() != 0) {
             throw new RuntimeException(
                     "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
