@@ -315,8 +315,9 @@ public class BaseTest {
               + replicas);
     }
 
-    // print services (TODO- only if failed)
-    TestUtils.getServices(domainNS);
+    // print service (TODO- only if failed)
+    TestUtils.describeService(domainNS, domainUid + "-cluster-" + clusterName);
+    TestUtils.getPods(domainNS);
 
     // commenting the load balance check, bug 29325139
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
@@ -338,7 +339,7 @@ public class BaseTest {
               + replicas);
     }
     // print services (TODO- only if failed)
-    TestUtils.getServices(domainNS);
+    TestUtils.describeService(domainNS, domainUid + "-cluster-" + clusterName);
 
     // commenting the load balance check, bug 29325139
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
