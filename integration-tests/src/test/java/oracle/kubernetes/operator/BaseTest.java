@@ -315,6 +315,8 @@ public class BaseTest {
               + replicas);
     }
 
+    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+
     replicas = 2;
     podName = domainUid + "-" + managedServerNameBase + (replicas + 1);
     logger.info("Scale down to " + replicas + " managed servers");
@@ -331,8 +333,9 @@ public class BaseTest {
               + "/"
               + replicas);
     }
-    // commenting the load balance check, bug 29325139
-    // domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+
+    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+
     logger.info("Done - testClusterScaling");
   }
 
