@@ -282,7 +282,9 @@ public class SitConfigTests {
             ResultSet rs = stmt.executeQuery("SELECT * FROM v$instance");
             while (rs.next()) {
                 println("INSTANCE_NAME:" + rs.getString("INSTANCE_NAME"));
+                assert dbInstanceName.equals(rs.getString("INSTANCE_NAME"));
                 println("HOST_NAME:" + rs.getString("HOST_NAME"));
+                assert dbHostName.equals(rs.getString("HOST_NAME"));
             }
             /*
             ResultSetMetaData meta = rs.getMetaData();
