@@ -4,7 +4,10 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -133,5 +136,29 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     } finally {
       lock.readLock().unlock();
     }
+  }
+
+  // path - a file containing a base64 encoded string containing the operator's cert in pem format
+  public String getFileContents(String path) {
+    // in pem format
+    String result = null;
+    if (checkFileExists(path)) {
+      try {
+        result = new String(Files.readAllBytes(Paths.get(path)));
+      } catch (Throwable t) {
+      }
+    }
+    // do not include the certificate data in the log message
+    return result;
+  }
+
+  public boolean checkFileExists(String path) {
+    File f = new File(path);
+    boolean result = false;
+    if (f.exists() && f.isFile()) {
+      result = true;
+    }
+
+    return result;
   }
 }
