@@ -68,16 +68,14 @@ public class SitConfigTests {
     private final String adminPassword;
 
     public static void main(String args[]) throws Exception {
-        /*String adminHost = args[0];
+        String adminHost = args[0];
         String adminPort = args[1];
         String adminUser = args[2];
         String adminPassword = args[3];
-        String testName = args[4];*/
-        String adminHost = "slc11vjg.us.oracle.com";
-        String testName = "testCustomSitConfigOverridesForDomain";
+        String testName = args[4];
 
-        //SitConfigTests test = new SitConfigTests(adminHost, adminPort, adminUser, adminPassword);
-        SitConfigTests test = new SitConfigTests("slc11vjg", "30051", "weblogic", "welcome1");
+        SitConfigTests test = new SitConfigTests(adminHost, adminPort, adminUser, adminPassword);
+        //SitConfigTests test = new SitConfigTests("slc11vjg", "30051", "weblogic", "welcome1");
 
         ServerRuntimeMBean runtimeMBean = test.runtimeServiceMBean.getServerRuntime();
         println("Sitconfig State:" + runtimeMBean.isInSitConfigState());
