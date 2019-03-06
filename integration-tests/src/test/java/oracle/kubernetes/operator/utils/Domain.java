@@ -877,8 +877,9 @@ public class Domain {
 
   private void callCreateDomainScript(String outputDir) throws Exception {
 
-    // copy create domain py script
-    if (domainMap.containsKey("createDomainPyScript")) {
+    // copy create domain py script for domain on pv case
+    if (domainMap.containsKey("createDomainPyScript")
+        && !domainMap.containsKey("domainHomeImageBase")) {
       Files.copy(
           new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
               .toPath(),
@@ -890,9 +891,13 @@ public class Domain {
     }
 
     StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+
+    // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
-      // clone docker sample from github
+
+      // clone docker sample from github and copy create domain py script for domain in image case
       gitCloneDockerImagesSample(domainMap);
+
       createDomainScriptCmd
           .append(
               "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
@@ -1324,6 +1329,15 @@ public class Domain {
                 + result.stderr()
                 + " "
                 + result.stdout());
+      }
+
+      // copy create domain py script to cloned location
+      if (domainMap.containsKey("createDomainPyScript")) {
+        Files.copy(
+            new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                .toPath(),
+            new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py").toPath(),
+            StandardCopyOption.REPLACE_EXISTING);
       }
     }
   }
