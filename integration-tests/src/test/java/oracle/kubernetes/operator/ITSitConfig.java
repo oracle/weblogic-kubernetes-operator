@@ -138,14 +138,10 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * This test covers custom situational configuration use cases for config.xml and resources jdbc,
-   * jms and wldf. Create Operator and create domain with listen address not set for admin server
-   * and t3 channel/NAP and incorrect file for admin server log location. Introspector should
-   * override these with sit-config automatically. Also, with some junk value for t3 channel public
-   * address and using custom situational config override replace with valid public address using
-   * secret. Verify the domain is started successfully and web application can be deployed and
-   * accessed. Verify that the JMS client can actually use the overridden values. Use NFS storage on
-   * Jenkins
+   * This test covers custom situational configuration use cases for config.xml. It sets the 
+   * connect-timeout, max-message-size, restart-max, JMXCore and Serverlifecycle debug flags.
+   * Also sets the T3Channel public address using kubernetes secret and verifies all these 
+   * parameters are overridden for domain
    *
    * @throws Exception
    */
@@ -165,6 +161,16 @@ public class ITSitConfig extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
+    /**
+   * This test covers custom situational configuration use cases for JDBC resource.
+   * The resource override sets the following connection pool properties. 
+   * initialCapacity, maxCapacity, test-connections-on-reserve, connection-harvest-max-count,
+   * inactive-connection-timeout-seconds
+   * It also overrides the jdbc driver parameters like data source url, db user and password 
+   * using kubernetes secret.
+   * 
+   * @throws Exception
+   */
   @Test
   public void testCustomSitConfigOverridesForJdbc() throws Exception {
     boolean testCompletedSuccessfully = false;
@@ -181,6 +187,13 @@ public class ITSitConfig extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
+    /**
+   * This test covers custom situational configuration use cases for JMS resource
+   * The resource override file sets the following Delivery Failure Parameters.
+   * Redelivery limit and Expiration policy
+   *
+   * @throws Exception
+   */
   @Test
   public void testCustomSitConfigOverridesForJms() throws Exception {
     boolean testCompletedSuccessfully = false;
@@ -197,6 +210,12 @@ public class ITSitConfig extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
+    /**
+   * This test covers custom situational configuration use cases for diagnostics resource
+   * It adds a bunch of instrumentation monitors and harvesters in a diagnostics module.
+   *
+   * @throws Exception
+   */
   @Test
   public void testCustomSitConfigOverridesForWldf() throws Exception {
     boolean testCompletedSuccessfully = false;
