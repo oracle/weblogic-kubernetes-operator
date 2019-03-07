@@ -589,6 +589,63 @@ public class ITOperator extends BaseTest {
     return domain;
   }
 
+  /**
+   * Create Operator1 and domainOnPVUsingWLST with admin server and 1 managed server if they are not
+   * running. After verifying the domain is created properly. Change some properties on domain
+   * resources that would cause servers to be restarted and verify that server are indeed restarted.
+   * The properties tested here are: env: "-Dweblogic.StdoutDebugEnabled=false"-->
+   * "-Dweblogic.StdoutDebugEnabled=false"
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testServerRestartByDomainOnPVUsingWLST() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    logger.info("Checking if operator1 and domain are running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(operator1File);
+    }
+
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      // load input yaml to map and add configOverrides
+      Map<String, Object> domainMap = TestUtils.loadYaml(domainonpvwlstFile);
+      domainMap.put("domainUID", "domainlifecycle");
+      domainMap.put("adminNodePort", new Integer("30707"));
+      domainMap.put("t3ChannelPort", new Integer("30081"));
+      domainMap.put("initialManagedServerReplicas", new Integer("1"));
+
+      logger.info("Creating Domain domain& verifing the domain creation");
+      domain = TestUtils.createDomain(domainMap);
+      domain.verifyDomainCreated();
+      // TODO add some comments
+      domain.testDomainServerRestart(
+          "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
+      logger.info(
+          "About to testServerPodRestart for Domain: "
+              + domainMap.get("domainUID")
+              + " for the env property: StdoutDebugEnabled=true");
+
+    } finally {
+      String domainUidsToBeDeleted = "";
+
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+        domainUidsToBeDeleted = domain.getDomainUid();
+      }
+
+      /* if (!domainUidsToBeDeleted.equals("")) {
+        logger.info("About to delete domains: " + domainUidsToBeDeleted);
+        TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
+        TestUtils.verifyAfterDeletion(domain);
+      }*/
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
   private void testBasicUseCases(Domain domain) throws Exception {
     testAdminT3Channel(domain);
     testAdminServerExternalService(domain);
