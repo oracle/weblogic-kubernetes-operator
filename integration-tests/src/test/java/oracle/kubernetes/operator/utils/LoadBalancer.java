@@ -42,6 +42,22 @@ public class LoadBalancer {
         createTraefikIngressPerDomain();
       }
     }
+
+    if (lbMap.get("loadBalancer").equals("VOYAGER")) {
+      String cmdLb = "helm list voyager-operator | grep DEPLOYED";
+      logger.info("Executing cmd " + cmdLb);
+      ExecResult result = ExecCommand.exec(cmdLb);
+      if (result.exitValue() != 0) {
+        createVoyagerLoadBalancer();
+        logger.info("Sleeping for 30 seconds to ensure voyager to be ready");
+        Thread.sleep(30 * 1000);
+      }
+
+      if (((Boolean) lbMap.get("ingressPerDomain")).booleanValue()) {
+        logger.info("Is going to createVoyagerIngressPerDomain");
+        createVoyagerIngressPerDomain();
+      }
+    }
   }
 
   public void createTraefikLoadBalancer() throws Exception {
@@ -143,6 +159,90 @@ public class LoadBalancer {
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       reportHelmInstallFailure(cmd.toString(), result);
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
+  public void createVoyagerLoadBalancer() throws Exception {
+
+    String cmd1 = "helm repo add appscode https://charts.appscode.com/stable/";
+    logger.info("Executing Add Appscode Chart Repository cmd " + cmd1);
+
+    executeHelmCommand(cmd1);
+
+    String cmd2 = "helm repo update";
+    logger.info("Executing Appscode Chart Repository upgrade cmd " + cmd2);
+
+    executeHelmCommand(cmd2);
+
+    String cmd3 =
+        "helm install appscode/voyager --name voyager-operator --version 7.4.0 --namespace voyage "
+            + "--set cloudProvider=baremetal --set apiserver.enableValidatingWebhook=false";
+    logger.info("Executing Install voyager operator cmd " + cmd3);
+
+    executeHelmCommand(cmd3);
+  }
+
+  private void createVoyagerIngressPerDomain() throws Exception {
+    upgradeVoyagerNamespace();
+    logger.info("Sleeping for 20 seconds after upgradeVoyagerNamespace ");
+    Thread.sleep(20 * 1000);
+    createVoyagerIngress();
+    logger.info("Sleeping for 20 seconds after createVoyagerIngress ");
+    Thread.sleep(20 * 1000);
+  }
+
+  private void upgradeVoyagerNamespace() throws Exception {
+
+    StringBuffer cmd = new StringBuffer("helm upgrade ");
+    cmd.append("--reuse-values ")
+        .append("--set ")
+        .append("\"")
+        .append("kubernetes.namespaces={voyager,")
+        .append(lbMap.get("namespace"))
+        .append("}")
+        .append("\"")
+        .append(" --version 7.4.0")
+        .append(" --set cloudProvider=baremetal")
+        .append(" --set apiserver.enableValidatingWebhook=false")
+        .append(" voyager-operator")
+        .append(" appscode/voyager");
+
+    logger.info(" upgradeVoyagerNamespace() Running " + cmd.toString());
+    executeHelmCommand(cmd.toString());
+  }
+
+  private void createVoyagerIngress() throws Exception {
+
+    String chartDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/charts";
+
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(chartDir).append(" && helm install ingress-per-domain ");
+    cmd.append(" --name ")
+        .append(lbMap.get("name"))
+        .append(" --namespace ")
+        .append(lbMap.get("namespace"))
+        .append(" --set type=VOYAGER")
+        .append(" --set ")
+        .append("wlsDomain.domainUID=")
+        .append(lbMap.get("domainUID"))
+        .append(" --set ")
+        .append("wlsDomain.clusterName=")
+        .append(lbMap.get("clusterName"))
+        .append(" --set ")
+        .append("voyager.webPort=")
+        .append(lbMap.get("loadBalancerWebPort"));
+
+    logger.info("createVoyagerIngress() Running " + cmd.toString());
+    executeHelmCommand(cmd.toString());
+  }
+
+  private void executeHelmCommand(String cmd) throws Exception {
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      logger.info("executeHelmCommand failed with " + cmd);
+      reportHelmInstallFailure(cmd, result);
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
