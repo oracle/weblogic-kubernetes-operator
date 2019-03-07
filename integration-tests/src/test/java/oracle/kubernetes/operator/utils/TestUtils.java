@@ -254,6 +254,52 @@ public class TestUtils {
   }
 
   /**
+   * kubectl describe service serviceName -n namespace
+   *
+   * @param namespace namespace where the service is located
+   * @param serviceName name of the service to be described
+   * @return String containing output of the kubectl describe service command
+   * @throws Exception
+   */
+  public static String describeService(String namespace, String serviceName) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl describe service ");
+    cmd.append(serviceName);
+    cmd.append(" -n ").append(namespace);
+    logger.info(
+        " Describe service "
+            + serviceName
+            + " in namespage "
+            + namespace
+            + " with command: '"
+            + cmd
+            + "'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String stdout = result.stdout();
+    logger.info(" Service " + serviceName + " found: ");
+    logger.info(stdout);
+    return stdout;
+  }
+
+  /**
+   * kubectl get pods -o wide -n namespace
+   *
+   * @param namespace namespace in which the pods are to be listed
+   * @return String containing output of the kubectl get pods command
+   * @throws Exception
+   */
+  public static String getPods(String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl get pods -o wide ");
+    cmd.append(" -n ").append(namespace);
+    logger.info(" Get pods in namespage " + namespace + " with command: '" + cmd + "'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String stdout = result.stdout();
+    logger.info(" Pods found: ");
+    logger.info(stdout);
+    return stdout;
+  }
+  /**
    * First, kill the mgd server process in the container three times to cause the node manager to
    * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
    * initiates a pod restart.
