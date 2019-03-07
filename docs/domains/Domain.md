@@ -143,7 +143,9 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
+| annotations | Map | Annotations to associate with the external channel service |
 | channels | array of [Channel](#channel) | Specifies which of the admin server's WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server's node port service will not be created. |
+| labels | Map | Labels to associate with the external channel service |
 
 ### Probe Tuning
 

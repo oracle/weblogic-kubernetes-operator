@@ -51,6 +51,14 @@
           "items": {
             "$ref": "#/definitions/Channel"
           }
+        },
+        "annotations": {
+          "description": "Annotations to associate with the external channel service",
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "Labels to associate with the external channel service",
+          "$ref": "#/definitions/Map"
         }
       }
     },

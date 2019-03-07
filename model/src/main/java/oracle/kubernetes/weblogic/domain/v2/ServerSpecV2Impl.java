@@ -20,7 +20,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
-public abstract class ServerSpecV2Impl extends ServerSpec {
+public abstract class ServerSpecV2Impl extends ServerSpecBase {
   private final Server server;
   private final Cluster cluster;
   private Integer clusterLimit;

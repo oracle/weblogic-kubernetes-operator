@@ -58,6 +58,14 @@ spec:
       channels:
       - channelName: default
         nodePort: 7001
+      - channelName: extra
+        nodePort: 7011
+      labels:
+        red: maroon
+        blue: azure
+      annotations:
+        sunday: dimanche
+        monday: lundi
     serverPod:
       env:
       - name: var1

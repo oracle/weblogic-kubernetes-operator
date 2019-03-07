@@ -179,7 +179,7 @@ public class Domain {
     return this;
   }
 
-  public ServerSpec getAdminServerSpec() {
+  public AdminServerSpec getAdminServerSpec() {
     return getEffectiveConfigurationFactory().getAdminServerSpec();
   }
 
@@ -443,7 +443,7 @@ public class Domain {
   @SuppressWarnings({"rawtypes", "unchecked"})
   static List sortOrNull(List list, Comparator c) {
     if (list != null) {
-      Object[] a = list.toArray(new Object[list.size()]);
+      Object[] a = list.toArray(new Object[0]);
       Arrays.sort(a, c);
       return Arrays.asList(a);
     }

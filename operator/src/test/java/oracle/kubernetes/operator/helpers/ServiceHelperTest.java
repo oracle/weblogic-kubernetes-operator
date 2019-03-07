@@ -11,6 +11,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
+import static oracle.kubernetes.operator.helpers.ServiceHelperTest.NodePortMatcher.nodePort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.containsPort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.ServiceNameMatcher.serviceWithName;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
@@ -19,24 +20,31 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLA
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-import com.meterware.simplestub.Stub;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -50,8 +58,8 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
 import org.hamcrest.Description;
+import org.hamcrest.Matcher;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,7 +71,9 @@ import org.junit.runners.Parameterized.Parameters;
 public class ServiceHelperTest extends ServiceHelperTestBase {
 
   private static final String TEST_CLUSTER = "cluster-1";
-  private static final int TEST_NODE_PORT = 7002;
+  private static final int TEST_NODE_PORT = 30001;
+  private static final int TEST_NODE_SSL_PORT = 30002;
+  private static final int TEST_NODE_NAP_PORT = 30012;
   private static final int TEST_PORT = 7000;
   private static final int ADMIN_PORT = 8000;
   private static final String DOMAIN_NAME = "domain1";
@@ -78,7 +88,10 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     ADMIN_SERVICE_EXISTS,
     MANAGED_SERVICE_EXISTS,
     ADMIN_SERVICE_REPLACED,
-    MANAGED_SERVICE_REPLACED
+    MANAGED_SERVICE_REPLACED,
+    EXTERNAL_CHANNEL_SERVICE_CREATED,
+    EXTERNAL_CHANNEL_SERVICE_REPLACED,
+    EXTERNAL_CHANNEL_SERVICE_EXISTS
   };
   private static final String OLD_LABEL = "oldLabel";
   private static final String OLD_ANNOTATION = "annotation";
@@ -89,6 +102,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private static final AdminServerTestFacade ADMIN_SERVER_TEST_FACADE = new AdminServerTestFacade();
   private static final ExternalServiceTestFacade EXTERNAL_SERVICE_TEST_FACADE =
       new ExternalServiceTestFacade();
+  private static final String NAP_1 = "nap1";
+  private static final int NAP_PORT_1 = 7100;
 
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
@@ -99,7 +114,11 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   @Before
   public void setUp() throws Exception {
-    configureAdminServer().configureAdminService().withChannel("default", TEST_NODE_PORT);
+    configureAdminServer()
+        .configureAdminService()
+        .withChannel("default", TEST_NODE_PORT)
+        .withChannel("default-secure", TEST_NODE_SSL_PORT)
+        .withChannel(NAP_1, TEST_NODE_NAP_PORT);
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, MESSAGE_KEYS)
@@ -107,7 +126,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     mementos.add(testSupport.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
-    configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
+    configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT).addNetworkAccessPoint(NAP_1, NAP_PORT_1);
     configSupport.addWlsServer(TEST_SERVER, TEST_PORT, ADMIN_PORT);
     configSupport.addWlsCluster(TEST_CLUSTER, TEST_SERVER);
     configSupport.setAdminServerName(ADMIN_SERVER);
@@ -154,14 +173,43 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   public TestFacade testFacade;
 
   @Test
-  public void whenCreated_modelIncludesListenPorts() {
-    Assume.assumeFalse(testType.equals("external"));
+  public void whenCreated_modelHasServiceType() {
+    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
 
+    assertThat(getServiceType(model), equalTo(testFacade.getExpectedServiceType().toString()));
+  }
+
+  private String getServiceType(V1Service service) {
+    return service.getSpec().getType();
+  }
+
+  @Test
+  public void whenCreated_modelIncludesStandardListenPorts() {
     V1Service model = testFacade.createServiceModel(testSupport.getPacket());
 
     assertThat(model, containsPort("default", testFacade.getExpectedListenPort()));
     assertThat(model, containsPort("default-secure", testFacade.getExpectedSslListenPort()));
     assertThat(model, containsPort("default-admin", testFacade.getExpectedAdminPort()));
+  }
+
+  @Test
+  public void whenCreated_modelIncludesExpectedNodePorts() {
+    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+
+    assertThat(
+        getExternalPorts(model), containsInAnyOrder(toMatchers(testFacade.getExpectedNodePorts())));
+  }
+
+  private List<V1ServicePort> getExternalPorts(V1Service model) {
+    return model.getSpec().getPorts().stream()
+        .filter(p -> p.getNodePort() != null)
+        .collect(Collectors.toList());
+  }
+
+  private List<Matcher<? super V1ServicePort>> toMatchers(Map<String, Integer> nodePorts) {
+    return nodePorts.entrySet().stream()
+        .map(e -> nodePort(e.getKey(), e.getValue()))
+        .collect(Collectors.toList());
   }
 
   @Test
@@ -228,8 +276,6 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   private void verifyServiceReplaced(Runnable serviceMutator) {
-    Assume.assumeFalse(testType.equals("external"));
-
     recordInitialService();
     serviceMutator.run();
 
@@ -272,41 +318,54 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     return testSupport.getResources(KubernetesTestSupport.SERVICE);
   }
 
-  interface TestFacade {
-    String getServiceCreateLogMessage();
-
-    String getServiceExistsLogMessage();
-
-    String getServiceReplacedLogMessage();
-
-    String getServerName();
-
-    String getServiceName();
-
-    Step createSteps(Step next);
-
-    V1Service createServiceModel(Packet packet);
-
-    V1Service getRecordedService(DomainPresenceInfo info);
-
-    void recordService(DomainPresenceInfo info, V1Service service);
-
-    Integer getExpectedListenPort();
-
-    default Integer getExpectedSslListenPort() {
-      return null;
-    }
-
-    default Integer getExpectedAdminPort() {
-      return null;
-    }
-
-    default ServiceConfigurator configureService(DomainConfigurator configurator) {
-      return Stub.createNiceStub(ServiceConfigurator.class);
-    }
+  enum ServiceType {
+    ClusterIP,
+    NodePort
   }
 
-  static class ClusterServiceTestFacade implements TestFacade {
+  abstract static class TestFacade {
+    private Map<String, Integer> expectedNodePorts = new HashMap<>();
+
+    abstract String getServiceCreateLogMessage();
+
+    abstract String getServiceExistsLogMessage();
+
+    abstract String getServiceReplacedLogMessage();
+
+    abstract String getServerName();
+
+    abstract String getServiceName();
+
+    abstract Step createSteps(Step next);
+
+    abstract V1Service createServiceModel(Packet packet);
+
+    abstract V1Service getRecordedService(DomainPresenceInfo info);
+
+    abstract void recordService(DomainPresenceInfo info, V1Service service);
+
+    abstract Integer getExpectedListenPort();
+
+    ServiceType getExpectedServiceType() {
+      return ServiceType.ClusterIP;
+    }
+
+    Integer getExpectedSslListenPort() {
+      return null;
+    }
+
+    Integer getExpectedAdminPort() {
+      return null;
+    }
+
+    Map<String, Integer> getExpectedNodePorts() {
+      return expectedNodePorts;
+    }
+
+    abstract ServiceConfigurator configureService(DomainConfigurator configurator);
+  }
+
+  static class ClusterServiceTestFacade extends TestFacade {
     @Override
     public String getServiceCreateLogMessage() {
       return CLUSTER_SERVICE_CREATED;
@@ -344,12 +403,12 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     @Override
     public V1Service getRecordedService(DomainPresenceInfo info) {
-      return info.getClusters().get(TEST_CLUSTER);
+      return info.getClusterService(TEST_CLUSTER);
     }
 
     @Override
     public void recordService(DomainPresenceInfo info, V1Service service) {
-      info.getClusters().put(TEST_CLUSTER, service);
+      info.setClusterService(TEST_CLUSTER, service);
     }
 
     @Override
@@ -368,7 +427,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     }
   }
 
-  abstract static class ServerTestFacade implements TestFacade {
+  abstract static class ServerTestFacade extends TestFacade {
 
     @Override
     public String getServiceName() {
@@ -387,12 +446,12 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     @Override
     public V1Service getRecordedService(DomainPresenceInfo info) {
-      return info.getServers().get(getServerName()).getService().get();
+      return info.getServerService(getServerName());
     }
 
     @Override
     public void recordService(DomainPresenceInfo info, V1Service service) {
-      info.getServers().put(getServerName(), createSko(service));
+      info.setServerService(getServerName(), service);
     }
 
     @Override
@@ -460,20 +519,25 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     }
   }
 
-  static class ExternalServiceTestFacade implements TestFacade {
+  static class ExternalServiceTestFacade extends TestFacade {
+    ExternalServiceTestFacade() {
+      getExpectedNodePorts().put("default", TEST_NODE_PORT);
+      getExpectedNodePorts().put(NAP_1, TEST_NODE_NAP_PORT);
+    }
+
     @Override
     public String getServiceCreateLogMessage() {
-      return ADMIN_SERVICE_CREATED;
+      return EXTERNAL_CHANNEL_SERVICE_CREATED;
     }
 
     @Override
     public String getServiceExistsLogMessage() {
-      return ADMIN_SERVICE_EXISTS;
+      return EXTERNAL_CHANNEL_SERVICE_EXISTS;
     }
 
     @Override
     public String getServiceReplacedLogMessage() {
-      return ADMIN_SERVICE_REPLACED;
+      return EXTERNAL_CHANNEL_SERVICE_REPLACED;
     }
 
     @Override
@@ -483,7 +547,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     @Override
     public String getServiceName() {
-      return LegalNames.toExternalServiceName(UID, ADMIN_SERVER);
+      return LegalNames.toExternalServiceName(UID);
     }
 
     @Override
@@ -498,17 +562,27 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     @Override
     public V1Service getRecordedService(DomainPresenceInfo info) {
-      return info.getServers().get(ADMIN_SERVER).getService().get();
+      return info.getExternalService();
     }
 
     @Override
     public void recordService(DomainPresenceInfo info, V1Service service) {
-      info.getServers().put(ADMIN_SERVER, createSko(service));
+      info.setExternalService(service);
     }
 
     @Override
     public Integer getExpectedListenPort() {
-      return null;
+      return ADMIN_PORT;
+    }
+
+    @Override
+    public ServiceType getExpectedServiceType() {
+      return ServiceType.NodePort;
+    }
+
+    @Override
+    ServiceConfigurator configureService(DomainConfigurator configurator) {
+      return configurator.configureAdminServer().configureAdminService();
     }
   }
 
@@ -548,16 +622,14 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Service> {
     @Nonnull private final String expectedName;
     private final Integer expectedValue;
-    private final Integer expectedNodePort;
 
-    private PortMatcher(@Nonnull String expectedName, Integer expectedValue, Integer nodePort) {
+    private PortMatcher(@Nonnull String expectedName, Integer expectedValue) {
       this.expectedName = expectedName;
       this.expectedValue = expectedValue;
-      this.expectedNodePort = nodePort;
     }
 
     static PortMatcher containsPort(@Nonnull String expectedName, Integer expectedValue) {
-      return new PortMatcher(expectedName, expectedValue, null);
+      return new PortMatcher(expectedName, expectedValue);
     }
 
     @Override
@@ -577,8 +649,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     private boolean matchSelectedPort(V1ServicePort matchingPort) {
       return "TCP".equals(matchingPort.getProtocol())
-          && Objects.equals(expectedValue, matchingPort.getPort())
-          && Objects.equals(expectedNodePort, matchingPort.getNodePort());
+          && Objects.equals(expectedValue, matchingPort.getPort());
     }
 
     private V1ServicePort getPortWithName(V1Service item) {
@@ -599,9 +670,47 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
             .appendValue(expectedName)
             .appendText(", number ")
             .appendValue(expectedValue);
-        if (expectedNodePort != null)
-          description.appendText(" and node port ").appendValue(expectedNodePort);
       }
     }
   }
+
+  static class NodePortMatcher
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1ServicePort> {
+    private String name;
+    private int nodePort;
+
+    private NodePortMatcher(String name, int nodePort) {
+      this.name = name;
+      this.nodePort = nodePort;
+    }
+
+    static NodePortMatcher nodePort(String name, int nodePort) {
+      return new NodePortMatcher(name, nodePort);
+    }
+
+    @Override
+    protected boolean matchesSafely(V1ServicePort item, Description mismatchDescription) {
+      if (name.equals(item.getName()) && nodePort == item.getNodePort()) return true;
+
+      describe(mismatchDescription, item.getName(), item.getNodePort());
+      return false;
+    }
+
+    private static void describe(Description description, String name, Integer nodePort) {
+      description
+          .appendText("service port with name ")
+          .appendValue(name)
+          .appendText(" and node port ")
+          .appendValue(nodePort);
+    }
+
+    @Override
+    public void describeTo(Description description) {
+      describe(description, name, nodePort);
+    }
+  }
 }
+
+// todo: external with no admin server (avoid NPE)
+// todo: external with empty naps   (avoid NPE)
+// todo: external with no channels  (don't create service)

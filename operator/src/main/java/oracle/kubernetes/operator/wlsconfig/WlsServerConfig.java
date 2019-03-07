@@ -94,6 +94,11 @@ public class WlsServerConfig {
     networkAccessPoints.add(networkAccessPoint);
   }
 
+  public WlsServerConfig addNetworkAccessPoint(String name, int listenPort) {
+    addNetworkAccessPoint(new NetworkAccessPoint(name, "TCP", listenPort, null));
+    return this;
+  }
+
   public String getClusterName() {
     return this.clusterName;
   }

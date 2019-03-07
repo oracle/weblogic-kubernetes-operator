@@ -10,6 +10,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLA
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
@@ -22,6 +25,7 @@ import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1Status;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +46,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.AdminServer;
+import oracle.kubernetes.weblogic.domain.v2.AdminServerSpec;
 import oracle.kubernetes.weblogic.domain.v2.AdminService;
 import oracle.kubernetes.weblogic.domain.v2.Channel;
 import oracle.kubernetes.weblogic.domain.v2.ClusterSpec;
@@ -117,35 +121,17 @@ public class ServiceHelper {
     }
 
     protected List<V1ServicePort> createServicePorts() {
-      if (scan != null) {
-        List<V1ServicePort> ports = new ArrayList<>();
-        if (scan.getNetworkAccessPoints() != null) {
-          for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
-            V1ServicePort port =
-                new V1ServicePort()
-                    .name(LegalNames.toDNS1123LegalName(nap.getName()))
-                    .port(nap.getListenPort())
-                    .protocol("TCP");
-            ports.add(port);
-          }
-        }
-        if (scan.getListenPort() != null) {
-          ports.add(new V1ServicePort().name("default").port(scan.getListenPort()).protocol("TCP"));
-        }
-        if (scan.getSslListenPort() != null) {
-          ports.add(
-              new V1ServicePort()
-                  .name("default-secure")
-                  .port(scan.getSslListenPort())
-                  .protocol("TCP"));
-        }
-        if (scan.getAdminPort() != null) {
-          ports.add(
-              new V1ServicePort().name("default-admin").port(scan.getAdminPort()).protocol("TCP"));
-        }
-        return ports;
-      }
-      return null;
+      if (scan == null) return null;
+
+      addServicePorts(scan);
+      return ports;
+    }
+
+    @Override
+    void addServicePortIfNeeded(String portName, Integer port) {
+      if (port == null) return;
+
+      addPort(new V1ServicePort().name(portName).protocol("TCP").port(port));
     }
 
     @Override
@@ -268,6 +254,7 @@ public class ServiceHelper {
 
   private abstract static class ServiceStepContext {
     private final Step conflictStep;
+    protected List<V1ServicePort> ports;
     DomainPresenceInfo info;
     WlsDomainConfig domainTopology;
 
@@ -319,6 +306,28 @@ public class ServiceHelper {
           .putSelectorItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
           .ports(createServicePorts());
     }
+
+    void addServicePorts(WlsServerConfig serverConfig) {
+      getNetworkAccessPoints(serverConfig).forEach(this::addNapServicePort);
+      addServicePortIfNeeded("default", serverConfig.getListenPort());
+      addServicePortIfNeeded("default-secure", serverConfig.getSslListenPort());
+      addServicePortIfNeeded("default-admin", serverConfig.getAdminPort());
+    }
+
+    List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
+      return Optional.ofNullable(config.getNetworkAccessPoints()).orElse(Collections.emptyList());
+    }
+
+    void addPort(V1ServicePort port) {
+      if (ports == null) ports = new ArrayList<>();
+      ports.add(port);
+    }
+
+    void addNapServicePort(NetworkAccessPoint nap) {
+      addServicePortIfNeeded(LegalNames.toDNS1123LegalName(nap.getName()), nap.getListenPort());
+    }
+
+    abstract void addServicePortIfNeeded(String portName, Integer port);
 
     protected V1ObjectMeta createMetadata() {
       V1ObjectMeta metadata =
@@ -624,52 +633,26 @@ public class ServiceHelper {
           .putSelectorItem(LabelConstants.CLUSTERNAME_LABEL, clusterName);
     }
 
-    protected List<V1ServicePort> createServicePorts() {
-      WlsClusterConfig clusterConfig = config.getClusterConfig(clusterName);
-      List<WlsServerConfig> serverConfigs =
-          clusterConfig != null ? clusterConfig.getServerConfigs() : null;
-      if (serverConfigs != null) {
-        Map<String, V1ServicePort> ports = new HashMap<>();
-        for (WlsServerConfig server : serverConfigs) {
-          // for every server in the cluster, locate ports
-          if (server.getNetworkAccessPoints() != null) {
-            for (NetworkAccessPoint nap : server.getNetworkAccessPoints()) {
-              V1ServicePort port =
-                  new V1ServicePort()
-                      .name(LegalNames.toDNS1123LegalName(nap.getName()))
-                      .port(nap.getListenPort())
-                      .protocol("TCP");
-              ports.putIfAbsent(nap.getName(), port);
-            }
-          }
-          if (server.getListenPort() != null) {
-            ports.putIfAbsent(
-                "default",
-                new V1ServicePort().name("default").port(server.getListenPort()).protocol("TCP"));
-          }
-          if (server.getSslListenPort() != null) {
-            ports.putIfAbsent(
-                "defaultSecure",
-                new V1ServicePort()
-                    .name("default-secure")
-                    .port(server.getSslListenPort())
-                    .protocol("TCP"));
-          }
-          if (server.getAdminPort() != null) {
-            ports.putIfAbsent(
-                "defaultAdmin",
-                new V1ServicePort()
-                    .name("default-admin")
-                    .port(server.getAdminPort())
-                    .protocol("TCP"));
-          }
-        }
-        if (!ports.isEmpty()) {
-          return new ArrayList<>(ports.values());
-        }
-      }
+    Map<String, V1ServicePort> ports = new HashMap<>();
 
-      return null;
+    protected List<V1ServicePort> createServicePorts() {
+      for (WlsServerConfig server : getServerConfigs(config.getClusterConfig(clusterName)))
+        addServicePorts(server);
+
+      return ports.isEmpty() ? null : new ArrayList<>(ports.values());
+    }
+
+    private List<WlsServerConfig> getServerConfigs(WlsClusterConfig clusterConfig) {
+      return Optional.ofNullable(clusterConfig)
+          .flatMap(c -> Optional.ofNullable(c.getServerConfigs()))
+          .orElse(Collections.emptyList());
+    }
+
+    void addServicePortIfNeeded(String channelName, Integer port) {
+      if (port != null) {
+        ports.putIfAbsent(
+            channelName, new V1ServicePort().name(channelName).port(port).protocol("TCP"));
+      }
     }
 
     @Override
@@ -687,17 +670,17 @@ public class ServiceHelper {
 
     @Override
     protected V1Service getServiceFromRecord() {
-      return info.getClusters().get(clusterName);
+      return info.getClusterService(clusterName);
     }
 
     @Override
     protected void addServiceToRecord(@Nonnull V1Service service) {
-      info.getClusters().put(clusterName, service);
+      info.setClusterService(clusterName, service);
     }
 
     @Override
     protected void removeServiceFromRecord() {
-      info.getClusters().remove(clusterName);
+      info.removeClusterService(clusterName);
     }
 
     @Override
@@ -814,7 +797,7 @@ public class ServiceHelper {
     }
   }
 
-  private static class ForExternalServiceStepContext extends ServerServiceStepContext {
+  private static class ForExternalServiceStepContext extends ServiceStepContext {
 
     ForExternalServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
@@ -822,7 +805,7 @@ public class ServiceHelper {
 
     @Override
     protected String createServiceName() {
-      return LegalNames.toExternalServiceName(getDomainUID(), getServerName());
+      return LegalNames.toExternalServiceName(getDomainUID());
     }
 
     @Override
@@ -837,106 +820,76 @@ public class ServiceHelper {
 
     @Override
     protected V1Service getServiceFromRecord() {
-      return sko.getService().get();
+      return info.getExternalService();
     }
 
     @Override
     protected void addServiceToRecord(V1Service service) {
-      sko.getService().set(service);
+      info.setExternalService(service);
     }
 
     @Override
     protected void removeServiceFromRecord() {
-      sko.getService().set(null);
+      info.setExternalService(null);
     }
 
     @Override
     protected String getServiceCreatedMessageKey() {
-      return ADMIN_SERVICE_CREATED;
+      return EXTERNAL_CHANNEL_SERVICE_CREATED;
     }
 
     @Override
     protected String getServiceReplaceMessageKey() {
-      return ADMIN_SERVICE_REPLACED;
+      return EXTERNAL_CHANNEL_SERVICE_REPLACED;
+    }
+
+    @Override
+    Map<String, String> getServiceLabels() {
+      return getAdminService().map(AdminService::getLabels).orElse(Collections.emptyMap());
+    }
+
+    @Override
+    Map<String, String> getServiceAnnotations() {
+      return getAdminService().map(AdminService::getAnnotations).orElse(Collections.emptyMap());
+    }
+
+    @Override
+    protected void logServiceCreated(String messageKey) {
+      LOGGER.info(messageKey, getDomainUID());
+    }
+
+    @Override
+    protected void logServiceExists() {
+      LOGGER.fine(EXTERNAL_CHANNEL_SERVICE_EXISTS, getDomainUID());
     }
 
     protected List<V1ServicePort> createServicePorts() {
-      if (scan != null) {
-        List<V1ServicePort> ports = new ArrayList<>();
-        if (scan.getNetworkAccessPoints() != null) {
-          for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
-            Channel c = getChannel(nap.getName());
-            if (c != null) {
-              Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(nap.getListenPort());
-              V1ServicePort port =
-                  new V1ServicePort()
-                      .name(LegalNames.toDNS1123LegalName(nap.getName()))
-                      .port(nap.getListenPort())
-                      .nodePort(nodePort)
-                      .protocol("TCP");
-              ports.add(port);
-            }
-          }
-        }
-        if (scan.getListenPort() != null) {
-          Channel c = getChannel("default");
-          if (c != null) {
-            Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(scan.getListenPort());
-            ports.add(
-                new V1ServicePort()
-                    .name("default")
-                    .port(scan.getListenPort())
-                    .nodePort(nodePort)
-                    .protocol("TCP"));
-          }
-        }
-        if (scan.getSslListenPort() != null) {
-          Channel c = getChannel("default-secure");
-          if (c != null) {
-            Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(scan.getSslListenPort());
-            ports.add(
-                new V1ServicePort()
-                    .name("default-secure")
-                    .port(scan.getSslListenPort())
-                    .nodePort(nodePort)
-                    .protocol("TCP"));
-          }
-        }
-        if (scan.getAdminPort() != null) {
-          Channel c = getChannel("default-admin");
-          if (c != null) {
-            Integer nodePort = Optional.ofNullable(c.getNodePort()).orElse(scan.getAdminPort());
-            ports.add(
-                new V1ServicePort()
-                    .name("default-admin")
-                    .port(scan.getAdminPort())
-                    .nodePort(nodePort)
-                    .protocol("TCP"));
-          }
-        }
-        return ports;
-      }
-      return null;
+      WlsServerConfig scan = domainTopology.getServerConfig(domainTopology.getAdminServerName());
+      if (scan == null) return null;
+
+      addServicePorts(scan);
+      return ports;
+    }
+
+    void addServicePortIfNeeded(String channelName, Integer internalPort) {
+      Channel channel = getChannel(channelName);
+      if (channel == null || internalPort == null) return;
+
+      addPort(
+          new V1ServicePort()
+              .name(channel.getChannelName())
+              .protocol("TCP")
+              .port(internalPort)
+              .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
     }
 
     private Channel getChannel(String channelName) {
-      AdminService adminService = getAdminService();
-      if (adminService != null) {
-        List<Channel> channels = adminService.getChannels();
-        if (channels != null) {
-          for (Channel c : channels) {
-            if (channelName.equals(c.getChannelName())) {
-              return c;
-            }
-          }
-        }
-      }
-      return null;
+      return getAdminService().map(a -> a.getChannel(channelName)).orElse(null);
     }
 
-    private AdminService getAdminService() {
-      AdminServer adminServer = getDomain().getSpec().getAdminServer();
-      return adminServer != null ? adminServer.getAdminService() : null;
+    private Optional<AdminService> getAdminService() {
+      return Optional.ofNullable(getDomain().getAdminServerSpec())
+          .map(AdminServerSpec::getAdminService);
     }
   }
 }

@@ -639,7 +639,7 @@ public class Main {
             DomainPresenceInfo info =
                 dpis.computeIfAbsent(domainUID, k -> new DomainPresenceInfo(ns, domainUID));
             if (clusterName != null) {
-              info.getClusters().put(clusterName, service);
+              info.setClusterService(clusterName, service);
             } else if (serverName != null) {
               ServerKubernetesObjects sko =
                   info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());

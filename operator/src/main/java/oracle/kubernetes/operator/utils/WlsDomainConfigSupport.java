@@ -47,8 +47,10 @@ public class WlsDomainConfigSupport {
    * @param serverName the name of the server.
    * @param listenPort the listen port
    */
-  public void addWlsServer(String serverName, Integer listenPort) {
-    wlsServers.put(serverName, createServerConfig(serverName, listenPort));
+  public WlsServerConfig addWlsServer(String serverName, Integer listenPort) {
+    WlsServerConfig serverConfig = createServerConfig(serverName, listenPort);
+    wlsServers.put(serverName, serverConfig);
+    return serverConfig;
   }
 
   /**

@@ -6,17 +6,33 @@ package oracle.kubernetes.weblogic.domain.v2;
 
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants.START_NEVER;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1Capabilities;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1PodSecurityContext;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1SELinuxOptions;
+import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Sysctl;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.io.IOException;
 import java.util.Map;
-import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import org.hamcrest.Matcher;
@@ -101,16 +117,6 @@ public class DomainV2Test extends DomainTestBase {
   @Test
   public void whenAdminServerChannelsNotDefined_exportedNamesIsEmpty() {
     assertThat(domain.getAdminServerChannelNames(), empty());
-  }
-
-  @Test
-  public void whenAdminServerChannelsDefined_returnChannelNames() {
-    AdminServerConfigurator configurator = configureDomain(domain).configureAdminServer();
-    AdminService adminService = configurator.configureAdminService();
-    adminService.withChannel("channel1", 0);
-    adminService.withChannel("channel2", 1);
-
-    assertThat(domain.getAdminServerChannelNames(), containsInAnyOrder("channel1", "channel2"));
   }
 
   @Test
@@ -777,6 +783,21 @@ public class DomainV2Test extends DomainTestBase {
   private Matcher<Map<? extends String, ? extends Quantity>> hasResourceQuantity(
       String resource, String quantity) {
     return hasEntry(resource, Quantity.fromString(quantity));
+  }
+
+  @Test
+  public void whenDomainReadFromYaml_AdminServiceIsDefined() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    AdminService adminService = domain.getAdminServerSpec().getAdminService();
+
+    assertThat(
+        adminService.getChannels(),
+        containsInAnyOrder(channelWith("default", 7001), channelWith("extra", 7011)));
+    assertThat(
+        adminService.getLabels(), both(hasEntry("red", "maroon")).and(hasEntry("blue", "azure")));
+    assertThat(
+        adminService.getAnnotations(),
+        both(hasEntry("sunday", "dimanche")).and(hasEntry("monday", "lundi")));
   }
 
   @Test
