@@ -17,6 +17,7 @@ import java.util.Optional;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.OperatorConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -33,10 +34,6 @@ public class PodHelper {
   private PodHelper() {}
 
   static class AdminPodStepContext extends PodStepContext {
-    private static final String OPERATOR_DIR = "/operator/";
-    private static final String INTERNAL_REST_IDENTITY_DIR = OPERATOR_DIR + "internal-identity/";
-    private static final String INTERNAL_OPERATOR_CERTIFICATE =
-        INTERNAL_REST_IDENTITY_DIR + "internalOperatorCert";
     static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
 
     AdminPodStepContext(Step conflictStep, Packet packet) {
@@ -135,7 +132,7 @@ public class PodHelper {
     }
 
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
-      return tuningParameters.getFileContents(INTERNAL_OPERATOR_CERTIFICATE);
+      return tuningParameters.getFileContents(OperatorConstants.INTERNAL_CERTIFICATE);
     }
   }
 
