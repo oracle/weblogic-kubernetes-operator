@@ -54,12 +54,10 @@ public class ITOperator extends BaseTest {
   private static boolean QUICKTEST;
   private static boolean SMOKETEST;
   private static boolean JENKINS;
-  private static boolean INGRESSPERDOMAIN = true;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset
   // of tests, plus leave domain1 up and running when the test completes.
-  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
@@ -68,9 +66,6 @@ public class ITOperator extends BaseTest {
     if (SMOKETEST) QUICKTEST = true;
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
-    }
-    if (System.getenv("INGRESSPERDOMAIN") != null) {
-      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
   }
 
@@ -236,12 +231,7 @@ public class ITOperator extends BaseTest {
       wlstDomainMap.put("domainUID", "domain1onpvwlst");
       wlstDomainMap.put("adminNodePort", new Integer("30702"));
       wlstDomainMap.put("t3ChannelPort", new Integer("30031"));
-      if (!INGRESSPERDOMAIN) {
-        wlstDomainMap.put("ingressPerDomain", new Boolean("false"));
-        logger.info(
-            "domain1onpvwlst ingressPerDomain is set to: "
-                + ((Boolean) wlstDomainMap.get("ingressPerDomain")).booleanValue());
-      }
+      wlstDomainMap.put("voyagerWebPort", new Integer("30307"));
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1);
@@ -257,12 +247,7 @@ public class ITOperator extends BaseTest {
       wdtDomainMap.put("adminNodePort", new Integer("30703"));
       wdtDomainMap.put("t3ChannelPort", new Integer("30041"));
       // wdtDomainMap.put("clusterType", "Configured");
-      if (!INGRESSPERDOMAIN) {
-        wdtDomainMap.put("ingressPerDomain", new Boolean("false"));
-        logger.info(
-            "domain2onpvwdt ingressPerDomain is set to: "
-                + ((Boolean) wdtDomainMap.get("ingressPerDomain")).booleanValue());
-      }
+      wdtDomainMap.put("voyagerWebPort", new Integer("30308"));
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
@@ -323,7 +308,6 @@ public class ITOperator extends BaseTest {
     try {
       domain = TestUtils.createDomain(domainadminonlyFile);
       domain.verifyDomainCreated();
-
     } finally {
       if (domain != null) {
         // create domain on existing dir
@@ -437,6 +421,8 @@ public class ITOperator extends BaseTest {
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-domain-auto-custom-sit-config.py");
+      domainMap.put("voyagerWebPort", new Integer("30312"));
+
       // use NFS for this domain on Jenkins, defaultis HOST_PATH
       if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
         domainMap.put("weblogicDomainStorageType", "NFS");
