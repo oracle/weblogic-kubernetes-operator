@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.weblogic.domain.v2.api;
 
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
 
 import com.google.gson.reflect.TypeToken;
@@ -16,15 +18,13 @@ import io.kubernetes.client.Pair;
 import io.kubernetes.client.ProgressRequestBody;
 import io.kubernetes.client.ProgressResponseBody;
 import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1Scale;
 import io.kubernetes.client.models.V1Status;
-import io.kubernetes.client.models.V1WatchEvent;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.sound.midi.Patch;
 import oracle.kubernetes.weblogic.domain.v2.Domain;
 import oracle.kubernetes.weblogic.domain.v2.DomainList;
 
@@ -48,20 +48,27 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for createWebLogicOracleV2NamespacedDomain.
+   * Build call for createNamespacedDomain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param progressListener Progress listener
    * @param progressRequestListener Progress request listener
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call createWebLogicOracleV2NamespacedDomainCall(
+  public com.squareup.okhttp.Call createNamespacedDomainCall(
       String namespace,
       Domain body,
+      Boolean includeUninitialized,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -69,14 +76,21 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains"
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL)
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    if (includeUninitialized != null)
+      localVarQueryParams.addAll(
+          apiClient.parameterToPair("includeUninitialized", includeUninitialized));
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+    if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
     Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
@@ -97,12 +111,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -119,10 +137,13 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call createWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call createNamespacedDomainValidateBeforeCall(
       String namespace,
       Domain body,
+      Boolean includeUninitialized,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -130,69 +151,97 @@ public class WeblogicApi {
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling createWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'namespace' when calling createNamespacedDomain(Async)");
     }
 
     // verify the required parameter 'body' is set
     if (body == null) {
       throw new ApiException(
-          "Missing the required parameter 'body' when calling createWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'body' when calling createNamespacedDomain(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        createWebLogicOracleV2NamespacedDomainCall(
-            namespace, body, pretty, progressListener, progressRequestListener);
+        createNamespacedDomainCall(
+            namespace,
+            body,
+            includeUninitialized,
+            pretty,
+            dryRun,
+            progressListener,
+            progressRequestListener);
     return call;
   }
 
   /**
-   * create a Domain.
+   * create a Domain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return Domain
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public Domain createWebLogicOracleV2NamespacedDomain(String namespace, Domain body, String pretty)
+  public Domain createNamespacedDomain(
+      String namespace, Domain body, Boolean includeUninitialized, String pretty, String dryRun)
       throws ApiException {
     ApiResponse<Domain> resp =
-        createWebLogicOracleV2NamespacedDomainWithHttpInfo(namespace, body, pretty);
+        createNamespacedDomainWithHttpInfo(namespace, body, includeUninitialized, pretty, dryRun);
     return resp.getData();
   }
 
   /**
-   * create a Domain.
+   * create a Domain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return ApiResponse&lt;Domain&gt;
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<Domain> createWebLogicOracleV2NamespacedDomainWithHttpInfo(
-      String namespace, Domain body, String pretty) throws ApiException {
+  public ApiResponse<Domain> createNamespacedDomainWithHttpInfo(
+      String namespace, Domain body, Boolean includeUninitialized, String pretty, String dryRun)
+      throws ApiException {
     com.squareup.okhttp.Call call =
-        createWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-            namespace, body, pretty, null, null);
+        createNamespacedDomainValidateBeforeCall(
+            namespace, body, includeUninitialized, pretty, dryRun, null, null);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     return apiClient.execute(call, localVarReturnType);
   }
 
   /**
-   * (asynchronously) create a Domain.
+   * (asynchronously) create a Domain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param callback The callback to be executed when the API call finishes
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call createWebLogicOracleV2NamespacedDomainAsync(
-      String namespace, Domain body, String pretty, final ApiCallback<Domain> callback)
+  public com.squareup.okhttp.Call createNamespacedDomainAsync(
+      String namespace,
+      Domain body,
+      Boolean includeUninitialized,
+      String pretty,
+      String dryRun,
+      final ApiCallback<Domain> callback)
       throws ApiException {
 
     ProgressResponseBody.ProgressListener progressListener = null;
@@ -200,40 +249,60 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        createWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-            namespace, body, pretty, progressListener, progressRequestListener);
+        createNamespacedDomainValidateBeforeCall(
+            namespace,
+            body,
+            includeUninitialized,
+            pretty,
+            dryRun,
+            progressListener,
+            progressRequestListener);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     apiClient.executeAsync(call, localVarReturnType, callback);
     return call;
   }
 
   /**
-   * Build call for deleteWebLogicOracleV2CollectionNamespacedDomain.
+   * Build call for deleteCollectionNamespacedDomain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
    *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
+   *     configuration change on the server, the server will respond with a 410 ResourceExpired
+   *     error together with a continue token. If the client needs a consistent list, it must
+   *     restart their list without the continue field. Otherwise, the client may send another list
+   *     request with the token received with the 410 error, the server will respond with a list
+   *     starting from the next key, but from the latest snapshot, which is inconsistent from the
+   *     previous list results - objects that are created, modified, or deleted after the first list
+   *     request will be included in the response, as long as their keys are after the \&quot;next
+   *     key\&quot;. This field is not supported when watch is true. Clients may start a watch from
+   *     the last resourceVersion value returned by the server and not miss any modifications.
+   *     (optional)
    * @param fieldSelector A selector to restrict the list of returned objects by their fields.
    *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param labelSelector A selector to restrict the list of returned objects by their labels.
    *     Defaults to everything. (optional)
    * @param limit limit is a maximum number of responses to return for a list call. If more items
@@ -258,7 +327,8 @@ public class WeblogicApi {
    *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
    *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
    *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
+   * @param timeoutSeconds Timeout for the list/watch call. This limits the duration of the call,
+   *     regardless of any activity or inactivity. (optional)
    * @param watch Watch for changes to the described resources and return them as a stream of add,
    *     update, and remove notifications. Specify resourceVersion. (optional)
    * @param progressListener Progress listener
@@ -266,12 +336,12 @@ public class WeblogicApi {
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call deleteWebLogicOracleV2CollectionNamespacedDomainCall(
+  public com.squareup.okhttp.Call deleteCollectionNamespacedDomainCall(
       String namespace,
+      Boolean includeUninitialized,
       String pretty,
       String _continue,
       String fieldSelector,
-      Boolean includeUninitialized,
       String labelSelector,
       Integer limit,
       String resourceVersion,
@@ -284,41 +354,32 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains"
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL)
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (pretty != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    }
-    if (_continue != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
-    }
-    if (fieldSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
-    }
-    if (includeUninitialized != null) {
+    if (includeUninitialized != null)
       localVarQueryParams.addAll(
           apiClient.parameterToPair("includeUninitialized", includeUninitialized));
-    }
-    if (labelSelector != null) {
+    if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+    if (_continue != null)
+      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
+    if (fieldSelector != null)
+      localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
+    if (labelSelector != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("labelSelector", labelSelector));
-    }
-    if (limit != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("limit", limit));
-    }
-    if (resourceVersion != null) {
+    if (limit != null) localVarQueryParams.addAll(apiClient.parameterToPair("limit", limit));
+    if (resourceVersion != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("resourceVersion", resourceVersion));
-    }
-    if (timeoutSeconds != null) {
+    if (timeoutSeconds != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("timeoutSeconds", timeoutSeconds));
-    }
-    if (watch != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
-    }
+    if (watch != null) localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
 
     Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
@@ -339,12 +400,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -361,35 +426,35 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call
-      deleteWebLogicOracleV2CollectionNamespacedDomainValidateBeforeCall(
-          String namespace,
-          String pretty,
-          String _continue,
-          String fieldSelector,
-          Boolean includeUninitialized,
-          String labelSelector,
-          Integer limit,
-          String resourceVersion,
-          Integer timeoutSeconds,
-          Boolean watch,
-          final ProgressResponseBody.ProgressListener progressListener,
-          final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-          throws ApiException {
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call deleteCollectionNamespacedDomainValidateBeforeCall(
+      String namespace,
+      Boolean includeUninitialized,
+      String pretty,
+      String _continue,
+      String fieldSelector,
+      String labelSelector,
+      Integer limit,
+      String resourceVersion,
+      Integer timeoutSeconds,
+      Boolean watch,
+      final ProgressResponseBody.ProgressListener progressListener,
+      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
+      throws ApiException {
 
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling deleteWebLogicOracleV2CollectionNamespacedDomain(Async)");
+          "Missing the required parameter 'namespace' when calling deleteCollectionNamespacedDomain(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        deleteWebLogicOracleV2CollectionNamespacedDomainCall(
+        deleteCollectionNamespacedDomainCall(
             namespace,
+            includeUninitialized,
             pretty,
             _continue,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -401,23 +466,29 @@ public class WeblogicApi {
   }
 
   /**
-   * delete collection of Domain.
+   * delete collection of Domain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
    *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
+   *     configuration change on the server, the server will respond with a 410 ResourceExpired
+   *     error together with a continue token. If the client needs a consistent list, it must
+   *     restart their list without the continue field. Otherwise, the client may send another list
+   *     request with the token received with the 410 error, the server will respond with a list
+   *     starting from the next key, but from the latest snapshot, which is inconsistent from the
+   *     previous list results - objects that are created, modified, or deleted after the first list
+   *     request will be included in the response, as long as their keys are after the \&quot;next
+   *     key\&quot;. This field is not supported when watch is true. Clients may start a watch from
+   *     the last resourceVersion value returned by the server and not miss any modifications.
+   *     (optional)
    * @param fieldSelector A selector to restrict the list of returned objects by their fields.
    *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param labelSelector A selector to restrict the list of returned objects by their labels.
    *     Defaults to everything. (optional)
    * @param limit limit is a maximum number of responses to return for a list call. If more items
@@ -442,19 +513,20 @@ public class WeblogicApi {
    *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
    *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
    *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
+   * @param timeoutSeconds Timeout for the list/watch call. This limits the duration of the call,
+   *     regardless of any activity or inactivity. (optional)
    * @param watch Watch for changes to the described resources and return them as a stream of add,
    *     update, and remove notifications. Specify resourceVersion. (optional)
    * @return V1Status
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public V1Status deleteWebLogicOracleV2CollectionNamespacedDomain(
+  public V1Status deleteCollectionNamespacedDomain(
       String namespace,
+      Boolean includeUninitialized,
       String pretty,
       String _continue,
       String fieldSelector,
-      Boolean includeUninitialized,
       String labelSelector,
       Integer limit,
       String resourceVersion,
@@ -462,12 +534,12 @@ public class WeblogicApi {
       Boolean watch)
       throws ApiException {
     ApiResponse<V1Status> resp =
-        deleteWebLogicOracleV2CollectionNamespacedDomainWithHttpInfo(
+        deleteCollectionNamespacedDomainWithHttpInfo(
             namespace,
+            includeUninitialized,
             pretty,
             _continue,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -477,23 +549,29 @@ public class WeblogicApi {
   }
 
   /**
-   * delete collection of Domain.
+   * delete collection of Domain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
    *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
+   *     configuration change on the server, the server will respond with a 410 ResourceExpired
+   *     error together with a continue token. If the client needs a consistent list, it must
+   *     restart their list without the continue field. Otherwise, the client may send another list
+   *     request with the token received with the 410 error, the server will respond with a list
+   *     starting from the next key, but from the latest snapshot, which is inconsistent from the
+   *     previous list results - objects that are created, modified, or deleted after the first list
+   *     request will be included in the response, as long as their keys are after the \&quot;next
+   *     key\&quot;. This field is not supported when watch is true. Clients may start a watch from
+   *     the last resourceVersion value returned by the server and not miss any modifications.
+   *     (optional)
    * @param fieldSelector A selector to restrict the list of returned objects by their fields.
    *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param labelSelector A selector to restrict the list of returned objects by their labels.
    *     Defaults to everything. (optional)
    * @param limit limit is a maximum number of responses to return for a list call. If more items
@@ -518,19 +596,20 @@ public class WeblogicApi {
    *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
    *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
    *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
+   * @param timeoutSeconds Timeout for the list/watch call. This limits the duration of the call,
+   *     regardless of any activity or inactivity. (optional)
    * @param watch Watch for changes to the described resources and return them as a stream of add,
    *     update, and remove notifications. Specify resourceVersion. (optional)
    * @return ApiResponse&lt;V1Status&gt;
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<V1Status> deleteWebLogicOracleV2CollectionNamespacedDomainWithHttpInfo(
+  public ApiResponse<V1Status> deleteCollectionNamespacedDomainWithHttpInfo(
       String namespace,
+      Boolean includeUninitialized,
       String pretty,
       String _continue,
       String fieldSelector,
-      Boolean includeUninitialized,
       String labelSelector,
       Integer limit,
       String resourceVersion,
@@ -538,12 +617,12 @@ public class WeblogicApi {
       Boolean watch)
       throws ApiException {
     com.squareup.okhttp.Call call =
-        deleteWebLogicOracleV2CollectionNamespacedDomainValidateBeforeCall(
+        deleteCollectionNamespacedDomainValidateBeforeCall(
             namespace,
+            includeUninitialized,
             pretty,
             _continue,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -556,23 +635,29 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) delete collection of Domain.
+   * (asynchronously) delete collection of Domain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
    *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
+   *     configuration change on the server, the server will respond with a 410 ResourceExpired
+   *     error together with a continue token. If the client needs a consistent list, it must
+   *     restart their list without the continue field. Otherwise, the client may send another list
+   *     request with the token received with the 410 error, the server will respond with a list
+   *     starting from the next key, but from the latest snapshot, which is inconsistent from the
+   *     previous list results - objects that are created, modified, or deleted after the first list
+   *     request will be included in the response, as long as their keys are after the \&quot;next
+   *     key\&quot;. This field is not supported when watch is true. Clients may start a watch from
+   *     the last resourceVersion value returned by the server and not miss any modifications.
+   *     (optional)
    * @param fieldSelector A selector to restrict the list of returned objects by their fields.
    *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param labelSelector A selector to restrict the list of returned objects by their labels.
    *     Defaults to everything. (optional)
    * @param limit limit is a maximum number of responses to return for a list call. If more items
@@ -597,19 +682,20 @@ public class WeblogicApi {
    *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
    *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
    *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
+   * @param timeoutSeconds Timeout for the list/watch call. This limits the duration of the call,
+   *     regardless of any activity or inactivity. (optional)
    * @param watch Watch for changes to the described resources and return them as a stream of add,
    *     update, and remove notifications. Specify resourceVersion. (optional)
    * @param callback The callback to be executed when the API call finishes
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call deleteWebLogicOracleV2CollectionNamespacedDomainAsync(
+  public com.squareup.okhttp.Call deleteCollectionNamespacedDomainAsync(
       String namespace,
+      Boolean includeUninitialized,
       String pretty,
       String _continue,
       String fieldSelector,
-      Boolean includeUninitialized,
       String labelSelector,
       Integer limit,
       String resourceVersion,
@@ -623,21 +709,29 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        deleteWebLogicOracleV2CollectionNamespacedDomainValidateBeforeCall(
+        deleteCollectionNamespacedDomainValidateBeforeCall(
             namespace,
+            includeUninitialized,
             pretty,
             _continue,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -651,12 +745,15 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for deleteWebLogicOracleV2NamespacedDomain.
+   * Build call for deleteNamespacedDomain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param gracePeriodSeconds The duration in seconds before the object should be deleted. Value
    *     must be non-negative integer. The value zero indicates delete immediately. If this value is
    *     nil, the default grace period for the specified type will be used. Defaults to a per object
@@ -668,17 +765,21 @@ public class WeblogicApi {
    * @param propagationPolicy Whether and how garbage collection will be performed. Either this
    *     field or OrphanDependents may be set, but not both. The default policy is decided by the
    *     existing finalizer set in the metadata.finalizers and the resource-specific default policy.
+   *     Acceptable values are: &#39;Orphan&#39; - orphan the dependents; &#39;Background&#39; -
+   *     allow the garbage collector to delete the dependents in the background;
+   *     &#39;Foreground&#39; - a cascading policy that deletes all dependents in the foreground.
    *     (optional)
    * @param progressListener Progress listener
    * @param progressRequestListener Progress request listener
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call deleteWebLogicOracleV2NamespacedDomainCall(
+  public com.squareup.okhttp.Call deleteNamespacedDomainCall(
       String name,
       String namespace,
       V1DeleteOptions body,
       String pretty,
+      String dryRun,
       Integer gracePeriodSeconds,
       Boolean orphanDependents,
       String propagationPolicy,
@@ -689,27 +790,27 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL
+                + "/{name}")
+            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (pretty != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    }
-    if (gracePeriodSeconds != null) {
+    if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+    if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
+    if (gracePeriodSeconds != null)
       localVarQueryParams.addAll(
           apiClient.parameterToPair("gracePeriodSeconds", gracePeriodSeconds));
-    }
-    if (orphanDependents != null) {
+    if (orphanDependents != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("orphanDependents", orphanDependents));
-    }
-    if (propagationPolicy != null) {
+    if (propagationPolicy != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("propagationPolicy", propagationPolicy));
-    }
 
     Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
@@ -730,12 +831,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -752,11 +857,13 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call deleteWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call deleteNamespacedDomainValidateBeforeCall(
       String name,
       String namespace,
       V1DeleteOptions body,
       String pretty,
+      String dryRun,
       Integer gracePeriodSeconds,
       Boolean orphanDependents,
       String propagationPolicy,
@@ -767,27 +874,28 @@ public class WeblogicApi {
     // verify the required parameter 'name' is set
     if (name == null) {
       throw new ApiException(
-          "Missing the required parameter 'name' when calling deleteWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'name' when calling deleteNamespacedDomain(Async)");
     }
 
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling deleteWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'namespace' when calling deleteNamespacedDomain(Async)");
     }
 
     // verify the required parameter 'body' is set
     if (body == null) {
       throw new ApiException(
-          "Missing the required parameter 'body' when calling deleteWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'body' when calling deleteNamespacedDomain(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        deleteWebLogicOracleV2NamespacedDomainCall(
+        deleteNamespacedDomainCall(
             name,
             namespace,
             body,
             pretty,
+            dryRun,
             gracePeriodSeconds,
             orphanDependents,
             propagationPolicy,
@@ -797,12 +905,15 @@ public class WeblogicApi {
   }
 
   /**
-   * delete a Domain.
+   * delete a Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param gracePeriodSeconds The duration in seconds before the object should be deleted. Value
    *     must be non-negative integer. The value zero indicates delete immediately. If this value is
    *     nil, the default grace period for the specified type will be used. Defaults to a per object
@@ -814,33 +925,47 @@ public class WeblogicApi {
    * @param propagationPolicy Whether and how garbage collection will be performed. Either this
    *     field or OrphanDependents may be set, but not both. The default policy is decided by the
    *     existing finalizer set in the metadata.finalizers and the resource-specific default policy.
+   *     Acceptable values are: &#39;Orphan&#39; - orphan the dependents; &#39;Background&#39; -
+   *     allow the garbage collector to delete the dependents in the background;
+   *     &#39;Foreground&#39; - a cascading policy that deletes all dependents in the foreground.
    *     (optional)
    * @return V1Status
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public V1Status deleteWebLogicOracleV2NamespacedDomain(
+  public V1Status deleteNamespacedDomain(
       String name,
       String namespace,
       V1DeleteOptions body,
       String pretty,
+      String dryRun,
       Integer gracePeriodSeconds,
       Boolean orphanDependents,
       String propagationPolicy)
       throws ApiException {
     ApiResponse<V1Status> resp =
-        deleteWebLogicOracleV2NamespacedDomainWithHttpInfo(
-            name, namespace, body, pretty, gracePeriodSeconds, orphanDependents, propagationPolicy);
+        deleteNamespacedDomainWithHttpInfo(
+            name,
+            namespace,
+            body,
+            pretty,
+            dryRun,
+            gracePeriodSeconds,
+            orphanDependents,
+            propagationPolicy);
     return resp.getData();
   }
 
   /**
-   * delete a Domain.
+   * delete a Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param gracePeriodSeconds The duration in seconds before the object should be deleted. Value
    *     must be non-negative integer. The value zero indicates delete immediately. If this value is
    *     nil, the default grace period for the specified type will be used. Defaults to a per object
@@ -852,26 +977,31 @@ public class WeblogicApi {
    * @param propagationPolicy Whether and how garbage collection will be performed. Either this
    *     field or OrphanDependents may be set, but not both. The default policy is decided by the
    *     existing finalizer set in the metadata.finalizers and the resource-specific default policy.
+   *     Acceptable values are: &#39;Orphan&#39; - orphan the dependents; &#39;Background&#39; -
+   *     allow the garbage collector to delete the dependents in the background;
+   *     &#39;Foreground&#39; - a cascading policy that deletes all dependents in the foreground.
    *     (optional)
    * @return ApiResponse&lt;V1Status&gt;
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<V1Status> deleteWebLogicOracleV2NamespacedDomainWithHttpInfo(
+  public ApiResponse<V1Status> deleteNamespacedDomainWithHttpInfo(
       String name,
       String namespace,
       V1DeleteOptions body,
       String pretty,
+      String dryRun,
       Integer gracePeriodSeconds,
       Boolean orphanDependents,
       String propagationPolicy)
       throws ApiException {
     com.squareup.okhttp.Call call =
-        deleteWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+        deleteNamespacedDomainValidateBeforeCall(
             name,
             namespace,
             body,
             pretty,
+            dryRun,
             gracePeriodSeconds,
             orphanDependents,
             propagationPolicy,
@@ -882,12 +1012,15 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) delete a Domain.
+   * (asynchronously) delete a Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param gracePeriodSeconds The duration in seconds before the object should be deleted. Value
    *     must be non-negative integer. The value zero indicates delete immediately. If this value is
    *     nil, the default grace period for the specified type will be used. Defaults to a per object
@@ -899,16 +1032,20 @@ public class WeblogicApi {
    * @param propagationPolicy Whether and how garbage collection will be performed. Either this
    *     field or OrphanDependents may be set, but not both. The default policy is decided by the
    *     existing finalizer set in the metadata.finalizers and the resource-specific default policy.
+   *     Acceptable values are: &#39;Orphan&#39; - orphan the dependents; &#39;Background&#39; -
+   *     allow the garbage collector to delete the dependents in the background;
+   *     &#39;Foreground&#39; - a cascading policy that deletes all dependents in the foreground.
    *     (optional)
    * @param callback The callback to be executed when the API call finishes
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call deleteWebLogicOracleV2NamespacedDomainAsync(
+  public com.squareup.okhttp.Call deleteNamespacedDomainAsync(
       String name,
       String namespace,
       V1DeleteOptions body,
       String pretty,
+      String dryRun,
       Integer gracePeriodSeconds,
       Boolean orphanDependents,
       String propagationPolicy,
@@ -920,20 +1057,29 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        deleteWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+        deleteNamespacedDomainValidateBeforeCall(
             name,
             namespace,
             body,
             pretty,
+            dryRun,
             gracePeriodSeconds,
             orphanDependents,
             propagationPolicy,
@@ -945,21 +1091,29 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for listWebLogicOracleV2DomainForAllNamespaces.
+   * Build call for listNamespacedDomain
    *
+   * @param namespace object name and auth scope, such as for teams and projects (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
+   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
    *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
+   *     configuration change on the server, the server will respond with a 410 ResourceExpired
+   *     error together with a continue token. If the client needs a consistent list, it must
+   *     restart their list without the continue field. Otherwise, the client may send another list
+   *     request with the token received with the 410 error, the server will respond with a list
+   *     starting from the next key, but from the latest snapshot, which is inconsistent from the
+   *     previous list results - objects that are created, modified, or deleted after the first list
+   *     request will be included in the response, as long as their keys are after the \&quot;next
+   *     key\&quot;. This field is not supported when watch is true. Clients may start a watch from
+   *     the last resourceVersion value returned by the server and not miss any modifications.
+   *     (optional)
    * @param fieldSelector A selector to restrict the list of returned objects by their fields.
    *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param labelSelector A selector to restrict the list of returned objects by their labels.
    *     Defaults to everything. (optional)
    * @param limit limit is a maximum number of responses to return for a list call. If more items
@@ -978,14 +1132,14 @@ public class WeblogicApi {
    *     smaller chunks of a very large result can ensure they see all possible objects. If objects
    *     are updated during a chunked list the version of the object that was present at the time
    *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param resourceVersion When specified with a watch call, shows changes that occur after that
    *     particular version of a resource. Defaults to changes from the beginning of history. When
    *     specified for list: - if unset, then the result is returned from remote storage based on
    *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
    *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
    *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
+   * @param timeoutSeconds Timeout for the list/watch call. This limits the duration of the call,
+   *     regardless of any activity or inactivity. (optional)
    * @param watch Watch for changes to the described resources and return them as a stream of add,
    *     update, and remove notifications. Specify resourceVersion. (optional)
    * @param progressListener Progress listener
@@ -993,13 +1147,14 @@ public class WeblogicApi {
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call listWebLogicOracleV2DomainForAllNamespacesCall(
+  public com.squareup.okhttp.Call listNamespacedDomainCall(
+      String namespace,
+      Boolean includeUninitialized,
+      String pretty,
       String _continue,
       String fieldSelector,
-      Boolean includeUninitialized,
       String labelSelector,
       Integer limit,
-      String pretty,
       String resourceVersion,
       Integer timeoutSeconds,
       Boolean watch,
@@ -1009,38 +1164,33 @@ public class WeblogicApi {
     Object localVarPostBody = null;
 
     // create path and map variables
-    String localVarPath = "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/domains";
+    String localVarPath =
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL)
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (_continue != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
-    }
-    if (fieldSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
-    }
-    if (includeUninitialized != null) {
+    if (includeUninitialized != null)
       localVarQueryParams.addAll(
           apiClient.parameterToPair("includeUninitialized", includeUninitialized));
-    }
-    if (labelSelector != null) {
+    if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+    if (_continue != null)
+      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
+    if (fieldSelector != null)
+      localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
+    if (labelSelector != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("labelSelector", labelSelector));
-    }
-    if (limit != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("limit", limit));
-    }
-    if (pretty != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    }
-    if (resourceVersion != null) {
+    if (limit != null) localVarQueryParams.addAll(apiClient.parameterToPair("limit", limit));
+    if (resourceVersion != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("resourceVersion", resourceVersion));
-    }
-    if (timeoutSeconds != null) {
+    if (timeoutSeconds != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("timeoutSeconds", timeoutSeconds));
-    }
-    if (watch != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
-    }
+    if (watch != null) localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
 
     Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
@@ -1065,12 +1215,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -1087,432 +1241,13 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call listWebLogicOracleV2DomainForAllNamespacesValidateBeforeCall(
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-
-    com.squareup.okhttp.Call call =
-        listWebLogicOracleV2DomainForAllNamespacesCall(
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            progressListener,
-            progressRequestListener);
-    return call;
-  }
-
-  /**
-   * list or watch objects of kind Domain.
-   *
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @return DomainList
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public DomainList listWebLogicOracleV2DomainForAllNamespaces(
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch)
-      throws ApiException {
-    ApiResponse<DomainList> resp =
-        listWebLogicOracleV2DomainForAllNamespacesWithHttpInfo(
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch);
-    return resp.getData();
-  }
-
-  /**
-   * list or watch objects of kind Domain.
-   *
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @return ApiResponse&lt;DomainList&gt;
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public ApiResponse<DomainList> listWebLogicOracleV2DomainForAllNamespacesWithHttpInfo(
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch)
-      throws ApiException {
-    com.squareup.okhttp.Call call =
-        listWebLogicOracleV2DomainForAllNamespacesValidateBeforeCall(
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            null,
-            null);
-    Type localVarReturnType = new TypeToken<DomainList>() {}.getType();
-    return apiClient.execute(call, localVarReturnType);
-  }
-
-  /**
-   * (asynchronously) list or watch objects of kind Domain.
-   *
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @param callback The callback to be executed when the API call finishes
-   * @return The request call
-   * @throws ApiException If fail to process the API call, e.g. serializing the request body object
-   */
-  public com.squareup.okhttp.Call listWebLogicOracleV2DomainForAllNamespacesAsync(
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ApiCallback<DomainList> callback)
-      throws ApiException {
-
-    ProgressResponseBody.ProgressListener progressListener = null;
-    ProgressRequestBody.ProgressRequestListener progressRequestListener = null;
-
-    if (callback != null) {
-      progressListener =
-          (bytesRead, contentLength, done) ->
-              callback.onDownloadProgress(bytesRead, contentLength, done);
-
-      progressRequestListener =
-          (bytesWritten, contentLength, done) ->
-              callback.onUploadProgress(bytesWritten, contentLength, done);
-    }
-
-    com.squareup.okhttp.Call call =
-        listWebLogicOracleV2DomainForAllNamespacesValidateBeforeCall(
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            progressListener,
-            progressRequestListener);
-    Type localVarReturnType = new TypeToken<DomainList>() {}.getType();
-    apiClient.executeAsync(call, localVarReturnType, callback);
-    return call;
-  }
-
-  /**
-   * Build call for listWebLogicOracleV2NamespacedDomain.
-   *
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @param progressListener Progress listener
-   * @param progressRequestListener Progress request listener
-   * @return Call to execute
-   * @throws ApiException If fail to serialize the request body object
-   */
-  public com.squareup.okhttp.Call listWebLogicOracleV2NamespacedDomainCall(
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call listNamespacedDomainValidateBeforeCall(
       String namespace,
+      Boolean includeUninitialized,
       String pretty,
       String _continue,
       String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-    Object localVarPostBody = null;
-
-    // create path and map variables
-    String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains"
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
-
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (pretty != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    }
-    if (_continue != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
-    }
-    if (fieldSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
-    }
-    if (includeUninitialized != null) {
-      localVarQueryParams.addAll(
-          apiClient.parameterToPair("includeUninitialized", includeUninitialized));
-    }
-    if (labelSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("labelSelector", labelSelector));
-    }
-    if (limit != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("limit", limit));
-    }
-    if (resourceVersion != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("resourceVersion", resourceVersion));
-    }
-    if (timeoutSeconds != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("timeoutSeconds", timeoutSeconds));
-    }
-    if (watch != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
-    }
-
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
-
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
-
-    final String[] localVarAccepts = {
-      "application/json",
-      "application/yaml",
-      "application/vnd.kubernetes.protobuf",
-      "application/json;stream=watch",
-      "application/vnd.kubernetes.protobuf;stream=watch"
-    };
-    final String localVarAccept = apiClient.selectHeaderAccept(localVarAccepts);
-    if (localVarAccept != null) localVarHeaderParams.put("Accept", localVarAccept);
-
-    final String[] localVarContentTypes = {"*/*"};
-    final String localVarContentType = apiClient.selectHeaderContentType(localVarContentTypes);
-    localVarHeaderParams.put("Content-Type", localVarContentType);
-
-    if (progressListener != null) {
-      apiClient
-          .getHttpClient()
-          .networkInterceptors()
-          .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
-              });
-    }
-
-    String[] localVarAuthNames = new String[] {"BearerToken"};
-    return apiClient.buildCall(
-        localVarPath,
-        "GET",
-        localVarQueryParams,
-        localVarCollectionQueryParams,
-        localVarPostBody,
-        localVarHeaderParams,
-        localVarFormParams,
-        localVarAuthNames,
-        progressRequestListener);
-  }
-
-  private com.squareup.okhttp.Call listWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-      String namespace,
-      String pretty,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
       String labelSelector,
       Integer limit,
       String resourceVersion,
@@ -1525,16 +1260,16 @@ public class WeblogicApi {
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling listWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'namespace' when calling listNamespacedDomain(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        listWebLogicOracleV2NamespacedDomainCall(
+        listNamespacedDomainCall(
             namespace,
+            includeUninitialized,
             pretty,
             _continue,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -1546,23 +1281,29 @@ public class WeblogicApi {
   }
 
   /**
-   * list or watch objects of kind Domain.
+   * list or watch objects of kind Domain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
    *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
+   *     configuration change on the server, the server will respond with a 410 ResourceExpired
+   *     error together with a continue token. If the client needs a consistent list, it must
+   *     restart their list without the continue field. Otherwise, the client may send another list
+   *     request with the token received with the 410 error, the server will respond with a list
+   *     starting from the next key, but from the latest snapshot, which is inconsistent from the
+   *     previous list results - objects that are created, modified, or deleted after the first list
+   *     request will be included in the response, as long as their keys are after the \&quot;next
+   *     key\&quot;. This field is not supported when watch is true. Clients may start a watch from
+   *     the last resourceVersion value returned by the server and not miss any modifications.
+   *     (optional)
    * @param fieldSelector A selector to restrict the list of returned objects by their fields.
    *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param labelSelector A selector to restrict the list of returned objects by their labels.
    *     Defaults to everything. (optional)
    * @param limit limit is a maximum number of responses to return for a list call. If more items
@@ -1587,19 +1328,20 @@ public class WeblogicApi {
    *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
    *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
    *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
+   * @param timeoutSeconds Timeout for the list/watch call. This limits the duration of the call,
+   *     regardless of any activity or inactivity. (optional)
    * @param watch Watch for changes to the described resources and return them as a stream of add,
    *     update, and remove notifications. Specify resourceVersion. (optional)
    * @return DomainList
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public DomainList listWebLogicOracleV2NamespacedDomain(
+  public DomainList listNamespacedDomain(
       String namespace,
+      Boolean includeUninitialized,
       String pretty,
       String _continue,
       String fieldSelector,
-      Boolean includeUninitialized,
       String labelSelector,
       Integer limit,
       String resourceVersion,
@@ -1607,12 +1349,12 @@ public class WeblogicApi {
       Boolean watch)
       throws ApiException {
     ApiResponse<DomainList> resp =
-        listWebLogicOracleV2NamespacedDomainWithHttpInfo(
+        listNamespacedDomainWithHttpInfo(
             namespace,
+            includeUninitialized,
             pretty,
             _continue,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -1622,23 +1364,29 @@ public class WeblogicApi {
   }
 
   /**
-   * list or watch objects of kind Domain.
+   * list or watch objects of kind Domain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
    *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
+   *     configuration change on the server, the server will respond with a 410 ResourceExpired
+   *     error together with a continue token. If the client needs a consistent list, it must
+   *     restart their list without the continue field. Otherwise, the client may send another list
+   *     request with the token received with the 410 error, the server will respond with a list
+   *     starting from the next key, but from the latest snapshot, which is inconsistent from the
+   *     previous list results - objects that are created, modified, or deleted after the first list
+   *     request will be included in the response, as long as their keys are after the \&quot;next
+   *     key\&quot;. This field is not supported when watch is true. Clients may start a watch from
+   *     the last resourceVersion value returned by the server and not miss any modifications.
+   *     (optional)
    * @param fieldSelector A selector to restrict the list of returned objects by their fields.
    *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param labelSelector A selector to restrict the list of returned objects by their labels.
    *     Defaults to everything. (optional)
    * @param limit limit is a maximum number of responses to return for a list call. If more items
@@ -1663,19 +1411,20 @@ public class WeblogicApi {
    *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
    *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
    *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
+   * @param timeoutSeconds Timeout for the list/watch call. This limits the duration of the call,
+   *     regardless of any activity or inactivity. (optional)
    * @param watch Watch for changes to the described resources and return them as a stream of add,
    *     update, and remove notifications. Specify resourceVersion. (optional)
    * @return ApiResponse&lt;DomainList&gt;
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<DomainList> listWebLogicOracleV2NamespacedDomainWithHttpInfo(
+  public ApiResponse<DomainList> listNamespacedDomainWithHttpInfo(
       String namespace,
+      Boolean includeUninitialized,
       String pretty,
       String _continue,
       String fieldSelector,
-      Boolean includeUninitialized,
       String labelSelector,
       Integer limit,
       String resourceVersion,
@@ -1683,12 +1432,12 @@ public class WeblogicApi {
       Boolean watch)
       throws ApiException {
     com.squareup.okhttp.Call call =
-        listWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+        listNamespacedDomainValidateBeforeCall(
             namespace,
+            includeUninitialized,
             pretty,
             _continue,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -1701,23 +1450,29 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) list or watch objects of kind Domain.
+   * (asynchronously) list or watch objects of kind Domain
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
+   * @param includeUninitialized If true, partially initialized resources are included in the
+   *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
    * @param _continue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
    *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
+   *     configuration change on the server, the server will respond with a 410 ResourceExpired
+   *     error together with a continue token. If the client needs a consistent list, it must
+   *     restart their list without the continue field. Otherwise, the client may send another list
+   *     request with the token received with the 410 error, the server will respond with a list
+   *     starting from the next key, but from the latest snapshot, which is inconsistent from the
+   *     previous list results - objects that are created, modified, or deleted after the first list
+   *     request will be included in the response, as long as their keys are after the \&quot;next
+   *     key\&quot;. This field is not supported when watch is true. Clients may start a watch from
+   *     the last resourceVersion value returned by the server and not miss any modifications.
+   *     (optional)
    * @param fieldSelector A selector to restrict the list of returned objects by their fields.
    *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
    * @param labelSelector A selector to restrict the list of returned objects by their labels.
    *     Defaults to everything. (optional)
    * @param limit limit is a maximum number of responses to return for a list call. If more items
@@ -1742,19 +1497,20 @@ public class WeblogicApi {
    *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
    *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
    *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
+   * @param timeoutSeconds Timeout for the list/watch call. This limits the duration of the call,
+   *     regardless of any activity or inactivity. (optional)
    * @param watch Watch for changes to the described resources and return them as a stream of add,
    *     update, and remove notifications. Specify resourceVersion. (optional)
    * @param callback The callback to be executed when the API call finishes
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call listWebLogicOracleV2NamespacedDomainAsync(
+  public com.squareup.okhttp.Call listNamespacedDomainAsync(
       String namespace,
+      Boolean includeUninitialized,
       String pretty,
       String _continue,
       String fieldSelector,
-      Boolean includeUninitialized,
       String labelSelector,
       Integer limit,
       String resourceVersion,
@@ -1768,21 +1524,29 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        listWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+        listNamespacedDomainValidateBeforeCall(
             namespace,
+            includeUninitialized,
             pretty,
             _continue,
             fieldSelector,
-            includeUninitialized,
             labelSelector,
             limit,
             resourceVersion,
@@ -1796,22 +1560,26 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for patchWebLogicOracleV2NamespacedDomain.
+   * Build call for patchNamespacedDomain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param progressListener Progress listener
    * @param progressRequestListener Progress request listener
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call patchWebLogicOracleV2NamespacedDomainCall(
+  public com.squareup.okhttp.Call patchNamespacedDomainCall(
       String name,
       String namespace,
-      Patch body,
+      Object body,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -1819,15 +1587,20 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL
+                + "/{name}")
+            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+    if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
     Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
@@ -1852,12 +1625,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -1874,11 +1651,13 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call patchWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call patchNamespacedDomainValidateBeforeCall(
       String name,
       String namespace,
-      Patch body,
+      Object body,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -1886,78 +1665,93 @@ public class WeblogicApi {
     // verify the required parameter 'name' is set
     if (name == null) {
       throw new ApiException(
-          "Missing the required parameter 'name' when calling patchWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'name' when calling patchNamespacedDomain(Async)");
     }
 
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling patchWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'namespace' when calling patchNamespacedDomain(Async)");
     }
 
     // verify the required parameter 'body' is set
     if (body == null) {
       throw new ApiException(
-          "Missing the required parameter 'body' when calling patchWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'body' when calling patchNamespacedDomain(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        patchWebLogicOracleV2NamespacedDomainCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
+        patchNamespacedDomainCall(
+            name, namespace, body, pretty, dryRun, progressListener, progressRequestListener);
     return call;
   }
 
   /**
-   * partially update the specified Domain.
+   * partially update the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return Domain
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public Domain patchWebLogicOracleV2NamespacedDomain(
-      String name, String namespace, Patch body, String pretty) throws ApiException {
+  public Domain patchNamespacedDomain(
+      String name, String namespace, Object body, String pretty, String dryRun)
+      throws ApiException {
     ApiResponse<Domain> resp =
-        patchWebLogicOracleV2NamespacedDomainWithHttpInfo(name, namespace, body, pretty);
+        patchNamespacedDomainWithHttpInfo(name, namespace, body, pretty, dryRun);
     return resp.getData();
   }
 
   /**
-   * partially update the specified Domain.
+   * partially update the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return ApiResponse&lt;Domain&gt;
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<Domain> patchWebLogicOracleV2NamespacedDomainWithHttpInfo(
-      String name, String namespace, Patch body, String pretty) throws ApiException {
+  public ApiResponse<Domain> patchNamespacedDomainWithHttpInfo(
+      String name, String namespace, Object body, String pretty, String dryRun)
+      throws ApiException {
     com.squareup.okhttp.Call call =
-        patchWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-            name, namespace, body, pretty, null, null);
+        patchNamespacedDomainValidateBeforeCall(name, namespace, body, pretty, dryRun, null, null);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     return apiClient.execute(call, localVarReturnType);
   }
 
   /**
-   * (asynchronously) partially update the specified Domain.
+   * (asynchronously) partially update the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param callback The callback to be executed when the API call finishes
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call patchWebLogicOracleV2NamespacedDomainAsync(
-      String name, String namespace, Patch body, String pretty, final ApiCallback<Domain> callback)
+  public com.squareup.okhttp.Call patchNamespacedDomainAsync(
+      String name,
+      String namespace,
+      Object body,
+      String pretty,
+      String dryRun,
+      final ApiCallback<Domain> callback)
       throws ApiException {
 
     ProgressResponseBody.ProgressListener progressListener = null;
@@ -1965,39 +1759,50 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        patchWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
+        patchNamespacedDomainValidateBeforeCall(
+            name, namespace, body, pretty, dryRun, progressListener, progressRequestListener);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     apiClient.executeAsync(call, localVarReturnType, callback);
     return call;
   }
-
   /**
-   * Build call for patchWebLogicOracleV2NamespacedDomainScale.
+   * Build call for patchNamespacedDomainStatus
    *
-   * @param name name of the Scale (required)
+   * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param progressListener Progress listener
    * @param progressRequestListener Progress request listener
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call patchWebLogicOracleV2NamespacedDomainScaleCall(
+  public com.squareup.okhttp.Call patchNamespacedDomainStatusCall(
       String name,
       String namespace,
-      Patch body,
+      Object body,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -2005,15 +1810,20 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}/scale"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL
+                + "/{name}/status")
+            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+    if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
     Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
@@ -2038,12 +1848,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -2060,11 +1874,13 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call patchWebLogicOracleV2NamespacedDomainScaleValidateBeforeCall(
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call patchNamespacedDomainStatusValidateBeforeCall(
       String name,
       String namespace,
-      Patch body,
+      Object body,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -2072,264 +1888,94 @@ public class WeblogicApi {
     // verify the required parameter 'name' is set
     if (name == null) {
       throw new ApiException(
-          "Missing the required parameter 'name' when calling patchWebLogicOracleV2NamespacedDomainScale(Async)");
+          "Missing the required parameter 'name' when calling patchNamespacedDomainStatus(Async)");
     }
 
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling patchWebLogicOracleV2NamespacedDomainScale(Async)");
+          "Missing the required parameter 'namespace' when calling patchNamespacedDomainStatus(Async)");
     }
 
     // verify the required parameter 'body' is set
     if (body == null) {
       throw new ApiException(
-          "Missing the required parameter 'body' when calling patchWebLogicOracleV2NamespacedDomainScale(Async)");
+          "Missing the required parameter 'body' when calling patchNamespacedDomainStatus(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        patchWebLogicOracleV2NamespacedDomainScaleCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
+        patchNamespacedDomainStatusCall(
+            name, namespace, body, pretty, dryRun, progressListener, progressRequestListener);
     return call;
   }
 
   /**
-   * partially update scale of the specified Domain.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param body (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @return V1Scale
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public V1Scale patchWebLogicOracleV2NamespacedDomainScale(
-      String name, String namespace, Patch body, String pretty) throws ApiException {
-    ApiResponse<V1Scale> resp =
-        patchWebLogicOracleV2NamespacedDomainScaleWithHttpInfo(name, namespace, body, pretty);
-    return resp.getData();
-  }
-
-  /**
-   * partially update scale of the specified Domain.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param body (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @return ApiResponse&lt;V1Scale&gt;
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public ApiResponse<V1Scale> patchWebLogicOracleV2NamespacedDomainScaleWithHttpInfo(
-      String name, String namespace, Patch body, String pretty) throws ApiException {
-    com.squareup.okhttp.Call call =
-        patchWebLogicOracleV2NamespacedDomainScaleValidateBeforeCall(
-            name, namespace, body, pretty, null, null);
-    Type localVarReturnType = new TypeToken<V1Scale>() {}.getType();
-    return apiClient.execute(call, localVarReturnType);
-  }
-
-  /**
-   * (asynchronously) partially update scale of the specified Domain.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param body (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param callback The callback to be executed when the API call finishes
-   * @return The request call
-   * @throws ApiException If fail to process the API call, e.g. serializing the request body object
-   */
-  public com.squareup.okhttp.Call patchWebLogicOracleV2NamespacedDomainScaleAsync(
-      String name, String namespace, Patch body, String pretty, final ApiCallback<V1Scale> callback)
-      throws ApiException {
-
-    ProgressResponseBody.ProgressListener progressListener = null;
-    ProgressRequestBody.ProgressRequestListener progressRequestListener = null;
-
-    if (callback != null) {
-      progressListener =
-          (bytesRead, contentLength, done) ->
-              callback.onDownloadProgress(bytesRead, contentLength, done);
-
-      progressRequestListener =
-          (bytesWritten, contentLength, done) ->
-              callback.onUploadProgress(bytesWritten, contentLength, done);
-    }
-
-    com.squareup.okhttp.Call call =
-        patchWebLogicOracleV2NamespacedDomainScaleValidateBeforeCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
-    Type localVarReturnType = new TypeToken<V1Scale>() {}.getType();
-    apiClient.executeAsync(call, localVarReturnType, callback);
-    return call;
-  }
-
-  /**
-   * Build call for patchWebLogicOracleV2NamespacedDomainStatus.
+   * partially update status of the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param progressListener Progress listener
-   * @param progressRequestListener Progress request listener
-   * @return Call to execute
-   * @throws ApiException If fail to serialize the request body object
-   */
-  public com.squareup.okhttp.Call patchWebLogicOracleV2NamespacedDomainStatusCall(
-      String name,
-      String namespace,
-      Patch body,
-      String pretty,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-    Object localVarPostBody = body;
-
-    // create path and map variables
-    String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}/status"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
-
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
-
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
-
-    final String[] localVarAccepts = {
-      "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
-    };
-    final String localVarAccept = apiClient.selectHeaderAccept(localVarAccepts);
-    if (localVarAccept != null) localVarHeaderParams.put("Accept", localVarAccept);
-
-    final String[] localVarContentTypes = {
-      "application/json-patch+json",
-      "application/merge-patch+json",
-      "application/strategic-merge-patch+json"
-    };
-    final String localVarContentType = apiClient.selectHeaderContentType(localVarContentTypes);
-    localVarHeaderParams.put("Content-Type", localVarContentType);
-
-    if (progressListener != null) {
-      apiClient
-          .getHttpClient()
-          .networkInterceptors()
-          .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
-              });
-    }
-
-    String[] localVarAuthNames = new String[] {"BearerToken"};
-    return apiClient.buildCall(
-        localVarPath,
-        "PATCH",
-        localVarQueryParams,
-        localVarCollectionQueryParams,
-        localVarPostBody,
-        localVarHeaderParams,
-        localVarFormParams,
-        localVarAuthNames,
-        progressRequestListener);
-  }
-
-  private com.squareup.okhttp.Call patchWebLogicOracleV2NamespacedDomainStatusValidateBeforeCall(
-      String name,
-      String namespace,
-      Patch body,
-      String pretty,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-
-    // verify the required parameter 'name' is set
-    if (name == null) {
-      throw new ApiException(
-          "Missing the required parameter 'name' when calling patchWebLogicOracleV2NamespacedDomainStatus(Async)");
-    }
-
-    // verify the required parameter 'namespace' is set
-    if (namespace == null) {
-      throw new ApiException(
-          "Missing the required parameter 'namespace' when calling patchWebLogicOracleV2NamespacedDomainStatus(Async)");
-    }
-
-    // verify the required parameter 'body' is set
-    if (body == null) {
-      throw new ApiException(
-          "Missing the required parameter 'body' when calling patchWebLogicOracleV2NamespacedDomainStatus(Async)");
-    }
-
-    com.squareup.okhttp.Call call =
-        patchWebLogicOracleV2NamespacedDomainStatusCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
-    return call;
-  }
-
-  /**
-   * partially update status of the specified Domain.
-   *
-   * @param name name of the Domain (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param body (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return Domain
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public Domain patchWebLogicOracleV2NamespacedDomainStatus(
-      String name, String namespace, Patch body, String pretty) throws ApiException {
+  public Domain patchNamespacedDomainStatus(
+      String name, String namespace, Object body, String pretty, String dryRun)
+      throws ApiException {
     ApiResponse<Domain> resp =
-        patchWebLogicOracleV2NamespacedDomainStatusWithHttpInfo(name, namespace, body, pretty);
+        patchNamespacedDomainStatusWithHttpInfo(name, namespace, body, pretty, dryRun);
     return resp.getData();
   }
 
   /**
-   * partially update status of the specified Domain.
+   * partially update status of the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return ApiResponse&lt;Domain&gt;
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<Domain> patchWebLogicOracleV2NamespacedDomainStatusWithHttpInfo(
-      String name, String namespace, Patch body, String pretty) throws ApiException {
+  public ApiResponse<Domain> patchNamespacedDomainStatusWithHttpInfo(
+      String name, String namespace, Object body, String pretty, String dryRun)
+      throws ApiException {
     com.squareup.okhttp.Call call =
-        patchWebLogicOracleV2NamespacedDomainStatusValidateBeforeCall(
-            name, namespace, body, pretty, null, null);
+        patchNamespacedDomainStatusValidateBeforeCall(
+            name, namespace, body, pretty, dryRun, null, null);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     return apiClient.execute(call, localVarReturnType);
   }
 
   /**
-   * (asynchronously) partially update status of the specified Domain.
+   * (asynchronously) partially update status of the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param callback The callback to be executed when the API call finishes
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call patchWebLogicOracleV2NamespacedDomainStatusAsync(
-      String name, String namespace, Patch body, String pretty, final ApiCallback<Domain> callback)
+  public com.squareup.okhttp.Call patchNamespacedDomainStatusAsync(
+      String name,
+      String namespace,
+      Object body,
+      String pretty,
+      String dryRun,
+      final ApiCallback<Domain> callback)
       throws ApiException {
 
     ProgressResponseBody.ProgressListener progressListener = null;
@@ -2337,24 +1983,32 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        patchWebLogicOracleV2NamespacedDomainStatusValidateBeforeCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
+        patchNamespacedDomainStatusValidateBeforeCall(
+            name, namespace, body, pretty, dryRun, progressListener, progressRequestListener);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     apiClient.executeAsync(call, localVarReturnType, callback);
     return call;
   }
 
   /**
-   * Build call for readWebLogicOracleV2NamespacedDomain.
+   * Build call for readNamespacedDomain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2368,7 +2022,7 @@ public class WeblogicApi {
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call readWebLogicOracleV2NamespacedDomainCall(
+  public com.squareup.okhttp.Call readNamespacedDomainCall(
       String name,
       String namespace,
       String pretty,
@@ -2381,23 +2035,21 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL
+                + "/{name}")
+            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (pretty != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    }
-    if (exact != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("exact", exact));
-    }
-    if (export != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("export", export));
-    }
+    if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+    if (exact != null) localVarQueryParams.addAll(apiClient.parameterToPair("exact", exact));
+    if (export != null) localVarQueryParams.addAll(apiClient.parameterToPair("export", export));
 
     Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
@@ -2418,12 +2070,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -2440,7 +2096,8 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call readWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call readNamespacedDomainValidateBeforeCall(
       String name,
       String namespace,
       String pretty,
@@ -2453,23 +2110,23 @@ public class WeblogicApi {
     // verify the required parameter 'name' is set
     if (name == null) {
       throw new ApiException(
-          "Missing the required parameter 'name' when calling readWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'name' when calling readNamespacedDomain(Async)");
     }
 
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling readWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'namespace' when calling readNamespacedDomain(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        readWebLogicOracleV2NamespacedDomainCall(
+        readNamespacedDomainCall(
             name, namespace, pretty, exact, export, progressListener, progressRequestListener);
     return call;
   }
 
   /**
-   * read the specified Domain.
+   * read the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2482,16 +2139,16 @@ public class WeblogicApi {
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public Domain readWebLogicOracleV2NamespacedDomain(
+  public Domain readNamespacedDomain(
       String name, String namespace, String pretty, Boolean exact, Boolean export)
       throws ApiException {
     ApiResponse<Domain> resp =
-        readWebLogicOracleV2NamespacedDomainWithHttpInfo(name, namespace, pretty, exact, export);
+        readNamespacedDomainWithHttpInfo(name, namespace, pretty, exact, export);
     return resp.getData();
   }
 
   /**
-   * read the specified Domain.
+   * read the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2504,18 +2161,17 @@ public class WeblogicApi {
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<Domain> readWebLogicOracleV2NamespacedDomainWithHttpInfo(
+  public ApiResponse<Domain> readNamespacedDomainWithHttpInfo(
       String name, String namespace, String pretty, Boolean exact, Boolean export)
       throws ApiException {
     com.squareup.okhttp.Call call =
-        readWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-            name, namespace, pretty, exact, export, null, null);
+        readNamespacedDomainValidateBeforeCall(name, namespace, pretty, exact, export, null, null);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     return apiClient.execute(call, localVarReturnType);
   }
 
   /**
-   * (asynchronously) read the specified Domain.
+   * (asynchronously) read the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2528,7 +2184,7 @@ public class WeblogicApi {
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call readWebLogicOracleV2NamespacedDomainAsync(
+  public com.squareup.okhttp.Call readNamespacedDomainAsync(
       String name,
       String namespace,
       String pretty,
@@ -2542,16 +2198,24 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        readWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+        readNamespacedDomainValidateBeforeCall(
             name, namespace, pretty, exact, export, progressListener, progressRequestListener);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     apiClient.executeAsync(call, localVarReturnType, callback);
@@ -2559,177 +2223,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for readWebLogicOracleV2NamespacedDomainScale.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param progressListener Progress listener
-   * @param progressRequestListener Progress request listener
-   * @return Call to execute
-   * @throws ApiException If fail to serialize the request body object
-   */
-  public com.squareup.okhttp.Call readWebLogicOracleV2NamespacedDomainScaleCall(
-      String name,
-      String namespace,
-      String pretty,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-    Object localVarPostBody = null;
-
-    // create path and map variables
-    String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}/scale"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
-
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
-
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
-
-    final String[] localVarAccepts = {
-      "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
-    };
-    final String localVarAccept = apiClient.selectHeaderAccept(localVarAccepts);
-    if (localVarAccept != null) localVarHeaderParams.put("Accept", localVarAccept);
-
-    final String[] localVarContentTypes = {"*/*"};
-    final String localVarContentType = apiClient.selectHeaderContentType(localVarContentTypes);
-    localVarHeaderParams.put("Content-Type", localVarContentType);
-
-    if (progressListener != null) {
-      apiClient
-          .getHttpClient()
-          .networkInterceptors()
-          .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
-              });
-    }
-
-    String[] localVarAuthNames = new String[] {"BearerToken"};
-    return apiClient.buildCall(
-        localVarPath,
-        "GET",
-        localVarQueryParams,
-        localVarCollectionQueryParams,
-        localVarPostBody,
-        localVarHeaderParams,
-        localVarFormParams,
-        localVarAuthNames,
-        progressRequestListener);
-  }
-
-  private com.squareup.okhttp.Call readWebLogicOracleV2NamespacedDomainScaleValidateBeforeCall(
-      String name,
-      String namespace,
-      String pretty,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-
-    // verify the required parameter 'name' is set
-    if (name == null) {
-      throw new ApiException(
-          "Missing the required parameter 'name' when calling readWebLogicOracleV2NamespacedDomainScale(Async)");
-    }
-
-    // verify the required parameter 'namespace' is set
-    if (namespace == null) {
-      throw new ApiException(
-          "Missing the required parameter 'namespace' when calling readWebLogicOracleV2NamespacedDomainScale(Async)");
-    }
-
-    com.squareup.okhttp.Call call =
-        readWebLogicOracleV2NamespacedDomainScaleCall(
-            name, namespace, pretty, progressListener, progressRequestListener);
-    return call;
-  }
-
-  /**
-   * read scale of the specified Domain.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @return V1Scale
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public V1Scale readWebLogicOracleV2NamespacedDomainScale(
-      String name, String namespace, String pretty) throws ApiException {
-    ApiResponse<V1Scale> resp =
-        readWebLogicOracleV2NamespacedDomainScaleWithHttpInfo(name, namespace, pretty);
-    return resp.getData();
-  }
-
-  /**
-   * read scale of the specified Domain.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @return ApiResponse&lt;V1Scale&gt;
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public ApiResponse<V1Scale> readWebLogicOracleV2NamespacedDomainScaleWithHttpInfo(
-      String name, String namespace, String pretty) throws ApiException {
-    com.squareup.okhttp.Call call =
-        readWebLogicOracleV2NamespacedDomainScaleValidateBeforeCall(
-            name, namespace, pretty, null, null);
-    Type localVarReturnType = new TypeToken<V1Scale>() {}.getType();
-    return apiClient.execute(call, localVarReturnType);
-  }
-
-  /**
-   * (asynchronously) read scale of the specified Domain.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param callback The callback to be executed when the API call finishes
-   * @return The request call
-   * @throws ApiException If fail to process the API call, e.g. serializing the request body object
-   */
-  public com.squareup.okhttp.Call readWebLogicOracleV2NamespacedDomainScaleAsync(
-      String name, String namespace, String pretty, final ApiCallback<V1Scale> callback)
-      throws ApiException {
-
-    ProgressResponseBody.ProgressListener progressListener = null;
-    ProgressRequestBody.ProgressRequestListener progressRequestListener = null;
-
-    if (callback != null) {
-      progressListener =
-          (bytesRead, contentLength, done) ->
-              callback.onDownloadProgress(bytesRead, contentLength, done);
-
-      progressRequestListener =
-          (bytesWritten, contentLength, done) ->
-              callback.onUploadProgress(bytesWritten, contentLength, done);
-    }
-
-    com.squareup.okhttp.Call call =
-        readWebLogicOracleV2NamespacedDomainScaleValidateBeforeCall(
-            name, namespace, pretty, progressListener, progressRequestListener);
-    Type localVarReturnType = new TypeToken<V1Scale>() {}.getType();
-    apiClient.executeAsync(call, localVarReturnType, callback);
-    return call;
-  }
-
-  /**
-   * Build call for readWebLogicOracleV2NamespacedDomainStatus.
+   * Build call for readNamespacedDomainStatus
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2739,7 +2233,7 @@ public class WeblogicApi {
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call readWebLogicOracleV2NamespacedDomainStatusCall(
+  public com.squareup.okhttp.Call readNamespacedDomainStatusCall(
       String name,
       String namespace,
       String pretty,
@@ -2750,11 +2244,15 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}/status"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL
+                + "/{name}/status")
+            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
@@ -2779,12 +2277,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -2801,7 +2303,8 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call readWebLogicOracleV2NamespacedDomainStatusValidateBeforeCall(
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call readNamespacedDomainStatusValidateBeforeCall(
       String name,
       String namespace,
       String pretty,
@@ -2812,23 +2315,23 @@ public class WeblogicApi {
     // verify the required parameter 'name' is set
     if (name == null) {
       throw new ApiException(
-          "Missing the required parameter 'name' when calling readWebLogicOracleV2NamespacedDomainStatus(Async)");
+          "Missing the required parameter 'name' when calling readNamespacedDomainStatus(Async)");
     }
 
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling readWebLogicOracleV2NamespacedDomainStatus(Async)");
+          "Missing the required parameter 'namespace' when calling readNamespacedDomainStatus(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        readWebLogicOracleV2NamespacedDomainStatusCall(
+        readNamespacedDomainStatusCall(
             name, namespace, pretty, progressListener, progressRequestListener);
     return call;
   }
 
   /**
-   * read status of the specified Domain.
+   * read status of the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2837,15 +2340,14 @@ public class WeblogicApi {
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public Domain readWebLogicOracleV2NamespacedDomainStatus(
-      String name, String namespace, String pretty) throws ApiException {
-    ApiResponse<Domain> resp =
-        readWebLogicOracleV2NamespacedDomainStatusWithHttpInfo(name, namespace, pretty);
+  public Domain readNamespacedDomainStatus(String name, String namespace, String pretty)
+      throws ApiException {
+    ApiResponse<Domain> resp = readNamespacedDomainStatusWithHttpInfo(name, namespace, pretty);
     return resp.getData();
   }
 
   /**
-   * read status of the specified Domain.
+   * read status of the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2854,17 +2356,16 @@ public class WeblogicApi {
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<Domain> readWebLogicOracleV2NamespacedDomainStatusWithHttpInfo(
+  public ApiResponse<Domain> readNamespacedDomainStatusWithHttpInfo(
       String name, String namespace, String pretty) throws ApiException {
     com.squareup.okhttp.Call call =
-        readWebLogicOracleV2NamespacedDomainStatusValidateBeforeCall(
-            name, namespace, pretty, null, null);
+        readNamespacedDomainStatusValidateBeforeCall(name, namespace, pretty, null, null);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     return apiClient.execute(call, localVarReturnType);
   }
 
   /**
-   * (asynchronously) read status of the specified Domain.
+   * (asynchronously) read status of the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2873,7 +2374,7 @@ public class WeblogicApi {
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call readWebLogicOracleV2NamespacedDomainStatusAsync(
+  public com.squareup.okhttp.Call readNamespacedDomainStatusAsync(
       String name, String namespace, String pretty, final ApiCallback<Domain> callback)
       throws ApiException {
 
@@ -2882,16 +2383,24 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        readWebLogicOracleV2NamespacedDomainStatusValidateBeforeCall(
+        readNamespacedDomainStatusValidateBeforeCall(
             name, namespace, pretty, progressListener, progressRequestListener);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     apiClient.executeAsync(call, localVarReturnType, callback);
@@ -2899,22 +2408,26 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for replaceWebLogicOracleV2NamespacedDomain.
+   * Build call for replaceNamespacedDomain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param progressListener Progress listener
    * @param progressRequestListener Progress request listener
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call replaceWebLogicOracleV2NamespacedDomainCall(
+  public com.squareup.okhttp.Call replaceNamespacedDomainCall(
       String name,
       String namespace,
       Domain body,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -2922,15 +2435,20 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL
+                + "/{name}")
+            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+    if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
     Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
@@ -2951,12 +2469,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -2973,11 +2495,13 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call replaceWebLogicOracleV2NamespacedDomainValidateBeforeCall(
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call replaceNamespacedDomainValidateBeforeCall(
       String name,
       String namespace,
       Domain body,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -2985,78 +2509,94 @@ public class WeblogicApi {
     // verify the required parameter 'name' is set
     if (name == null) {
       throw new ApiException(
-          "Missing the required parameter 'name' when calling replaceWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'name' when calling replaceNamespacedDomain(Async)");
     }
 
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling replaceWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'namespace' when calling replaceNamespacedDomain(Async)");
     }
 
     // verify the required parameter 'body' is set
     if (body == null) {
       throw new ApiException(
-          "Missing the required parameter 'body' when calling replaceWebLogicOracleV2NamespacedDomain(Async)");
+          "Missing the required parameter 'body' when calling replaceNamespacedDomain(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        replaceWebLogicOracleV2NamespacedDomainCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
+        replaceNamespacedDomainCall(
+            name, namespace, body, pretty, dryRun, progressListener, progressRequestListener);
     return call;
   }
 
   /**
-   * replace the specified Domain.
+   * replace the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return Domain
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public Domain replaceWebLogicOracleV2NamespacedDomain(
-      String name, String namespace, Domain body, String pretty) throws ApiException {
+  public Domain replaceNamespacedDomain(
+      String name, String namespace, Domain body, String pretty, String dryRun)
+      throws ApiException {
     ApiResponse<Domain> resp =
-        replaceWebLogicOracleV2NamespacedDomainWithHttpInfo(name, namespace, body, pretty);
+        replaceNamespacedDomainWithHttpInfo(name, namespace, body, pretty, dryRun);
     return resp.getData();
   }
 
   /**
-   * replace the specified Domain.
+   * replace the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return ApiResponse&lt;Domain&gt;
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<Domain> replaceWebLogicOracleV2NamespacedDomainWithHttpInfo(
-      String name, String namespace, Domain body, String pretty) throws ApiException {
+  public ApiResponse<Domain> replaceNamespacedDomainWithHttpInfo(
+      String name, String namespace, Domain body, String pretty, String dryRun)
+      throws ApiException {
     com.squareup.okhttp.Call call =
-        replaceWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-            name, namespace, body, pretty, null, null);
+        replaceNamespacedDomainValidateBeforeCall(
+            name, namespace, body, pretty, dryRun, null, null);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     return apiClient.execute(call, localVarReturnType);
   }
 
   /**
-   * (asynchronously) replace the specified Domain.
+   * (asynchronously) replace the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param callback The callback to be executed when the API call finishes
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call replaceWebLogicOracleV2NamespacedDomainAsync(
-      String name, String namespace, Domain body, String pretty, final ApiCallback<Domain> callback)
+  public com.squareup.okhttp.Call replaceNamespacedDomainAsync(
+      String name,
+      String namespace,
+      Domain body,
+      String pretty,
+      String dryRun,
+      final ApiCallback<Domain> callback)
       throws ApiException {
 
     ProgressResponseBody.ProgressListener progressListener = null;
@@ -3064,39 +2604,50 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        replaceWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
+        replaceNamespacedDomainValidateBeforeCall(
+            name, namespace, body, pretty, dryRun, progressListener, progressRequestListener);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     apiClient.executeAsync(call, localVarReturnType, callback);
     return call;
   }
-
   /**
-   * Build call for replaceWebLogicOracleV2NamespacedDomainScale.
+   * Build call for replaceNamespacedDomainStatus
    *
-   * @param name name of the Scale (required)
+   * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param progressListener Progress listener
    * @param progressRequestListener Progress request listener
    * @return Call to execute
    * @throws ApiException If fail to serialize the request body object
    */
-  public com.squareup.okhttp.Call replaceWebLogicOracleV2NamespacedDomainScaleCall(
+  public com.squareup.okhttp.Call replaceNamespacedDomainStatusCall(
       String name,
       String namespace,
-      V1Scale body,
+      Domain body,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -3104,15 +2655,20 @@ public class WeblogicApi {
 
     // create path and map variables
     String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}/scale"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
+        ("/apis/"
+                + DOMAIN_GROUP
+                + "/"
+                + DOMAIN_VERSION
+                + "/namespaces/{namespace}/"
+                + DOMAIN_PLURAL
+                + "/{name}/status")
+            .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
+            .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<Pair>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
+    if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
     Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
@@ -3133,12 +2689,16 @@ public class WeblogicApi {
           .getHttpClient()
           .networkInterceptors()
           .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
+              new com.squareup.okhttp.Interceptor() {
+                @Override
+                public com.squareup.okhttp.Response intercept(
+                    com.squareup.okhttp.Interceptor.Chain chain) throws IOException {
+                  com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
+                  return originalResponse
+                      .newBuilder()
+                      .body(new ProgressResponseBody(originalResponse.body(), progressListener))
+                      .build();
+                }
               });
     }
 
@@ -3155,11 +2715,13 @@ public class WeblogicApi {
         progressRequestListener);
   }
 
-  private com.squareup.okhttp.Call replaceWebLogicOracleV2NamespacedDomainScaleValidateBeforeCall(
+  @SuppressWarnings("rawtypes")
+  private com.squareup.okhttp.Call replaceNamespacedDomainStatusValidateBeforeCall(
       String name,
       String namespace,
-      V1Scale body,
+      Domain body,
       String pretty,
+      String dryRun,
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
@@ -3167,264 +2729,94 @@ public class WeblogicApi {
     // verify the required parameter 'name' is set
     if (name == null) {
       throw new ApiException(
-          "Missing the required parameter 'name' when calling replaceWebLogicOracleV2NamespacedDomainScale(Async)");
+          "Missing the required parameter 'name' when calling replaceNamespacedDomainStatus(Async)");
     }
 
     // verify the required parameter 'namespace' is set
     if (namespace == null) {
       throw new ApiException(
-          "Missing the required parameter 'namespace' when calling replaceWebLogicOracleV2NamespacedDomainScale(Async)");
+          "Missing the required parameter 'namespace' when calling replaceNamespacedDomainStatus(Async)");
     }
 
     // verify the required parameter 'body' is set
     if (body == null) {
       throw new ApiException(
-          "Missing the required parameter 'body' when calling replaceWebLogicOracleV2NamespacedDomainScale(Async)");
+          "Missing the required parameter 'body' when calling replaceNamespacedDomainStatus(Async)");
     }
 
     com.squareup.okhttp.Call call =
-        replaceWebLogicOracleV2NamespacedDomainScaleCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
+        replaceNamespacedDomainStatusCall(
+            name, namespace, body, pretty, dryRun, progressListener, progressRequestListener);
     return call;
   }
 
   /**
-   * replace scale of the specified Domain.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param body (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @return V1Scale
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public V1Scale replaceWebLogicOracleV2NamespacedDomainScale(
-      String name, String namespace, V1Scale body, String pretty) throws ApiException {
-    ApiResponse<V1Scale> resp =
-        replaceWebLogicOracleV2NamespacedDomainScaleWithHttpInfo(name, namespace, body, pretty);
-    return resp.getData();
-  }
-
-  /**
-   * replace scale of the specified Domain.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param body (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @return ApiResponse&lt;V1Scale&gt;
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public ApiResponse<V1Scale> replaceWebLogicOracleV2NamespacedDomainScaleWithHttpInfo(
-      String name, String namespace, V1Scale body, String pretty) throws ApiException {
-    com.squareup.okhttp.Call call =
-        replaceWebLogicOracleV2NamespacedDomainScaleValidateBeforeCall(
-            name, namespace, body, pretty, null, null);
-    Type localVarReturnType = new TypeToken<V1Scale>() {}.getType();
-    return apiClient.execute(call, localVarReturnType);
-  }
-
-  /**
-   * (asynchronously) replace scale of the specified Domain.
-   *
-   * @param name name of the Scale (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param body (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param callback The callback to be executed when the API call finishes
-   * @return The request call
-   * @throws ApiException If fail to process the API call, e.g. serializing the request body object
-   */
-  public com.squareup.okhttp.Call replaceWebLogicOracleV2NamespacedDomainScaleAsync(
-      String name,
-      String namespace,
-      V1Scale body,
-      String pretty,
-      final ApiCallback<V1Scale> callback)
-      throws ApiException {
-
-    ProgressResponseBody.ProgressListener progressListener = null;
-    ProgressRequestBody.ProgressRequestListener progressRequestListener = null;
-
-    if (callback != null) {
-      progressListener =
-          (bytesRead, contentLength, done) ->
-              callback.onDownloadProgress(bytesRead, contentLength, done);
-
-      progressRequestListener =
-          (bytesWritten, contentLength, done) ->
-              callback.onUploadProgress(bytesWritten, contentLength, done);
-    }
-
-    com.squareup.okhttp.Call call =
-        replaceWebLogicOracleV2NamespacedDomainScaleValidateBeforeCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
-    Type localVarReturnType = new TypeToken<V1Scale>() {}.getType();
-    apiClient.executeAsync(call, localVarReturnType, callback);
-    return call;
-  }
-
-  /**
-   * Build call for replaceWebLogicOracleV2NamespacedDomainStatus.
+   * replace status of the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param progressListener Progress listener
-   * @param progressRequestListener Progress request listener
-   * @return Call to execute
-   * @throws ApiException If fail to serialize the request body object
-   */
-  public com.squareup.okhttp.Call replaceWebLogicOracleV2NamespacedDomainStatusCall(
-      String name,
-      String namespace,
-      Domain body,
-      String pretty,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-    Object localVarPostBody = body;
-
-    // create path and map variables
-    String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/namespaces/{namespace}/domains/{name}/status"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
-
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
-
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
-
-    final String[] localVarAccepts = {
-      "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
-    };
-    final String localVarAccept = apiClient.selectHeaderAccept(localVarAccepts);
-    if (localVarAccept != null) localVarHeaderParams.put("Accept", localVarAccept);
-
-    final String[] localVarContentTypes = {"*/*"};
-    final String localVarContentType = apiClient.selectHeaderContentType(localVarContentTypes);
-    localVarHeaderParams.put("Content-Type", localVarContentType);
-
-    if (progressListener != null) {
-      apiClient
-          .getHttpClient()
-          .networkInterceptors()
-          .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
-              });
-    }
-
-    String[] localVarAuthNames = new String[] {"BearerToken"};
-    return apiClient.buildCall(
-        localVarPath,
-        "PUT",
-        localVarQueryParams,
-        localVarCollectionQueryParams,
-        localVarPostBody,
-        localVarHeaderParams,
-        localVarFormParams,
-        localVarAuthNames,
-        progressRequestListener);
-  }
-
-  private com.squareup.okhttp.Call replaceWebLogicOracleV2NamespacedDomainStatusValidateBeforeCall(
-      String name,
-      String namespace,
-      Domain body,
-      String pretty,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-
-    // verify the required parameter 'name' is set
-    if (name == null) {
-      throw new ApiException(
-          "Missing the required parameter 'name' when calling replaceWebLogicOracleV2NamespacedDomainStatus(Async)");
-    }
-
-    // verify the required parameter 'namespace' is set
-    if (namespace == null) {
-      throw new ApiException(
-          "Missing the required parameter 'namespace' when calling replaceWebLogicOracleV2NamespacedDomainStatus(Async)");
-    }
-
-    // verify the required parameter 'body' is set
-    if (body == null) {
-      throw new ApiException(
-          "Missing the required parameter 'body' when calling replaceWebLogicOracleV2NamespacedDomainStatus(Async)");
-    }
-
-    com.squareup.okhttp.Call call =
-        replaceWebLogicOracleV2NamespacedDomainStatusCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
-    return call;
-  }
-
-  /**
-   * replace status of the specified Domain.
-   *
-   * @param name name of the Domain (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param body (required)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return Domain
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public Domain replaceWebLogicOracleV2NamespacedDomainStatus(
-      String name, String namespace, Domain body, String pretty) throws ApiException {
+  public Domain replaceNamespacedDomainStatus(
+      String name, String namespace, Domain body, String pretty, String dryRun)
+      throws ApiException {
     ApiResponse<Domain> resp =
-        replaceWebLogicOracleV2NamespacedDomainStatusWithHttpInfo(name, namespace, body, pretty);
+        replaceNamespacedDomainStatusWithHttpInfo(name, namespace, body, pretty, dryRun);
     return resp.getData();
   }
 
   /**
-   * replace status of the specified Domain.
+   * replace status of the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @return ApiResponse&lt;Domain&gt;
    * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
    *     response body
    */
-  public ApiResponse<Domain> replaceWebLogicOracleV2NamespacedDomainStatusWithHttpInfo(
-      String name, String namespace, Domain body, String pretty) throws ApiException {
+  public ApiResponse<Domain> replaceNamespacedDomainStatusWithHttpInfo(
+      String name, String namespace, Domain body, String pretty, String dryRun)
+      throws ApiException {
     com.squareup.okhttp.Call call =
-        replaceWebLogicOracleV2NamespacedDomainStatusValidateBeforeCall(
-            name, namespace, body, pretty, null, null);
+        replaceNamespacedDomainStatusValidateBeforeCall(
+            name, namespace, body, pretty, dryRun, null, null);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
     return apiClient.execute(call, localVarReturnType);
   }
 
   /**
-   * (asynchronously) replace status of the specified Domain.
+   * (asynchronously) replace status of the specified Domain
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
+   * @param dryRun When present, indicates that modifications should not be persisted. An invalid or
+   *     unrecognized dryRun directive will result in an error response and no further processing of
+   *     the request. Valid values are: - All: all dry run stages will be processed (optional)
    * @param callback The callback to be executed when the API call finishes
    * @return The request call
    * @throws ApiException If fail to process the API call, e.g. serializing the request body object
    */
-  public com.squareup.okhttp.Call replaceWebLogicOracleV2NamespacedDomainStatusAsync(
-      String name, String namespace, Domain body, String pretty, final ApiCallback<Domain> callback)
+  public com.squareup.okhttp.Call replaceNamespacedDomainStatusAsync(
+      String name,
+      String namespace,
+      Domain body,
+      String pretty,
+      String dryRun,
+      final ApiCallback<Domain> callback)
       throws ApiException {
 
     ProgressResponseBody.ProgressListener progressListener = null;
@@ -3432,1327 +2824,26 @@ public class WeblogicApi {
 
     if (callback != null) {
       progressListener =
-          (bytesRead, contentLength, done) ->
+          new ProgressResponseBody.ProgressListener() {
+            @Override
+            public void update(long bytesRead, long contentLength, boolean done) {
               callback.onDownloadProgress(bytesRead, contentLength, done);
+            }
+          };
 
       progressRequestListener =
-          (bytesWritten, contentLength, done) ->
+          new ProgressRequestBody.ProgressRequestListener() {
+            @Override
+            public void onRequestProgress(long bytesWritten, long contentLength, boolean done) {
               callback.onUploadProgress(bytesWritten, contentLength, done);
+            }
+          };
     }
 
     com.squareup.okhttp.Call call =
-        replaceWebLogicOracleV2NamespacedDomainStatusValidateBeforeCall(
-            name, namespace, body, pretty, progressListener, progressRequestListener);
+        replaceNamespacedDomainStatusValidateBeforeCall(
+            name, namespace, body, pretty, dryRun, progressListener, progressRequestListener);
     Type localVarReturnType = new TypeToken<Domain>() {}.getType();
-    apiClient.executeAsync(call, localVarReturnType, callback);
-    return call;
-  }
-
-  /**
-   * Build call for watchWebLogicOracleV2DomainListForAllNamespaces.
-   *
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @param progressListener Progress listener
-   * @param progressRequestListener Progress request listener
-   * @return Call to execute
-   * @throws ApiException If fail to serialize the request body object
-   */
-  public com.squareup.okhttp.Call watchWebLogicOracleV2DomainListForAllNamespacesCall(
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-    Object localVarPostBody = null;
-
-    // create path and map variables
-    String localVarPath = "/apis/weblogic.oracle/" + DOMAIN_VERSION + "/watch/domains";
-
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (_continue != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
-    }
-    if (fieldSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
-    }
-    if (includeUninitialized != null) {
-      localVarQueryParams.addAll(
-          apiClient.parameterToPair("includeUninitialized", includeUninitialized));
-    }
-    if (labelSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("labelSelector", labelSelector));
-    }
-    if (limit != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("limit", limit));
-    }
-    if (pretty != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    }
-    if (resourceVersion != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("resourceVersion", resourceVersion));
-    }
-    if (timeoutSeconds != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("timeoutSeconds", timeoutSeconds));
-    }
-    if (watch != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
-    }
-
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
-
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
-
-    final String[] localVarAccepts = {
-      "application/json",
-      "application/yaml",
-      "application/vnd.kubernetes.protobuf",
-      "application/json;stream=watch",
-      "application/vnd.kubernetes.protobuf;stream=watch"
-    };
-    final String localVarAccept = apiClient.selectHeaderAccept(localVarAccepts);
-    if (localVarAccept != null) localVarHeaderParams.put("Accept", localVarAccept);
-
-    final String[] localVarContentTypes = {"*/*"};
-    final String localVarContentType = apiClient.selectHeaderContentType(localVarContentTypes);
-    localVarHeaderParams.put("Content-Type", localVarContentType);
-
-    if (progressListener != null) {
-      apiClient
-          .getHttpClient()
-          .networkInterceptors()
-          .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
-              });
-    }
-
-    String[] localVarAuthNames = new String[] {"BearerToken"};
-    return apiClient.buildCall(
-        localVarPath,
-        "GET",
-        localVarQueryParams,
-        localVarCollectionQueryParams,
-        localVarPostBody,
-        localVarHeaderParams,
-        localVarFormParams,
-        localVarAuthNames,
-        progressRequestListener);
-  }
-
-  private com.squareup.okhttp.Call
-      watchWebLogicOracleV2DomainListForAllNamespacesValidateBeforeCall(
-          String _continue,
-          String fieldSelector,
-          Boolean includeUninitialized,
-          String labelSelector,
-          Integer limit,
-          String pretty,
-          String resourceVersion,
-          Integer timeoutSeconds,
-          Boolean watch,
-          final ProgressResponseBody.ProgressListener progressListener,
-          final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-          throws ApiException {
-
-    com.squareup.okhttp.Call call =
-        watchWebLogicOracleV2DomainListForAllNamespacesCall(
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            progressListener,
-            progressRequestListener);
-    return call;
-  }
-
-  /**
-   * watch individual changes to a list of Domain.
-   *
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @return V1WatchEvent
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public V1WatchEvent watchWebLogicOracleV2DomainListForAllNamespaces(
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch)
-      throws ApiException {
-    ApiResponse<V1WatchEvent> resp =
-        watchWebLogicOracleV2DomainListForAllNamespacesWithHttpInfo(
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch);
-    return resp.getData();
-  }
-
-  /**
-   * watch individual changes to a list of Domain.
-   *
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @return ApiResponse&lt;V1WatchEvent&gt;
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public ApiResponse<V1WatchEvent> watchWebLogicOracleV2DomainListForAllNamespacesWithHttpInfo(
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch)
-      throws ApiException {
-    com.squareup.okhttp.Call call =
-        watchWebLogicOracleV2DomainListForAllNamespacesValidateBeforeCall(
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            null,
-            null);
-    Type localVarReturnType = new TypeToken<V1WatchEvent>() {}.getType();
-    return apiClient.execute(call, localVarReturnType);
-  }
-
-  /**
-   * (asynchronously) watch individual changes to a list of Domain.
-   *
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @param callback The callback to be executed when the API call finishes
-   * @return The request call
-   * @throws ApiException If fail to process the API call, e.g. serializing the request body object
-   */
-  public com.squareup.okhttp.Call watchWebLogicOracleV2DomainListForAllNamespacesAsync(
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ApiCallback<V1WatchEvent> callback)
-      throws ApiException {
-
-    ProgressResponseBody.ProgressListener progressListener = null;
-    ProgressRequestBody.ProgressRequestListener progressRequestListener = null;
-
-    if (callback != null) {
-      progressListener =
-          (bytesRead, contentLength, done) ->
-              callback.onDownloadProgress(bytesRead, contentLength, done);
-
-      progressRequestListener =
-          (bytesWritten, contentLength, done) ->
-              callback.onUploadProgress(bytesWritten, contentLength, done);
-    }
-
-    com.squareup.okhttp.Call call =
-        watchWebLogicOracleV2DomainListForAllNamespacesValidateBeforeCall(
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            progressListener,
-            progressRequestListener);
-    Type localVarReturnType = new TypeToken<V1WatchEvent>() {}.getType();
-    apiClient.executeAsync(call, localVarReturnType, callback);
-    return call;
-  }
-
-  /**
-   * Build call for watchWebLogicOracleV2NamespacedDomain.
-   *
-   * @param name name of the Pod (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @param progressListener Progress listener
-   * @param progressRequestListener Progress request listener
-   * @return Call to execute
-   * @throws ApiException If fail to serialize the request body object
-   */
-  public com.squareup.okhttp.Call watchWebLogicOracleV2NamespacedDomainCall(
-      String name,
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-    Object localVarPostBody = null;
-
-    // create path and map variables
-    String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/watch/namespaces/{namespace}/domains/{name}"
-                .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name))
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
-
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (_continue != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
-    }
-    if (fieldSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
-    }
-    if (includeUninitialized != null) {
-      localVarQueryParams.addAll(
-          apiClient.parameterToPair("includeUninitialized", includeUninitialized));
-    }
-    if (labelSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("labelSelector", labelSelector));
-    }
-    if (limit != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("limit", limit));
-    }
-    if (pretty != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    }
-    if (resourceVersion != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("resourceVersion", resourceVersion));
-    }
-    if (timeoutSeconds != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("timeoutSeconds", timeoutSeconds));
-    }
-    if (watch != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
-    }
-
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
-
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
-
-    final String[] localVarAccepts = {
-      "application/json",
-      "application/yaml",
-      "application/vnd.kubernetes.protobuf",
-      "application/json;stream=watch",
-      "application/vnd.kubernetes.protobuf;stream=watch"
-    };
-    final String localVarAccept = apiClient.selectHeaderAccept(localVarAccepts);
-    if (localVarAccept != null) localVarHeaderParams.put("Accept", localVarAccept);
-
-    final String[] localVarContentTypes = {"*/*"};
-    final String localVarContentType = apiClient.selectHeaderContentType(localVarContentTypes);
-    localVarHeaderParams.put("Content-Type", localVarContentType);
-
-    if (progressListener != null) {
-      apiClient
-          .getHttpClient()
-          .networkInterceptors()
-          .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
-              });
-    }
-
-    String[] localVarAuthNames = new String[] {"BearerToken"};
-    return apiClient.buildCall(
-        localVarPath,
-        "GET",
-        localVarQueryParams,
-        localVarCollectionQueryParams,
-        localVarPostBody,
-        localVarHeaderParams,
-        localVarFormParams,
-        localVarAuthNames,
-        progressRequestListener);
-  }
-
-  private com.squareup.okhttp.Call watchWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-      String name,
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-
-    // verify the required parameter 'name' is set
-    if (name == null) {
-      throw new ApiException(
-          "Missing the required parameter 'name' when calling watchWebLogicOracleV2NamespacedDomain(Async)");
-    }
-
-    // verify the required parameter 'namespace' is set
-    if (namespace == null) {
-      throw new ApiException(
-          "Missing the required parameter 'namespace' when calling watchWebLogicOracleV2NamespacedDomain(Async)");
-    }
-
-    com.squareup.okhttp.Call call =
-        watchWebLogicOracleV2NamespacedDomainCall(
-            name,
-            namespace,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            progressListener,
-            progressRequestListener);
-    return call;
-  }
-
-  /**
-   * watch changes to an object of kind Domain.
-   *
-   * @param name name of the Pod (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @return V1WatchEvent
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public V1WatchEvent watchWebLogicOracleV2NamespacedDomain(
-      String name,
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch)
-      throws ApiException {
-    ApiResponse<V1WatchEvent> resp =
-        watchWebLogicOracleV2NamespacedDomainWithHttpInfo(
-            name,
-            namespace,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch);
-    return resp.getData();
-  }
-
-  /**
-   * watch changes to an object of kind Domain.
-   *
-   * @param name name of the Pod (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @return ApiResponse&lt;V1WatchEvent&gt;
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public ApiResponse<V1WatchEvent> watchWebLogicOracleV2NamespacedDomainWithHttpInfo(
-      String name,
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch)
-      throws ApiException {
-    com.squareup.okhttp.Call call =
-        watchWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-            name,
-            namespace,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            null,
-            null);
-    Type localVarReturnType = new TypeToken<V1WatchEvent>() {}.getType();
-    return apiClient.execute(call, localVarReturnType);
-  }
-
-  /**
-   * (asynchronously) watch changes to an object of kind Domain.
-   *
-   * @param name name of the Pod (required)
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @param callback The callback to be executed when the API call finishes
-   * @return The request call
-   * @throws ApiException If fail to process the API call, e.g. serializing the request body object
-   */
-  public com.squareup.okhttp.Call watchWebLogicOracleV2NamespacedDomainAsync(
-      String name,
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ApiCallback<V1WatchEvent> callback)
-      throws ApiException {
-
-    ProgressResponseBody.ProgressListener progressListener = null;
-    ProgressRequestBody.ProgressRequestListener progressRequestListener = null;
-
-    if (callback != null) {
-      progressListener =
-          (bytesRead, contentLength, done) ->
-              callback.onDownloadProgress(bytesRead, contentLength, done);
-
-      progressRequestListener =
-          (bytesWritten, contentLength, done) ->
-              callback.onUploadProgress(bytesWritten, contentLength, done);
-    }
-
-    com.squareup.okhttp.Call call =
-        watchWebLogicOracleV2NamespacedDomainValidateBeforeCall(
-            name,
-            namespace,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            progressListener,
-            progressRequestListener);
-    Type localVarReturnType = new TypeToken<V1WatchEvent>() {}.getType();
-    apiClient.executeAsync(call, localVarReturnType, callback);
-    return call;
-  }
-
-  /**
-   * Build call for watchWebLogicOracleV2NamespacedDomainList.
-   *
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @param progressListener Progress listener
-   * @param progressRequestListener Progress request listener
-   * @return Call to execute
-   * @throws ApiException If fail to serialize the request body object
-   */
-  public com.squareup.okhttp.Call watchWebLogicOracleV2NamespacedDomainListCall(
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-    Object localVarPostBody = null;
-
-    // create path and map variables
-    String localVarPath =
-        "/apis/weblogic.oracle/"
-            + DOMAIN_VERSION
-            + "/watch/namespaces/{namespace}/domains"
-                .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace));
-
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
-    if (_continue != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
-    }
-    if (fieldSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
-    }
-    if (includeUninitialized != null) {
-      localVarQueryParams.addAll(
-          apiClient.parameterToPair("includeUninitialized", includeUninitialized));
-    }
-    if (labelSelector != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("labelSelector", labelSelector));
-    }
-    if (limit != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("limit", limit));
-    }
-    if (pretty != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    }
-    if (resourceVersion != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("resourceVersion", resourceVersion));
-    }
-    if (timeoutSeconds != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("timeoutSeconds", timeoutSeconds));
-    }
-    if (watch != null) {
-      localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
-    }
-
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
-
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
-
-    final String[] localVarAccepts = {
-      "application/json",
-      "application/yaml",
-      "application/vnd.kubernetes.protobuf",
-      "application/json;stream=watch",
-      "application/vnd.kubernetes.protobuf;stream=watch"
-    };
-    final String localVarAccept = apiClient.selectHeaderAccept(localVarAccepts);
-    if (localVarAccept != null) localVarHeaderParams.put("Accept", localVarAccept);
-
-    final String[] localVarContentTypes = {"*/*"};
-    final String localVarContentType = apiClient.selectHeaderContentType(localVarContentTypes);
-    localVarHeaderParams.put("Content-Type", localVarContentType);
-
-    if (progressListener != null) {
-      apiClient
-          .getHttpClient()
-          .networkInterceptors()
-          .add(
-              chain -> {
-                com.squareup.okhttp.Response originalResponse = chain.proceed(chain.request());
-                return originalResponse
-                    .newBuilder()
-                    .body(new ProgressResponseBody(originalResponse.body(), progressListener))
-                    .build();
-              });
-    }
-
-    String[] localVarAuthNames = new String[] {"BearerToken"};
-    return apiClient.buildCall(
-        localVarPath,
-        "GET",
-        localVarQueryParams,
-        localVarCollectionQueryParams,
-        localVarPostBody,
-        localVarHeaderParams,
-        localVarFormParams,
-        localVarAuthNames,
-        progressRequestListener);
-  }
-
-  private com.squareup.okhttp.Call watchWebLogicOracleV2NamespacedDomainListValidateBeforeCall(
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ProgressResponseBody.ProgressListener progressListener,
-      final ProgressRequestBody.ProgressRequestListener progressRequestListener)
-      throws ApiException {
-
-    // verify the required parameter 'namespace' is set
-    if (namespace == null) {
-      throw new ApiException(
-          "Missing the required parameter 'namespace' when calling watchWebLogicOracleV2NamespacedDomainList(Async)");
-    }
-
-    com.squareup.okhttp.Call call =
-        watchWebLogicOracleV2NamespacedDomainListCall(
-            namespace,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            progressListener,
-            progressRequestListener);
-    return call;
-  }
-
-  /**
-   * watch individual changes to a list of Domain.
-   *
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @return V1WatchEvent
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public V1WatchEvent watchWebLogicOracleV2NamespacedDomainList(
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch)
-      throws ApiException {
-    ApiResponse<V1WatchEvent> resp =
-        watchWebLogicOracleV2NamespacedDomainListWithHttpInfo(
-            namespace,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch);
-    return resp.getData();
-  }
-
-  /**
-   * watch individual changes to a list of Domain.
-   *
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @return ApiResponse&lt;V1WatchEvent&gt;
-   * @throws ApiException If fail to call the API, e.g. server error or cannot deserialize the
-   *     response body
-   */
-  public ApiResponse<V1WatchEvent> watchWebLogicOracleV2NamespacedDomainListWithHttpInfo(
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch)
-      throws ApiException {
-    com.squareup.okhttp.Call call =
-        watchWebLogicOracleV2NamespacedDomainListValidateBeforeCall(
-            namespace,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            null,
-            null);
-    Type localVarReturnType = new TypeToken<V1WatchEvent>() {}.getType();
-    return apiClient.execute(call, localVarReturnType);
-  }
-
-  /**
-   * (asynchronously) watch individual changes to a list of Domain.
-   *
-   * @param namespace object name and auth scope, such as for teams and projects (required)
-   * @param _continue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
-   *     configuration change on the server the server will respond with a 410 ResourceExpired error
-   *     indicating the client must restart their list without the continue field. This field is not
-   *     supported when watch is true. Clients may start a watch from the last resourceVersion value
-   *     returned by the server and not miss any modifications. (optional)
-   * @param fieldSelector A selector to restrict the list of returned objects by their fields.
-   *     Defaults to everything. (optional)
-   * @param includeUninitialized If true, partially initialized resources are included in the
-   *     response. (optional)
-   * @param labelSelector A selector to restrict the list of returned objects by their labels.
-   *     Defaults to everything. (optional)
-   * @param limit limit is a maximum number of responses to return for a list call. If more items
-   *     exist, the server will set the &#x60;continue&#x60; field on the list metadata to a value
-   *     that can be used with the same initial query to retrieve the next set of results. Setting a
-   *     limit may return fewer than the requested amount of items (up to zero items) in the event
-   *     all requested objects are filtered out and clients should only use the presence of the
-   *     continue field to determine whether more results are available. Servers may choose not to
-   *     support the limit argument and will return all of the available results. If limit is
-   *     specified and the continue field is empty, clients may assume that no more results are
-   *     available. This field is not supported if watch is true. The server guarantees that the
-   *     objects returned when using continue will be identical to issuing a single list call
-   *     without a limit - that is, no objects created, modified, or deleted after the first request
-   *     is issued will be included in any subsequent continued requests. This is sometimes referred
-   *     to as a consistent snapshot, and ensures that a client that is using limit to receive
-   *     smaller chunks of a very large result can ensure they see all possible objects. If objects
-   *     are updated during a chunked list the version of the object that was present at the time
-   *     the first list result was calculated is returned. (optional)
-   * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param resourceVersion When specified with a watch call, shows changes that occur after that
-   *     particular version of a resource. Defaults to changes from the beginning of history. When
-   *     specified for list: - if unset, then the result is returned from remote storage based on
-   *     quorum-read flag; - if it&#39;s 0, then we simply return what we currently have in cache,
-   *     no guarantee; - if set to non zero, then the result is at least as fresh as given rv.
-   *     (optional)
-   * @param timeoutSeconds Timeout for the list/watch call. (optional)
-   * @param watch Watch for changes to the described resources and return them as a stream of add,
-   *     update, and remove notifications. Specify resourceVersion. (optional)
-   * @param callback The callback to be executed when the API call finishes
-   * @return The request call
-   * @throws ApiException If fail to process the API call, e.g. serializing the request body object
-   */
-  public com.squareup.okhttp.Call watchWebLogicOracleV2NamespacedDomainListAsync(
-      String namespace,
-      String _continue,
-      String fieldSelector,
-      Boolean includeUninitialized,
-      String labelSelector,
-      Integer limit,
-      String pretty,
-      String resourceVersion,
-      Integer timeoutSeconds,
-      Boolean watch,
-      final ApiCallback<V1WatchEvent> callback)
-      throws ApiException {
-
-    ProgressResponseBody.ProgressListener progressListener = null;
-    ProgressRequestBody.ProgressRequestListener progressRequestListener = null;
-
-    if (callback != null) {
-      progressListener =
-          (bytesRead, contentLength, done) ->
-              callback.onDownloadProgress(bytesRead, contentLength, done);
-
-      progressRequestListener =
-          (bytesWritten, contentLength, done) ->
-              callback.onUploadProgress(bytesWritten, contentLength, done);
-    }
-
-    com.squareup.okhttp.Call call =
-        watchWebLogicOracleV2NamespacedDomainListValidateBeforeCall(
-            namespace,
-            _continue,
-            fieldSelector,
-            includeUninitialized,
-            labelSelector,
-            limit,
-            pretty,
-            resourceVersion,
-            timeoutSeconds,
-            watch,
-            progressListener,
-            progressRequestListener);
-    Type localVarReturnType = new TypeToken<V1WatchEvent>() {}.getType();
     apiClient.executeAsync(call, localVarReturnType, callback);
     return call;
   }
