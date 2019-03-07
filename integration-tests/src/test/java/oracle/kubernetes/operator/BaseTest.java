@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import javax.jms.Connection;
@@ -96,21 +97,36 @@ public class BaseTest {
               + clnResult.stderr());
     }
     // create resultRoot, PVRoot, etc
-    Files.createDirectories(Paths.get(resultRoot));
-    Files.createDirectories(Paths.get(resultDir));
-    Files.createDirectories(Paths.get(userProjectsDir));
+    if (Files.notExists(Paths.get(resultRoot))) {
+      logger.log(Level.INFO, "Creating {0}", resultRoot);
+      Files.createDirectories(Paths.get(resultRoot));
+    }
+    if (Files.notExists(Paths.get(resultDir))) {
+      logger.log(Level.INFO, "Creating {0}", resultDir);
+      Files.createDirectories(Paths.get(resultDir));
+    }
+    if (Files.notExists(Paths.get(userProjectsDir))) {
+      logger.log(Level.INFO, "Creating {0}", userProjectsDir);
+      Files.createDirectories(Paths.get(userProjectsDir));
+    }
 
     // create file handler
-    FileHandler fh = new FileHandler(resultDir + "/java_test_suite.out");
+    FileHandler fh = new FileHandler(resultDir + "/java_test_suite.out", true);
     SimpleFormatter formatter = new SimpleFormatter();
     fh.setFormatter(formatter);
     logger.addHandler(fh);
-    logger.info("Adding file handler, logging to file at " + resultDir + "/java_test_suite.out");
+    logger.log(
+        Level.INFO, "Adding file handler, logging to file at {0}/java_test_suite.out", resultDir);
 
     // for manual/local run, create file handler, create PVROOT
     if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
-      logger.info("Creating PVROOT " + pvRoot);
-      Files.createDirectories(Paths.get(pvRoot));
+      logger.log(Level.INFO, "Creating PVROOT {0}", pvRoot);
+      if (Files.notExists(Paths.get(pvRoot))) {
+        logger.log(Level.INFO, "Creating {0}", pvRoot);
+        Files.createDirectories(Paths.get(pvRoot));
+      } else {
+        logger.log(Level.INFO, "{0} already exists, skipping...", pvRoot);
+      }
       ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
