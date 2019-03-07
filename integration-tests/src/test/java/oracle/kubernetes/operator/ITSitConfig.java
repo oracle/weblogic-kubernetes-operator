@@ -140,7 +140,7 @@ public class ITSitConfig extends BaseTest {
   /**
    * This test covers custom situational configuration use cases for config.xml. It sets the 
    * connect-timeout, max-message-size, restart-max, JMXCore and Serverlifecycle debug flags.
-   * Also sets the T3Channel public address using kubernetes secret and verifies all these 
+   * Also sets the T3Channel public address using Kubernetes secret and verifies all these 
    * parameters are overridden for domain
    *
    * @throws Exception
