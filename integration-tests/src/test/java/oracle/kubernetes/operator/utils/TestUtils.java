@@ -4,14 +4,21 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.io.*;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -52,6 +59,16 @@ public class TestUtils {
 
     // check for admin pod
     checkCmdInLoop(cmd.toString(), "Running", podName);
+  }
+
+  /** @param cmd - kubectl get pod <podname> -n namespace */
+  public static void checkPodTerminating(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    checkCmdInLoop(cmd.toString(), "Terminating", podName);
   }
 
   /**
@@ -987,5 +1004,63 @@ public class TestUtils {
         break;
       }
     }
+  }
+
+  // create yaml file with changed property
+  public static void createNewYamlFile(
+      String inputYamlFile, String generatedYamlFile, String oldString, String newString)
+      throws Exception {
+    logger.info("Creating new  " + generatedYamlFile);
+
+    // copy input template file and modify it
+    Files.copy(
+        new File(inputYamlFile).toPath(),
+        Paths.get(generatedYamlFile),
+        StandardCopyOption.REPLACE_EXISTING);
+
+    // read each line in input domain file and replace with intended changed property
+    BufferedReader reader = new BufferedReader(new FileReader(generatedYamlFile));
+    String line = "";
+    StringBuffer changedLines = new StringBuffer();
+    boolean isLineChanged = false;
+    while ((line = reader.readLine()) != null) {
+      if (line.contains(oldString)) {
+        String changedLine = line.replace(line.substring(line.indexOf(oldString)), newString);
+        changedLines.append(changedLine).append("\n");
+        isLineChanged = true;
+      }
+
+      if (!isLineChanged) {
+        changedLines.append(line).append("\n");
+      }
+      isLineChanged = false;
+    }
+    reader.close();
+    // writing to the file
+    Files.write(Paths.get(generatedYamlFile), changedLines.toString().getBytes());
+    logger.info("Done - generate the new yaml file ");
+  }
+
+  public static boolean findFileContainString(String inputYamlFile, String searchString)
+      throws Exception {
+    logger.info("Search File   " + inputYamlFile + " Search String: " + searchString);
+    boolean result = false;
+    File file = new File(inputYamlFile);
+    Scanner in = null;
+    try {
+      in = new Scanner(new FileReader(file));
+      while (in.hasNextLine() && !result) {
+        result = in.nextLine().indexOf(searchString) >= 0;
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        in.close();
+      } catch (Exception e) {
+        /* ignore */
+      }
+    }
+    return result;
   }
 }
