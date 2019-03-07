@@ -138,10 +138,10 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * This test covers custom situational configuration use cases for config.xml. It sets the 
-   * connect-timeout, max-message-size, restart-max, JMXCore and Serverlifecycle debug flags.
-   * Also sets the T3Channel public address using Kubernetes secret and verifies all these 
-   * parameters are overridden for domain
+   * This test covers custom situational configuration use cases for config.xml. It sets the
+   * connect-timeout, max-message-size, restart-max, JMXCore and Serverlifecycle debug flags. Also
+   * sets the T3Channel public address using Kubernetes secret and verifies all these parameters are
+   * overridden for domain
    *
    * @throws Exception
    */
@@ -161,14 +161,13 @@ public class ITSitConfig extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
-    /**
-   * This test covers custom situational configuration use cases for JDBC resource.
-   * The resource override sets the following connection pool properties. 
-   * initialCapacity, maxCapacity, test-connections-on-reserve, connection-harvest-max-count,
-   * inactive-connection-timeout-seconds
-   * It also overrides the jdbc driver parameters like data source url, db user and password 
-   * using kubernetes secret.
-   * 
+  /**
+   * This test covers custom situational configuration use cases for JDBC resource. The resource
+   * override sets the following connection pool properties. initialCapacity, maxCapacity,
+   * test-connections-on-reserve, connection-harvest-max-count, inactive-connection-timeout-seconds
+   * It also overrides the jdbc driver parameters like data source url, db user and password using
+   * kubernetes secret.
+   *
    * @throws Exception
    */
   @Test
@@ -187,10 +186,10 @@ public class ITSitConfig extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
-    /**
-   * This test covers custom situational configuration use cases for JMS resource
-   * The resource override file sets the following Delivery Failure Parameters.
-   * Redelivery limit and Expiration policy
+  /**
+   * This test covers custom situational configuration use cases for JMS resource The resource
+   * override file sets the following Delivery Failure Parameters. Redelivery limit and Expiration
+   * policy
    *
    * @throws Exception
    */
@@ -210,9 +209,9 @@ public class ITSitConfig extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
-    /**
-   * This test covers custom situational configuration use cases for diagnostics resource
-   * It adds a bunch of instrumentation monitors and harvesters in a diagnostics module.
+  /**
+   * This test covers custom situational configuration use cases for diagnostics resource It adds a
+   * bunch of instrumentation monitors and harvesters in a diagnostics module.
    *
    * @throws Exception
    */
