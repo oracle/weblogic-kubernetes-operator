@@ -887,6 +887,15 @@ public class Domain {
     if (domainMap.containsKey("domainHomeImageBase")) {
       // clone docker sample from github
       gitCloneDockerImagesSample(domainMap);
+      if (domainMap.containsKey("replaceDomainModelYaml")) {
+        String sourceFile = domainMap.get("replaceDomainModelYaml").toString();
+        String targetFile =
+            ((String) domainMap.get("domainHomeImageBuildPath")).trim() + "/simple-topology.yaml";
+        Files.copy(
+            TestUtils.class.getClassLoader().getResourceAsStream(sourceFile),
+            new File(targetFile).toPath(),
+            StandardCopyOption.REPLACE_EXISTING);
+      }
       createDomainScriptCmd
           .append(
               "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")

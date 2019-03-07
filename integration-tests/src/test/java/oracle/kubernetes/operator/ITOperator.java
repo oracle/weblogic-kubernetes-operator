@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.operator;
 
+import static org.junit.Assert.assertThat;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -14,6 +16,7 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RESTCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -34,6 +37,7 @@ public class ITOperator extends BaseTest {
 
   private static String operator1File = "operator1.yaml";
   private static String operator2File = "operator2.yaml";
+  private static String managedcohOperatorFile = "coh/operator.yaml";
   private static final String operator_bcFile = "operator_bc.yaml";
   private static final String operator_chainFile = "operator_chain.yaml";
 
@@ -45,6 +49,7 @@ public class ITOperator extends BaseTest {
   private static String domainsampledefaultsFile = "domainsampledefaults.yaml";
   private static String domaininimagewlstFile = "domaininimagewlst.yaml";
   private static String domaininimagewdtFile = "domaininimagewdt.yaml";
+  private static String domainmanagedcohFile = "coh/domaincreation.yaml";
 
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
@@ -532,6 +537,7 @@ public class ITOperator extends BaseTest {
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
    * Create Operator and create domain using domain-in-image option. Verify the domain is started
    * successfully and web application can be deployed and accessed.
@@ -563,6 +569,70 @@ public class ITOperator extends BaseTest {
       if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
     }
     logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Create Operator and create domain with managed coherence servers. Verify the domain is started
+   * successfully and coherence is enabled on each managed servers.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testManagedCoherenceInImageUsingWDT() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    logger.info("Deploying operator to kubernetes cluster!");
+    Operator opForMangagedCoh = TestUtils.createOperator(managedcohOperatorFile);
+
+    logger.info("Creating Domain & verifing the domain creation");
+    // create domain
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      domain = TestUtils.createDomain(domainmanagedcohFile);
+      domain.verifyDomainCreated();
+
+      testBasicUseCases(domain);
+      testClusterScaling(opForMangagedCoh, domain);
+      StringBuffer cmd = new StringBuffer("kubectl logs cohdomain-managed-server1 -n coh");
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() == 0) {
+        assertThat(
+            "Coherence is not enabled on managed server 1!",
+            result.stdout(),
+            CoreMatchers.containsString("Oracle Coherence"));
+        assertThat(
+            "[MS1] Coherence Grid Edition is not enabled with Production mode!",
+            result.stdout(),
+            CoreMatchers.containsString("Grid Edition: Production mode"));
+      }
+      cmd = new StringBuffer("kubectl logs cohdomain-managed-server2 -n coh");
+      result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() == 0) {
+        assertThat(
+            "Coherence is not enabled on managed server 2!",
+            result.stdout(),
+            CoreMatchers.containsString("Oracle Coherence"));
+        assertThat(
+            "[MS2] Coherence Grid Edition is not enabled with Production mode!",
+            result.stdout(),
+            CoreMatchers.containsString("Grid Edition: Production mode"));
+      }
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
+      if (opForMangagedCoh != null && (JENKINS || testCompletedSuccessfully)) {
+        opForMangagedCoh.destroy();
+        ExecCommand.exec("kubectl delete ns coh");
+      }
+    }
+    if (testCompletedSuccessfully) {
+      logger.info("SUCCESS - " + testMethodName);
+    } else {
+      logger.info("FAILED - " + testMethodName);
+    }
   }
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
