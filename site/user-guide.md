@@ -106,6 +106,6 @@ was updated on January 17, 2019, and has all the necessary patches applied.
 
 ### OpenShift
 
-The operator is certified for use on OpenShift 3.11.43+
+Operator 2.0.1+ is certified for use on OpenShift 3.11.43+, with Kubernetes 1.11.5+
 
 When using the operator in OpenShift, the `anyuid` security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
