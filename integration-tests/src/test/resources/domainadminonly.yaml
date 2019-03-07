@@ -19,3 +19,4 @@ namespace: default
 serverStartPolicy: ADMIN_ONLY
 loadBalancer: TRAEFIK
 ingressPerDomain: true
+voyagerWebPort: 30309

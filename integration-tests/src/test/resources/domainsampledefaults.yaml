@@ -7,3 +7,4 @@ domainUID: domainsampledefaults
 configuredManagedServerCount: 4
 loadBalancer: TRAEFIK
 ingressPerDomain: true
+voyagerWebPort: 30310

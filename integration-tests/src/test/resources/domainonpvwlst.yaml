@@ -17,4 +17,5 @@ namespace: default
 loadBalancer: TRAEFIK
 ingressPerDomain: true
 javaOptions: -Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true
+voyagerWebPort: 30305
 
