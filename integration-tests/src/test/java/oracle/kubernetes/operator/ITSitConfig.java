@@ -35,7 +35,7 @@ public class ITSitConfig extends BaseTest {
   private static String TESTSCRIPTDIR = "";
 
   private static String ADMINPODNAME = "";
-  private static final String DOMAINUID = "customsitdomain";
+  private static final String DOMAINUID = "customsitconfigdomain";
   private static final String ADMINPORT = "30704";
   private static final int T3CHANNELPORT = 30051;
   private static String fqdn = "";
