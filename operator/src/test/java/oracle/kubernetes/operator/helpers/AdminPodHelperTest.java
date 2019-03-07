@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.OperatorConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -41,8 +42,6 @@ import org.junit.Test;
 
 @SuppressWarnings("SameParameterValue")
 public class AdminPodHelperTest extends PodHelperTestBase {
-  private static final String INTERNAL_OPERATOR_CERT_FILE_PARAM =
-      "/operator/internal-identity/internalOperatorCert";
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
   private static final String CERTFILE = "certfile";
 
@@ -210,7 +209,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreated_hasOperatorCertEnvVariable() {
-    putTuningParameter(INTERNAL_OPERATOR_CERT_FILE_PARAM, CERTFILE);
+    putTuningParameter(OperatorConstants.INTERNAL_CERTIFICATE, CERTFILE);
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, CERTFILE));

@@ -140,25 +140,35 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
 
   // path - a file containing a base64 encoded string containing the operator's cert in pem format
   public String getFileContents(String path) {
+    LOGGER.entering(path);
     // in pem format
     String result = null;
     if (checkFileExists(path)) {
       try {
         result = new String(Files.readAllBytes(Paths.get(path)));
       } catch (Throwable t) {
+        LOGGER.warning("Can't read " + path, t);
       }
     }
     // do not include the certificate data in the log message
+    LOGGER.exiting();
     return result;
   }
 
-  private boolean checkFileExists(String path) {
+  public boolean checkFileExists(String path) {
+    LOGGER.entering(path);
     File f = new File(path);
     boolean result = false;
-    if (f.exists() && f.isFile()) {
-      result = true;
+    if (f.exists()) {
+      if (f.isFile()) {
+        result = true;
+      } else {
+        LOGGER.warning(path + " is not a file");
+      }
+    } else {
+      LOGGER.warning(path + " does not exist");
     }
-
+    LOGGER.exiting(result);
     return result;
   }
 }
