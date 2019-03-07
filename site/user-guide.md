@@ -98,7 +98,7 @@ Oracle recommends careful consideration before deciding to expose any administra
 * Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
 * Docker 18.03.1.ce (check with `docker version`).
 * Helm 2.8.2+ (check with `helm version`).
-* Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
+* Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 (check with `docker run store/oracle/weblogic:12.2.1.3 /u01/oracle/OPatch/opatch lsinventory`).
    * The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`,
 was updated on January 17, 2019, and has all the necessary patches applied.
    * A `docker pull` is required if you pulled the image prior to that date.
@@ -106,4 +106,6 @@ was updated on January 17, 2019, and has all the necessary patches applied.
 
 ### OpenShift
 
-When using the operator in OpenShift, the `anyuid` security context constraint is required to ensure that WebLogic containers run with a Unix UID that has the correct permissions on the domain filesystem.
+The operator is certified for use on OpenShift 3.11.43+
+
+When using the operator in OpenShift, the `anyuid` security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
