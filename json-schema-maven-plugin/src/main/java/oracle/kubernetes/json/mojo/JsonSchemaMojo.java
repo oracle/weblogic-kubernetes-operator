@@ -20,10 +20,9 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
 @Mojo(
-  name = "generate",
-  defaultPhase = LifecyclePhase.PROCESS_CLASSES,
-  requiresDependencyResolution = ResolutionScope.COMPILE
-)
+    name = "generate",
+    defaultPhase = LifecyclePhase.PROCESS_CLASSES,
+    requiresDependencyResolution = ResolutionScope.COMPILE)
 public class JsonSchemaMojo extends AbstractMojo {
 
   private static final String DOT = "\\.";
