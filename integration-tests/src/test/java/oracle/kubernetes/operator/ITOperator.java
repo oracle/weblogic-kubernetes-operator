@@ -400,7 +400,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  //@Test
   public void testAutoAndCustomSitConfigOverrides() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
