@@ -32,7 +32,7 @@
      * Operator(s).
      */
     @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-    public class ITOperatorHelmChart extends BaseTest {
+    public class ITUsabilityOperatorHelmChart extends BaseTest {
 
         // property file used to customize operator properties for operator inputs yaml
         private static String operator2File = "operator2.yaml";
