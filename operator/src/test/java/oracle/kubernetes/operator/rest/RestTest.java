@@ -286,6 +286,12 @@ public class RestTest {
     verifyNotAuthenticated(r);
   }
 
+  @Test
+  public void testGetInternalCertificateAsBase64PEM() {
+    String internalCertData = RestServer.getInstance().getInternalCertificateAsBase64PEM();
+    assertEquals(internalCertData, RestTest.OP_CERT_DATA);
+  }
+
   private VersionModel createLatestVersion() {
     return new VersionModel(V1, true, "active");
   }
