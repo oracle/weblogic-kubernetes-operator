@@ -125,6 +125,7 @@ public class CRDHelper {
               .map(e -> new V1beta1CustomResourceDefinitionVersion().name(e).served(true))
               .collect(Collectors.toList());
       versions.add(
+          0, // must be first
           new V1beta1CustomResourceDefinitionVersion()
               .name(KubernetesConstants.DOMAIN_VERSION)
               .served(true)
