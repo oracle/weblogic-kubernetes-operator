@@ -5,7 +5,7 @@
 package oracle.kubernetes.operator;
 
 import com.google.common.base.Strings;
-import oracle.kubernetes.weblogic.domain.v3.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 class DomainPresenceControl {
 

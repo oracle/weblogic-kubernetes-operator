@@ -70,8 +70,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
-import oracle.kubernetes.weblogic.domain.v3.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 

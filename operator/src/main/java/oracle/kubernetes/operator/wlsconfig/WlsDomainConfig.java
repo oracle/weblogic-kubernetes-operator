@@ -13,8 +13,8 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
-import oracle.kubernetes.weblogic.domain.v3.WlsDomain;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.WlsDomain;
 
 /** Contains a snapshot of configuration for a WebLogic Domain. */
 public class WlsDomainConfig implements WlsDomain {
