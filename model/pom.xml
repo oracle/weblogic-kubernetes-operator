@@ -107,7 +107,7 @@
             <configuration>
               <resources>
                 <resource>
-                  <directory>${project.build.outputDirectory}/schema/oracle/kubernetes/weblogic/domain/v3</directory>
+                  <directory>${project.build.outputDirectory}/schema/oracle/kubernetes/weblogic/domain/model</directory>
                 </resource>
               </resources>
               <outputDirectory>
