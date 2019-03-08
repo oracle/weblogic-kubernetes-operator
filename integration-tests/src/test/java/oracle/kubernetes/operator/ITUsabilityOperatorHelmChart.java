@@ -320,6 +320,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
           new Operator(TestUtils.createOperatorMap(number, true), RESTCertType.SELF_SIGNED);
       firstoperator.callHelmInstall();
       number = number + 1;
+      oprelease = "op" + number;
       Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, false);
       ArrayList<String> targetDomainsNS =
           (ArrayList<String>) firstoperator.getOperatorMap().get("domainNamespaces");
