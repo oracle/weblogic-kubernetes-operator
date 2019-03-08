@@ -49,6 +49,8 @@ public class RestServer {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int CORE_POOL_SIZE = 3;
 
+  private static RestServer INSTANCE = null;
+
   private RestConfig config;
 
   // private String baseHttpUri;
@@ -63,6 +65,21 @@ public class RestServer {
     SSL_PROTOCOL
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
 
+  public static synchronized void create(RestConfig restConfig) {
+    if (INSTANCE == null) {
+      INSTANCE = new RestServer(restConfig);
+    }
+    // throw new IllegalStateException();
+  }
+
+  public static synchronized RestServer getInstance() {
+    return INSTANCE;
+  }
+
+  public static void destroy() {
+    INSTANCE = null;
+  }
+
   /**
    * Constructs the WebLogic Operator REST server.
    *
@@ -70,7 +87,7 @@ public class RestServer {
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  public RestServer(RestConfig config) {
+  private RestServer(RestConfig config) {
     LOGGER.entering();
     this.config = config;
     baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
@@ -166,6 +183,18 @@ public class RestServer {
       LOGGER.info("Stopped the internal ssl REST server"); // TBD .fine ?
     }
     LOGGER.exiting();
+  }
+
+  public String getInternalCertificate() {
+    try {
+      return readCertFromDataOrFile(
+          this.config.getOperatorInternalCertificateData(),
+          this.config.getOperatorInternalCertificateFile());
+    } catch (IOException e) {
+      LOGGER.warning("Unable to read internal certificate data", e);
+    }
+
+    return null;
   }
 
   private HttpServer createExternalHttpsServer(Container container) throws Exception {
@@ -319,6 +348,13 @@ public class RestServer {
             );
     LOGGER.exiting(result);
     return result;
+  }
+
+  private static String readCertFromDataOrFile(String data, String file) throws IOException {
+    if (data != null && data.length() > 0) {
+      return data;
+    }
+    return new String(Files.readAllBytes(new File(file).toPath()));
   }
 
   private static byte[] readFromDataOrFile(String data, String file) throws IOException {

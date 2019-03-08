@@ -77,6 +77,8 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.rest.RestServer;
+import oracle.kubernetes.operator.rest.RestTest;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -170,6 +172,8 @@ public abstract class PodHelperTestBase {
     mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
 
+    RestServer.create(new RestTest.TestRestConfigImpl());
+
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
     if (!ADMIN_SERVER.equals(serverName)) configSupport.addWlsServer(serverName, listenPort);
@@ -197,6 +201,8 @@ public abstract class PodHelperTestBase {
 
     testSupport.throwOnCompletionFailure();
     testSupport.verifyAllDefinedResponsesInvoked();
+
+    RestServer.destroy();
   }
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
