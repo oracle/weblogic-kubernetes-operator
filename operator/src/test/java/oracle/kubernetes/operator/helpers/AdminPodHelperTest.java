@@ -42,9 +42,7 @@ import org.junit.Test;
 
 @SuppressWarnings("SameParameterValue")
 public class AdminPodHelperTest extends PodHelperTestBase {
-  static final String INTERNAL_OPERATOR_CERT_FILE_PARAM = "internalOperatorCert";
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
-  private static final String CERTFILE = "certfile";
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -210,7 +208,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreated_hasOperatorCertEnvVariable() {
-    // putTuningParameter(INTERNAL_OPERATOR_CERT_FILE_PARAM, CERTFILE);
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, RestTest.OP_CERT_DATA));

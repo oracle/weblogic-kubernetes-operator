@@ -132,7 +132,7 @@ public class PodHelper {
     }
 
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
-      return RestServer.getInstance().getInternalCertificate();
+      return RestServer.getInstance().getInternalCertificateAsBase64PEM();
     }
   }
 
