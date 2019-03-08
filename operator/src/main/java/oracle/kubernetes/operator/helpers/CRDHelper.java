@@ -99,6 +99,7 @@ public class CRDHelper {
       V1beta1CustomResourceDefinitionSpec spec =
           new V1beta1CustomResourceDefinitionSpec()
               .group(KubernetesConstants.DOMAIN_GROUP)
+              .version(KubernetesConstants.DOMAIN_VERSION)
               .versions(getCRDVersions())
               .scope("Namespaced")
               .names(getCRDNames())
