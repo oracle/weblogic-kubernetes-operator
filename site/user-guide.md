@@ -4,8 +4,7 @@ This document provides detailed user information for the Oracle WebLogic
 Server Kubernetes Operator.  It provides instructions on how to install the operator in your
 Kubernetes cluster and how to use it to manage WebLogic domains.  
 
-If you are looking for information about how the operator is designed, implemented, built, and such, then
-you should refer to the [Developer guide](developer.md).
+If you are looking for information about how the operator is designed, implemented, built, and such, then you should refer to the [Developer guide](developer.md).
 
 ## Table of contents
 
@@ -99,11 +98,10 @@ Oracle recommends careful consideration before deciding to expose any administra
 * Docker 18.03.1.ce (check with `docker version`).
 * Helm 2.8.2+ (check with `helm version`).
 * Oracle WebLogic Server 12.2.1.3.0 with patch 29135930.
-   * Check WLS version with `docker run store/oracle/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`.
-   * Check WLS patches with `docker run store/oracle/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
-   * The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`,
-was updated on January 17, 2019, and has all the necessary patches applied.
+   * The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied.
    * A `docker pull` is required if you pulled the image prior to that date.
+   * Check the WLS version with `docker run store/oracle/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`.
+   * Check the WLS patches with `docker run store/oracle/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
 * You must have the `cluster-admin` role to install the operator.
 
 ### OpenShift
