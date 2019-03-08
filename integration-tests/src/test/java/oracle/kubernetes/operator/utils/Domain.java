@@ -1024,6 +1024,20 @@ public class Domain {
       // clone docker sample from github and copy create domain py script for domain in image case
       gitCloneDockerImagesSample(domainMap);
 
+      if (domainMap.containsKey("domainModelYaml")) {
+        String domainModelYamlPath = domainMap.get("domainModelYaml").toString().trim();
+        String sourceFile =
+            domainModelYamlPath.substring(
+                domainModelYamlPath.lastIndexOf("resources/") + "resources/".length());
+        String targetFile =
+            ((String) domainMap.get("domainHomeImageBuildPath")).trim()
+                + File.separator
+                + "simple-topology.yaml";
+        Files.copy(
+            TestUtils.class.getClassLoader().getResourceAsStream(sourceFile),
+            new File(targetFile).toPath(),
+            StandardCopyOption.REPLACE_EXISTING);
+      }
       createDomainScriptCmd
           .append(
               "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
