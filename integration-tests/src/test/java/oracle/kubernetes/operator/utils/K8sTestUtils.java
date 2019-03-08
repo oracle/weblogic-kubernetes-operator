@@ -73,7 +73,7 @@ public class K8sTestUtils {
       // TODO all resources may be derived from the domain object.
       Object domainObject =
           customObjectsApi.getNamespacedCustomObject(
-              "weblogic.oracle", "model", namespace, "domains", domainUid);
+              "weblogic.oracle", "v2", namespace, "domains", domainUid);
 
       assertTrue("Domain exists", existed);
     } catch (ApiException aex) {
