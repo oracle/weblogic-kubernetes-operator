@@ -117,6 +117,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
           new Operator(TestUtils.createOperatorMap(number, true), RESTCertType.SELF_SIGNED);
       firstoperator.callHelmInstall();
       number = number + 1;
+      oprelease = "op" + number;
       logger.info(" new value for oprelease " + oprelease);
       secondoperator =
           new Operator((TestUtils.createOperatorMap(number, true)), RESTCertType.SELF_SIGNED);
@@ -170,6 +171,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
           new Operator(TestUtils.createOperatorMap(number, true), RESTCertType.SELF_SIGNED);
       firstoperator.callHelmInstall();
       number = number + 1;
+      oprelease = "op" + number;
       logger.info(" new value for oprelease" + oprelease);
       Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
       operatorMap.replace("namespace", firstoperator.getOperatorMap().get("namespace"));
@@ -429,6 +431,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       httpsRestPort = (int) operator1.getOperatorMap().get("externalRestHttpsPort");
       logger.info("Creating second operator with externalRestHttpPort " + httpsRestPort);
       number = number + 1;
+      oprelease = "op" + number;
       Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
       operatorMap.replace("externalRestHttpsPort", httpsRestPort);
 
