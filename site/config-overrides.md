@@ -182,13 +182,14 @@ The secret macro `SECRETNAME` field must reference the name of a Kubernetes secr
 **Check each item below to ensure custom situational configuration takes effect:**
 
 * Reference the name of the current bean and each parent bean in any hierarchy you override.
+  * Note that the `combine-mode` verbs (`add` and `replace`) should be omitted for beans that are already defined in your original domain home configuration.
   * See [Override template samples](#override-template-samples) for examples.
 * Use situational config `replace` and `add` verbs as follows:
-  * If you are adding a new bean that doesn't already exist in your original domain home `config.xml`, specify `add` on the MBean itself and on each attribute within the bean. 
+  * If you are adding a new bean that doesn't already exist in your original domain home configuration, specify `add` on the MBean itself and on each attribute within the bean. 
     * See the `server-debug` stanza in [Override template samples](#override-template-samples) below for an example.
-  * If you are adding a new attribute to an existing bean in the domain home `config.xml`, the attribute needs an `add` verb.
+  * If you are adding a new attribute to an existing bean in the domain home configuration, the attribute needs an `add` verb.
     * See the `max-message-size` stanza in [Override template samples](#override-template-samples) below for an example.
-  * If you are changing the value of an existing attribute within a domain home `config.xml`, the attribute needs a `replace` verb.
+  * If you are changing the value of an existing attribute within a domain home configuration, the attribute needs a `replace` verb.
     * See the `public-address` stanza in  [Override template samples](#override-template-samples) below for an example.
 * When overriding `config.xml`:
   * The XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
