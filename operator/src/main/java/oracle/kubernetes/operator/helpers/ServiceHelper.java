@@ -132,7 +132,11 @@ public class ServiceHelper {
     void addServicePortIfNeeded(String portName, Integer port) {
       if (port == null) return;
 
-      addPort(new V1ServicePort().name(portName).protocol("TCP").port(port));
+      addPort(
+          new V1ServicePort()
+              .name(LegalNames.toDNS1123LegalName(portName))
+              .protocol("TCP")
+              .port(port));
     }
 
     @Override
@@ -325,7 +329,7 @@ public class ServiceHelper {
     }
 
     void addNapServicePort(NetworkAccessPoint nap) {
-      addServicePortIfNeeded(LegalNames.toDNS1123LegalName(nap.getName()), nap.getListenPort());
+      addServicePortIfNeeded(nap.getName(), nap.getListenPort());
     }
 
     abstract void addServicePortIfNeeded(String portName, Integer port);
@@ -652,7 +656,8 @@ public class ServiceHelper {
     void addServicePortIfNeeded(String channelName, Integer port) {
       if (port != null) {
         ports.putIfAbsent(
-            channelName, new V1ServicePort().name(channelName).port(port).protocol("TCP"));
+            LegalNames.toDNS1123LegalName(channelName),
+            new V1ServicePort().name(channelName).port(port).protocol("TCP"));
       }
     }
 
@@ -881,7 +886,7 @@ public class ServiceHelper {
 
       addPort(
           new V1ServicePort()
-              .name(channel.getChannelName())
+              .name(LegalNames.toDNS1123LegalName(channelName))
               .protocol("TCP")
               .port(internalPort)
               .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));

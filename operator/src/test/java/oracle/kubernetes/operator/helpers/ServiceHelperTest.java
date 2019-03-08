@@ -75,7 +75,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private static final String TEST_CLUSTER = "cluster-1";
   private static final int TEST_NODE_PORT = 30001;
   private static final int TEST_NODE_SSL_PORT = 30002;
-  private static final int TEST_NODE_NAP_PORT = 30012;
+  private static final int NAP1_NODE_PORT = 30012;
   private static final int TEST_PORT = 7000;
   private static final int ADMIN_PORT = 8000;
   private static final String DOMAIN_NAME = "domain1";
@@ -105,7 +105,9 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private static final ExternalServiceTestFacade EXTERNAL_SERVICE_TEST_FACADE =
       new ExternalServiceTestFacade();
   private static final String NAP_1 = "nap1";
+  private static final String NAP_2 = "Nap2";
   private static final int NAP_PORT_1 = 7100;
+  private static final int NAP_PORT_2 = 37100;
 
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
@@ -120,7 +122,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
         .configureAdminService()
         .withChannel("default", TEST_NODE_PORT)
         .withChannel("default-secure", TEST_NODE_SSL_PORT)
-        .withChannel(NAP_1, TEST_NODE_NAP_PORT);
+        .withChannel(NAP_1, NAP1_NODE_PORT)
+        .withChannel(NAP_2);
     mementos.add(
         consoleHandlerMemento =
             TestUtils.silenceOperatorLogger()
@@ -129,7 +132,10 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     mementos.add(testSupport.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
-    configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT).addNetworkAccessPoint(NAP_1, NAP_PORT_1);
+    configSupport
+        .addWlsServer(ADMIN_SERVER, ADMIN_PORT)
+        .addNetworkAccessPoint(NAP_1, NAP_PORT_1)
+        .addNetworkAccessPoint(NAP_2, NAP_PORT_2);
     configSupport.addWlsServer(TEST_SERVER, TEST_PORT, ADMIN_PORT);
     configSupport.addWlsCluster(TEST_CLUSTER, TEST_SERVER);
     configSupport.setAdminServerName(ADMIN_SERVER);
@@ -539,7 +545,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   static class ExternalServiceTestFacade extends TestFacade {
     ExternalServiceTestFacade() {
       getExpectedNodePorts().put("default", TEST_NODE_PORT);
-      getExpectedNodePorts().put(NAP_1, TEST_NODE_NAP_PORT);
+      getExpectedNodePorts().put(LegalNames.toDNS1123LegalName(NAP_1), NAP1_NODE_PORT);
+      getExpectedNodePorts().put(LegalNames.toDNS1123LegalName(NAP_2), NAP_PORT_2);
     }
 
     @Override

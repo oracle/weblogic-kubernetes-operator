@@ -32,7 +32,7 @@ public class AdminService implements ServiceConfigurator {
   private Map<String, String> annotations = new HashMap<>();
 
   /**
-   * Adds a channel to expose an admin server port outside the cluster
+   * Adds a channel to expose an admin server port outside the cluster via a specified port.
    *
    * @param channelName name of the channel to expose
    * @param nodePort the external port on which the channel will be exposed
@@ -40,6 +40,18 @@ public class AdminService implements ServiceConfigurator {
    */
   public AdminService withChannel(String channelName, int nodePort) {
     channels.add(new Channel().withChannelName(channelName).withNodePort(nodePort));
+    return this;
+  }
+
+  /**
+   * Adds a channel to expose an admin server port outside the cluster. Will use the matching
+   * NAP port number.
+   *
+   * @param channelName name of the channel to expose
+   * @return this object
+   */
+  public AdminService withChannel(String channelName) {
+    channels.add(new Channel().withChannelName(channelName));
     return this;
   }
 
