@@ -462,7 +462,8 @@ public class TestUtils {
       } catch (Exception ex) {
         logger.info("Got exception, iteration " + i + " " + ex.getMessage());
         i++;
-        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")) {
+        if (ex.getMessage().contains("java.net.ConnectException: Connection refused")
+            || ex.getMessage().contains("javax.net.ssl.SSLHandshakeException")) {
           if (i == (BaseTest.getMaxIterationsPod() - 1)) {
             throw ex;
           }
