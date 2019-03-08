@@ -5,7 +5,7 @@
 package oracle.kubernetes.operator.utils;
 
 import java.nio.file.Path;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 /** Parses a generated domain-custom-resource.yaml file into a set of typed k8s java objects */
 public class ParsedDomainCustomResourceYaml extends ParsedKubernetesYaml {
