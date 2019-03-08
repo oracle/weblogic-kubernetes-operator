@@ -241,18 +241,14 @@ public class ITSitConfig extends BaseTest {
     domainMap.put("domainUID", DOMAINUID);
     domainMap.put("adminNodePort", new Integer(ADMINPORT));
     domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
+    domainMap.put(
+        "createDomainPyScript",
+        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
 
     // use NFS for this domain on Jenkins, defaultis HOST_PATH
     if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
       domainMap.put("weblogicDomainStorageType", "NFS");
     }
-    // copy the custom domain create script file
-    backuprestoreDomainCreateFile("backup");
-    Files.copy(
-        new File(TESTSCRIPTDIR + "/sitconfig/scripts/create-domain-auto-custom-sit-config20.py")
-            .toPath(),
-        new File(createDomainScript).toPath(),
-        StandardCopyOption.REPLACE_EXISTING);
     copyOverrideFiles();
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
@@ -260,32 +256,9 @@ public class ITSitConfig extends BaseTest {
   }
 
   private static void destroySitConfigDomain() throws Exception {
-    backuprestoreDomainCreateFile("restore");
     if (domain != null) {
       domain.destroy();
     }
-  }
-
-  private static void backuprestoreDomainCreateFile(String op) throws IOException {
-    String createDomainScriptDir = TESTSCRIPTDIR + "/domain-home-on-pv";
-    String srcFileName;
-    String dstFileName;
-    switch (op) {
-      case "backup":
-        srcFileName = createDomainScriptDir + "/create-domain.py";
-        dstFileName = createDomainScriptDir + "/create-domain.py.bak";
-        break;
-      case "restore":
-        srcFileName = createDomainScriptDir + "/create-domain.py.bak";
-        dstFileName = createDomainScriptDir + "/create-domain.py";
-        break;
-      default:
-        return;
-    }
-    Files.copy(
-        new File(srcFileName).toPath(),
-        new File(dstFileName).toPath(),
-        StandardCopyOption.REPLACE_EXISTING);
   }
 
   private static void copyOverrideFiles() throws IOException {
