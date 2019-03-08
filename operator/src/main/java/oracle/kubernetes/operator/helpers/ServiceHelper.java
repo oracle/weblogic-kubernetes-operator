@@ -123,6 +123,7 @@ public class ServiceHelper {
     protected List<V1ServicePort> createServicePorts() {
       if (scan == null) return null;
 
+      ports = null;
       addServicePorts(scan);
       return ports;
     }

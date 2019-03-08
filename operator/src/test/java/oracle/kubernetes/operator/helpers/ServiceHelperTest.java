@@ -14,6 +14,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.NodePortMatcher.nodePort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.containsPort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.ServiceNameMatcher.serviceWithName;
+import static oracle.kubernetes.operator.helpers.ServiceHelperTest.UniquePortsMatcher.hasOnlyUniquePortNames;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
@@ -26,10 +27,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SE
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.ApiException;
@@ -39,9 +39,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
@@ -109,8 +111,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private final TerminalStep terminalStep = new TerminalStep();
   private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private List<LogRecord> logRecords = new ArrayList<>();
-  private WlsDomainConfig domainConfig;
   private WlsServerConfig serverConfig;
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   @Before
   public void setUp() throws Exception {
@@ -120,9 +122,10 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
         .withChannel("default-secure", TEST_NODE_SSL_PORT)
         .withChannel(NAP_1, TEST_NODE_NAP_PORT);
     mementos.add(
-        TestUtils.silenceOperatorLogger()
-            .collectLogMessages(logRecords, MESSAGE_KEYS)
-            .withLogLevel(Level.FINE));
+        consoleHandlerMemento =
+            TestUtils.silenceOperatorLogger()
+                .collectLogMessages(logRecords, MESSAGE_KEYS)
+                .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
@@ -131,7 +134,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     configSupport.addWlsCluster(TEST_CLUSTER, TEST_SERVER);
     configSupport.setAdminServerName(ADMIN_SERVER);
 
-    domainConfig = configSupport.createDomainConfig();
+    WlsDomainConfig domainConfig = configSupport.createDomainConfig();
     serverConfig = domainConfig.getServerConfig(testFacade.getServerName());
     testSupport
         .addToPacket(CLUSTER_NAME, TEST_CLUSTER)
@@ -213,16 +216,34 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void onRunWithNoService_createIt() {
+  public void onRunWithNoService_logCreatedMessage() {
     runServiceHelper();
 
-    assertThat(getCreatedResources(), contains(serviceWithName(testFacade.getServiceName())));
-    assertThat(testFacade.getRecordedService(domainPresenceInfo), notNullValue());
     assertThat(logRecords, containsInfo(testFacade.getServiceCreateLogMessage()));
   }
 
   private void runServiceHelper() {
     testSupport.runSteps(testFacade.createSteps(terminalStep));
+  }
+
+  @Test
+  public void onRunWithNoService_createIt() {
+    consoleHandlerMemento.ignoreMessage(testFacade.getServiceCreateLogMessage());
+
+    runServiceHelper();
+
+    assertThat(
+        testFacade.getRecordedService(domainPresenceInfo),
+        is(serviceWithName(testFacade.getServiceName())));
+  }
+
+  @Test
+  public void afterRun_createdServiceHasNoDuplicatePorts() {
+    consoleHandlerMemento.ignoreMessage(testFacade.getServiceCreateLogMessage());
+
+    runServiceHelper();
+
+    assertThat(testFacade.getRecordedService(domainPresenceInfo), hasOnlyUniquePortNames());
   }
 
   @Test
@@ -312,10 +333,6 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     V1Service originalService = testFacade.createServiceModel(testSupport.getPacket());
     testSupport.defineResources(originalService);
     testFacade.recordService(domainPresenceInfo, originalService);
-  }
-
-  private List<V1Service> getCreatedResources() {
-    return testSupport.getResources(KubernetesTestSupport.SERVICE);
   }
 
   enum ServiceType {
@@ -620,7 +637,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @SuppressWarnings("unused")
   static class PortMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Service> {
-    @Nonnull private final String expectedName;
+    private final String expectedName;
     private final Integer expectedValue;
 
     private PortMatcher(@Nonnull String expectedName, Integer expectedValue) {
@@ -674,6 +691,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     }
   }
 
+  @SuppressWarnings("unused")
   static class NodePortMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1ServicePort> {
     private String name;
@@ -707,6 +725,36 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     @Override
     public void describeTo(Description description) {
       describe(description, name, nodePort);
+    }
+  }
+
+  @SuppressWarnings("unused")
+  static class UniquePortsMatcher
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.models.V1Service> {
+    static UniquePortsMatcher hasOnlyUniquePortNames() {
+      return new UniquePortsMatcher();
+    }
+
+    @Override
+    protected boolean matchesSafely(V1Service item, Description mismatchDescription) {
+      Set<String> duplicates = getDuplicatePortNames(item);
+      if (duplicates.isEmpty()) return true;
+
+      mismatchDescription.appendValueList("found duplicate ports for names: ", ",", "", duplicates);
+      return false;
+    }
+
+    private Set<String> getDuplicatePortNames(V1Service item) {
+      Set<String> uniqueNames = new HashSet<>();
+      Set<String> duplicates = new HashSet<>();
+      for (V1ServicePort port : item.getSpec().getPorts())
+        if (!uniqueNames.add(port.getName())) duplicates.add(port.getName());
+      return duplicates;
+    }
+
+    @Override
+    public void describeTo(Description description) {
+      description.appendText("ports with all unique names");
     }
   }
 }
