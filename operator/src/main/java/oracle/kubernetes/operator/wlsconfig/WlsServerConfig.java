@@ -99,6 +99,11 @@ public class WlsServerConfig {
     return this;
   }
 
+  public WlsServerConfig setAdminPort(int adminPort) {
+    this.adminPort = adminPort;
+    return this;
+  }
+
   public String getClusterName() {
     return this.clusterName;
   }

@@ -106,8 +106,10 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
       new ExternalServiceTestFacade();
   private static final String NAP_1 = "nap1";
   private static final String NAP_2 = "Nap2";
+  private static final String NAP_3 = "NAP_3";
   private static final int NAP_PORT_1 = 7100;
   private static final int NAP_PORT_2 = 37100;
+  private static final int NAP_PORT_3 = 37200;
 
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
@@ -136,7 +138,10 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
         .addWlsServer(ADMIN_SERVER, ADMIN_PORT)
         .addNetworkAccessPoint(NAP_1, NAP_PORT_1)
         .addNetworkAccessPoint(NAP_2, NAP_PORT_2);
-    configSupport.addWlsServer(TEST_SERVER, TEST_PORT, ADMIN_PORT);
+    configSupport
+        .addWlsServer(TEST_SERVER, TEST_PORT)
+        .setAdminPort(ADMIN_PORT)
+        .addNetworkAccessPoint(NAP_3, NAP_PORT_3);
     configSupport.addWlsCluster(TEST_CLUSTER, TEST_SERVER);
     configSupport.setAdminServerName(ADMIN_SERVER);
 
@@ -190,6 +195,14 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   private String getServiceType(V1Service service) {
     return service.getSpec().getType();
+  }
+
+  @Test
+  public void whenCreated_modelIncludesExpectedNapPorts() {
+    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+
+    for (Map.Entry<String, Integer> entry : testFacade.getExpectedNapPorts().entrySet())
+      assertThat(model, containsPort(entry.getKey(), entry.getValue()));
   }
 
   @Test
@@ -347,6 +360,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   abstract static class TestFacade {
+    private Map<String, Integer> expectedNapPorts = new HashMap<>();
     private Map<String, Integer> expectedNodePorts = new HashMap<>();
 
     abstract String getServiceCreateLogMessage();
@@ -385,10 +399,18 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
       return expectedNodePorts;
     }
 
+    Map<String, Integer> getExpectedNapPorts() {
+      return expectedNapPorts;
+    }
+
     abstract ServiceConfigurator configureService(DomainConfigurator configurator);
   }
 
   static class ClusterServiceTestFacade extends TestFacade {
+    ClusterServiceTestFacade() {
+      getExpectedNapPorts().put(LegalNames.toDNS1123LegalName(NAP_3), NAP_PORT_3);
+    }
+
     @Override
     public String getServiceCreateLogMessage() {
       return CLUSTER_SERVICE_CREATED;

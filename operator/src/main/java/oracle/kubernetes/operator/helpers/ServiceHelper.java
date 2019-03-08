@@ -132,11 +132,7 @@ public class ServiceHelper {
     void addServicePortIfNeeded(String portName, Integer port) {
       if (port == null) return;
 
-      addPort(
-          new V1ServicePort()
-              .name(LegalNames.toDNS1123LegalName(portName))
-              .protocol("TCP")
-              .port(port));
+      addPort(createServicePort(portName, port));
     }
 
     @Override
@@ -333,6 +329,13 @@ public class ServiceHelper {
     }
 
     abstract void addServicePortIfNeeded(String portName, Integer port);
+
+    V1ServicePort createServicePort(String portName, Integer port) {
+      return new V1ServicePort()
+          .name(LegalNames.toDNS1123LegalName(portName))
+          .port(port)
+          .protocol("TCP");
+    }
 
     protected V1ObjectMeta createMetadata() {
       V1ObjectMeta metadata =
@@ -653,11 +656,9 @@ public class ServiceHelper {
           .orElse(Collections.emptyList());
     }
 
-    void addServicePortIfNeeded(String channelName, Integer port) {
+    void addServicePortIfNeeded(String portName, Integer port) {
       if (port != null) {
-        ports.putIfAbsent(
-            LegalNames.toDNS1123LegalName(channelName),
-            new V1ServicePort().name(channelName).port(port).protocol("TCP"));
+        ports.putIfAbsent(portName, createServicePort(portName, port));
       }
     }
 
@@ -885,10 +886,7 @@ public class ServiceHelper {
       if (channel == null || internalPort == null) return;
 
       addPort(
-          new V1ServicePort()
-              .name(LegalNames.toDNS1123LegalName(channelName))
-              .protocol("TCP")
-              .port(internalPort)
+          createServicePort(channelName, internalPort)
               .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
     }
 

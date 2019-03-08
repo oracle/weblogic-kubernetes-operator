@@ -44,8 +44,8 @@ public class AdminService implements ServiceConfigurator {
   }
 
   /**
-   * Adds a channel to expose an admin server port outside the cluster. Will use the matching
-   * NAP port number.
+   * Adds a channel to expose an admin server port outside the cluster. Will use the matching NAP
+   * port number.
    *
    * @param channelName name of the channel to expose
    * @return this object
