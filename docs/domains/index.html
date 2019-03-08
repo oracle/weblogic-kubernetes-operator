@@ -952,13 +952,13 @@ window.onload = function() {
             "IF_NEEDED"
           ]
         },
-        "restartVersion": {
-          "description": "If present, every time this value is updated the operator will restart the required servers.",
-          "type": "string"
-        },
         "adminService": {
           "description": "Configures which of the admin server\u0027s WebLogic admin channels should be exposed outside the Kubernetes cluster via a node port service.",
           "$ref": "#/definitions/AdminService"
+        },
+        "restartVersion": {
+          "description": "If present, every time this value is updated the operator will restart the required servers.",
+          "type": "string"
         }
       }
     },
@@ -1354,6 +1354,10 @@ window.onload = function() {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
           }
         },
+        "resources": {
+          "description": "Memory and cpu minimum requirements and limits for the server.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
         "readinessProbe": {
           "description": "Settings for the readiness probe associated with a server.",
           "$ref": "#/definitions/ProbeTuning"
@@ -1361,10 +1365,6 @@ window.onload = function() {
         "annotations": {
           "description": "The annotations to be attached to generated resources.",
           "$ref": "#/definitions/Map"
-        },
-        "resources": {
-          "description": "Memory and cpu minimum requirements and limits for the server.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "containerSecurityContext": {
           "description": "Container-level security attributes. Will override any matching pod-level attributes.",
@@ -1377,10 +1377,6 @@ window.onload = function() {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
-        "labels": {
-          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
-          "$ref": "#/definitions/Map"
-        },
         "nodeSelector": {
           "description": "Selector which must match a node\u0027s labels for the pod to be scheduled on that node.",
           "$ref": "#/definitions/Map"
@@ -1391,6 +1387,10 @@ window.onload = function() {
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
           }
+        },
+        "labels": {
+          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
+          "$ref": "#/definitions/Map"
         }
       }
     },
