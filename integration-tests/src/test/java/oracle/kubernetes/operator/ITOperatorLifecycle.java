@@ -122,8 +122,8 @@ public class ITOperatorLifecycle extends BaseTest {
 
   /**
    * Create Operator1 and domainOnPVUsingWLST with admin server and 1 managed server if they are not
-   * running. After verifying the domain is created properly. Change some properties on domain
-   * resources that would cause servers to be restarted and verify that server are indeed restarted.
+   * running. After verifying the domain is created properly change some properties on domain
+   * resources that would cause servers to be restarted and verify that servers are indeed restarted.
    * The properties tested here are: env: "-Dweblogic.StdoutDebugEnabled=false"-->
    * "-Dweblogic.StdoutDebugEnabled=false" logHomeEnabled: true --> logHomeEnabled: false
    * includeServerOutInPodLog: true --> includeServerOutInPodLog: false
