@@ -564,7 +564,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     @Override
     public String getServiceName() {
-      return LegalNames.toExternalServiceName(UID);
+      return LegalNames.toExternalServiceName(UID, ADMIN_SERVER);
     }
 
     @Override

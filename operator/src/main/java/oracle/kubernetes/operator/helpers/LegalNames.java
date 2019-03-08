@@ -10,7 +10,7 @@ public class LegalNames {
   private static final String SERVER_PATTERN = "%s-%s";
   private static final String CLUSTER_SERVICE_PATTERN = "%s-cluster-%s";
   private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s-introspect-domain-job";
-  private static final String EXTERNAL_SERVICE_PATTERN = "%s-external";
+  private static final String EXTERNAL_SERVICE_PATTERN = "%s-%s-external";
 
   public static String toServerServiceName(String domainUID, String serverName) {
     return toServerName(domainUID, serverName);
@@ -32,8 +32,8 @@ public class LegalNames {
     return toDNS1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUID));
   }
 
-  static String toExternalServiceName(String domainUID) {
-    return toDNS1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUID));
+  static String toExternalServiceName(String domainUID, String serverName) {
+    return toDNS1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUID, serverName));
   }
 
   /**

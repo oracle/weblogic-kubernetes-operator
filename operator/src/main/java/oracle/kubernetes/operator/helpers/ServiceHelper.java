@@ -800,13 +800,16 @@ public class ServiceHelper {
 
   private static class ForExternalServiceStepContext extends ServiceStepContext {
 
+    private final String adminServerName;
+
     ForExternalServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
+      adminServerName = (String) packet.get(ProcessingConstants.SERVER_NAME);
     }
 
     @Override
     protected String createServiceName() {
-      return LegalNames.toExternalServiceName(getDomainUID());
+      return LegalNames.toExternalServiceName(getDomainUID(), adminServerName);
     }
 
     @Override
