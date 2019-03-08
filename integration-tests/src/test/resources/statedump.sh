@@ -142,6 +142,8 @@ function state_dump {
   # remove docker-images project before archiving
   rm -rf ${RESULT_DIR}/docker-images
   
+  rm -rf ${RESULT_DIR}/samples
+  
   # now archive all the local test files
   $SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
   
