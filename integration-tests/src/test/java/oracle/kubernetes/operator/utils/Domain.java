@@ -810,8 +810,8 @@ public class Domain {
     InputStream pv_is =
         new FileInputStream(
             new File(
-                BaseTest.getProjectRoot()
-                    + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
+                BaseTest.getResultDir()
+                    + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     pvMap = yaml.load(pv_is);
     pv_is.close();
     pvMap.put("domainUID", domainUid);
@@ -882,21 +882,38 @@ public class Domain {
   }
 
   private void callCreateDomainScript(String outputDir) throws Exception {
-    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getProjectRoot());
 
+    // copy create domain py script for domain on pv case
+    if (domainMap.containsKey("createDomainPyScript")
+        && !domainMap.containsKey("domainHomeImageBase")) {
+      Files.copy(
+          new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+              .toPath(),
+          new File(
+                  BaseTest.getResultDir()
+                      + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
+              .toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+
+    // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
-      // clone docker sample from github
+
+      // clone docker sample from github and copy create domain py script for domain in image case
       gitCloneDockerImagesSample(domainMap);
+
       createDomainScriptCmd
           .append(
-              "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
+              "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
           .append(BaseTest.getUsername())
           .append(" -p ")
           .append(BaseTest.getPassword())
           .append(" -k -i ");
     } else {
       createDomainScriptCmd.append(
-          "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
+          "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
     }
     createDomainScriptCmd.append(generatedInputYamlFile);
 
@@ -1122,27 +1139,31 @@ public class Domain {
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
+
+    // copy samples to RESULT_DIR
+    TestUtils.exec(
+        "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
+
     this.voyager =
         System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER");
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
+
     domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
     String sampleDomainInputsFile =
-        "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
+        "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
     if (domainMap.containsKey("domainHomeImageBase")) {
       sampleDomainInputsFile =
-          "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
+          "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
     }
     Yaml dyaml = new Yaml();
     InputStream sampleDomainInputStream =
-        new FileInputStream(new File(BaseTest.getProjectRoot() + sampleDomainInputsFile));
+        new FileInputStream(new File(BaseTest.getResultDir() + sampleDomainInputsFile));
     logger.info(
-        "loading domain inputs template file "
-            + BaseTest.getProjectRoot()
-            + sampleDomainInputsFile);
+        "loading domain inputs template file " + BaseTest.getResultDir() + sampleDomainInputsFile);
     Map<String, Object> sampleDomainMap = dyaml.load(sampleDomainInputStream);
     sampleDomainInputStream.close();
 
@@ -1183,9 +1204,9 @@ public class Domain {
     domainMap.put("logHome", "/shared/logs/" + domainUid);
     if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
-      domainMap.put(
-          "createDomainFilesDir",
-          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
+      /* domainMap.put(
+      "createDomainFilesDir",
+      BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv"); */
       domainMap.put("image", imageName + ":" + imageTag);
     }
 
@@ -1348,14 +1369,15 @@ public class Domain {
                 + " "
                 + result.stdout());
       }
-      // copy script to cloned location
-      Files.copy(
-          new File(
-                  BaseTest.getProjectRoot()
-                      + "/integration-tests/src/test/resources/domain-home-on-image/create-wls-domain.py")
-              .toPath(),
-          new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py").toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
+
+      // copy create domain py script to cloned location
+      if (domainMap.containsKey("createDomainPyScript")) {
+        Files.copy(
+            new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                .toPath(),
+            new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py").toPath(),
+            StandardCopyOption.REPLACE_EXISTING);
+      }
     }
   }
 
