@@ -48,9 +48,4 @@ public abstract class TuningParametersStub implements TuningParameters {
   public String get(Object key) {
     return namedParameters.get(key);
   }
-
-  @Override
-  public String getFileContents(String path) {
-    return get(path);
-  }
 }

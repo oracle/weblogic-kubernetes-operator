@@ -259,8 +259,4 @@ public interface TuningParameters extends Map<String, String> {
   public WatchTuning getWatchTuning();
 
   public PodTuning getPodTuning();
-
-  public String getFileContents(String path);
-
-  public boolean checkFileExists(String path);
 }
