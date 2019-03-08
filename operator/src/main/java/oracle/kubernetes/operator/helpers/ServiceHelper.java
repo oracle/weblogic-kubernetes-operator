@@ -42,12 +42,12 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v3.AdminServer;
-import oracle.kubernetes.weblogic.domain.v3.AdminService;
-import oracle.kubernetes.weblogic.domain.v3.Channel;
-import oracle.kubernetes.weblogic.domain.v3.ClusterSpec;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
-import oracle.kubernetes.weblogic.domain.v3.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.AdminServer;
+import oracle.kubernetes.weblogic.domain.model.AdminService;
+import oracle.kubernetes.weblogic.domain.model.Channel;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
