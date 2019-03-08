@@ -886,40 +886,46 @@ public class Domain {
         throw new RuntimeException("FAILURE: domain not found, exiting!");
 
       // verify the servers in the domain are being restarted in a sequence
-      logger.info(
-          "Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
-      TestUtils.checkPodTerminating(domainUid + "-" + adminServerName, domainNS);
-      Thread.sleep(10 * 1000);
-      logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
-      TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
-      Thread.sleep(10 * 1000);
-
-      if (domainMap.get("serverStartPolicy") == null
-          || (domainMap.get("serverStartPolicy") != null
-              && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
-        // check managed server pods
-        for (int i = 1; i <= initialManagedServerReplicas; i++) {
-          logger.info(
-              "Checking if managed pod("
-                  + domainUid
-                  + "-"
-                  + managedServerNameBase
-                  + i
-                  + ") is Terminating");
-          TestUtils.checkPodTerminating(domainUid + "-" + managedServerNameBase + i, domainNS);
-          Thread.sleep(10 * 1000);
-          logger.info(
-              "Checking if managed pod("
-                  + domainUid
-                  + "-"
-                  + managedServerNameBase
-                  + i
-                  + ") is Running");
-          TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
-        }
-      }
+      verifyAdminServerRestarted();
+      verifyManagedServerRestarted();
     }
     logger.info("Done - testDomainServerPodRestart");
+  }
+
+  public void verifyAdminServerRestarted() throws Exception {
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
+    TestUtils.checkPodTerminating(domainUid + "-" + adminServerName, domainNS);
+    Thread.sleep(10 * 1000);
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
+    TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
+    Thread.sleep(10 * 1000);
+  }
+
+  public void verifyManagedServerRestarted() throws Exception {
+    if (domainMap.get("serverStartPolicy") == null
+        || (domainMap.get("serverStartPolicy") != null
+            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
+      // check managed server pods
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        logger.info(
+            "Checking if managed pod("
+                + domainUid
+                + "-"
+                + managedServerNameBase
+                + i
+                + ") is Terminating");
+        TestUtils.checkPodTerminating(domainUid + "-" + managedServerNameBase + i, domainNS);
+        Thread.sleep(10 * 1000);
+        logger.info(
+            "Checking if managed pod("
+                + domainUid
+                + "-"
+                + managedServerNameBase
+                + i
+                + ") is Running");
+        TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+      }
+    }
   }
 
   private void createSecret() throws Exception {
