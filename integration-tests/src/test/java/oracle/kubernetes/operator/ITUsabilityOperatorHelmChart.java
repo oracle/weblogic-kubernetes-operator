@@ -6,7 +6,6 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Map;
-import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
@@ -22,17 +21,13 @@ import org.junit.runners.MethodSorters;
 /**
  * Simple JUnit test file used for testing Operator.
  *
- * <p>This test is used for creating Operator(s) and multiple domains which are managed by the
- * Operator(s).
+ * <p>This test is used for testing Helm install for Operator(s)
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITUsabilityOperatorHelmChart extends BaseTest {
 
-  // property file used to customize operator properties for operator inputs yaml
-  private static String operator2File = "operator_hc.yaml";
   // property file used to configure constants for integration tests
   private static String appPropsFile = "OperatorIT.properties";
-  private static Operator firstoperator = null;
   private static boolean QUICKTEST;
   private static boolean SMOKETEST;
   private static boolean JENKINS;
@@ -41,8 +36,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
   String oprelease = "op" + number;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
-  // Set SMOKETEST env var to true to run an even smaller subset
-  // of tests, plus leave domain1 up and running when the test completes.
+  // Set SMOKETEST env var to true to run an even smaller subset of tests
   // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
   static {
     QUICKTEST =
@@ -87,7 +81,6 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     cmd.append(BaseTest.getProjectRoot())
         .append("/integration-tests/src/test/resources/statedump.sh");
     logger.info("Running " + cmd);
-    if (firstoperator != null) firstoperator.destroy();
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) logger.info("Executed statedump.sh " + result.stdout());
@@ -107,30 +100,33 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Operator create 2 operators, delete, create again second operator
+   * Helm will install 2 operators, delete, install again second operator with same attributes
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testOperatorCreateDeleteCreate() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
+    Operator firstoperator = null;
     Operator secondoperator = null;
     try {
-      logger.info("Checking if firstoperator is running, if not creating");
-      if (firstoperator == null) {
-        firstoperator = TestUtils.createOperator(operator2File);
-      }
+      logger.info("Checking if first operator is running, if not creating");
+      firstoperator =
+          new Operator(TestUtils.createOperatorMap(number, true), RESTCertType.SELF_SIGNED);
+      firstoperator.callHelmInstall();
+      number = number + 1;
+      logger.info(" new value for oprelease " + oprelease);
       secondoperator =
           new Operator((TestUtils.createOperatorMap(number, true)), RESTCertType.SELF_SIGNED);
       secondoperator.callHelmInstall();
 
-      logger.info("Delete second operator and verify the firstoperator pod still running");
+      logger.info("Delete second operator and verify the first operator pod still running");
       secondoperator.destroy();
       Thread.sleep(BaseTest.getWaitTimePod() * 1000);
 
-      logger.info("Verify firstperator pod is running");
+      logger.info("Verify first perator pod is running");
       firstoperator.verifyOperatorReady();
       logger.info(
           "Create again second operator pod and verify it is started again after create - delete -create steps");
@@ -145,36 +141,42 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
 
     } finally {
       number++;
-      if (secondoperator != null) {
-        secondoperator.destroy();
-      }
+    }
+    if (firstoperator != null) {
+      firstoperator.destroy();
+    }
+    if (secondoperator != null) {
+      secondoperator.destroy();
     }
     logger.info("SUCCESS - " + testMethodName);
   }
 
   /**
-   * Operator create 2 operators, with same namespace, second operator should fail
+   * Negative test: Helm will install 2 operators, with same namespace, second operator should fail
    *
    * @throws Exception
    */
   @Test
-  public void testCreateSecondOperatorUsingSameOperatorNS() throws Exception {
+  public void testCreateSecondOperatorUsingSameOperatorNSNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
+    Operator firstoperator = null;
     Operator secondoperator = null;
 
     try {
-      logger.info("Checking if firstoperator is running, if not creating");
-      if (firstoperator == null) {
-        firstoperator = TestUtils.createOperator(operator2File);
-      }
+      logger.info("Creating firs toperator");
+      firstoperator =
+          new Operator(TestUtils.createOperatorMap(number, true), RESTCertType.SELF_SIGNED);
+      firstoperator.callHelmInstall();
+      number = number + 1;
+      logger.info(" new value for oprelease" + oprelease);
       Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
       operatorMap.replace("namespace", firstoperator.getOperatorMap().get("namespace"));
       secondoperator = new Operator(operatorMap, false, true, true, RESTCertType.SELF_SIGNED);
       secondoperator.callHelmInstall();
       throw new RuntimeException(
-          "FAILURE: Helm install second operator with same namespace as the first one");
+          "FAILURE: Helm installs second operator with same namespace as the first one");
 
     } catch (Exception ex) {
       if (!ex.getMessage()
@@ -183,32 +185,35 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
                   + oprelease
                   + " failed: secrets \"weblogic-operator-secrets\" already exists")) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with dublicated target domains namespaces does not report expected message "
+            "FAILURE: Helm installs second operator with same namespace as the first one does not report expected message "
                 + ex.getMessage());
       }
-      ;
       String cmdLb = "helm list --failed " + "  | grep " + oprelease;
       logger.info("Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
-            "FAILURE: Helm install second operator with same namespace as the first one ");
+            "FAILURE: Helm installs second operator with same namespace as the first one ");
       }
     } finally {
       number++;
+      if (firstoperator != null) {
+        firstoperator.destroy();
+      }
       if (secondoperator != null) {
         secondoperator.destroy();
       }
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
-   * Negative test : Operator create operator with not existed operator namespace
+   * Negative test : Helm will install the operator with not preexisted operator namespace
    *
    * @throws Exception
    */
   @Test
-  public void testNotExistedOpNSCreateOperatorNegativeInstall() throws Exception {
+  public void testNotPreCreatedOpNSCreateOperatorNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -218,14 +223,15 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
           new Operator(
               (TestUtils.createOperatorMap(number, false)), false, false, true, RESTCertType.NONE);
       operator.callHelmInstall();
-      throw new RuntimeException("FAILURE: Helm install operator with with not existed namespace ");
+      throw new RuntimeException("FAILURE: Helm install operator with not preexisted namespace ");
 
     } catch (Exception ex) {
       String cmdLb = "helm list --failed " + "  | grep " + oprelease;
       logger.info("Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
-        throw new RuntimeException("FAILURE: Helm install operator with not existed namespace ");
+        throw new RuntimeException(
+            "FAILURE: Helm installs operator with not preexisted namespace ");
       }
     } finally {
       number++;
@@ -235,13 +241,15 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
-   * Negative test : Operator create operator with not existed operator namespace
+   * Negative test : Helm will install the operator with not preexisted operator service account,
+   * deployment will not start until service account will be created
    *
    * @throws Exception
    */
   @Test
-  public void testNotExistedOpServiceAccountCreateOperatorNegativeInstall() throws Exception {
+  public void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -251,6 +259,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
           new Operator(
               (TestUtils.createOperatorMap(number, false)), true, false, true, RESTCertType.NONE);
       operator.callHelmInstall();
+      throw new RuntimeException(
+          "FAILURE: Helm installs operator with not preexisted service account ");
 
     } catch (Exception ex) {
       String cmdLb = "helm list --failed " + "  | grep " + oprelease;
@@ -258,7 +268,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with not existed service account ");
+            "FAILURE: Helm installs operator with not preexisted service account ");
       }
       // create operator service account
       String serviceAccount = (String) operator.getOperatorMap().get("serviceAccount");
@@ -290,8 +300,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Negative test : Operator create second operator with same target domain namespace as the first
-   * operator
+   * Negative test : Helm will install the second operator with same target domain namespace as the
+   * first operator
    *
    * @throws Exception
    */
@@ -301,20 +311,21 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator secondoperator = null;
+    Operator firstoperator = null;
     try {
-      logger.info("Checking if firstoperator is running, if not, creating");
-      if (firstoperator == null) {
-        firstoperator = TestUtils.createOperator(operator2File);
-      }
+      logger.info("Creating first operator");
+      firstoperator =
+          new Operator(TestUtils.createOperatorMap(number, true), RESTCertType.SELF_SIGNED);
+      firstoperator.callHelmInstall();
+      number = number + 1;
       Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, false);
       ArrayList<String> targetDomainsNS =
           (ArrayList<String>) firstoperator.getOperatorMap().get("domainNamespaces");
       operatorMap.put("domainNamespaces", targetDomainsNS);
       secondoperator = new Operator(operatorMap, true, true, false, RESTCertType.NONE);
       secondoperator.callHelmInstall();
-
       throw new RuntimeException(
-          "FAILURE: Helm install operator with dublicated target domains namespaces ");
+          "FAILURE: Helm installs second operator with same as first operator's target domains namespaces ");
 
     } catch (Exception ex) {
       logger.info("Caught exception " + ex.getMessage() + ex.getStackTrace());
@@ -324,7 +335,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
                   + oprelease
                   + " failed: rolebindings.rbac.authorization.k8s.io \"weblogic-operator-rolebinding-namespace\" already exists")) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with dublicated target domains namespaces does not report expected message "
+            "FAILURE: Helm installs second operator with same as first operator's target domains namespaces does not report expected message "
                 + ex.getMessage());
       }
       ;
@@ -333,24 +344,28 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with dublicated target domains namespaces ");
+            "FAILURE: Helm installs second operator with same as first operator's target domains namespaces ");
       }
 
     } finally {
       number++;
+      if (firstoperator != null) {
+        firstoperator.destroy();
+      }
       if (secondoperator != null) {
         secondoperator.destroy();
       }
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
    * Negative test : Create operator with not preexisted target domain namespace
    *
    * @throws Exception
    */
   @Test
-  public void testTargetNSIsNotCreatedNegativeInstall() throws Exception {
+  public void testTargetNSIsNotPreexistedNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -361,7 +376,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
               TestUtils.createOperatorMap(number, false), true, true, false, RESTCertType.NONE);
       operator.callHelmInstall();
       throw new RuntimeException(
-          "FAILURE: Helm install operator with not precreated target domains namespaces ");
+          "FAILURE: Helm install operator with not preexisted target domains namespaces ");
 
     } catch (Exception ex) {
       if (!ex.getMessage()
@@ -372,7 +387,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
                   + number
                   + "\" not found")) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with not precreated target domains namespaces does not report expected message "
+            "FAILURE: Helm install operator with not preexisted target domains namespaces does not report expected message "
                 + ex.getMessage());
       }
       ;
@@ -381,7 +396,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with not precreated target domains namespaces ");
+            "FAILURE: Helm install operator with not preexisted target domains namespaces ");
       }
 
     } finally {
@@ -392,9 +407,10 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
-   * Negative test : Operator create operator with dublicated ExternalRestPort, use upgrade to
-   * update to correct value
+   * Negative test : Helm installs the second operator with same ExternalRestPort as the first
+   * operator
    *
    * @throws Exception
    */
@@ -412,7 +428,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
 
       httpsRestPort = (int) operator1.getOperatorMap().get("externalRestHttpsPort");
       logger.info("Creating second operator with externalRestHttpPort " + httpsRestPort);
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number + 1, true);
+      number = number + 1;
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
       operatorMap.replace("externalRestHttpsPort", httpsRestPort);
 
       operator2 = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
@@ -422,7 +439,6 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
           "FAILURE: Helm install operator with dublicated Rest Port number ");
 
     } catch (Exception ex) {
-      oprelease = "op" + (number + 1);
       logger.info("Error message " + ex.getMessage());
       if (!ex.getMessage()
           .contains(
@@ -441,7 +457,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       }
 
     } finally {
-      number = number + 2;
+      number++;
       if (operator1 != null) {
         operator1.destroy();
       }
@@ -451,9 +467,9 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
-   * Negative test : Operator create operator with invalid target domains namespaces existed
-   * operator namespace
+   * Negative test : Helm installs the operator with invalid target domains namespaces (UpperCase)
    *
    * @throws Exception
    */
@@ -477,7 +493,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       if (!ex.getMessage()
           .contains("Error: release " + oprelease + " failed: namespaces \"Test9\" not found")) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with UpperCase for target domains namespace does not report expected message "
+            "FAILURE: Helm installs the operator with UpperCase for target domains namespace does not report expected message "
                 + ex.getMessage());
       }
       ;
@@ -486,7 +502,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with UpperCase Target Domain NS ");
+            "FAILURE: Helm installs the operator with UpperCase Target Domain NS ");
       }
 
     } finally {
@@ -499,8 +515,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Negative test : Operator create operator with invalid target domains namespaces existed
-   * operator namespace
+   * Negative test : Helm installs the operator with invalid attributes values
    *
    * @throws Exception
    */
@@ -513,16 +528,16 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
 
     try {
-      operatorMap.put("externalRestEnabled", "true");
+      operatorMap.put("elkIntegrationEnabled", "true");
       operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
       operator.callHelmInstall();
       throw new RuntimeException(
-          "FAILURE: Helm install operator with invalid value for attribute externalRestEnabled ");
+          "FAILURE: Helm installs the operator with invalid value for attribute elkIntegrationEnabled ");
 
     } catch (Exception ex) {
-      if (!ex.getMessage().contains("java.lang.String cannot be cast to java.lang.Boolean")) {
+      if (!ex.getMessage().contains("elkIntegrationEnabled must be a bool : string")) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with invalid value for attribute externalRestEnabled does not report expected message "
+            "FAILURE: Helm installs the operator with invalid value for attribute elkIntegrationEnabled does not report expected message "
                 + ex.getMessage());
       }
       ;
@@ -534,14 +549,14 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       operator = new Operator(operatorMap, false, false, false, RESTCertType.SELF_SIGNED);
       operator.callHelmInstall();
       throw new RuntimeException(
-          "FAILURE: Helm install operator with invalid value for attribute javaLoggingLevel ");
+          "FAILURE: Helm installs the operator with invalid value for attribute javaLoggingLevel ");
 
     } catch (Exception ex) {
       if (!ex.getMessage()
           .contains(
               "javaLoggingLevel must be one of the following values [SEVERE WARNING INFO CONFIG FINE FINER FINEST] : INVALIDOPTION")) {
         throw new RuntimeException(
-            "FAILURE: Helm install operator with invalid value for attribute externalRestEnabled does not report expected message "
+            "FAILURE: Helm installs the operator with invalid value for attribute externalRestEnabled does not report expected message "
                 + ex.getMessage());
       }
     } finally {
@@ -549,8 +564,9 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
-   * Operator create operator with empty target domains namespaces
+   * Helm will install the operator with empty target domains namespaces
    *
    * @throws Exception
    */
@@ -584,8 +600,9 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     operator.callHelmUpgrade(upgradeSet);
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
-   * Operator create operator with default target domains namespaces
+   * Helm installs the operator with default target domains namespaces
    *
    * @throws Exception
    */
@@ -603,8 +620,6 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       operator = new Operator(operatorMap, true, true, false, RESTCertType.SELF_SIGNED);
       operator.callHelmInstall();
       operator.verifyOperatorReady();
-      // throw new RuntimeException(
-      //       "FAILURE: Helm install operator with UpperCase for target domains ");
 
     } finally {
       number++;
@@ -613,19 +628,5 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       }
     }
     logger.info("SUCCESS - " + testMethodName);
-  }
-
-  private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
-    if (!SMOKETEST) {
-      testClusterScaling(operator, domain);
-      testDomainLifecyle(operator, domain);
-      testOperatorLifecycle(operator, domain);
-    }
-    return domain;
-  }
-
-  private void testBasicUseCases(Domain domain) throws Exception {
-    testAdminT3Channel(domain);
-    testAdminServerExternalService(domain);
   }
 }
