@@ -111,7 +111,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    *
    * @throws Exception
    */
-  //@Test
+  // @Test
   public void testOperatorCreateDeleteCreate() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
