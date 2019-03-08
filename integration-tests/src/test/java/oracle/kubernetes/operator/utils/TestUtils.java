@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -688,6 +689,20 @@ public class TestUtils {
     if (result.exitValue() != 0) {
       throw new RuntimeException("Couldn't create secret " + result.stderr());
     }
+  }
+  public static Map<String,Object> createOperatorMap(int number, boolean restEnabled) {
+    Map<String,Object> operatorMap = new HashMap<>();
+    ArrayList<String> targetDomainsNS= new ArrayList<String>();
+    targetDomainsNS.add("test" + number);
+    operatorMap.put("releaseName","op" + number);
+    operatorMap.put("domainNamespaces",targetDomainsNS );
+    operatorMap.put("serviceAccount","weblogic-operator" + number);
+    operatorMap.put("namespace", "weblogic-operator" + number);
+    if(restEnabled) {
+        operatorMap.put("externalRestHttpsPort", 31000 + number);
+        operatorMap.put("externalRestEnabled", restEnabled);
+    }
+    return operatorMap;
   }
 
   public static String callShellScriptByExecToPod(
