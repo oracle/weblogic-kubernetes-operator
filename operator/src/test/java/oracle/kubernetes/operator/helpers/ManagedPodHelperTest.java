@@ -35,7 +35,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.Test;
 
 public class ManagedPodHelperTest extends PodHelperTestBase {

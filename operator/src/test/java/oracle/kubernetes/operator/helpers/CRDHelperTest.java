@@ -17,6 +17,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinitionVersion;
 import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
 import java.net.HttpURLConnection;
@@ -145,9 +146,34 @@ public class CRDHelperTest {
 
   @Test
   public void whenExistingCRDHasFutureVersion_dontReplaceIt() {
-    expectReadCRD().returning(defineCRD("v4", "operator-v4"));
+    V1beta1CustomResourceDefinition existing = defineCRD("v4", "operator-v4");
+    existing
+        .getSpec()
+        .addVersionsItem(
+            new V1beta1CustomResourceDefinitionVersion()
+                .served(true)
+                .name(KubernetesConstants.DOMAIN_VERSION));
+    expectReadCRD().returning(existing);
 
     testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
+  }
+
+  @Test
+  public void whenExistingCRDHasFutureVersionButNotCurrentStorage_updateIt() {
+    expectReadCRD().returning(defineCRD("v4", "operator-v4"));
+
+    V1beta1CustomResourceDefinition replacement = defineCRD("v4", "operator-v4");
+    replacement
+        .getSpec()
+        .addVersionsItem(
+            new V1beta1CustomResourceDefinitionVersion()
+                .served(true)
+                .name(KubernetesConstants.DOMAIN_VERSION));
+    expectSuccessfulReplaceCRD(replacement);
+
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
   @Test
@@ -214,7 +240,7 @@ public class CRDHelperTest {
 
     private boolean hasSchemaVerification(V1beta1CustomResourceDefinition actualBody) {
       V1beta1CustomResourceValidation validation = actualBody.getSpec().getValidation();
-      if (validation == null) return false;
+      if (validation == null) return expected.getSpec().getValidation() == null;
 
       V1beta1JSONSchemaProps openAPIV3Schema = validation.getOpenAPIV3Schema();
       if (openAPIV3Schema == null || openAPIV3Schema.getProperties().size() != 2) return false;

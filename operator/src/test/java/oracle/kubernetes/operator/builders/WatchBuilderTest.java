@@ -41,7 +41,7 @@ import java.util.Queue;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

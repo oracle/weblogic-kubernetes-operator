@@ -25,8 +25,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
-import oracle.kubernetes.weblogic.domain.v3.DomainList;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 public class WeblogicApi {
   private ApiClient apiClient;

@@ -7,7 +7,7 @@ package oracle.kubernetes.operator.steps;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class DomainPresenceStep extends Step {
 

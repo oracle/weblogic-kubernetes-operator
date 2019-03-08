@@ -7,7 +7,7 @@ package oracle.kubernetes.json;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class GenerateSchema {
 

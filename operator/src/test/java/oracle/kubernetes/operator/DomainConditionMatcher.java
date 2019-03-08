@@ -8,10 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.weblogic.domain.v3.Domain;
-import oracle.kubernetes.weblogic.domain.v3.DomainCondition;
-import oracle.kubernetes.weblogic.domain.v3.DomainConditionType;
-import oracle.kubernetes.weblogic.domain.v3.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
