@@ -19,6 +19,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import org.apache.commons.codec.binary.Base64;
@@ -66,10 +67,17 @@ public class RestServer {
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
 
   public static synchronized void create(RestConfig restConfig) {
-    if (INSTANCE == null) {
-      INSTANCE = new RestServer(restConfig);
+    LOGGER.entering();
+    try {
+      if (INSTANCE == null) {
+        INSTANCE = new RestServer(restConfig);
+        return;
+      }
+
+      throw new IllegalStateException();
+    } finally {
+      LOGGER.exiting();
     }
-    // throw new IllegalStateException();
   }
 
   public static synchronized RestServer getInstance() {
@@ -77,7 +85,9 @@ public class RestServer {
   }
 
   public static void destroy() {
+    LOGGER.entering();
     INSTANCE = null;
+    LOGGER.exiting();
   }
 
   /**
@@ -185,16 +195,27 @@ public class RestServer {
     LOGGER.exiting();
   }
 
-  public String getInternalCertificate() {
+  /**
+   * Gets the internal https port's certificate as a base64 encoded PEM.
+   *
+   * @return base64 encoded PEM containing the certificate, or null if unable to read the
+   *     certificate data.
+   */
+  public String getInternalCertificateAsBase64PEM() {
+    LOGGER.entering();
+    String internalCert = null;
     try {
-      return readCertFromDataOrFile(
-          this.config.getOperatorInternalCertificateData(),
-          this.config.getOperatorInternalCertificateFile());
+      internalCert =
+          Base64.encodeBase64String(
+              readFromDataOrFile(
+                  this.config.getOperatorInternalCertificateData(),
+                  this.config.getOperatorInternalCertificateFile()));
     } catch (IOException e) {
-      LOGGER.warning("Unable to read internal certificate data", e);
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
 
-    return null;
+    LOGGER.exiting(internalCert);
+    return internalCert;
   }
 
   private HttpServer createExternalHttpsServer(Container container) throws Exception {
@@ -348,13 +369,6 @@ public class RestServer {
             );
     LOGGER.exiting(result);
     return result;
-  }
-
-  private static String readCertFromDataOrFile(String data, String file) throws IOException {
-    if (data != null && data.length() > 0) {
-      return data;
-    }
-    return new String(Files.readAllBytes(new File(file).toPath()));
   }
 
   private static byte[] readFromDataOrFile(String data, String file) throws IOException {
