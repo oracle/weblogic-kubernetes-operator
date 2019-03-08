@@ -17,5 +17,5 @@ namespace: default
 loadBalancer: TRAEFIK
 ingressPerDomain: true
 javaOptions: -Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true
+createDomainPyScript: integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py
 voyagerWebPort: 30305
-
