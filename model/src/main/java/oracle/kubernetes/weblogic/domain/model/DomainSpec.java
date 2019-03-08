@@ -219,8 +219,9 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   @SuppressWarnings("unused")
-  EffectiveConfigurationFactory getEffectiveConfigurationFactory(String resourceVersionLabel) {
-    return new V2EffectiveConfigurationFactory();
+  EffectiveConfigurationFactory getEffectiveConfigurationFactory(
+      String apiVersion, String resourceVersionLabel) {
+    return new CommonEffectiveConfigurationFactory();
   }
 
   /**
@@ -640,7 +641,7 @@ public class DomainSpec extends BaseConfiguration {
     return clusters;
   }
 
-  class V2EffectiveConfigurationFactory implements EffectiveConfigurationFactory {
+  class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
     public ServerSpec getAdminServerSpec() {
       return new AdminServerSpecCommonImpl(DomainSpec.this, adminServer);

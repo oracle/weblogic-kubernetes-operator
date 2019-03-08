@@ -186,7 +186,7 @@ public class Domain {
   }
 
   private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
-    return spec.getEffectiveConfigurationFactory(getResourceVersion());
+    return spec.getEffectiveConfigurationFactory(apiVersion, getResourceVersion());
   }
 
   private String getResourceVersion() {
