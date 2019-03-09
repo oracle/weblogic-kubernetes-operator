@@ -66,6 +66,12 @@ public class RestServer {
     SSL_PROTOCOL
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
 
+  /**
+   * Create singleton instance of the WebLogic Operator's RestServer. Should only be called once.
+   *
+   * @param restConfig - the WebLogic Operator's REST configuration. Throws IllegalStateException if
+   *     instance already created.
+   */
   public static synchronized void create(RestConfig restConfig) {
     LOGGER.entering();
     try {
@@ -80,14 +86,31 @@ public class RestServer {
     }
   }
 
+  /**
+   * Accessor for obtaining reference to the RestServer singleton instance.
+   *
+   * @return RestServer - Singleton instance of the RestServer
+   */
   public static synchronized RestServer getInstance() {
     return INSTANCE;
   }
 
+  /**
+   * Release RestServer singleton instance. Should only be called once. Throws IllegalStateException
+   * if singleton instance not created.
+   */
   public static void destroy() {
     LOGGER.entering();
-    INSTANCE = null;
-    LOGGER.exiting();
+    try {
+      if (INSTANCE != null) {
+        INSTANCE = null;
+        return;
+      }
+
+      throw new IllegalStateException();
+    } finally {
+      LOGGER.exiting();
+    }
   }
 
   /**
