@@ -814,6 +814,12 @@ public class ServiceHelper {
     }
 
     @Override
+    protected V1ServiceSpec createServiceSpec() {
+      return super.createServiceSpec()
+          .putSelectorItem(LabelConstants.SERVERNAME_LABEL, adminServerName);
+    }
+
+    @Override
     protected String createServiceName() {
       return LegalNames.toExternalServiceName(getDomainUID(), adminServerName);
     }

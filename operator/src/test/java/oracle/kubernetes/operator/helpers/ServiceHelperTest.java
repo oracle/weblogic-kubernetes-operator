@@ -27,8 +27,10 @@ import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SE
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -49,6 +51,7 @@ import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -195,6 +198,18 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   private String getServiceType(V1Service service) {
     return service.getSpec().getType();
+  }
+
+  @Test
+  public void whenCreated_modelHasExpectedSelectors() {
+    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+
+    assertThat(
+        model.getSpec().getSelector(),
+        allOf(
+            hasEntry(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"),
+            hasEntry(LabelConstants.DOMAINUID_LABEL, UID),
+            hasEntry(testFacade.getExpectedSelectorKey(), testFacade.getExpectedSelectorValue())));
   }
 
   @Test
@@ -404,6 +419,12 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     }
 
     abstract ServiceConfigurator configureService(DomainConfigurator configurator);
+
+    String getExpectedSelectorKey() {
+      return LabelConstants.SERVERNAME_LABEL;
+    }
+
+    abstract String getExpectedSelectorValue();
   }
 
   static class ClusterServiceTestFacade extends TestFacade {
@@ -470,6 +491,16 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     public ServiceConfigurator configureService(DomainConfigurator configurator) {
       return configurator.configureCluster(TEST_CLUSTER);
     }
+
+    @Override
+    String getExpectedSelectorKey() {
+      return LabelConstants.CLUSTERNAME_LABEL;
+    }
+
+    @Override
+    String getExpectedSelectorValue() {
+      return TEST_CLUSTER;
+    }
   }
 
   abstract static class ServerTestFacade extends TestFacade {
@@ -502,6 +533,11 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     @Override
     public ServiceConfigurator configureService(DomainConfigurator configurator) {
       return configurator.configureServer(getServerName());
+    }
+
+    @Override
+    String getExpectedSelectorValue() {
+      return getServerName();
     }
   }
 
@@ -629,6 +665,11 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     @Override
     ServiceConfigurator configureService(DomainConfigurator configurator) {
       return configurator.configureAdminServer().configureAdminService();
+    }
+
+    @Override
+    String getExpectedSelectorValue() {
+      return ADMIN_SERVER;
     }
   }
 
