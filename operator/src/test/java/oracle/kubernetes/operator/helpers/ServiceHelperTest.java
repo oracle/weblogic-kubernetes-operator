@@ -644,12 +644,12 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
     @Override
     public V1Service getRecordedService(DomainPresenceInfo info) {
-      return info.getExternalService();
+      return info.getExternalService(ADMIN_SERVER);
     }
 
     @Override
     public void recordService(DomainPresenceInfo info, V1Service service) {
-      info.setExternalService(service);
+      info.setExternalService(ADMIN_SERVER, service);
     }
 
     @Override

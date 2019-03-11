@@ -35,7 +35,6 @@ public class DomainPresenceInfo {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
-  private final AtomicReference<V1Service> externalService = new AtomicReference<>();
 
   private DateTime lastCompletionTime;
 
@@ -69,7 +68,7 @@ public class DomainPresenceInfo {
   }
 
   private ServerKubernetesObjects getSko(String serverName) {
-    return getServers().putIfAbsent(serverName, new ServerKubernetesObjects());
+    return getServers().computeIfAbsent(serverName, (n -> new ServerKubernetesObjects()));
   }
 
   V1Service getServerService(String serverName) {
@@ -88,12 +87,12 @@ public class DomainPresenceInfo {
     getClusters().put(clusterName, service);
   }
 
-  V1Service getExternalService() {
-    return externalService.get();
+  V1Service getExternalService(String serverName) {
+    return getSko(serverName).getExternalService();
   }
 
-  void setExternalService(V1Service service) {
-    externalService.set(service);
+  void setExternalService(String serverName, V1Service service) {
+    getSko(serverName).setExternalService(service);
   }
 
   public boolean isDeleting() {

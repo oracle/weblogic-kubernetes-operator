@@ -157,31 +157,29 @@ public class ServiceHelper {
 
     @Override
     protected V1Service getServiceFromRecord() {
-      return sko.getService().get();
+      return info.getServerService(serverName);
     }
 
     @Override
     protected void addServiceToRecord(@Nonnull V1Service service) {
-      sko.getService().set(service);
+      info.setServerService(serverName, service);
     }
 
     @Override
     protected void removeServiceFromRecord() {
-      sko.getService().set(null);
+      info.setServerService(serverName, null);
     }
   }
 
   private abstract static class ServerServiceStepContext extends ServiceStepContext {
     protected final String serverName;
     protected final String clusterName;
-    protected final ServerKubernetesObjects sko;
     protected final WlsServerConfig scan;
 
     ServerServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
-      sko = info.getServers().computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
       scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
     }
 
@@ -836,17 +834,17 @@ public class ServiceHelper {
 
     @Override
     protected V1Service getServiceFromRecord() {
-      return info.getExternalService();
+      return info.getExternalService(adminServerName);
     }
 
     @Override
     protected void addServiceToRecord(V1Service service) {
-      info.setExternalService(service);
+      info.setExternalService(adminServerName, service);
     }
 
     @Override
     protected void removeServiceFromRecord() {
-      info.setExternalService(null);
+      info.setExternalService(adminServerName, null);
     }
 
     @Override
