@@ -5,7 +5,6 @@
 # This is an example of how to define a Domain resource.  Please read through the comments which explain
 # what updates are needed.
 #
-apiVersion: "weblogic.oracle/v3alpha1"
 kind: Domain
 metadata:
   # Update this with the `domainUID` of your domain:
