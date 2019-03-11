@@ -18,7 +18,7 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 * Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/fusionmiddlewaresupport/updated-weblogic-kubernetes-support-with-operator-20-v2), or try out the [samples](kubernetes/samples/README.md).
+The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/updated-weblogic-kubernetes-support-with-operator-20), or try out the [samples](kubernetes/samples/README.md).
 
 ***
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.0.1.
@@ -147,7 +147,7 @@ Only pull requests from committers that can be verified as having signed the OCA
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.
 
-## Use Helm Chart from Github chart repository
+## Use Helm Chart from GitHub chart repository
 
 Add this repo to Helm installation:
 
@@ -157,7 +157,7 @@ $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-o
 
 Verify repository was added correctly:
 
-````
+```
 $ helm repo list
 NAME           URL
 weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts

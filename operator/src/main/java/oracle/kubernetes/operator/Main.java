@@ -143,7 +143,6 @@ public class Main {
       new AtomicReference<>(DateTime.now());
 
   private static String principal;
-  private static RestServer restServer = null;
   private static KubernetesVersion version = null;
 
   static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
@@ -387,7 +386,7 @@ public class Main {
   }
 
   private static Step readExistingDomains(String ns) {
-    LOGGER.info(MessageKeys.LISTING_DOMAINS);
+    LOGGER.fine(MessageKeys.LISTING_DOMAINS);
     return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
   }
 
@@ -450,13 +449,13 @@ public class Main {
 
   private static void startRestServer(String principal, Collection<String> targetNamespaces)
       throws Exception {
-    restServer = new RestServer(new RestConfigImpl(principal, targetNamespaces));
-    restServer.start(container);
+    RestServer.create(new RestConfigImpl(principal, targetNamespaces));
+    RestServer.getInstance().start(container);
   }
 
   private static void stopRestServer() {
-    restServer.stop();
-    restServer = null;
+    RestServer.getInstance().stop();
+    RestServer.destroy();
   }
 
   private static void startLivenessThread() {
