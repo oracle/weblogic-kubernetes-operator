@@ -4,9 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
@@ -57,12 +54,10 @@ public class ITOperator extends BaseTest {
   private static boolean QUICKTEST;
   private static boolean SMOKETEST;
   private static boolean JENKINS;
-  private static boolean INGRESSPERDOMAIN = true;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset
   // of tests, plus leave domain1 up and running when the test completes.
-  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
@@ -71,9 +66,6 @@ public class ITOperator extends BaseTest {
     if (SMOKETEST) QUICKTEST = true;
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
-    }
-    if (System.getenv("INGRESSPERDOMAIN") != null) {
-      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
   }
 
@@ -239,12 +231,7 @@ public class ITOperator extends BaseTest {
       wlstDomainMap.put("domainUID", "domain1onpvwlst");
       wlstDomainMap.put("adminNodePort", new Integer("30702"));
       wlstDomainMap.put("t3ChannelPort", new Integer("30031"));
-      if (!INGRESSPERDOMAIN) {
-        wlstDomainMap.put("ingressPerDomain", new Boolean("false"));
-        logger.info(
-            "domain1onpvwlst ingressPerDomain is set to: "
-                + ((Boolean) wlstDomainMap.get("ingressPerDomain")).booleanValue());
-      }
+      wlstDomainMap.put("voyagerWebPort", new Integer("30307"));
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1);
@@ -260,12 +247,7 @@ public class ITOperator extends BaseTest {
       wdtDomainMap.put("adminNodePort", new Integer("30703"));
       wdtDomainMap.put("t3ChannelPort", new Integer("30041"));
       // wdtDomainMap.put("clusterType", "Configured");
-      if (!INGRESSPERDOMAIN) {
-        wdtDomainMap.put("ingressPerDomain", new Boolean("false"));
-        logger.info(
-            "domain2onpvwdt ingressPerDomain is set to: "
-                + ((Boolean) wdtDomainMap.get("ingressPerDomain")).booleanValue());
-      }
+      wdtDomainMap.put("voyagerWebPort", new Integer("30308"));
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
@@ -326,7 +308,6 @@ public class ITOperator extends BaseTest {
     try {
       domain = TestUtils.createDomain(domainadminonlyFile);
       domain.verifyDomainCreated();
-
     } finally {
       if (domain != null) {
         // create domain on existing dir
@@ -427,8 +408,6 @@ public class ITOperator extends BaseTest {
     }
     Domain domain11 = null;
     boolean testCompletedSuccessfully = false;
-    String createDomainScriptDir =
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv";
     try {
       // load input yaml to map and add configOverrides
       Map<String, Object> domainMap = TestUtils.loadYaml(domainonpvwlstFile);
@@ -439,20 +418,15 @@ public class ITOperator extends BaseTest {
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put("adminNodePort", new Integer("30704"));
       domainMap.put("t3ChannelPort", new Integer("30051"));
+      domainMap.put(
+          "createDomainPyScript",
+          "integration-tests/src/test/resources/domain-home-on-pv/create-domain-auto-custom-sit-config.py");
+      domainMap.put("voyagerWebPort", new Integer("30312"));
+
       // use NFS for this domain on Jenkins, defaultis HOST_PATH
       if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
         domainMap.put("weblogicDomainStorageType", "NFS");
       }
-
-      // cp py
-      Files.copy(
-          new File(createDomainScriptDir + "/create-domain.py").toPath(),
-          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
-      Files.copy(
-          new File(createDomainScriptDir + "/create-domain-auto-custom-sit-config.py").toPath(),
-          new File(createDomainScriptDir + "/create-domain.py").toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
 
       domain11 = TestUtils.createDomain(domainMap);
       domain11.verifyDomainCreated();
@@ -461,10 +435,6 @@ public class ITOperator extends BaseTest {
       testCompletedSuccessfully = true;
 
     } finally {
-      Files.copy(
-          new File(createDomainScriptDir + "/create-domain.py.bak").toPath(),
-          new File(createDomainScriptDir + "/create-domain.py").toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
       if (domain11 != null && (JENKINS || testCompletedSuccessfully)) {
         domain11.destroy();
       }
@@ -521,7 +491,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testDomainInImageUsingWLST() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -553,7 +523,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testDomainInImageUsingWDT() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();

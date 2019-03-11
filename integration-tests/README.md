@@ -16,7 +16,7 @@ Wercker runs only Quick test use cases, Jenkins runs both Quick and Full test us
 
 Java integration tests cover the below use cases:
 
-Quick test use cases
+Quick test Configuration & Use Cases - 
 
 |  |  |
 | --- | --- |
@@ -42,12 +42,13 @@ Also the below use cases are covered for Quick test:
 9. Verify the liveness probe by killing managed server 1 process 3 times to kick pod auto-restart.
 10. Shutdown the domain by changing domain `serverStartPolicy` to `NEVER`.
 
-Full test use cases
+
+Full test Configuration & Use Cases - Runs Quick test Configuration & Use cases and the below
 
 |  |  |
 | --- | --- |
-| Operator Configuration | operator2 deployed in `weblogic-operator2` namespace and manages domains `test2` namespace. |
-| Domain Configuration | Domain on PV using WDT; domain with `serverStartPolicy` `ADMIN_ONLY`; domain with auto and custom situational configuration; two domains managed by two operators; domain with recycle `weblogicDomainStorageReclaimPolicy`; domain with default sample values. |
+| Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
+| Domain Configuration | Domain on PV using WDT <p> Domain home in image using WLST <p> Domain home in image using WDT <p> Domain with serverStartPolicy ADMIN_ONLY <p> Domain with auto and custom situational configuration <p> Two domains managed by two operators <p> Domain with Recycle weblogicDomainStorageReclaimPolicy <p> Domain with default sample values |
 
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
@@ -55,12 +56,14 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Domain | Use Case |
 | --- | --- |
 | Domain on PV using WDT | WLDF scaling |
-| Domain with ADMIN_ONLY | Making sure only admin server is started and managed servers are not started. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
-| Domain with situational config | Create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage. |
-| Two domains managed by two operators | Verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
-| Domain with Recycle policy | Create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted once the domain and PVC are deleted. |
-| Domain with default sample values | Create domain using mostly default values for inputs. |					
-
+| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
+| Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage |	
+| Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
+| Domain with Recycle policy | create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted once the domain and PVC are deleted |
+| Domain with default sample values | create domain using mostly default values for inputs |	
+| Domain home in image using WLST | cluster scaling |
+| Domain home in image using WDT  | cluster scaling |
+						
 
 # Directory Configuration and Structure
 
@@ -166,10 +169,21 @@ Certain properties like weblogicDomainStoragePath, image, externalOperatorCert a
 
 # How does it work
 
-When the tests are run manually with mvn command on hosted Linux, WebLogic image store/oracle/weblogic:12.2.1.3 is pulled from docker hub or uses local image if one exists. Server jre images are pulled from a local repository wlsldi-v2.docker.oraclecorp.com. Operator image is built with the git branch from where the mvn command is executed.
-All the tests that start with IT*.java are run. The test builds the operator, runs a series of tests and archives the results into tar.gz files upon completion.
+When the tests are run with mvn command, 
+- cleanup the test tmp files, PV dir and k8s artifacts created for the test if any
+- creates the required secrets to pull the WL image from docker hub
+- Operator image is built with the git branch from where the mvn command is executed. 
+- creates Operator and verifies operator is running
+- creates Domain crd using samples
+- verifies the domain is started and servers are ready, services are created
+- executes the basic and advanced use cases 
+- shutdown the domain 
+- archive logs and results
+- cleanup the tmp files, PV dir and k8s artifacts created for the test
+	
+All the tests that start with IT*.java in integration-tests/src/test/java are run. 
 
-Integration test classes:
+**Integration test classes:**
 
 When the integration test class ITOperator is executed, staticPrepare() method is called once before any of the test methods in the class and staticUnPrepare() method once at the end.
 
@@ -179,27 +193,43 @@ staticUnPrepare() - releases the cluster lease on wercker env.
 
 test methods -  testDomainOnPVUsingWLST, testDomainOnPVUsingWDT, testTwoDomainsManagedByTwoOperators, testCreateDomainWithStartPolicyAdminOnly, testCreateDomainPVReclaimPolicyRecycle, testCreateDomainWithDefaultValuesInSampleInputs, testAutoAndCustomSitConfigOverrides, testOperatorRESTIdentityBackwardCompatibility, testOperatorRESTUsingCertificateChain
 
-Utility classes:
+**Utility classes:**
 
-Operator - contains methods to create/destroy operator, verify operator created, scale using rest api, etc
-Domain - contains methods to create/destroy domain, verify domain created,deploy webapp, load balancing, etc
-PersistentVolume - to create PV
-LoadBalancer - to create load balancer
-Secret - to create secret
+Operator - constructor takes yaml file with operator properties and generates operator valus yaml with required properties and certs,  creates service account, namespace and calls helm install using the generated values yaml file. Also contains methods to delete operator release, verify operator created and ready, scale using rest api, verify a given domain via rest, verify external rest service, etc  <p>
+Domain - constructor takes Map with domain, LB, PV properties and creates domain crd, LB operator/ingress and PV artifacts using the sample scripts provided in the project. Also contains helper methods to destroy domain by deleting domain crd, verify domain created and servers are ready, deploy webapp, verify load balancing of http requests, etc <p>
+PersistentVolume - runs k8s job to create PV directory and creates PV and PVC using sample scripts  <p>
+LoadBalancer - creates load balancer, currently TREFIK and VOYAGER are supported <p>
+Secret - creates a k8s secret <p>
+TestUtils - mostly runs kubectl commands. Contains utility methods to check if a pod is created, ready, deleted, service created, get pod restart cnt, get cluster replica, delete PVC, check PV released, create rbac policy, create wldf module, etc. <p>
+ExecCommand - Class for executing shell commands from java <p>
+ExecResult - Class that holds the results of using java to exec a command (i.e. exit value, stdout and stderr) <p>
+K8sTestUtils - uses k8s java client api, this is used only for delete domain use cases for now. <p>
 
 # How to run the Java integration tests
 
 * Maven and latest Git should be in PATH
 * export JAVA_HOME
+* export WEBLOGIC_IMAGE_NAME and WEBLOGIC_IMAGE_TAG if different from store/oracle/weblogic and 12.2.1.3
+* Setup docker access to WebLogic 12c Images 
 
-Command to run the tests:
+ Method 1 
+  - Setup a personal account on hub.docker.com
+  - Then sign in to hub.docker.com and signup for access to WebLogic 12c Images via https://hub.docker.com/_/oracle-weblogic-server-12c
+  - Then export the following before running the tests: 
+	```
+	export DOCKER_USERNAME=<docker_username>
+	export DOCKER_PASSWORD=<docker_password>
+	export DOCKER_EMAIL=<docker_email>
+	```
+ 
+ Method 2 
+ - Make sure the weblogic image i.e. store/oracle/weblogic:12.2.1.3 already exists locally in a docker repository the k8s cluster can access
+ - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
+  	- If not, see [https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s].
+		
+		
+* Command to run the tests: 
 ```
-export DOCKER_USERNAME=<docker_username>
-export DOCKER_PASSWORD=<docker_password>
-export DOCKER_EMAIL=<docker_email>
-or
-make sure the weblogic image i.e. store/oracle/weblogic:12.2.1.3 already exists locally
-
 mvn clean verify -P java-integration-tests 2>&1 | tee log.txt
 ```
 
@@ -210,7 +240,8 @@ The tests accepts optional env var overrides:
 | RESULT_ROOT | The root directory to use for the tests temporary files. See "Directory Configuration and Structure" for                  defaults and a detailed description of test directories. |
 | PV_ROOT    |  The root directory on the kubernetes cluster used for persistent volumes. See "Directory Configuration and Structure" for defaults and a detailed description of test directories. |
 | QUICKTEST  | When set to "true", limits testing to a subset of the tests. |
-| INGRESSPERDOMAIN  | The defult value is true. If you want to test creating LB by kubectl yaml for multiple domains, set it to false. |
+| LB_TYPE    | The default value is "TRAEFIK". Set to "VOYAGER" if you want to use it as LB. |
+| INGRESSPERDOMAIN  | The defult value is true. If you want to test creating TRAEFIK LB by kubectl yaml for multiple domains, set it to false. |
 | WERCKER    | Set to true if invoking from Wercker, set to false or "" if running stand-alone or from Jenkins. Default is "". |
 | JENKINS    | Set to true if invoking from Jenkins, set to false or "" if running stand-alone or from Wercker. Default is "". |
 | K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
