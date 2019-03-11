@@ -28,8 +28,8 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainList;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -151,8 +151,8 @@ public class KubernetesTestSupportTest {
   public void listPodSelectsByLabel() {
     V1Pod pod1 = createLabeledPod("ns1", "pod1", ImmutableMap.of("k1", "v1", "k2", "v2"));
     V1Pod pod2 = createLabeledPod("ns1", "pod2", ImmutableMap.of("k1", "v2"));
-    V1Pod pod3 = createLabeledPod("ns1", "pod3", ImmutableMap.of("k1", "v1", "k2", "v3"));
-    V1Pod pod4 = createLabeledPod("ns2", "pod4", ImmutableMap.of("k1", "v1", "k2", "v3"));
+    V1Pod pod3 = createLabeledPod("ns1", "pod3", ImmutableMap.of("k1", "v1", "k2", "v2"));
+    V1Pod pod4 = createLabeledPod("ns2", "pod4", ImmutableMap.of("k1", "v1", "k2", "v2"));
     testSupport.defineResources(pod1, pod2, pod3, pod4);
 
     TestResponseStep<V1PodList> responseStep = new TestResponseStep<>();
