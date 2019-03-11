@@ -191,7 +191,7 @@ public class CRDHelper {
           return doNext(createCRD(getNext()), packet);
         } else if (isOutdatedCRD(existingCRD)) {
           return doNext(updateCRD(getNext(), existingCRD), packet);
-        } else if (isExistingCRDMissingVersion(existingCRD)) {
+        } else if (!existingCRDContainsVersion(existingCRD)) {
           return doNext(updateExistingCRD(getNext(), existingCRD), packet);
         } else {
           return doNext(packet);
@@ -231,7 +231,7 @@ public class CRDHelper {
       return COMPARATOR.isOutdatedCRD(existingCRD, this.model);
     }
 
-    private boolean isExistingCRDMissingVersion(V1beta1CustomResourceDefinition existingCRD) {
+    private boolean existingCRDContainsVersion(V1beta1CustomResourceDefinition existingCRD) {
       List<V1beta1CustomResourceDefinitionVersion> versions = existingCRD.getSpec().getVersions();
       boolean found = false;
       if (versions != null) {
@@ -243,7 +243,7 @@ public class CRDHelper {
         }
       }
 
-      return !found;
+      return found;
     }
 
     Step updateExistingCRD(Step next, V1beta1CustomResourceDefinition existingCRD) {
@@ -349,27 +349,27 @@ public class CRDHelper {
       // VersionHelper.matchesResourceVersion(existingCRD.getMetadata(), DEFAULT_OPERATOR_VERSION)
     }
 
-    // true, if right is later than left
-    private boolean isLaterOrEqual(ResourceVersion left, ResourceVersion right) {
-      if (right.getVersion() != left.getVersion()) {
-        return right.getVersion() >= left.getVersion();
+    // true, if version is later than base
+    private boolean isLaterOrEqual(ResourceVersion base, ResourceVersion version) {
+      if (version.getVersion() != base.getVersion()) {
+        return version.getVersion() >= base.getVersion();
       }
 
-      if (right.getPrerelease() == null) {
-        if (left.getPrerelease() != null) {
+      if (version.getPrerelease() == null) {
+        if (base.getPrerelease() != null) {
           return true;
         }
-      } else if (!right.getPrerelease().equals(left.getPrerelease())) {
-        if (left.getPrerelease() == null) {
+      } else if (!version.getPrerelease().equals(base.getPrerelease())) {
+        if (base.getPrerelease() == null) {
           return false;
         }
-        return "alpha".equals(left.getPrerelease());
+        return "alpha".equals(base.getPrerelease());
       }
 
-      if (right.getPrereleaseVersion() == null && left.getPrereleaseVersion() != null) {
+      if (version.getPrereleaseVersion() == null && base.getPrereleaseVersion() != null) {
         return false;
       }
-      return right.getPrereleaseVersion() >= left.getPrereleaseVersion();
+      return version.getPrereleaseVersion() >= base.getPrereleaseVersion();
     }
 
     private V1beta1JSONSchemaProps getSchemaValidation(V1beta1CustomResourceDefinition crd) {
