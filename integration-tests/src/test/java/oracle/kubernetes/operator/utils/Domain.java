@@ -57,7 +57,7 @@ public class Domain {
   private int loadBalancerWebPort = 30305;
   private String userProjectsDir = "";
   private String projectRoot = "";
-  private boolean ingressPerDomain = false;
+  private boolean ingressPerDomain = true;
 
   private String createDomainScript = "";
   private String inputTemplateFile = "";
@@ -65,6 +65,12 @@ public class Domain {
 
   private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTime = BaseTest.getWaitTimePod();
+
+  private boolean voyager;
+  // LB_TYPE is an evn var. Set to "VOYAGER" to use it as loadBalancer
+  private static String LB_TYPE;
+  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
+  private static boolean INGRESSPERDOMAIN = true;
 
   public Domain(String inputYaml) throws Exception {
     // read input domain yaml to test
@@ -804,8 +810,8 @@ public class Domain {
     InputStream pv_is =
         new FileInputStream(
             new File(
-                BaseTest.getProjectRoot()
-                    + "/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
+                BaseTest.getResultDir()
+                    + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     pvMap = yaml.load(pv_is);
     pv_is.close();
     pvMap.put("domainUID", domainUid);
@@ -960,21 +966,38 @@ public class Domain {
   }
 
   private void callCreateDomainScript(String outputDir) throws Exception {
-    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getProjectRoot());
 
+    // copy create domain py script for domain on pv case
+    if (domainMap.containsKey("createDomainPyScript")
+        && !domainMap.containsKey("domainHomeImageBase")) {
+      Files.copy(
+          new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+              .toPath(),
+          new File(
+                  BaseTest.getResultDir()
+                      + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
+              .toPath(),
+          StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+
+    // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
-      // clone docker sample from github
+
+      // clone docker sample from github and copy create domain py script for domain in image case
       gitCloneDockerImagesSample(domainMap);
+
       createDomainScriptCmd
           .append(
-              "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
+              "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
           .append(BaseTest.getUsername())
           .append(" -p ")
           .append(BaseTest.getPassword())
           .append(" -k -i ");
     } else {
       createDomainScriptCmd.append(
-          "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
+          "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
     }
     createDomainScriptCmd.append(generatedInputYamlFile);
 
@@ -1010,17 +1033,35 @@ public class Domain {
     lbMap.put("namespace", domainNS);
     lbMap.put("host", domainUid + ".org");
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
-    lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
-    lbMap.put("ingressPerDomain", domainMap.getOrDefault("ingressPerDomain", ingressPerDomain));
+    if (voyager) {
+      lbMap.put("loadBalancer", "VOYAGER");
+      lbMap.put("loadBalancerWebPort", domainMap.get("voyagerWebPort"));
+    } else {
+      lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
+      lbMap.put(
+          "loadBalancerWebPort",
+          domainMap.getOrDefault("loadBalancerWebPort", new Integer(loadBalancerWebPort)));
+    }
+    if (!INGRESSPERDOMAIN) {
+      lbMap.put("ingressPerDomain", new Boolean("false"));
+      logger.info("For this domain, INGRESSPERDOMAIN is set to false");
+    } else {
+      lbMap.put(
+          "ingressPerDomain",
+          domainMap.getOrDefault("ingressPerDomain", new Boolean(ingressPerDomain)));
+    }
     lbMap.put("clusterName", domainMap.get("clusterName"));
 
     loadBalancer = (String) lbMap.get("loadBalancer");
+    loadBalancerWebPort = ((Integer) lbMap.get("loadBalancerWebPort")).intValue();
     ingressPerDomain = ((Boolean) lbMap.get("ingressPerDomain")).booleanValue();
     logger.info(
         "For this domain loadBalancer is: "
             + loadBalancer
             + " ingressPerDomain is: "
-            + ingressPerDomain);
+            + ingressPerDomain
+            + " loadBalancerWebPort is: "
+            + loadBalancerWebPort);
 
     if (loadBalancer.equals("TRAEFIK") && !ingressPerDomain) {
       lbMap.put("name", "traefik-hostrouting-" + domainUid);
@@ -1028,6 +1069,10 @@ public class Domain {
 
     if (loadBalancer.equals("TRAEFIK") && ingressPerDomain) {
       lbMap.put("name", "traefik-ingress-" + domainUid);
+    }
+
+    if (loadBalancer.equals("VOYAGER") && ingressPerDomain) {
+      lbMap.put("name", "voyager-ingress-" + domainUid);
     }
 
     if (loadBalancer.equals("APACHE")) {
@@ -1077,14 +1122,20 @@ public class Domain {
         .append("'");
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
     ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
-    }
-    String output = result.stdout().trim();
-    if (!output.contains("Deployment State : completed")) {
-      throw new RuntimeException("Failure: webapp deployment failed." + output);
-    }
+    String resultStr =
+        "Command= '"
+            + cmdKubectlSh
+            + "'"
+            + ", exitValue="
+            + result.exitValue()
+            + ", stdout='"
+            + result.stdout()
+            + "'"
+            + ", stderr='"
+            + result.stderr()
+            + "'";
+    if (result.exitValue() != 0 || !resultStr.contains("Deployment State : completed"))
+      throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
   }
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
@@ -1138,11 +1189,11 @@ public class Domain {
                 + " \n "
                 + result.stdout());
       } else {
-        logger.info("webapp invoked successfully");
+        logger.info("webapp invoked successfully for curlCmd:" + curlCmd);
       }
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
-        // logger.info("response "+ response);
+        // logger.info("response: " + response);
         for (String key : managedServers.keySet()) {
           if (response.contains(key)) {
             managedServers.put(key, new Boolean(true));
@@ -1152,10 +1203,15 @@ public class Domain {
       }
     }
     logger.info("ManagedServers " + managedServers);
+
     // error if any managedserver value is false
     if (verifyLoadBalancing) {
       for (Map.Entry<String, Boolean> entry : managedServers.entrySet()) {
+        logger.info("Load balancer will try to reach server " + entry.getKey());
         if (!entry.getValue().booleanValue()) {
+          // print service and pods info for debugging
+          TestUtils.describeService(domainNS, domainUid + "-cluster-" + clusterName);
+          TestUtils.getPods(domainNS);
           throw new RuntimeException(
               "FAILURE: Load balancer can not reach server " + entry.getKey());
         }
@@ -1168,22 +1224,30 @@ public class Domain {
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
 
+    // copy samples to RESULT_DIR
+    TestUtils.exec(
+        "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
+
+    this.voyager =
+        System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER");
+    if (System.getenv("INGRESSPERDOMAIN") != null) {
+      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
+    }
+
     domainMap.put("domainName", domainMap.get("domainUID"));
 
     // read sample domain inputs
     String sampleDomainInputsFile =
-        "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
+        "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml";
     if (domainMap.containsKey("domainHomeImageBase")) {
       sampleDomainInputsFile =
-          "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
+          "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml";
     }
     Yaml dyaml = new Yaml();
     InputStream sampleDomainInputStream =
-        new FileInputStream(new File(BaseTest.getProjectRoot() + sampleDomainInputsFile));
+        new FileInputStream(new File(BaseTest.getResultDir() + sampleDomainInputsFile));
     logger.info(
-        "loading domain inputs template file "
-            + BaseTest.getProjectRoot()
-            + sampleDomainInputsFile);
+        "loading domain inputs template file " + BaseTest.getResultDir() + sampleDomainInputsFile);
     Map<String, Object> sampleDomainMap = dyaml.load(sampleDomainInputStream);
     sampleDomainInputStream.close();
 
@@ -1224,9 +1288,9 @@ public class Domain {
     domainMap.put("logHome", "/shared/logs/" + domainUid);
     if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
-      domainMap.put(
-          "createDomainFilesDir",
-          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv");
+      /* domainMap.put(
+      "createDomainFilesDir",
+      BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv"); */
       domainMap.put("image", imageName + ":" + imageTag);
     }
 
@@ -1389,14 +1453,15 @@ public class Domain {
                 + " "
                 + result.stdout());
       }
-      // copy script to cloned location
-      Files.copy(
-          new File(
-                  BaseTest.getProjectRoot()
-                      + "/integration-tests/src/test/resources/domain-home-on-image/create-wls-domain.py")
-              .toPath(),
-          new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py").toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
+
+      // copy create domain py script to cloned location
+      if (domainMap.containsKey("createDomainPyScript")) {
+        Files.copy(
+            new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                .toPath(),
+            new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py").toPath(),
+            StandardCopyOption.REPLACE_EXISTING);
+      }
     }
   }
 
