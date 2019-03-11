@@ -58,6 +58,11 @@ Then, you can pull the image with this command:
 ```
 $ docker pull store/oracle/weblogic:12.2.1.3
 ```
+If desired, you can:
+
+* Check the WLS version with `docker run store/oracle/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`
+
+* Check the WLS patches with `docker run store/oracle/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
 
 Additional information about using this image is available on the
 Docker store.
