@@ -28,14 +28,16 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
+import oracle.kubernetes.operator.rest.RestServer;
+import oracle.kubernetes.operator.rest.RestTest;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
@@ -66,6 +68,8 @@ public class DomainUpPlanTest {
     mementos.add(testSupport.install());
 
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
+
+    RestServer.create(new RestTest.TestRestConfigImpl());
   }
 
   @After
@@ -73,6 +77,8 @@ public class DomainUpPlanTest {
     for (Memento memento : mementos) memento.revert();
 
     testSupport.throwOnCompletionFailure();
+
+    RestServer.destroy();
   }
 
   @Test

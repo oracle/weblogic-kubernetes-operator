@@ -22,3 +22,4 @@ createDomainFilesDir: wdt
 #loadBalancerDashboardPort: 30321
 loadBalancer: TRAEFIK
 ingressPerDomain: true
+voyagerWebPort: 30306
