@@ -466,10 +466,7 @@ public class ServiceHelperTest {
 
   private V1Service withNodePort(V1Service service, int nodePort) {
     service.getSpec().type("NodePort").clusterIP(null);
-    service
-        .getSpec()
-        .getPorts()
-        .stream()
+    service.getSpec().getPorts().stream()
         .findFirst()
         .ifPresent(servicePort -> servicePort.setNodePort(nodePort));
     return service;
