@@ -51,11 +51,11 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
-import oracle.kubernetes.weblogic.domain.v2.AdminServer;
-import oracle.kubernetes.weblogic.domain.v2.AdminService;
-import oracle.kubernetes.weblogic.domain.v2.Channel;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.AdminServer;
+import oracle.kubernetes.weblogic.domain.model.AdminService;
+import oracle.kubernetes.weblogic.domain.model.Channel;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
 
 public class DomainProcessorImpl implements DomainProcessor {

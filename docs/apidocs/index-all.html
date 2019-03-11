@@ -491,6 +491,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/rest/model/CollectionModel.html#CollectionModel--">CollectionModel()</a></span> - Constructor for class oracle.kubernetes.operator.rest.model.<a href="oracle/kubernetes/operator/rest/model/CollectionModel.html" title="class in oracle.kubernetes.operator.rest.model">CollectionModel</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#compareTo-oracle.kubernetes.operator.helpers.ResourceVersion-">compareTo(ResourceVersion)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html#complete--">complete()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html" title="class in oracle.kubernetes.operator.helpers">DomainPresenceInfo</a></dt>
 <dd>
 <div class="block">Sets the last completion time to now.</div>
@@ -673,7 +675,7 @@
 <dd>
 <div class="block">Factory for <a href="oracle/kubernetes/operator/work/Step.html" title="class in oracle.kubernetes.operator.work"><code>Step</code></a> that creates WebLogic domain introspector job.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/steps/DomainPresenceStep.html#createDomainPresenceStep-oracle.kubernetes.weblogic.domain.v2.Domain-oracle.kubernetes.operator.work.Step-oracle.kubernetes.operator.work.Step-">createDomainPresenceStep(Domain, Step, Step)</a></span> - Static method in class oracle.kubernetes.operator.steps.<a href="oracle/kubernetes/operator/steps/DomainPresenceStep.html" title="class in oracle.kubernetes.operator.steps">DomainPresenceStep</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/steps/DomainPresenceStep.html#createDomainPresenceStep-oracle.kubernetes.weblogic.domain.model.Domain-oracle.kubernetes.operator.work.Step-oracle.kubernetes.operator.work.Step-">createDomainPresenceStep(Domain, Step, Step)</a></span> - Static method in class oracle.kubernetes.operator.steps.<a href="oracle/kubernetes/operator/steps/DomainPresenceStep.html" title="class in oracle.kubernetes.operator.steps">DomainPresenceStep</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/builders/WatchBuilder.html#createDomainWatch-java.lang.String-">createDomainWatch(String)</a></span> - Method in class oracle.kubernetes.operator.builders.<a href="oracle/kubernetes/operator/builders/WatchBuilder.html" title="class in oracle.kubernetes.operator.builders">WatchBuilder</a></dt>
 <dd>
@@ -971,7 +973,7 @@
 <div class="block">Operator's mapping between custom resource Domain and runtime details about that domain,
  including the scan and the Pods and Services for servers.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html#DomainPresenceInfo-oracle.kubernetes.weblogic.domain.v2.Domain-">DomainPresenceInfo(Domain)</a></span> - Constructor for class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html" title="class in oracle.kubernetes.operator.helpers">DomainPresenceInfo</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html#DomainPresenceInfo-oracle.kubernetes.weblogic.domain.model.Domain-">DomainPresenceInfo(Domain)</a></span> - Constructor for class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html" title="class in oracle.kubernetes.operator.helpers">DomainPresenceInfo</a></dt>
 <dd>
 <div class="block">Create presence for a domain.</div>
 </dd>
@@ -1069,6 +1071,8 @@
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/KubernetesVersion.html#equals-java.lang.Object-">equals(Object)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/KubernetesVersion.html" title="class in oracle.kubernetes.operator.helpers">KubernetesVersion</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/NonClusteredServerConfig.html#equals-java.lang.Object-">equals(Object)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/NonClusteredServerConfig.html" title="class in oracle.kubernetes.operator.helpers">NonClusteredServerConfig</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#equals-java.lang.Object-">equals(Object)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ServerConfig.html#equals-java.lang.Object-">equals(Object)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ServerConfig.html" title="class in oracle.kubernetes.operator.helpers">ServerConfig</a></dt>
 <dd>&nbsp;</dd>
@@ -1790,6 +1794,12 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/TuningParametersImpl.html#getPodTuning--">getPodTuning()</a></span> - Method in class oracle.kubernetes.operator.<a href="oracle/kubernetes/operator/TuningParametersImpl.html" title="class in oracle.kubernetes.operator">TuningParametersImpl</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#getPrefix--">getPrefix()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#getPrerelease--">getPrerelease()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#getPrereleaseVersion--">getPrereleaseVersion()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/builders/CallParams.html#getPretty--">getPretty()</a></span> - Method in interface oracle.kubernetes.operator.builders.<a href="oracle/kubernetes/operator/builders/CallParams.html" title="interface in oracle.kubernetes.operator.builders">CallParams</a></dt>
 <dd>
 <div class="block">Returns the &#39;pretty-print&#39; option to be sent.</div>
@@ -2009,6 +2019,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/work/Packet.html#getValue-java.lang.String-">getValue(String)</a></span> - Method in class oracle.kubernetes.operator.work.<a href="oracle/kubernetes/operator/work/Packet.html" title="class in oracle.kubernetes.operator.work">Packet</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#getVersion--">getVersion()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/rest/backend/VersionUtils.html#getVersion-java.lang.String-">getVersion(String)</a></span> - Static method in class oracle.kubernetes.operator.rest.backend.<a href="oracle/kubernetes/operator/rest/backend/VersionUtils.html" title="class in oracle.kubernetes.operator.rest.backend">VersionUtils</a></dt>
 <dd>
 <div class="block">Get the un-aliased name of a version of the WebLogic operator REST api.</div>
@@ -2066,6 +2078,8 @@
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/KubernetesVersion.html#hashCode--">hashCode()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/KubernetesVersion.html" title="class in oracle.kubernetes.operator.helpers">KubernetesVersion</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/NonClusteredServerConfig.html#hashCode--">hashCode()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/NonClusteredServerConfig.html" title="class in oracle.kubernetes.operator.helpers">NonClusteredServerConfig</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#hashCode--">hashCode()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ServerConfig.html#hashCode--">hashCode()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ServerConfig.html" title="class in oracle.kubernetes.operator.helpers">ServerConfig</a></dt>
 <dd>&nbsp;</dd>
@@ -2166,6 +2180,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/wlsconfig/WlsServerConfig.html#isAdminPortEnabled--">isAdminPortEnabled()</a></span> - Method in class oracle.kubernetes.operator.wlsconfig.<a href="oracle/kubernetes/operator/wlsconfig/WlsServerConfig.html" title="class in oracle.kubernetes.operator.wlsconfig">WlsServerConfig</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#isAlpha--">isAlpha()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#isBeta--">isBeta()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/work/Fiber.html#isCancelled--">isCancelled()</a></span> - Method in class oracle.kubernetes.operator.work.<a href="oracle/kubernetes/operator/work/Fiber.html" title="class in oracle.kubernetes.operator.work">Fiber</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/rest/backend/RestBackend.html#isCluster-java.lang.String-java.lang.String-">isCluster(String, String)</a></span> - Method in interface oracle.kubernetes.operator.rest.backend.<a href="oracle/kubernetes/operator/rest/backend/RestBackend.html" title="interface in oracle.kubernetes.operator.rest.backend">RestBackend</a></dt>
@@ -2216,6 +2234,8 @@
 <dd>
 <div class="block">Checks if a message at FINEST level would actually be logged.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#isGA--">isGA()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/logging/LoggingFacade.html#isInfoEnabled--">isInfoEnabled()</a></span> - Method in class oracle.kubernetes.operator.logging.<a href="oracle/kubernetes/operator/logging/LoggingFacade.html" title="class in oracle.kubernetes.operator.logging">LoggingFacade</a></dt>
 <dd>
 <div class="block">Checks if a message at INFO level would actually be logged.</div>
@@ -2252,6 +2272,8 @@
 <dd>
 <div class="block">Checks if a message at WARNING level would actually be logged.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#isWellFormed--">isWellFormed()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="oracle/kubernetes/operator/rest/model/ItemModel.html" title="class in oracle.kubernetes.operator.rest.model"><span class="typeNameLink">ItemModel</span></a> - Class in <a href="oracle/kubernetes/operator/rest/model/package-summary.html">oracle.kubernetes.operator.rest.model</a></dt>
 <dd>
 <div class="block">ItemModel is the base class for all singular resources (singletons and collection children).</div>
@@ -2886,19 +2908,19 @@
 <dd>
 <div class="block">Asynchronous step for replacing CRD.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/CallBuilder.html#replaceDomain-java.lang.String-java.lang.String-oracle.kubernetes.weblogic.domain.v2.Domain-">replaceDomain(String, String, Domain)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/CallBuilder.html" title="class in oracle.kubernetes.operator.helpers">CallBuilder</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/CallBuilder.html#replaceDomain-java.lang.String-java.lang.String-oracle.kubernetes.weblogic.domain.model.Domain-">replaceDomain(String, String, Domain)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/CallBuilder.html" title="class in oracle.kubernetes.operator.helpers">CallBuilder</a></dt>
 <dd>
 <div class="block">Replace domain.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/CallBuilder.html#replaceDomainAsync-java.lang.String-java.lang.String-oracle.kubernetes.weblogic.domain.v2.Domain-oracle.kubernetes.operator.helpers.ResponseStep-">replaceDomainAsync(String, String, Domain, ResponseStep&lt;Domain&gt;)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/CallBuilder.html" title="class in oracle.kubernetes.operator.helpers">CallBuilder</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/CallBuilder.html#replaceDomainAsync-java.lang.String-java.lang.String-oracle.kubernetes.weblogic.domain.model.Domain-oracle.kubernetes.operator.helpers.ResponseStep-">replaceDomainAsync(String, String, Domain, ResponseStep&lt;Domain&gt;)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/CallBuilder.html" title="class in oracle.kubernetes.operator.helpers">CallBuilder</a></dt>
 <dd>
 <div class="block">Asynchronous step for replacing domain.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/CallBuilder.html#replaceDomainStatusAsync-java.lang.String-java.lang.String-oracle.kubernetes.weblogic.domain.v2.Domain-oracle.kubernetes.operator.helpers.ResponseStep-">replaceDomainStatusAsync(String, String, Domain, ResponseStep&lt;Domain&gt;)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/CallBuilder.html" title="class in oracle.kubernetes.operator.helpers">CallBuilder</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/CallBuilder.html#replaceDomainStatusAsync-java.lang.String-java.lang.String-oracle.kubernetes.weblogic.domain.model.Domain-oracle.kubernetes.operator.helpers.ResponseStep-">replaceDomainStatusAsync(String, String, Domain, ResponseStep&lt;Domain&gt;)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/CallBuilder.html" title="class in oracle.kubernetes.operator.helpers">CallBuilder</a></dt>
 <dd>
 <div class="block">Asynchronous step for replacing domain status.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/CallBuilder.html#replaceDomainWithConflictRetry-java.lang.String-java.lang.String-oracle.kubernetes.weblogic.domain.v2.Domain-oracle.kubernetes.operator.helpers.ConflictRetry-">replaceDomainWithConflictRetry(String, String, Domain, ConflictRetry&lt;Domain&gt;)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/CallBuilder.html" title="class in oracle.kubernetes.operator.helpers">CallBuilder</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/CallBuilder.html#replaceDomainWithConflictRetry-java.lang.String-java.lang.String-oracle.kubernetes.weblogic.domain.model.Domain-oracle.kubernetes.operator.helpers.ConflictRetry-">replaceDomainWithConflictRetry(String, String, Domain, ConflictRetry&lt;Domain&gt;)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/CallBuilder.html" title="class in oracle.kubernetes.operator.helpers">CallBuilder</a></dt>
 <dd>
 <div class="block">Replace domain.</div>
 </dd>
@@ -2932,6 +2954,10 @@
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html#resetFailureCount--">resetFailureCount()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html" title="class in oracle.kubernetes.operator.helpers">DomainPresenceInfo</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/logging/MessageKeys.html#RESOURCE_BUNDLE_NOT_FOUND">RESOURCE_BUNDLE_NOT_FOUND</a></span> - Static variable in class oracle.kubernetes.operator.logging.<a href="oracle/kubernetes/operator/logging/MessageKeys.html" title="class in oracle.kubernetes.operator.logging">MessageKeys</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers"><span class="typeNameLink">ResourceVersion</span></a> - Class in <a href="oracle/kubernetes/operator/helpers/package-summary.html">oracle.kubernetes.operator.helpers</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#ResourceVersion-java.lang.String-">ResourceVersion(String)</a></span> - Constructor for class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/calls/AsyncRequestStep.html#RESPONSE_COMPONENT_NAME">RESPONSE_COMPONENT_NAME</a></span> - Static variable in class oracle.kubernetes.operator.calls.<a href="oracle/kubernetes/operator/calls/AsyncRequestStep.html" title="class in oracle.kubernetes.operator.calls">AsyncRequestStep</a></dt>
 <dd>&nbsp;</dd>
@@ -3156,7 +3182,7 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/ProcessingConstants.html#SERVERS_TO_ROLL">SERVERS_TO_ROLL</a></span> - Static variable in interface oracle.kubernetes.operator.<a href="oracle/kubernetes/operator/ProcessingConstants.html" title="interface in oracle.kubernetes.operator">ProcessingConstants</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.ServerStartupInfo.html#ServerStartupInfo-oracle.kubernetes.operator.wlsconfig.WlsServerConfig-java.lang.String-oracle.kubernetes.weblogic.domain.v2.ServerSpec-">ServerStartupInfo(WlsServerConfig, String, ServerSpec)</a></span> - Constructor for class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.ServerStartupInfo.html" title="class in oracle.kubernetes.operator.helpers">DomainPresenceInfo.ServerStartupInfo</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.ServerStartupInfo.html#ServerStartupInfo-oracle.kubernetes.operator.wlsconfig.WlsServerConfig-java.lang.String-oracle.kubernetes.weblogic.domain.model.ServerSpec-">ServerStartupInfo(WlsServerConfig, String, ServerSpec)</a></span> - Constructor for class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.ServerStartupInfo.html" title="class in oracle.kubernetes.operator.helpers">DomainPresenceInfo.ServerStartupInfo</a></dt>
 <dd>
 <div class="block">Create server startup info.</div>
 </dd>
@@ -3226,7 +3252,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ConfigMapHelper.DomainTopology.html#setDomain-oracle.kubernetes.operator.wlsconfig.WlsDomainConfig-">setDomain(WlsDomainConfig)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ConfigMapHelper.DomainTopology.html" title="class in oracle.kubernetes.operator.helpers">ConfigMapHelper.DomainTopology</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html#setDomain-oracle.kubernetes.weblogic.domain.v2.Domain-">setDomain(Domain)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html" title="class in oracle.kubernetes.operator.helpers">DomainPresenceInfo</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html#setDomain-oracle.kubernetes.weblogic.domain.model.Domain-">setDomain(Domain)</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/DomainPresenceInfo.html" title="class in oracle.kubernetes.operator.helpers">DomainPresenceInfo</a></dt>
 <dd>
 <div class="block">Sets the domain.</div>
 </dd>
@@ -3616,6 +3642,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/NonClusteredServerConfig.html#toString--">toString()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/NonClusteredServerConfig.html" title="class in oracle.kubernetes.operator.helpers">NonClusteredServerConfig</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ResourceVersion.html#toString--">toString()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ResourceVersion.html" title="class in oracle.kubernetes.operator.helpers">ResourceVersion</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/helpers/ServerConfig.html#toString--">toString()</a></span> - Method in class oracle.kubernetes.operator.helpers.<a href="oracle/kubernetes/operator/helpers/ServerConfig.html" title="class in oracle.kubernetes.operator.helpers">ServerConfig</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/http/Result.html#toString--">toString()</a></span> - Method in class oracle.kubernetes.operator.http.<a href="oracle/kubernetes/operator/http/Result.html" title="class in oracle.kubernetes.operator.http">Result</a></dt>
@@ -3698,9 +3726,9 @@
 </a>
 <h2 class="title">V</h2>
 <dl>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/wlsconfig/WlsDomainConfig.html#validate-oracle.kubernetes.weblogic.domain.v2.Domain-">validate(Domain)</a></span> - Method in class oracle.kubernetes.operator.wlsconfig.<a href="oracle/kubernetes/operator/wlsconfig/WlsDomainConfig.html" title="class in oracle.kubernetes.operator.wlsconfig">WlsDomainConfig</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/wlsconfig/WlsDomainConfig.html#validate-oracle.kubernetes.weblogic.domain.model.Domain-">validate(Domain)</a></span> - Method in class oracle.kubernetes.operator.wlsconfig.<a href="oracle/kubernetes/operator/wlsconfig/WlsDomainConfig.html" title="class in oracle.kubernetes.operator.wlsconfig">WlsDomainConfig</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/wlsconfig/WlsDomainConfig.html#validate-oracle.kubernetes.weblogic.domain.v2.Domain-java.util.List-">validate(Domain, List&lt;ConfigUpdate&gt;)</a></span> - Method in class oracle.kubernetes.operator.wlsconfig.<a href="oracle/kubernetes/operator/wlsconfig/WlsDomainConfig.html" title="class in oracle.kubernetes.operator.wlsconfig">WlsDomainConfig</a></dt>
+<dt><span class="memberNameLink"><a href="oracle/kubernetes/operator/wlsconfig/WlsDomainConfig.html#validate-oracle.kubernetes.weblogic.domain.model.Domain-java.util.List-">validate(Domain, List&lt;ConfigUpdate&gt;)</a></span> - Method in class oracle.kubernetes.operator.wlsconfig.<a href="oracle/kubernetes/operator/wlsconfig/WlsDomainConfig.html" title="class in oracle.kubernetes.operator.wlsconfig">WlsDomainConfig</a></dt>
 <dd>
 <div class="block">Checks the provided k8s domain spec to see if it is consistent with the configuration of the
  WLS domain.</div>
