@@ -59,11 +59,27 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage |	
 | Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
 | Domain with Recycle policy | create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted once the domain and PVC are deleted |
-| Domain with default sample values | create domain using mostly default values for inputs |					
+| Domain with default sample values | create domain using mostly default values for inputs |	
+
+| Operator Usability | Use Case |
+| --- | --- | 		
+| Operator Helm Chart with Invalid Attributes | create chart with invalid attributes, verify that deployment fails with expected error |
+| Two Operators using same Operator Namespace | create two operators sharing same namespace,verify that deployment fails with expected error |
+| Operator Helm Chart using default target domains Namespace| create chart using default target domains namespace |
+| Operator Helm Chart using empty target domains Namespace| create chart using empty target domains namespace |
+| Operator Helm Chart using UpperCase target domains Namespace| create chart using invalid UpperCase target domains namespace, verify that deployment fails with expected error |
+| Operator Helm Chart using not preexisted Operator Namespace | create chart using not preexisted Operator namespace, verify that deployment will fail |
+| Operator Helm Chart using not preexisted Operator ServiceAccount | create chart using not preexisted Operator ServiceAccount, verify that deployment will fail, but will change to running after SA is created |
+| Operator Helm Chart create delete create | create delete create chart with same values |
+| Two Operators using same External Https Port | create chart using same https rest port as already running first operator, verify that deployment fails with expected error |
+| Two Operators using same target domains namespace | create chart using target domains namespace as already running first operator, verify that deployment fails with expected error |
+| Operator Helm Chart using not preexisted target domains namespace | create chart using not preexisted target domains namespace as already running first operator, verify that deployment fails with expected error |
+
+		 
 						
 
 # Directory Configuration and Structure
-
+ 
 Directory structure of source code:
 
 A new module "integration-tests" is added to the Maven project weblogic-kubernetes-operator.
