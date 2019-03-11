@@ -32,6 +32,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.rest.RestTest;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -41,9 +42,7 @@ import org.junit.Test;
 
 @SuppressWarnings("SameParameterValue")
 public class AdminPodHelperTest extends PodHelperTestBase {
-  private static final String INTERNAL_OPERATOR_CERT_FILE_PARAM = "internalOperatorCert";
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
-  private static final String CERTFILE = "certfile";
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -209,10 +208,9 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreated_hasOperatorCertEnvVariable() {
-    putTuningParameter(INTERNAL_OPERATOR_CERT_FILE_PARAM, CERTFILE);
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
-        hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, CERTFILE));
+        hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, RestTest.OP_CERT_DATA));
   }
 
   @Test
