@@ -82,7 +82,7 @@ public class SitConfigTests {
       test.verifyConnectTimeout(12);
       test.verifyRestartMax(22);
       test.verifyT3ChannelPublicAddress(adminHost);
-      test.verifyT3ChannelPublicPort(30051);
+      test.verifyT3ChannelPublicPort(30091);
     }
     if (testName.equals("testCustomSitConfigOverridesForJdbc")) {
       test.testSystemResourcesJDBCAttributeChange("JdbcTestDataSource-0");
