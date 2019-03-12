@@ -80,26 +80,30 @@ public class ITSitConfig extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    initialize(APPPROPSFILE);
-    Assume.assumeFalse(QUICKTEST);
-    if (operator1 == null) {
-      operator1 = TestUtils.createOperator(OPERATOR1FILE);
+
+    if (!QUICKTEST) {
+      // initialize test properties and create the directories
+      initialize(APPPROPSFILE);
+
+      if (operator1 == null) {
+        operator1 = TestUtils.createOperator(OPERATOR1FILE);
+      }
+      TESTSCRIPTDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
+      domain = createSitConfigDomain();
+      Assert.assertNotNull(domain);
+      ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
+      TestUtils.copyFileViaCat(
+          TESTSCRIPTDIR + "sitconfig/java/SitConfigTests.java",
+          "SitConfigTests.java",
+          ADMINPODNAME,
+          domain.getDomainNS());
+      TestUtils.copyFileViaCat(
+          TESTSCRIPTDIR + "sitconfig/scripts/runSitConfigTests.sh",
+          "runSitConfigTests.sh",
+          ADMINPODNAME,
+          domain.getDomainNS());
+      fqdn = TestUtils.getHostName();
     }
-    TESTSCRIPTDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
-    domain = createSitConfigDomain();
-    Assert.assertNotNull(domain);
-    ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
-    TestUtils.copyFileViaCat(
-        TESTSCRIPTDIR + "sitconfig/java/SitConfigTests.java",
-        "SitConfigTests.java",
-        ADMINPODNAME,
-        domain.getDomainNS());
-    TestUtils.copyFileViaCat(
-        TESTSCRIPTDIR + "sitconfig/scripts/runSitConfigTests.sh",
-        "runSitConfigTests.sh",
-        ADMINPODNAME,
-        domain.getDomainNS());
-    fqdn = TestUtils.getHostName();
   }
 
   /**
@@ -109,32 +113,19 @@ public class ITSitConfig extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-    StringBuffer cmd =
-        new StringBuffer("export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append("/integration-tests/src/test/resources/statedump.sh");
-    logger.log(Level.INFO, "Running {0}", cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() == 0) {
-      logger.log(Level.INFO, "Executed statedump.sh {0}", result.stdout());
-    } else {
-      logger.log(
-          Level.INFO,
-          "Execution of statedump.sh failed, {0}\n{1}",
-          new Object[] {result.stderr(), result.stdout()});
+    if (!QUICKTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+
+      destroySitConfigDomain();
+      tearDown();
+      if (!"".equals(getLeaseId())) {
+        logger.info("Release the k8s cluster lease");
+        TestUtils.releaseLease(getProjectRoot(), getLeaseId());
+      }
+      logger.info("SUCCESS");
     }
-    destroySitConfigDomain();
-    if (JENKINS) {
-      cleanup();
-    }
-    if (!"".equals(getLeaseId())) {
-      logger.info("Release the k8s cluster lease");
-      TestUtils.releaseLease(getProjectRoot(), getLeaseId());
-    }
-    logger.info("SUCCESS");
   }
 
   /**
@@ -147,6 +138,7 @@ public class ITSitConfig extends BaseTest {
    */
   @Test
   public void testCustomSitConfigOverridesForDomain() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -172,6 +164,7 @@ public class ITSitConfig extends BaseTest {
    */
   @Test
   public void testCustomSitConfigOverridesForJdbc() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -195,6 +188,7 @@ public class ITSitConfig extends BaseTest {
    */
   @Test
   public void testCustomSitConfigOverridesForJms() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -217,6 +211,7 @@ public class ITSitConfig extends BaseTest {
    */
   @Test
   public void testCustomSitConfigOverridesForWldf() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
