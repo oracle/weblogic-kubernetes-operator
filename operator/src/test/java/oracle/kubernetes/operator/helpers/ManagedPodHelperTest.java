@@ -35,7 +35,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.Test;
 
 public class ManagedPodHelperTest extends PodHelperTestBase {
@@ -300,6 +300,95 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
             hasVolumeMount("volume1", "/domain-path1"),
             hasVolumeMount("volume2", "/cluster-path"),
             hasVolumeMount("volume3", "/server-path")));
+  }
+
+  @Test
+  public void whenDomainHasInitContainers_createPodWithThem() {
+    getConfigurator()
+        .withInitContainer(
+            createContainer(
+                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo managed server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasInitContainers_createPodWithThem() {
+    getConfigurator()
+        .configureServer(SERVER_NAME)
+        .withInitContainer(
+            createContainer(
+                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo managed server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasDuplicateInitContainers_createPodWithCombination() {
+    getConfigurator()
+        .withInitContainer(
+            createContainer(
+                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /top"))
+        .configureServer(SERVER_NAME)
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo managed server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenClusterHasInitContainers_createPodWithThem() {
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withInitContainer(
+            createContainer(
+                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo managed server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerAndClusterHasDuplicateInitContainers_createPodWithCombination() {
+    getConfigurator()
+        .withInitContainer(
+            createContainer(
+                "container1", "busybox", "sh", "-c", "echo managed server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /top"))
+        .configureServer(SERVER_NAME)
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withInitContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo cluster && sleep 120"))
+        .withInitContainer(createContainer("container3", "oraclelinux", "ls /cluster"));
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo cluster && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle"),
+            hasContainer("container3", "oraclelinux", "ls /cluster")));
   }
 
   @Test

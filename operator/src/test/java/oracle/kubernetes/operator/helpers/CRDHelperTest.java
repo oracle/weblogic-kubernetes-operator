@@ -13,11 +13,18 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinitionNames;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
+import io.kubernetes.client.models.V1beta1CustomResourceDefinitionVersion;
+import io.kubernetes.client.models.V1beta1CustomResourceValidation;
+import io.kubernetes.client.models.V1beta1JSONSchemaProps;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
@@ -139,9 +146,34 @@ public class CRDHelperTest {
 
   @Test
   public void whenExistingCRDHasFutureVersion_dontReplaceIt() {
-    expectReadCRD().returning(defineCRD("v4", "operator-v4"));
+    V1beta1CustomResourceDefinition existing = defineCRD("v4", "operator-v4");
+    existing
+        .getSpec()
+        .addVersionsItem(
+            new V1beta1CustomResourceDefinitionVersion()
+                .served(true)
+                .name(KubernetesConstants.DOMAIN_VERSION));
+    expectReadCRD().returning(existing);
 
     testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
+  }
+
+  @Test
+  public void whenExistingCRDHasFutureVersionButNotCurrentStorage_updateIt() {
+    expectReadCRD().returning(defineCRD("v4", "operator-v4"));
+
+    V1beta1CustomResourceDefinition replacement = defineCRD("v4", "operator-v4");
+    replacement
+        .getSpec()
+        .addVersionsItem(
+            new V1beta1CustomResourceDefinitionVersion()
+                .served(true)
+                .name(KubernetesConstants.DOMAIN_VERSION));
+    expectSuccessfulReplaceCRD(replacement);
+
+    testSupport.runSteps(CRDHelper.createDomainCRDStep(KUBERNETES_VERSION, null));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
   @Test
@@ -202,12 +234,13 @@ public class CRDHelperTest {
     }
 
     private boolean hasExpectedVersion(V1beta1CustomResourceDefinition actualBody) {
-      return expected.getSpec().getVersion().equals(actualBody.getSpec().getVersion());
+      return Objects.equals(expected.getSpec().getVersion(), actualBody.getSpec().getVersion())
+          && Objects.equals(expected.getSpec().getVersions(), actualBody.getSpec().getVersions());
     }
 
     private boolean hasSchemaVerification(V1beta1CustomResourceDefinition actualBody) {
       V1beta1CustomResourceValidation validation = actualBody.getSpec().getValidation();
-      if (validation == null) return false;
+      if (validation == null) return expected.getSpec().getValidation() == null;
 
       V1beta1JSONSchemaProps openAPIV3Schema = validation.getOpenAPIV3Schema();
       if (openAPIV3Schema == null || openAPIV3Schema.getProperties().size() != 2) return false;
