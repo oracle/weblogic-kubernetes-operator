@@ -11,7 +11,6 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,11 +31,11 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Cluster;
-import oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v2.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 
 public class JobHelper {
 
@@ -98,7 +97,7 @@ public class JobHelper {
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       // Pod for introspector job would use same environment variables as for admin server
       List<V1EnvVar> vars =
-          new ArrayList<>(getDomain().getAdminServerSpec().getEnvironmentVariables());
+          PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
 
       addEnvVar(vars, "NAMESPACE", getNamespace());
       addEnvVar(vars, "DOMAIN_UID", getDomainUID());

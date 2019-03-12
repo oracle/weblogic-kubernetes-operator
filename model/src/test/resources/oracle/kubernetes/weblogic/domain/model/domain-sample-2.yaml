@@ -1,0 +1,115 @@
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at
+# http://oss.oracle.com/licenses/upl.
+
+kind: Domain
+metadata:
+  name: domain2
+  namespace: domain_ns
+spec:
+  # Identify which Secret contains the WebLogic Admin credentials
+  webLogicCredentialsSecret:
+    name: admin-secret
+  # The domainUID must be unique across the entire Kubernetes Cluster.   Each WebLogic Domain must
+  # have its own unique domainUID.  This does not have to be the same as the Domain Name.  It is allowed
+  # to have multiple Domains with the same Domain Name, but they MUST have different domainUID's.
+  # The domainUID is also used to identify the Persistent Volume that belongs to/with this Domain.
+  domainUID: test-domain-2
+
+  # Tells the operator whether the customer wants the server to be running. For non-clustered
+  # servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
+  # operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
+  # to be started to get to the cluster's replica count..
+  serverStartPolicy: NEVER
+
+  domainHomeInImage: false
+  includeServerOutInPodLog: false
+
+  # Specifies the number of replicas for any clusters which do not specify their own count:
+  replicas: 3
+  
+  serverPod:
+    podSecurityContext:
+      runAsGroup: 420
+      runAsNonRoot: true
+      seLinuxOptions:
+        level: domain
+        role: admin
+        user: weblogic
+      sysctls:
+      - name: net.ipv4.route.min_pmtu
+        value: '552'
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        add:
+        - CHOWN
+        - SYS_BOOT
+      runAsGroup: 420
+      runAsNonRoot: true
+      seLinuxOptions:
+        level: domain
+        role: admin
+        user: weblogic
+  
+  clusters:
+  - clusterName: cluster1
+    serverPod:
+      readinessProbe:
+        initialDelaySeconds: 10
+        timeoutSeconds: 15
+        periodSeconds: 20
+      livenessProbe:
+        initialDelaySeconds: 20
+        timeoutSeconds: 5
+        periodSeconds: 20
+      nodeSelector:
+        os: linux
+      podSecurityContext:
+        runAsGroup: 421
+        runAsNonRoot: true
+        seLinuxOptions:
+          level: cluster
+          role: admin
+          type: admin
+          user: weblogic
+        sysctls:
+        - name: kernel.shm_rmid_forced
+          value: '0'
+      containerSecurityContext:
+        capabilities:
+          add:
+          - SYS_TIME
+        runAsGroup: 421
+        runAsNonRoot: true
+        seLinuxOptions:
+          level: cluster
+          role: admin
+          type: admin
+          user: weblogic
+    serverService:
+      labels:
+        testKey1: testValue1
+        testKey2: testValue2
+
+  managedServers:
+  - serverName: server2
+    serverPod:
+      livenessProbe:
+        periodSeconds: 18
+      nodeSelector:
+        os_type: oel7
+      podSecurityContext:
+        runAsGroup: 422
+        seLinuxOptions:
+          level: server
+          role: slave
+      containerSecurityContext:
+        runAsGroup: 422
+        seLinuxOptions:
+          level: server
+          role: slave
+    serverService:
+      annotations:
+        testKey3: testValue3
+        testKey4: testValue4
