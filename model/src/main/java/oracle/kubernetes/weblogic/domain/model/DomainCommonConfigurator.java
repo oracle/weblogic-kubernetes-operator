@@ -9,6 +9,7 @@ import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
 import java.util.Arrays;
@@ -77,6 +78,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withAdditionalVolumeMount(String name, String path) {
     ((BaseConfiguration) getDomainSpec()).addAdditionalVolumeMount(name, path);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withInitContainer(V1Container initContainer) {
+    ((BaseConfiguration) getDomainSpec()).addInitContainer(initContainer);
     return this;
   }
 
@@ -278,6 +285,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withInitContainer(V1Container initContainer) {
+      server.addInitContainer(initContainer);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withPodLabel(String name, String value) {
       server.addPodLabel(name, value);
       return this;
@@ -429,6 +442,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withAdditionalVolumeMount(String name, String path) {
       cluster.addAdditionalVolumeMount(name, path);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withInitContainer(V1Container initContainer) {
+      cluster.addInitContainer(initContainer);
       return this;
     }
 
