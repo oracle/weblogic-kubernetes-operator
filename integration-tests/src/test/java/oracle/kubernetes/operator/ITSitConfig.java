@@ -8,10 +8,6 @@ import static oracle.kubernetes.operator.BaseTest.getProjectRoot;
 import static oracle.kubernetes.operator.BaseTest.initialize;
 import static oracle.kubernetes.operator.BaseTest.logger;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
