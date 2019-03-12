@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import io.kubernetes.client.models.V1Container;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -39,4 +42,14 @@ public abstract class ClusterSpec {
    */
   @Nonnull
   public abstract Map<String, String> getClusterAnnotations();
+
+  /**
+   * Returns the list of initContainers.
+   *
+   * @return a list of containers
+   */
+  @Nonnull
+  public List<V1Container> getInitContainers() {
+    return Collections.emptyList();
+  }
 }

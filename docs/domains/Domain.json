@@ -457,6 +457,13 @@
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
+        "initContainers": {
+          "description": "Initialization containers",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+          }
+        },
         "nodeSelector": {
           "description": "Selector which must match a node\u0027s labels for the pod to be scheduled on that node.",
           "$ref": "#/definitions/Map"

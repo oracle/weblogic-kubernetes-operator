@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import io.kubernetes.client.models.V1Container;
+import java.util.List;
 import java.util.Map;
 
 public class ClusterSpecCommonImpl extends ClusterSpec {
@@ -36,5 +38,10 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   @Override
   public Map<String, String> getClusterAnnotations() {
     return cluster.getClusterAnnotations();
+  }
+
+  @Override
+  public List<V1Container> getInitContainers() {
+    return cluster.getInitContainers();
   }
 }
