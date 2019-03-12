@@ -1,4 +1,4 @@
-// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -35,7 +35,7 @@ import oracle.kubernetes.operator.utils.KubernetesExecFactoryImpl;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
+import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 
 /** Creates an asynchronous step to read the WebLogic server state from a particular pod. */
 public class ServerStatusReader {
@@ -72,7 +72,7 @@ public class ServerStatusReader {
       for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
         String serverName = entry.getKey();
         ServerKubernetesObjects sko = entry.getValue();
-        if (sko != null) { // !! Impossible to have a null value in a concurrent map
+        if (sko != null) {
           V1Pod pod = sko.getPod().get();
           if (pod != null) {
             Packet p = packet.clone();
