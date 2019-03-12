@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1ResourceRequirements;
@@ -200,6 +201,10 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolumeMount(name, path);
   }
 
+  void addInitContainer(V1Container initContainer) {
+    serverPod.addInitContainer(initContainer);
+  }
+
   Map<String, String> getPodLabels() {
     return serverPod.getLabels();
   }
@@ -234,6 +239,10 @@ public abstract class BaseConfiguration {
 
   public Map<String, String> getServiceAnnotations() {
     return serverService.getAnnotations();
+  }
+
+  public List<V1Container> getInitContainers() {
+    return serverPod.getInitContainers();
   }
 
   void addServiceAnnotation(String name, String value) {

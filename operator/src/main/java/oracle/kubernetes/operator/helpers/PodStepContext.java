@@ -628,7 +628,8 @@ public abstract class PodStepContext extends StepContextBase {
                     .resources(getServerSpec().getResources())
                     .securityContext(getServerSpec().getContainerSecurityContext()))
             .nodeSelector(getServerSpec().getNodeSelectors())
-            .securityContext(getServerSpec().getPodSecurityContext());
+            .securityContext(getServerSpec().getPodSecurityContext())
+            .initContainers(getServerSpec().getInitContainers());
 
     podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());
 
