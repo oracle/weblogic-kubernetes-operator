@@ -81,6 +81,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     // initialize test properties and create the directories
     initialize(appPropsFile);
 
@@ -123,6 +124,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
     logger.info("Run once, release cluster lease");
@@ -159,6 +161,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPConnToNewMS() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -249,6 +252,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPReconnToRunningMSAndScaleUp() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -403,7 +407,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPRestartDeadMS() throws Exception {
-    Assume.assumeFalse(SMOKETEST);
+    Assume.assumeFalse(QUICKTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
