@@ -65,6 +65,7 @@ import io.kubernetes.client.models.V1VolumeMount;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +78,8 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.rest.RestServer;
+import oracle.kubernetes.operator.rest.RestTest;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -88,8 +91,8 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.After;
@@ -170,6 +173,8 @@ public abstract class PodHelperTestBase {
     mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
 
+    RestServer.create(new RestTest.TestRestConfigImpl());
+
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
     if (!ADMIN_SERVER.equals(serverName)) configSupport.addWlsServer(serverName, listenPort);
@@ -197,6 +202,8 @@ public abstract class PodHelperTestBase {
 
     testSupport.throwOnCompletionFailure();
     testSupport.verifyAllDefinedResponsesInvoked();
+
+    RestServer.destroy();
   }
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
@@ -247,6 +254,10 @@ public abstract class PodHelperTestBase {
 
   V1Container getCreatedPodSpecContainer() {
     return getCreatedPod().getSpec().getContainers().get(0);
+  }
+
+  List<V1Container> getCreatedPodSpecInitContainers() {
+    return getCreatedPod().getSpec().getInitContainers();
   }
 
   @Test
@@ -448,6 +459,15 @@ public abstract class PodHelperTestBase {
 
   static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
     return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
+  }
+
+  static V1Container createContainer(String name, String image, String... command) {
+    return new V1Container().name(name).image(image).command(Arrays.asList(command));
+  }
+
+  static Matcher<Iterable<? super V1Container>> hasContainer(
+      String name, String image, String... command) {
+    return hasItem(createContainer(name, image, command));
   }
 
   @Test
