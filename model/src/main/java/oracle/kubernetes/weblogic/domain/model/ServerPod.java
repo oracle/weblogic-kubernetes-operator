@@ -8,6 +8,7 @@ import static java.util.Collections.emptyList;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Capabilities;
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
 import io.kubernetes.client.models.V1PodSecurityContext;
@@ -90,6 +91,15 @@ class ServerPod extends KubernetesResource {
   private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
 
   /**
+   * InitContainers holds a list of initialization containers that should be run before starting the
+   * main containers in this pod.
+   *
+   * @since 2.1
+   */
+  @Description("Initialization containers")
+  private List<V1Container> initContainers = new ArrayList<>();
+
+  /**
    * SecurityContext holds security configuration that will be applied to a container. Some fields
    * are present in both SecurityContext and PodSecurityContext. When both are set, the values in
    * SecurityContext take precedence
@@ -149,6 +159,9 @@ class ServerPod extends KubernetesResource {
     }
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) {
       addIfMissing(var);
+    }
+    for (V1Container c : serverPod1.getInitContainers()) {
+      addIfMissing(c);
     }
     fillInFrom((KubernetesResource) serverPod1);
     serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
@@ -212,11 +225,6 @@ class ServerPod extends KubernetesResource {
     }
   }
 
-  private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
-    from.getRequests().forEach(to.getRequests()::putIfAbsent);
-    from.getLimits().forEach(to.getLimits()::putIfAbsent);
-  }
-
   private void copyValues(V1Capabilities to, V1Capabilities from) {
     if (from.getAdd() != null) {
       List<String> allAddCapabilities = new ArrayList<>();
@@ -259,6 +267,12 @@ class ServerPod extends KubernetesResource {
     }
   }
 
+  private void addIfMissing(V1Container c) {
+    if (!hasContainerName(c.getName())) {
+      addInitContainer(c);
+    }
+  }
+
   private List<V1EnvVar> getV1EnvVars() {
     return Optional.ofNullable(getEnv()).orElse(emptyList());
   }
@@ -275,6 +289,17 @@ class ServerPod extends KubernetesResource {
     return false;
   }
 
+  private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
+    if (from != null) {
+      if (from.getRequests() != null) {
+        from.getRequests().forEach(to.getRequests()::putIfAbsent);
+      }
+      if (from.getLimits() != null) {
+        from.getLimits().forEach(to.getLimits()::putIfAbsent);
+      }
+    }
+  }
+
   private boolean hasVolumeName(String name) {
     for (V1Volume var : volumes) {
       if (var.getName().equals(name)) {
@@ -287,6 +312,15 @@ class ServerPod extends KubernetesResource {
   private boolean hasVolumeMountName(String name) {
     for (V1VolumeMount var : volumeMounts) {
       if (var.getName().equals(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean hasContainerName(String name) {
+    for (V1Container c : initContainers) {
+      if (c.getName().equals(name)) {
         return true;
       }
     }
@@ -336,6 +370,18 @@ class ServerPod extends KubernetesResource {
     this.podSecurityContext = podSecurityContext;
   }
 
+  List<V1Container> getInitContainers() {
+    return initContainers;
+  }
+
+  void setInitContainers(List<V1Container> initContainers) {
+    this.initContainers = initContainers;
+  }
+
+  void addInitContainer(V1Container initContainer) {
+    initContainers.add(initContainer);
+  }
+
   V1SecurityContext getContainerSecurityContext() {
     return containerSecurityContext;
   }
@@ -382,6 +428,7 @@ class ServerPod extends KubernetesResource {
         .append("resourceRequirements", resources)
         .append("podSecurityContext", podSecurityContext)
         .append("containerSecurityContext", containerSecurityContext)
+        .append("initContainers", initContainers)
         .toString();
   }
 
@@ -414,6 +461,7 @@ class ServerPod extends KubernetesResource {
         .append(resources, that.resources)
         .append(podSecurityContext, that.podSecurityContext)
         .append(containerSecurityContext, that.containerSecurityContext)
+        .append(initContainers, that.initContainers)
         .isEquals();
   }
 
@@ -430,6 +478,7 @@ class ServerPod extends KubernetesResource {
         .append(resources)
         .append(podSecurityContext)
         .append(containerSecurityContext)
+        .append(initContainers)
         .toHashCode();
   }
 
