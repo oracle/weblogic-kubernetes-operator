@@ -1,6 +1,7 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
@@ -24,7 +25,6 @@ import oracle.kubernetes.operator.utils.TestUtils;
  * extend this class.
  */
 public class BaseTest {
-
   public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   public static final String TESTWEBAPP = "testwebapp";
 
@@ -230,7 +230,6 @@ public class BaseTest {
       if (domainMap.containsKey("domainHomeImageBase")) {
         if (domainMap.get("initialManagedServerReplicas") != null
             && ((Integer) domainMap.get("initialManagedServerReplicas")).intValue() >= 1) {
-
           result =
               ExecCommand.exec(
                   "kubectl logs "

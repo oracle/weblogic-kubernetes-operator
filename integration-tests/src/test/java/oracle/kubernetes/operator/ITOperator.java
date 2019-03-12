@@ -90,9 +90,7 @@ public class ITOperator extends BaseTest {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
     logger.info("Run once, release cluster lease");
-
     tearDown();
-
     logger.info("SUCCESS");
   }
 
@@ -125,9 +123,7 @@ public class ITOperator extends BaseTest {
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       testAdvancedUseCasesForADomain(operator1, domain);
-
       if (!SMOKETEST) domain.testWlsLivenessProbe();
-
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
@@ -147,7 +143,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testDomainOnPVUsingWDT() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -191,7 +187,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testTwoDomainsManagedByTwoOperators() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -272,7 +268,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -305,7 +301,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testCreateDomainPVReclaimPolicyRecycle() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -338,7 +334,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -429,7 +425,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testOperatorRESTIdentityBackwardCompatibility() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -451,7 +447,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testOperatorRESTUsingCertificateChain() throws Exception {
     Assume.assumeFalse(QUICKTEST);
 
@@ -471,7 +467,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testDomainInImageUsingWLST() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -503,7 +499,7 @@ public class ITOperator extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testDomainInImageUsingWDT() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
