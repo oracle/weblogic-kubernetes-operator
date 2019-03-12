@@ -938,7 +938,7 @@ public class DomainV2Test extends DomainTestBase {
     List<V1Container> serverSpecInitContainers = domain.getSpec().getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
     assertThat(serverSpecInitContainers.size(), is(1));
-    assertThat(serverSpecInitContainers.get(0).getName(), is("test"));
+    assertThat(serverSpecInitContainers.get(0).getName(), is("test1"));
     assertThat(serverSpecInitContainers.get(0).getImage(), is("busybox"));
     assertThat(serverSpecInitContainers.get(0).getCommand().get(2), containsString("serverPod"));
   }
@@ -951,10 +951,10 @@ public class DomainV2Test extends DomainTestBase {
     List<V1Container> serverSpecInitContainers = domain.getAdminServerSpec().getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
     assertThat(serverSpecInitContainers.size(), is(2));
-    assertThat(serverSpecInitContainers.get(0).getName(), is("test"));
+    assertThat(serverSpecInitContainers.get(0).getName(), is("test2"));
     assertThat(serverSpecInitContainers.get(0).getImage(), is("busybox"));
     assertThat(serverSpecInitContainers.get(0).getCommand().get(2), containsString("admin server"));
-    assertThat(serverSpecInitContainers.get(1).getName(), is("test"));
+    assertThat(serverSpecInitContainers.get(1).getName(), is("test1"));
     assertThat(serverSpecInitContainers.get(1).getImage(), is("busybox"));
     assertThat(serverSpecInitContainers.get(1).getCommand().get(2), containsString("serverPod"));
   }
@@ -968,11 +968,11 @@ public class DomainV2Test extends DomainTestBase {
         domain.getServer("server1", null).getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
     assertThat(serverSpecInitContainers.size(), is(2));
-    assertThat(serverSpecInitContainers.get(0).getName(), is("test"));
+    assertThat(serverSpecInitContainers.get(0).getName(), is("test3"));
     assertThat(serverSpecInitContainers.get(0).getImage(), is("busybox"));
     assertThat(
         serverSpecInitContainers.get(0).getCommand().get(2), containsString("managed server"));
-    assertThat(serverSpecInitContainers.get(1).getName(), is("test"));
+    assertThat(serverSpecInitContainers.get(1).getName(), is("test1"));
     assertThat(serverSpecInitContainers.get(1).getImage(), is("busybox"));
     assertThat(serverSpecInitContainers.get(1).getCommand().get(2), containsString("serverPod"));
   }
@@ -986,7 +986,7 @@ public class DomainV2Test extends DomainTestBase {
         domain.getServer("server2", null).getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
     assertThat(serverSpecInitContainers.size(), is(1));
-    assertThat(serverSpecInitContainers.get(0).getName(), is("test"));
+    assertThat(serverSpecInitContainers.get(0).getName(), is("test1"));
     assertThat(serverSpecInitContainers.get(0).getImage(), is("busybox"));
     assertThat(serverSpecInitContainers.get(0).getCommand().get(2), containsString("serverPod"));
   }
@@ -999,11 +999,11 @@ public class DomainV2Test extends DomainTestBase {
     List<V1Container> serverSpecInitContainers = domain.getCluster("cluster2").getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
     assertThat(serverSpecInitContainers.size(), is(2));
-    assertThat(serverSpecInitContainers.get(0).getName(), is("test"));
+    assertThat(serverSpecInitContainers.get(0).getName(), is("test4"));
     assertThat(serverSpecInitContainers.get(0).getImage(), is("busybox"));
     assertThat(
         serverSpecInitContainers.get(0).getCommand().get(2), containsString("cluster member"));
-    assertThat(serverSpecInitContainers.get(1).getName(), is("test"));
+    assertThat(serverSpecInitContainers.get(1).getName(), is("test1"));
     assertThat(serverSpecInitContainers.get(1).getImage(), is("busybox"));
     assertThat(serverSpecInitContainers.get(1).getCommand().get(2), containsString("serverPod"));
   }

@@ -65,6 +65,7 @@ import io.kubernetes.client.models.V1VolumeMount;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -253,6 +254,10 @@ public abstract class PodHelperTestBase {
 
   V1Container getCreatedPodSpecContainer() {
     return getCreatedPod().getSpec().getContainers().get(0);
+  }
+
+  List<V1Container> getCreatedPodSpecInitContainers() {
+    return getCreatedPod().getSpec().getInitContainers();
   }
 
   @Test
@@ -454,6 +459,15 @@ public abstract class PodHelperTestBase {
 
   static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
     return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
+  }
+
+  static V1Container createContainer(String name, String image, String... command) {
+    return new V1Container().name(name).image(image).command(Arrays.asList(command));
+  }
+
+  static Matcher<Iterable<? super V1Container>> hasContainer(
+      String name, String image, String... command) {
+    return hasItem(createContainer(name, image, command));
   }
 
   @Test

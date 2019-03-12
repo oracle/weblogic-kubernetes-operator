@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PodSecurityContext;
@@ -199,6 +200,8 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
 
   public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
+
+  public abstract DomainConfigurator withInitContainer(V1Container initContainer);
 
   public abstract DomainConfigurator withPodLabel(String name, String value);
 

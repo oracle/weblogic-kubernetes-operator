@@ -160,10 +160,12 @@ class ServerPod extends KubernetesResource {
     for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) {
       addIfMissing(var);
     }
+    for (V1Container c : serverPod1.getInitContainers()) {
+      addIfMissing(c);
+    }
     fillInFrom((KubernetesResource) serverPod1);
     serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
     copyValues(resources, serverPod1.resources);
-    copyValues(initContainers, serverPod1.initContainers);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
     copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
   }
@@ -247,12 +249,6 @@ class ServerPod extends KubernetesResource {
     }
   }
 
-  private void copyValues(List<V1Container> to, List<V1Container> from) {
-    if (from != null) {
-      to.addAll(from);
-    }
-  }
-
   private void addIfMissing(V1Volume var) {
     if (!hasVolumeName(var.getName())) {
       addAdditionalVolume(var);
@@ -268,6 +264,12 @@ class ServerPod extends KubernetesResource {
   private void addIfMissing(V1VolumeMount var) {
     if (!hasVolumeMountName(var.getName())) {
       addAdditionalVolumeMount(var);
+    }
+  }
+
+  private void addIfMissing(V1Container c) {
+    if (!hasContainerName(c.getName())) {
+      addInitContainer(c);
     }
   }
 
@@ -310,6 +312,15 @@ class ServerPod extends KubernetesResource {
   private boolean hasVolumeMountName(String name) {
     for (V1VolumeMount var : volumeMounts) {
       if (var.getName().equals(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean hasContainerName(String name) {
+    for (V1Container c : initContainers) {
+      if (c.getName().equals(name)) {
         return true;
       }
     }
@@ -365,6 +376,10 @@ class ServerPod extends KubernetesResource {
 
   void setInitContainers(List<V1Container> initContainers) {
     this.initContainers = initContainers;
+  }
+
+  void addInitContainer(V1Container initContainer) {
+    initContainers.add(initContainer);
   }
 
   V1SecurityContext getContainerSecurityContext() {

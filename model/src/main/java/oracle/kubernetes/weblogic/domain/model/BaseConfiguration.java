@@ -201,6 +201,10 @@ public abstract class BaseConfiguration {
     serverPod.addAdditionalVolumeMount(name, path);
   }
 
+  void addInitContainer(V1Container initContainer) {
+    serverPod.addInitContainer(initContainer);
+  }
+
   Map<String, String> getPodLabels() {
     return serverPod.getLabels();
   }

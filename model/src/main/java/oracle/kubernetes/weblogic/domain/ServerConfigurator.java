@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
 
@@ -80,6 +81,8 @@ public interface ServerConfigurator {
   ServerConfigurator withAdditionalVolume(String name, String path);
 
   ServerConfigurator withAdditionalVolumeMount(String name, String path);
+
+  ServerConfigurator withInitContainer(V1Container initContainer);
 
   ServerConfigurator withPodLabel(String name, String value);
 

@@ -30,7 +30,7 @@ spec:
 
   serverPod:
     initContainers:
-      - name: test
+      - name: test1
         image: busybox
         command: ['sh', '-c', 'echo serverPod && sleep 120']
     env:
@@ -64,7 +64,7 @@ spec:
         nodePort: 7001
     serverPod:
       initContainers:
-        - name: test
+        - name: test2
           image: busybox
           command: ['sh', '-c', 'echo admin server && sleep 120']
       env:
@@ -84,7 +84,7 @@ spec:
     # an (optional) list of environment variable to be set on the server
     serverPod:
       initContainers:
-        - name: test
+        - name: test3
           image: busybox
           command: ['sh', '-c', 'echo managed server && sleep 120']
       env:
@@ -110,7 +110,7 @@ spec:
     replicas: 5
     serverPod:
       initContainers:
-        - name: test
+        - name: test4
           image: busybox
           command: ['sh', '-c', 'echo cluster member && sleep 120']
       env:
