@@ -102,6 +102,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | annotations | Map | The annotations to be attached to generated resources. |
 | containerSecurityContext | [Security Context](k8s1.9.0.md#security-context) | Container-level security attributes. Will override any matching pod-level attributes. |
 | env | array of [Env Var](k8s1.9.0.md#env-var) | A list of environment variables to add to a server |
+| initContainers | array of [Container](k8s1.9.0.md#container) | Initialization containers |
 | labels | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
 | livenessProbe | [Probe Tuning](#probe-tuning) | Settings for the liveness probe associated with a server. |
 | nodeSelector | Map | Selector which must match a node's labels for the pod to be scheduled on that node. |
