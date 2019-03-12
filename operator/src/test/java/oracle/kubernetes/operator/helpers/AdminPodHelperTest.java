@@ -344,6 +344,51 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenDomainHasInitContainers_createAdminPodWithThem() {
+    getConfigurator()
+        .withInitContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasInitContainers_createAdminPodWithThem() {
+    getConfigurator()
+        .configureAdminServer()
+        .withInitContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasDuplicateInitContainers_createAdminPodWithCombination() {
+    getConfigurator()
+        .withInitContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /top"))
+        .configureAdminServer()
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
   public void whenDomainHasLabels_createAdminPodWithThem() {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
