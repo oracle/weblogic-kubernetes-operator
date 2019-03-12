@@ -69,8 +69,9 @@ import io.kubernetes.client.models.V1beta1APIServiceSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
@@ -85,7 +86,8 @@ public class KubernetesArtifactUtils {
   public static final String API_VERSION_REGISTRATION_V1BETA1 = "apiregistration.k8s.io/v1beta1";
   public static final String API_VERSION_RBAC_V1 = API_GROUP_RBAC + "/v1";
   public static final String API_VERSION_RBAC_V1BETA1 = API_GROUP_RBAC + "/v1beta1";
-  public static final String API_VERSION_ORACLE_V2 = "weblogic.oracle/v2";
+  public static final String API_VERSION_WEBLOGIC_ORACLE =
+      KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION;
   public static final String API_VERSION_V1 = "v1";
   public static final String API_VERSION_VOYAGER_V1BETA1 = "voyager.appscode.com/v1beta1";
 
@@ -115,7 +117,7 @@ public class KubernetesArtifactUtils {
   }
 
   public static Domain newDomain() {
-    return (new Domain()).withApiVersion(API_VERSION_ORACLE_V2).withKind(KIND_DOMAIN);
+    return (new Domain()).withApiVersion(API_VERSION_WEBLOGIC_ORACLE).withKind(KIND_DOMAIN);
   }
 
   public static ExtensionsV1beta1Deployment newDeployment() {

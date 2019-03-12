@@ -20,10 +20,9 @@ public class RestConfigImpl implements RestConfig {
   private final String principal;
   private final Collection<String> targetNamespaces;
 
-  private static final String OPERATOR_DIR = "/operator/";
-  private static final String INTERNAL_REST_IDENTITY_DIR = OPERATOR_DIR + "internal-identity/";
-  private static final String INTERNAL_CERTIFICATE =
-      INTERNAL_REST_IDENTITY_DIR + "internalOperatorCert";
+  static final String OPERATOR_DIR = "/operator/";
+  static final String INTERNAL_REST_IDENTITY_DIR = OPERATOR_DIR + "internal-identity/";
+  static final String INTERNAL_CERTIFICATE = INTERNAL_REST_IDENTITY_DIR + "internalOperatorCert";
   private static final String INTERNAL_CERTIFICATE_KEY =
       INTERNAL_REST_IDENTITY_DIR + "internalOperatorKey";
   private static final String EXTERNAL_REST_IDENTITY_DIR = OPERATOR_DIR + "external-identity/";

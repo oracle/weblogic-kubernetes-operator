@@ -59,8 +59,8 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -466,10 +466,7 @@ public class ServiceHelperTest {
 
   private V1Service withNodePort(V1Service service, int nodePort) {
     service.getSpec().type("NodePort").clusterIP(null);
-    service
-        .getSpec()
-        .getPorts()
-        .stream()
+    service.getSpec().getPorts().stream()
         .findFirst()
         .ifPresent(servicePort -> servicePort.setNodePort(nodePort));
     return service;

@@ -50,8 +50,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -582,14 +582,10 @@ public abstract class PodStepContext extends StepContextBase {
   // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
-    getPodLabels()
-        .entrySet()
-        .stream()
+    getPodLabels().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putLabelsItem(e.getKey(), e.getValue()));
-    getPodAnnotations()
-        .entrySet()
-        .stream()
+    getPodAnnotations().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
     return pod;
