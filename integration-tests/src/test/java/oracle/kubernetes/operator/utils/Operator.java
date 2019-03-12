@@ -8,8 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import oracle.kubernetes.operator.BaseTest;
@@ -24,7 +22,9 @@ public class Operator {
      * both and stored in a kubernetes tls secret*/
     CHAIN,
     /*Certificate and public key, and stored in a kubernetes tls secret*/
-    LEGACY
+    LEGACY,
+    /* no Rest Support */
+    NONE
   };
 
   public static final String CREATE_OPERATOR_SCRIPT_MESSAGE =
@@ -73,6 +73,40 @@ public class Operator {
     initialize(inputYaml);
     generateInputYaml();
     callHelmInstall();
+  }
+  /**
+   * Takes operator input properties which needs to be customized and generates a operator input
+   * yaml file, with option to create operator namespace, serviceaccount, domain namespace.
+   *
+   * @param inputMap
+   * @param opNS
+   * @param opSA
+   * @param targetdomainNS
+   * @param restCertType
+   * @throws Exception
+   */
+  public Operator(
+      Map<String, Object> inputMap,
+      boolean opNS,
+      boolean opSA,
+      boolean targetdomainNS,
+      RESTCertType restCertType)
+      throws Exception {
+    this.restCertType = restCertType;
+    initialize(inputMap, opNS, opSA, targetdomainNS);
+    generateInputYaml();
+  }
+  /**
+   * Takes operator input properties from a map which needs to be customized and generates a
+   * operator input yaml file.
+   *
+   * @param inputMap
+   * @throws Exception
+   */
+  public Operator(Map<String, Object> inputMap, RESTCertType restCertType) throws Exception {
+    this.restCertType = restCertType;
+    initialize(inputMap, true, true, true);
+    generateInputYaml();
   }
 
   /**
@@ -251,7 +285,7 @@ public class Operator {
     return operatorMap;
   }
 
-  private void callHelmInstall() throws Exception {
+  public void callHelmInstall() throws Exception {
     StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(BaseTest.getProjectRoot())
         .append(" && helm install kubernetes/charts/weblogic-operator ");
@@ -265,13 +299,33 @@ public class Operator {
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
-      reportHelmInstallFailure(cmd.toString(), result);
+      reportHelmFailure(cmd.toString(), result);
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
   }
 
-  private void reportHelmInstallFailure(String cmd, ExecResult result) throws Exception {
+  public void callHelmUpgrade(String upgradeSet) throws Exception {
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append(" && helm upgrade ")
+        .append(operatorMap.get("releaseName"))
+        .append(" kubernetes/charts/weblogic-operator ")
+        .append(" --set ")
+        .append(upgradeSet)
+        .append(" --reuse-values ")
+        .append(" --wait --timeout 60");
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      reportHelmFailure(cmd.toString(), result);
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
+  private void reportHelmFailure(String cmd, ExecResult result) throws Exception {
+    logger.info("reportHelmFailure " + result);
     throw new RuntimeException(getExecFailure(cmd, result));
   }
 
@@ -336,13 +390,56 @@ public class Operator {
     }
   }
 
-  private void initialize(String yamlFile) throws Exception {
-    operatorMap = TestUtils.loadYaml(yamlFile);
+  private void initialize(String inputYaml) throws Exception {
+    initialize(TestUtils.loadYaml(inputYaml), true, true, true);
+  }
+
+  private void initialize(
+      Map<String, Object> inputMap, boolean opNS, boolean opSA, boolean targetdomainNS)
+      throws Exception {
+    operatorMap = inputMap;
     userProjectsDir = BaseTest.getUserProjectsDir();
     operatorNS = (String) operatorMap.getOrDefault("namespace", operatorNS);
 
     if (operatorMap.get("releaseName") == null) {
       throw new RuntimeException("FAILURE: releaseName cann't be null");
+    }
+    if (opNS) {
+      ExecCommand.exec("kubectl delete namespace " + operatorNS);
+
+      // create operator namespace
+      ExecCommand.exec("kubectl create namespace " + operatorNS);
+    }
+    if (opSA) {
+      // create operator service account
+      String serviceAccount = (String) operatorMap.get("serviceAccount");
+      if (serviceAccount != null && !serviceAccount.equals("default")) {
+        ExecResult result =
+            ExecCommand.exec(
+                "kubectl create serviceaccount " + serviceAccount + " -n " + operatorNS);
+        if (result.exitValue() != 0) {
+          throw new RuntimeException(
+              "FAILURE: Couldn't create serviceaccount "
+                  + serviceAccount
+                  + ". Cmd returned "
+                  + result.stdout()
+                  + "\n"
+                  + result.stderr());
+        }
+      }
+    }
+    if (targetdomainNS) {
+      // create domain namespaces
+
+      ArrayList<String> domainNamespaces = (ArrayList<String>) operatorMap.get("domainNamespaces");
+      for (int i = 0; i < domainNamespaces.size(); i++) {
+        String domainNS = domainNamespaces.get(i);
+        logger.info("domainNamespace " + domainNS);
+        if (!domainNS.equals("default")) {
+          logger.info("Creating domain namespace " + domainNS);
+          ExecCommand.exec("kubectl create namespace " + domainNS);
+        }
+      }
     }
     // customize the inputs yaml file to generate a self-signed cert for the external Operator REST
     // https port
@@ -379,55 +476,6 @@ public class Operator {
 
     if (System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null) {
       operatorMap.put("imagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
-    }
-
-    ExecCommand.exec("kubectl delete namespace " + operatorNS);
-
-    // create opeartor namespace
-    ExecCommand.exec("kubectl create namespace " + operatorNS);
-
-    // create operator service account
-    String serviceAccount = (String) operatorMap.get("serviceAccount");
-    if (serviceAccount != null && !serviceAccount.equals("default")) {
-      ExecResult result =
-          ExecCommand.exec("kubectl create serviceaccount " + serviceAccount + " -n " + operatorNS);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: Couldn't create serviceaccount "
-                + serviceAccount
-                + ". Cmd returned "
-                + result.stdout()
-                + "\n"
-                + result.stderr());
-      }
-    }
-
-    // create domain namespaces
-
-    ArrayList<String> domainNamespaces = (ArrayList<String>) operatorMap.get("domainNamespaces");
-    for (int i = 0; i < domainNamespaces.size(); i++) {
-      String domainNS = domainNamespaces.get(i);
-      logger.info("domainNamespace " + domainNS);
-      if (!domainNS.equals("default")) {
-        logger.info("Creating domain namespace " + domainNS);
-        ExecCommand.exec("kubectl create namespace " + domainNS);
-      }
-    }
-
-    if (System.getenv("IMAGE_PULL_SECRET_OPERATOR") != null) {
-      Map<String, String> m = new HashMap<>();
-      m.put("name", System.getenv("IMAGE_PULL_SECRET_OPERATOR"));
-      List<Map<String, String>> l = new ArrayList<>();
-      l.add(m);
-      operatorMap.put("imagePullSecrets", l);
-      // create docker registry secrets
-      TestUtils.createDockerRegistrySecret(
-          System.getenv("IMAGE_PULL_SECRET_OPERATOR"),
-          System.getenv("REPO_SERVER"),
-          System.getenv("REPO_USERNAME"),
-          System.getenv("REPO_PASSWORD"),
-          System.getenv("REPO_EMAIL"),
-          operatorNS);
     }
   }
 
