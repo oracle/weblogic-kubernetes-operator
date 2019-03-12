@@ -244,7 +244,6 @@ public class ITSitConfig extends BaseTest {
     if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
       domainMap.put("weblogicDomainStorageType", "NFS");
     }
-    copyOverrideFiles();
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
     return domain;
@@ -253,23 +252,6 @@ public class ITSitConfig extends BaseTest {
   private static void destroySitConfigDomain() throws Exception {
     if (domain != null) {
       domain.destroy();
-    }
-  }
-
-  private static void copyOverrideFiles() throws IOException {
-    String files[] = {
-      "config.xml",
-      "version.txt",
-      "diagnostics-WLDF-MODULE-0.xml",
-      "jdbc-JdbcTestDataSource-0.xml",
-      "jms-ClusterJmsSystemResource.xml"
-    };
-    String overrideDstDir = TESTSCRIPTDIR + "/domain-home-on-pv/customsitconfig/";
-    for (String file : files) {
-      Files.copy(
-          new File(TESTSCRIPTDIR + "/sitconfig/configoverrides/" + file).toPath(),
-          new File(overrideDstDir + file).toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
     }
   }
 
