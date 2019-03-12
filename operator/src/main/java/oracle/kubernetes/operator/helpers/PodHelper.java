@@ -21,19 +21,19 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public class PodHelper {
 
   private PodHelper() {}
 
   static class AdminPodStepContext extends PodStepContext {
-    private static final String INTERNAL_OPERATOR_CERT_FILE = "internalOperatorCert";
     static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
 
     AdminPodStepContext(Step conflictStep, Packet packet) {
@@ -132,7 +132,7 @@ public class PodHelper {
     }
 
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
-      return tuningParameters.get(INTERNAL_OPERATOR_CERT_FILE);
+      return RestServer.getInstance().getInternalCertificateAsBase64PEM();
     }
   }
 
