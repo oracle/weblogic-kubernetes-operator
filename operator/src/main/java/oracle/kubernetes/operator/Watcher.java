@@ -1,4 +1,4 @@
-// Copyright 2017, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -187,17 +187,31 @@ abstract class Watcher<T> {
 
   private void handleErrorResponse(Watch.Response<T> item) {
     V1Status status = item.status;
-    if (status != null && status.getCode() == HTTP_GONE) {
-      String message = status.getMessage();
+    if (status == null) {
+      // The kubernetes client parsing logic can mistakenly parse a status as a type
+      // with similar fields, such as V1ConfigMap. In this case, the actual status is
+      // not available to our layer, so respond defensively by resetting resource version.
+      resourceVersion = 0l;
+    } else if (status.getCode() == HTTP_GONE) {
+      resourceVersion = computeNextResourceVersionFromMessage(status);
+    }
+  }
+
+  private long computeNextResourceVersionFromMessage(V1Status status) {
+    String message = status.getMessage();
+    if (message != null) {
       int index1 = message.indexOf('(');
       if (index1 > 0) {
         int index2 = message.indexOf(')', index1 + 1);
         if (index2 > 0) {
           String val = message.substring(index1 + 1, index2);
-          resourceVersion = !isNullOrEmptyString(val) ? Long.parseLong(val) : 0;
+          if (!isNullOrEmptyString(val)) {
+            return Long.parseLong(val);
+          }
         }
       }
     }
+    return 0l;
   }
 
   /**

@@ -35,7 +35,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.Test;
 
 public class ManagedPodHelperTest extends PodHelperTestBase {
@@ -162,6 +162,16 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
+  }
+
+  @Test
+  public void whenPacketHasEnvironmentItemsWithVariable_createManagedPodShouldNotChangeItsValue() {
+    V1EnvVar ENVVAR = toEnvVar(ITEM1, RAW_VALUE_1);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(ENVVAR));
+
+    getCreatedPodSpecContainer();
+
+    assertThat(ENVVAR.getValue(), is(RAW_VALUE_1));
   }
 
   @Test

@@ -1,4 +1,4 @@
-// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,9 +10,9 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
-import static oracle.kubernetes.weblogic.domain.v2.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.v2.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.v2.DomainConditionType.Progressing;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
@@ -42,11 +42,11 @@ import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainCondition;
-import oracle.kubernetes.weblogic.domain.v2.DomainStatus;
-import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
-import oracle.kubernetes.weblogic.domain.v2.ServerStatus;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerHealth;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 /**
  * Updates for status of Domain. This class has two modes: 1) Watching for Pod state changes by
@@ -203,8 +203,7 @@ public class DomainStatusUpdater {
       }
 
       Map<String, ServerStatus> getServerStatuses() {
-        return getServerNames()
-            .stream()
+        return getServerNames().stream()
             .collect(Collectors.toMap(Function.identity(), this::createServerStatus));
       }
 
@@ -231,8 +230,7 @@ public class DomainStatusUpdater {
       }
 
       private Map<String, Long> getClusterCounts() {
-        return getServerNames()
-            .stream()
+        return getServerNames().stream()
             .map(this::getClusterNameFromPod)
             .filter(Objects::nonNull)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));

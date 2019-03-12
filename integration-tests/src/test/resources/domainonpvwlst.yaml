@@ -16,4 +16,5 @@ exposeAdminNodePort: true
 namespace: default
 loadBalancer: TRAEFIK
 ingressPerDomain: true
-
+createDomainPyScript: integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py
+voyagerWebPort: 30305
