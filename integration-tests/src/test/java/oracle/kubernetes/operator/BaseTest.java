@@ -27,6 +27,25 @@ public class BaseTest {
   public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   public static final String TESTWEBAPP = "testwebapp";
 
+  // property file used to customize operator properties for operator inputs yaml
+
+  public static final String OPERATOR1_YAML = "operator1.yaml";
+  public static final String OPERATOR2_YAML = "operator2.yaml";
+  public static final String OPERATORBC_YAML = "operator_bc.yaml";
+  public static final String OPERATOR_CHAIN_YAML = "operator_chain.yaml";
+
+  // file used to customize domain properties for domain, PV and LB inputs yaml
+  public static final String DOMAINONPV_WLST_YAML = "domainonpvwlst.yaml";
+  public static final String DOMAINONPV_WDT_YAML = "domainonpvwdt.yaml";
+  public static final String DOMAIN_ADMINONLY_YAML = "domainadminonly.yaml";
+  public static final String DOMAIN_RECYCLEPOLICY_YAML = "domainrecyclepolicy.yaml";
+  public static final String DOMAIN_SAMPLE_DEFAULTS_YAML = "domainsampledefaults.yaml";
+  public static final String DOMAININIMAGE_WLST_YAML = "domaininimagewlst.yaml";
+  public static final String DOMAININIMAGE_WDT_YAML = "domaininimagewdt.yaml";
+
+  // property file used to configure constants for integration tests
+  public static final String APP_PROPS_FILE = "OperatorIT.properties";
+
   private static String resultRoot = "";
   private static String pvRoot = "";
   private static String resultDir = "";
@@ -40,6 +59,28 @@ public class BaseTest {
   private static String branchName = "";
   private static String appLocationInPod = "/u01/oracle/apps";
   private static Properties appProps;
+
+  public static boolean QUICKTEST;
+  public static boolean SMOKETEST;
+  public static boolean JENKINS;
+  public static boolean INGRESSPERDOMAIN = true;
+
+  // Set QUICKTEST env var to true to run a small subset of tests.
+  // Set SMOKETEST env var to true to run an even smaller subset of tests
+  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
+  static {
+    QUICKTEST =
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
+    SMOKETEST =
+        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
+    if (SMOKETEST) QUICKTEST = true;
+    if (System.getenv("JENKINS") != null) {
+      JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
+    }
+    if (System.getenv("INGRESSPERDOMAIN") != null) {
+      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
+    }
+  }
 
   public static void initialize(String appPropsFile) throws Exception {
 
