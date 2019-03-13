@@ -10,7 +10,10 @@ import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static java.util.Collections.emptyMap;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ConfigMapList;
@@ -26,21 +29,33 @@ import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1SubjectAccessReview;
+import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonPatch;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
+import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
+import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
@@ -53,6 +68,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 public class KubernetesTestSupport extends FiberTestSupport {
   private Map<String, DataRepository<?>> repositories = new HashMap<>();
   private Map<Class<?>, String> dataTypes = new HashMap<>();
+  private Failure failure;
 
   public static final String CONFIG_MAP = "ConfigMap";
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
@@ -62,6 +78,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String PVC = "PersistentVolumeClaim";
   public static final String POD = "Pod";
   public static final String SERVICE = "Service";
+  public static final String SUBJECT_ACCESS_REVIEW = "SubjectAccessReview";
+  public static final String TOKEN_REVIEW = "TokenReview";
 
   /**
    * Installs a factory into CallBuilder to use canned responses.
@@ -70,6 +88,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
    */
   public Memento install() {
     support(CUSTOM_RESOURCE_DEFINITION, V1beta1CustomResourceDefinition.class);
+    support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
+    support(TOKEN_REVIEW, V1TokenReview.class);
+
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
@@ -78,8 +99,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPVCList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
 
-    return new KubernetesTestSupport.StepFactoryMemento(
-        new KubernetesTestSupport.RequestStepFactory());
+    return new CallBuilderMemento();
   }
 
   private V1ConfigMapList createConfigMapList(List<V1ConfigMap> items) {
@@ -113,18 +133,27 @@ public class KubernetesTestSupport extends FiberTestSupport {
   @SuppressWarnings("SameParameterValue")
   private void support(String resourceName, Class<?> resourceClass) {
     dataTypes.put(resourceClass, resourceName);
-    repositories.put(resourceName, new DataRepository());
+    repositories.put(resourceName, new DataRepository<>(resourceClass));
   }
 
   private <T> void supportNamespaced(
       String resourceName, Class<T> resourceClass, Function<List<T>, Object> toList) {
     dataTypes.put(resourceClass, resourceName);
-    repositories.put(resourceName, new NamespacedDataRepository<>(toList));
+    repositories.put(resourceName, new NamespacedDataRepository<>(resourceClass, toList));
   }
 
   @SuppressWarnings("unchecked")
   public <T> List<T> getResources(String resourceType) {
     return ((DataRepository<T>) repositories.get(resourceType)).getResources();
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> T getResourceWithName(String resourceType, String name) {
+    return (T)
+        getResources(resourceType).stream()
+            .filter(o -> name.equals(KubernetesUtils.getResourceName(o)))
+            .findFirst()
+            .orElse(null);
   }
 
   @SafeVarargs
@@ -137,26 +166,67 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return (DataRepository<T>) repositories.get(dataTypes.get(resource.getClass()));
   }
 
-  private static class StepFactoryMemento implements Memento {
-    private AsyncRequestStepFactory oldFactory;
+  public void doOnCreate(String resourceType, Consumer<?> consumer) {
+    repositories.get(resourceType).addCreateAction(consumer);
+  }
 
-    StepFactoryMemento(AsyncRequestStepFactory newFactory) {
-      oldFactory = CallBuilder.setStepFactory(newFactory);
+  public void doOnUpdate(String resourceType, Consumer<?> consumer) {
+    repositories.get(resourceType).addUpdateAction(consumer);
+  }
+
+  /**
+   * Specifies that any operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnResource(String resourceType, String name, String namespace, int httpStatus) {
+    failure = new Failure(resourceType, name, namespace, httpStatus);
+  }
+
+  /**
+   * Specifies that any operation should fail if it matches the specified conditions. Applies to
+   * non-namespaced resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param httpStatus the status to associate with the failure
+   */
+  public void failOnResource(String resourceType, String name, int httpStatus) {
+    failOnResource(resourceType, name, null, httpStatus);
+  }
+  /*
+
+    public void runOnOperation(String resourceType, String name, String namespace, Consumer<?> consumer) {
+      this.consumers.add(consumer)
+    }
+  */
+
+  private class CallBuilderMemento implements Memento {
+
+    {
+      {
+        CallBuilder.setStepFactory(new AsyncRequestStepFactoryImpl());
+        CallBuilder.setCallDispatcher(new CallDispatcherImpl());
+      }
     }
 
     @Override
     public void revert() {
       CallBuilder.resetStepFactory();
+      CallBuilder.resetCallDispatcher();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T getOriginalValue() {
-      return (T) oldFactory;
+      throw new UnsupportedOperationException();
     }
   }
 
-  private class RequestStepFactory implements AsyncRequestStepFactory {
+  private class AsyncRequestStepFactoryImpl implements AsyncRequestStepFactory {
 
     @Override
     public <T> Step createRequestAsync(
@@ -174,18 +244,48 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
+  private class CallDispatcherImpl implements SynchronousCallDispatcher {
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T execute(
+        SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> helper)
+        throws ApiException {
+      try {
+        return (T) new CallContext(requestParams).execute();
+      } catch (HttpErrorException e) {
+        throw new ApiException(e.status, "failure reported in test");
+      }
+    }
+  }
+
   private class DataRepository<T> {
     private Map<String, T> data = new HashMap<>();
-    private Method getMetadataMethod;
+    private Class<?> resourceType;
+    private List<Consumer<T>> onCreateActions = new ArrayList<>();
+    private List<Consumer<T>> onUpdateActions = new ArrayList<>();
+
+    public DataRepository(Class<?> resourceType) {
+      this.resourceType = resourceType;
+    }
+
+    public DataRepository(Class<?> resourceType, NamespacedDataRepository<T> parent) {
+      this.resourceType = resourceType;
+      onCreateActions = ((DataRepository<T>) parent).onCreateActions;
+      onUpdateActions = ((DataRepository<T>) parent).onUpdateActions;
+    }
 
     void createResourceInNamespace(T resource) {
       createResource(getMetadata(resource).getNamespace(), resource);
     }
 
     T createResource(String namespace, T resource) {
-      if (hasElementWithName(getName(resource))) throw new RuntimeException("element exists");
+      String name = getName(resource);
+      if (name != null) {
+        if (hasElementWithName(getName(resource))) throw new RuntimeException("element exists");
+        data.put(getName(resource), resource);
+      }
 
-      data.put(getName(resource), resource);
+      onCreateActions.forEach(a -> a.accept(resource));
       return resource;
     }
 
@@ -220,6 +320,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       setName(resource, name);
 
       data.put(name, resource);
+      onUpdateActions.forEach(a -> a.accept(resource));
       return resource;
     }
 
@@ -235,31 +336,47 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return data.get(name);
     }
 
+    public T patchResource(String namespace, String name, List<JsonObject> body) {
+      if (!data.containsKey(name)) throw new NotFoundException();
+
+      JsonPatch patch = Json.createPatch(toJsonArray(body));
+      JsonStructure result = patch.apply(toJsonStructure(data.get(name)));
+      T resource = fromJsonStructure(result);
+      data.put(name, resource);
+      onUpdateActions.forEach(a -> a.accept(resource));
+      return resource;
+    }
+
+    @SuppressWarnings("unchecked")
+    T fromJsonStructure(JsonStructure jsonStructure) {
+      return (T) new Gson().fromJson(jsonStructure.toString(), resourceType);
+    }
+
+    JsonStructure toJsonStructure(T src) {
+      String json = new Gson().toJson(src);
+      return Json.createReader(new StringReader(json)).read();
+    }
+
+    JsonArray toJsonArray(List<JsonObject> patch) {
+      JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+      for (JsonObject jsonObject : patch) arrayBuilder.add(toJsonValue(jsonObject));
+      return arrayBuilder.build();
+    }
+
+    private JsonValue toJsonValue(JsonObject jsonObject) {
+      return Json.createReader(new StringReader(jsonObject.toString())).readValue();
+    }
+
     boolean hasElementWithName(String name) {
       return data.containsKey(name);
     }
 
     private String getName(@Nonnull Object resource) {
-      return getMetadata(resource).getName();
+      return Optional.ofNullable(getMetadata(resource)).map(V1ObjectMeta::getName).orElse(null);
     }
 
     private V1ObjectMeta getMetadata(@Nonnull Object resource) {
-      try {
-        return (V1ObjectMeta) getMetadataMethod(resource).invoke(resource);
-      } catch (IllegalAccessException | InvocationTargetException e) {
-        throw new RuntimeException("unable to get name");
-      }
-    }
-
-    private Method getMetadataMethod(Object resource) {
-      if (getMetadataMethod == null) {
-        try {
-          getMetadataMethod = resource.getClass().getDeclaredMethod("getMetadata");
-        } catch (NoSuchMethodException e) {
-          throw new RuntimeException("unable to get metadata");
-        }
-      }
-      return getMetadataMethod;
+      return KubernetesUtils.getResourceMetadata(resource);
     }
 
     private void setName(@Nonnull Object resource, String name) {
@@ -269,13 +386,26 @@ public class KubernetesTestSupport extends FiberTestSupport {
     List<T> getResources() {
       return new ArrayList<>(data.values());
     }
+
+    @SuppressWarnings("unchecked")
+    public void addCreateAction(Consumer<?> consumer) {
+      onCreateActions.add((Consumer<T>) consumer);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void addUpdateAction(Consumer<?> consumer) {
+      onUpdateActions.add((Consumer<T>) consumer);
+    }
   }
 
   private class NamespacedDataRepository<T> extends DataRepository<T> {
     private Map<String, DataRepository<T>> repositories = new HashMap<>();
+    private Class<?> resourceType;
     private Function<List<T>, Object> listFactory;
 
-    NamespacedDataRepository(Function<List<T>, Object> listFactory) {
+    NamespacedDataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
+      super(resourceType);
+      this.resourceType = resourceType;
       this.listFactory = listFactory;
     }
 
@@ -285,7 +415,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private DataRepository<T> inNamespace(String namespace) {
-      return repositories.computeIfAbsent(namespace, n -> new DataRepository<>());
+      return repositories.computeIfAbsent(namespace, n -> new DataRepository<>(resourceType, this));
     }
 
     @Override
@@ -296,6 +426,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     @Override
     public T readResource(String namespace, String name) {
       return inNamespace(namespace).readResource(null, name);
+    }
+
+    @Override
+    public T patchResource(String namespace, String name, List<JsonObject> body) {
+      return inNamespace(namespace).patchResource(null, name, body);
     }
 
     @Override
@@ -312,54 +447,69 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "unused"})
   private enum Operation {
     create {
       @Override
-      Object execute(SimulatedResponseStep simulatedResponseStep, DataRepository dataRepository) {
-        return simulatedResponseStep.createResource(dataRepository);
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.createResource(dataRepository);
+      }
+
+      @Override
+      public String getName(RequestParams requestParams) {
+        return KubernetesUtils.getResourceName(requestParams.body);
       }
     },
     delete {
       @Override
-      Object execute(SimulatedResponseStep simulatedResponseStep, DataRepository dataRepository) {
-        return simulatedResponseStep.deleteResource(dataRepository);
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.deleteResource(dataRepository);
       }
     },
     read {
       @Override
-      Object execute(SimulatedResponseStep simulatedResponseStep, DataRepository dataRepository) {
-        return simulatedResponseStep.readResource(dataRepository);
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.readResource(dataRepository);
       }
     },
     replace {
       @Override
-      Object execute(SimulatedResponseStep simulatedResponseStep, DataRepository dataRepository) {
-        return simulatedResponseStep.replaceResource(dataRepository);
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.replaceResource(dataRepository);
       }
     },
     list {
       @Override
-      Object execute(SimulatedResponseStep simulatedResponseStep, DataRepository dataRepository) {
-        return simulatedResponseStep.listResources(dataRepository);
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.listResources(dataRepository);
+      }
+    },
+    patch {
+      @Override
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.patchResource(dataRepository);
       }
     };
 
-    abstract Object execute(
-        SimulatedResponseStep simulatedResponseStep, DataRepository dataRepository);
+    abstract Object execute(CallContext callContext, DataRepository dataRepository);
+
+    public String getName(RequestParams requestParams) {
+      return requestParams.name;
+    }
   }
 
-  private class SimulatedResponseStep extends Step {
-
+  private class CallContext {
     private final RequestParams requestParams;
-    private final String fieldSelector;
-    private final String[] labelSelector;
     private String resourceType;
     private Operation operation;
+    private final String fieldSelector;
+    private final String[] labelSelector;
 
-    SimulatedResponseStep(
-        Step next, RequestParams requestParams, String fieldSelector, String labelSelector) {
-      super(next);
+    CallContext(RequestParams requestParams) {
+      this(requestParams, null, null);
+    }
+
+    CallContext(RequestParams requestParams, String fieldSelector, String labelSelector) {
       this.requestParams = requestParams;
       this.fieldSelector = fieldSelector;
       this.labelSelector = labelSelector == null ? null : labelSelector.split(",");
@@ -369,8 +519,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private void parseCallName(String callName) {
       int i = indexOfFirstCapital(callName);
-      this.resourceType = callName.substring(i);
-      this.operation = Operation.valueOf(callName.substring(0, i));
+      resourceType = callName.substring(i);
+      operation = Operation.valueOf(callName.substring(0, i));
     }
 
     private int indexOfFirstCapital(String callName) {
@@ -380,35 +530,65 @@ public class KubernetesTestSupport extends FiberTestSupport {
       throw new RuntimeException(callName + " is not a valid call name");
     }
 
+    private Object execute() {
+      if (failure != null && failure.matches(resourceType, requestParams, operation))
+        throw failure.getException();
+
+      return operation.execute(this, repositories.get(resourceType));
+    }
+
     @SuppressWarnings("unchecked")
     <T> T createResource(DataRepository<T> dataRepository) {
       return dataRepository.createResource(requestParams.namespace, (T) requestParams.body);
     }
 
     @SuppressWarnings("unchecked")
-    <T> T replaceResource(DataRepository<T> dataRepository) {
+    private <T> T replaceResource(DataRepository<T> dataRepository) {
       return dataRepository.replaceResource(requestParams.name, (T) requestParams.body);
     }
 
-    Object deleteResource(DataRepository dataRepository) {
+    private Object deleteResource(DataRepository dataRepository) {
       return dataRepository.deleteResource(requestParams.namespace, requestParams.name);
     }
 
-    Object listResources(DataRepository dataRepository) {
+    @SuppressWarnings("unchecked")
+    private List<JsonObject> asJsonObject(Object body) {
+      return (List<JsonObject>) body;
+    }
+
+    private Object patchResource(DataRepository dataRepository) {
+      return dataRepository.patchResource(
+          requestParams.namespace, requestParams.name, asJsonObject(requestParams.body));
+    }
+
+    private Object listResources(DataRepository dataRepository) {
       return dataRepository.listResources(requestParams.namespace, fieldSelector, labelSelector);
     }
 
-    <T> T readResource(DataRepository<T> dataRepository) {
+    private <T> T readResource(DataRepository<T> dataRepository) {
       return dataRepository.readResource(requestParams.namespace, requestParams.name);
+    }
+  }
+
+  private class SimulatedResponseStep extends Step {
+
+    private CallContext callContext;
+
+    SimulatedResponseStep(
+        Step next, RequestParams requestParams, String fieldSelector, String labelSelector) {
+      super(next);
+      callContext = new CallContext(requestParams, fieldSelector, labelSelector);
     }
 
     @Override
     public NextAction apply(Packet packet) {
       try {
-        Object callResult = operation.execute(this, repositories.get(resourceType));
+        Object callResult = callContext.execute();
         CallResponse callResponse = createResponse(callResult);
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(callResponse));
       } catch (NotFoundException e) {
+        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
+      } catch (HttpErrorException e) {
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
       } catch (Exception e) {
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
@@ -425,10 +605,46 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return new CallResponse<>(null, new ApiException(e), HTTP_NOT_FOUND, emptyMap());
     }
 
+    private CallResponse createResponse(HttpErrorException e) {
+      return new CallResponse<>(null, new ApiException(e), e.status, emptyMap());
+    }
+
     private CallResponse createResponse(Throwable t) {
       return new CallResponse<>(null, new ApiException(t), HTTP_UNAVAILABLE, emptyMap());
     }
   }
 
+  static class Failure {
+    private String resourceType;
+    private String name;
+    private String namespace;
+    private int httpStatus;
+
+    public Failure(String resourceType, String name, String namespace, int httpStatus) {
+      this.resourceType = resourceType;
+      this.name = name;
+      this.namespace = namespace;
+      this.httpStatus = httpStatus;
+    }
+
+    public boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
+      return this.resourceType.equals(resourceType)
+          && Objects.equals(name, operation.getName(requestParams))
+          && Objects.equals(namespace, requestParams.namespace);
+    }
+
+    public HttpErrorException getException() {
+      return new HttpErrorException(httpStatus);
+    }
+  }
+
   static class NotFoundException extends RuntimeException {}
+
+  static class HttpErrorException extends RuntimeException {
+    private int status;
+
+    public HttpErrorException(int status) {
+      this.status = status;
+    }
+  }
 }

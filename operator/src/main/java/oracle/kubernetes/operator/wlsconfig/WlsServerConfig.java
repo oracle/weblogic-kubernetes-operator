@@ -18,10 +18,8 @@ public class WlsServerConfig {
   String listenAddress;
   String clusterName;
   Integer sslListenPort;
-  boolean sslPortEnabled;
   String machineName;
   Integer adminPort;
-  boolean adminPortEnabled;
   List<NetworkAccessPoint> networkAccessPoints;
 
   public WlsServerConfig() {}
@@ -96,6 +94,16 @@ public class WlsServerConfig {
     networkAccessPoints.add(networkAccessPoint);
   }
 
+  public WlsServerConfig addNetworkAccessPoint(String name, int listenPort) {
+    addNetworkAccessPoint(new NetworkAccessPoint(name, "TCP", listenPort, null));
+    return this;
+  }
+
+  public WlsServerConfig setAdminPort(int adminPort) {
+    this.adminPort = adminPort;
+    return this;
+  }
+
   public String getClusterName() {
     return this.clusterName;
   }
@@ -114,6 +122,10 @@ public class WlsServerConfig {
 
   public void setListenPort(Integer listenPort) {
     this.listenPort = listenPort;
+  }
+
+  public void setSslListenPort(Integer listenPort) {
+    this.sslListenPort = listenPort;
   }
 
   public boolean isAdminPortEnabled() {
@@ -148,56 +160,46 @@ public class WlsServerConfig {
     // parse the SSL configuration
     Map<String, Object> sslMap = (Map<String, Object>) serverConfigMap.get("SSL");
     Integer sslListenPort = (sslMap == null) ? null : (Integer) sslMap.get("listenPort");
-    boolean sslPortEnabled = (sslMap != null && sslMap.get("listenPort") != null) ? true : false;
+    boolean sslPortEnabled = sslMap != null && sslMap.get("listenPort") != null;
 
     // parse the administration port
-    Integer adminPort = (Integer) serverConfigMap.get("adminPort");
-    boolean adminPortEnabled = (adminPort != null);
 
     return new WlsServerConfig(
         (String) serverConfigMap.get("name"),
-        (Integer) serverConfigMap.get("listenPort"),
         (String) serverConfigMap.get("listenAddress"),
-        sslListenPort,
-        sslPortEnabled,
         getMachineNameFromJsonMap(serverConfigMap),
-        networkAccessPoints,
-        adminPort,
-        adminPortEnabled);
+        (Integer) serverConfigMap.get("listenPort"),
+        sslListenPort,
+        (Integer) serverConfigMap.get("adminPort"),
+        networkAccessPoints);
   }
 
   /**
    * Construct a WlsServerConfig object using values provided.
    *
    * @param name Name of the WLS server
-   * @param listenPort Configured listen port for this WLS server
    * @param listenAddress Configured listen address for this WLS server
-   * @param sslListenPort Configured SSL listen port for this WLS server
-   * @param sslPortEnabled boolean indicating whether the SSL listen port should be enabled
    * @param machineName Configured machine name for this WLS server
-   * @param networkAccessPoints List of NetworkAccessPoint containing channels configured for this
+   * @param listenPort Configured listen port for this WLS server
+   * @param sslListenPort Configured SSL listen port for this WLS server
    * @param adminPort Configured domain wide administration port
-   * @param adminPortEnabled boolean indicating whether administration port should be enabled
+   * @param networkAccessPoints List of NetworkAccessPoint containing channels configured for this
    */
   public WlsServerConfig(
       String name,
-      Integer listenPort,
       String listenAddress,
-      Integer sslListenPort,
-      boolean sslPortEnabled,
       String machineName,
-      List<NetworkAccessPoint> networkAccessPoints,
+      Integer listenPort,
+      Integer sslListenPort,
       Integer adminPort,
-      boolean adminPortEnabled) {
+      List<NetworkAccessPoint> networkAccessPoints) {
     this.name = name;
-    this.listenPort = listenPort;
     this.listenAddress = listenAddress;
-    this.networkAccessPoints = networkAccessPoints;
-    this.sslListenPort = sslListenPort;
-    this.sslPortEnabled = sslPortEnabled;
-    this.adminPort = adminPort;
-    this.adminPortEnabled = adminPortEnabled;
     this.machineName = machineName;
+    this.listenPort = listenPort;
+    this.sslListenPort = sslListenPort;
+    this.adminPort = adminPort;
+    this.networkAccessPoints = networkAccessPoints;
   }
 
   /**
@@ -318,13 +320,11 @@ public class WlsServerConfig {
     WlsServerConfig that = (WlsServerConfig) o;
 
     return new EqualsBuilder()
-        .append(sslPortEnabled, that.sslPortEnabled)
         .append(name, that.name)
         .append(listenPort, that.listenPort)
         .append(listenAddress, that.listenAddress)
         .append(sslListenPort, that.sslListenPort)
         .append(adminPort, that.adminPort)
-        .append(adminPortEnabled, that.adminPortEnabled)
         .append(machineName, that.machineName)
         .append(networkAccessPoints, that.networkAccessPoints)
         .isEquals();
@@ -337,9 +337,7 @@ public class WlsServerConfig {
         .append(listenPort)
         .append(listenAddress)
         .append(sslListenPort)
-        .append(sslPortEnabled)
         .append(adminPort)
-        .append(adminPortEnabled)
         .append(machineName)
         .append(networkAccessPoints)
         .toHashCode();
@@ -352,9 +350,7 @@ public class WlsServerConfig {
         .append("listenPort", listenPort)
         .append("listenAddress", listenAddress)
         .append("sslListenPort", sslListenPort)
-        .append("sslPortEnabled", sslPortEnabled)
         .append("adminPort", adminPort)
-        .append("adminPortEnabled", adminPortEnabled)
         .append("machineName", machineName)
         .append("networkAccessPoints", networkAccessPoints)
         .toString();
