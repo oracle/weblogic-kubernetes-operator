@@ -151,4 +151,7 @@ public class MessageKeys {
   public static final String REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT = "WLSKO-0146";
   public static final String SYNC_RETRY = "WLSKO-0147";
   public static final String POD_DUMP = "WLSKO-0148";
+  public static final String EXTERNAL_CHANNEL_SERVICE_CREATED = "WLSKO-0150";
+  public static final String EXTERNAL_CHANNEL_SERVICE_REPLACED = "WLSKO-0151";
+  public static final String EXTERNAL_CHANNEL_SERVICE_EXISTS = "WLSKO-0152";
 }
