@@ -78,7 +78,14 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Two Operators using same target domains namespace | create chart using target domains namespace as already running first operator, verify that deployment fails with expected error |
 | Operator Helm Chart using not preexisted target domains namespace | create chart using not preexisted target domains namespace as already running first operator, verify that deployment fails with expected error |
 
+Situational Configuration Override Usecases
 
+| Override | Usecase |
+| --- | --- |
+| Domain override | Override the admin server properties connect-timeout, max-message-size, restart-max, JMXCore and Serverlifecycle debug flags. Also T3Channel public address using Kubernetes secret |
+| JDBC Resource Override | Override JDBC connection pool properties; initialCapacity, maxCapacity, test-connections-on-reserve, connection-harvest-max-count, inactive-connection-timeout-seconds. Override the jdbc driver parameters like data source url, db user and password using kubernetes secret. |
+| JMS Resource Override | Override UniformDistributedTopic Delivery Failure Parameters, Redelivery limit and Expiration policy |
+| WLDF Resource Override | Override instrumentation monitors and harvesters in a diagnostics module. |
 
 # Directory Configuration and Structure
  
