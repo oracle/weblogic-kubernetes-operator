@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -233,13 +235,45 @@ public class RestBackendImpl implements RestBackend {
 
     verifyWLSConfiguredClusterCapacity(domain, cluster, managedServerCount);
 
+    /*/
+    patchDomain(domain, cluster, managedServerCount);
+    /*/
     if (updateReplicasForDomain(domain, cluster, managedServerCount)) {
       overwriteDomain(
           namespace,
           domain,
           () -> getDomainForConflictRetry(domainUID, cluster, managedServerCount));
     }
+    /**/
     LOGGER.exiting();
+  }
+
+  private static final String NEW_CLUSTER =
+      "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
+
+  private void patchDomain(Domain domain, String cluster, int replicas) {
+    if (replicas == domain.getReplicaCount(cluster)) return;
+
+    try {
+      JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+      int index = getClusterIndex(domain, cluster);
+      if (index < 0)
+        patchBuilder.add("/spec/clusters/0", String.format(NEW_CLUSTER, cluster, replicas));
+      else patchBuilder.replace("/spec/clusters/" + index + "/replicas", replicas);
+
+      new CallBuilder()
+          .patchDomain(
+              domain.getDomainUID(), domain.getMetadata().getNamespace(), patchBuilder.build());
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
+  private int getClusterIndex(Domain domain, String cluster) {
+    for (int i = 0; i < domain.getSpec().getClusters().size(); i++)
+      if (cluster.equals(domain.getSpec().getClusters().get(i).getClusterName())) return i;
+
+    return -1;
   }
 
   private boolean updateReplicasForDomain(Domain domain, String cluster, int newReplicaCount) {

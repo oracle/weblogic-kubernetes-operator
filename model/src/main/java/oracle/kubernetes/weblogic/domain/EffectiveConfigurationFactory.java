@@ -5,7 +5,7 @@
 package oracle.kubernetes.weblogic.domain;
 
 import java.util.List;
-import oracle.kubernetes.weblogic.domain.model.Channel;
+import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
@@ -15,7 +15,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
  */
 public interface EffectiveConfigurationFactory {
 
-  ServerSpec getAdminServerSpec();
+  AdminServerSpec getAdminServerSpec();
 
   ServerSpec getServerSpec(String serverName, String clusterName);
 
@@ -30,8 +30,4 @@ public interface EffectiveConfigurationFactory {
   boolean isShuttingDown();
 
   List<String> getAdminServerChannelNames();
-
-  List<Channel> getAdminServerChannels();
-
-  Integer getDefaultReplicaLimit();
 }
