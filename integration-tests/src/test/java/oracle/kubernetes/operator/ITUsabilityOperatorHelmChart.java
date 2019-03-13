@@ -26,31 +26,8 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITUsabilityOperatorHelmChart extends BaseTest {
 
-  // property file used to configure constants for integration tests
-  private static String appPropsFile = "OperatorIT.properties";
-  private static boolean QUICKTEST;
-  private static boolean SMOKETEST;
-  private static boolean JENKINS;
-  private static boolean INGRESSPERDOMAIN = true;
   private static int number = 3;
   String oprelease = "op" + number;
-
-  // Set QUICKTEST env var to true to run a small subset of tests.
-  // Set SMOKETEST env var to true to run an even smaller subset of tests
-  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  static {
-    QUICKTEST =
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
-    SMOKETEST =
-        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
-    if (SMOKETEST) QUICKTEST = true;
-    if (System.getenv("JENKINS") != null) {
-      JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
-    }
-    if (System.getenv("INGRESSPERDOMAIN") != null) {
-      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
-    }
-  }
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -63,7 +40,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
   public static void staticPrepare() throws Exception {
     if (!QUICKTEST) {
       // initialize test properties and create the directories
-      initialize(appPropsFile);
+      initialize(APP_PROPS_FILE);
     }
   }
 
