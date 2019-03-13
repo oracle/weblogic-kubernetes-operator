@@ -6,8 +6,6 @@ package oracle.kubernetes.operator;
 
 import java.util.Map;
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.ExecCommand;
-import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RESTCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -56,25 +54,7 @@ public class ITOperator extends BaseTest {
     logger.info("BEGIN");
     logger.info("Run once, release cluster lease");
 
-    StringBuffer cmd =
-        new StringBuffer("export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append("/integration-tests/src/test/resources/statedump.sh");
-    logger.info("Running " + cmd);
-
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() == 0) logger.info("Executed statedump.sh " + result.stdout());
-    else
-      logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
-
-    if (JENKINS) {
-      cleanup();
-    }
-
-    if (getLeaseId() != "") {
-      logger.info("Release the k8s cluster lease");
-      TestUtils.releaseLease(getProjectRoot(), getLeaseId());
-    }
+    tearDown();
 
     logger.info("SUCCESS");
   }
