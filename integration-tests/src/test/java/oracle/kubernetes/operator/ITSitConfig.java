@@ -235,6 +235,9 @@ public class ITSitConfig extends BaseTest {
     domainMap.put(
         "createDomainPyScript",
         "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
+    domainMap.put(
+        "javaOptions",
+        "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
 
     // use NFS for this domain on Jenkins, defaultis HOST_PATH
     if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
