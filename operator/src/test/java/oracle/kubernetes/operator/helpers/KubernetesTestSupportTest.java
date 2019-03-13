@@ -1,10 +1,18 @@
+// Copyright 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.helpers;
 
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -18,10 +26,14 @@ import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1SubjectAccessReview;
+import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -106,6 +118,40 @@ public class KubernetesTestSupportTest {
     assertThat(testSupport.getResources(CUSTOM_RESOURCE_DEFINITION), contains(crd));
   }
 
+  @Test
+  public void afterCreateTokenReview_tokenReviewExists() throws ApiException {
+    V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
+
+    new CallBuilder().createTokenReview(tokenReview);
+
+    assertThat(testSupport.getResources(TOKEN_REVIEW), contains(tokenReview));
+  }
+
+  @Test
+  public void whenHttpErrorNotAssociatedWithResource_dontThrowException() throws ApiException {
+    testSupport.failOnResource(TOKEN_REVIEW, "tr2", HTTP_BAD_REQUEST);
+    V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
+
+    new CallBuilder().createTokenReview(tokenReview);
+  }
+
+  @Test(expected = ApiException.class)
+  public void whenHttpErrorAssociatedWithResource_throwException() throws ApiException {
+    testSupport.failOnResource(TOKEN_REVIEW, "tr", HTTP_BAD_REQUEST);
+    V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
+
+    new CallBuilder().createTokenReview(tokenReview);
+  }
+
+  @Test
+  public void afterCreateSubjectAccessReview_subjectAccessReviewExists() throws ApiException {
+    V1SubjectAccessReview sar = new V1SubjectAccessReview().metadata(new V1ObjectMeta().name("rr"));
+
+    new CallBuilder().createSubjectAccessReview(sar);
+
+    assertThat(testSupport.getResources(SUBJECT_ACCESS_REVIEW), contains(sar));
+  }
+
   // tests for namespaced resources
 
   @Test
@@ -148,11 +194,30 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
+  public void whenHttpErrorAssociatedWithResource_callResponseIsError() {
+    testSupport.failOnResource(POD, "pod1", "ns2", HTTP_BAD_REQUEST);
+
+    TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().deletePodAsync("pod1", "ns2", null, responseStep));
+
+    testSupport.verifyCompletionThrowable(ApiException.class);
+    assertThat(responseStep.callResponse.getStatusCode(), equalTo(HTTP_BAD_REQUEST));
+  }
+
+  @Test
+  public void whenHttpErrorNotAssociatedWithResource_ignoreIt() {
+    testSupport.failOnResource(POD, "pod1", "ns2", HTTP_BAD_REQUEST);
+
+    TestResponseStep<V1Status> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().deletePodAsync("pod2", "ns2", null, responseStep));
+  }
+
+  @Test
   public void listPodSelectsByLabel() {
-    V1Pod pod1 = createLabeledPod("ns1", "pod1", ImmutableMap.of("k1", "v1", "k2", "v2"));
-    V1Pod pod2 = createLabeledPod("ns1", "pod2", ImmutableMap.of("k1", "v2"));
-    V1Pod pod3 = createLabeledPod("ns1", "pod3", ImmutableMap.of("k1", "v1", "k2", "v2"));
-    V1Pod pod4 = createLabeledPod("ns2", "pod4", ImmutableMap.of("k1", "v1", "k2", "v2"));
+    V1Pod pod1 = createLabeledPod("pod1", "ns1", ImmutableMap.of("k1", "v1", "k2", "v2"));
+    V1Pod pod2 = createLabeledPod("pod2", "ns1", ImmutableMap.of("k1", "v2"));
+    V1Pod pod3 = createLabeledPod("pod3", "ns1", ImmutableMap.of("k1", "v1", "k2", "v3"));
+    V1Pod pod4 = createLabeledPod("pod4", "ns2", ImmutableMap.of("k1", "v1", "k2", "v3"));
     testSupport.defineResources(pod1, pod2, pod3, pod4);
 
     TestResponseStep<V1PodList> responseStep = new TestResponseStep<>();
@@ -162,8 +227,38 @@ public class KubernetesTestSupportTest {
     assertThat(responseStep.callResponse.getResult().getItems(), containsInAnyOrder(pod1, pod3));
   }
 
-  private V1Pod createLabeledPod(String namespace, String name, Map<String, String> labels) {
+  private V1Pod createLabeledPod(String name, String namespace, Map<String, String> labels) {
     return new V1Pod().metadata(new V1ObjectMeta().namespace(namespace).name(name).labels(labels));
+  }
+
+  @Test
+  public void afterPatchPodWithoutExistingLabel_podHasLabel() {
+    V1Pod pod1 = createLabeledPod("pod1", "ns1", ImmutableMap.of());
+    testSupport.defineResources(pod1);
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder().add("/metadata/labels/k1", "v2");
+
+    TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(
+        new CallBuilder().patchPodAsync("pod1", "ns1", patchBuilder.build(), responseStep));
+
+    V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
+    assertThat(pod2.getMetadata().getLabels(), hasEntry("k1", "v2"));
+  }
+
+  @Test
+  public void afterPatchPodWithExistingLabel_labelValueChanged() {
+    V1Pod pod1 = createLabeledPod("pod1", "ns1", ImmutableMap.of("k1", "v1"));
+    testSupport.defineResources(pod1);
+
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder().replace("/metadata/labels/k1", "v2");
+
+    TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
+    testSupport.runSteps(
+        new CallBuilder().patchPodAsync("pod1", "ns1", patchBuilder.build(), responseStep));
+
+    V1Pod pod2 = (V1Pod) testSupport.getResources(POD).stream().findFirst().orElse(pod1);
+    assertThat(pod2.getMetadata().getLabels(), hasEntry("k1", "v2"));
   }
 
   @Test
@@ -214,6 +309,12 @@ public class KubernetesTestSupportTest {
 
     TestResponseStep() {
       super(null);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<T> callResponse) {
+      this.callResponse = callResponse;
+      return super.onFailure(packet, callResponse);
     }
 
     @Override
