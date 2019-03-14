@@ -38,9 +38,10 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE);
+    if (!QUICKTEST) {
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE);
+    }
   }
 
   /**
@@ -50,14 +51,15 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
+    if (!QUICKTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
 
-    tearDown();
+      tearDown();
 
-    logger.info("SUCCESS");
+      logger.info("SUCCESS");
+    }
   }
 
   /**
@@ -67,6 +69,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testOperatorCreateDeleteCreate() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator firstoperator = null;
@@ -119,7 +122,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateSecondOperatorUsingSameOperatorNSNegativeInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator firstoperator = null;
@@ -176,7 +179,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testNotPreCreatedOpNSCreateOperatorNegativeInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -212,7 +215,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -269,7 +272,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testSecondOpSharingSameTargetDomainsNSNegativeInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator secondoperator = null;
@@ -329,7 +332,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testTargetNSIsNotPreexistedNegativeInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -379,7 +382,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testSecondOpSharingSameExternalRestPortNegativeInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator1 = null;
@@ -439,7 +442,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithUpperCaseTargetDomainNegativeInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -485,7 +488,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateChartWithInvalidAttributesNegativeInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -536,7 +539,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithEmptyTargetDomainInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
@@ -558,7 +561,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
   }
 
   private void upgradeOperator(Operator operator, String upgradeSet) throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     operator.callHelmUpgrade(upgradeSet);
@@ -572,7 +575,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    */
   @Test
   public void testCreateWithDefaultTargetDomainInstall() throws Exception {
-
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
