@@ -124,7 +124,6 @@ public class ITServerDiscovery extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
     logger.info("Run once, release cluster lease");
@@ -161,7 +160,6 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPConnToNewMS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -187,8 +185,6 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPReconnToNewMS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -221,8 +217,6 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPReconnToRunningMSAndScaleDown() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -252,7 +246,6 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPReconnToRunningMSAndScaleUp() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -278,8 +271,6 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPReconnToRunningMSWApp() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -319,8 +310,6 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPAdminReconnToDomain() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -363,8 +352,6 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPMSReconnToDomain() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -407,8 +394,6 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPRestartDeadMS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
