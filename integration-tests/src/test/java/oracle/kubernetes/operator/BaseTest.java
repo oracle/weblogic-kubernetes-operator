@@ -609,6 +609,8 @@ public class BaseTest {
       logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
     }
 
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+
     if (JENKINS) {
       result = cleanup();
       if (result.exitValue() != 0) {
