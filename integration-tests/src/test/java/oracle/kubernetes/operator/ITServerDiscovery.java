@@ -81,40 +81,41 @@ public class ITServerDiscovery extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    // initialize test properties and create the directories
-    initialize(appPropsFile);
+    if (!QUICKTEST) {
+      // initialize test properties and create the directories
+      initialize(appPropsFile);
 
-    // create operator1
-    if (operator == null) {
-      logger.info("Creating Operator & waiting for the script to complete execution");
-      operator = TestUtils.createOperator(operatorYmlFile);
+      // create operator1
+      if (operator == null) {
+        logger.info("Creating Operator & waiting for the script to complete execution");
+        operator = TestUtils.createOperator(operatorYmlFile);
+      }
+
+      // create domain
+      if (domain == null) {
+        logger.info("Creating WLS Domain & waiting for the script to complete execution");
+        domain = TestUtils.createDomain(domainonpvwlstFile);
+        domain.verifyDomainCreated();
+      }
+
+      domainYaml =
+          BaseTest.getUserProjectsDir()
+              + "/weblogic-domains/"
+              + domain.getDomainUid()
+              + "/domain.yaml";
+
+      // create test domain yaml file
+      testDomainYamlFile = BaseTest.getResultDir() + "/" + testYamlFileName;
+
+      Path sourceFile = Paths.get(domainYaml);
+      Path targetFile = Paths.get(testDomainYamlFile);
+
+      Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+
+      String content = new String(Files.readAllBytes(targetFile), StandardCharsets.UTF_8);
+      content = content.replaceAll("replicas: 2", "replicas: 3");
+      Files.write(targetFile, content.getBytes(StandardCharsets.UTF_8));
     }
-
-    // create domain
-    if (domain == null) {
-      logger.info("Creating WLS Domain & waiting for the script to complete execution");
-      domain = TestUtils.createDomain(domainonpvwlstFile);
-      domain.verifyDomainCreated();
-    }
-
-    domainYaml =
-        BaseTest.getUserProjectsDir()
-            + "/weblogic-domains/"
-            + domain.getDomainUid()
-            + "/domain.yaml";
-
-    // create test domain yaml file
-    testDomainYamlFile = BaseTest.getResultDir() + "/" + testYamlFileName;
-
-    Path sourceFile = Paths.get(domainYaml);
-    Path targetFile = Paths.get(testDomainYamlFile);
-
-    Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-
-    String content = new String(Files.readAllBytes(targetFile), StandardCharsets.UTF_8);
-    content = content.replaceAll("replicas: 2", "replicas: 3");
-    Files.write(targetFile, content.getBytes(StandardCharsets.UTF_8));
   }
 
   /**
@@ -124,33 +125,15 @@ public class ITServerDiscovery extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
+    if (!QUICKTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
 
-    StringBuffer cmd =
-        new StringBuffer("export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append("/integration-tests/src/test/resources/statedump.sh");
-    logger.info("Running " + cmd);
+      tearDown();
 
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() == 0) logger.info("Executed statedump.sh " + result.stdout());
-    else
-      logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
-
-    if (domain != null && !SMOKETEST) domain.shutdownUsingServerStartPolicy();
-
-    if (JENKINS) {
-      cleanup();
+      logger.info("SUCCESS");
     }
-
-    if (getLeaseId() != "") {
-      logger.info("Release the k8s cluster lease");
-      TestUtils.releaseLease(getProjectRoot(), getLeaseId());
-    }
-
-    logger.info("SUCCESS");
   }
 
   /**
@@ -160,6 +143,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPConnToNewMS() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -185,6 +169,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPReconnToNewMS() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -217,6 +202,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPReconnToRunningMSAndScaleDown() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -246,6 +232,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPReconnToRunningMSAndScaleUp() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -271,6 +258,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPReconnToRunningMSWApp() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -310,6 +298,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPAdminReconnToDomain() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -352,6 +341,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPMSReconnToDomain() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -394,6 +384,7 @@ public class ITServerDiscovery extends BaseTest {
    */
   @Test
   public void testOPRestartDeadMS() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
