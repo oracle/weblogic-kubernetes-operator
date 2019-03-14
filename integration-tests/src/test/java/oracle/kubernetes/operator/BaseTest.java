@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import javax.jms.Connection;
@@ -585,23 +586,35 @@ public class BaseTest {
   }
 
   public static void tearDown() throws Exception {
+    logger.log(
+        Level.INFO,
+        "TEARDOWN: Starting Test Run TearDown (cleanup and state-dump)."
+            + " Note that if the test failed previous to tearDown, "
+            + " the error that caused the test failure may be reported "
+            + "after the tearDown completes. Note that tearDown itself may report errors,"
+            + " but this won't affect the outcome of the test results.");
     StringBuffer cmd =
         new StringBuffer("export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && ");
     cmd.append(BaseTest.getProjectRoot())
         .append("/integration-tests/src/test/resources/statedump.sh");
     logger.info("Running " + cmd);
 
+    // renew lease before callin statedump.sh
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
-      logger.info("Executed statedump.sh " + result.stdout());
+      // logger.info("Executed statedump.sh " + result.stdout());
     } else {
       logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
     }
 
-    // if (JENKINS) {
-    result = cleanup();
-    logger.info("cleanup result =" + result.stdout() + "\n " + result.stderr());
-    // }
+    if (JENKINS) {
+      result = cleanup();
+      if (result.exitValue() != 0) {
+        logger.info("cleanup result =" + result.stdout() + "\n " + result.stderr());
+      }
+    }
 
     if (getLeaseId() != "") {
       logger.info("Release the k8s cluster lease");
