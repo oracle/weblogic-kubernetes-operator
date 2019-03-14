@@ -63,23 +63,6 @@ public class AdminServer extends Server {
     return adminService.getChannels();
   }
 
-  /**
-   * Gets channel.
-   *
-   * @param channelName Channel name
-   * @return Channel
-   */
-  public Channel getChannel(String channelName) {
-    if (adminService != null) {
-      for (Channel c : adminService.getChannels()) {
-        if (channelName.equals(c.getChannelName())) {
-          return c;
-        }
-      }
-    }
-    return null;
-  }
-
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -115,10 +98,7 @@ public class AdminServer extends Server {
   }
 
   public AdminService getAdminService() {
+    if (adminService == null) adminService = new AdminService();
     return adminService;
-  }
-
-  public void setAdminService(AdminService adminService) {
-    this.adminService = adminService;
   }
 }
