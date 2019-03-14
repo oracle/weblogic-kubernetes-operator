@@ -330,9 +330,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                     removeIfPresentAnd(
                         existing.getClusters(),
                         clusterName,
-                        (current) -> {
-                          return isOutdated(current.getMetadata(), metadata);
-                        });
+                        (current) -> isOutdated(current.getMetadata(), metadata));
                 if (removed && !existing.isDeleting()) {
                   // Service was deleted, but clusters still contained a non-null entry
                   LOGGER.info(
@@ -350,9 +348,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                         removeIfPresentAnd(
                             sko.getChannels(),
                             channelName,
-                            (current) -> {
-                              return isOutdated(current.getMetadata(), metadata);
-                            });
+                            (current) -> isOutdated(current.getMetadata(), metadata));
                     if (removed && !existing.isDeleting()) {
                       // Service was deleted, but sko still contained a non-null entry
                       LOGGER.info(
@@ -789,7 +785,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           String channelName = ServiceWatcher.getServiceChannelName(service);
           String clusterName = ServiceWatcher.getServiceClusterName(service);
           if (clusterName != null) {
-            info.getClusters().put(clusterName, service);
+            info.setClusterService(clusterName, service);
           } else if (serverName != null) {
             ServerKubernetesObjects sko =
                 info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());

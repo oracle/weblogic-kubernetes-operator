@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import java.net.HttpURLConnection;
@@ -46,8 +45,27 @@ public class CallTestSupport {
 
   private Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
 
-  public Memento installSynchronousCallDispatcher() throws NoSuchFieldException {
-    return StaticStubSupport.install(CallBuilder.class, "DISPATCHER", new CallDispatcherStub());
+  Memento installSynchronousCallDispatcher() {
+    return new Memento() {
+      private SynchronousCallDispatcher originalCallDispatcher;
+
+      {
+        {
+          originalCallDispatcher = CallBuilder.setCallDispatcher(new CallDispatcherStub());
+        }
+      }
+
+      @Override
+      public void revert() {
+        CallBuilder.resetCallDispatcher();
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public <T> T getOriginalValue() {
+        return (T) originalCallDispatcher;
+      }
+    };
   }
 
   /**
