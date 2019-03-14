@@ -643,7 +643,7 @@ public class DomainSpec extends BaseConfiguration {
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
-    public ServerSpec getAdminServerSpec() {
+    public AdminServerSpec getAdminServerSpec() {
       return new AdminServerSpecCommonImpl(DomainSpec.this, adminServer);
     }
 
@@ -688,16 +688,6 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public List<String> getAdminServerChannelNames() {
       return adminServer != null ? adminServer.getChannelNames() : Collections.emptyList();
-    }
-
-    @Override
-    public List<Channel> getAdminServerChannels() {
-      return adminServer != null ? adminServer.getChannels() : Collections.emptyList();
-    }
-
-    @Override
-    public Integer getDefaultReplicaLimit() {
-      return 0;
     }
 
     private Cluster getOrCreateCluster(String clusterName) {
