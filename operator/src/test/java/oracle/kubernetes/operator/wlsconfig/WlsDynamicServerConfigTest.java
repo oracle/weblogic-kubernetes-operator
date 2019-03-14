@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -19,8 +19,7 @@ public class WlsDynamicServerConfigTest {
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
     WlsServerConfig template =
-        new WlsServerConfig(
-            "template1", 1000, null, 2000, true, null, networkAccessPointList, null, false);
+        new WlsServerConfig("template1", null, null, 1000, 2000, null, networkAccessPointList);
 
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", false, template);
@@ -38,8 +37,7 @@ public class WlsDynamicServerConfigTest {
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
     WlsServerConfig template =
-        new WlsServerConfig(
-            "template1", null, null, null, true, null, networkAccessPointList, null, false);
+        new WlsServerConfig("template1", null, null, null, null, null, networkAccessPointList);
 
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", false, template);
@@ -57,8 +55,7 @@ public class WlsDynamicServerConfigTest {
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
     WlsServerConfig template =
-        new WlsServerConfig(
-            "template1", 1000, null, 2000, true, null, networkAccessPointList, null, false);
+        new WlsServerConfig("template1", null, null, 1000, 2000, null, networkAccessPointList);
 
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", true, template);
@@ -76,8 +73,7 @@ public class WlsDynamicServerConfigTest {
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
     WlsServerConfig template =
-        new WlsServerConfig(
-            "template1", null, null, null, true, null, networkAccessPointList, null, false);
+        new WlsServerConfig("template1", null, null, null, null, null, networkAccessPointList);
 
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", true, template);
