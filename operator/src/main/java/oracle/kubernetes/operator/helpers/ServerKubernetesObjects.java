@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -15,6 +15,7 @@ public class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
   private final AtomicReference<String> lastKnownStatus = new AtomicReference<>(null);
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
+  private final AtomicReference<V1Service> externalService = new AtomicReference<>();
   private final ConcurrentMap<String, V1Service> channels = new ConcurrentHashMap<>();
 
   public ServerKubernetesObjects() {}
@@ -53,5 +54,13 @@ public class ServerKubernetesObjects {
    */
   public ConcurrentMap<String, V1Service> getChannels() {
     return channels;
+  }
+
+  public V1Service getExternalService() {
+    return externalService.get();
+  }
+
+  public void setExternalService(V1Service service) {
+    externalService.set(service);
   }
 }
