@@ -4,6 +4,8 @@
 
 set -u
 
+source waitUntil.sh
+
 function checkPV() {
   if [ -z "$PV_ROOT" ] || [ ! -e "$PV_ROOT" ]; then
     echo "PV_ROOT is not set correctly in file setenv.sh. It needs to point to an existing folder. Currently PV_ROOT is '$PV_ROOT'."
@@ -99,38 +101,35 @@ function delAll() {
 function waitUntilReady() {
   local namespace=$1
   local domainName=$2
-  echo "wait until domain $domainName is ready"
 
   # get server number
   serverNum="$(kubectl -n $namespace get domain $domainName -o=jsonpath='{.spec.replicas}')"
   serverNum=$(expr $serverNum + 1)
-  ready=false
-  while test $ready != true; do
-    if test "$(kubectl -n $namespace get pods  -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true \
-        -o jsonpath='{range .items[*]}{.status.containerStatuses[0].ready}{"\n"}{end}' | grep true | wc -l)" != $serverNum; then
-      kubectl -n $namespace get pods -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true
-      sleep 5
-      continue
-    fi
-    ready=true
-  done
+
+  cmd="checkDomainReadyCmd"
+  expected_out=$serverNum
+  okMsg="domain $domainName is ready"
+  failMsg="fail to start domain $domainName"
+
+  waitUntil "$cmd" "$expected_out" "$okMsg" "$failMsg"
+}
+
+function checkDomainReadyCmd() {
+  kubectl -n $namespace get pods  -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true \
+        -o jsonpath='{range .items[*]}{.status.containerStatuses[0].ready}{"\n"}{end}' | grep true | wc -l
 }
 
 # Usage: waitUntilStopped namespace domainName
 function waitUntilStopped() {
-  local namespace=$1
-  local domainName=$2
-  echo "wait until domain $domainName stopped"
-  while : ; do
-    if test "$(kubectl -n $namespace get all -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true \
-        | wc -l)" != 0; then
-      echo "wait domain shutdown"
-      kubectl -n $namespace get pods -l weblogic.domainUID=${domainName},weblogic.createdByOperator=true
-      sleep 5
-      continue
-    fi
-    break
-  done
+  expected_out=0
+  okMsg="domain $2 is stopped"
+  failMsg="fail to stop domain $2"
+
+  waitUntil "checkDomainStoppedCmd $1 $2" "$expected_out" "$okMsg" "$failMsg"
+}
+
+function checkDomainStoppedCmd() {
+  kubectl -n $1 get all -l weblogic.domainUID=$2,weblogic.createdByOperator=true | wc -l
 }
 
 function waitUntilAllReady() {

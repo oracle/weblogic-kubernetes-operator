@@ -4,6 +4,8 @@
 
 set -u
 
+source waitUntil.sh
+
 function createCon() {
   echo "install Treafik controller to namespace traefik"
   helm install stable/traefik \
@@ -18,19 +20,7 @@ function delCon() {
   echo "delete Traefik controller"
   helm delete --purge traefik-controller
   kubectl delete namespace traefik
-  waitUntilNSTerm
-}
-
-function waitUntilNSTerm() {
-  ready=false
-  while test $ready != true; do
-    if test "$(kubectl get ns traefik  --ignore-not-found | wc -l)" != 0; then
-      echo "wait until namespace traefik termiated..."
-      sleep 5
-      continue
-    fi
-    ready=true
-  done
+  waitUntilNSTerm traefik
 }
 
 function createIng() {
@@ -62,9 +52,15 @@ function delIng() {
 }
 
 function verify() {
+  # verify http
   curl -v -H 'host: domain1.org' http://$hostname:30305/weblogic/
   curl -v -H 'host: domain2.org' http://$hostname:30305/weblogic/
   curl -v -H 'host: domain3.org' http://$hostname:30305/weblogic/
+
+  # verify https
+  curl -v -k -H 'host: domain1.org' https://$hostname:30443/weblogic/
+  curl -v -k -H 'host: domain2.org' https://$hostname:30443/weblogic/
+  curl -v -k -H 'host: domain3.org' https://$hostname:30443/weblogic/
 }
 
 function usage() {

@@ -4,6 +4,7 @@
 
 set -u
 
+source waitUntil.sh
 function pullImages() {
   echo "pull docker images"
   docker pull oracle/weblogic-kubernetes-operator:2.0
@@ -44,15 +45,15 @@ function create() {
 
 # wait until domain CRD is ready
 function waitUntilCRDReady() {
-  ready=false
-  while test $ready != true; do
-    if test "$(kubectl get crd  domains.weblogic.oracle  -oyaml  --ignore-not-found | grep 'version: v2' | wc -l)" != '1'; then
-      echo "wait until domain CRD is ready"
-      sleep 5
-      continue
-    fi
-    ready=true
-  done
+  expected_out=1
+  okMsg="domain CRD is ready"
+  failMsg="fail to create domain CRD"
+
+  waitUntil checkCRDReadyCmd "$expected_out" "$okMsg" "$failMsg"
+}
+
+function checkCRDReadyCmd() {
+  kubectl get crd domains.weblogic.oracle  -oyaml  --ignore-not-found | grep 'version: v2' | wc -l
 }
 
 function delete() {
@@ -63,19 +64,6 @@ function delete() {
   kubectl delete namespace test1
   waitUntilNSTerm weblogic-operator1 
   waitUntilNSTerm test1
-}
-
-# usage: waitUntilNSTerm ns_name 
-function waitUntilNSTerm() {
-  ready=false
-  while test $ready != true; do
-    if test "$(kubectl get ns $1  --ignore-not-found | wc -l)" != 0; then
-      echo "wait until namespace $1 termiated..."
-      sleep 5
-      continue
-    fi
-    ready=true
-  done
 }
 
 function usage() {
