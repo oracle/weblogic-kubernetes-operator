@@ -25,47 +25,10 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITOperator extends BaseTest {
 
-  // property file used to customize operator properties for operator inputs yaml
-
-  private static String operator1File = "operator1.yaml";
-  private static String operator2File = "operator2.yaml";
-  private static final String operator_bcFile = "operator_bc.yaml";
-  private static final String operator_chainFile = "operator_chain.yaml";
-
-  // file used to customize domain properties for domain, PV and LB inputs yaml
-  private static String domainonpvwlstFile = "domainonpvwlst.yaml";
-  private static String domainonpvwdtFile = "domainonpvwdt.yaml";
-  private static String domainadminonlyFile = "domainadminonly.yaml";
-  private static String domainrecyclepolicyFile = "domainrecyclepolicy.yaml";
-  private static String domainsampledefaultsFile = "domainsampledefaults.yaml";
-  private static String domaininimagewlstFile = "domaininimagewlst.yaml";
-  private static String domaininimagewdtFile = "domaininimagewdt.yaml";
-
-  // property file used to configure constants for integration tests
-  private static String appPropsFile = "OperatorIT.properties";
-
   private static Operator operator1, operator2;
 
   private static Operator operatorForBackwardCompatibility;
   private static Operator operatorForRESTCertChain;
-
-  private static boolean QUICKTEST;
-  private static boolean SMOKETEST;
-  private static boolean JENKINS;
-
-  // Set QUICKTEST env var to true to run a small subset of tests.
-  // Set SMOKETEST env var to true to run an even smaller subset
-  // of tests, plus leave domain1 up and running when the test completes.
-  static {
-    QUICKTEST =
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
-    SMOKETEST =
-        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
-    if (SMOKETEST) QUICKTEST = true;
-    if (System.getenv("JENKINS") != null) {
-      JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
-    }
-  }
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -77,7 +40,7 @@ public class ITOperator extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    initialize(appPropsFile);
+    initialize(APP_PROPS_FILE);
   }
 
   /**
@@ -114,14 +77,15 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(domainonpvwlstFile);
+      domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
+      TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
       testAdvancedUseCasesForADomain(operator1, domain);
       if (!SMOKETEST) domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
@@ -151,13 +115,13 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain using DomainOnPVUsingWDT & verifing the domain creation");
 
     if (operator2 == null) {
-      operator2 = TestUtils.createOperator(operator2File);
+      operator2 = TestUtils.createOperator(OPERATOR2_YAML);
     }
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
       // create domain
-      domain = TestUtils.createDomain(domainonpvwdtFile);
+      domain = TestUtils.createDomain(DOMAINONPV_WDT_YAML);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       testWLDFScaling(operator2, domain);
@@ -196,14 +160,14 @@ public class ITOperator extends BaseTest {
 
     logger.info("Checking if operator1 and domain1 are running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
 
     Domain domain1 = null, domain2 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
-      Map<String, Object> wlstDomainMap = TestUtils.loadYaml(domainonpvwlstFile);
+      Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
       wlstDomainMap.put("domainUID", "domain1onpvwlst");
       wlstDomainMap.put("adminNodePort", new Integer("30702"));
       wlstDomainMap.put("t3ChannelPort", new Integer("30031"));
@@ -213,12 +177,12 @@ public class ITOperator extends BaseTest {
       testBasicUseCases(domain1);
       logger.info("Checking if operator2 is running, if not creating");
       if (operator2 == null) {
-        operator2 = TestUtils.createOperator(operator2File);
+        operator2 = TestUtils.createOperator(OPERATOR2_YAML);
       }
       // create domain2 with configured cluster
       // ToDo: configured cluster support is removed from samples, modify the test to create
       // configured cluster
-      Map<String, Object> wdtDomainMap = TestUtils.loadYaml(domainonpvwdtFile);
+      Map<String, Object> wdtDomainMap = TestUtils.loadYaml(DOMAINONPV_WDT_YAML);
       wdtDomainMap.put("domainUID", "domain2onpvwdt");
       wdtDomainMap.put("adminNodePort", new Integer("30703"));
       wdtDomainMap.put("t3ChannelPort", new Integer("30041"));
@@ -275,14 +239,14 @@ public class ITOperator extends BaseTest {
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
     logger.info("Creating Domain domain6 & verifing the domain creation");
     // create domain
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(domainadminonlyFile);
+      domain = TestUtils.createDomain(DOMAIN_ADMINONLY_YAML);
       domain.verifyDomainCreated();
     } finally {
       if (domain != null) {
@@ -308,14 +272,14 @@ public class ITOperator extends BaseTest {
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
     logger.info("Creating Domain domain & verifing the domain creation");
     // create domain
     Domain domain = null;
 
     try {
-      domain = TestUtils.createDomain(domainrecyclepolicyFile);
+      domain = TestUtils.createDomain(DOMAIN_RECYCLEPOLICY_YAML);
       domain.verifyDomainCreated();
     } finally {
       if (domain != null) domain.shutdown();
@@ -341,14 +305,14 @@ public class ITOperator extends BaseTest {
     logTestBegin(testMethodName);
     logger.info("Creating Domain domain10 & verifing the domain creation");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
 
     // create domain10
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(domainsampledefaultsFile);
+      domain = TestUtils.createDomain(DOMAIN_SAMPLE_DEFAULTS_YAML);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       // testAdvancedUseCasesForADomain(operator1, domain10);
@@ -380,13 +344,13 @@ public class ITOperator extends BaseTest {
     logTestBegin(testMethod);
 
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
     Domain domain11 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
-      Map<String, Object> domainMap = TestUtils.loadYaml(domainonpvwlstFile);
+      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
       domainMap.put("configOverrides", "sitconfigcm");
       domainMap.put(
           "configOverridesFile",
@@ -433,7 +397,7 @@ public class ITOperator extends BaseTest {
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
     if (operatorForBackwardCompatibility == null) {
       operatorForBackwardCompatibility =
-          TestUtils.createOperator(operator_bcFile, RESTCertType.LEGACY);
+          TestUtils.createOperator(OPERATORBC_YAML, RESTCertType.LEGACY);
     }
     operatorForBackwardCompatibility.verifyOperatorExternalRESTEndpoint();
     logger.info("Operator using legacy REST identity created successfully");
@@ -454,7 +418,7 @@ public class ITOperator extends BaseTest {
     logTestBegin("testOperatorRESTUsingCertificateChain");
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
     if (operatorForRESTCertChain == null) {
-      operatorForRESTCertChain = TestUtils.createOperator(operator_chainFile, RESTCertType.CHAIN);
+      operatorForRESTCertChain = TestUtils.createOperator(OPERATOR_CHAIN_YAML, RESTCertType.CHAIN);
     }
     operatorForRESTCertChain.verifyOperatorExternalRESTEndpoint();
     logger.info("Operator using legacy REST identity created successfully");
@@ -475,14 +439,14 @@ public class ITOperator extends BaseTest {
 
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
     logger.info("Creating Domain & verifing the domain creation");
     // create domain
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(domaininimagewlstFile);
+      domain = TestUtils.createDomain(DOMAININIMAGE_WLST_YAML);
       domain.verifyDomainCreated();
 
       testBasicUseCases(domain);
@@ -507,14 +471,14 @@ public class ITOperator extends BaseTest {
 
     logger.info("Checking if operator1 is running, if not creating");
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
     logger.info("Creating Domain & verifing the domain creation");
     // create domain
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(domaininimagewdtFile);
+      domain = TestUtils.createDomain(DOMAININIMAGE_WDT_YAML);
       domain.verifyDomainCreated();
 
       testBasicUseCases(domain);
