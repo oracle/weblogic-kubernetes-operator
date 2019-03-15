@@ -54,9 +54,9 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.PatchUtils;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainList;
-import oracle.kubernetes.weblogic.domain.v2.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 /** Simplifies synchronous and asynchronous call patterns to the Kubernetes API Server. */
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
@@ -67,7 +67,7 @@ public class CallBuilder {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static SynchronousCallDispatcher DISPATCHER =
+  private static final SynchronousCallDispatcher DEFAULT_DISPATCHER =
       new SynchronousCallDispatcher() {
         @Override
         public <T> T execute(
@@ -81,6 +81,8 @@ public class CallBuilder {
           }
         }
       };
+
+  private static SynchronousCallDispatcher DISPATCHER = DEFAULT_DISPATCHER;
 
   private String pretty = "false";
   private String fieldSelector;
@@ -434,6 +436,61 @@ public class CallBuilder {
       String name, String namespace, Domain body, ResponseStep<Domain> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("replaceDomain", namespace, name, body), REPLACE_DOMAIN);
+  }
+
+  private SynchronousCallFactory<Domain> PATCH_DOMAIN_CALL =
+      (client, requestParams) ->
+          new WeblogicApi(client)
+              .patchNamespacedDomain(
+                  requestParams.name, requestParams.namespace, requestParams.body, pretty, null);
+
+  /**
+   * Patch domain.
+   *
+   * @param uid the domain uid (unique within the k8s cluster)
+   * @param namespace the namespace containing the domain
+   * @param patchBody the patch to apply
+   * @return Updated domain
+   * @throws ApiException APIException
+   */
+  public Domain patchDomain(String uid, String namespace, JsonPatch patchBody) throws ApiException {
+    RequestParams requestParams =
+        new RequestParams("patchDomain", namespace, uid, PatchUtils.toKubernetesPatch(patchBody));
+    return executeSynchronousCall(requestParams, PATCH_DOMAIN_CALL);
+  }
+
+  private com.squareup.okhttp.Call patchDomainAsync(
+      ApiClient client, String name, String namespace, Object patch, ApiCallback<Domain> callback)
+      throws ApiException {
+    return new WeblogicApi(client)
+        .patchNamespacedDomainAsync(name, namespace, patch, pretty, null, callback);
+  }
+
+  private final CallFactory<Domain> PATCH_DOMAIN =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchDomainAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  requestParams.body,
+                  callback));
+
+  /**
+   * Asynchronous step for patching a domain.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param patchBody instructions on what to patch
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step patchDomainAsync(
+      String name, String namespace, JsonPatch patchBody, ResponseStep<Domain> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("patchDomain", namespace, name, PatchUtils.toKubernetesPatch(patchBody)),
+        PATCH_DOMAIN);
   }
 
   private com.squareup.okhttp.Call replaceDomainStatusAsync(
@@ -1804,6 +1861,16 @@ public class CallBuilder {
             tailLines,
             timestamps,
             callback);
+  }
+
+  static SynchronousCallDispatcher setCallDispatcher(SynchronousCallDispatcher newDispatcher) {
+    SynchronousCallDispatcher oldDispatcher = DISPATCHER;
+    DISPATCHER = newDispatcher;
+    return oldDispatcher;
+  }
+
+  static void resetCallDispatcher() {
+    DISPATCHER = DEFAULT_DISPATCHER;
   }
 
   static AsyncRequestStepFactory setStepFactory(AsyncRequestStepFactory newFactory) {

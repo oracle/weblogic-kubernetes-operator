@@ -35,11 +35,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainList;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +51,9 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private static final String NAME = "name";
   private static final String UID = "uid";
   private static final String DOMAIN_RESOURCE =
-      String.format("/apis/weblogic.oracle/v2/namespaces/%s/domains", NAMESPACE);
+      String.format(
+          "/apis/weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION + "/namespaces/%s/domains",
+          NAMESPACE);
   private static final String PV_RESOURCE = "/api/v1/persistentvolumes";
   private static final String PVC_RESOURCE =
       String.format("/api/v1/namespaces/%s/persistentvolumeclaims", NAMESPACE);

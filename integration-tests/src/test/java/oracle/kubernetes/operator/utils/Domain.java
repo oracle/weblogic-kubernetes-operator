@@ -988,7 +988,12 @@ public class Domain {
           StandardCopyOption.REPLACE_EXISTING);
     }
 
-    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+    StringBuffer createDomainScriptCmd = new StringBuffer("export JAVA_HOME=");
+
+    createDomainScriptCmd
+        .append(System.getenv("JAVA_HOME"))
+        .append(" && export PATH=$JAVA_HOME/bin:$PATH && ")
+        .append(BaseTest.getResultDir());
 
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
