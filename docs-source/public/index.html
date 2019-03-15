@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.47.1" />
+    <meta name="description" content="">
+
+
+    <link rel="icon" href="/images/favicon.png" type="image/png">
+
+    <title> :: WebLogic Kubernetes Operator</title>
+
+    
+    <link href="/css/nucleus.css?1551107857" rel="stylesheet">
+    <link href="/css/fontawesome-all.min.css?1551107857" rel="stylesheet">
+    <link href="/css/hybrid.css?1551107857" rel="stylesheet">
+    <link href="/css/featherlight.min.css?1551107857" rel="stylesheet">
+    <link href="/css/perfect-scrollbar.min.css?1551107857" rel="stylesheet">
+    <link href="/css/auto-complete.css?1551107857" rel="stylesheet">
+    <link href="/css/theme.css?1551107857" rel="stylesheet">
+    <link href="/css/hugo-theme.css?1551107857" rel="stylesheet">
+    
+
+    <script src="/js/jquery-2.x.min.js?1551107857"></script>
+
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+    </style>
+    
+  </head>
+  <body class="" data-url="/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="/">
+  <img src="//images/logo.png" height="60"><br/>
+  Kubernetes Operator
+</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fas fa-search"></i></label>
+    <input data-search-input id="search-by" type="search" placeholder="Search...">
+    <span data-search-clear=""><i class="fas fa-times"></i></span>
+</div>
+
+<script type="text/javascript" src="/js/lunr.min.js?1551107857"></script>
+<script type="text/javascript" src="/js/auto-complete.js?1551107857"></script>
+<script type="text/javascript">
+    
+        var baseurl = "\/";
+    
+</script>
+<script type="text/javascript" src="/js/search.js?1551107857"></script>
+
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+        <li><a  class="padding" href="/">Home</a></li>
+        
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/quickstart/" title="Quickstart" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/quickstart/">
+          <b>1. </b>Quickstart
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/" title="User Guide" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/">
+          <b>2. </b>User Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/introduction/" title="Introduction" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/introduction/">
+          <b>1. </b>Introduction
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-operators/" title="Managing Operators" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-operators/">
+          <b>2. </b>Managing Operators
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-operators/installation/" title="Installation" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-operators/installation/">
+          <b>1. </b>Installation
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-operators/using-the-operator/" title="Using the Operator" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-operators/using-the-operator/">
+          <b>2. </b>Using the Operator
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/" title="Managing Domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/">
+          <b>3. </b>Managing Domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/choosing-a-model/" title="Choosing a Model" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/choosing-a-model/">
+          <b>1. </b>Choosing a Model
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/persistent-storage/" title="Persistent Storage" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/persistent-storage/">
+          <b>2. </b>Persistent Storage
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-in-image/" title="Domain in Image" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-in-image/">
+          <b>3. </b>Domain in Image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-in-image/base-images/" title="Base Images" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-in-image/base-images/">
+          <b>1. </b>Base Images
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-in-image/patching/" title="Patching" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-in-image/patching/">
+          <b>2. </b>Patching
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-in-image/domain-images/" title="Domain Images" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-in-image/domain-images/">
+          <b>3. </b>Domain Images
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-lifecycle/" title="Domain Lifecycle" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-lifecycle/">
+          <b>4. </b>Domain Lifecycle
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/accessing-the-domain/" title="Accessing the Domain" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/accessing-the-domain/">
+          <b>5. </b>Accessing the Domain
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/ingress/" title="Ingress" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/ingress/">
+          <b>6. </b>Ingress
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/integrations/" title="Integrations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/integrations/">
+          <b>7. </b>Integrations
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/integrations/exporting-metrics/" title="Exporting Metrics" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/integrations/exporting-metrics/">
+          <b>1. </b>Exporting Metrics
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/integrations/exporting-logs/" title="Exporting Logs" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/integrations/exporting-logs/">
+          <b>2. </b>Exporting Logs
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/" title="Samples" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/">
+          <b>3. </b>Samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/" title="Simple" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/">
+          <b>1. </b>Simple
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/credentials/" title="Credentials" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/credentials/">
+          <b>1. </b>Credentials
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/storage/" title="Storage" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/storage/">
+          <b>2. </b>Storage
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/domains/" title="Domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/domains/">
+          <b>3. </b>Domains
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/rest/" title="REST APIs" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/rest/">
+          <b>4. </b>REST APIs
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/ingress/" title="Ingress" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/ingress/">
+          <b>5. </b>Ingress
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/elastic-stack/" title="Elastic Stack" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/elastic-stack/">
+          <b>6. </b>Elastic Stack
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/production/" title="Production" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/production/">
+          <b>2. </b>Production
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/developerguide/" title="Developer Guide" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/developerguide/">
+          <b>4. </b>Developer Guide
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/reference/" title="Reference" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/reference/">
+          <b>5. </b>Reference
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/security/" title="Security" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/security/">
+          <b>6. </b>Security
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/faq/" title="Frequently Asked Questions" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/faq/">
+          <b>7. </b>Frequently Asked Questions
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+         
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      <p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
+<p>&nbsp;</p>
+<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
+<p><a href="https://weblogic-slack-inviter.herokuapp.com/"><i class="fab fa-slack"></i> Public Slack #operator</a></p>
+<p>&nbsp;</p>
+<img src="http://build.weblogick8s.org:8080/buildStatus/icon?job=weblogic-kubernetes-operator">
+    </section>
+  </div>
+</nav>
+
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+
+        
+        <div id="body-inner">
+          
+
+        
+
+<span id="sidebar-toggle-span">
+<a href="#" id="sidebar-toggle" data-sidebar-toggle=""><i class="fas fa-bars"></i> navigation</a>
+</span>
+
+ 
+
+
+<h2 id="oracle-weblogic-server-kubernetes-operator">Oracle WebLogic Server Kubernetes Operator</h2>
+
+<p>Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we&rsquo;ve provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:</p>
+
+<ul>
+<li>Create WebLogic domains in a Kubernetes persistent volume. This persistent volume can reside in an NFS file system or other Kubernetes volume types.</li>
+<li>Create a WebLogic domain in a Docker image.</li>
+<li>Override certain aspects of the WebLogic domain configuration.</li>
+<li>Define WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).</li>
+<li>Start servers based on declarative startup parameters and desired states.</li>
+<li>Manage WebLogic configured or dynamic clusters.</li>
+<li>Expose the WebLogic Server Administration Console outside the Kubernetes cluster, if desired.</li>
+<li>Expose T3 channels outside the Kubernetes domain, if desired.</li>
+<li>Expose HTTP paths on a WebLogic domain outside the Kubernetes domain with load balancing and update the load balancer when Managed Servers in the WebLogic domain are started or stopped.</li>
+<li>Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.</li>
+<li>Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.</li>
+</ul>
+
+<p>The fastest way to experience the operator is to follow the <a href="site/quickstart.md">Quick Start guide</a>, or you can peruse our <a href="site">documentation</a>, read our <a href="https://blogs.oracle.com/fusionmiddlewaresupport/updated-weblogic-kubernetes-support-with-operator-20-v2">blogs</a>, or try out the <a href="kubernetes/samples/README.md">samples</a>.</p>
+
+<pre><code class="language-diff">+ The current release of the operator is 2.0-rc2, a release candidate for our 2.0 release.
++ This release candidate was published on Jan. 16, 2019.
++ We expect to publish the final 2.0 release later in January, 2019.
++ We expect that there will be some minor changes to documentation and samples in the final 2.0 release.
++ However, this release candidate is suitable for testing and early adopters.
+</code></pre>
+
+<h3 id="known-issues">Known issues</h3>
+
+<table>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Description</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><a href="https://github.com/oracle/weblogic-kubernetes-operator/issues/726">#726</a></td>
+<td>Clusters only support default channel.</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="operator-version-1-1">Operator version 1.1</h3>
+
+<p>Documentation for the 1.1 release of the operator is available <a href="site/v1.1/README.md">here</a>.</p>
+
+<h2 id="backward-compatibility-guidelines">Backward compatibility guidelines</h2>
+
+<p>The 2.0 release introduces some breaking changes and does not maintain compatibility with previous releases.</p>
+
+<p>Starting with the 2.0 release, future operator releases are intended to be backward compatible with respect to the domain
+resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created
+by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to
+maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
+maintained for one release after a replacement is available.</p>
+
+<h2 id="about-this-documentation">About this documentation</h2>
+
+<p>This documentation includes sections targeted to different audiences.  To help you find what you are looking for more easily,
+please consult this table of contents:</p>
+
+<ul>
+<li>The <a href="/quickstart">Quick Start guide</a> explains how to quickly get the operator running, using the defaults, nothing special.</li>
+<li>The <a href="/userguide">User guide</a> contains detailed usage information, including how to install and configure the operator,
+and how to use it to create and manage WebLogic domains.<br /></li>
+<li>The <a href="/samples">Samples</a> provide detailed example code and instructions that show you how to perform
+various tasks related to the operator.</li>
+<li>The <a href="/developerguide">Developer guide</a> provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to contribute to the operator code will find useful information here.  This section also includes
+API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.</li>
+<li>The <a href="#contributing-to-the-operator">Contributing</a> section provides information about contribution requirements.</li>
+</ul>
+
+<h2 id="user-guide">User guide</h2>
+
+<p>The <a href="/userguide">User guide</a> provides detailed information about all aspects of using the operator including:</p>
+
+<ul>
+<li>Installing and configuring the operator.</li>
+<li>Using the operator to create and manage WebLogic domains.</li>
+<li>Manually creating WebLogic domains to be managed by the operator.</li>
+<li>Scaling WebLogic clusters.</li>
+<li>Configuring Kubernetes load balancers.</li>
+<li>Configuring Elasticsearch and Kibana to access the operator&rsquo;s log files.</li>
+<li>Shutting down domains.</li>
+<li>Removing/deleting domains.</li>
+<li>And much more!</li>
+</ul>
+
+<h2 id="samples">Samples</h2>
+
+<p>Please refer to our <a href="/samples">samples</a> for information about the available sample code.</p>
+
+<h2 id="need-more-help-have-a-suggestion-come-and-say-hello">Need more help? Have a suggestion? Come and say, &ldquo;Hello!&rdquo;</h2>
+
+<p>We have a <strong>public Slack channel</strong> where you can get in touch with us to ask questions about using the operator or give us feedback
+or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
+please <a href="https://weblogic-slack-inviter.herokuapp.com/">visit this site to get an invitation</a>.  The invitation email will include
+details of how to access our Slack workspace.  After you are logged in, please come to <code>#operator</code> and say, &ldquo;hello!&rdquo;</p>
+
+<h2 id="recent-changes">Recent changes</h2>
+
+<p>See <a href="site/recent-changes.md">Recent changes</a> for changes to the operator, including any backward incompatible changes.</p>
+
+<h2 id="developer-guide">Developer guide</h2>
+
+<p>Developers interested in this project are encouraged to read the <a href="/developerguide">Developer guide</a> to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.</p>
+
+<p>Please take a look at our <a href="https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list">wish list</a> to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something to which you would like to contribute!</p>
+
+<h3 id="api-documentation">API documentation</h3>
+
+<p>Documentation for APIs:</p>
+
+<ul>
+<li><p>The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see <a href="site/rest.md">Using the operator&rsquo;s REST services</a>.</p></li>
+
+<li><p>See the <a href="/swagger/index.html">Swagger</a> documentation for the operator&rsquo;s REST interface.</p></li>
+
+<li><p>See the <a href="/apidocs/index.html">Javadoc</a> for the operator.</p></li>
+</ul>
+
+<h2 id="contributing-to-the-operator">Contributing to the operator</h2>
+
+<p>Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the operator or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended that you create an issue and discuss the proposed changes with the existing developers first.</p>
+
+<p>If you want to submit a pull request to fix a bug or enhance an existing feature, please first open an issue and link to that issue when you submit your pull request.</p>
+
+<p>If you have any questions about a possible submission, feel free to open an issue too.</p>
+
+<h3 id="contributing-to-the-oracle-weblogic-server-kubernetes-operator-repository">Contributing to the Oracle WebLogic Server Kubernetes Operator repository</h3>
+
+<p>Pull requests can be made under The Oracle Contributor Agreement (OCA), which is available at <a href="https://www.oracle.com/technetwork/community/oca-486395.html">https://www.oracle.com/technetwork/community/oca-486395.html</a>.</p>
+
+<p>For pull requests to be accepted, the bottom of the commit message must have the following line, using the contributor’s name and e-mail address as it appears in the OCA Signatories list.</p>
+
+<pre><code>Signed-off-by: Your Name &lt;you@example.org&gt;
+</code></pre>
+
+<p>This can be automatically added to pull requests by committing with:</p>
+
+<pre><code>git commit --signoff
+</code></pre>
+
+<p>Only pull requests from committers that can be verified as having signed the OCA can be accepted.</p>
+
+<h3 id="pull-request-process">Pull request process</h3>
+
+<ul>
+<li>Fork the repository.</li>
+<li>Create a branch in your fork to implement the changes. We recommend using the issue number as part of your branch name, for example, <code>1234-fixes</code>.</li>
+<li>Ensure that any documentation is updated with the changes that are required by your fix.</li>
+<li>Ensure that any samples are updated if the base image has been changed.</li>
+<li>Submit the pull request. Do not leave the pull request blank. Explain exactly what your changes are meant to do and provide simple steps on how to validate your changes. Ensure that you reference the issue you created as well. We will assign the pull request to 2-3 people for review before it is merged.</li>
+</ul>
+
+<h3 id="introducing-a-new-dependency">Introducing a new dependency</h3>
+
+<p>Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.</p>
+
+<h3 id="use-helm-chart-from-github-chart-repository">Use Helm Chart from Github chart repository</h3>
+
+<p>Add this repo to Helm installation:</p>
+
+<pre><code>$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
+</code></pre>
+
+<p>Verify repository was added correctly:</p>
+
+<pre><code>$ helm repo list
+NAME           URL
+weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
+</code></pre>
+
+<p>Update with latest information about charts from chart repositories:</p>
+
+<pre><code>$ helm repo update
+</code></pre>
+
+<p>Install Operator from the repo:</p>
+
+<pre><code>$ helm install helm install weblogic-operator/weblogic-operator --name weblogic-operator
+</code></pre>
+	
+  
+        
+        </div> 
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+        
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+        
+        
+
+
+	 
+	 
+		
+		
+			<a class="nav nav-next" href="/quickstart/" title="Quickstart" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+    
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/js/clipboard.min.js?1551107857"></script>
+    <script src="/js/perfect-scrollbar.min.js?1551107857"></script>
+    <script src="/js/perfect-scrollbar.jquery.min.js?1551107857"></script>
+    <script src="/js/jquery.sticky.js?1551107857"></script>
+    <script src="/js/featherlight.min.js?1551107857"></script>
+    <script src="/js/html5shiv-printshiv.min.js?1551107857"></script>
+    <script src="/js/highlight.pack.js?1551107857"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/js/modernizr.custom.71422.js?1551107857"></script>
+    <script src="/js/learn.js?1551107857"></script>
+    <script src="/js/hugo-learn.js?1551107857"></script>
+
+    <link href="/mermaid/mermaid.css?1551107857" type="text/css" rel="stylesheet" />
+    <script src="/mermaid/mermaid.js?1551107857"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    
+
+  </body>
+</html>
+

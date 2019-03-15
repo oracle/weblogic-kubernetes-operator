@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.47.1" />
+    <meta name="description" content="">
+
+
+    <link rel="icon" href="/images/favicon.png" type="image/png">
+
+    <title>Choosing a Model :: WebLogic Kubernetes Operator</title>
+
+    
+    <link href="/css/nucleus.css?1551107856" rel="stylesheet">
+    <link href="/css/fontawesome-all.min.css?1551107856" rel="stylesheet">
+    <link href="/css/hybrid.css?1551107856" rel="stylesheet">
+    <link href="/css/featherlight.min.css?1551107856" rel="stylesheet">
+    <link href="/css/perfect-scrollbar.min.css?1551107856" rel="stylesheet">
+    <link href="/css/auto-complete.css?1551107856" rel="stylesheet">
+    <link href="/css/theme.css?1551107856" rel="stylesheet">
+    <link href="/css/hugo-theme.css?1551107856" rel="stylesheet">
+    
+
+    <script src="/js/jquery-2.x.min.js?1551107856"></script>
+
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+    </style>
+    
+  </head>
+  <body class="" data-url="/userguide/managing-domains/choosing-a-model/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="/">
+  <img src="//images/logo.png" height="60"><br/>
+  Kubernetes Operator
+</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fas fa-search"></i></label>
+    <input data-search-input id="search-by" type="search" placeholder="Search...">
+    <span data-search-clear=""><i class="fas fa-times"></i></span>
+</div>
+
+<script type="text/javascript" src="/js/lunr.min.js?1551107856"></script>
+<script type="text/javascript" src="/js/auto-complete.js?1551107856"></script>
+<script type="text/javascript">
+    
+        var baseurl = "\/";
+    
+</script>
+<script type="text/javascript" src="/js/search.js?1551107856"></script>
+
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+        <li><a  class="padding" href="/">Home</a></li>
+        
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/quickstart/" title="Quickstart" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/quickstart/">
+          <b>1. </b>Quickstart
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/" title="User Guide" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/userguide/">
+          <b>2. </b>User Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/introduction/" title="Introduction" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/introduction/">
+          <b>1. </b>Introduction
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-operators/" title="Managing Operators" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-operators/">
+          <b>2. </b>Managing Operators
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-operators/installation/" title="Installation" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-operators/installation/">
+          <b>1. </b>Installation
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-operators/using-the-operator/" title="Using the Operator" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-operators/using-the-operator/">
+          <b>2. </b>Using the Operator
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/" title="Managing Domains" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/userguide/managing-domains/">
+          <b>3. </b>Managing Domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/choosing-a-model/" title="Choosing a Model" class="dd-item 
+        parent
+        active
+        
+        ">
+      <a href="/userguide/managing-domains/choosing-a-model/">
+          <b>1. </b>Choosing a Model
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/persistent-storage/" title="Persistent Storage" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/persistent-storage/">
+          <b>2. </b>Persistent Storage
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-in-image/" title="Domain in Image" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-in-image/">
+          <b>3. </b>Domain in Image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-in-image/base-images/" title="Base Images" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-in-image/base-images/">
+          <b>1. </b>Base Images
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-in-image/patching/" title="Patching" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-in-image/patching/">
+          <b>2. </b>Patching
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-in-image/domain-images/" title="Domain Images" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-in-image/domain-images/">
+          <b>3. </b>Domain Images
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/domain-lifecycle/" title="Domain Lifecycle" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/domain-lifecycle/">
+          <b>4. </b>Domain Lifecycle
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/accessing-the-domain/" title="Accessing the Domain" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/accessing-the-domain/">
+          <b>5. </b>Accessing the Domain
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/ingress/" title="Ingress" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/ingress/">
+          <b>6. </b>Ingress
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/integrations/" title="Integrations" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/integrations/">
+          <b>7. </b>Integrations
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/integrations/exporting-metrics/" title="Exporting Metrics" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/integrations/exporting-metrics/">
+          <b>1. </b>Exporting Metrics
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/userguide/managing-domains/integrations/exporting-logs/" title="Exporting Logs" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/userguide/managing-domains/integrations/exporting-logs/">
+          <b>2. </b>Exporting Logs
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/" title="Samples" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/">
+          <b>3. </b>Samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/" title="Simple" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/">
+          <b>1. </b>Simple
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/credentials/" title="Credentials" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/credentials/">
+          <b>1. </b>Credentials
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/storage/" title="Storage" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/storage/">
+          <b>2. </b>Storage
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/domains/" title="Domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/domains/">
+          <b>3. </b>Domains
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/rest/" title="REST APIs" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/rest/">
+          <b>4. </b>REST APIs
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/ingress/" title="Ingress" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/ingress/">
+          <b>5. </b>Ingress
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/simple/elastic-stack/" title="Elastic Stack" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/simple/elastic-stack/">
+          <b>6. </b>Elastic Stack
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/samples/production/" title="Production" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/samples/production/">
+          <b>2. </b>Production
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/developerguide/" title="Developer Guide" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/developerguide/">
+          <b>4. </b>Developer Guide
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/reference/" title="Reference" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/reference/">
+          <b>5. </b>Reference
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/security/" title="Security" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/security/">
+          <b>6. </b>Security
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/faq/" title="Frequently Asked Questions" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/faq/">
+          <b>7. </b>Frequently Asked Questions
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+         
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      <p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
+<p>&nbsp;</p>
+<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
+<p><a href="https://weblogic-slack-inviter.herokuapp.com/"><i class="fab fa-slack"></i> Public Slack #operator</a></p>
+<p>&nbsp;</p>
+<img src="http://build.weblogick8s.org:8080/buildStatus/icon?job=weblogic-kubernetes-operator">
+    </section>
+  </div>
+</nav>
+
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/'></a> > <a href='/userguide/'>User Guide</a> > <a href='/userguide/managing-domains/'>Managing Domains</a> > Choosing a Model
+          
+         
+          
+         
+          
+         
+          
+        
+                 
+                  </span>
+                </div>
+                
+              </div>
+            </div>
+            
+
+        
+          <div id="chapter">
+        
+        <div id="body-inner">
+          
+
+        
+
+
+
+
+<h3 id="chapter-1">Chapter 1</h3>
+
+<h1 id="choosing-a-model">Choosing a model</h1>
+
+<p>Lorem Ipsum.</p>
+
+
+<footer class=" footline" >
+	
+</footer>
+
+        
+            </div> 
+        
+        </div> 
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+        
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+        
+        
+
+
+	 
+	 
+		
+			<a class="nav nav-prev" href="/userguide/managing-domains/" title="Managing Domains"> <i class="fa fa-chevron-left"></i></a>
+		
+		
+			<a class="nav nav-next" href="/userguide/managing-domains/persistent-storage/" title="Persistent Storage" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+    
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/js/clipboard.min.js?1551107856"></script>
+    <script src="/js/perfect-scrollbar.min.js?1551107856"></script>
+    <script src="/js/perfect-scrollbar.jquery.min.js?1551107856"></script>
+    <script src="/js/jquery.sticky.js?1551107856"></script>
+    <script src="/js/featherlight.min.js?1551107856"></script>
+    <script src="/js/html5shiv-printshiv.min.js?1551107856"></script>
+    <script src="/js/highlight.pack.js?1551107856"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/js/modernizr.custom.71422.js?1551107856"></script>
+    <script src="/js/learn.js?1551107856"></script>
+    <script src="/js/hugo-learn.js?1551107856"></script>
+
+    <link href="/mermaid/mermaid.css?1551107856" type="text/css" rel="stylesheet" />
+    <script src="/mermaid/mermaid.js?1551107856"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    
+
+  </body>
+</html>

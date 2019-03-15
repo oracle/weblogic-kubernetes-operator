@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>/samples/simple/credentials/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/samples/simple/</loc>
+    <lastmod>2019-02-23T17:11:34-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-operators/installation/</loc>
+    <lastmod>2019-02-23T16:47:21-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/integrations/exporting-metrics/</loc>
+    <lastmod>2019-02-23T16:46:35-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/domain-in-image/base-images/</loc>
+    <lastmod>2019-02-23T16:45:38-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/choosing-a-model/</loc>
+    <lastmod>2019-02-23T16:44:54-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/quickstart/</loc>
+    <lastmod>2019-02-22T15:27:38-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/samples/simple/storage/</loc>
+    <lastmod>2019-02-23T17:33:26-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/samples/production/</loc>
+    <lastmod>2019-02-23T17:11:39-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-operators/using-the-operator/</loc>
+    <lastmod>2019-02-23T17:08:18-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/integrations/exporting-logs/</loc>
+    <lastmod>2019-02-23T16:46:40-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/domain-in-image/patching/</loc>
+    <lastmod>2019-02-23T16:45:48-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/persistent-storage/</loc>
+    <lastmod>2019-02-23T16:45:09-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/introduction/</loc>
+    <lastmod>2019-02-23T16:43:10-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/</loc>
+    <lastmod>2019-02-22T15:27:48-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/samples/simple/domains/</loc>
+    <lastmod>2019-02-23T17:32:37-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/domain-in-image/domain-images/</loc>
+    <lastmod>2019-02-23T16:45:55-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/domain-in-image/</loc>
+    <lastmod>2019-02-23T16:45:16-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-operators/</loc>
+    <lastmod>2019-02-23T16:43:38-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/samples/</loc>
+    <lastmod>2019-02-22T15:28:03-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/samples/simple/rest/</loc>
+    <lastmod>2019-02-23T17:33:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/domain-lifecycle/</loc>
+    <lastmod>2019-02-23T16:50:09-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/</loc>
+    <lastmod>2019-02-23T16:43:45-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/developerguide/</loc>
+    <lastmod>2019-02-22T15:27:54-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/accessing-the-domain/</loc>
+    <lastmod>2019-02-23T17:39:00-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/samples/simple/ingress/</loc>
+    <lastmod>2019-02-23T17:32:47-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/reference/</loc>
+    <lastmod>2019-02-22T16:16:39-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/ingress/</loc>
+    <lastmod>2019-02-23T20:46:32-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/security/</loc>
+    <lastmod>2019-02-23T17:34:48-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/samples/simple/elastic-stack/</loc>
+    <lastmod>2019-02-23T17:32:56-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/userguide/managing-domains/integrations/</loc>
+    <lastmod>2019-02-23T16:46:23-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/faq/</loc>
+    <lastmod>2019-02-23T08:14:59-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/</loc>
+  </url>
+  
+  <url>
+    <loc>/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>/tags/</loc>
+    <priority>0</priority>
+  </url>
+  
+</urlset>

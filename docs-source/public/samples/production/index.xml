@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Production on WebLogic Kubernetes Operator</title>
+    <link>/samples/production/</link>
+    <description>Recent content in Production on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 17:11:39 -0500</lastBuildDate>
+    
+	<atom:link href="/samples/production/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+  </channel>
+</rss>
