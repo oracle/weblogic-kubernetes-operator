@@ -129,9 +129,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
     @Override
     public AdminService configureAdminService() {
-      if (adminServer.getAdminService() == null) {
-        adminServer.setAdminService(new AdminService());
-      }
       return adminServer.getAdminService();
     }
   }
