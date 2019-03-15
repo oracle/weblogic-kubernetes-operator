@@ -29,7 +29,7 @@ This release was published on March 4, 2019.
 
 #### Operator earlier versions
 
-Documentation for prior releases of the operator is available [here](site/README.md).
+Documentation for prior releases of the operator is available [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/site/README.md).
 
 #### Backward compatibility guidelines
 
