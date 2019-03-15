@@ -3,6 +3,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 
+DEFAULT_MAX_WAIT=12
+
 # Usage:
 # waitUntil cmd expected_out okMsg failMsg 
 function waitUntil() {
@@ -11,14 +13,15 @@ function waitUntil() {
   okMsg=$3
   failMsg=$4
 
-  MAX_WAIT=100
+  max_wait=100
   count=0
-  while [ $count -lt $MAX_WAIT ]; do
+  echo "wait until $okMsg"
+  while [ $count -lt $max_wait ]; do
     if [ "$($cmd)" = "$expected_out" ]; then
       echo $okMsg
       return 0;
     fi
-    echo "wait until $okMsg"
+    #echo "wait until $okMsg"
     ((count=count+1))
     sleep 5 
   done
@@ -37,4 +40,32 @@ function waitUntilNSTerm() {
 
 function checkNSTermCmd() {
   kubectl get ns $1  --ignore-not-found | grep $1 | wc -l
+}
+
+# Usage: waitUntilHttpReady name hostname url
+function waitUntilHttpReady() {
+  expected_out=200
+  okMsg="http to $1 is ready"
+  failMsg="fail to access http to $1 "
+
+  waitUntil "checkHttpCmd $2 $3" "$expected_out" "$okMsg" "$failMsg"
+}
+
+# Usage: checkHTTPCmd hostname url
+function checkHttpCmd() {
+  curl -s -o /dev/null -w "%{http_code}"  -H "host: $1" $2
+}
+
+# Usage: waitUntilHttpsReady name hostname url
+function waitUntilHttpsReady() {
+  expected_out=200
+  okMsg="https to $1 is ready"
+  failMsg="fail to access https to $1 "
+
+  waitUntil "checkHttpsCmd $2 $3" "$expected_out" "$okMsg" "$failMsg"
+}
+
+# Usage: checkHTTPSCmd hostname url
+function checkHttpsCmd() {
+  curl -k -s -o /dev/null -w "%{http_code}"  -H "host: $1" $2
 }

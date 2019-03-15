@@ -42,30 +42,6 @@ function createIng() {
     --namespace test1 \
     --set wlsDomain.domainUID=domain3 \
     --set traefik.hostname=domain3.org
-
-  waitUntilHTTPReady Domain1
-  waitUntilHTTPReady Domain2
-  waitUntilHTTPReady Domain3
-}
-
-function waitUntilHTTPReady() {
-  expected_out=200
-  okMsg="load balancing traffic to $1 is ready"
-  failMsg="fail to load balancing traffic to $1 "
-
-  waitUntil "checkHTTP${1}Cmd" "$expected_out" "$okMsg" "$failMsg"
-}
-
-function checkHTTPDomain1Cmd() {
-  curl -s -o /dev/null -w "%{http_code}"  -H 'host: domain1.org' http://$HOSTNAME:30305/weblogic/
-}
-
-function checkHTTPDomain2Cmd() {
-  curl -s -o /dev/null -w "%{http_code}"  -H 'host: domain2.org' http://$HOSTNAME:30305/weblogic/
-}
-
-function checkHTTPDomain3Cmd() {
-  curl -s -o /dev/null -w "%{http_code}"  -H 'host: domain3.org' http://$HOSTNAME:30305/weblogic/
 }
 
 function delIng() {
