@@ -128,16 +128,16 @@ function state_dump {
   
 
   
-  if [ ! "$LEASE_ID" = "" ]; then
+ # if [ ! "$LEASE_ID" = "" ]; then
     # release the lease if we own it
-    ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" 2>&1 | tee ${RESULT_DIR}/release_lease.out
-    if [ "$?" = "0" ]; then
-      echo Lease released.
-    else
-      echo Lease could not be released:
-      cat /${RESULT_DIR}/release_lease.out 
-    fi
-  fi
+  #  ${SCRIPTPATH}/lease.sh -d "$LEASE_ID" 2>&1 | tee ${RESULT_DIR}/release_lease.out
+   # if [ "$?" = "0" ]; then
+   #   echo Lease released.
+   # else
+   #   echo Lease could not be released:
+   #   cat /${RESULT_DIR}/release_lease.out 
+   # fi
+ # fi
 
   # remove docker-images project before archiving
   rm -rf ${RESULT_DIR}/docker-images
