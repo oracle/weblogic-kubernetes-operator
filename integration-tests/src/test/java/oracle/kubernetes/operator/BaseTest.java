@@ -139,27 +139,6 @@ public class BaseTest {
               + clnResult.stderr());
     }
 
-    if (System.getenv("JENKINS") != null) {
-      logger.info("Creating " + resultRoot + "/acceptance_test_tmp");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
-              + resultRoot
-              + "/acceptance_test_tmp\"");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
-              + resultRoot
-              + "/acceptance_test_tmp\"");
-      logger.info("Creating " + pvRoot + "/acceptance_test_pv");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
-              + pvRoot
-              + "/acceptance_test_pv\"");
-      TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
-              + pvRoot
-              + "/acceptance_test_pv\"");
-    }
-
     // create resultRoot, PVRoot, etc
     Files.createDirectories(Paths.get(resultRoot));
     Files.createDirectories(Paths.get(resultDir));
