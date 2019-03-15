@@ -53,7 +53,9 @@ public class ITOperator extends BaseTest {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN");
     logger.info("Run once, release cluster lease");
+
     tearDown();
+
     logger.info("SUCCESS");
   }
 
@@ -87,7 +89,9 @@ public class ITOperator extends BaseTest {
       testBasicUseCases(domain);
       TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
       testAdvancedUseCasesForADomain(operator1, domain);
+
       if (!SMOKETEST) domain.testWlsLivenessProbe();
+
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
