@@ -389,6 +389,51 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenDomainHasContainers_createAdminPodWithThem() {
+    getConfigurator()
+        .withContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasContainers_createAdminPodWithThem() {
+    getConfigurator()
+        .configureAdminServer()
+        .withContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasDuplicateContainers_createAdminPodWithCombination() {
+    getConfigurator()
+        .withContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withContainer(createContainer("container2", "oraclelinux", "ls /top"))
+        .configureAdminServer()
+        .withContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
   public void whenDomainHasLabels_createAdminPodWithThem() {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
