@@ -5,13 +5,14 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1ObjectMeta;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import javax.json.JsonPatchBuilder;
 import org.apache.commons.collections.MapUtils;
 
-class KubernetesUtils {
+public class KubernetesUtils {
 
   /**
    * Returns true if the two maps of values match. A null map is considered to match an empty map.
@@ -98,7 +99,7 @@ class KubernetesUtils {
    * @param current a map of the values found in a Kubernetes resource
    * @param required a map of the values specified for the resource by the domain
    */
-  static void addPatches(
+  public static void addPatches(
       JsonPatchBuilder patchBuilder,
       String basePath,
       Map<String, String> current,
@@ -109,6 +110,35 @@ class KubernetesUtils {
       } else {
         patchBuilder.replace(basePath + name, required.get(name));
       }
+    }
+  }
+
+  /**
+   * Returns the name of the resource, extracted from its metadata.
+   *
+   * @param resource a Kubernetes resource
+   * @return the name, if found
+   */
+  static String getResourceName(Object resource) {
+    return getResourceMetadata(resource).getName();
+  }
+
+  /**
+   * Returns the metadata of the resource.
+   *
+   * @param resource a Kubernetes resource
+   * @return the metadata, if found; otherwise a newly created one.
+   */
+  static V1ObjectMeta getResourceMetadata(Object resource) {
+    try {
+      Field metadataField = resource.getClass().getDeclaredField("metadata");
+      metadataField.setAccessible(true);
+      return (V1ObjectMeta) metadataField.get(resource);
+    } catch (NoSuchFieldException
+        | SecurityException
+        | IllegalArgumentException
+        | IllegalAccessException e) {
+      return new V1ObjectMeta();
     }
   }
 }

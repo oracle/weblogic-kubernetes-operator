@@ -87,7 +87,7 @@
               <goal>generate</goal>
             </goals>
             <configuration>
-              <rootClass>oracle.kubernetes.weblogic.domain.v2.Domain</rootClass>
+              <rootClass>oracle.kubernetes.weblogic.domain.model.Domain</rootClass>
               <kubernetesVersion>1.9.0</kubernetesVersion>
               <generateMarkdown>true</generateMarkdown>
             </configuration>
@@ -107,7 +107,7 @@
             <configuration>
               <resources>
                 <resource>
-                  <directory>${project.build.outputDirectory}/schema/oracle/kubernetes/weblogic/domain/v2</directory>
+                  <directory>${project.build.outputDirectory}/schema/oracle/kubernetes/weblogic/domain/model</directory>
                 </resource>
               </resources>
               <outputDirectory>
