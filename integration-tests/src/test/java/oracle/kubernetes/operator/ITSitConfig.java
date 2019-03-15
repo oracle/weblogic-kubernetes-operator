@@ -3,8 +3,6 @@
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.BaseTest.getLeaseId;
-import static oracle.kubernetes.operator.BaseTest.getProjectRoot;
 import static oracle.kubernetes.operator.BaseTest.initialize;
 import static oracle.kubernetes.operator.BaseTest.logger;
 
@@ -23,11 +21,6 @@ import org.junit.Test;
 
 public class ITSitConfig extends BaseTest {
 
-  private static final String OPERATOR1FILE = "operator1.yaml";
-  private static final String OPERATOR2FILE = "operator2.yaml";
-  private static final String DOMAINONPVWLSTFILE = "domainonpvwlst.yaml";
-  private static final String DOMAINONPVWDTFILE = "domainonpvwdt.yaml";
-  private static String TESTSRCDIR = "";
   private static String TESTSCRIPTDIR = "";
 
   private static String ADMINPODNAME = "";
@@ -37,35 +30,7 @@ public class ITSitConfig extends BaseTest {
   private static String fqdn = "";
 
   private static Domain domain = null;
-  private static Operator operator1, operator2;
-  // property file used to configure constants for integration tests
-  private static final String APPPROPSFILE = "OperatorIT.properties";
-
-  private static boolean QUICKTEST;
-  private static final boolean SMOKETEST;
-  private static boolean JENKINS;
-  private static boolean INGRESSPERDOMAIN = true;
-
-  // Set QUICKTEST env var to true to run a small subset of tests.
-  // Set SMOKETEST env var to true to run an even smaller subset
-  // of tests, plus leave domain1 up and running when the test completes.
-  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  static {
-    QUICKTEST =
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
-    SMOKETEST =
-        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
-    if (SMOKETEST) {
-      QUICKTEST = true;
-    }
-    if (System.getenv("JENKINS") != null) {
-      JENKINS = Boolean.valueOf(System.getenv("JENKINS"));
-    }
-    if (System.getenv("INGRESSPERDOMAIN") != null) {
-      INGRESSPERDOMAIN = Boolean.valueOf(System.getenv("INGRESSPERDOMAIN"));
-    }
-  }
-
+  private static Operator operator1;
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -79,10 +44,10 @@ public class ITSitConfig extends BaseTest {
 
     if (!QUICKTEST) {
       // initialize test properties and create the directories
-      initialize(APPPROPSFILE);
+      initialize(APP_PROPS_FILE);
 
       if (operator1 == null) {
-        operator1 = TestUtils.createOperator(OPERATOR1FILE);
+        operator1 = TestUtils.createOperator(OPERATOR1_YAML);
       }
       TESTSCRIPTDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
       domain = createSitConfigDomain();
@@ -116,10 +81,6 @@ public class ITSitConfig extends BaseTest {
 
       destroySitConfigDomain();
       tearDown();
-      if (!"".equals(getLeaseId())) {
-        logger.info("Release the k8s cluster lease");
-        TestUtils.releaseLease(getProjectRoot(), getLeaseId());
-      }
       logger.info("SUCCESS");
     }
   }
@@ -225,7 +186,7 @@ public class ITSitConfig extends BaseTest {
   private static Domain createSitConfigDomain() throws Exception {
     String createDomainScript = TESTSCRIPTDIR + "/domain-home-on-pv/create-domain.py";
     // load input yaml to map and add configOverrides
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPVWLSTFILE);
+    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
     domainMap.put("configOverrides", "sitconfigcm");
     domainMap.put(
         "configOverridesFile", "/integration-tests/src/test/resources/sitconfig/configoverrides");
@@ -239,10 +200,6 @@ public class ITSitConfig extends BaseTest {
         "javaOptions",
         "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
 
-    // use NFS for this domain on Jenkins, defaultis HOST_PATH
-    if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
-      domainMap.put("weblogicDomainStorageType", "NFS");
-    }
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
     return domain;
