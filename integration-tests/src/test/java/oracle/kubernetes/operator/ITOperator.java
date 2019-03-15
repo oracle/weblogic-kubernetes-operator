@@ -19,6 +19,7 @@ import org.junit.runners.MethodSorters;
 /**
  * Simple JUnit test file used for testing Operator.
  *
+ * /
  * <p>This test is used for creating Operator(s) and multiple domains which are managed by the
  * Operator(s).
  */
