@@ -853,12 +853,16 @@ public class Domain {
   public void testDomainServerRestart(String oldPropertyString, String newPropertyString)
       throws Exception {
     logger.info("Inside testDomainServerPodRestart");
-    boolean result = false;
-    result =
-        TestUtils.findFileContainString(
-            BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml",
-            newPropertyString);
-    logger.info("The search result for " + newPropertyString + " is: " + result); // TODO
+    String content =
+        new String(
+            Files.readAllBytes(
+                Paths.get(
+                    BaseTest.getUserProjectsDir()
+                        + "/weblogic-domains/"
+                        + domainUid
+                        + "/domain.yaml")));
+    boolean result = content.indexOf(newPropertyString) >= 0;
+    logger.info("The search result for " + newPropertyString + " is: " + result);
     if (!result) {
       TestUtils.createNewYamlFile(
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml",
@@ -893,7 +897,11 @@ public class Domain {
 
       // verify the servers in the domain are being restarted in a sequence
       verifyAdminServerRestarted();
-      verifyManagedServerRestarted();
+      verifyManagedServersRestarted();
+      // let domain.yaml include the new changed property
+      TestUtils.copyFile(
+          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
+          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml");
     }
     logger.info("Done - testDomainServerPodRestart");
   }
@@ -907,7 +915,7 @@ public class Domain {
     Thread.sleep(10 * 1000);
   }
 
-  public void verifyManagedServerRestarted() throws Exception {
+  public void verifyManagedServersRestarted() throws Exception {
     if (domainMap.get("serverStartPolicy") == null
         || (domainMap.get("serverStartPolicy") != null
             && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
