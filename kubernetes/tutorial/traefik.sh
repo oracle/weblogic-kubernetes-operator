@@ -31,17 +31,41 @@ function createIng() {
     --set wlsDomain.domainUID=domain1 \
     --set traefik.hostname=domain1.org
 
- helm install $WLS_OPT_ROOT/kubernetes/samples/charts/ingress-per-domain \
+  helm install $WLS_OPT_ROOT/kubernetes/samples/charts/ingress-per-domain \
     --name domain2-ing-t \
     --namespace test1 \
     --set wlsDomain.domainUID=domain2 \
     --set traefik.hostname=domain2.org
 
- helm install $WLS_OPT_ROOT/kubernetes/samples/charts/ingress-per-domain \
+  helm install $WLS_OPT_ROOT/kubernetes/samples/charts/ingress-per-domain \
     --name domain3-ing-t \
     --namespace test1 \
     --set wlsDomain.domainUID=domain3 \
     --set traefik.hostname=domain3.org
+
+  waitUntilHTTPReady Domain1
+  waitUntilHTTPReady Domain2
+  waitUntilHTTPReady Domain3
+}
+
+function waitUntilHTTPReady() {
+  expected_out=200
+  okMsg="load balancing traffic to $1 is ready"
+  failMsg="fail to load balancing traffic to $1 "
+
+  waitUntil "checkHTTP${1}Cmd" "$expected_out" "$okMsg" "$failMsg"
+}
+
+function checkHTTPDomain1Cmd() {
+  curl -s -o /dev/null -w "%{http_code}"  -H 'host: domain1.org' http://$HOSTNAME:30305/weblogic/
+}
+
+function checkHTTPDomain2Cmd() {
+  curl -s -o /dev/null -w "%{http_code}"  -H 'host: domain2.org' http://$HOSTNAME:30305/weblogic/
+}
+
+function checkHTTPDomain3Cmd() {
+  curl -s -o /dev/null -w "%{http_code}"  -H 'host: domain3.org' http://$HOSTNAME:30305/weblogic/
 }
 
 function delIng() {
@@ -49,18 +73,6 @@ function delIng() {
   helm delete --purge domain1-ing-t 
   helm delete --purge domain2-ing-t
   helm delete --purge domain3-ing-t
-}
-
-function verify() {
-  # verify http
-  curl -v -H 'host: domain1.org' http://$hostname:30305/weblogic/
-  curl -v -H 'host: domain2.org' http://$hostname:30305/weblogic/
-  curl -v -H 'host: domain3.org' http://$hostname:30305/weblogic/
-
-  # verify https
-  curl -v -k -H 'host: domain1.org' https://$hostname:30443/weblogic/
-  curl -v -k -H 'host: domain2.org' https://$hostname:30443/weblogic/
-  curl -v -k -H 'host: domain3.org' https://$hostname:30443/weblogic/
 }
 
 function usage() {

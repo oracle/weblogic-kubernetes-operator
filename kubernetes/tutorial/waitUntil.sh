@@ -19,7 +19,7 @@ function waitUntil() {
       return 0;
     fi
     echo "wait until $okMsg"
-    count=`expr $count + 1`
+    ((count=count+1))
     sleep 5 
   done
   echo "Error: $failMsg"
