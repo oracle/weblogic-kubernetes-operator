@@ -5,12 +5,6 @@
 package oracle.kubernetes.operator.utils;
 
 import java.io.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -18,7 +12,6 @@ import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Scanner;
 import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -1087,26 +1080,41 @@ public class TestUtils {
     logger.info("Done - generate the new yaml file ");
   }
 
-  public static boolean findFileContainString(String inputYamlFile, String searchString)
-      throws Exception {
-    logger.info("Search File   " + inputYamlFile + " Search String: " + searchString);
-    boolean result = false;
-    File file = new File(inputYamlFile);
-    Scanner in = null;
-    try {
-      in = new Scanner(new FileReader(file));
-      while (in.hasNextLine() && !result) {
-        result = in.nextLine().indexOf(searchString) >= 0;
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-    } finally {
-      try {
-        in.close();
-      } catch (Exception e) {
-        /* ignore */
-      }
+  public static void copyFile(String fromFile, String toFile) throws Exception {
+    logger.info("Copying file from  " + fromFile + " to " + toFile);
+
+    Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
+  }
+
+  public static void dockerTagImage(String sourceImage, String targetImage) throws Exception {
+    logger.info("Tagging souceImage:  " + sourceImage + "  to " + targetImage);
+    String dockerCmd = "docker tag " + sourceImage + " " + targetImage;
+    logger.info("Executing cmd " + dockerCmd);
+
+    ExecResult result = ExecCommand.exec(dockerCmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to create load balancer "
+              + dockerCmd
+              + " failed, returned "
+              + result.stdout()
+              + result.stderr());
     }
-    return result;
+  }
+
+  public static void dockerRemoveImage(String imageName) throws Exception {
+    logger.info("Removing image:  " + imageName);
+    String dockerCmd = "docker rmi -f  " + imageName;
+    logger.info("Executing cmd " + dockerCmd);
+
+    ExecResult result = ExecCommand.exec(dockerCmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to create load balancer "
+              + dockerCmd
+              + " failed, returned "
+              + result.stdout()
+              + result.stderr());
+    }
   }
 }
