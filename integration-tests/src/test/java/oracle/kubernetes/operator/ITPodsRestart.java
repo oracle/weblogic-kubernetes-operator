@@ -77,7 +77,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testServerRestartByChangingEnvProperty() throws Exception {
+  public void testServerPodsRestartByChangingEnvProperty() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -99,7 +99,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testServerRestartByChangingLogHomeEnabled() throws Exception {
+  public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -121,7 +121,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testServerRestartByChangingImagePullPolicy() throws Exception {
+  public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -144,7 +144,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testServerRestartByChangingIncludeServerOutInPodLog() throws Exception {
+  public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -168,7 +168,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testServerRestartByChangingImage() throws Exception {
+  public void testServerPodsRestartByChangingImage() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
