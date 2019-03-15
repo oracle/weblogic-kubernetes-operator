@@ -24,40 +24,8 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITPodsRestart extends BaseTest {
 
-  // property file used to customize operator properties for operator inputs yaml
-	private static String operator1File = "operator1.yaml";
-
-  // file used to customize domain properties for domain, PV and LB inputs yaml
   private static Domain domain = null;
-  private static String domainonpvwlstFile = "domainonpvwlst.yaml";
-
-  // property file used to configure constants for integration tests
-  private static String appPropsFile = "OperatorIT.properties";
-
   private static Operator operator1;
-
-  private static boolean QUICKTEST;
-  private static boolean SMOKETEST;
-  private static boolean JENKINS;
-  private static boolean INGRESSPERDOMAIN = true;
-
-  // Set QUICKTEST env var to true to run a small subset of tests.
-  // Set SMOKETEST env var to true to run an even smaller subset
-  // of tests, plus leave domain1 up and running when the test completes.
-  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  static {
-    QUICKTEST =
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
-    SMOKETEST =
-        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
-    if (SMOKETEST) QUICKTEST = true;
-    if (System.getenv("JENKINS") != null) {
-      JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
-    }
-    if (System.getenv("INGRESSPERDOMAIN") != null) {
-      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
-    }
-  }
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -71,11 +39,11 @@ public class ITPodsRestart extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     if (!QUICKTEST) {
-      initialize(appPropsFile);
+      initialize(APP_PROPS_FILE);
 
       logger.info("Checking if operator1 and domain are running, if not creating");
       if (operator1 == null) {
-        operator1 = TestUtils.createOperator(operator1File);
+        operator1 = TestUtils.createOperator(OPERATOR1_YAML);
       }
 
       domain = createPodsRestartdomain();
@@ -95,13 +63,8 @@ public class ITPodsRestart extends BaseTest {
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
 
-      // destroyPodsRestartdomain();
-      // tearDown();
-
-      if (!"".equals(getLeaseId())) {
-        logger.info("Release the k8s cluster lease");
-        TestUtils.releaseLease(getProjectRoot(), getLeaseId());
-      }
+      destroyPodsRestartdomain();
+      tearDown();
 
       logger.info("SUCCESS");
     }
@@ -211,22 +174,24 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     boolean testCompletedSuccessfully = false;
-
-    logger.info(
-        "About to testDomainServerRestart for Domain: "
-            + domain.getDomainUid()
-            + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
-    TestUtils.dockerTagImage("store/oracle/weblogic:12.2.1.3", "store/oracle/weblogic:duplicate");
-    domain.testDomainServerRestart(
-        "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
-    TestUtils.dockerRemoveImage("store/oracle/weblogic:duplicate");
+    try {
+      logger.info(
+          "About to testDomainServerRestart for Domain: "
+              + domain.getDomainUid()
+              + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
+      TestUtils.dockerTagImage("store/oracle/weblogic:12.2.1.3", "store/oracle/weblogic:duplicate");
+      domain.testDomainServerRestart(
+          "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
+    } finally {
+      TestUtils.dockerRemoveImage("store/oracle/weblogic:duplicate");
+    }
 
     logger.info("SUCCESS - " + testMethodName);
   }
 
   private static Domain createPodsRestartdomain() throws Exception {
 
-    Map<String, Object> domainMap = TestUtils.loadYaml(domainonpvwlstFile);
+    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
     domainMap.put("domainUID", "domainpodsrestart");
     domainMap.put("adminNodePort", new Integer("30707"));
     domainMap.put("t3ChannelPort", new Integer("30081"));

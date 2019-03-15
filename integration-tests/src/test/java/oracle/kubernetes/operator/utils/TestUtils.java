@@ -4,7 +4,12 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -1067,7 +1072,6 @@ public class TestUtils {
       throws Exception {
     logger.info("Creating new  " + generatedYamlFile);
 
-    // copy input template file and modify it
     Files.copy(
         new File(inputYamlFile).toPath(),
         Paths.get(generatedYamlFile),
