@@ -1,6 +1,7 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
@@ -24,11 +25,11 @@ import oracle.kubernetes.operator.utils.TestUtils;
  * extend this class.
  */
 public class BaseTest {
-
   public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   public static final String TESTWEBAPP = "testwebapp";
 
   // property file used to customize operator properties for operator inputs yaml
+
   public static final String OPERATOR1_YAML = "operator1.yaml";
   public static final String OPERATOR2_YAML = "operator2.yaml";
   public static final String OPERATORBC_YAML = "operator_bc.yaml";
@@ -73,9 +74,7 @@ public class BaseTest {
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
     SMOKETEST =
         System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
-    if (SMOKETEST) {
-      QUICKTEST = true;
-    }
+    if (SMOKETEST) QUICKTEST = true;
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
     }
@@ -139,30 +138,6 @@ public class BaseTest {
               + clnResult.stderr());
     }
 
-    // create resultRoot, PVRoot, etc
-    Files.createDirectories(Paths.get(resultRoot));
-    Files.createDirectories(Paths.get(resultDir));
-    Files.createDirectories(Paths.get(userProjectsDir));
-
-    // create file handler
-    FileHandler fh = new FileHandler(resultDir + "/java_test_suite.out", true);
-    SimpleFormatter formatter = new SimpleFormatter();
-    fh.setFormatter(formatter);
-    logger.addHandler(fh);
-    logger.log(
-        Level.INFO, "Adding file handler, logging to file at {0}/java_test_suite.out", resultDir);
-
-    // for manual/local run, create file handler, create PVROOT
-    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
-      logger.log(Level.INFO, "Creating PVROOT {0}", pvRoot);
-      Files.createDirectories(Paths.get(pvRoot));
-      ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
-      }
-    }
-
     if (System.getenv("JENKINS") != null) {
       logger.info("Creating " + resultRoot + "/acceptance_test_tmp");
       TestUtils.exec(
@@ -182,6 +157,29 @@ public class BaseTest {
           "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
               + pvRoot
               + "/acceptance_test_pv\"");
+    }
+
+    // create resultRoot, PVRoot, etc
+    Files.createDirectories(Paths.get(resultRoot));
+    Files.createDirectories(Paths.get(resultDir));
+    Files.createDirectories(Paths.get(userProjectsDir));
+
+    // create file handler
+    FileHandler fh = new FileHandler(resultDir + "/java_test_suite.out");
+    SimpleFormatter formatter = new SimpleFormatter();
+    fh.setFormatter(formatter);
+    logger.addHandler(fh);
+    logger.info("Adding file handler, logging to file at " + resultDir + "/java_test_suite.out");
+
+    // for manual/local run, create file handler, create PVROOT
+    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
+      logger.info("Creating PVROOT " + pvRoot);
+      Files.createDirectories(Paths.get(pvRoot));
+      ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
+      }
     }
 
     logger.info("appProps = " + appProps);
@@ -270,9 +268,11 @@ public class BaseTest {
        * 	at weblogic.cluster.UnicastSender.send(UnicastSender.java:21)
        * 	Truncated. see log file for complete stacktrace
        */
+
       if (domainMap.containsKey("domainHomeImageBase")) {
         if (domainMap.get("initialManagedServerReplicas") != null
             && ((Integer) domainMap.get("initialManagedServerReplicas")).intValue() >= 1) {
+
           result =
               ExecCommand.exec(
                   "kubectl logs "
