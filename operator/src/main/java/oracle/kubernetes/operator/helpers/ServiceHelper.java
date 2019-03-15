@@ -10,6 +10,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLA
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
@@ -22,6 +25,7 @@ import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1Status;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,15 +46,14 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.AdminServer;
-import oracle.kubernetes.weblogic.domain.v2.AdminService;
-import oracle.kubernetes.weblogic.domain.v2.Channel;
-import oracle.kubernetes.weblogic.domain.v2.ClusterSpec;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
+import oracle.kubernetes.weblogic.domain.model.AdminService;
+import oracle.kubernetes.weblogic.domain.model.Channel;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
-@SuppressWarnings("deprecation")
 public class ServiceHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -64,6 +67,18 @@ public class ServiceHelper {
    */
   public static Step createForServerStep(Step next) {
     return new ForServerStep(next);
+  }
+
+  static V1Service createClusterServiceModel(Packet packet) {
+    return new ClusterStepContext(null, packet).createModel();
+  }
+
+  static V1Service createServerServiceModel(Packet packet) {
+    return new ForServerStepContext(null, packet).createModel();
+  }
+
+  static V1Service createExternalServiceModel(Packet packet) {
+    return new ForExternalServiceStepContext(null, packet).createModel();
   }
 
   private static class ForServerStep extends ServiceHelperStep {
@@ -185,7 +200,7 @@ public class ServiceHelper {
     protected final String serverName;
     protected final String clusterName;
     protected final ServerKubernetesObjects sko;
-    protected final WlsServerConfig scan;
+    final WlsServerConfig scan;
 
     ServerServiceStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
@@ -211,8 +226,7 @@ public class ServiceHelper {
       return metadata;
     }
 
-    @Override
-    ServerSpec getServerSpec() {
+    private ServerSpec getServerSpec() {
       return getDomain().getServer(getServerName(), getClusterName());
     }
 
@@ -239,7 +253,7 @@ public class ServiceHelper {
       LOGGER.fine(getServiceExistsMessageKey(), getDomainUID(), getServerName());
     }
 
-    private String getServiceExistsMessageKey() {
+    protected String getServiceExistsMessageKey() {
       return isForAdminServer() ? ADMIN_SERVICE_EXISTS : MANAGED_SERVICE_EXISTS;
     }
 
@@ -306,6 +320,10 @@ public class ServiceHelper {
     }
 
     V1Service createModel() {
+      return AnnotationHelper.withSha256Hash(createRecipe());
+    }
+
+    private V1Service createRecipe() {
       return new V1Service().spec(createServiceSpec()).metadata(createMetadata());
     }
 
@@ -355,8 +373,6 @@ public class ServiceHelper {
 
     protected abstract String createServiceName();
 
-    abstract ServerSpec getServerSpec();
-
     abstract Map<String, String> getServiceLabels();
 
     abstract Map<String, String> getServiceAnnotations();
@@ -377,7 +393,7 @@ public class ServiceHelper {
       V1Service service = getServiceFromRecord();
       if (service == null) {
         return createNewService(next);
-      } else if (validateCurrentService(createModel(), service)) {
+      } else if (canUseCurrentService(createModel(), service)) {
         logServiceExists();
         return next;
       } else {
@@ -713,11 +729,6 @@ public class ServiceHelper {
       return CLUSTER_SERVICE_REPLACED;
     }
 
-    @Override
-    ServerSpec getServerSpec() {
-      return null;
-    }
-
     ClusterSpec getClusterSpec() {
       return getDomain().getCluster(clusterName);
     }
@@ -733,53 +744,8 @@ public class ServiceHelper {
     }
   }
 
-  private static boolean validateCurrentService(V1Service build, V1Service current) {
-    return isCurrentServiceMetadataValid(build.getMetadata(), current.getMetadata())
-        && isCurrentServiceSpecValid(build.getSpec(), current.getSpec());
-  }
-
-  private static boolean isCurrentServiceMetadataValid(
-      V1ObjectMeta buildMeta, V1ObjectMeta currentMeta) {
-    return VersionHelper.matchesResourceVersion(
-            currentMeta, VersionConstants.DEFAULT_DOMAIN_VERSION)
-        && KubernetesUtils.areLabelsValid(buildMeta, currentMeta)
-        && KubernetesUtils.areAnnotationsValid(buildMeta, currentMeta);
-  }
-
-  private static boolean isCurrentServiceSpecValid(
-      V1ServiceSpec buildSpec, V1ServiceSpec currentSpec) {
-    String buildType = buildSpec.getType();
-    String currentType = currentSpec.getType();
-
-    if (currentType == null) {
-      currentType = "ClusterIP";
-    }
-    if (!currentType.equals(buildType)) {
-      return false;
-    }
-
-    if (!KubernetesUtils.mapEquals(buildSpec.getSelector(), currentSpec.getSelector())) {
-      return false;
-    }
-
-    List<V1ServicePort> buildPorts = buildSpec.getPorts();
-    List<V1ServicePort> currentPorts = currentSpec.getPorts();
-
-    outer:
-    for (V1ServicePort bp : buildPorts) {
-      for (V1ServicePort cp : currentPorts) {
-        if (cp.getPort().equals(bp.getPort())) {
-          if (!"NodePort".equals(buildType)
-              || bp.getNodePort() == null
-              || bp.getNodePort().equals(cp.getNodePort())) {
-            continue outer;
-          }
-        }
-      }
-      return false;
-    }
-
-    return true;
+  private static boolean canUseCurrentService(V1Service model, V1Service current) {
+    return AnnotationHelper.getHash(model).equals(AnnotationHelper.getHash(current));
   }
 
   /**
@@ -815,38 +781,48 @@ public class ServiceHelper {
     }
 
     @Override
-    ServerSpec getServerSpec() {
-      return getDomain().getAdminServerSpec();
-    }
-
-    @Override
     protected String getSpecType() {
       return "NodePort";
     }
 
     @Override
     protected V1Service getServiceFromRecord() {
-      return sko.getService().get();
+      return info.getExternalService(getServerName());
     }
 
     @Override
     protected void addServiceToRecord(V1Service service) {
-      sko.getService().set(service);
+      info.setExternalService(getServerName(), service);
     }
 
     @Override
     protected void removeServiceFromRecord() {
-      sko.getService().set(null);
+      info.setExternalService(getServerName(), null);
     }
 
     @Override
     protected String getServiceCreatedMessageKey() {
-      return ADMIN_SERVICE_CREATED;
+      return EXTERNAL_CHANNEL_SERVICE_CREATED;
     }
 
     @Override
     protected String getServiceReplaceMessageKey() {
-      return ADMIN_SERVICE_REPLACED;
+      return EXTERNAL_CHANNEL_SERVICE_REPLACED;
+    }
+
+    @Override
+    protected String getServiceExistsMessageKey() {
+      return EXTERNAL_CHANNEL_SERVICE_EXISTS;
+    }
+
+    @Override
+    protected Map<String, String> getServiceLabels() {
+      return getAdminService().map(AdminService::getLabels).orElse(Collections.emptyMap());
+    }
+
+    @Override
+    protected Map<String, String> getServiceAnnotations() {
+      return getAdminService().map(AdminService::getAnnotations).orElse(Collections.emptyMap());
     }
 
     protected List<V1ServicePort> createServicePorts() {
@@ -909,23 +885,12 @@ public class ServiceHelper {
     }
 
     private Channel getChannel(String channelName) {
-      AdminService adminService = getAdminService();
-      if (adminService != null) {
-        List<Channel> channels = adminService.getChannels();
-        if (channels != null) {
-          for (Channel c : channels) {
-            if (channelName.equals(c.getChannelName())) {
-              return c;
-            }
-          }
-        }
-      }
-      return null;
+      return getAdminService().map(a -> a.getChannel(channelName)).orElse(null);
     }
 
-    private AdminService getAdminService() {
-      AdminServer adminServer = getDomain().getSpec().getAdminServer();
-      return adminServer != null ? adminServer.getAdminService() : null;
+    private Optional<AdminService> getAdminService() {
+      return Optional.ofNullable(getDomain().getAdminServerSpec())
+          .map(AdminServerSpec::getAdminService);
     }
   }
 }

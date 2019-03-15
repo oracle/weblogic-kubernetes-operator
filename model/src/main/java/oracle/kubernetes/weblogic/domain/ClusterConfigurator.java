@@ -1,15 +1,16 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
-public interface ClusterConfigurator {
+public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withReplicas(int replicas);
 
   ClusterConfigurator withMaxUnavailable(int maxUnavailable);
@@ -84,6 +85,8 @@ public interface ClusterConfigurator {
   ClusterConfigurator withAdditionalVolume(String name, String path);
 
   ClusterConfigurator withAdditionalVolumeMount(String name, String path);
+
+  ClusterConfigurator withInitContainer(V1Container initContainer);
 
   ClusterConfigurator withPodLabel(String name, String value);
 
