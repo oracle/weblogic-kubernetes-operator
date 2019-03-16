@@ -84,6 +84,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
 
   ServerConfigurator withInitContainer(V1Container initContainer);
 
+  ServerConfigurator withContainer(V1Container container);
+
   ServerConfigurator withPodLabel(String name, String value);
 
   ServerConfigurator withPodAnnotation(String name, String value);
