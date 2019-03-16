@@ -88,6 +88,8 @@ public interface ClusterConfigurator extends ServiceConfigurator {
 
   ClusterConfigurator withInitContainer(V1Container initContainer);
 
+  ClusterConfigurator withContainer(V1Container container);
+
   ClusterConfigurator withPodLabel(String name, String value);
 
   ClusterConfigurator withPodAnnotation(String name, String value);

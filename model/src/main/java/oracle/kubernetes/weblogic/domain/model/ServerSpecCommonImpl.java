@@ -89,6 +89,12 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
 
   @Override
   @Nonnull
+  public List<V1Container> getContainers() {
+    return server.getContainers();
+  }
+
+  @Override
+  @Nonnull
   public List<V1Container> getInitContainers() {
     return server.getInitContainers();
   }
