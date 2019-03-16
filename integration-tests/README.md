@@ -77,7 +77,7 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Two Operators using same External Https Port | create chart using same https rest port as already running first operator, verify that deployment fails with expected error |
 | Two Operators using same target domains namespace | create chart using target domains namespace as already running first operator, verify that deployment fails with expected error |
 | Operator Helm Chart using not preexisted target domains namespace | create chart using not preexisted target domains namespace as already running first operator, verify that deployment fails with expected error |
-
+| Operator Helm Chart add/delete target domains namespace ( domain1, domain2) | create chart , use upgrade to add/remove target domains ( domain1,domain2), verify that operator is able to manage added domain (domain2, not able to access the deleted one(domain1), after delete operator, verify that domain2 is still functional  |
 
 
 # Directory Configuration and Structure
@@ -88,7 +88,7 @@ A new module "integration-tests" is added to the Maven project `weblogic-kuberne
 
 `weblogic-kubernetes-operator/integration-tests` - location of module pom.xml  
 `weblogic-kubernetes-operator/integration-tests/src/test/java` - integration test(JUnit) classes and utility classes  
-`weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files (see Configuration Files section) and other scripts.
+`weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files (see Configuration Files section) and other scripts
 
 Directory structure used for the test run:
 
