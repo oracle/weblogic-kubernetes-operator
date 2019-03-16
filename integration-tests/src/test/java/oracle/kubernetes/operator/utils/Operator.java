@@ -311,9 +311,9 @@ public class Operator {
         .append(" && helm upgrade ")
         .append(operatorMap.get("releaseName"))
         .append(" kubernetes/charts/weblogic-operator ")
-        .append(" --set ")
+        .append(" --set \"")
         .append(upgradeSet)
-        .append(" --reuse-values ")
+        .append("\" --reuse-values ")
         .append(" --wait --timeout 60");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
@@ -322,6 +322,22 @@ public class Operator {
     }
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
+  }
+
+  public String getHelmValues() throws Exception {
+    StringBuffer cmd = new StringBuffer("cd ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append(" && helm get values ")
+        .append(operatorMap.get("releaseName"));
+
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      reportHelmFailure(cmd.toString(), result);
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+    return outputStr;
   }
 
   private void reportHelmFailure(String cmd, ExecResult result) throws Exception {
