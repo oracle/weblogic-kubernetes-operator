@@ -648,9 +648,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     } catch (Exception ex) {
       if (!ex.getMessage()
           .contains(
-              " Response {\"status\":404,\"detail\":\"/operator/latest/domains/test"
-                  + number
-                  + "\""))
+              " Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number))
         throw new RuntimeException(
             "FAILURE: Exception does not report the expected error message " + ex.getMessage());
       logger.info("Deleting operator to check that domain functionality is not effected");
