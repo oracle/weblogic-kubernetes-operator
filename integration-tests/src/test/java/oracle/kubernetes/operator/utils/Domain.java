@@ -362,7 +362,7 @@ public class Domain {
   public void deployWebAppViaREST(
       String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
-    cmd.append("curl --silent  --user ")
+    cmd.append("curl --noproxy '*' --silent  --user ")
         .append(username)
         .append(":")
         .append(password)
@@ -479,7 +479,7 @@ public class Domain {
       }
       testAppUrl.append(webappName).append("/");
       // curl cmd to call webapp
-      StringBuffer curlCmd = new StringBuffer("curl --noproxy '*'  --silent ");
+      StringBuffer curlCmd = new StringBuffer("curl --silent ");
       curlCmd
           .append(" -H 'host: ")
           .append(domainUid)
