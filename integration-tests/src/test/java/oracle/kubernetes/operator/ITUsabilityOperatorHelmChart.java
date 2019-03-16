@@ -6,16 +6,9 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Map;
-import oracle.kubernetes.operator.utils.ExecCommand;
-import oracle.kubernetes.operator.utils.ExecResult;
-import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.*;
 import oracle.kubernetes.operator.utils.Operator.RESTCertType;
-import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -594,6 +587,89 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
         operator.destroy();
       }
     }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+  /**
+   * Create operator and verify its deployed successfully. Create domain1 and verify domain is
+   * started. Call helm upgrade to add domainnew to manage, verify both domains are managed by
+   * operator Call helm upgrade to remove first domain from operator target domains, verify it can't
+   * not be managed by operator anymore Delete operator and make sure domainnew is still functional
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testAddRemoveDomainUpdateOperatorHC() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    logger.info("Creating Operator & waiting for the script to complete execution");
+    // create operator
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
+    Operator operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
+    operator.callHelmInstall();
+    Domain domain = null;
+    Domain domainnew = null;
+    boolean testCompletedSuccessfully = false;
+    logger.info("kubectl create namespace test" + (number + 1));
+    ExecCommand.exec("kubectl create namespace test" + (number + 1));
+    logger.info("create domain with UID : test" + number);
+    domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
+    domain.verifyDomainCreated();
+    testAdminT3Channel(domain);
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    logger.info("verify that domain is managed by operator");
+    operator.verifyDomainExists(domain.getDomainUid());
+    logger.info("update operator with new target domain");
+    operator.callHelmUpgrade("domainNamespaces={test" + number + ",test" + (number + 1) + "}");
+
+    ArrayList<String> targetDomainsNS =
+        (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
+    targetDomainsNS.add("test" + (number + 1));
+    operatorMap.replace("domainNamespaces", targetDomainsNS);
+    domainnew = TestUtils.createDomain(TestUtils.createDomainMap(number + 1));
+    domainnew.verifyDomainCreated();
+    testAdminT3Channel(domainnew);
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    logger.info("verify that new domain is managed by operator after upgrade");
+    operator.verifyDomainExists(domainnew.getDomainUid());
+    logger.info("verify that old domain is managed by operator after upgrade");
+    operator.verifyDomainExists(domain.getDomainUid());
+    logger.info("Upgrade to remove first domain");
+    operator.callHelmUpgrade("domainNamespaces={test" + (number + 1) + "}");
+    targetDomainsNS = (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
+    targetDomainsNS.remove("test" + (number));
+    operatorMap.replace("domainNamespaces", targetDomainsNS);
+    Thread.sleep(30 * 1000);
+    try {
+      logger.info("verify that old domain is not managed by operator");
+      operator.verifyDomainExists(domain.getDomainUid());
+      throw new RuntimeException(
+          "FAILURE: After Helm Upgrade for the domainNamespaces operator still able to manage old namespace ");
+    } catch (Exception ex) {
+      if (!ex.getMessage()
+          .contains(
+              " Response {\"status\":404,\"detail\":\"/operator/latest/domains/test"
+                  + number
+                  + "\""))
+        throw new RuntimeException(
+            "FAILURE: Exception does not report the expected error message " + ex.getMessage());
+      logger.info("Deleting operator to check that domain functionality is not effected");
+      operator.destroy();
+      operator = null;
+      Thread.sleep(20 * 1000);
+      domainnew.testWlsLivenessProbe();
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) domain.destroy();
+      if (domainnew != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
+        domainnew.destroy();
+
+      if (operator != null) {
+        operator.destroy();
+      }
+      number++;
+    }
+
     logger.info("SUCCESS - " + testMethodName);
   }
 }
