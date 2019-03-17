@@ -1416,7 +1416,7 @@ public class Domain {
     logger.info("Command returned " + result.stdout().trim());
   }
 
-  private String getHostNameForCurl() throws Exception {
+  public String getHostNameForCurl() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
     } else {
@@ -1435,5 +1435,66 @@ public class Domain {
         return result2.stdout().trim();
       }
     }
+  }
+
+  public int getLoadBalancerWebPort() throws Exception {
+    return loadBalancerWebPort;
+  }
+
+  /**
+   * shutdown a ms by setting serverStartPolicy to NEVER
+   *
+   * @throws Exception
+   */
+  public void shutdownManagedServerUsingServerStartPolicy(String msName) throws Exception {
+    String cmd =
+        "kubectl patch domain "
+            + domainUid
+            + " -n "
+            + domainNS
+            + " -p '{\"spec\":{\"managedServers\":[{\"serverName\":\""
+            + msName
+            + "\",\"serverStartPolicy\":\"NEVER\"}]}}' --type merge";
+
+    logger.info("command to shutdown managed server <" + msName + "> is: " + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
+    logger.info("output fr shutdown managed server:\n" + output);
+
+    TestUtils.checkPodDeleted(domainUid + "-" + msName, domainNS);
+  }
+
+  /**
+   * restart a ms by setting serverStartPolicy to IF_NEEDED
+   *
+   * @throws Exception
+   */
+  public void restartManagedServerUsingServerStartPolicy(String msName) throws Exception {
+    String cmd =
+        "kubectl patch domain "
+            + domainUid
+            + " -n "
+            + domainNS
+            + " -p '{\"spec\":{\"managedServers\":[{\"serverName\":\""
+            + msName
+            + "\",\"serverStartPolicy\":\"IF_NEEDED\"}]}}' --type merge";
+
+    logger.info("command to restart managed server <" + msName + "> is: " + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
+    logger.info("output fr restart managed server:\n" + output);
+
+    TestUtils.checkPodCreated(domainUid + "-" + msName, domainNS);
+    TestUtils.checkPodReady(domainUid + "-" + msName, domainNS);
   }
 }
