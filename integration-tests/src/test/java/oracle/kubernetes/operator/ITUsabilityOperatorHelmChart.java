@@ -647,8 +647,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
           "FAILURE: After Helm Upgrade for the domainNamespaces operator still able to manage old namespace ");
     } catch (Exception ex) {
       if (!ex.getMessage()
-          .contains(
-              "Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number))
+          .contains("Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number))
         throw new RuntimeException(
             "FAILURE: Exception does not report the expected error message " + ex.getMessage());
       logger.info("Deleting operator to check that domain functionality is not effected");
@@ -670,5 +669,4 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
 
     logger.info("SUCCESS - " + testMethodName);
   }
-    
 }
