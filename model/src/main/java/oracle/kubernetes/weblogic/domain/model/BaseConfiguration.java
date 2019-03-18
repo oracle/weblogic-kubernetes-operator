@@ -205,6 +205,10 @@ public abstract class BaseConfiguration {
     serverPod.addInitContainer(initContainer);
   }
 
+  void addContainer(V1Container container) {
+    serverPod.addContainer(container);
+  }
+
   Map<String, String> getPodLabels() {
     return serverPod.getLabels();
   }
@@ -243,6 +247,10 @@ public abstract class BaseConfiguration {
 
   public List<V1Container> getInitContainers() {
     return serverPod.getInitContainers();
+  }
+
+  public List<V1Container> getContainers() {
+    return serverPod.getContainers();
   }
 
   void addServiceAnnotation(String name, String value) {
