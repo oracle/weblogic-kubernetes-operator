@@ -307,8 +307,6 @@ function runSuiteThree() {
 
 function runAll() {
   beforeAll
-  runSuiteThree
-  runSuiteTwo
   runSuiteOne
   afterAll
 }
