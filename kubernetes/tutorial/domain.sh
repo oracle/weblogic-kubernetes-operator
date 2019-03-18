@@ -111,7 +111,7 @@ function waitUntilReady() {
   okMsg="domain $domainName is ready"
   failMsg="fail to start domain $domainName"
 
-  waitUntil "$cmd" "$expected_out" "$okMsg" "$failMsg"
+  waitUntil "$cmd" "$expected_out" "$okMsg" "$failMsg" 160
 }
 
 function checkDomainReadyCmd() {
@@ -125,7 +125,7 @@ function waitUntilStopped() {
   okMsg="domain $2 is stopped"
   failMsg="fail to stop domain $2"
 
-  waitUntil "checkDomainStoppedCmd $1 $2" "$expected_out" "$okMsg" "$failMsg"
+  waitUntil "checkDomainStoppedCmd $1 $2" "$expected_out" "$okMsg" "$failMsg" 160
 }
 
 function checkDomainStoppedCmd() {

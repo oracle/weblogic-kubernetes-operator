@@ -3,27 +3,32 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 
-DEFAULT_MAX_WAIT=12
+DEFAULT_MAX_WAIT=20
 
 # Usage:
-# waitUntil cmd expected_out okMsg failMsg 
+# waitUntil cmd expected_out okMsg failMsg <waitMaxCount>
 function waitUntil() {
   cmd=$1
   expected_out=$2
   okMsg=$3
   failMsg=$4
+  givenMaxWait=$5
+  if [ -z $givenMaxWait  ]; then
+    max_wait=$DEFAULT_MAX_WAIT
+  else
+    max_wait=$givenMaxWait
+  fi
 
-  max_wait=100
   count=0
   echo "wait until $okMsg"
   while [ $count -lt $max_wait ]; do
     if [ "$($cmd)" = "$expected_out" ]; then
       echo $okMsg
-      return 0;
+      return 0
     fi
     #echo "wait until $okMsg"
     ((count=count+1))
-    sleep 5 
+    sleep 3 
   done
   echo "Error: $failMsg"
   return 1
@@ -69,3 +74,14 @@ function waitUntilHttpsReady() {
 function checkHttpsCmd() {
   curl -k -s -o /dev/null -w "%{http_code}"  -H "host: $1" $2
 }
+
+function test() {
+  expected_out=0
+  okMsg="namespace $1 is termiated"
+  failMsg="fail to termiate namespace $1"
+
+  waitUntil "checkNSTermCmd $1" "$expected_out" "$okMsg" "$failMsg"  1
+  waitUntil "checkNSTermCmd $1" "$expected_out" "$okMsg" "$failMsg" 2
+  waitUntil "checkNSTermCmd $1" "$expected_out" "$okMsg" "$failMsg" 
+}
+
