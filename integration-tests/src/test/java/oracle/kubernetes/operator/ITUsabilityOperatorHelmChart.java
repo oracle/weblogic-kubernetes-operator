@@ -553,14 +553,6 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
-  private void upgradeOperator(Operator operator, String upgradeSet) throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    operator.callHelmUpgrade(upgradeSet);
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
   /**
    * Helm installs the operator with default target domains namespaces
    *
@@ -593,7 +585,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
    * Create operator and verify its deployed successfully. Create domain1 and verify domain is
    * started. Call helm upgrade to add domainnew to manage, verify both domains are managed by
    * operator Call helm upgrade to remove first domain from operator target domains, verify it can't
-   * not be managed by operator anymore Delete operator and make sure domainnew is still functional
+   * not be managed by operator anymore
    *
    * @throws Exception
    */
@@ -650,14 +642,10 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
           .contains("Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number))
         throw new RuntimeException(
             "FAILURE: Exception does not report the expected error message " + ex.getMessage());
-      logger.info("Deleting operator to check that domain functionality is not effected");
-      operator.destroy();
-      operator = null;
-      Thread.sleep(20 * 1000);
-      domainnew.testWlsLivenessProbe();
-      testCompletedSuccessfully = true;
+
+        testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) domain.destroy();
+      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) cleanupDomainResources(domain.getDomainUid());
       if (domainnew != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
         domainnew.destroy();
 
@@ -669,4 +657,50 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
 
     logger.info("SUCCESS - " + testMethodName);
   }
+    /**
+     * Create operator and verify its deployed successfully. Create domain1 and verify domain is
+     * started.  Delete operator and make sure domain1 is still functional
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDeleteOperatorButNotDomain() throws Exception {
+        Assume.assumeFalse(QUICKTEST);
+        String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+        logTestBegin(testMethodName);
+
+        logger.info("Creating Operator & waiting for the script to complete execution");
+        // create operator
+
+        Operator operator = null;
+        Domain domain = null;
+        boolean testCompletedSuccessfully = false;
+        try{
+            Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
+            operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
+            operator.callHelmInstall();
+            domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
+            domain.verifyDomainCreated();
+            testAdminT3Channel(domain);
+            TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+            logger.info("verify that domain is managed by operator");
+            operator.verifyDomainExists(domain.getDomainUid());
+            logger.info("Deleting operator to check that domain functionality is not effected");
+            operator.destroy();
+            operator = null;
+            Thread.sleep(20 * 1000);
+            domain.testWlsLivenessProbe();
+            testCompletedSuccessfully = true;
+            } finally {
+                if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
+                    cleanupDomainResources(domain.getDomainUid());
+
+                if (operator != null) {
+                    operator.destroy();
+                }
+                number++;
+            }
+
+            logger.info("SUCCESS - " + testMethodName);
+    }
 }
