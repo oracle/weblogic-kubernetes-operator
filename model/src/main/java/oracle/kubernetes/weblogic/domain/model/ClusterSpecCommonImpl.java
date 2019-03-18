@@ -44,4 +44,9 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   public List<V1Container> getInitContainers() {
     return cluster.getInitContainers();
   }
+
+  @Override
+  public List<V1Container> getContainers() {
+    return cluster.getContainers();
+  }
 }

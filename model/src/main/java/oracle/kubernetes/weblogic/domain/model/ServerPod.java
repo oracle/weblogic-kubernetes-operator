@@ -100,6 +100,14 @@ class ServerPod extends KubernetesResource {
   private List<V1Container> initContainers = new ArrayList<>();
 
   /**
+   * The additional containers.
+   *
+   * @since 2.1
+   */
+  @Description("Additional containers to be included in the server pod.")
+  private List<V1Container> containers = new ArrayList<>();
+
+  /**
    * SecurityContext holds security configuration that will be applied to a container. Some fields
    * are present in both SecurityContext and PodSecurityContext. When both are set, the values in
    * SecurityContext take precedence
@@ -161,7 +169,10 @@ class ServerPod extends KubernetesResource {
       addIfMissing(var);
     }
     for (V1Container c : serverPod1.getInitContainers()) {
-      addIfMissing(c);
+      addInitContainerIfMissing(c);
+    }
+    for (V1Container c : serverPod1.getContainers()) {
+      addContainerIfMissing(c);
     }
     fillInFrom((KubernetesResource) serverPod1);
     serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
@@ -267,9 +278,15 @@ class ServerPod extends KubernetesResource {
     }
   }
 
-  private void addIfMissing(V1Container c) {
-    if (!hasContainerName(c.getName())) {
+  private void addInitContainerIfMissing(V1Container c) {
+    if (!hasInitContainerName(c.getName())) {
       addInitContainer(c);
+    }
+  }
+
+  private void addContainerIfMissing(V1Container c) {
+    if (!hasContainerName(c.getName())) {
+      addContainer(c);
     }
   }
 
@@ -318,8 +335,17 @@ class ServerPod extends KubernetesResource {
     return false;
   }
 
-  private boolean hasContainerName(String name) {
+  private boolean hasInitContainerName(String name) {
     for (V1Container c : initContainers) {
+      if (c.getName().equals(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean hasContainerName(String name) {
+    for (V1Container c : containers) {
       if (c.getName().equals(name)) {
         return true;
       }
@@ -382,6 +408,18 @@ class ServerPod extends KubernetesResource {
     initContainers.add(initContainer);
   }
 
+  List<V1Container> getContainers() {
+    return containers;
+  }
+
+  void setContainers(List<V1Container> containers) {
+    this.containers = containers;
+  }
+
+  void addContainer(V1Container container) {
+    containers.add(container);
+  }
+
   V1SecurityContext getContainerSecurityContext() {
     return containerSecurityContext;
   }
@@ -429,6 +467,7 @@ class ServerPod extends KubernetesResource {
         .append("podSecurityContext", podSecurityContext)
         .append("containerSecurityContext", containerSecurityContext)
         .append("initContainers", initContainers)
+        .append("containers", containers)
         .toString();
   }
 
@@ -462,6 +501,7 @@ class ServerPod extends KubernetesResource {
         .append(podSecurityContext, that.podSecurityContext)
         .append(containerSecurityContext, that.containerSecurityContext)
         .append(initContainers, that.initContainers)
+        .append(containers, that.containers)
         .isEquals();
   }
 
@@ -479,6 +519,7 @@ class ServerPod extends KubernetesResource {
         .append(podSecurityContext)
         .append(containerSecurityContext)
         .append(initContainers)
+        .append(containers)
         .toHashCode();
   }
 
