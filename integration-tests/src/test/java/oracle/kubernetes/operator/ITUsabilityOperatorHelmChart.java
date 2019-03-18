@@ -602,37 +602,26 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     Domain domain = null;
     Domain domainnew = null;
     boolean testCompletedSuccessfully = false;
-    logger.info("kubectl create namespace test" + (number + 1));
-    ExecCommand.exec("kubectl create namespace test" + (number + 1));
-    logger.info("create domain with UID : test" + number);
-    domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
-    domain.verifyDomainCreated();
-    testAdminT3Channel(domain);
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-    logger.info("verify that domain is managed by operator");
-    operator.verifyDomainExists(domain.getDomainUid());
-    logger.info("update operator with new target domain");
-    operator.callHelmUpgrade("domainNamespaces={test" + number + ",test" + (number + 1) + "}");
-
-    ArrayList<String> targetDomainsNS =
-        (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
-    targetDomainsNS.add("test" + (number + 1));
-    operatorMap.replace("domainNamespaces", targetDomainsNS);
-    domainnew = TestUtils.createDomain(TestUtils.createDomainMap(number + 1));
-    domainnew.verifyDomainCreated();
-    testAdminT3Channel(domainnew);
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-    logger.info("verify that new domain is managed by operator after upgrade");
-    operator.verifyDomainExists(domainnew.getDomainUid());
-    logger.info("verify that old domain is managed by operator after upgrade");
-    operator.verifyDomainExists(domain.getDomainUid());
-    logger.info("Upgrade to remove first domain");
-    operator.callHelmUpgrade("domainNamespaces={test" + (number + 1) + "}");
-    targetDomainsNS = (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
-    targetDomainsNS.remove("test" + (number));
-    operatorMap.replace("domainNamespaces", targetDomainsNS);
-    Thread.sleep(30 * 1000);
     try {
+      logger.info("kubectl create namespace test" + (number + 1));
+      ExecCommand.exec("kubectl create namespace test" + (number + 1));
+      domain = createVerifyDomain(number, operator);
+      logger.info("update operator with new target domain");
+      operator.callHelmUpgrade("domainNamespaces={test" + number + ",test" + (number + 1) + "}");
+
+      ArrayList<String> targetDomainsNS =
+          (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
+      targetDomainsNS.add("test" + (number + 1));
+      operatorMap.replace("domainNamespaces", targetDomainsNS);
+      domainnew = createVerifyDomain(number + 1, operator);
+      logger.info("verify that old domain is managed by operator after upgrade");
+      operator.verifyDomainExists(domain.getDomainUid());
+      logger.info("Upgrade to remove first domain");
+      operator.callHelmUpgrade("domainNamespaces={test" + (number + 1) + "}");
+      targetDomainsNS = (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
+      targetDomainsNS.remove("test" + (number));
+      operatorMap.replace("domainNamespaces", targetDomainsNS);
+      Thread.sleep(30 * 1000);
       logger.info("verify that old domain is not managed by operator");
       operator.verifyDomainExists(domain.getDomainUid());
       throw new RuntimeException(
@@ -646,7 +635,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
-        cleanupDomainResources(domain.getDomainUid());
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
       if (domainnew != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
         domainnew.destroy();
 
@@ -680,12 +669,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
       operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
       operator.callHelmInstall();
-      domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
-      domain.verifyDomainCreated();
-      testAdminT3Channel(domain);
-      TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-      logger.info("verify that domain is managed by operator");
-      operator.verifyDomainExists(domain.getDomainUid());
+      domain = createVerifyDomain(number, operator);
       logger.info("Deleting operator to check that domain functionality is not effected");
       operator.destroy();
       operator = null;
@@ -694,7 +678,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
-        cleanupDomainResources(domain.getDomainUid());
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
 
       if (operator != null) {
         operator.destroy();
@@ -703,5 +687,16 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     }
 
     logger.info("SUCCESS - " + testMethodName);
+  }
+
+  private Domain createVerifyDomain(int number, Operator operator) throws Exception {
+    logger.info("create domain with UID : test" + number);
+    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
+    domain.verifyDomainCreated();
+    testAdminT3Channel(domain);
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    logger.info("verify that domain is managed by operator");
+    operator.verifyDomainExists(domain.getDomainUid());
+    return domain;
   }
 }
