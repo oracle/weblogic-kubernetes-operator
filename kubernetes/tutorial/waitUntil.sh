@@ -12,11 +12,10 @@ function waitUntil() {
   expected_out=$2
   okMsg=$3
   failMsg=$4
-  givenMaxWait=$5
-  if [ -z $givenMaxWait  ]; then
-    max_wait=$DEFAULT_MAX_WAIT
+  if [ $# = 5 ]; then
+    max_wait=$5
   else
-    max_wait=$givenMaxWait
+    max_wait=$DEFAULT_MAX_WAIT
   fi
 
   count=0
