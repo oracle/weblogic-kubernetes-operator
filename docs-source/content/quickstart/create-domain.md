@@ -18,7 +18,7 @@ weight: 6
     `sample-domain1-weblogic-credentials`.
 
 1.	Create a new image with a domain home by running the [`create-domain`](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script.
-Follow the directions in the [README](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file,
+Follow the directions in the [sample]({{< relref "/samples/simple/domains/domain-home-in-image/_index.md" >}}),
 including:
 
     * Copying the sample `kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
@@ -131,4 +131,10 @@ Depending on where your Kubernetes cluster is running, you may need to open fire
 {{% /notice %}}
 
 
-1.	To access the WLS Administration Console, edit the `my-inputs.yaml` file (assuming that you named your copy `my-inputs.yaml`) to set `exposedAdminNodePort: true`. Open a browser to `http://your.server.com:30701`. As in the previous step, substitute the Node IP address of the worker node for `your.server.com`.
+1.	To access the WLS Administration Console:
+
+    a. Edit the `my-inputs.yaml` file (assuming that you named your copy `my-inputs.yaml`) to set `exposedAdminNodePort: true`.
+
+    b. Open a browser to `http://your.server.com:30701`.
+
+    c. As in step 5, substitute the Node IP address of the worker node for `your.server.com`.
