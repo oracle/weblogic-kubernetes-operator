@@ -21,12 +21,6 @@ The [current release of the operator](https://github.com/oracle/weblogic-kuberne
 This release was published on March 4, 2019.
 ***
 
-#### Known issues
-
-| Issue | Description |
-| --- | --- |
-| None currently |  |
-
 #### Operator earlier versions
 
 Documentation for prior releases of the operator is available [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/site/README.md).
@@ -79,9 +73,9 @@ or suggestions about what features and improvements you would like to see.  We w
 please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include
 details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!"
 
-### Recent changes
+### Recent changes and known issues
 
-See [Recent changes]({{< relref "release-notes.md" >}})  for changes to the operator, including any backward incompatible changes.
+See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes to the operator and known issues.
 
 ### Developer guide
 
@@ -136,31 +130,3 @@ Only pull requests from committers that can be verified as having signed the OCA
 #### Introducing a new dependency
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.
-
-### Use Helm chart from GitHub chart repository
-
-Add this repository to the Helm installation:
-
-```
-$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
-```
-
-Verify that the repository was added correctly:
-
-```
-$ helm repo list
-NAME           URL
-weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
-```
-
-Update with the latest information about charts from the chart repositories:
-
-```
-$ helm repo update
-```
-
-Install the operator from the repository:
-
-```
-$ helm install weblogic-operator/weblogic-operator --name weblogic-operator
-```
