@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import javax.json.JsonPatchBuilder;
 import org.apache.commons.collections.MapUtils;
+import org.joda.time.DateTime;
 
 public class KubernetesUtils {
 
@@ -140,5 +141,27 @@ public class KubernetesUtils {
         | IllegalAccessException e) {
       return new V1ObjectMeta();
     }
+  }
+
+  /**
+   * Returns true if the first metadata indicates a newer resource than does the second.
+   *
+   * @param first the first item to compare
+   * @param second the second item to compare
+   * @return true if the first object is newer than the second object
+   */
+  public static boolean isFirstNewer(V1ObjectMeta first, V1ObjectMeta second) {
+    if (second == null) return true;
+    if (first == null) return false;
+
+    DateTime time1 = first.getCreationTimestamp();
+    DateTime time2 = second.getCreationTimestamp();
+
+    if (time2.isAfter(time1)) {
+      return false;
+    }
+    return Integer.parseInt(second.getResourceVersion())
+            < Integer.parseInt(first.getResourceVersion())
+        || time2.isBefore(time1);
   }
 }
