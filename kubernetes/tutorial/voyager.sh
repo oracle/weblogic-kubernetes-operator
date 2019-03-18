@@ -36,6 +36,9 @@ function checkHAProxyReadyCmd() {
 function delIng() {
   echo "delete Ingress"
   kubectl delete -f ings/voyager-ings.yaml
+
+  #TODO:  workaround the issue HAProxy pod fail to be deleted
+  kubectl delete deployment.apps/voyager-ings  
 }
 
 function usage() {
