@@ -75,7 +75,7 @@ details of how to access our Slack workspace.  After you are logged in, please c
 
 ### Recent changes and known issues
 
-See the [Recent Notes]({{< relref "release-notes.md" >}})  for recent changes to the operator and known issues.
+See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes to the operator and known issues.
 
 ### Developer guide
 
