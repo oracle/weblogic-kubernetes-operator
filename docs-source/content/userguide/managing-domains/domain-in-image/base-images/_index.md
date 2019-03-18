@@ -1,9 +1,9 @@
-+++
-title = "Base images"
-date = 2019-02-23T16:45:55-05:00
-weight = 1
-pre = "<b> </b>"
-+++
+---
+title: "Base images"
+date: 2019-02-23T16:45:55-05:00
+weight: 1
+description: "Creating or obtaining WebLogic Docker images."
+---
 
 #### Contents
 

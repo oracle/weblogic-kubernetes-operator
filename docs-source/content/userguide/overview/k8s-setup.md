@@ -35,7 +35,7 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
      oci = "<path_to_provider_binary>/terraform-provider-oci"
    }
    ```
-4.  Ensure that you have [kubectl][Kubectl] installed if you plan to interact with the cluster locally.
+4.  Ensure that you have [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed if you plan to interact with the cluster locally.
 
 #### Quick Start
 
@@ -438,6 +438,6 @@ Docker for Mac 18+ provides an [embedded Kubernetes environment](https://docs.do
     To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
     ```
 
-#### Important note about persistent volumes
-
-Docker for Mac has some restrictions on where you can place a directory that can be used as a `HostPath` for a persistent volume.  To keep it simple, place your directory somewhere under `/Users`.
+    #### Important note about persistent volumes
+  {{% notice warning %}} Docker for Mac has some restrictions on where you can place a directory that can be used as a `HostPath` for a persistent volume.  To keep it simple, place your directory somewhere under `/Users`.
+  {{% /notice %}}
