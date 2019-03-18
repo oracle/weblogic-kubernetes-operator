@@ -4,7 +4,7 @@ date: 2019-03-15T11:25:28-04:00
 draft: false
 ---
 
-#### Recent changes
+### Recent changes
 
 | Date | Version | Introduces backward incompatibilities | Change |
 | --- | --- | --- | --- |
@@ -16,7 +16,7 @@ draft: false
 | April 4, 2018 | v1.0 | yes | Many Kubernetes artifact names and labels have changed. Also, the names of generated YAML files for creating a domain's PV and PVC have changed.  Because of these changes, customers must recreate their operators and domains.
 | May 7, 2018 |   | no | Added support for dynamic clusters, the Apache HTTP Server, the Voyager Ingress Controller, and for PV in NFS storage for multi-node environments.
 
-#### Known issues
+### Known issues
 
 | Issue | Description |
 | --- | --- |

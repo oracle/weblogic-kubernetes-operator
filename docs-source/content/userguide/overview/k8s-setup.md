@@ -438,8 +438,6 @@ Docker for Mac 18+ provides an [embedded Kubernetes environment](https://docs.do
     To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
     ```
 
-    {{% notice warning %}}
     #### Important note about persistent volumes
-
-    Docker for Mac has some restrictions on where you can place a directory that can be used as a `HostPath` for a persistent volume.  To keep it simple, place your directory somewhere under `/Users`.
-    {{% /notice %}}
+  {{% notice warning %}} Docker for Mac has some restrictions on where you can place a directory that can be used as a `HostPath` for a persistent volume.  To keep it simple, place your directory somewhere under `/Users`.
+  {{% /notice %}}
