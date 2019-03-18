@@ -130,31 +130,31 @@ public class ServicePresenceTest {
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), sameInstance(newService));
+    assertThat(info.getClusterService(CLUSTER), sameInstance(newService));
   }
 
   @Test
   public void onAddEventWithNewerClusterService_replaceCurrentValue() {
     V1Service currentService = createClusterService();
     V1Service newerService = createClusterService();
-    info.getClusters().put(CLUSTER, currentService);
+    info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(newerService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), sameInstance(newerService));
+    assertThat(info.getClusterService(CLUSTER), sameInstance(newerService));
   }
 
   @Test
   public void onAddEventWithOlderClusterService_keepCurrentValue() {
     V1Service olderService = createClusterService();
     V1Service currentService = createClusterService();
-    info.getClusters().put(CLUSTER, currentService);
+    info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(olderService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), sameInstance(currentService));
+    assertThat(info.getClusterService(CLUSTER), sameInstance(currentService));
   }
 
   @Test
@@ -164,31 +164,31 @@ public class ServicePresenceTest {
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), sameInstance(service1));
+    assertThat(info.getClusterService(CLUSTER), sameInstance(service1));
   }
 
   @Test
   public void onModifyEventWithNewerClusterService_replaceCurrentValue() {
     V1Service currentService = createClusterService();
     V1Service newService = createClusterService();
-    info.getClusters().put(CLUSTER, currentService);
+    info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event = WatchEvent.createModifiedEvent(newService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), sameInstance(newService));
+    assertThat(info.getClusterService(CLUSTER), sameInstance(newService));
   }
 
   @Test
   public void onModifyEventWithOlderClusterService_keepCurrentValue() {
     V1Service oldService = createClusterService();
     V1Service currentService = createClusterService();
-    info.getClusters().put(CLUSTER, currentService);
+    info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event = WatchEvent.createModifiedEvent(oldService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), sameInstance(currentService));
+    assertThat(info.getClusterService(CLUSTER), sameInstance(currentService));
   }
 
   @Test
@@ -198,43 +198,43 @@ public class ServicePresenceTest {
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), nullValue());
+    assertThat(info.getClusterService(CLUSTER), nullValue());
   }
 
   @Test
   public void onDeleteEventWithOlderClusterService_keepCurrentValue() {
     V1Service oldService = createClusterService();
     V1Service currentService = createClusterService();
-    info.getClusters().put(CLUSTER, currentService);
+    info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(oldService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), sameInstance(currentService));
+    assertThat(info.getClusterService(CLUSTER), sameInstance(currentService));
   }
 
   @Test
   public void onDeleteEventWithSameClusterService_removeIt() {
     V1Service currentService = createClusterService();
-    info.getClusters().put(CLUSTER, currentService);
+    info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event =
         WatchEvent.createDeleteEvent(currentService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), nullValue());
+    assertThat(info.getClusterService(CLUSTER), nullValue());
   }
 
   @Test
   public void onDeleteEventWithNewerClusterService_removeIt() {
     V1Service currentService = createClusterService();
     V1Service newerService = createClusterService();
-    info.getClusters().put(CLUSTER, currentService);
+    info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(newerService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
-    assertThat(info.getClusters().get(CLUSTER), nullValue());
+    assertThat(info.getClusterService(CLUSTER), nullValue());
   }
 
   @Test

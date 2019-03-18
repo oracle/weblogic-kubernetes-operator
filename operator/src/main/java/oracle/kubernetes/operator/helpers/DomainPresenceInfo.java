@@ -21,7 +21,6 @@ import java.util.function.Predicate;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
-import org.joda.time.DateTime;
 
 /**
  * Operator's mapping between custom resource Domain and runtime details about that domain,
@@ -38,8 +37,6 @@ public class DomainPresenceInfo {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
-
-  private DateTime lastCompletionTime;
 
   /**
    * Create presence for a domain.
@@ -102,26 +99,26 @@ public class DomainPresenceInfo {
   }
 
   void removeClusterService(String clusterName) {
-    getClusters().remove(clusterName);
+    clusters.remove(clusterName);
   }
 
   V1Service getClusterService(String clusterName) {
-    return getClusters().get(clusterName);
+    return clusters.get(clusterName);
   }
 
   void setClusterService(String clusterName, V1Service service) {
-    getClusters().put(clusterName, service);
+    clusters.put(clusterName, service);
   }
 
   void setClusterServiceFromEvent(String clusterName, V1Service event) {
     if (clusterName == null) return;
 
-    getClusters().compute(clusterName, (k, s) -> getNewerService(s, event));
+    clusters.compute(clusterName, (k, s) -> getNewerService(s, event));
   }
 
   boolean deleteClusterServiceFromEvent(String clusterName, V1Service event) {
     return removeIfPresentAnd(
-        getClusters(),
+        clusters,
         clusterName,
         s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
   }
@@ -181,7 +178,7 @@ public class DomainPresenceInfo {
     isPopulated.set(populated);
   }
 
-  public void resetFailureCount() {
+  private void resetFailureCount() {
     retryCount.set(0);
   }
 
@@ -189,22 +186,12 @@ public class DomainPresenceInfo {
     return retryCount.incrementAndGet();
   }
 
-  public int getRetryCount() {
+  int getRetryCount() {
     return retryCount.get();
-  }
-
-  /**
-   * Last completion time.
-   *
-   * @return Last completion time
-   */
-  public DateTime getLastCompletionTime() {
-    return lastCompletionTime;
   }
 
   /** Sets the last completion time to now. */
   public void complete() {
-    this.lastCompletionTime = new DateTime();
     resetFailureCount();
   }
 
@@ -251,15 +238,6 @@ public class DomainPresenceInfo {
    */
   public ConcurrentMap<String, ServerKubernetesObjects> getServers() {
     return servers;
-  }
-
-  /**
-   * Map from cluster name to Service objects.
-   *
-   * @return Cluster object map
-   */
-  public ConcurrentMap<String, V1Service> getClusters() {
-    return clusters;
   }
 
   /**
