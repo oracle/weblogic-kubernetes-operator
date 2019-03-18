@@ -491,13 +491,14 @@ public class BaseTest {
 
   public static ExecResult cleanupDomainResources(String domainUid) throws Exception {
     String cmd =
-            "export RESULT_ROOT="
-                    + getResultRoot()
-                    + " export PV_ROOT="
-                    + getPvRoot()
-                    + " && "
-                    + getProjectRoot()
-                    + "/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d " + domainUid;
+        "export RESULT_ROOT="
+            + getResultRoot()
+            + " export PV_ROOT="
+            + getPvRoot()
+            + " && "
+            + getProjectRoot()
+            + "/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d "
+            + domainUid;
     logger.info("Command to call cleanup domain resources script " + cmd);
     return ExecCommand.exec(cmd);
   }
