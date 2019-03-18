@@ -10,3 +10,5 @@ pre = "<b>2. </b>"
 # User Guide
 
 The User Guide provides detailed information about all aspects of using the operator.
+
+{{% children style="h4" description="true" %}}

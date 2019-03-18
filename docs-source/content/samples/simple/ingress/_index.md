@@ -2,10 +2,9 @@
 title: "Ingress"
 date: 2019-02-23T17:32:31-05:00
 weight: 5
-description: "Lorem Ipsum."
+description: "Load balancer sample scripts."
 ---
 
-## Load balancer sample scripts
 
 The Oracle WebLogic Server Kubernetes Operator supports three load balancers: Traefik, Voyager, and Apache. We provide samples that demonstrate how to install and configure each one. The samples are located in following folders:
 
@@ -16,4 +15,6 @@ The Oracle WebLogic Server Kubernetes Operator supports three load balancers: Tr
 * [ingress-per-domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/ingress-per-domain/README.md)
 * [apache-webtier](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/apache-webtier/README.md)
 
-**Note**: The apache-webtier script contains a Helm chart that is used in the Apache samples.
+{{% notice note %}}
+The apache-webtier script contains a Helm chart that is used in the Apache samples.
+{{% /notice %}}

@@ -3,6 +3,7 @@ title: "Scaling"
 date: 2019-02-23T17:04:45-05:00
 draft: false
 weight: 3
+description: "The operator provides several ways to initiate scaling of WebLogic clusters."
 ---
 
 WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/middleware/12213/wls/CLUST/dynamic_clusters.htm#CLUST678).

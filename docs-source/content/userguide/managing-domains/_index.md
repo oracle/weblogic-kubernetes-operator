@@ -65,10 +65,10 @@ Please be aware of the following important considerations for WebLogic domains r
 
 * _Security Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the `env` attribute under the `serverPod` configuration.
 
-The following features are not certified or supported in this release:
+The following features are **not** certified or supported in this release:
 
-* Whole Server Migration
-* Consensus Leasing
+* Whole server migration
+* Consensus leasing
 * Node Manager (although it is used internally for the liveness probe and to start WebLogic Server instances)
 * Multicast
 * Multitenancy
