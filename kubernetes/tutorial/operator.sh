@@ -39,7 +39,11 @@ function create() {
     --set image=weblogic-kubernetes-operator:2.0 \
     --set "domainNamespaces={default,test1}" \
     --wait
-  
+ 
+  if [ $? != 0 ]; then
+    echo "fail to install WebLogic operator"
+    return 1 
+  fi
   waitUntilCRDReady 
 }
 

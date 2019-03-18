@@ -210,7 +210,7 @@ function verfiyLBForDomain() {
   checkResult $? verify_$1_Traefik_Https
 
   createVoyager
-  waitUntilHttpReady "domain1 via Voyager" domain1.org $domainUrlVoyager
+  waitUntilHttpReady "domain1 via Voyager" $1.org $domainUrlVoyager
   checkResult $? verify_$1_Voyager_Http
 }
 
