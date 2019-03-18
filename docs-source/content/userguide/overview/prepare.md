@@ -24,4 +24,4 @@ You can choose a load balancer provider for your WebLogic domains running in a K
 #### Configuring Kibana and Elasticsearch
 
 You can send the operator logs to Elasticsearch, to be displayed in Kibana. Use
-this [sample script](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/elasticsearch-and-kibana/README.md) to configure Elasticsearch and Kibana deployments and services.
+this [sample script]({{< relref "/samples/simple/elastic-stack/_index.md" >}}) to configure Elasticsearch and Kibana deployments and services.

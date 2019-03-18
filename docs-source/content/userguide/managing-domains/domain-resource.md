@@ -8,13 +8,14 @@ pre = "<b> </b>"
 
 
 
-Use this document to set up and configure your own [domain resource](/weblogic-kubernetes-operator/domains/Domain.md) which can be used to configure your WLS domain. Then, you can use the domain resource to start the Kubernetes artifacts of the corresponding domain.
+Use this document to set up and configure your own [domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md) which can be used to configure your WLS domain. Then, you can use the domain resource to start the Kubernetes artifacts of the corresponding domain.
 
 Swagger documentation is available [here](/weblogic-kubernetes-operator/swagger/index.html).
 
 #### Prerequisites
 
 The following prerequisites must be fulfilled before proceeding with the creation of the resource.
+
 * Make sure the WebLogic operator is running.
 * Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.
 * Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes namespace as the domain resource.
