@@ -203,6 +203,8 @@ public abstract class DomainConfigurator {
 
   public abstract DomainConfigurator withInitContainer(V1Container initContainer);
 
+  public abstract DomainConfigurator withContainer(V1Container container);
+
   public abstract DomainConfigurator withPodLabel(String name, String value);
 
   public abstract DomainConfigurator withPodAnnotation(String name, String value);
