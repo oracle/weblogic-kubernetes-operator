@@ -218,6 +218,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/reference/domain-resource/</loc>
+    <lastmod>2019-02-22T16:17:07-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/quickstart/get-images/</loc>
     <lastmod>2019-02-22T15:44:42-05:00</lastmod>
   </url>

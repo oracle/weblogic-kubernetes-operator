@@ -29,5 +29,14 @@
       <description>You can view the Swagger REST API documentation here.</description>
     </item>
     
+    <item>
+      <title>Domain resource</title>
+      <link>/weblogic-kubernetes-operator/reference/domain-resource/</link>
+      <pubDate>Fri, 22 Feb 2019 16:17:07 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/reference/domain-resource/</guid>
+      <description>View a domain resource reference document here.</description>
+    </item>
+    
   </channel>
 </rss>

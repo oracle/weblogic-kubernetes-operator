@@ -37,7 +37,7 @@ The operator requires a re-start in order to begin using the new or udpated exte
       <pubDate>Sat, 23 Feb 2019 17:19:19 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/developerguide/requirements/</guid>
-      <description>In addition to the requirements listed in the User Guide, the following software is also required to obtain and build the operator:
+      <description>In addition to the requirements listed in the User guide, the following software is also required to obtain and build the operator:
  Git (1.8 or later recommended) Java Developer Kit (1.8u131 or later recommended; please use 1.8, tests will not work on 1.9 or later versions) Apache Maven (3.3 or later recommended)  The operator is written primarily in Java, BASH shell scripts, and WLST scripts. The Java code uses features introduced in Java 1.</description>
     </item>
     
@@ -110,7 +110,7 @@ You can have one or more operators in your Kubernetes cluster that manage one or
       
       <guid>/weblogic-kubernetes-operator/quickstart/introduction/</guid>
       <description>Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
-Important note for users of operator releases before 2.0   Click here to expand   If you have an older version of the operator installed on your cluster, i.</description>
+Important note for users of operator releases before 2.0   Click here to expand   If you have an older version of the operator installed on your cluster, for example, a 1.</description>
     </item>
     
     <item>
@@ -162,7 +162,8 @@ One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogi
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</guid>
       <description>Use this document to set up and configure your own domain resource which can be used to configure your WLS domain. Then, you can use the domain resource to start the Kubernetes artifacts of the corresponding domain.
 Swagger documentation is available here.
-Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the resource. * Make sure the WebLogic operator is running. * Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.</description>
+Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the resource.
+ Make sure the WebLogic operator is running. Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.</description>
     </item>
     
     <item>
@@ -264,6 +265,15 @@ You can access most of the REST services using GET, for example:
       <guid>/weblogic-kubernetes-operator/userguide/overview/database/</guid>
       <description>Run the Oracle database in Kubernetes If you wish to run the Oracle database inside your Kubernetes cluster, in order to place your state store, leasing tables, and such, in that database, then you can use this sample to install the database.
 You must configure your database to store its DB files on persistent storage. Refer to your cloud vendor&amp;rsquo;s documentation for details of available storage providers and how to create a persistent volume and attach it to a pod.</description>
+    </item>
+    
+    <item>
+      <title>Domain resource</title>
+      <link>/weblogic-kubernetes-operator/reference/domain-resource/</link>
+      <pubDate>Fri, 22 Feb 2019 16:17:07 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/reference/domain-resource/</guid>
+      <description>View a domain resource reference document here.</description>
     </item>
     
     <item>
@@ -436,8 +446,7 @@ After this, the operator starts watches for changes to Domain resources and any 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>This document tracks recent changes to the operator, especially ones that introduce backward incompatibilities.
-   Date Version Introduces backward incompatibilities Change     March 4, 2019 v2.0.1 no OpenShift support is now certified. Many bug fixes, including fixes for configuration overrides, cluster services, and domain status processing.   January 24, 2019 v2.0 yes; not compatible with 1.x releases, but is compatible with 2.0-rc2. Final version numbers and documentation updates.</description>
+      <description>Recent changes    Date Version Introduces backward incompatibilities Change     March 4, 2019 v2.0.1 no OpenShift support is now certified. Many bug fixes, including fixes for configuration overrides, cluster services, and domain status processing.   January 24, 2019 v2.0 yes; not compatible with 1.x releases, but is compatible with 2.0-rc2. Final version numbers and documentation updates.   January 16, 2019 v2.0-rc2 yes Schema updates are completed, and various bugs fixed.</description>
     </item>
     
   </channel>
