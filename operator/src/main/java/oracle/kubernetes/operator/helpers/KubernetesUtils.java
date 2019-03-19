@@ -119,12 +119,10 @@ public class KubernetesUtils {
     DateTime time1 = first.getCreationTimestamp();
     DateTime time2 = second.getCreationTimestamp();
 
-    if (time1.isAfter(time2)) {
-      return true;
-    } else if (time2.isAfter(time1)) {
-      return false;
-    } else {
+    if (time1.equals(time2)) {
       return getResourceVersion(first) > getResourceVersion(second);
+    } else {
+      return time1.isAfter(time2);
     }
   }
 
