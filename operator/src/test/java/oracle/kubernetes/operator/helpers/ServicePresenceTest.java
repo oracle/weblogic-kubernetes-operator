@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
@@ -238,6 +239,17 @@ public class ServicePresenceTest {
   }
 
   @Test
+  public void whenEventContainsServiceWithClusterNameAndNoTypeLabel_addAsClusterService() {
+    V1Service service =
+        new V1Service().metadata(createMetadata().putLabelsItem(CLUSTERNAME_LABEL, CLUSTER));
+    Watch.Response<V1Service> event = WatchEvent.createAddedEvent(service).toWatchResponse();
+
+    processor.dispatchServiceWatch(event);
+
+    assertThat(info.getClusterService(CLUSTER), sameInstance(service));
+  }
+
+  @Test
   public void onAddEventWithNoRecordedServerService_addIt() {
     V1Service newService = createServerService();
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(newService).toWatchResponse();
@@ -349,6 +361,21 @@ public class ServicePresenceTest {
     processor.dispatchServiceWatch(event);
 
     assertThat(info.getServerService(SERVER), nullValue());
+  }
+
+  @Test
+  public void whenEventContainsServiceWithServerNameAndNoTypeLabel_addAsServerService() {
+    V1Service service =
+        new V1Service()
+            .metadata(
+                createMetadata()
+                    .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER)
+                    .putLabelsItem(SERVERNAME_LABEL, SERVER));
+    Watch.Response<V1Service> event = WatchEvent.createAddedEvent(service).toWatchResponse();
+
+    processor.dispatchServiceWatch(event);
+
+    assertThat(info.getServerService(SERVER), sameInstance(service));
   }
 
   @Test
@@ -482,6 +509,10 @@ public class ServicePresenceTest {
     return service;
   }
 
+  private DateTime getDateTime() {
+    return new DateTime(++clock);
+  }
+
   private V1ObjectMeta createMetadata() {
     return new V1ObjectMeta()
         .namespace(NS)
@@ -490,7 +521,30 @@ public class ServicePresenceTest {
         .resourceVersion(RESOURCE_VERSION);
   }
 
-  private DateTime getDateTime() {
-    return new DateTime(++clock);
+  @Test
+  public void whenClusterServiceAdded_recordforCluster() {
+    V1Service clusterService = createClusterService();
+
+    ServiceHelper.addToPresence(info, clusterService);
+
+    assertThat(info.getClusterService(CLUSTER), sameInstance(clusterService));
+  }
+
+  @Test
+  public void whenServerServiceAdded_recordforServer() {
+    V1Service serverService = createServerService();
+
+    ServiceHelper.addToPresence(info, serverService);
+
+    assertThat(info.getServerService(SERVER), sameInstance(serverService));
+  }
+
+  @Test
+  public void whenExternalServiceAdded_recordforServer() {
+    V1Service externalService = createExternalService();
+
+    ServiceHelper.addToPresence(info, externalService);
+
+    assertThat(info.getExternalService(SERVER), sameInstance(externalService));
   }
 }
