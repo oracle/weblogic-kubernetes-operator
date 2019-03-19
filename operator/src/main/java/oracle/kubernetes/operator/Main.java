@@ -44,6 +44,7 @@ import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -630,24 +631,11 @@ public class Main {
 
       if (result != null) {
         for (V1Service service : result.getItems()) {
-          String domainUID = ServiceWatcher.getServiceDomainUID(service);
-          String serverName = ServiceWatcher.getServiceServerName(service);
-          String channelName = ServiceWatcher.getServiceChannelName(service);
-          String clusterName = ServiceWatcher.getServiceClusterName(service);
+          String domainUID = ServiceHelper.getServiceDomainUID(service);
           if (domainUID != null) {
             DomainPresenceInfo info =
                 dpis.computeIfAbsent(domainUID, k -> new DomainPresenceInfo(ns, domainUID));
-            if (clusterName != null) {
-              info.setClusterService(clusterName, service);
-            } else if (serverName != null) {
-              ServerKubernetesObjects sko =
-                  info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-              if (channelName != null) {
-                sko.getChannels().put(channelName, service);
-              } else {
-                sko.getService().set(service);
-              }
-            }
+            ServiceHelper.addToPresence(info, service);
           }
         }
       }
