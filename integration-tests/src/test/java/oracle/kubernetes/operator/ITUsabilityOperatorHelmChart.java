@@ -599,29 +599,23 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
     Operator operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
     operator.callHelmInstall();
-    Domain domain = null;
-    Domain domainnew = null;
+    Domain domain, domainnew = null;
     boolean testCompletedSuccessfully = false;
     try {
       logger.info("kubectl create namespace test" + (number + 1));
       ExecCommand.exec("kubectl create namespace test" + (number + 1));
       domain = createVerifyDomain(number, operator);
-      logger.info("update operator with new target domain");
-      operator.callHelmUpgrade("domainNamespaces={test" + number + ",test" + (number + 1) + "}");
-
       ArrayList<String> targetDomainsNS =
           (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
       targetDomainsNS.add("test" + (number + 1));
-      operatorMap.replace("domainNamespaces", targetDomainsNS);
+      upgradeVerifyOperatorDomainNamespaces(operator, targetDomainsNS);
       domainnew = createVerifyDomain(number + 1, operator);
       logger.info("verify that old domain is managed by operator after upgrade");
       operator.verifyDomainExists(domain.getDomainUid());
       logger.info("Upgrade to remove first domain");
-      operator.callHelmUpgrade("domainNamespaces={test" + (number + 1) + "}");
-      targetDomainsNS = (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
       targetDomainsNS.remove("test" + (number));
-      operatorMap.replace("domainNamespaces", targetDomainsNS);
-      Thread.sleep(30 * 1000);
+      upgradeVerifyOperatorDomainNamespaces(operator, targetDomainsNS);
+      Thread.sleep(60 * 1000);
       logger.info("verify that old domain is not managed by operator");
       operator.verifyDomainExists(domain.getDomainUid());
       throw new RuntimeException(
@@ -658,10 +652,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator
-
     Operator operator = null;
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
@@ -673,7 +665,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       logger.info("Deleting operator to check that domain functionality is not effected");
       operator.destroy();
       operator = null;
-      Thread.sleep(20 * 1000);
+      Thread.sleep(60 * 1000);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
@@ -698,5 +690,20 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     logger.info("verify that domain is managed by operator");
     operator.verifyDomainExists(domain.getDomainUid());
     return domain;
+  }
+
+  private void upgradeVerifyOperatorDomainNamespaces(
+      Operator operator, ArrayList<String> targetNamespaces) throws Exception {
+    logger.info("update operator with new target domain");
+    String upgradeSet =
+        "domainNamespaces="
+            + targetNamespaces
+                .toString()
+                .replaceAll("\\[", "{")
+                .replaceAll("\\]", "}")
+                .replaceAll(" ", "");
+    logger.info("update operator with new target domain " + upgradeSet);
+    operator.callHelmUpgrade(upgradeSet);
+    operator.getOperatorMap().replace("domainNamespaces", targetNamespaces);
   }
 }
