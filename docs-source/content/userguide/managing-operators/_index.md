@@ -2,7 +2,7 @@
 title: "Manage operators"
 date: 2019-02-23T16:43:38-05:00
 weight: 3
-description: "Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster."
+description: "Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster. Use the operator's Helm chart to install and manage the operator"
 ---
 
 
