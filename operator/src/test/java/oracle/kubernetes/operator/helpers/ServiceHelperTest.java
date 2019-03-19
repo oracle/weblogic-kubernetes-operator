@@ -203,6 +203,13 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
+  public void whenCreated_modelKubernetesTypeIsCorrect() {
+    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+
+    assertThat(KubernetesServiceType.getType(model), equalTo(testFacade.getType()));
+  }
+
+  @Test
   public void whenCreated_modelHasExpectedSelectors() {
     V1Service model = testFacade.createServiceModel(testSupport.getPacket());
 
@@ -451,6 +458,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     private Map<String, Integer> expectedNapPorts = new HashMap<>();
     private Map<String, Integer> expectedNodePorts = new HashMap<>();
 
+    abstract KubernetesServiceType getType();
+
     abstract String getServiceCreateLogMessage();
 
     abstract String getServiceExistsLogMessage();
@@ -503,6 +512,11 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   static class ClusterServiceTestFacade extends TestFacade {
     ClusterServiceTestFacade() {
       getExpectedNapPorts().put(LegalNames.toDNS1123LegalName(NAP_3), NAP_PORT_3);
+    }
+
+    @Override
+    KubernetesServiceType getType() {
+      return KubernetesServiceType.CLUSTER;
     }
 
     @Override
@@ -577,6 +591,11 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   abstract static class ServerTestFacade extends TestFacade {
+
+    @Override
+    KubernetesServiceType getType() {
+      return KubernetesServiceType.SERVER;
+    }
 
     @Override
     public String getServiceName() {
@@ -678,6 +697,11 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
       getExpectedNodePorts().put("default", TEST_NODE_PORT);
       getExpectedNodePorts().put(LegalNames.toDNS1123LegalName(NAP_1), NAP1_NODE_PORT);
       getExpectedNodePorts().put(LegalNames.toDNS1123LegalName(NAP_2), NAP_PORT_2);
+    }
+
+    @Override
+    KubernetesServiceType getType() {
+      return KubernetesServiceType.EXTERNAL;
     }
 
     @Override
