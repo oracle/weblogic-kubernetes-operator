@@ -599,7 +599,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
     Operator operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
     operator.callHelmInstall();
-    Domain domain, domainnew = null;
+    Domain domain = null;
+    Domain domainnew = null;
     boolean testCompletedSuccessfully = false;
     try {
       logger.info("kubectl create namespace test" + (number + 1));
