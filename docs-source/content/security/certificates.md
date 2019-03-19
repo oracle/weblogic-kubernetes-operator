@@ -2,7 +2,7 @@
 title: "Certificates"
 date: 2019-03-06T21:14:18-05:00
 weight: 1
-description: "WebLogic operator SSL/TLS certificate handling"
+description: "SSL/TLS certificate handling for the WebLogic operator."
 ---
 
 #### Updating operator external certificate
