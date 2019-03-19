@@ -84,10 +84,10 @@ public class ITPodsRestart extends BaseTest {
 
     boolean testCompletedSuccessfully = false;
     logger.info(
-        "About to testDomainServerRestart for Domain: "
+        "About to testDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  env property: StdoutDebugEnabled=false to StdoutDebugEnabled=true");
-    domain.testDomainServerRestart(
+    domain.testDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
 
     logger.info("SUCCESS - " + testMethodName);
@@ -107,10 +107,10 @@ public class ITPodsRestart extends BaseTest {
     boolean testCompletedSuccessfully = false;
 
     logger.info(
-        "About to testDomainServerRestart for Domain: "
+        "About to testDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  logHomeEnabled: true -->  logHomeEnabled: false");
-    domain.testDomainServerRestart("logHomeEnabled: true", "logHomeEnabled: false");
+    domain.testDomainServerPodRestart("logHomeEnabled: true", "logHomeEnabled: false");
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -129,10 +129,10 @@ public class ITPodsRestart extends BaseTest {
     boolean testCompletedSuccessfully = false;
 
     logger.info(
-        "About to testDomainServerRestart for Domain: "
+        "About to testDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " imagePullPolicy: IfNotPresent -->  imagePullPolicy: Never ");
-    domain.testDomainServerRestart(
+    domain.testDomainServerPodRestart(
         "imagePullPolicy: \"IfNotPresent\"", "imagePullPolicy: \"Never\" ");
 
     logger.info("SUCCESS - " + testMethodName);
@@ -152,10 +152,10 @@ public class ITPodsRestart extends BaseTest {
     boolean testCompletedSuccessfully = false;
 
     logger.info(
-        "About to testDomainServerRestart for Domain: "
+        "About to testDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  includeServerOutInPodLog: true -->  includeServerOutInPodLog: false");
-    domain.testDomainServerRestart(
+    domain.testDomainServerPodRestart(
         "includeServerOutInPodLog: true", "includeServerOutInPodLog: false");
 
     logger.info("SUCCESS - " + testMethodName);
@@ -176,11 +176,11 @@ public class ITPodsRestart extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       logger.info(
-          "About to testDomainServerRestart for Domain: "
+          "About to testDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
               + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
       TestUtils.dockerTagImage("store/oracle/weblogic:12.2.1.3", "store/oracle/weblogic:duplicate");
-      domain.testDomainServerRestart(
+      domain.testDomainServerPodRestart(
           "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
     } finally {
       TestUtils.dockerRemoveImage("store/oracle/weblogic:duplicate");
