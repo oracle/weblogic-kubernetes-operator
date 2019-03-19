@@ -39,6 +39,6 @@ and submit a pull request. Remember to follow the guidelines in the
 document.
 
 {{% notice note %}}
-Make sure you only check in your source code changes in `doc-source`; do 
+Make sure you only check in your source code changes in `docs-source`; do 
 not build the site and check in the static files.
 {{% /notice %}}
