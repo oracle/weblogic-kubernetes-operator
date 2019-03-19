@@ -56,11 +56,7 @@ public class ServerKubernetesObjects {
     return channels;
   }
 
-  public V1Service getExternalService() {
-    return externalService.get();
-  }
-
-  public void setExternalService(V1Service service) {
-    externalService.set(service);
+  AtomicReference<V1Service> getExternalService() {
+    return externalService;
   }
 }
