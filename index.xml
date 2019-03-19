@@ -432,6 +432,19 @@ After this, the operator starts watches for changes to Domain resources and any 
     </item>
     
     <item>
+      <title>Documentation</title>
+      <link>/weblogic-kubernetes-operator/developerguide/documentation/</link>
+      <pubDate>Tue, 19 Mar 2019 07:13:22 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/developerguide/documentation/</guid>
+      <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
+ Clone the repository if you have not already
+git clone https://github.com/oracle/weblogic-kubernetes-operator  Create a new branch from master
+git checkout master git pull origin master git checkout -b your-branch  Make your documentation updates by editing the source files in docs-source/content.
+ If you wish to view your changes you can run the site locally using these commands; the site will be available on the URL shown here:</description>
+    </item>
+    
+    <item>
       <title>Backward compatibility</title>
       <link>/weblogic-kubernetes-operator/developerguide/backwards-compatibility/</link>
       <pubDate>Sat, 23 Feb 2019 17:26:09 -0500</pubDate>
