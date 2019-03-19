@@ -25,7 +25,8 @@ function createVoyager() {
     helm install appscode/voyager --name voyager-operator --version 7.4.0 \
       --namespace voyager \
       --set cloudProvider=baremetal \
-      --set apiserver.enableValidatingWebhook=false
+      --set apiserver.enableValidatingWebhook=false \
+      --set ingressClass=voyager
   else
     echo "Voyager operator is already installed."
   fi 
