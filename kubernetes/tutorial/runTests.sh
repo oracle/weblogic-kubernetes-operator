@@ -3,10 +3,6 @@
 # domain2: DomainHomeInImage_ServerLogsInPV
 # domain3: DomainHomeOnPV
 #
-# TODO
-##
-## voyager https?
-#
 
 source waitUntil.sh
 
@@ -286,20 +282,20 @@ function traceOne() {
 }
 
 # This suite contains all the tests. It's suitable for daily-run.
-function runSuiteOne() {
+function suiteOne() {
   traceOne testWLST
   traceOne testWDT
 }
 
-## This suite can run tests of seperate domains with WLST.
-function runSuiteTwo() {
+# This suite can run tests of seperate domains with WLST.
+function suiteTwo() {
   traceOne testDomain1WLST
   traceOne testDomain2WLST
   traceOne testDomain3WLST
 }
 
-## This suite can run tests of seperate domains with WDT.
-function runSuiteThree() {
+# This suite can run tests of seperate domains with WDT.
+function suiteThree() {
   traceOne testDomain1WDT
   traceOne testDomain2WDT
   traceOne testDomain3WDT
@@ -307,7 +303,7 @@ function runSuiteThree() {
 
 function runAll() {
   beforeAll
-  runSuiteOne
+  suiteOne
   afterAll
 }
 
@@ -317,6 +313,7 @@ function runOne() {
   afterAll
 }
 
+#runOne
 runAll
 
 
