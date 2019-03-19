@@ -604,7 +604,7 @@ public class BaseTest {
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
-      // logger.info("Executed statedump.sh " + result.stdout());
+      logger.info("Executed statedump.sh " + result.stdout());
     } else {
       logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
     }

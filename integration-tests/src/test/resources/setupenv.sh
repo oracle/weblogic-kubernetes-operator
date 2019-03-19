@@ -92,29 +92,7 @@ function pull_tag_images {
    	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
-  echo "Pull and tag the images we need"
-  docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
-  docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
 
-  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
-  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
-}
-
-
-function create_image_pull_secret_jenkins {
-  echo "Creating Secret"
-  kubectl create secret docker-registry wlsldi-secret  \
-    --docker-server=wlsldi-v2.docker.oraclecorp.com \
-    --docker-username=teamsldi_us@oracle.com \
-    --docker-password=$docker_pass \
-    --docker-email=teamsldi_us@oracle.com 
-
-  echo "Checking Secret"
-  local SECRET="`kubectl get secret wlsldi-secret | grep wlsldi | wc | awk ' { print $1; }'`"
-  if [ "$SECRET" != "1" ]; then
-    echo 'secret wlsldi-secret was not created successfully'
-    exit 1
-  fi
 }
 
 function get_wlthint3client_from_image {
@@ -202,8 +180,6 @@ elif [ "$JENKINS" = "true" ]; then
   clean_jenkins
 
   setup_jenkins
-
-  create_image_pull_secret_jenkins
 
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT"
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT"
