@@ -1110,31 +1110,13 @@ public class TestUtils {
     logger.info("Tagging souceImage:  " + sourceImage + "  to " + targetImage);
     String dockerCmd = "docker tag " + sourceImage + " " + targetImage;
     logger.info("Executing cmd " + dockerCmd);
-
-    ExecResult result = ExecCommand.exec(dockerCmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create load balancer "
-              + dockerCmd
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
-    }
+    exec(dockerCmd);
   }
 
   public static void dockerRemoveImage(String imageName) throws Exception {
     logger.info("Removing image:  " + imageName);
     String dockerCmd = "docker rmi -f  " + imageName;
     logger.info("Executing cmd " + dockerCmd);
-
-    ExecResult result = ExecCommand.exec(dockerCmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create load balancer "
-              + dockerCmd
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
-    }
+    exec(dockerCmd);
   }
 }

@@ -850,7 +850,7 @@ public class Domain {
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
   }
 
-  public void testDomainServerRestart(String oldPropertyString, String newPropertyString)
+  public void testDomainServerPodRestart(String oldPropertyString, String newPropertyString)
       throws Exception {
     logger.info("Inside testDomainServerPodRestart");
     String content =
