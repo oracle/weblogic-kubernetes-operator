@@ -25,9 +25,9 @@ Please be aware of the following important considerations for WebLogic domains r
   assume that the domain home is `/shared/domains/DOMAIN_UID`.
   {{% notice warning %}}
   Oracle strongly recommends storing an image containing a WebLogic domain home
-  as private in the registry (e.g. Oracle Cloud Infrastructure Registry, Docker Hub, etc.).
-  A Docker image that contains a WebLogic Domain has sensitive information including
-  keys and credentials that are used access external resources (e.g. datasource password).
+  as private in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such).
+  A Docker image that contains a WebLogic domain has sensitive information including
+  keys and credentials that are used access external resources (for example, data source password).
   For more information, see
   [domain home in image protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}})
   in the ***Security*** section.
