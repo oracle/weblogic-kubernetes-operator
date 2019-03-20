@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -14,23 +14,28 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 import javax.annotation.Nonnull;
+import org.joda.time.DateTime;
 
-@SuppressWarnings("WeakerAccess")
 public class SchemaGenerator {
-  public static final String DEFAULT_KUBERNETES_VERSION = "1.9.0";
 
   private static final String EXTERNAL_CLASS = "external";
 
   private static final List<Class<?>> PRIMITIVE_NUMBERS =
       Arrays.asList(byte.class, short.class, int.class, long.class, float.class, double.class);
 
-  static final String K8S_SCHEMA_URL =
-      "https://github.com/garethr/kubernetes-json-schema/blob/master/v%s/_definitions.json";
-  private static final String K8S_SCHEMA_CACHE = "caches/kubernetes-%s.json";
   private static final String JSON_SCHEMA_REFERENCE = "http://json-schema.org/draft-04/schema#";
 
   // A map of classes to their $ref values
@@ -51,6 +56,9 @@ public class SchemaGenerator {
   // if true, the object fields are implemented as references to definitions
   private boolean supportObjectReferences = true;
 
+  // if true, generate the top-level schema version reference
+  private boolean includeSchemaReference = true;
+
   /**
    * Returns a pretty-printed string corresponding to a generated schema
    *
@@ -68,36 +76,35 @@ public class SchemaGenerator {
    * @throws IOException if no schema for that version is cached.
    */
   public void useKubernetesVersion(String version) throws IOException {
-    addExternalSchema(getKubernetesSchemaUrl(version), getKubernetesSchemaCache(version));
-  }
+    KubernetesSchemaReference reference = KubernetesSchemaReference.create(version);
+    URL cacheUrl = reference.getKubernetesSchemaCacheUrl();
+    if (cacheUrl == null) throw new IOException("No schema cached for Kubernetes " + version);
 
-  URL getKubernetesSchemaUrl(String version) throws MalformedURLException {
-    return new URL(String.format(K8S_SCHEMA_URL, version));
-  }
-
-  private URL getKubernetesSchemaCache(String version) {
-    return getClass().getResource(String.format(K8S_SCHEMA_CACHE, version));
-  }
-
-  public void addExternalSchema(URL schemaUrl) throws IOException {
-    addExternalSchema(schemaUrl, new BufferedReader(new InputStreamReader(schemaUrl.openStream())));
+    addExternalSchema(reference.getKubernetesSchemaUrl(), cacheUrl);
   }
 
   public void addExternalSchema(URL schemaUrl, URL cacheUrl) throws IOException {
-    addExternalSchema(schemaUrl, new BufferedReader(new InputStreamReader(cacheUrl.openStream())));
-  }
-
-  private void addExternalSchema(URL schemaUrl, BufferedReader schemaReader) throws IOException {
-    StringBuilder sb = new StringBuilder();
-    String inputLine;
-    while ((inputLine = schemaReader.readLine()) != null) sb.append(inputLine).append('\n');
-    schemaReader.close();
-
-    Map<String, Map<String, Object>> map = fromJson(sb.toString());
-    Map<String, Object> definitions = map.get("definitions");
+    Map<String, Map<String, Object>> objectObjectMap = loadCachedSchema(cacheUrl);
+    Map<String, Object> definitions = objectObjectMap.get("definitions");
     for (Map.Entry<String, Object> entry : definitions.entrySet()) {
       if (isDefinitionToUse(entry.getValue())) schemaUrls.put(entry.getKey(), schemaUrl.toString());
     }
+  }
+
+  static <T, S> Map<T, S> loadCachedSchema(URL cacheUrl) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    try (BufferedReader schemaReader =
+        new BufferedReader(new InputStreamReader(cacheUrl.openStream()))) {
+      String inputLine;
+      while ((inputLine = schemaReader.readLine()) != null) sb.append(inputLine).append('\n');
+    }
+
+    return fromJson(sb.toString());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T, S> Map<T, S> fromJson(String json) {
+    return new Gson().fromJson(json, HashMap.class);
   }
 
   @SuppressWarnings("unchecked")
@@ -108,11 +115,6 @@ public class SchemaGenerator {
 
   private boolean isDeprecated(Object description) {
     return description != null && description.toString().contains("Deprecated");
-  }
-
-  @SuppressWarnings("unchecked")
-  private <T, S> Map<T, S> fromJson(String json) {
-    return new Gson().fromJson(json, HashMap.class);
   }
 
   /**
@@ -145,15 +147,26 @@ public class SchemaGenerator {
   }
 
   /**
+   * Specifies whether top-level schema reference is included
+   *
+   * @param includeSchemaReference true to include schema reference
+   */
+  public void setIncludeSchemaReference(boolean includeSchemaReference) {
+    this.includeSchemaReference = includeSchemaReference;
+  }
+
+  /**
    * Generates an object representing a JSON schema for the specified class.
    *
    * @param aClass the class for which the schema should be generated
    * @return a map of maps, representing the computed JSON
    */
-  public Object generate(Class aClass) {
+  public Map<String, Object> generate(Class aClass) {
     Map<String, Object> result = new HashMap<>();
 
-    result.put("$schema", JSON_SCHEMA_REFERENCE);
+    if (includeSchemaReference) {
+      result.put("$schema", JSON_SCHEMA_REFERENCE);
+    }
     generateObjectTypeIn(result, aClass);
     if (!definedObjects.isEmpty()) {
       Map<String, Object> definitions = new TreeMap<>();
@@ -207,6 +220,10 @@ public class SchemaGenerator {
 
   private boolean isString(Class<?> type) {
     return type.equals(String.class);
+  }
+
+  private boolean isDateTime(Class<?> type) {
+    return type.equals(DateTime.class);
   }
 
   private boolean isNumeric(Class<?> type) {
@@ -383,20 +400,31 @@ public class SchemaGenerator {
   }
 
   private void generateObjectTypeIn(Map<String, Object> result, Class<?> type) {
-    Map<String, Object> properties = new HashMap<>();
-    List<String> requiredFields = new ArrayList<>();
-    result.put("type", "object");
-    if (includeAdditionalProperties) result.put("additionalProperties", "false");
-    result.put("properties", properties);
+    if (isDateTime(type)) {
+      result.put("type", "string");
+      result.put("format", "date-time");
+    } else {
+      Map<String, Object> properties = new HashMap<>();
+      List<String> requiredFields = new ArrayList<>();
+      result.put("type", "object");
+      if (includeAdditionalProperties) result.put("additionalProperties", "false");
+      Optional.ofNullable(getDescription(type)).ifPresent(s -> result.put("description", s));
+      result.put("properties", properties);
 
-    for (Field field : getPropertyFields(type)) {
-      if (!isSelfReference(field)) generateFieldIn(properties, field);
-      if (isRequired(field) && includeInSchema(field)) {
-        requiredFields.add(getPropertyName(field));
+      for (Field field : getPropertyFields(type)) {
+        if (!isSelfReference(field)) generateFieldIn(properties, field);
+        if (isRequired(field) && includeInSchema(field)) {
+          requiredFields.add(getPropertyName(field));
+        }
       }
-    }
 
-    if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+      if (!requiredFields.isEmpty()) result.put("required", requiredFields.toArray(new String[0]));
+    }
+  }
+
+  private String getDescription(Class<?> aClass) {
+    Description description = aClass.getAnnotation(Description.class);
+    return description != null ? description.value() : null;
   }
 
   private Collection<Field> getPropertyFields(Class<?> type) {

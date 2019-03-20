@@ -115,6 +115,15 @@ public class KubernetesVersion {
     return this.major > 1 || (this.major == 1 && this.minor >= 10);
   }
 
+  // Even though subresources are supported at version 1.10, we've determined that the
+  // 'status' subresource and the pattern of using "/status" doesn't actually work
+  // until 1.13.  This is validated against the published recent changes doc.
+  // *NOTE*: To use this, update CRDHelper to include the status subresource and also
+  // update DomainStatusUpdater to use replaceDomainStatusAsync
+  boolean isCRDSubresourcesStatusPatternSupported() {
+    return this.major > 1 || (this.major == 1 && this.minor >= 13);
+  }
+
   @Override
   public boolean equals(Object o) {
     return this == o || o instanceof KubernetesVersion && equals((KubernetesVersion) o);

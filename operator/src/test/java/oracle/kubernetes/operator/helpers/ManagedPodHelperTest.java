@@ -77,6 +77,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     return PodHelper::createManagedPodStep;
   }
 
+  private void expectReplaceDomainStatus() {
+    testSupport
+        .createCannedResponse("replaceDomainStatus")
+        .withNamespace(NS)
+        .ignoringBody()
+        .returning(new Domain());
+  }
+
   private void expectReplaceDomain() {
     testSupport
         .createCannedResponse("replaceDomain")

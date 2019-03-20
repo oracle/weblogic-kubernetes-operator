@@ -17,7 +17,7 @@ spec:
   domainHome: %DOMAIN_HOME%
   # If the domain home is in the image
   domainHomeInImage: %DOMAIN_HOME_IN_IMAGE%
-  # The Operator currently does not support other images
+  # The WebLogic Server Docker image that the Operator uses to start the domain
   image: "%WEBLOGIC_IMAGE%"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
@@ -32,7 +32,7 @@ spec:
   includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
   # Whether to enable log home
   %LOG_HOME_ON_PV_PREFIX%logHomeEnabled: %LOG_HOME_ENABLED%
-  # The in-pod location for domain log, server logs, server out, and node manager log files
+  # The in-pod location for domain log, server logs, server out, and Node Manager log files
   %LOG_HOME_ON_PV_PREFIX%logHome: %LOG_HOME%
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain

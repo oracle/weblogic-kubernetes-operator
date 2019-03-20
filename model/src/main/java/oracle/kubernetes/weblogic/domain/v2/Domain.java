@@ -24,7 +24,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster. */
-@SuppressWarnings("deprecation")
+@Description(
+    "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
 public class Domain {
   /** The pattern for computing the default shared logs directory. */
   private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
@@ -36,7 +37,7 @@ public class Domain {
    */
   @SerializedName("apiVersion")
   @Expose
-  @Description("The API version for the Domain. Must be 'weblogic.oracle/v2'")
+  @Description("The API version for the Domain. Must be 'weblogic.oracle/v2'.")
   private String apiVersion;
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer
@@ -45,7 +46,7 @@ public class Domain {
    */
   @SerializedName("kind")
   @Expose
-  @Description("The type of resource. Must be 'Domain'")
+  @Description("The type of resource. Must be 'Domain'.")
   private String kind;
   /**
    * Standard object's metadata. More info:
@@ -62,7 +63,7 @@ public class Domain {
   @SerializedName("spec")
   @Expose
   @Valid
-  @Description("The actual specification of the domain. Required.")
+  @Description("The specification of the domain. Required")
   @Nonnull
   private DomainSpec spec = new DomainSpec();
 
@@ -73,6 +74,7 @@ public class Domain {
   @SerializedName("status")
   @Expose
   @Valid
+  @Description("The current status of the domain. Updated by the operator.")
   private DomainStatus status;
 
   /**

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -17,17 +18,19 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** SubsystemHealth describes the current health of a specific subsystem. */
 public class SubsystemHealth implements Comparable<SubsystemHealth> {
 
-  /** Server health of this WebLogic server. (Required) */
+  @Description("Server health of this WebLogic server. Required")
   @SerializedName("health")
   @Expose
   @NotNull
   private String health;
-  /** Name of subsystem providing symptom information. (Required) */
+
+  @Description("Name of subsystem providing symptom information. Required")
   @SerializedName("subsystemName")
   @Expose
   @NotNull
   private String subsystemName;
-  /** Symptoms provided by the reporting subsystem. */
+
+  @Description("Symptoms provided by the reporting subsystem.")
   @SerializedName("symptoms")
   @Expose
   @Valid

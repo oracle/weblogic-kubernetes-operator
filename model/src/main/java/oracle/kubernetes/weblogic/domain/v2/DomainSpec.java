@@ -28,12 +28,13 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** DomainSpec is a description of a domain. */
+@Description("DomainSpec is a description of a domain.")
 public class DomainSpec extends BaseConfiguration {
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
-      "Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required)"
-          + "Defaults to the value of metadata.name")
+      "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
+          + " Defaults to the value of metadata.name")
   @Pattern("^[a-z0-9_.]{1,253}$")
   private String domainUID;
 
@@ -43,9 +44,9 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "The folder for the Weblogic Domain. (Not required)"
-          + "Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
-          + "Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
+      "The folder for the Weblogic Domain. Not required."
+          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
   private String domainHome;
 
   /**
@@ -68,7 +69,8 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The name of a pre-created Kubernetes secret, in the domain's namepace, that holds"
-          + " the username and password needed to boot WebLogic Server under the 'username' and 'password' fields.")
+          + " the username and password needed to boot WebLogic Server under the 'username' and "
+          + "'password' fields.")
   @Valid
   @NotNull
   private V1SecretReference webLogicCredentialsSecret;
@@ -78,7 +80,8 @@ public class DomainSpec extends BaseConfiguration {
    * .out files in.
    */
   @Description(
-      "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files")
+      "The in-pod name of the directory in which to store the domain, node manager, server logs, "
+          + "and server  *.out files")
   private String logHome;
 
   /**
@@ -87,13 +90,13 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "Specified whether the log home folder is enabled (Not required). "
+      "Specified whether the log home folder is enabled. Not required. "
           + "Defaults to true if domainHomeInImage is false. "
           + "Defaults to false if domainHomeInImage is true. ")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
-  @Description("If true (the default), the server .out file will be included in the pod's stdout")
+  @Description("If true (the default), the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
 
   /**
@@ -103,7 +106,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The Weblogic Docker image; required when domainHomeInImage is true; "
-          + "otherwise, defaults to store/oracle/weblogic:12.2.1.3")
+          + "otherwise, defaults to store/oracle/weblogic:12.2.1.3.")
   private String image;
 
   /**
@@ -117,7 +120,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "The image pull policy for the WebLogic Docker image. "
           + "Legal values are Always, Never and IfNotPresent. "
-          + "Defaults to Always if image ends in :latest, IfNotPresent otherwise")
+          + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
@@ -137,7 +140,7 @@ public class DomainSpec extends BaseConfiguration {
    * configured in a cluster specification.
    */
   @Description(
-      "The number of managed servers to run in any cluster that does not specify a replica count")
+      "The number of managed servers to run in any cluster that does not specify a replica count.")
   @Range(minimum = 0)
   private Integer replicas;
 
@@ -147,7 +150,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "True if this domain's home is defined in the docker image for the domain. Defaults to true")
+      "True if this domain's home is defined in the docker image for the domain. Defaults to true.")
   private Boolean domainHomeInImage;
 
   /**
@@ -171,7 +174,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the admin server")
+  @Description("Configuration for the admin server.")
   private AdminServer adminServer;
 
   /**
@@ -179,7 +182,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the managed servers")
+  @Description("Configuration for the managed servers.")
   private List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
@@ -187,7 +190,7 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the clusters")
+  @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
 
   /**

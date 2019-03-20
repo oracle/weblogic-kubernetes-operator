@@ -9,6 +9,7 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
+import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Range;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -19,39 +20,47 @@ import org.joda.time.DateTime;
  * DomainStatus represents information about the status of a domain. Status may trail the actual
  * state of a system.
  */
+@Description(
+    "DomainStatus represents information about the status of a domain. "
+        + "Status may trail the actual state of a system.")
 public class DomainStatus {
 
-  /** Current service state of domain. */
+  @Description("Current service state of domain.")
   @SerializedName("conditions")
   @Expose
   @Valid
   private List<DomainCondition> conditions = new ArrayList<DomainCondition>();
-  /** A human readable message indicating details about why the domain is in this condition. */
+
+  @Description(
+      "A human readable message indicating details about why the domain is in this condition.")
   @SerializedName("message")
   @Expose
   private String message;
-  /** A brief CamelCase message indicating details about why the domain is in this state. */
+
+  @Description(
+      "A brief CamelCase message indicating details about why the domain is in this state.")
   @SerializedName("reason")
   @Expose
   private String reason;
-  /** Status of WebLogic servers in this domain. */
+
+  @Description("Status of WebLogic servers in this domain.")
   @SerializedName("servers")
   @Expose
   @Valid
   private List<ServerStatus> servers = new ArrayList<ServerStatus>();
-  /**
-   * RFC 3339 date and time at which the operator started the domain. This will be when the operator
-   * begins processing and will precede when the various servers or clusters are available.
-   */
+
+  @Description(
+      "RFC 3339 date and time at which the operator started the domain. This will be when "
+          + "the operator begins processing and will precede when the various servers "
+          + "or clusters are available.")
   @SerializedName("startTime")
   @Expose
   private DateTime startTime;
 
-  /**
-   * The number of running managed servers in the WebLogic cluster if there is only one cluster in
-   * the domain and where the cluster does not explicitly configure its replicas in a cluster
-   * specification.
-   */
+  @Description(
+      "The number of running managed servers in the WebLogic cluster if there is "
+          + "only one cluster in the domain and where the cluster does not explicitly "
+          + "configure its replicas in a cluster specification.")
   @Range(minimum = 0)
   private Integer replicas;
 

@@ -8,6 +8,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -15,25 +16,29 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** ServerStatus describes the current status of a specific WebLogic server. */
 public class ServerStatus implements Comparable<ServerStatus> {
 
-  /** WebLogic server name. (Required) */
+  @Description("WebLogic server name. Required")
   @SerializedName("serverName")
   @Expose
   @NotNull
   private String serverName;
-  /** Current state of this WebLogic server. (Required) */
+
+  @Description("Current state of this WebLogic server. Required")
   @SerializedName("state")
   @Expose
   @NotNull
   private String state;
-  /** WebLogic cluster name, if the server is part of a cluster */
+
+  @Description("WebLogic cluster name, if the server is part of a cluster.")
   @SerializedName("clusterName")
   @Expose
   private String clusterName;
-  /** Name of node that is hosting the Pod containing this WebLogic server. */
+
+  @Description("Name of node that is hosting the Pod containing this WebLogic server.")
   @SerializedName("nodeName")
   @Expose
   private String nodeName;
-  /** ServerHealth describes the current status and health of a specific WebLogic server. */
+
+  @Description("Current status and health of a specific WebLogic server.")
   @SerializedName("health")
   @Expose
   @Valid

@@ -16,7 +16,10 @@ public class AdminService {
   /** */
   @SerializedName("channels")
   @Description(
-      "Specifies which of the admin server's WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server's node port service will not be created.")
+      "Specifies which of the admin server's WebLogic channels should be exposed outside "
+          + "the Kubernetes cluster via a node port service, along with the node port for "
+          + "each channel. If not specified, the admin server's node port service will "
+          + "not be created.")
   private List<Channel> channels = new ArrayList<>();
 
   public AdminService withChannel(Channel port) {
