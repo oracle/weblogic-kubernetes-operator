@@ -377,7 +377,7 @@ $ helm upgrade \ --reuse-values \ --set &amp;quot;kubernetes.namespaces={traefik
       <pubDate>Sat, 23 Feb 2019 17:36:33 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/secrets/</guid>
-      <description>Contents  WebLogic domain credentials secret WebLogic domain image pull secret WebLogic operator external REST interface secret WebLogic operator internal REST interface secret  WebLogic domain credentials secret The credential for the WebLogic domain is kept in a Kubernetes Secret that follows the pattern &amp;lt;domainUID&amp;gt;-weblogic-credentials, where &amp;lt;domainUID&amp;gt; is the unique identifier of the domain, for example, domain1-weblogic-credentials. The Secret is created in the namespace where the Domain will be running.</description>
+      <description>Contents  WebLogic domain credentials secret WebLogic domain image pull secret WebLogic operator configuration override secrets WebLogic operator external REST interface secret WebLogic operator internal REST interface secret  WebLogic domain credentials secret The credentials for the WebLogic domain are kept in a Kubernetes Secret where the name of the secret is specified using webLogicCredentialsSecret in the WebLogic Domain resource. Also, the domain credentials secret must be created in the namespace where the Domain will be running.</description>
     </item>
     
     <item>
