@@ -1437,12 +1437,12 @@ public class Domain {
     }
   }
 
-  public int getLoadBalancerWebPort() throws Exception {
+  public int getLoadBalancerWebPort() {
     return loadBalancerWebPort;
   }
 
   /**
-   * shutdown a ms by setting serverStartPolicy to NEVER
+   * Shut down a ms by setting serverStartPolicy to NEVER
    *
    * @throws Exception
    */
@@ -1460,17 +1460,16 @@ public class Domain {
 
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
     }
     String output = result.stdout().trim();
-    logger.info("output fr shutdown managed server:\n" + output);
+    logger.info("output from shutting down managed server:\n" + output);
 
     TestUtils.checkPodDeleted(domainUid + "-" + msName, domainNS);
   }
 
   /**
-   * restart a ms by setting serverStartPolicy to IF_NEEDED
+   * Restart a ms by setting serverStartPolicy to IF_NEEDED
    *
    * @throws Exception
    */
@@ -1488,11 +1487,10 @@ public class Domain {
 
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
     }
     String output = result.stdout().trim();
-    logger.info("output fr restart managed server:\n" + output);
+    logger.info("output from restarting managed server:\n" + output);
 
     TestUtils.checkPodCreated(domainUid + "-" + msName, domainNS);
     TestUtils.checkPodReady(domainUid + "-" + msName, domainNS);
