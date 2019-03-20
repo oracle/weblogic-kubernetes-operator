@@ -440,8 +440,7 @@ After this, the operator starts watches for changes to Domain resources and any 
       <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
  Clone the repository if you have not already
 git clone https://github.com/oracle/weblogic-kubernetes-operator  Create a new branch from master
-git checkout master git pull origin master git checkout -b your-branch  Make your documentation updates by editing the source files in docs-source/content.
- If you wish to view your changes you can run the site locally using these commands; the site will be available on the URL shown here:</description>
+git checkout master git pull origin master git checkout -b your-branch  Make your documentation updates by editing the source files in docs-source/content. Make sure you only check in the changes from the docs-source/content area; do not build the site and check in the static files.</description>
     </item>
     
     <item>
