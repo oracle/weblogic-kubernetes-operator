@@ -7,7 +7,7 @@ set -u
 source waitUntil.sh
 function pullImages() {
   echo "pull docker images"
-  docker pull oracle/weblogic-kubernetes-operator:2.0
+  docker pull $WLS_OPERATOR_IMAGE 
   docker pull traefik:1.7.6
   docker pull appscode/voyager:7.4.0 
   docker pull $WLS_BASE_IMAGE 
@@ -19,7 +19,7 @@ function delImages() {
   docker rmi $WLS_BASE_IMAGE
   docker rmi traefik:1.7.6
   docker rmi appscode/voyager:7.4.0
-  docker rmi oracle/weblogic-kubernetes-operator:2.0
+  docker rmi $WLS_OPERATOR_IMAGE 
 }
 
 function create() {
@@ -34,7 +34,7 @@ function create() {
     --name sample-weblogic-operator \
     --namespace weblogic-operator1 \
     --set serviceAccount=sample-weblogic-operator-sa \
-    --set image=oracle/weblogic-kubernetes-operator:2.0 \
+    --set image=$WLS_OPERATOR_IMAGE \
     --set "domainNamespaces={default,test1}" \
     --wait
  

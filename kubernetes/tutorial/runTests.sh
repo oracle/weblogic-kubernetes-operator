@@ -4,11 +4,8 @@
 # domain3: DomainHomeOnPV
 #
 
-source waitUntil.sh
-
-export PV_ROOT=/scratch/lihhe/pv
-export WLS_OPT_ROOT=../../
-export WLS_BASE_IMAGE=store/oracle/weblogic:12.2.1.3
+source ./waitUntil.sh
+source ./setenv.sh
 
 resultFile=results
 passcnt=0
@@ -20,6 +17,10 @@ domainUrlVoyager=http://$HOSTNAME:30305/weblogic/
 
 # this need to be run once before any domain test
 function beforeAll() {
+  ./domain.sh checkPV
+  if [ $? != 0 ]; then
+   exit 1
+  fi
   cleanAll
   rm $resultFile
   ./operator.sh pullImages
