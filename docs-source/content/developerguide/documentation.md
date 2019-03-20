@@ -24,6 +24,10 @@ update to the documentation, follow this process:
 
 3. Make your documentation updates by editing the source files in 
 `docs-source/content`.
+{{% notice note %}}
+Make sure you only check in the changes from the `docs-source/content` area;
+do not build the site and check in the static files.
+{{% /notice %}}
 
 4. If you wish to view your changes you can run the site locally using 
 these commands; the site will be available on the URL shown here:
@@ -38,7 +42,3 @@ and submit a pull request. Remember to follow the guidelines in the
 [CONTRIBUTING](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/CONTRIBUTING.md)
 document.
 
-{{% notice note %}}
-Make sure you only check in your source code changes in `docs-source`; do 
-not build the site and check in the static files.
-{{% /notice %}}
