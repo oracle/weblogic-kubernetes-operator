@@ -887,18 +887,12 @@ public class Domain {
                   + domainUid
                   + "/domain_new.yaml");
       logger.info("kubectl execut with command: " + command.toString());
-      ExecResult exeResult = ExecCommand.exec(command.toString());
-      if (exeResult.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILED: command to get domain " + command + " failed with " + exeResult.stderr());
-      }
-      if (!exeResult.stdout().contains(domainUid))
-        throw new RuntimeException("FAILURE: domain not found, exiting!");
+      TestUtils.exec(command.toString());
 
       // verify the servers in the domain are being restarted in a sequence
       verifyAdminServerRestarted();
       verifyManagedServersRestarted();
-      // let domain.yaml include the new changed property
+      // make domain.yaml include the new changed property
       TestUtils.copyFile(
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml");
