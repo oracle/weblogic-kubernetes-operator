@@ -13,6 +13,7 @@ then run the operator in a Kubernetes cluster.
 Use the `helm install` command to install the operator Helm chart. As part of this, you must specify a "release" name for the operator.
 
 You can override default configuration values in the operator Helm chart by doing one of the following:
+
 - Creating a custom YAML file containing the values to be overridden, and specifying the `--value` option on the Helm command line.
 - Overriding individual values directly on the Helm command line, using the `--set` option.
 
