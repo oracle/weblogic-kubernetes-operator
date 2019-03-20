@@ -45,7 +45,7 @@ function cleanAll() {
   ./traefik.sh delCon
 
   ./operator.sh delete
-  #./operator.sh delImages
+  ./operator.sh delImages
 }
 
 # This is to be run before each domain test
@@ -80,17 +80,17 @@ function checkResult() {
 }
 
 function printResult() {
-  echo >> $resultFile
-  echo "###################################################"  >> $resultFile
-  echo "Test restuls: "  >> $resultFile
-  echo "Passed Tests: $passcnt"  >> $resultFile
-  echo "Failed Tests: $failcnt"  >> $resultFile
-  if [ $failcnt != 0 ]; then 
-    echo "Failed Cases: $failcases"  >> $resultFile
+  echo |& tee -a $resultFile
+  echo "###################################################"  |& tee -a $resultFile
+  echo "Test restuls: "  |& tee -a  $resultFile
+  echo "Passed Tests: $passcnt" |& tee -a $resultFile
+  echo "Failed Tests: $failcnt"  |& tee -a $resultFile
+  if [ $failcnt != 0 ]; then
+    echo "Failed Cases: $failcases"  |& tee -a $resultFile
   fi
-  echo "###################################################"  >> $resultFile
-  echo >> $resultFile
-  echo >> $resultFile
+  echo "###################################################"  |& tee -a $resultFile
+  echo |& tee -a $resultFile
+  echo |& tee -a $resultFile
 }
 
 function createOperator() {
@@ -313,8 +313,8 @@ function runOne() {
   afterAll
 }
 
-#runOne
-runAll
+runOne
+#runAll
 
 
 
