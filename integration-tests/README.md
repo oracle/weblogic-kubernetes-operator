@@ -78,12 +78,12 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Two Operators using same target domains namespace | create chart using target domains namespace as already running first operator, verify that deployment fails with expected error |
 | Operator Helm Chart using not preexisted target domains namespace | create chart using not preexisted target domains namespace as already running first operator, verify that deployment fails with expected error |
 
-Situational Configuration Override Usecases
+Configuration Overrides Usecases
 
 | Override | Usecase |
 | --- | --- |
-| Domain override | Override the admin server properties connect-timeout, max-message-size, restart-max, JMXCore and Serverlifecycle debug flags. Also T3Channel public address using Kubernetes secret. The override is verified by JMX client connecting to the serverConfig MBean tree and the values are checked against the expected values. The test client connects to the overridden T3 public address and port to connect to the MBean servers |
-| JDBC Resource Override | Override JDBC connection pool properties; initialCapacity, maxCapacity, test-connections-on-reserve, connection-harvest-max-count, inactive-connection-timeout-seconds. Override the jdbc driver parameters like data source url, db user and password using kubernetes secret. The test verifies the overridden functionality datasource url, user/pass by getting the data source connection and verifies the db name it is connected to. |
+| Domain override | Override the administration server properties connect-timeout, max-message-size, restart-max, JMXCore and Serverlifecycle debug flags. Also T3Channel public address using Kubernetes secret. The override is verified by JMX client connecting to the serverConfig MBean tree and the values are checked against the expected values. The test client connects to the overridden T3 public address and port to connect to the MBean servers |
+| JDBC Resource Override | Override JDBC connection pool properties; initialCapacity, maxCapacity, test-connections-on-reserve, connection-harvest-max-count, inactive-connection-timeout-seconds. Override the JDBC driver parameters like data source URL, DB user and password using kubernetes secret. The test verifies the overridden functionality datasource URL, user/pass by getting the data source connection and verifies the DB name it is connected to. |
 | JMS Resource Override | Override UniformDistributedTopic Delivery Failure Parameters, Redelivery limit and Expiration policy. The JMX test client verifies the serverConfig MBean tree for the expected deliver failure parameters, redelivery limit and expiration policy. |
 | WLDF Resource Override | Override instrumentation monitors and harvesters in a diagnostics module. The test client verifies the new instrumentation monitors / harvesters set by getting the WLDF resource from serverConfig tree with expected values.  |
 
