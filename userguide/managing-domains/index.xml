@@ -31,7 +31,7 @@ $ kubectl create namespace domain-namespace-1  Replace domain-namespace-1 with n
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</guid>
       <description>Use this document to set up and configure your own domain resource which can be used to configure your WLS domain. Then, you can use the domain resource to start the Kubernetes artifacts of the corresponding domain.
 Swagger documentation is available here.
-Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the resource.
+Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the resource:
  Make sure the WebLogic operator is running. Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.</description>
     </item>
     

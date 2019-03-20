@@ -12,17 +12,17 @@
     <title>Storage :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1553086580" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1553086877" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1553086580"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1553086877"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1553086580"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1553086580"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1553086877"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1553086877"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1553086580"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1553086877"></script>
 
     
   </div>
@@ -1932,7 +1932,7 @@
 
 <h4 id="prerequisites">Prerequisites</h4>
 
-<p>Please read the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">Persistent storage</a> document before proceeding.</p>
+<p>Before you begin, read this document, <a href="/weblogic-kubernetes-operator/userguide/managing-domains/persistent-storage/">Persistent storage</a>.</p>
 
 <h4 id="using-the-scripts-to-create-a-pv-and-pvc">Using the scripts to create a PV and PVC</h4>
 
@@ -2000,7 +2000,7 @@ usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
 
 <tr>
 <td><code>weblogicDomainStoragePath</code></td>
-<td>Physical path of the storage for the PV.  When <code>weblogicDomainStorageType</code> is set to <code>HOST_PATH</code>, this value should be set the to path to the domain storage on the Kubernetes host.  When <code>weblogicDomainStorageType</code> is set to NFS, then <code>weblogicDomainStorageNFSServer</code> should be set to the IP address or name of the DNS server, and this value should be set to the exported path on that server.  Note that the path where the domain is mounted in the WebLogic containers is not affected by this setting, that is determined when you create your domain.</td>
+<td>Physical path of the storage for the PV.  When <code>weblogicDomainStorageType</code> is set to <code>HOST_PATH</code>, this value should be set the to path to the domain storage on the Kubernetes host.  When <code>weblogicDomainStorageType</code> is set to NFS, then <code>weblogicDomainStorageNFSServer</code> should be set to the IP address or name of the DNS server, and this value should be set to the exported path on that server.  Note that the path where the domain is mounted in the WebLogic containers is not affected by this setting; that is determined when you create your domain.</td>
 <td>no default</td>
 </tr>
 
@@ -2142,7 +2142,7 @@ spec:
 
 <h4 id="verify-the-pv-and-pvc-objects">Verify the PV and PVC objects</h4>
 
-<p>You can use this command to verify the persistent volume was created, note that the <code>Status</code> field
+<p>You can use this command to verify the persistent volume was created. Note that the <code>Status</code> field
 should have the value <code>Bound</code>, indicating the that persistent volume has been claimed:</p>
 
 <pre><code>$ kubectl describe pv weblogic-sample-pv
@@ -3447,20 +3447,20 @@ Events:        &lt;none&gt;
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1553086580"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1553086877"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1553086580"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1553086877"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1553086580" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1553086580"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1553086877" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1553086877"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

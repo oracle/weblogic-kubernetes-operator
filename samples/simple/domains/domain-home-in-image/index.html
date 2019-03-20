@@ -12,17 +12,17 @@
     <title>Domain home in image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1553086580" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1553086580" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1553086877" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1553086877" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1553086580"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1553086877"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1553086580"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1553086580"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1553086877"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1553086877"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1553086580"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1553086877"></script>
 
     
   </div>
@@ -1985,9 +1985,9 @@ $ create-weblogic-credentials.sh
 <li>Replace the built-in user name and password in the <code>properties/docker-build/domain_security.properties</code> file with the <code>username</code> and <code>password</code> that are supplied on the command line using the <code>-u</code> and <code>-p</code> options. These credentials need to match the WebLogic domain admin credentials in the secret that is specified via the <code>weblogicCredentialsSecretName</code> property in the <code>create-domain-inputs.yaml</code> file.</li>
 <li>Build a Docker image based on the Docker sample, <a href="https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image">Example Image with a WebLogic Server Domain using the Oracle WebLogic Scripting Tooling (WLST)</a> or <a href="https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt">Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)</a>. It will create a sample WebLogic Server domain in the Docker image.
 <div class="notices warning" ><p>Oracle strongly recommends storing the image containing the domain home as private
-  in the registry (e.g. Oracle Cloud Infrastructure Registry, Docker Hub, etc.) as
+  in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such) as
   this image contains sensitive information about the domain including keys and
-  credentials that are used to access external resources (e.g. datasource password).
+  credentials that are used to access external resources (for example, data source password).
   For more information about
   <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/#weblogic-domain-in-docker-image-protection">domain home in image protection</a>,
   see the <strong><em>Security</em></strong> section.</p>
@@ -3769,20 +3769,20 @@ domain1-managed-server2                     ClusterIP   None             &lt;non
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1553086580"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1553086877"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1553086580"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1553086580"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1553086877"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1553086877"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1553086580" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1553086580"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1553086877" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1553086877"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

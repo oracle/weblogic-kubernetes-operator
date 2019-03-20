@@ -85,7 +85,7 @@ $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-
       
       <guid>/weblogic-kubernetes-operator/quickstart/cleanup/</guid>
       <description>Remove the domain.  Remove the domain&amp;rsquo;s Ingress by using helm:
-$ helm delete --purge sample-domain1-ingress  Remove the domain resources by using the sample delete-weblogic-domain-resources script.
+$ helm delete --purge sample-domain1-ingress  Remove the domain resources by using the sample delete-weblogic-domain-resources script:
 $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1  Use kubectl to confirm that the server pods and domain resource are gone:
 $ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.  Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:</description>
     </item>

@@ -81,7 +81,7 @@ $ kubectl create namespace domain-namespace-1  Replace domain-namespace-1 with n
       <guid>/weblogic-kubernetes-operator/userguide/overview/prepare/</guid>
       <description>Set up your Kubernetes cluster If you need help setting up a Kubernetes environment, check our cheat sheet.
 After creating Kubernetes clusters, you can optionally:
- Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs.  Load balancing with an Ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster.</description>
+ Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs.  Load balance with an Ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster.</description>
     </item>
     
     <item>
@@ -162,7 +162,7 @@ One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogi
       <guid>/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</guid>
       <description>Use this document to set up and configure your own domain resource which can be used to configure your WLS domain. Then, you can use the domain resource to start the Kubernetes artifacts of the corresponding domain.
 Swagger documentation is available here.
-Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the resource.
+Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the resource:
  Make sure the WebLogic operator is running. Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.</description>
     </item>
     
@@ -295,7 +295,8 @@ $ docker pull traefik:1.</description>
       <pubDate>Sat, 23 Feb 2019 20:51:51 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/introduction/design/</guid>
-      <description>The Oracle WebLogic Server Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment. It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.a traditional data center deployment. It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.</description>
+      <description>The Oracle WebLogic Server Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment. It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
+Human operators are normally responsible for starting and stopping environments, initiating backups, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.</description>
     </item>
     
     <item>
@@ -416,7 +417,7 @@ $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-
       
       <guid>/weblogic-kubernetes-operator/quickstart/cleanup/</guid>
       <description>Remove the domain.  Remove the domain&amp;rsquo;s Ingress by using helm:
-$ helm delete --purge sample-domain1-ingress  Remove the domain resources by using the sample delete-weblogic-domain-resources script.
+$ helm delete --purge sample-domain1-ingress  Remove the domain resources by using the sample delete-weblogic-domain-resources script:
 $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1  Use kubectl to confirm that the server pods and domain resource are gone:
 $ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.  Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:</description>
     </item>
