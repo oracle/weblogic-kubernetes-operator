@@ -69,7 +69,6 @@ public class SitConfigTests {
     String testName = args[4];
 
     SitConfigTests test = new SitConfigTests(adminHost, adminPort, adminUser, adminPassword);
-    // SitConfigTests test = new SitConfigTests("slc11vjg", "30051", "weblogic", "welcome1");
 
     ServerRuntimeMBean runtimeMBean = test.runtimeServiceMBean.getServerRuntime();
     println("Sitconfig State:" + runtimeMBean.isInSitConfigState());
@@ -78,8 +77,8 @@ public class SitConfigTests {
       test.verifyDebugFlagJMXCore(true);
       test.verifyDebugFlagServerLifeCycle(true);
       test.verifyMaxMessageSize(78787878);
-      test.verifyConnectTimeout(12);
-      test.verifyRestartMax(22);
+      test.verifyConnectTimeout(120);
+      test.verifyRestartMax(5);
       test.verifyT3ChannelPublicAddress(adminHost);
       test.verifyT3ChannelPublicPort(30091);
     }
@@ -302,7 +301,6 @@ public class SitConfigTests {
         : "Didn't get the expected value "
             + inactiveConnectionTimeoutSeconds
             + " for inactiveConnectionTimeoutSeconds";
-    // testMaxPoolSize(resourceName, jcpb.getMaxCapacity());
 
     // Assert the jdbc driver param properties
     JDBCDriverParamsBean jdbcDriverParams = jdbcDataSourceBean.getJDBCDriverParams();
@@ -310,16 +308,6 @@ public class SitConfigTests {
     assert dsUrl.equals(jdbcDriverParams.getUrl())
         : "Didn't get the expected url for datasource " + dsUrl;
 
-    // println("jdbcDriverParams.getPasswordEncrypted()" +
-    // jdbcDriverParams.getPasswordEncrypted()[0]);
-    // Assert datasource user property
-    /*
-    JDBCPropertiesBean properties = jdbcDriverParams.getProperties();
-    JDBCPropertyBean[] properties1 = properties.getProperties();
-    for (JDBCPropertyBean jDBCPropertyBean : properties1) {
-        println(jDBCPropertyBean.getName());
-    }
-     */
     // Assert datasource is working with overiridden value
     DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
 
@@ -333,26 +321,6 @@ public class SitConfigTests {
         println("HOST_NAME:" + rs.getString("HOST_NAME"));
         assert dbHostName.equals(rs.getString("HOST_NAME"));
       }
-      /*
-      ResultSetMetaData meta = rs.getMetaData();
-      int colCount = meta.getColumnCount();
-      println(colCount + "");
-      for (int col = 1; col <= colCount; col++) {
-          System.out.print(meta.getColumnName(col) + " ");
-      }
-      println("");
-      while (rs.next()) {
-          println("INSTANCE_NAME:" + rs.getString("INSTANCE_NAME"));
-          println("HOST_NAME:" + rs.getString("HOST_NAME"));
-          for (int col = 1; col <= colCount; col++) {
-              Object value = rs.getObject(col);
-              if (value != null) {
-                  System.out.print("@" + value.toString() + "@ ");
-              }
-          }
-          println("");
-      }
-       */
     } catch (SQLException ex) {
       Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
     }
