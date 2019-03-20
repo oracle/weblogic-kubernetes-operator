@@ -6,9 +6,17 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Map;
-import oracle.kubernetes.operator.utils.*;
 import oracle.kubernetes.operator.utils.Operator.RESTCertType;
-import org.junit.*;
+import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
+import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.AfterClass;
+import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 /**
