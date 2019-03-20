@@ -21,6 +21,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
 
   private static int number = 3;
   String oprelease = "op" + number;
+  private int waitTime = 5;
+  private int maxIterations = 60;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -609,24 +611,16 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       ArrayList<String> targetDomainsNS =
           (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
       targetDomainsNS.add("test" + (number + 1));
-      upgradeVerifyOperatorDomainNamespaces(operator, targetDomainsNS);
+      upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
       domainnew = createVerifyDomain(number + 1, operator);
       logger.info("verify that old domain is managed by operator after upgrade");
-      operator.verifyDomainExists(domain.getDomainUid());
+      verifyOperatorDomainManagement(operator, domain, true);
       logger.info("Upgrade to remove first domain");
       targetDomainsNS.remove("test" + (number));
-      upgradeVerifyOperatorDomainNamespaces(operator, targetDomainsNS);
-      Thread.sleep(60 * 1000);
+      upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
       logger.info("verify that old domain is not managed by operator");
-      operator.verifyDomainExists(domain.getDomainUid());
-      throw new RuntimeException(
-          "FAILURE: After Helm Upgrade for the domainNamespaces operator still able to manage old namespace ");
-    } catch (Exception ex) {
-      if (!ex.getMessage()
-          .contains("Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number))
-        throw new RuntimeException(
-            "FAILURE: Exception does not report the expected error message " + ex.getMessage());
-
+      verifyOperatorDomainManagement(operator, domain, false);
+      verifyOperatorDomainManagement(operator, domainnew, true);
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
@@ -639,7 +633,6 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       }
       number++;
     }
-
     logger.info("SUCCESS - " + testMethodName);
   }
   /**
@@ -666,7 +659,6 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       logger.info("Deleting operator to check that domain functionality is not effected");
       operator.destroy();
       operator = null;
-      Thread.sleep(60 * 1000);
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
@@ -682,6 +674,39 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
+  private void verifyOperatorDomainManagement(
+      Operator operator, Domain domain, boolean isAccessible) throws Exception {
+    for (int i = 0; i < maxIterations; i++) {
+
+      try {
+        operator.verifyDomainExists(domain.getDomainUid());
+        if (!isAccessible) {
+          throw new RuntimeException("FAILURE: Operator still able to manage old namespace ");
+        } else {
+          break;
+        }
+      } catch (Exception ex) {
+        if (!isAccessible) {
+          if (!ex.getMessage()
+              .contains(
+                  "Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number)) {
+
+          } else {
+            break;
+          }
+        }
+      }
+      if (i == maxIterations - 1) {
+        String errorMsg = "FAILURE: Operator can't access the domain " + domain.getDomainUid();
+        if (!isAccessible)
+          errorMsg = "FAILURE: Operator still can access the domain " + domain.getDomainUid();
+        throw new RuntimeException(errorMsg);
+      }
+      logger.info("iteration " + i + " of " + maxIterations);
+      Thread.sleep(waitTime * 1000);
+    }
+  }
+
   private Domain createVerifyDomain(int number, Operator operator) throws Exception {
     logger.info("create domain with UID : test" + number);
     Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
@@ -693,7 +718,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     return domain;
   }
 
-  private void upgradeVerifyOperatorDomainNamespaces(
+  private void upgradeOperatorDomainNamespaces(
       Operator operator, ArrayList<String> targetNamespaces) throws Exception {
     logger.info("update operator with new target domain");
     String upgradeSet =
