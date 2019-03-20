@@ -71,7 +71,7 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The properties tested is: env: "-Dweblogic.StdoutDebugEnabled=false"-->
+   * The property tested is: env: "-Dweblogic.StdoutDebugEnabled=false"-->
    * "-Dweblogic.StdoutDebugEnabled=true"
    *
    * @throws Exception
@@ -94,7 +94,7 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The properties tested is: logHomeEnabled: true --> logHomeEnabled: false
+   * The property tested is: logHomeEnabled: true --> logHomeEnabled: false
    *
    * @throws Exception
    */
@@ -116,7 +116,7 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The properties tested is: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+   * The property tested is: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
    *
    * @throws Exception
    */
@@ -139,7 +139,7 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The properties tested is: includeServerOutInPodLog: true --> includeServerOutInPodLog: false
+   * The property tested is: includeServerOutInPodLog: true --> includeServerOutInPodLog: false
    *
    * @throws Exception
    */
@@ -162,7 +162,7 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The properties tested is: image: "store/oracle/weblogic:12.2.1.3" --> image:
+   * The property tested is: image: "store/oracle/weblogic:12.2.1.3" --> image:
    * "store/oracle/weblogic:duplicate"
    *
    * @throws Exception
