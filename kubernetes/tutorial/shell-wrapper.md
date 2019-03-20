@@ -21,7 +21,7 @@ cd weblogic-kubernetes-operator/kubernetes/tutorial
 #  Modify value of LB_TYPE to choose load balancer type: traefik or voyager.
 #  Modify value of DOMAIN_BUILD_TYPE to choose the approach to create domain home: wlst or wdt.
 .
-./startup.sh
+./setup.sh
 ```
 
 If everything goes well, after the setup script finishes, you'll have all the resources deployed and running on your Kubernetes cluster. Let's check the result.
@@ -168,12 +168,9 @@ For instance, following are the cmds to create only `domain1`.
 ```
 
 ## Cleanup
-Run `clean.sh` to clean up everything created by `setup.sh`.  
-Then got to PV_ROOT to clean all subfolders. Note that the owner of the subfolders can be different from current user since they are created by container. So you need to use `sudo` to delete them.
+Run `clean.sh` to clean up everything created by `setup.sh` including contents under PV_ROOT folder.  
 ```
 cd wls-operator-tutorial
 ./clean.sh
-cd $PV_ROOT
-sudo rm -rf shared logs
 ```
 
