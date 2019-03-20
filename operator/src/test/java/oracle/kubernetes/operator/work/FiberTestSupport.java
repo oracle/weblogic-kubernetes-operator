@@ -1,3 +1,7 @@
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.work;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -42,7 +46,7 @@ public class FiberTestSupport {
   private Packet packet = new Packet();
 
   /** Creates a single-threaded FiberGate instance. */
-  public FiberGate createFiberGateStub() {
+  FiberGate createFiberGateStub() {
     return new FiberGate(engine);
   }
 
@@ -80,6 +84,10 @@ public class FiberTestSupport {
   /** Returns an unmodifiable map of the components in the test packet. */
   public Map<String, Component> getPacketComponents() {
     return Collections.unmodifiableMap(packet.getComponents());
+  }
+
+  public Packet getPacket() {
+    return packet;
   }
 
   public FiberTestSupport addToPacket(String key, Object value) {
@@ -125,6 +133,7 @@ public class FiberTestSupport {
    * @param step the first step to run
    */
   public Packet runSteps(Step step) {
+    fiber = engine.createFiber();
     fiber.start(step, packet, completionCallback);
 
     return packet;
@@ -136,6 +145,7 @@ public class FiberTestSupport {
    * @param step the first step to run
    */
   public Packet runStepsToCompletion(Step step) {
+    fiber = engine.createFiber();
     fiber.start(step, packet, completionCallback);
 
     // Wait for fiber to finish
@@ -153,6 +163,7 @@ public class FiberTestSupport {
    * @param nextStep the first step to run
    */
   public Packet runSteps(StepFactory factory, Step nextStep) {
+    fiber = engine.createFiber();
     fiber.start(factory.createStepList(nextStep), packet, completionCallback);
     return packet;
   }

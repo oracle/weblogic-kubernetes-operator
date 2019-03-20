@@ -180,7 +180,8 @@ function createDomainHome {
   createDomainConfigmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
-  JOB_NAME="${domainUID}-create-weblogic-sample-domain-job"
+  CONTAINER_NAME="create-weblogic-sample-domain-job"
+  JOB_NAME="${domainUID}-${CONTAINER_NAME}"
   deleteK8sObj job $JOB_NAME ${createJobOutput}
 
   echo Creating the domain by creating the job ${createJobOutput}
@@ -193,8 +194,8 @@ function createDomainHome {
   while [ "$JOB_STATUS" != "Completed" -a $count -lt $max ] ; do
     sleep 30
     count=`expr $count + 1`
-    JOBS=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME}`
-    JOB_ERRORS=`kubectl logs jobs/$JOB_NAME -n ${namespace} | grep "ERROR:" `
+    JOBS=`kubectl get pods -n ${namespace} | grep ${JOB_NAME}`
+    JOB_ERRORS=`kubectl logs jobs/$JOB_NAME $CONTAINER_NAME -n ${namespace} | grep "ERROR:" `
     JOB_STATUS=`echo $JOBS | awk ' { print $3; } '`
     JOB_INFO=`echo $JOBS | awk ' { print "pod", $1, "status is", $3; } '`
     echo "status on iteration $count of $max"
@@ -216,17 +217,17 @@ function createDomainHome {
   if [ "$JOB_STATUS" != "Completed" ]; then
     echo "The create domain job is not showing status completed after waiting 300 seconds."
     echo "Check the log output for errors."
-    kubectl logs jobs/$JOB_NAME -n ${namespace}
+    kubectl logs jobs/$JOB_NAME $CONTAINER_NAME -n ${namespace}
     fail "Exiting due to failure - the job status is not Completed!"
   fi
 
   # Check for successful completion in log file
-  JOB_POD=`kubectl get pods --show-all -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
-  JOB_STS=`kubectl logs $JOB_POD -n ${namespace} | grep "Successfully Completed" | awk ' { print $1; } '`
+  JOB_POD=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
+  JOB_STS=`kubectl logs $JOB_POD $CONTAINER_NAME -n ${namespace} | grep "Successfully Completed" | awk ' { print $1; } '`
   if [ "${JOB_STS}" != "Successfully" ]; then
     echo The log file for the create domain job does not contain a successful completion status
     echo Check the log output for errors
-    kubectl logs $JOB_POD -n ${namespace}
+    kubectl logs $JOB_POD $CONTAINER_NAME -n ${namespace}
     fail "Exiting due to failure - the job log file does not contain a successful completion status!"
   fi
 }
@@ -243,10 +244,10 @@ function printSummary {
   echo "Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
   echo ""
   if [ "${exposeAdminNodePort}" = true ]; then
-    echo "Administration console access is available at http:${K8S_IP}:${adminNodePort}/console"
+    echo "Administration console access is available at http://${K8S_IP}:${adminNodePort}/console"
   fi
   if [ "${exposeAdminT3Channel}" = true ]; then
-    echo "T3 access is available at t3:${K8S_IP}:${t3ChannelPort}"
+    echo "T3 access is available at t3://${K8S_IP}:${t3ChannelPort}"
   fi
   echo "The following files were generated:"
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"

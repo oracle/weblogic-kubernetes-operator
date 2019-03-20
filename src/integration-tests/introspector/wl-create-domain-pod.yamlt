@@ -1,0 +1,84 @@
+# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    weblogic.createdByOperator: "true"
+    weblogic.domainUID: ${DOMAIN_UID}
+  name: ${DOMAIN_UID}-create-domain-pod
+  namespace: ${NAMESPACE}
+spec:
+  containers:
+  - command:
+    - ${JOB_SCRIPT}
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Djava.security.egd=file:/dev/./urandom "
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
+    - name: NAMESPACE
+      value: "${NAMESPACE}"
+    - name: DOMAIN_UID
+      value: "${DOMAIN_UID}"
+    - name: DOMAIN_HOME
+      value: "${DOMAIN_HOME}"
+    - name: NODEMGR_HOME
+      value: "${NODEMGR_HOME}"
+    - name: LOG_HOME
+      value: "${LOG_HOME}"
+    - name: CREDENTIALS_SECRET_NAME
+      value: "${WEBLOGIC_CREDENTIALS_SECRET_NAME}"
+    image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
+    imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
+    name: weblogic-server
+    readinessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/ready
+      initialDelaySeconds: 5
+      periodSeconds: 1
+    volumeMounts:
+    - name: my-secret-volume
+      mountPath: /weblogic-operator/config-overrides-secrets/my-secret
+      readOnly: true
+    - name: weblogic-credentials-volume
+      mountPath: /weblogic-operator/secrets
+      readOnly: true
+    - name: weblogic-domain-cm-volume
+      mountPath: /weblogic-operator/scripts
+      readOnly: true
+    - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
+      mountPath: /weblogic-operator/config-overrides
+      readOnly: true
+    - name: test-script-cm-volume
+      mountPath: /test-scripts
+      readOnly: true
+    - mountPath: /shared
+      name: weblogic-domain-storage-volume
+  volumes:
+  - name: my-secret-volume
+    secret:
+      defaultMode: 420
+      secretName:  my-secret
+  - name: weblogic-credentials-volume
+    secret:
+      defaultMode: 420
+      secretName:  ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
+  - name: weblogic-domain-cm-volume
+    configMap:
+      defaultMode: 365
+      name: weblogic-domain-cm
+  - name: ${DOMAIN_UID}-mycustom-overrides-cm-volume
+    configMap:
+      defaultMode: 365
+      name: ${DOMAIN_UID}-mycustom-overrides-cm
+  - name: test-script-cm-volume
+    configMap:
+      defaultMode: 365
+      name: test-script-cm
+  - name: weblogic-domain-storage-volume
+    persistentVolumeClaim:
+      claimName: ${DOMAIN_UID}-weblogic-domain-pvc

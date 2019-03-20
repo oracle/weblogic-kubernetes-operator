@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -19,9 +19,12 @@ import io.kubernetes.client.models.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -29,10 +32,10 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
-import oracle.kubernetes.weblogic.domain.v2.Cluster;
-import oracle.kubernetes.weblogic.domain.v2.ConfigurationConstants;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
@@ -290,7 +293,12 @@ public class DomainIntrospectorJobTest {
   }
 
   FiberTestSupport.StepFactory getStepFactory() {
-    return next -> JobHelper.createDomainIntrospectorJobStep(new WatchTuning(30, 0), next);
+    return next ->
+        JobHelper.createDomainIntrospectorJobStep(
+            new WatchTuning(30, 0),
+            next,
+            new ConcurrentHashMap<String, JobWatcher>(),
+            new AtomicBoolean(false));
   }
 
   V1PodList createListPods() {

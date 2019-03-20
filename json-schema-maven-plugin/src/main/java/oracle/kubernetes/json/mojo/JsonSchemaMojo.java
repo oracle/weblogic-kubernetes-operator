@@ -1,4 +1,4 @@
-// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -19,10 +20,9 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
 @Mojo(
-  name = "generate",
-  defaultPhase = LifecyclePhase.PROCESS_CLASSES,
-  requiresDependencyResolution = ResolutionScope.COMPILE
-)
+    name = "generate",
+    defaultPhase = LifecyclePhase.PROCESS_CLASSES,
+    requiresDependencyResolution = ResolutionScope.COMPILE)
 public class JsonSchemaMojo extends AbstractMojo {
 
   private static final String DOT = "\\.";
@@ -72,10 +72,17 @@ public class JsonSchemaMojo extends AbstractMojo {
 
     if (updateNeeded(new File(classUrl.getPath()), getSchemaFile())) {
       getLog().info("Changes detected -- generating schema for " + rootClass + ".");
-      main.generateSchema(rootClass, getSchemaFile());
-      if (generateMarkdown) main.generateMarkdown(getMarkdownFile());
+      generate();
     } else {
       getLog().info("Schema up-to-date. Skipping generation.");
+    }
+  }
+
+  private void generate() throws MojoExecutionException {
+    Map<String, Object> generatedSchema = main.generateSchema(rootClass, getSchemaFile());
+    if (generateMarkdown) {
+      getLog().info(" -- generating markdown for " + rootClass + ".");
+      main.generateMarkdown("Domain", getMarkdownFile(), generatedSchema);
     }
   }
 

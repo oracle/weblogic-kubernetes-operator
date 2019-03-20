@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -11,7 +11,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
-/** Contains configuration of a WLS cluster */
+/** Contains configuration of a WLS cluster. */
 public class WlsClusterConfig {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -23,7 +23,7 @@ public class WlsClusterConfig {
   public WlsClusterConfig() {}
 
   /**
-   * Constructor for a static cluster when Json result is not available
+   * Constructor for a static cluster when Json result is not available.
    *
    * @param clusterName Name of the WLS cluster
    */
@@ -33,7 +33,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Constructor that can also be used for a dynamic cluster *
+   * Constructor that can also be used for a dynamic cluster.
    *
    * @param clusterName Name of the WLS cluster
    * @param dynamicServersConfig A WlsDynamicServersConfig object containing the dynamic servers
@@ -46,7 +46,7 @@ public class WlsClusterConfig {
 
   /**
    * Creates a WlsClusterConfig object using an "clusters" item parsed from JSON result from WLS
-   * REST call
+   * REST call.
    *
    * @param clusterConfigMap Map containing "cluster" item parsed from JSON result from WLS REST
    *     call
@@ -77,7 +77,17 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Add a statically configured WLS server to this cluster
+   * Returns true if one of the servers in the cluster has the specified name.
+   *
+   * @param serverName the name to look for
+   * @return true or false
+   */
+  public boolean hasNamedServer(String serverName) {
+    return getServerConfigs().stream().anyMatch(c -> serverName.equals(c.getName()));
+  }
+
+  /**
+   * Add a statically configured WLS server to this cluster.
    *
    * @param wlsServerConfig A WlsServerConfig object containing the configuration of the statically
    *     configured WLS server that belongs to this cluster
@@ -87,7 +97,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns the number of servers that are statically configured in this cluster
+   * Returns the number of servers that are statically configured in this cluster.
    *
    * @return The number of servers that are statically configured in this cluster
    */
@@ -100,7 +110,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns the name of the cluster that this WlsClusterConfig is created for
+   * Returns the name of the cluster that this WlsClusterConfig is created for.
    *
    * @return the name of the cluster that this WlsClusterConfig is created for
    */
@@ -109,7 +119,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns the name of the cluster that this WlsClusterConfig is created for
+   * Returns the name of the cluster that this WlsClusterConfig is created for.
    *
    * @return the name of the cluster that this WlsClusterConfig is created for
    */
@@ -131,7 +141,7 @@ public class WlsClusterConfig {
 
   /**
    * Associate this cluster to the WlsDomainConfig object for the WLS domain that this cluster
-   * belongs to
+   * belongs to.
    *
    * @param wlsDomainConfig the WlsDomainConfig object for the WLS domain that this cluster belongs
    *     to
@@ -141,7 +151,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns the WlsDomainConfig object for the WLS domain that this cluster belongs to
+   * Returns the WlsDomainConfig object for the WLS domain that this cluster belongs to.
    *
    * @return the WlsDomainConfig object for the WLS domain that this cluster belongs to
    */
@@ -151,7 +161,7 @@ public class WlsClusterConfig {
 
   /**
    * Returns a list of server configurations for servers that belong to this cluster, which includes
-   * both statically configured servers and dynamic servers
+   * both statically configured servers and dynamic servers.
    *
    * @return A list of WlsServerConfig containing configurations of servers that belong to this
    *     cluster
@@ -176,7 +186,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Whether the cluster contains any statically configured servers
+   * Whether the cluster contains any statically configured servers.
    *
    * @return True if the cluster contains any statically configured servers
    */
@@ -185,7 +195,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Whether the cluster contains any dynamic servers
+   * Whether the cluster contains any dynamic servers.
    *
    * @return True if the cluster contains any dynamic servers
    */
@@ -195,7 +205,7 @@ public class WlsClusterConfig {
 
   /**
    * Returns the current size of the dynamic cluster (the number of dynamic server instances allowed
-   * to be created)
+   * to be created).
    *
    * @return the current size of the dynamic cluster, or -1 if there is no dynamic servers in this
    *     cluster
@@ -205,7 +215,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Returns the maximum size of the dynamic cluster
+   * Returns the maximum size of the dynamic cluster.
    *
    * @return the maximum size of the dynamic cluster, or -1 if there is no dynamic servers in this
    *     cluster
@@ -255,7 +265,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Finds the names of a machine to be created for all dynamic servers in this dynamic cluster
+   * Finds the names of a machine to be created for all dynamic servers in this dynamic cluster.
    *
    * @param machineNamePrefix Prefix for the new machine names (should match
    *     machineNameMatchExpression in dynamic servers config)
@@ -319,7 +329,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Return the URL path of REST request for updating dynamic cluster size
+   * Return the URL path of REST request for updating dynamic cluster size.
    *
    * @return The REST URL path for updating cluster size of dynamic servers for this cluster
    */
@@ -353,7 +363,7 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Checks the JSON result from the dynamic cluster size update REST request
+   * Checks the JSON result from the dynamic cluster size update REST request.
    *
    * @param jsonResult The JSON String result from the dynamic server cluster size update REST
    *     request

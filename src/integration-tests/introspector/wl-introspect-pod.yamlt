@@ -15,6 +15,10 @@ spec:
   - command:
     - ${JOB_SCRIPT}
     env:
+    - name: JAVA_OPTIONS
+      value: "-Djava.security.egd=file:/dev/./urandom "
+    - name: USER_MEM_ARGS
+      value: "-Xms64m -Xmx256m "
     - name: NAMESPACE
       value: "${NAMESPACE}"
     - name: DOMAIN_UID
@@ -30,9 +34,19 @@ spec:
     image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
     imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
     name: weblogic-server
+    readinessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/ready
+      initialDelaySeconds: 5
+      periodSeconds: 1
     volumeMounts:
     - name: weblogic-credentials-volume
       mountPath: /weblogic-operator/secrets
+      readOnly: true
+    - name: mysql-secret-volume
+      mountPath: /weblogic-operator/config-overrides-secrets/${DOMAIN_UID}-mysql-secret
       readOnly: true
     - name: my-secret-volume
       mountPath: /weblogic-operator/config-overrides-secrets/my-secret
@@ -46,13 +60,17 @@ spec:
     - name: test-script-cm-volume
       mountPath: /test-scripts
       readOnly: true
-    ${PVCOMMENT}- mountPath: /shared
-    ${PVCOMMENT}  name: weblogic-domain-storage-volume
+    - name: weblogic-domain-storage-volume
+      mountPath: /shared
   volumes:
   - name: weblogic-credentials-volume
     secret:
       defaultMode: 420
       secretName:  ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
+  - name: mysql-secret-volume
+    secret:
+      defaultMode: 420
+      secretName:  ${DOMAIN_UID}-mysql-secret
   - name: my-secret-volume
     secret:
       defaultMode: 420
@@ -69,6 +87,6 @@ spec:
     configMap:
       defaultMode: 365
       name: test-script-cm
-  ${PVCOMMENT}- name: weblogic-domain-storage-volume
-  ${PVCOMMENT}  persistentVolumeClaim:
-  ${PVCOMMENT}    claimName: ${DOMAIN_UID}-weblogic-domain-pvc
+  - name: weblogic-domain-storage-volume
+    persistentVolumeClaim:
+      claimName: ${DOMAIN_UID}-weblogic-domain-pvc

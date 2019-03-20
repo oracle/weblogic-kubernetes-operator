@@ -1,8 +1,8 @@
 # Oracle WebLogic Server Kubernetes Operator
 
-Built with [Wercker](http://www.wercker.com)
+Built with [Jenkins](http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator/)
 
-[![wercker status](https://app.wercker.com/status/68ce42623fce7fb2e52d304de8ea7530/m/develop "wercker status")](https://app.wercker.com/project/byKey/68ce42623fce7fb2e52d304de8ea7530)
+[![Build Status](http://build.weblogick8s.org:8080/buildStatus/icon?job=weblogic-kubernetes-operator)](http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator/)
 
 Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
 
@@ -18,21 +18,22 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 * Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](kubernetes/samples/README.md).
+The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/updated-weblogic-kubernetes-support-with-operator-20), or try out the [samples](kubernetes/samples/README.md).
 
-```diff
-+ The current release of the operator is 2.0-rc2, a release candidate for our 2.0 release.
-+ This release candidate was published on Jan. 16, 2019.
-+ We expect to publish the final 2.0 release later in January, 2019.
-+ We expect that there will be some minor changes to documentation and samples in the final 2.0 release.
-+ However, this release candidate is suitable for testing and early adopters.
-```
+***
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.0.1.
+This release was published on March 4, 2019.
+***
 
 ## Known issues
 
 | Issue | Description |
 | --- | --- |
-| [#726](https://github.com/oracle/weblogic-kubernetes-operator/issues/726) | Clusters only support default channel. |
+|  |  |
+
+## Operator version 2.0
+
+Documentation for the 2.0 release of the operator is available [here](site/v2.0/README.md).
 
 ## Operator version 1.1
 
@@ -81,7 +82,7 @@ The [User guide](site/user-guide.md) provides detailed information about all asp
 
 Please refer to our [samples](kubernetes/samples/README.md) for information about the available sample code.
 
-# Need more help? Have a suggestion? Come and say "Hello!"
+# Need more help? Have a suggestion? Come and say, "Hello!"
 
 We have a **public Slack channel** where you can get in touch with us to ask questions about using the operator or give us feedback
 or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
@@ -100,7 +101,7 @@ Please take a look at our [wish list](https://github.com/oracle/weblogic-kuberne
 
 ## API documentation
 
-Documentation for APIs is provided here:
+Documentation for APIs:
 
 * The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md).
 
@@ -145,3 +146,31 @@ Only pull requests from committers that can be verified as having signed the OCA
 ## Introducing a new dependency
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.
+
+## Use Helm Chart from GitHub chart repository
+
+Add this repo to Helm installation:
+
+```
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
+```
+
+Verify repository was added correctly:
+
+```
+$ helm repo list
+NAME           URL
+weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
+```
+
+Update with latest information about charts from chart repositories:
+
+```
+$ helm repo update
+```
+
+Install Operator from the repo:
+
+```
+$ helm install weblogic-operator/weblogic-operator --name weblogic-operator
+```

@@ -14,5 +14,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(FIELD)
 public @interface Pattern {
+
+  /**
+   * Pattern value.
+   *
+   * @return pattern value
+   */
   String value();
 }

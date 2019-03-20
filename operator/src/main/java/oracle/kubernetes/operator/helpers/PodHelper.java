@@ -4,26 +4,37 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import oracle.kubernetes.operator.*;
+import java.util.Optional;
+import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public class PodHelper {
 
   private PodHelper() {}
 
   static class AdminPodStepContext extends PodStepContext {
-    private static final String INTERNAL_OPERATOR_CERT_FILE = "internalOperatorCert";
-    private static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
+    static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
 
     AdminPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
@@ -67,8 +78,35 @@ public class PodHelper {
     }
 
     @Override
+    String getPodPatchedMessageKey() {
+      return MessageKeys.ADMIN_POD_PATCHED;
+    }
+
+    @Override
     String getPodReplacedMessageKey() {
       return MessageKeys.ADMIN_POD_REPLACED;
+    }
+
+    @Override
+    V1Pod withNonHashedElements(V1Pod pod) {
+      V1Pod v1Pod = super.withNonHashedElements(pod);
+      getContainer(v1Pod).ifPresent(c -> c.addEnvItem(internalCertEnvValue()));
+
+      return v1Pod;
+    }
+
+    private V1EnvVar internalCertEnvValue() {
+      return new V1EnvVar()
+          .name(INTERNAL_OPERATOR_CERT_ENV)
+          .value(getInternalOperatorCertFile(TuningParameters.getInstance()));
+    }
+
+    private Optional<V1Container> getContainer(V1Pod v1Pod) {
+      return v1Pod.getSpec().getContainers().stream().filter(this::isK8sContainer).findFirst();
+    }
+
+    private boolean isK8sContainer(V1Container c) {
+      return KubernetesConstants.CONTAINER_NAME.equals(c.getName());
     }
 
     @Override
@@ -77,11 +115,9 @@ public class PodHelper {
     }
 
     @Override
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
-      List<V1EnvVar> vars = new ArrayList<>(getServerSpec().getEnvironmentVariables());
-      addEnvVar(vars, INTERNAL_OPERATOR_CERT_ENV, getInternalOperatorCertFile(tuningParameters));
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
+      List<V1EnvVar> vars = createCopy(getServerSpec().getEnvironmentVariables());
       overrideContainerWeblogicEnvVars(vars);
-      doSubstitution(vars);
       return vars;
     }
 
@@ -96,12 +132,12 @@ public class PodHelper {
     }
 
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
-      return tuningParameters.get(INTERNAL_OPERATOR_CERT_FILE);
+      return RestServer.getInstance().getInternalCertificateAsBase64PEM();
     }
   }
 
   /**
-   * Factory for {@link Step} that creates admin server pod
+   * Factory for {@link Step} that creates admin server pod.
    *
    * @param next Next processing step
    * @return Step for creating admin server pod
@@ -137,7 +173,7 @@ public class PodHelper {
   }
 
   /**
-   * Factory for {@link Step} that creates managed server pod
+   * Factory for {@link Step} that creates managed server pod.
    *
    * @param next Next processing step
    * @return Step for creating managed server pod
@@ -222,6 +258,11 @@ public class PodHelper {
     }
 
     @Override
+    String getPodPatchedMessageKey() {
+      return MessageKeys.MANAGED_POD_PATCHED;
+    }
+
+    @Override
     protected String getPodReplacedMessageKey() {
       return MessageKeys.MANAGED_POD_REPLACED;
     }
@@ -246,15 +287,14 @@ public class PodHelper {
 
     @Override
     @SuppressWarnings("unchecked")
-    List<V1EnvVar> getEnvironmentVariables(TuningParameters tuningParameters) {
-      List<V1EnvVar> envVars = (List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS);
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
+      List<V1EnvVar> envVars = createCopy((List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS));
 
       List<V1EnvVar> vars = new ArrayList<>();
       if (envVars != null) {
         vars.addAll(envVars);
       }
       overrideContainerWeblogicEnvVars(vars);
-      doSubstitution(vars);
       return vars;
     }
   }
@@ -273,7 +313,7 @@ public class PodHelper {
   }
 
   /**
-   * Factory for {@link Step} that deletes server pod
+   * Factory for {@link Step} that deletes server pod.
    *
    * @param sko Server Kubernetes Objects
    * @param next Next processing step
@@ -314,5 +354,15 @@ public class PodHelper {
       return new CallBuilder()
           .deletePodAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(next));
     }
+  }
+
+  public static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
+    ArrayList<V1EnvVar> copy = new ArrayList<>();
+    if (envVars != null) {
+      for (V1EnvVar envVar : envVars) {
+        copy.add(new V1EnvVar().name(envVar.getName()).value(envVar.getValue()));
+      }
+    }
+    return copy;
   }
 }

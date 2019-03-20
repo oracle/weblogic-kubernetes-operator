@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class WatchBuilder {
   /** Always true for watches. */
@@ -68,7 +68,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track service calls
+   * Creates a web hook object to track service calls.
    *
    * @param namespace the namespace
    * @return the active web hook
@@ -98,10 +98,10 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedServiceCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -116,7 +116,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track pods
+   * Creates a web hook object to track pods.
    *
    * @param namespace the namespace
    * @return the active web hook
@@ -143,10 +143,10 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedPodCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -161,7 +161,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track jobs
+   * Creates a web hook object to track jobs.
    *
    * @param namespace the namespace
    * @return the active web hook
@@ -188,10 +188,10 @@ public class WatchBuilder {
         return new BatchV1Api(client)
             .listNamespacedJobCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -206,7 +206,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track events
+   * Creates a web hook object to track events.
    *
    * @param namespace the namespace
    * @return the active web hook
@@ -233,10 +233,10 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedEventCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -251,7 +251,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track changes to weblogic domains in one namespaces
+   * Creates a web hook object to track changes to weblogic domains in one namespaces.
    *
    * @param namespace the namespace in which to track domains
    * @return the active web hook
@@ -276,12 +276,12 @@ public class WatchBuilder {
 
       try {
         return new WeblogicApi(client)
-            .listWebLogicOracleV2NamespacedDomainCall(
+            .listNamespacedDomainCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -296,7 +296,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track config map calls
+   * Creates a web hook object to track config map calls.
    *
    * @param namespace the namespace
    * @return the active web hook
@@ -326,10 +326,10 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedConfigMapCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),

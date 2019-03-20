@@ -5,9 +5,9 @@
 package oracle.kubernetes.weblogic.domain;
 
 import java.util.List;
-import oracle.kubernetes.weblogic.domain.v2.Channel;
-import oracle.kubernetes.weblogic.domain.v2.ClusterSpec;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.AdminServerSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 /**
  * The interface for the class used by the domain model to return effective configurations to the
@@ -15,7 +15,7 @@ import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
  */
 public interface EffectiveConfigurationFactory {
 
-  ServerSpec getAdminServerSpec();
+  AdminServerSpec getAdminServerSpec();
 
   ServerSpec getServerSpec(String serverName, String clusterName);
 
@@ -30,8 +30,4 @@ public interface EffectiveConfigurationFactory {
   boolean isShuttingDown();
 
   List<String> getAdminServerChannelNames();
-
-  List<Channel> getAdminServerChannels();
-
-  Integer getDefaultReplicaLimit();
 }

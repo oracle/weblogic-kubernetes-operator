@@ -19,6 +19,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import org.apache.commons.codec.binary.Base64;
@@ -49,6 +50,8 @@ public class RestServer {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int CORE_POOL_SIZE = 3;
 
+  private static RestServer INSTANCE = null;
+
   private RestConfig config;
 
   // private String baseHttpUri;
@@ -64,13 +67,60 @@ public class RestServer {
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
 
   /**
+   * Create singleton instance of the WebLogic Operator's RestServer. Should only be called once.
+   *
+   * @param restConfig - the WebLogic Operator's REST configuration. Throws IllegalStateException if
+   *     instance already created.
+   */
+  public static synchronized void create(RestConfig restConfig) {
+    LOGGER.entering();
+    try {
+      if (INSTANCE == null) {
+        INSTANCE = new RestServer(restConfig);
+        return;
+      }
+
+      throw new IllegalStateException();
+    } finally {
+      LOGGER.exiting();
+    }
+  }
+
+  /**
+   * Accessor for obtaining reference to the RestServer singleton instance.
+   *
+   * @return RestServer - Singleton instance of the RestServer
+   */
+  public static synchronized RestServer getInstance() {
+    return INSTANCE;
+  }
+
+  /**
+   * Release RestServer singleton instance. Should only be called once. Throws IllegalStateException
+   * if singleton instance not created.
+   */
+  public static void destroy() {
+    LOGGER.entering();
+    try {
+      if (INSTANCE != null) {
+        INSTANCE = null;
+        return;
+      }
+
+      throw new IllegalStateException();
+    } finally {
+      LOGGER.exiting();
+    }
+  }
+
+  /**
    * Constructs the WebLogic Operator REST server.
    *
    * @param config - contains the REST server's configuration, which includes the hostnames and port
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  public RestServer(RestConfig config) {
+  private RestServer(RestConfig config) {
     LOGGER.entering();
     this.config = config;
     baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
@@ -102,10 +152,10 @@ public class RestServer {
    * <p>If a port has not been configured, then it logs that fact, does not start that port, and
    * continues (v.s. throwing an exception and not starting any ports).
    *
+   * @param container Container
    * @throws Exception if the REST api could not be started for reasons other than a port was not
    *     configured. When an exception is thrown, then none of the ports will be leftrunning,
    *     however it is still OK to call stop (which will be a no-op).
-   * @param container Container
    */
   public void start(Container container) throws Exception {
     LOGGER.entering();
@@ -166,6 +216,29 @@ public class RestServer {
       LOGGER.info("Stopped the internal ssl REST server"); // TBD .fine ?
     }
     LOGGER.exiting();
+  }
+
+  /**
+   * Gets the internal https port's certificate as a base64 encoded PEM.
+   *
+   * @return base64 encoded PEM containing the certificate, or null if unable to read the
+   *     certificate data.
+   */
+  public String getInternalCertificateAsBase64PEM() {
+    LOGGER.entering();
+    String internalCert = null;
+    try {
+      internalCert =
+          Base64.encodeBase64String(
+              readFromDataOrFile(
+                  this.config.getOperatorInternalCertificateData(),
+                  this.config.getOperatorInternalCertificateFile()));
+    } catch (IOException e) {
+      LOGGER.warning(MessageKeys.EXCEPTION, e);
+    }
+
+    LOGGER.exiting(internalCert);
+    return internalCert;
   }
 
   private HttpServer createExternalHttpsServer(Container container) throws Exception {

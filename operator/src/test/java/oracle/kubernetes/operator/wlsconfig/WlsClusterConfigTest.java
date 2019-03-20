@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -488,7 +488,7 @@ public class WlsClusterConfigTest {
   static WlsDynamicServersConfig createDynamicServersConfig(
       int clusterSize, int maxClusterSize, String serverNamePrefix, String clusterName) {
     WlsServerConfig serverTemplate =
-        new WlsServerConfig("serverTemplate1", 7001, "host1", 7002, false, null, null, null, false);
+        new WlsServerConfig("serverTemplate1", "host1", null, 7001, 7002, null, null);
     List<String> serverNames = new ArrayList<>();
     final int startingServerNameIndex = 1;
     for (int i = 0; i < clusterSize; i++) {

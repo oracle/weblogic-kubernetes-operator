@@ -9,8 +9,11 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -25,6 +28,30 @@ public class BaseTest {
   public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   public static final String TESTWEBAPP = "testwebapp";
 
+  // property file used to customize operator properties for operator inputs yaml
+
+  public static final String OPERATOR1_YAML = "operator1.yaml";
+  public static final String OPERATOR2_YAML = "operator2.yaml";
+  public static final String OPERATORBC_YAML = "operator_bc.yaml";
+  public static final String OPERATOR_CHAIN_YAML = "operator_chain.yaml";
+
+  // file used to customize domain properties for domain, PV and LB inputs yaml
+  public static final String DOMAINONPV_WLST_YAML = "domainonpvwlst.yaml";
+  public static final String DOMAINONPV_WDT_YAML = "domainonpvwdt.yaml";
+  public static final String DOMAIN_ADMINONLY_YAML = "domainadminonly.yaml";
+  public static final String DOMAIN_RECYCLEPOLICY_YAML = "domainrecyclepolicy.yaml";
+  public static final String DOMAIN_SAMPLE_DEFAULTS_YAML = "domainsampledefaults.yaml";
+  public static final String DOMAININIMAGE_WLST_YAML = "domaininimagewlst.yaml";
+  public static final String DOMAININIMAGE_WDT_YAML = "domaininimagewdt.yaml";
+
+  // property file used to configure constants for integration tests
+  public static final String APP_PROPS_FILE = "OperatorIT.properties";
+
+  public static boolean QUICKTEST;
+  public static boolean SMOKETEST;
+  public static boolean JENKINS;
+  public static boolean INGRESSPERDOMAIN = true;
+
   private static String resultRoot = "";
   private static String pvRoot = "";
   private static String resultDir = "";
@@ -36,8 +63,27 @@ public class BaseTest {
   private static int waitTimePod = 5;
   private static String leaseId = "";
   private static String branchName = "";
-
+  private static String appLocationInPod = "/u01/oracle/apps";
   private static Properties appProps;
+
+  // Set QUICKTEST env var to true to run a small subset of tests.
+  // Set SMOKETEST env var to true to run an even smaller subset of tests
+  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
+  static {
+    QUICKTEST =
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
+    SMOKETEST =
+        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
+    if (SMOKETEST) {
+      QUICKTEST = true;
+    }
+    if (System.getenv("JENKINS") != null) {
+      JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
+    }
+    if (System.getenv("INGRESSPERDOMAIN") != null) {
+      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
+    }
+  }
 
   public static void initialize(String appPropsFile) throws Exception {
 
@@ -93,6 +139,28 @@ public class BaseTest {
               + "\n"
               + clnResult.stderr());
     }
+
+    if (System.getenv("JENKINS") != null) {
+      logger.info("Creating " + resultRoot + "/acceptance_test_tmp");
+      TestUtils.exec(
+          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
+              + resultRoot
+              + "/acceptance_test_tmp\"");
+      TestUtils.exec(
+          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
+              + resultRoot
+              + "/acceptance_test_tmp\"");
+      logger.info("Creating " + pvRoot + "/acceptance_test_pv");
+      TestUtils.exec(
+          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
+              + pvRoot
+              + "/acceptance_test_pv\"");
+      TestUtils.exec(
+          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
+              + pvRoot
+              + "/acceptance_test_pv\"");
+    }
+
     // create resultRoot, PVRoot, etc
     Files.createDirectories(Paths.get(resultRoot));
     Files.createDirectories(Paths.get(resultDir));
@@ -166,17 +234,88 @@ public class BaseTest {
     Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
 
     if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
+      ExecResult result =
+          TestUtils.kubectlexecNoCheck(
+              domain.getDomainUid() + ("-") + domainMap.get("adminServerName"),
+              "" + domainMap.get("namespace"),
+              " -- mkdir -p " + appLocationInPod);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command to create directory "
+                + appLocationInPod
+                + " in the pod failed, returned "
+                + result.stderr()
+                + " "
+                + result.stdout());
+      }
+
       domain.deployWebAppViaWLST(
           TESTWEBAPP,
           getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
+          appLocationInPod,
           getUsername(),
           getPassword());
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+
+      /* The below check is done for domain-home-in-image domains, it needs 12.2.1.3 patched image
+       * otherwise managed servers will see unicast errors after app deployment and run as standalone servers, not in cluster.
+       * Here is the error message
+       * <Jan 18, 2019 8:54:16,214 PM GMT> <Error> <Kernel> <BEA-000802> <ExecuteRequest failed
+       * java.lang.AssertionError: LocalGroup should atleast have the local server!.
+       * java.lang.AssertionError: LocalGroup should atleast have the local server!
+       * 	at weblogic.cluster.messaging.internal.GroupImpl.send(GroupImpl.java:176)
+       * 	at weblogic.cluster.messaging.internal.server.UnicastFragmentSocket.send(UnicastFragmentSocket.java:97)
+       * 	at weblogic.cluster.FragmentSocketWrapper.send(FragmentSocketWrapper.java:84)
+       * 	at weblogic.cluster.UnicastSender.send(UnicastSender.java:53)
+       * 	at weblogic.cluster.UnicastSender.send(UnicastSender.java:21)
+       * 	Truncated. see log file for complete stacktrace
+       */
+
+      if (domainMap.containsKey("domainHomeImageBase")) {
+        if (domainMap.get("initialManagedServerReplicas") != null
+            && ((Integer) domainMap.get("initialManagedServerReplicas")).intValue() >= 1) {
+
+          result =
+              ExecCommand.exec(
+                  "kubectl logs "
+                      + domain.getDomainUid()
+                      + ("-")
+                      + domainMap.get("managedServerNameBase")
+                      + "1 -n "
+                      + domainMap.get("namespace")
+                      + " | grep BEA-000802");
+          if (result.exitValue() == 0) {
+            throw new RuntimeException(
+                "FAILURE: Managed Servers are not part of the cluster, failing with "
+                    + result.stdout()
+                    + ". \n Make sure WebLogic Server 12.2.1.3.0 with patch 29135930 applied is used.");
+          }
+        }
+      }
+
     } else {
       logger.info("exposeAdminT3Channel is false, can not test t3ChannelPort");
     }
 
     logger.info("Done - testAdminT3Channel");
+  }
+
+  /**
+   * Verify t3channel port by a JMS connection.
+   *
+   * @throws Exception
+   */
+  public void testAdminT3ChannelWithJMS(Domain domain) throws Exception {
+    logger.info("Inside testAdminT3ChannelWithJMS");
+    ConnectionFactory cf = domain.createJMSConnectionFactory();
+    Connection c = cf.createConnection();
+    logger.info("Connection created successfully before cycle.");
+    domain.shutdownUsingServerStartPolicy();
+    domain.restartUsingServerStartPolicy();
+    c = cf.createConnection();
+    logger.info("Connection created successfully after cycle");
+    c.close();
+    logger.info("Done - testAdminT3ChannelWithJMS");
   }
 
   /**
@@ -192,8 +331,14 @@ public class BaseTest {
     operator.verifyExternalRESTService();
     operator.verifyDomainExists(domain.getDomainUid());
     domain.verifyDomainCreated();
-    domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+    // if domain created with domain home in image, re-deploy the webapp and verify load balancing
+    if (domain.getDomainMap().containsKey("domainHomeImageBase")) {
+      testAdminT3Channel(domain);
+    } else {
+      domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+    }
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
+    domain.verifyHasClusterServiceChannelPort("TCP", 8011, TESTWEBAPP + "/");
     logger.info("Done - testDomainLifecyle");
   }
 
@@ -256,6 +401,7 @@ public class BaseTest {
     }
 
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+
     logger.info("Done - testClusterScaling");
   }
 
@@ -289,6 +435,7 @@ public class BaseTest {
     domain.deployWebAppViaWLST(
         "opensessionapp",
         getProjectRoot() + "/src/integration-tests/apps/opensessionapp.war",
+        appLocationInPod,
         getUsername(),
         getPassword());
 
@@ -375,6 +522,10 @@ public class BaseTest {
     return password;
   }
 
+  public static String getResultDir() {
+    return resultDir;
+  }
+
   public static int getMaxIterationsPod() {
     return maxIterationsPod;
   }
@@ -402,10 +553,9 @@ public class BaseTest {
     TestUtils.createDirUnderDomainPV(dirPathToCreate);
 
     // copy script to pod
-    TestUtils.kubectlcp(
+    TestUtils.copyFileViaCat(
         getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
         "/shared/domains/" + domainUID + "/bin/scripts/scalingAction.sh",
-        // "/shared/scalingAction.sh",
         podName,
         domainNS);
   }
@@ -434,6 +584,45 @@ public class BaseTest {
 
       logger.info("Checking if managed service(" + podName + ") is created");
       TestUtils.checkServiceCreated(podName, domainNS);
+    }
+  }
+
+  public static void tearDown() throws Exception {
+    logger.log(
+        Level.INFO,
+        "TEARDOWN: Starting Test Run TearDown (cleanup and state-dump)."
+            + " Note that if the test failed previous to tearDown, "
+            + " the error that caused the test failure may be reported "
+            + "after the tearDown completes. Note that tearDown itself may report errors,"
+            + " but this won't affect the outcome of the test results.");
+    StringBuffer cmd =
+        new StringBuffer("export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && ");
+    cmd.append(BaseTest.getProjectRoot())
+        .append("/integration-tests/src/test/resources/statedump.sh");
+    logger.info("Running " + cmd);
+
+    // renew lease before callin statedump.sh
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() == 0) {
+      logger.info("Executed statedump.sh " + result.stdout());
+    } else {
+      logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
+    }
+
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+
+    if (JENKINS) {
+      result = cleanup();
+      if (result.exitValue() != 0) {
+        logger.info("cleanup result =" + result.stdout() + "\n " + result.stderr());
+      }
+    }
+
+    if (getLeaseId() != "") {
+      logger.info("Release the k8s cluster lease");
+      TestUtils.releaseLease(getProjectRoot(), getLeaseId());
     }
   }
 }
