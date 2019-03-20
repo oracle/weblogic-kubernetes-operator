@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -583,6 +583,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
    * Create operator and verify its deployed successfully. Create domain1 and verify domain is
    * started. Call helm upgrade to add domainnew to manage, verify both domains are managed by
@@ -633,6 +634,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
    * Create operator and verify its deployed successfully. Create domain1 and verify domain is
    * started. Delete operator and make sure domain1 is still functional
