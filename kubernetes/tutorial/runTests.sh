@@ -1,7 +1,18 @@
+#!/bin/bash
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # domain1: DomainHomeInImage
 # domain2: DomainHomeInImage_ServerLogsInPV
 # domain3: DomainHomeOnPV
+#
+# Usage:
+# To run all tests from scratch: call function 'runAll'.
+# If the oprator and Ingress controllers are ready (those are done in function beforeAll), 
+#   to rerun all domain tests: call function 'suiteOne'.
+#   to rerun some domain tests: 
+#     to run seperate domain tests with WLST: call function 'testDomain1WLST', 'testDomain2WLST' and/or 'testDomain3WLST';
+#     to run seperate domain tests with WDT: call function 'testDomain1WDT', 'testDomain2WDT' and/or 'testDomain3WDT'.
 #
 
 source ./waitUntil.sh
@@ -316,7 +327,6 @@ function runOne() {
 
 runOne
 #runAll
-
 
 
 

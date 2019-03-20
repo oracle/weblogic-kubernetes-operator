@@ -7,7 +7,7 @@ set -u
 source waitUntil.sh
 function pullImages() {
   echo "pull docker images"
-  docker pull $WLS_OPERATOR_IMAGE 
+  #docker pull $WLS_OPERATOR_IMAGE 
   docker pull traefik:1.7.6
   docker pull appscode/voyager:7.4.0 
   docker pull $WLS_BASE_IMAGE 
@@ -19,7 +19,7 @@ function delImages() {
   docker rmi $WLS_BASE_IMAGE
   docker rmi traefik:1.7.6
   docker rmi appscode/voyager:7.4.0
-  docker rmi $WLS_OPERATOR_IMAGE 
+  #docker rmi $WLS_OPERATOR_IMAGE 
 }
 
 function create() {
@@ -55,7 +55,8 @@ function waitUntilCRDReady() {
 }
 
 function checkCRDReadyCmd() {
-  kubectl get crd domains.weblogic.oracle  -oyaml  --ignore-not-found | grep 'version: v2' | wc -l
+  #TODO: check the exact version of domain CRD 
+  kubectl get crd domains.weblogic.oracle  -oyaml  --ignore-not-found | grep 'version' | wc -l
 }
 
 function delete() {

@@ -4,7 +4,7 @@
 # This is an sample domain resource which has domainHome in a PV.
 #
 
-apiVersion: "weblogic.oracle/v2"
+apiVersion: "weblogic.oracle/v3alpha1"
 kind: Domain
 metadata:
   name: domain3
