@@ -2,7 +2,7 @@
 title: "Manage operators"
 date: 2019-02-23T16:43:38-05:00
 weight: 3
-description: "Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster. Use the operator's Helm chart to install and manage the operator"
+description: "Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster. Use the operator's Helm chart to install and manage the operator."
 ---
 
 
@@ -92,7 +92,7 @@ For more detailed information, see the [REST interface configuration]({{<relref 
 
 For testing purposes, the WebLogic Kubernetes Operator project provides a sample script
 that generates a self-signed certificate and private key for the operator external REST interface.
-The generated certificate and key is stored in a kubernetes `tls secret` and the sample
+The generated certificate and key is stored in a Kubernetes `tls secret` and the sample
 script outputs the corresponding configuration values in YAML format. These values can be added to your custom YAML configuration file, for use when the operator's Helm chart is installed.
 
 {{% notice warning %}}
