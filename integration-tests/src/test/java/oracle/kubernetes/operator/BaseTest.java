@@ -51,7 +51,7 @@ public class BaseTest {
   public static boolean SMOKETEST;
   public static boolean JENKINS;
   public static boolean INGRESSPERDOMAIN = true;
-  
+
   private static String resultRoot = "";
   private static String pvRoot = "";
   private static String resultDir = "";
@@ -75,7 +75,7 @@ public class BaseTest {
     SMOKETEST =
         System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
     if (SMOKETEST) {
-    	QUICKTEST = true;
+      QUICKTEST = true;
     }
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
