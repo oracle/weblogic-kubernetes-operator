@@ -4,7 +4,6 @@
 1. [Directory Structure Explained](#directory-structure-explained)
 1. [Prerequisites Before Run](#prerequisites-before-run)
 1. [Run with Shell Wrapper](#run-with-shell-wrapper)
-1. [Run Step-By-Step](#run-step-by-step)
 
 ## Introduction
 This tutorial will teach you how to run WebLogic domains in a Kubernetes environment using the operator.  
@@ -39,6 +38,10 @@ The following is the directory structure of this tutorial:
 │   ├── pvc.yaml
 │   └── pv.yaml
 ├── domainHomeBuilder
+│   ├── cleanpv
+│   │   ├── run.sh
+│   │   └── scripts
+│   │       └── clean.sh
 │   ├── wdt
 │   │   ├── build.sh
 │   │   ├── Dockerfile
@@ -56,19 +59,26 @@ The following is the directory structure of this tutorial:
 │           ├── create-domain.py
 │           └── create-domain.sh
 ├── domain.sh
-├── setenv.sh
 ├── ings
 │   └── voyager-ings.yaml
 ├── operator.sh
+├── README.md
+├── runTests.sh
+├── setenv.sh
 ├── setup.sh
+├── shell-wrapper.md
 ├── traefik.sh
-└── voyager.sh
+├── voyager.sh
+└── waitUntil.sh
+
+11 directories, 33 files
 ```
 
 An overview of what each of these does:
-- `domainHomeBuilder`: This folder contains one Dockfile, one WLST file and some shell scripts to create domain home.
-  - There are two subfolders: `wlst` and `wdt`. The former is to create domain with WLST and the later is to create domain with WDT.
-    This two folder has similar structure and files.
+- `domainHomeBuilder`: This folder contains Dockfile, WLST, WDT  and shell scripts to create and clean domain home.
+  - There are three subfolders: `cleanpv`, `wlst` and `wdt`.   
+    The folder `cleanpv` is to clean the folder of PV.
+    The folder `wlst` is to create domain with WLST and the folder `wdt` is to create domain with WDT. This two folder has similar structure and files.
 
     - `build.sh`: To build a docker image with a domain home in it via calling `docker build`. The generated image name is `<domainName>-image` which will be used in domain-home-in-image case.  
       `usage: ./build.sh domainName adminUser adminPwd`
@@ -106,6 +116,8 @@ An overview of what each of these does:
   
   - `clean.sh`: a shell wrapper to do cleanup.
   
+  - `runTest.sh`: to run unit tests of this tutorial.
+  
 ## Prerequisites Before Run
   - Have Docker installed, a Kubernetes cluster running and have `kubectl` installed and configured. If you need help on this, check out our [cheat sheet](../../site/k8s_setup.md).
   - Have Helm installed: both the Helm client (helm) and the Helm server (Tiller). See [official helm doc](https://github.com/helm/helm/blob/master/docs/install.md) for detail.
@@ -116,8 +128,3 @@ It takes less than 20 minutes to complete. After finished, you'll have three run
 cover the three typical domain configurations and with load balancer configured.  
 With the running domains, you can experiment other operator features, like scale up/down, rolling restart etc.  
 See detail [here](shell-wrapper.md).
-
-## Run Step-By-Step
-We also provide step-by-step guide to guide you setup everything from scratch. This will help you understand the essential steps and then you'll be able to do customization to meet your own requirements.
-See detail [here](step-by-step.md).
-
