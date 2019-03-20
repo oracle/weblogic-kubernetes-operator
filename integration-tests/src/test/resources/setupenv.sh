@@ -15,7 +15,6 @@ function setup_jenkins {
   set -x
   id
 
-  docker login -u teamsldi_us@oracle.com -p $docker_pass  wlsldi-v2.docker.oraclecorp.com
   docker images
 
   pull_tag_images
