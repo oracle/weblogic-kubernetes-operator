@@ -632,10 +632,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       verifyOperatorDomainManagement(operator, domainnew, true);
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null)
-        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      if (domainnew != null)
-        domainnew.destroy();
+      if (domain != null) TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      if (domainnew != null) domainnew.destroy();
       if (operator != null) {
         operator.destroy();
       }
@@ -670,14 +668,13 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       operator = null;
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
-      } finally {
-        if (domain != null)
-          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-        if (operator != null) {
-          operator.destroy();
-        }
-        number++;
+    } finally {
+      if (domain != null) TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      if (operator != null) {
+        operator.destroy();
       }
+      number++;
+    }
     logger.info("SUCCESS - " + testMethodName);
   }
 
