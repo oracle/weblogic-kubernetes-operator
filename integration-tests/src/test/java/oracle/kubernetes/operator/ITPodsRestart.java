@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -71,8 +71,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The property tested is: env: "-Dweblogic.StdoutDebugEnabled=false"-->
-   * "-Dweblogic.StdoutDebugEnabled=true"
+   * Modify the domain scope env property on the domain resource using kubectl apply -f domain.yaml
+   * Verify that all the server pods in the domain got re-started The property tested is: env:
+   * "-Dweblogic.StdoutDebugEnabled=false"--> "-Dweblogic.StdoutDebugEnabled=true"
    *
    * @throws Exception
    */
@@ -94,7 +95,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The property tested is: logHomeEnabled: true --> logHomeEnabled: false
+   * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
+   * Verify that all the server pods in the domain got re-started The property tested is:
+   * logHomeEnabled: true --> logHomeEnabled: false
    *
    * @throws Exception
    */
@@ -116,7 +119,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The property tested is: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+   * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
+   * Verify that all the server pods in the domain got re-started The property tested is:
+   * imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
    *
    * @throws Exception
    */
@@ -139,7 +144,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The property tested is: includeServerOutInPodLog: true --> includeServerOutInPodLog: false
+   * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
+   * Verify that all the server pods in the domain got re-started The property tested is:
+   * includeServerOutInPodLog: true --> includeServerOutInPodLog: false
    *
    * @throws Exception
    */
@@ -162,8 +169,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * The property tested is: image: "store/oracle/weblogic:12.2.1.3" --> image:
-   * "store/oracle/weblogic:duplicate"
+   * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
+   * Verify that all the server pods in the domain got re-started The property tested is: image:
+   * "store/oracle/weblogic:12.2.1.3" --> image: "store/oracle/weblogic:duplicate"
    *
    * @throws Exception
    */
@@ -193,8 +201,6 @@ public class ITPodsRestart extends BaseTest {
 
     Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
     domainMap.put("domainUID", "domainpodsrestart");
-    domainMap.put("adminNodePort", new Integer("30707"));
-    domainMap.put("t3ChannelPort", new Integer("30081"));
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
 
     logger.info("Creating Domain domain& verifing the domain creation");
