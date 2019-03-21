@@ -60,7 +60,12 @@ public class TestUtils {
     checkCmdInLoop(cmd.toString(), "Running", podName);
   }
 
-  /** @param cmd - kubectl get pod <podname> -n namespace */
+  /**
+   * check pod is in Terminating state
+   *
+   * @param cmd - kubectl get pod <podname> -n namespace
+   * @throws Exception
+   */
   public static void checkPodTerminating(String podName, String domainNS) throws Exception {
 
     StringBuffer cmd = new StringBuffer();
@@ -1067,7 +1072,15 @@ public class TestUtils {
     }
   }
 
-  // create yaml file with changed property
+  /**
+   * create yaml file with changed property
+   *
+   * @param inputYamlFile
+   * @param generatedYamlFile
+   * @param oldString
+   * @paramnewString
+   * @throws Exception
+   */
   public static void createNewYamlFile(
       String inputYamlFile, String generatedYamlFile, String oldString, String newString)
       throws Exception {
@@ -1101,35 +1114,15 @@ public class TestUtils {
     logger.info("Done - generate the new yaml file ");
   }
 
+  /**
+   * copy file from source to target
+   *
+   * @param fromFile
+   * @param toFile
+   * @throws Exception
+   */
   public static void copyFile(String fromFile, String toFile) throws Exception {
     logger.info("Copying file from  " + fromFile + " to " + toFile);
-
     Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
-  }
-  /**
-   * tag image with docker cmd: docker tage sourceImageName targetImageName
-   *
-   * @param sourceImage
-   * @param targetImage
-   * @throws Exception
-   */
-  public static void dockerTagImage(String sourceImage, String targetImage) throws Exception {
-    logger.info("Tagging souceImage:  " + sourceImage + "  to " + targetImage);
-    String dockerCmd = "docker tag " + sourceImage + " " + targetImage;
-    logger.info("Executing cmd " + dockerCmd);
-    exec(dockerCmd);
-  }
-
-  /**
-   * remove image with docker cmd: docker rmi -f imageName
-   *
-   * @param imageName
-   * @throws Exception
-   */
-  public static void dockerRemoveImage(String imageName) throws Exception {
-    logger.info("Removing image:  " + imageName);
-    String dockerCmd = "docker rmi -f  " + imageName;
-    logger.info("Executing cmd " + dockerCmd);
-    exec(dockerCmd);
   }
 }
