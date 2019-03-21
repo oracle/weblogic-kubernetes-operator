@@ -16,7 +16,7 @@ You can access most of the REST services using `GET`, for example:
 
 All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  Callers should pass in the `Accept:/application/json` header.
 
-To protect against Cross Site Request Forgery (CSRF) attacks, the operator REST API requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example when you POST to the `/scale` endpoint).  The value is an arbitrary name such as `MyClient`. For example, when using curl:
+To protect against Cross Site Request Forgery (CSRF) attacks, the operator REST API requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example when you POST to the `/scale` endpoint).  The value is an arbitrary name such as `MyClient`. For example, when using `curl`:
 
 ```
 curl ... -H X-Requested-By:MyClient ... -X POST .../scaling
@@ -70,8 +70,7 @@ REST_ADDR="https://${KUBERNETES_SERVER}:${REST_PORT}"
 SECRET=`kubectl get serviceaccount weblogic-operator -n weblogic-operator -o jsonpath='{.secrets[0].name}'`
 ENCODED_TOKEN=`kubectl get secret ${SECRET} -n weblogic-operator -o jsonpath='{.data.token}'`
 TOKEN=`echo ${ENCODED_TOKEN} | base64 --decode`
-OPERATOR_CERT_SECRET=`grep externalRestIdentitySecret weblogic-operator.yaml | awk '{ print $2 }'`
-OPERATOR_CERT_DATA=`kubectl get secret ${OPERATOR_CERT_SECRET} -n weblogic-operator -o jsonpath='{.data.tls\.crt}'`
+OPERATOR_CERT_DATA=`kubectl get secret -n weblogic-operator weblogic-operator-external-rest-identity -o jsonpath='{.data.tls\.crt}'`
 OPERATOR_CERT_FILE="/tmp/operator.cert.pem"
 echo ${OPERATOR_CERT_DATA} | base64 --decode > ${OPERATOR_CERT_FILE}
 cat ${OPERATOR_CERT_FILE}
