@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
 import java.util.ArrayList;
 import java.util.List;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -14,17 +13,10 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.After;
 
 public class ServiceHelperTestBase {
-  protected static final String SERVICE_NAME = "service1";
   protected static final String NS = "namespace";
   protected static final String UID = "uid1";
   protected List<Memento> mementos = new ArrayList<>();
   protected DomainPresenceInfo domainPresenceInfo = createPresenceInfo();
-
-  static ServerKubernetesObjects createSko(V1Service service) {
-    ServerKubernetesObjects sko = new ServerKubernetesObjects();
-    sko.getService().set(service);
-    return sko;
-  }
 
   @After
   public void tearDown() {
