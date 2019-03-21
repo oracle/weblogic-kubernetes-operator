@@ -88,6 +88,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withContainer(V1Container container) {
+    ((BaseConfiguration) getDomainSpec()).addContainer(container);
+    return this;
+  }
+
+  @Override
   /**
    * Sets the WebLogic configuration overrides config map name for the domain
    *
@@ -288,6 +294,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withContainer(V1Container container) {
+      server.addContainer(container);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withPodLabel(String name, String value) {
       server.addPodLabel(name, value);
       return this;
@@ -445,6 +457,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withInitContainer(V1Container initContainer) {
       cluster.addInitContainer(initContainer);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withContainer(V1Container container) {
+      cluster.addContainer(container);
       return this;
     }
 
