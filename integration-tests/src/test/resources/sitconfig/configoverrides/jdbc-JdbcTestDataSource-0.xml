@@ -12,7 +12,7 @@
         <jdbc:inactive-connection-timeout-seconds jdbcf:combine-mode="add">120</jdbc:inactive-connection-timeout-seconds>
     </jdbc:jdbc-connection-pool-params>
     <jdbc:jdbc-driver-params>
-        <jdbc:url jdbcf:combine-mode="replace">jdbc:oracle:thin:@//slc11smq.us.oracle.com:1583/w18ys12c.us.oracle.com</jdbc:url>
+        <jdbc:url jdbcf:combine-mode="replace">JDBC_URL</jdbc:url>
         <jdbc:driver-name>oracle.jdbc.OracleDriver</jdbc:driver-name>
         <jdbc:properties>
             <jdbc:property>

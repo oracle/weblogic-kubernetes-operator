@@ -83,7 +83,8 @@ public class SitConfigTests {
       test.verifyT3ChannelPublicPort(30091);
     }
     if (testName.equals("testCustomSitConfigOverridesForJdbc")) {
-      test.testSystemResourcesJDBCAttributeChange("JdbcTestDataSource-0");
+      String JDBC_URL = args[5];
+      test.testSystemResourcesJDBCAttributeChange("JdbcTestDataSource-0", JDBC_URL);
     }
 
     if (testName.equals("testSystemResourcesJDBCAttributeChangeSecret")) {
@@ -268,15 +269,12 @@ public class SitConfigTests {
     return serverMBean;
   }
 
-  public void testSystemResourcesJDBCAttributeChange(String jdbcResourceName) {
+  public void testSystemResourcesJDBCAttributeChange(String jdbcResourceName, String dsUrl) {
     int initialCapacity = 2;
     int maxCapacity = 12;
     boolean testConnectionsonReserve = true;
     int harvestMaxCount = 7;
     int inactiveConnectionTimeoutSeconds = 120;
-    String dsUrl = "jdbc:oracle:thin:@//slc11smq.us.oracle.com:1583/w18ys12c.us.oracle.com";
-    String dbInstanceName = "w18ys12c";
-    String dbHostName = "slc11smq";
 
     println("Verifying the configuration changes made by sit config file");
 
@@ -314,13 +312,8 @@ public class SitConfigTests {
     try {
       Connection connection = dataSource.getConnection();
       Statement stmt = connection.createStatement();
-      ResultSet rs = stmt.executeQuery("SELECT * FROM v$instance");
-      while (rs.next()) {
-        println("INSTANCE_NAME:" + rs.getString("INSTANCE_NAME"));
-        assert dbInstanceName.equals(rs.getString("INSTANCE_NAME"));
-        println("HOST_NAME:" + rs.getString("HOST_NAME"));
-        assert dbHostName.equals(rs.getString("HOST_NAME"));
-      }
+      int createSchema = stmt.executeUpdate("CREATE SCHEMA `mysqldb` ;");
+      assert createSchema == 0 : "create schema failed";
     } catch (SQLException ex) {
       Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
     }
