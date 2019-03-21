@@ -1,13 +1,11 @@
 // Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
-
 package oracle.kubernetes.operator;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
@@ -31,7 +29,6 @@ import weblogic.j2ee.descriptor.wl.JDBCDataSourceBean;
 import weblogic.j2ee.descriptor.wl.JDBCDriverParamsBean;
 import weblogic.j2ee.descriptor.wl.JMSBean;
 import weblogic.j2ee.descriptor.wl.UniformDistributedTopicBean;
-import weblogic.management.ManagementException;
 import weblogic.management.configuration.*;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
 import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
@@ -41,6 +38,24 @@ import weblogic.management.mbeanservers.runtime.RuntimeServiceMBean;
 import weblogic.management.runtime.DomainRuntimeMBean;
 import weblogic.management.runtime.ServerRuntimeMBean;
 
+/**
+ * The configuration overrides tests are implemented in this class. Since the
+ * weblogic-kubernetes-operator doesn't have access to weblogic.jar, this test class is transferred
+ * to administration server pod running in the kubernetes cluster, built, run and returns with exit
+ * status.
+ *
+ * <p>This test class implements a main method since it is run outside of the JUnit tests in
+ * weblogic-kubernetes-operator integration test suite.
+ *
+ * <p>The JUnit wrapper test class oracle.kubernetes.operator.ITSitConfig running in functional
+ * integration test suite calls this Main class recursively to run individual override verification
+ * tests. The class exits with exception if any of the asserts fail and exit status 1 or gracefully
+ * exits with status 0 when all of the asserts pass.
+ *
+ * <p>The class takes a minimum of four arguments - administration server host, administration
+ * server port, administration server user name and administration server password. When
+ * testCustomSitConfigOverridesForJdbc test is run it expects an additional argument JDBC URL.
+ */
 public class SitConfigTests {
 
   private MBeanServerConnection domainRuntimeMbs, editMbs, runtimeMbs;
@@ -61,6 +76,13 @@ public class SitConfigTests {
   private final String adminUser;
   private final String adminPassword;
 
+  /**
+   * @param args the args should include a minimum of these values administration server host,
+   *     administration server port, administration server user name and administration server
+   *     password. When testCustomSitConfigOverridesForJdbc test is run it expects an additional
+   *     argument JDBC URL.
+   * @throws Exception
+   */
   public static void main(String args[]) throws Exception {
     String adminHost = args[0];
     String adminPort = args[1];
@@ -74,6 +96,8 @@ public class SitConfigTests {
     println("Sitconfig State:" + runtimeMBean.isInSitConfigState());
 
     if (testName.equals("testCustomSitConfigOverridesForDomain")) {
+      // the values passed to these verify methods are the attribute values overrrideen in the
+      // config.xml
       test.verifyDebugFlagJMXCore(true);
       test.verifyDebugFlagServerLifeCycle(true);
       test.verifyMaxMessageSize(78787878);
@@ -98,9 +122,15 @@ public class SitConfigTests {
     }
   }
 
-  /*    public SitConfigTests(){
-
-  }*/
+  /**
+   * Constructor
+   *
+   * @param adminHost
+   * @param adminPort
+   * @param adminUser
+   * @param adminPassword
+   * @throws Exception
+   */
   public SitConfigTests(String adminHost, String adminPort, String adminUser, String adminPassword)
       throws Exception {
     this.adminHost = adminHost;
@@ -177,6 +207,8 @@ public class SitConfigTests {
     h.put(Context.SECURITY_PRINCIPAL, adminUser);
     h.put(Context.SECURITY_CREDENTIALS, adminPassword);
     h.put(JMXConnectorFactory.PROTOCOL_PROVIDER_PACKAGES, "weblogic.management.remote");
+    // Add a timeout of 10 secs if the server doesnot return after a method invocation, this is not
+    // needed by the tests but to exit in case of a hang.
     h.put("jmx.remote.x.request.waiting.timeout", new Long(10000));
     serviceURL = new JMXServiceURL(protocol, adminHost, port, "/jndi/" + jndiName);
     println("Making mbean server connection with url");
@@ -189,6 +221,11 @@ public class SitConfigTests {
     return mBeanServerConnection;
   }
 
+  /**
+   * @param expectedValue - a boolean value set in the configuration override file config.xml
+   *     attribute debug-jmx-core verifies the boolean value is matched in the serverConfig mbean
+   *     tree
+   */
   protected void verifyDebugFlagJMXCore(boolean expectedValue) {
     ServerMBean serverMBean = getServerMBean();
     ServerDebugMBean serverDebugMBean = serverMBean.getServerDebug();
@@ -197,6 +234,11 @@ public class SitConfigTests {
         : "Didn't get the expected value " + expectedValue + " for JMX core debug flag";
   }
 
+  /**
+   * @param expectedValue - a boolean value set in the configuration override file config.xml
+   *     attribute debug-server-life-cycle verifies the boolean value is matched in the serverConfig
+   *     mbean tree
+   */
   protected void verifyDebugFlagServerLifeCycle(boolean expectedValue) {
     ServerMBean serverMBean = getServerMBean();
     ServerDebugMBean serverDebugMBean = serverMBean.getServerDebug();
@@ -205,6 +247,11 @@ public class SitConfigTests {
         : "Didn't get the expected value " + expectedValue + " for server life cycle debug flag";
   }
 
+  /**
+   * @param expectedValue - a integer value set in the configuration override file config.xml
+   *     attribute connect-timeout. configuration override file. Verifies the integer value is
+   *     matched in the serverConfig mbean tree
+   */
   protected void verifyConnectTimeout(int expectedValue) {
     ServerMBean serverMBean = getServerMBean();
     int got = serverMBean.getConnectTimeout();
@@ -212,6 +259,11 @@ public class SitConfigTests {
         : "Didn't get the expected value " + expectedValue + " for ConnectTimeout";
   }
 
+  /**
+   * @param expectedValue - a integer value set in the configuration override file config.xml
+   *     attribute restart-max. configuration override file. Verifies the integer value is matched
+   *     in the serverConfig mbean tree
+   */
   protected void verifyRestartMax(int expectedValue) {
     ServerMBean serverMBean = getServerMBean();
     int got = serverMBean.getRestartMax();
@@ -219,6 +271,11 @@ public class SitConfigTests {
         : "Didn't get the expected value " + expectedValue + " for RestartMax";
   }
 
+  /**
+   * @param expectedValue - a integer value set in the configuration override file config.xml
+   *     attribute max-message-size. Verifies the integer value is matched in the serverConfig mbean
+   *     tree
+   */
   protected void verifyMaxMessageSize(int expectedValue) {
     ServerMBean serverMBean = getServerMBean();
     int got = serverMBean.getMaxMessageSize();
@@ -226,6 +283,10 @@ public class SitConfigTests {
         : "Didn't get the expected value " + expectedValue + " for MaxMessageSize";
   }
 
+  /**
+   * @param expectedValue - public t3 channel address value set in the config.xml configuration
+   *     override file. verifies the public address is matched in the serverConfig mbean tree
+   */
   protected void verifyT3ChannelPublicAddress(String expectedValue) {
     boolean got = false;
     ServerMBean serverMBean = getServerMBean();
@@ -238,6 +299,10 @@ public class SitConfigTests {
     }
   }
 
+  /**
+   * @param expectedValue - a integer value set in the config.xml configuration override file.
+   *     Verifies the integer value is matched in the serverConfig mbean tree
+   */
   protected void verifyT3ChannelPublicPort(int expectedValue) {
     boolean got = false;
     ServerMBean serverMBean = getServerMBean();
@@ -250,6 +315,10 @@ public class SitConfigTests {
     }
   }
 
+  /**
+   * @param expectedValue - a integer value set in the config.xml configuration override file.
+   *     Verifies the integer value is matched in the serverConfig mbean tree
+   */
   protected void verifyT3ChannelMaxMessageSize(int expectedValue) {
     boolean got = false;
     ServerMBean serverMBean = getServerMBean();
@@ -269,6 +338,14 @@ public class SitConfigTests {
     return serverMBean;
   }
 
+  /**
+   * @param jdbcResourceName - name of the JDBC resource overridden in jdbc-JdbcTestDataSource-0.xml
+   * @param dsUrl - data source URL of the MySql database overridden in
+   *     jdbc-JdbcTestDataSource-0.xml. This test verifies the following attributes of the JDBC data
+   *     source connecion pool parameters overridden in jdbc-JdbcTestDataSource-0.xml -
+   *     initialCapacity, maxCapacity, testConnectionsonReserve, harvestMaxCount and
+   *     inactiveConnectionTimeoutSeconds (these are some random values chosen)
+   */
   public void testSystemResourcesJDBCAttributeChange(String jdbcResourceName, String dsUrl) {
     int initialCapacity = 2;
     int maxCapacity = 12;
@@ -306,9 +383,10 @@ public class SitConfigTests {
     assert dsUrl.equals(jdbcDriverParams.getUrl())
         : "Didn't get the expected url for datasource " + dsUrl;
 
-    // Assert datasource is working with overiridden value
+    // Assert datasource is working with overiridden JDBC URL value
     DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
 
+    // Create DDL statement and execute it to verify the datasource actually works.
     try {
       Connection connection = dataSource.getConnection();
       Statement stmt = connection.createStatement();
@@ -319,40 +397,10 @@ public class SitConfigTests {
     }
   }
 
-  public void testSystemResourcesJDBCAttributeChangeSecret(String jdbcResourceName)
-      throws ManagementException {
-    String dsUrl = "jdbc:oracle:thin:@//slc11smq.us.oracle.com:1583/w18ys12c.us.oracle.com";
-    String dbInstanceName = "w18ys12c";
-    String dbHostName = "slc11smq";
-
-    println("Verifying the configuration changes made by sit config file");
-
-    JDBCSystemResourceMBean jdbcSystemResource = getJDBCSystemResource(jdbcResourceName);
-    JDBCDataSourceBean jdbcDataSourceBean = jdbcSystemResource.getJDBCResource();
-
-    // Assert the jdbc driver param properties
-    JDBCDriverParamsBean jdbcDriverParams = jdbcDataSourceBean.getJDBCDriverParams();
-    assert dsUrl.equals(jdbcDriverParams.getUrl())
-        : "Didn't get the expected url for datasource " + dsUrl;
-
-    // Restart system resourtces which needs restart
-    restartResource("jdbc/" + jdbcResourceName);
-    // Assert datasource is working with overiridden value
-    DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
-
-    try {
-      Connection connection = dataSource.getConnection();
-      Statement stmt = connection.createStatement();
-      ResultSet rs = stmt.executeQuery("SELECT * FROM v$instance");
-      while (rs.next()) {
-        println("INSTANCE_NAME:" + rs.getString("INSTANCE_NAME"));
-        println("HOST_NAME:" + rs.getString("HOST_NAME"));
-      }
-    } catch (SQLException ex) {
-      Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
-    }
-  }
-
+  /**
+   * @param resourceName - name of the JDBC data source to lookup
+   * @return - the JDBC data source mbean
+   */
   protected JDBCSystemResourceMBean getJDBCSystemResource(String resourceName) {
     println("Looking up the jdbc system module..." + resourceName);
     DomainMBean domain = runtimeServiceMBean.getDomainConfiguration();
@@ -361,6 +409,10 @@ public class SitConfigTests {
     return jdbcSysRes;
   }
 
+  /**
+   * @param dataSourceName - JDBC datasource to lookup in the JNDI tree
+   * @return DataSource
+   */
   protected DataSource getDataSource(String dataSourceName) {
     DataSource ds = null;
     try {
@@ -378,37 +430,12 @@ public class SitConfigTests {
     return ds;
   }
 
-  protected void restartResource(String resourceName) throws ManagementException {
-    JDBCSystemResourceMBean[] jdbcSystemResources =
-        domainServiceMBean.getDomainConfiguration().getJDBCSystemResources();
-
-    println("Checking if any of the jdbc system resource needs restart");
-    ServerRuntimeMBean[] serverRuntimes = domainServiceMBean.getServerRuntimes();
-    for (ServerRuntimeMBean serverRuntime : serverRuntimes) {
-      String[] pendingRestartSystemResources = serverRuntime.getPendingRestartSystemResources();
-      for (String pendingRestartSystemResource : pendingRestartSystemResources) {
-        println(
-            "Resources pending restart :"
-                + pendingRestartSystemResource
-                + " in server :"
-                + serverRuntime.getName());
-        for (JDBCSystemResourceMBean jdbcSystemResource : jdbcSystemResources) {
-          if (jdbcSystemResource.getName().equals(pendingRestartSystemResource)) {
-            println("JDBC System Resource:" + jdbcSystemResource.getName());
-          }
-        }
-      }
-    }
-
-    for (JDBCSystemResourceMBean jdbcSystemResource : jdbcSystemResources) {
-      if (jdbcSystemResource.getName().equals(resourceName)) {
-        println("Restarting jdbc resource " + resourceName);
-        domainServiceMBean.getDomainRuntime().restartSystemResource(jdbcSystemResource);
-        break;
-      }
-    }
-  }
-
+  /**
+   * The testSystemResourcesJMSAttributeChange test verifies the ClusterJmsSystemResource system
+   * module resource UniformReplicatedTestTopic Delivery Failure Parameters overriiden in
+   * jms-ClusterJmsSystemResource.xml attributes redelivery-limit and expiration-policy. The test
+   * expects the overridden values to match against the serverConfig MBean tree
+   */
   public void testSystemResourcesJMSAttributeChange() {
     String jmsModuleName = "ClusterJmsSystemResource";
     String topicName = "UniformReplicatedTestTopic";
@@ -429,6 +456,10 @@ public class SitConfigTests {
         : " Didn't get the expected redelivery limit " + redeliveryLimit_exp;
   }
 
+  /**
+   * @param resourceName - name of the JMS system module to lookup
+   * @return JMSSystemResourceMBean of the JMS module
+   */
   protected JMSSystemResourceMBean getJMSSystemModule(String resourceName) {
     println("Looking up the jms system module..." + resourceName);
     DomainMBean domain = runtimeServiceMBean.getDomainConfiguration();
@@ -437,6 +468,11 @@ public class SitConfigTests {
     return jmsSysRes;
   }
 
+  /**
+   * The testSystemResourcesWLDFAttributeAdd test verifies the WLDF-MODULE-0 WLDF system module
+   * overridden in diagnostics-WLDF-MODULE-0.xml added elements wldf-instrumentation-monitor
+   * harvested-type are expected to show up in the serverConfig MBean tree.
+   */
   public void testSystemResourcesWLDFAttributeAdd() {
     String sitconfig_file = "testSystemResourcesWLDFAttributeAdd.xml";
     final String WLDF_MOD_NAME_0 = "WLDF-MODULE-0";
@@ -501,6 +537,10 @@ public class SitConfigTests {
         : "Harvested type name space doesn't match";
   }
 
+  /**
+   * @param resourceName - name of the WLDF system module to lookup
+   * @return the WLDFSystemResourceMBean
+   */
   protected WLDFSystemResourceMBean getWLDFSystemModule(String resourceName) {
     println("Looking up the wldf system module..." + resourceName);
     DomainMBean domain = runtimeServiceMBean.getDomainConfiguration();
