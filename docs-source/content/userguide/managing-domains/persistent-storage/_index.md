@@ -9,7 +9,7 @@ This document outlines how to set up a Kubernetes persistent volume and persiste
 
 #### Prerequisites
 
-The following prerequisites must be fulfilled before proceeding with the creation of the volume.
+The following prerequisites must be fulfilled before proceeding with the creation of the volume:
 
 * Create a Kubernetes namespace for the persistent volume claim unless the intention is to use the default namespace. Note that a persistent volume claim has to be in the same namespace as the domain resource that uses it.
 * Make sure that all the servers in the WebLogic domain are able to reach the storage location.
@@ -38,7 +38,7 @@ For sample YAML templates, refer to the [Persistent volumes example]({{< relref 
 
 ### Kubernetes resources
 
-After you have written your YAML files, you use them to create the persistent volume by creating Kubernetes resources using the `kubectl create -f` command.
+After you have written your YAML files, use them to create the persistent volume by creating Kubernetes resources using the `kubectl create -f` command:
 
 ```
 $ kubectl create -f pv.yaml

@@ -59,9 +59,9 @@ The script will perform the following steps:
 * Build a Docker image based on the Docker sample, [Example Image with a WebLogic Server Domain using the Oracle WebLogic Scripting Tooling (WLST)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image) or [Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt). It will create a sample WebLogic Server domain in the Docker image.
   {{% notice warning %}}
   Oracle strongly recommends storing the image containing the domain home as private
-  in the registry (e.g. Oracle Cloud Infrastructure Registry, Docker Hub, etc.) as
+  in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such) as
   this image contains sensitive information about the domain including keys and
-  credentials that are used to access external resources (e.g. datasource password).
+  credentials that are used to access external resources (for example, data source password).
   For more information about
   [domain home in image protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}}),
   see the ***Security*** section.

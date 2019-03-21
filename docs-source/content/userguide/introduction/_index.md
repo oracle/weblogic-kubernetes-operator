@@ -2,7 +2,7 @@
 title: "Introduction"
 date: 2019-02-23T16:43:10-05:00
 weight: 2
-description: "Learn about the operator's design, architecture, terms, and prerequisites."
+description: "Learn about the operator's design, architecture, important terms, and prerequisites."
 ---
 {{% children style="h4" description="true" %}}
 
