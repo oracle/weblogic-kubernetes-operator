@@ -94,7 +94,7 @@ function checkResult() {
 function printResult() {
   echo |& tee -a $resultFile
   echo "###################################################"  |& tee -a $resultFile
-  echo "Test restuls: "  |& tee -a  $resultFile
+  echo "Test results: "  |& tee -a  $resultFile
   echo "Passed Tests: $passcnt" |& tee -a $resultFile
   echo "Failed Tests: $failcnt"  |& tee -a $resultFile
   if [ $failcnt != 0 ]; then
@@ -325,8 +325,8 @@ function runOne() {
   afterAll
 }
 
-runOne
-#runAll
+#runOne
+runAll
 
 
 
