@@ -16,7 +16,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -28,18 +27,19 @@ import org.junit.Test;
 
 public class ITSitConfig extends BaseTest {
 
-  private static String TESTSCRIPTDIR = "";
-
-  private static String ADMINPODNAME = "";
+  private static String TESTSCRIPTDIR;
+  private static String ADMINPODNAME;
   private static final String DOMAINUID = "customsitconfigdomain";
   private static final String ADMINPORT = "30710";
   private static final int T3CHANNELPORT = 30091;
   private static final String MYSQL_DB_PORT = "31306";
   private static String fqdn;
   private static String JDBC_URL;
+  private static String KUBE_EXEC_CMD;
 
-  private static Domain domain = null;
+  private static Domain domain;
   private static Operator operator1;
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -50,21 +50,27 @@ public class ITSitConfig extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-
     if (!QUICKTEST) {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
-
       if (operator1 == null) {
         operator1 = TestUtils.createOperator(OPERATOR1_YAML);
       }
       TESTSCRIPTDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
-      manageMySqlDB(TESTSCRIPTDIR + "/sitconfig/mysql/mysql-dbservices.yml", "create");
+      // Create the MySql db container
+      ExecResult result =
+          TestUtils.exec(
+              "kubectl create -f " + TESTSCRIPTDIR + "/sitconfig/mysql/mysql-dbservices.yml");
+      Assert.assertEquals(0, result.exitValue());
+
       fqdn = TestUtils.getHostName();
       JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
+      // copy the configuration override files to replacing the JDBC_URL token
       copySitConfigFiles();
+      // create weblogic domain with configOverrides
       domain = createSitConfigDomain();
       Assert.assertNotNull(domain);
+      // copy the jmx test client file the administratioin server weblogic server pod
       ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
       TestUtils.copyFileViaCat(
           TESTSCRIPTDIR + "sitconfig/java/SitConfigTests.java",
@@ -76,11 +82,13 @@ public class ITSitConfig extends BaseTest {
           "runSitConfigTests.sh",
           ADMINPODNAME,
           domain.getDomainNS());
+      KUBE_EXEC_CMD =
+          "kubectl -n " + domain.getDomainNS() + "  exec -it " + ADMINPODNAME + "  -- bash -c";
     }
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories
+   * Destroy domain, delete the MySql DB container and teardown
    *
    * @throws Exception
    */
@@ -93,16 +101,21 @@ public class ITSitConfig extends BaseTest {
 
       destroySitConfigDomain();
       tearDown();
-      manageMySqlDB(TESTSCRIPTDIR + "/sitconfig/mysql-dbservices.yml", "delete");
+      ExecResult result =
+          TestUtils.exec(
+              "kubectl delete -f " + TESTSCRIPTDIR + "/sitconfig/mysql/mysql-dbservices.yml");
+      // manageMySqlDB(TESTSCRIPTDIR + "/sitconfig/mysql-dbservices.yml", "delete");
       logger.info("SUCCESS");
     }
   }
 
   /**
-   * This test covers custom situational configuration use cases for config.xml. It sets the
-   * connect-timeout, max-message-size, restart-max, JMXCore and Serverlifecycle debug flags. Also
-   * sets the T3Channel public address using Kubernetes secret and verifies all these parameters are
-   * overridden for domain
+   * This test covers custom configuration override use cases for config.xml.
+   *
+   * <p>The test checks the overridden config.xml attributes connect-timeout, max-message-size,
+   * restart-max, JMXCore and ServerLifeCycle debug flags, the T3Channel public address. The
+   * overridden are verified against the ServerConfig MBean tree. It does not verifies whether the
+   * overridden values are applied to the runtime
    *
    * @throws Exception
    */
@@ -112,23 +125,32 @@ public class ITSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    String stdout =
-        callShellScriptByExecToPod(
-            "runSitConfigTests.sh",
-            fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod,
-            ADMINPODNAME,
-            domain.getDomainNS());
-    Assert.assertFalse(stdout.toLowerCase().contains("error"));
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh"
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + "'");
+    assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
-   * This test covers custom situational configuration use cases for JDBC resource. The resource
-   * override sets the following connection pool properties. initialCapacity, maxCapacity,
-   * test-connections-on-reserve, connection-harvest-max-count, inactive-connection-timeout-seconds
-   * It also overrides the jdbc driver parameters like data source url, db user and password using
-   * kubernetes secret.
+   * This test covers custom resource override use cases for JDBC resource.
+   *
+   * <p>The resource override sets the following connection pool properties. initialCapacity,
+   * maxCapacity, test-connections-on-reserve, connection-harvest-max-count,
+   * inactive-connection-timeout-seconds in the JDBC resource override file. It also overrides the
+   * jdbc driver parameters like data source url, db user and password using kubernetes secret.
+   *
+   * <p>The overridden values are verified against the ServerConfig MBean tree. It does not verifies
+   * whether the overridden values are applied to the runtime except the JDBC URL which is verified
+   * at runtime by making a connection to the MySql database and executing a DDL statement.
    *
    * @throws Exception
    */
@@ -138,21 +160,30 @@ public class ITSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    String stdout =
-        callShellScriptByExecToPod(
-            "runSitConfigTests.sh",
-            fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod + " " + JDBC_URL,
-            ADMINPODNAME,
-            domain.getDomainNS());
-    Assert.assertFalse(stdout.toLowerCase().contains("error"));
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh"
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + " "
+                + JDBC_URL
+                + "'");
+    assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
-   * This test covers custom situational configuration use cases for JMS resource The resource
-   * override file sets the following Delivery Failure Parameters. Redelivery limit and Expiration
-   * policy
+   * This test covers custom resource use cases for JMS resource The JMS resource override file sets
+   * the following Delivery Failure Parameters. Redelivery limit and Expiration policy for a
+   * uniform-distributed-topic JMS resource
+   *
+   * <p>The overridden values are verified against the ServerConfig MBean tree. It does not verifies
+   * whether the overridden values are applied to the runtime
    *
    * @throws Exception
    */
@@ -162,20 +193,30 @@ public class ITSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    String stdout =
-        callShellScriptByExecToPod(
-            "runSitConfigTests.sh",
-            fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod,
-            ADMINPODNAME,
-            domain.getDomainNS());
-    Assert.assertFalse(stdout.toLowerCase().contains("error"));
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh"
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + "'");
+    assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
   /**
-   * This test covers custom situational configuration use cases for diagnostics resource It adds a
-   * bunch of instrumentation monitors and harvesters in a diagnostics module.
+   * This test covers custom resource override use cases for diagnostics resource. It adds the
+   * following instrumentation monitors Connector_After_Inbound Connector_Around_Outbound
+   * Connector_Around_Tx Connector_Around_Work Connector_Before_Inbound and harvesters for
+   * weblogic.management.runtime.JDBCServiceRuntimeMBean
+   * weblogic.management.runtime.ServerRuntimeMBean
+   *
+   * <p>The overridden values are verified against the ServerConfig MBean tree. It does not verifies
+   * whether the overridden values are applied to the runtime
    *
    * @throws Exception
    */
@@ -185,13 +226,18 @@ public class ITSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    String stdout =
-        callShellScriptByExecToPod(
-            "runSitConfigTests.sh",
-            fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod,
-            ADMINPODNAME,
-            domain.getDomainNS());
-    Assert.assertFalse(stdout.toLowerCase().contains("error"));
+    TestUtils.exec(fqdn);
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh"
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + "'");
+    assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
@@ -222,54 +268,6 @@ public class ITSitConfig extends BaseTest {
     }
   }
 
-  private static String callShellScriptByExecToPod(
-      String scriptPath, String arguments, String podName, String namespace) throws Exception {
-
-    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
-    cmdKubectlSh
-        .append(namespace)
-        .append(" exec -it ")
-        .append(podName)
-        .append(" -- bash -c 'sh ")
-        .append(scriptPath)
-        .append(" ")
-        .append(arguments)
-        .append("'");
-    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
-    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
-    if (result.exitValue() != 0) {
-      logger.log(Level.INFO, result.stdout().trim());
-      throw new RuntimeException(
-          "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
-    }
-    logger.log(Level.INFO, result.stdout().trim());
-    return result.stdout().trim();
-  }
-
-  /**
-   * create mysql crd
-   *
-   * @throws Exception
-   */
-  public static void manageMySqlDB(String dbYaml, String task) throws Exception {
-    StringBuffer cmd = new StringBuffer("kubectl " + task + " -f ");
-    cmd.append(dbYaml);
-    logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      logger.log(Level.INFO, result.stdout().trim());
-      throw new RuntimeException(
-          "FAILURE: command "
-              + cmd
-              + " failed, returned "
-              + result.stdout()
-              + "\n"
-              + result.stderr());
-    }
-    String outputStr = result.stdout().trim();
-    logger.info("Command returned " + outputStr);
-  }
-
   private static void copySitConfigFiles() throws IOException {
     String src_dir = TESTSCRIPTDIR + "/sitconfig/configoverrides";
     String dst_dir = sitconfigDir;
@@ -288,5 +286,11 @@ public class ITSitConfig extends BaseTest {
       path = Paths.get(dst_dir, file);
       Files.write(path, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
     }
+  }
+
+  private void assertResult(ExecResult result) {
+    Assert.assertFalse(result.stdout().toLowerCase().contains("error"));
+    Assert.assertFalse(result.stderr().toLowerCase().contains("error"));
+    Assert.assertEquals(0, result.exitValue());
   }
 }
