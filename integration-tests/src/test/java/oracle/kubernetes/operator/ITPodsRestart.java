@@ -83,7 +83,6 @@ public class ITPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    boolean testCompletedSuccessfully = false;
     logger.info(
         "About to testDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
@@ -107,8 +106,6 @@ public class ITPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    boolean testCompletedSuccessfully = false;
-
     logger.info(
         "About to testDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
@@ -130,8 +127,6 @@ public class ITPodsRestart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-
-    boolean testCompletedSuccessfully = false;
 
     logger.info(
         "About to testDomainServerPodRestart for Domain: "
@@ -156,8 +151,6 @@ public class ITPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    boolean testCompletedSuccessfully = false;
-
     logger.info(
         "About to testDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
@@ -176,22 +169,22 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testServerPodsRestartByChangingImage() throws Exception {
+  public void testServerPodsRestartByChangingZImage() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    boolean testCompletedSuccessfully = false;
     try {
       logger.info(
           "About to testDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
               + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
-      TestUtils.dockerTagImage("store/oracle/weblogic:12.2.1.3", "store/oracle/weblogic:duplicate");
+
+      TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
       domain.testDomainServerPodRestart(
           "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
     } finally {
-      TestUtils.dockerRemoveImage("store/oracle/weblogic:duplicate");
+      TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
     }
 
     logger.info("SUCCESS - " + testMethodName);
