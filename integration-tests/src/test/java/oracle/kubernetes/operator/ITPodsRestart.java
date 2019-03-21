@@ -72,7 +72,7 @@ public class ITPodsRestart extends BaseTest {
 
   /**
    * Modify the domain scope env property on the domain resource using kubectl apply -f domain.yaml
-   * Verify that all the server pods in the domain got re-started The property tested is: env:
+   * Verify that all the server pods in the domain got re-started. The property tested is: env:
    * "-Dweblogic.StdoutDebugEnabled=false"--> "-Dweblogic.StdoutDebugEnabled=true"
    *
    * @throws Exception
@@ -95,7 +95,7 @@ public class ITPodsRestart extends BaseTest {
 
   /**
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
-   * Verify that all the server pods in the domain got re-started The property tested is:
+   * Verify that all the server pods in the domain got re-started. The property tested is:
    * logHomeEnabled: true --> logHomeEnabled: false
    *
    * @throws Exception
@@ -117,7 +117,7 @@ public class ITPodsRestart extends BaseTest {
 
   /**
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
-   * Verify that all the server pods in the domain got re-started The property tested is:
+   * Verify that all the server pods in the domain got re-started. The property tested is:
    * imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
    *
    * @throws Exception
@@ -140,7 +140,7 @@ public class ITPodsRestart extends BaseTest {
 
   /**
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
-   * Verify that all the server pods in the domain got re-started The property tested is:
+   * Verify that all the server pods in the domain got re-started. The property tested is:
    * includeServerOutInPodLog: true --> includeServerOutInPodLog: false
    *
    * @throws Exception
@@ -163,7 +163,7 @@ public class ITPodsRestart extends BaseTest {
 
   /**
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
-   * Verify that all the server pods in the domain got re-started The property tested is: image:
+   * Verify that all the server pods in the domain got re-started .The property tested is: image:
    * "store/oracle/weblogic:12.2.1.3" --> image: "store/oracle/weblogic:duplicate"
    *
    * @throws Exception
