@@ -1256,7 +1256,6 @@ public class Domain {
               + "-"
               + domainMap.get("configOverrides")
               + " --from-file "
-              + BaseTest.getProjectRoot()
               + configOverridesFile;
       ExecResult result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
