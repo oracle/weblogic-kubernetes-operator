@@ -1105,7 +1105,13 @@ public class TestUtils {
 
     Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
   }
-
+  /**
+   * tag image with docker cmd: docker tage sourceImageName targetImageName
+   *
+   * @param sourceImage
+   * @param targetImage
+   * @throws Exception
+   */
   public static void dockerTagImage(String sourceImage, String targetImage) throws Exception {
     logger.info("Tagging souceImage:  " + sourceImage + "  to " + targetImage);
     String dockerCmd = "docker tag " + sourceImage + " " + targetImage;
@@ -1113,6 +1119,12 @@ public class TestUtils {
     exec(dockerCmd);
   }
 
+  /**
+   * remove image with docker cmd: docker rmi -f imageName
+   *
+   * @param imageName
+   * @throws Exception
+   */
   public static void dockerRemoveImage(String imageName) throws Exception {
     logger.info("Removing image:  " + imageName);
     String dockerCmd = "docker rmi -f  " + imageName;
