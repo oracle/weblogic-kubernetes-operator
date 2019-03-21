@@ -6,6 +6,13 @@ package oracle.kubernetes.operator;
 import static oracle.kubernetes.operator.BaseTest.initialize;
 import static oracle.kubernetes.operator.BaseTest.logger;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
@@ -27,7 +34,9 @@ public class ITSitConfig extends BaseTest {
   private static final String DOMAINUID = "customsitconfigdomain";
   private static final String ADMINPORT = "30710";
   private static final int T3CHANNELPORT = 30091;
-  private static String fqdn = "";
+  private static final String MYSQL_DB_PORT = "31306";
+  private static String fqdn;
+  private static String JDBC_URL;
 
   private static Domain domain = null;
   private static Operator operator1;
@@ -50,6 +59,10 @@ public class ITSitConfig extends BaseTest {
         operator1 = TestUtils.createOperator(OPERATOR1_YAML);
       }
       TESTSCRIPTDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
+      manageMySqlDB(TESTSCRIPTDIR + "/sitconfig/mysql/mysql-dbservices.yml", "create");
+      fqdn = TestUtils.getHostName();
+      JDBC_URL = "jdbc:mysql://" + fqdn + ":" + MYSQL_DB_PORT + "/";
+      copySitConfigFiles();
       domain = createSitConfigDomain();
       Assert.assertNotNull(domain);
       ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
@@ -63,7 +76,6 @@ public class ITSitConfig extends BaseTest {
           "runSitConfigTests.sh",
           ADMINPODNAME,
           domain.getDomainNS());
-      fqdn = TestUtils.getHostName();
     }
   }
 
@@ -81,6 +93,7 @@ public class ITSitConfig extends BaseTest {
 
       destroySitConfigDomain();
       tearDown();
+      manageMySqlDB(TESTSCRIPTDIR + "/sitconfig/mysql-dbservices.yml", "delete");
       logger.info("SUCCESS");
     }
   }
@@ -128,7 +141,7 @@ public class ITSitConfig extends BaseTest {
     String stdout =
         callShellScriptByExecToPod(
             "runSitConfigTests.sh",
-            fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod,
+            fqdn + " " + T3CHANNELPORT + " weblogic welcome1 " + testMethod + " " + JDBC_URL,
             ADMINPODNAME,
             domain.getDomainNS());
     Assert.assertFalse(stdout.toLowerCase().contains("error"));
@@ -188,8 +201,7 @@ public class ITSitConfig extends BaseTest {
     // load input yaml to map and add configOverrides
     Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
     domainMap.put("configOverrides", "sitconfigcm");
-    domainMap.put(
-        "configOverridesFile", "/integration-tests/src/test/resources/sitconfig/configoverrides");
+    domainMap.put("configOverridesFile", sitconfigDir);
     domainMap.put("domainUID", DOMAINUID);
     domainMap.put("adminNodePort", new Integer(ADMINPORT));
     domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
@@ -199,7 +211,6 @@ public class ITSitConfig extends BaseTest {
     domainMap.put(
         "javaOptions",
         "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
-
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
     return domain;
@@ -233,5 +244,49 @@ public class ITSitConfig extends BaseTest {
     }
     logger.log(Level.INFO, result.stdout().trim());
     return result.stdout().trim();
+  }
+
+  /**
+   * create mysql crd
+   *
+   * @throws Exception
+   */
+  public static void manageMySqlDB(String dbYaml, String task) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl " + task + " -f ");
+    cmd.append(dbYaml);
+    logger.info("Running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() != 0) {
+      logger.log(Level.INFO, result.stdout().trim());
+      throw new RuntimeException(
+          "FAILURE: command "
+              + cmd
+              + " failed, returned "
+              + result.stdout()
+              + "\n"
+              + result.stderr());
+    }
+    String outputStr = result.stdout().trim();
+    logger.info("Command returned " + outputStr);
+  }
+
+  private static void copySitConfigFiles() throws IOException {
+    String src_dir = TESTSCRIPTDIR + "/sitconfig/configoverrides";
+    String dst_dir = sitconfigDir;
+    String files[] = {
+      "config.xml",
+      "jdbc-JdbcTestDataSource-0.xml",
+      "diagnostics-WLDF-MODULE-0.xml",
+      "jms-ClusterJmsSystemResource.xml",
+      "version.txt"
+    };
+    for (String file : files) {
+      Path path = Paths.get(src_dir, file);
+      Charset charset = StandardCharsets.UTF_8;
+      String content = new String(Files.readAllBytes(path), charset);
+      content = content.replaceAll("JDBC_URL", JDBC_URL);
+      path = Paths.get(dst_dir, file);
+      Files.write(path, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
+    }
   }
 }

@@ -103,8 +103,8 @@ def createDataSource(dsName, dsJNDI, dsUrl, dsUser, dsPassword, dsTarget):
 
     cd('JDBCConnectionPoolParams/NO_NAME_0')
     set('TestTableName', 'SQL SELECT 1 FROM DUAL')
-    #set('InitialCapacity', 1)
-    #set('MinCapacity', 3)
+    set('InitialCapacity', 0)
+    set('MinCapacity', 0)
 
 # This python script is used to create a WebLogic domain
 
@@ -125,6 +125,9 @@ managed_server_name_base_svc = getEnvVar("MANAGED_SERVER_NAME_BASE_SVC")
 domain_logs                  = getEnvVar("DOMAIN_LOGS_DIR")
 script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
 production_mode_enabled      = getEnvVar("PRODUCTION_MODE_ENABLED")
+jdbc_url                     = 'jdbc:mysql://HOSTNAME:NOPORT/'
+jdbc_user                    = 'user'
+jdbc_password                = 'password'
 
 # Read the domain secrets from the common python file
 execfile('%s/read-domain-secret.py' % script_dir)
@@ -227,7 +230,7 @@ else:
 
     print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);
 
-createDataSource('JdbcTestDataSource-0', 'jdbc/JdbcTestDataSource-0', 'jdbc:oracle:thin:@//slcai724.us.oracle.com:1583/w03ys12c', 'j2ee', 'j2ee', admin_server_name)
+createDataSource('JdbcTestDataSource-0', 'jdbc/JdbcTestDataSource-0', jdbc_url, jdbc_user, jdbc_password, admin_server_name)
 createJMSSystemResource(cluster_name)
 createWLDFSystemResource("WLDF-MODULE-0", admin_server_name)
 
