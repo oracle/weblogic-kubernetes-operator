@@ -1287,8 +1287,8 @@ public class Domain {
               + "test-secrets"
               + " --from-literal=hostname="
               + TestUtils.getHostName()
-              + " --from-literal=dbusername=scott"
-              + " --from-literal=dbpassword=tiger";
+              + " --from-literal=dbusername=root"
+              + " --from-literal=dbpassword=root123";
       result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
