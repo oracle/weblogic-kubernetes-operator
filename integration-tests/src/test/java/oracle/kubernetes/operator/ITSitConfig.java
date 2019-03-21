@@ -104,7 +104,6 @@ public class ITSitConfig extends BaseTest {
       ExecResult result =
           TestUtils.exec(
               "kubectl delete -f " + TESTSCRIPTDIR + "/sitconfig/mysql/mysql-dbservices.yml");
-      // manageMySqlDB(TESTSCRIPTDIR + "/sitconfig/mysql-dbservices.yml", "delete");
       logger.info("SUCCESS");
     }
   }
