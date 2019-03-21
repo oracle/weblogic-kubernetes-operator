@@ -47,6 +47,11 @@ public class BaseTest {
   // property file used to configure constants for integration tests
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
 
+  public static boolean QUICKTEST;
+  public static boolean SMOKETEST;
+  public static boolean JENKINS;
+  public static boolean INGRESSPERDOMAIN = true;
+
   private static String resultRoot = "";
   private static String pvRoot = "";
   private static String resultDir = "";
@@ -62,11 +67,6 @@ public class BaseTest {
   private static String appLocationInPod = "/u01/oracle/apps";
   private static Properties appProps;
 
-  public static boolean QUICKTEST;
-  public static boolean SMOKETEST;
-  public static boolean JENKINS;
-  public static boolean INGRESSPERDOMAIN = true;
-
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
   // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
@@ -75,7 +75,9 @@ public class BaseTest {
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
     SMOKETEST =
         System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
-    if (SMOKETEST) QUICKTEST = true;
+    if (SMOKETEST) {
+      QUICKTEST = true;
+    }
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
     }
@@ -610,7 +612,7 @@ public class BaseTest {
 
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() == 0) {
-      // logger.info("Executed statedump.sh " + result.stdout());
+      logger.info("Executed statedump.sh " + result.stdout());
     } else {
       logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
     }

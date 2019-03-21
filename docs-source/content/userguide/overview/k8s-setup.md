@@ -57,7 +57,7 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
     cp terraform.example.tfvars terraform.tfvars
     ```
 
-1.  Edit the `terraform.tvfars` file to include values for your tenancy, user, and compartment.  Optionally, edit variables to change the `Shape` of the VMs for your Kubernetes master and workers, and your `etcd` cluster.   For example:
+1.  Edit the `terraform.tvfars` file to include values for your tenancy, user, and compartment.  Optionally, edit the variables to change the `Shape` of the VMs for your Kubernetes master and workers, and your `etcd` cluster.   For example:
 
      ```
      #give a label to your cluster to help identify it if you have multiple
