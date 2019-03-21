@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mysql-ns
+  labels:
+    name: mysql-ns
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  labels:
+    app: mysql-db
+  namespace: mysql-ns
+spec:
+  type: NodePort
+  ports:
+  - port: 3306
+    protocol: TCP
+    targetPort: 3306
+    nodePort: 31306
+  selector:
+    app: mysql-db
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql
+  namespace: mysql-ns
+type: Opaque
+data:
+  password: cm9vdDEyMw==
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: mysql-db
+  namespace: mysql-ns
+  labels:
+    app: mysql-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-db
+  template:
+    metadata:
+      labels:
+        app: mysql-db
+    spec:
+      containers:
+        - image: mysql:5.6
+          name: mysql-db
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql
+                  key: password
+          ports:
+            - containerPort: 3306
+              name: mysql
