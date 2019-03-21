@@ -20,6 +20,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
+  private static final String SERVICE_NAME = "service1";
+
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private V1Service service = createMinimalService();
   private ServerKubernetesObjects sko;
@@ -35,6 +37,12 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
 
     sko = createSko(service);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
+  }
+
+  private static ServerKubernetesObjects createSko(V1Service service) {
+    ServerKubernetesObjects sko = new ServerKubernetesObjects();
+    sko.getService().set(service);
+    return sko;
   }
 
   @Test

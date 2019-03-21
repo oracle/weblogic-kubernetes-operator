@@ -277,7 +277,7 @@ WERCKER=true:
 | Variable | Description |
 | --- | --- |
 | IMAGE_TAG_OPERATOR | Docker image tag for operator. Default generated based off the BRANCH_NAME. |
-| IMAGE_NAME_OPERATOR | Docker image name for operator. Default is wlsldi-v2.docker.oraclecorp.com/weblogic-operator |
+| IMAGE_NAME_OPERATOR | Docker image name for operator. Default is weblogic-kubernetes-operator |
 | IMAGE_PULL_POLICY_OPERATOR | Default 'Never'. |
 | IMAGE_PULL_SECRET_OPERATOR | Default ''. |
  | IMAGE_PULL_SECRET_WEBLOGIC | Default ''.
