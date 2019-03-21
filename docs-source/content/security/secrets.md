@@ -8,15 +8,24 @@ description: "Kubernetes secrets for the WebLogic operator"
 #### Contents
 * [WebLogic domain credentials secret](#weblogic-domain-credentials-secret)
 * [WebLogic domain image pull secret](#weblogic-domain-image-pull-secret)
+* [WebLogic operator configuration override secrets](#weblogic-operator-configuration-override-secrets)
 * [WebLogic operator external REST interface secret](#weblogic-operator-external-rest-interface-secret)
 * [WebLogic operator internal REST interface secret](#weblogic-operator-internal-rest-interface-secret)
 
 #### WebLogic domain credentials secret
 
-The credential for the WebLogic domain is kept in a Kubernetes `Secret` that
-follows the pattern `<domainUID>-weblogic-credentials`, where `<domainUID>` is
+The credentials for the WebLogic domain are kept in a Kubernetes `Secret` where the name of
+the secret is specified using `webLogicCredentialsSecret` in the WebLogic `Domain` resource.
+Also, the domain credentials secret must be created in the namespace where the `Domain` will be running.
+
+{{% notice note %}}
+For an example of a WebLogic domain resource using `webLogicCredentialsSecret`,
+see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#1-use-imagepullsecrets-with-the-domain-resource">}}).
+{{% /notice %}}
+
+The samples supplied with the WebLogic operator use a naming convention that follows
+the pattern `<domainUID>-weblogic-credentials`, where `<domainUID>` is
 the unique identifier of the domain, for example, `domain1-weblogic-credentials`.
-The `Secret` is created in the namespace where the `Domain` will be running.
 
 If the WebLogic domain will be started in `domain1-ns` and the `<domainUID>` is `domain1`,
 an example of creating a Kubernetes `generic secret` is as follows:
@@ -67,7 +76,20 @@ Kubernetes `Secret` that holds the registry credentials.
 
 {{% notice info %}}
 For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}})
-under **Domain Security**.
+under **Domain security**.
+{{% /notice %}}
+
+#### WebLogic operator configuration override secrets
+
+The WebLogic operator supports embedding macros within configuration override templates
+that reference Kubernetes secrets. These Kubernetes secrets can be created with any name in the
+namespace where the `Domain` will be running. The Kubernetes secret names are
+specified using `configOverrideSecrets` in the WebLogic `Domain` resource.
+
+{{% notice info %}}
+For more information, see
+[Configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#how-do-you-specify-overrides">}})
+under **User Guide**.
 {{% /notice %}}
 
 #### WebLogic operator external REST interface secret
@@ -84,7 +106,7 @@ under **Securty**.
 #### WebLogic operator internal REST interface secret
 
 The operator exposes an internal REST HTTPS interface with a self-signed certificate.
-The certificate is kept in a Kubernetes `ConfigMap` with the name `weblogic-operator-cm ` using the key `internalOperatorCert`.
+The certificate is kept in a Kubernetes `ConfigMap` with the name `weblogic-operator-cm` using the key `internalOperatorCert`.
 The private key is kept in a Kubernetes `Secret` with the name `weblogic-operator-secrets` using the key `internalOperatorKey`.
 These Kubernetes objects are managed by the operator's Helm chart and are part of the
 namespace where the WebLogic operator is installed.
