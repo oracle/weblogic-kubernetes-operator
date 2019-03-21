@@ -6,11 +6,11 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Map;
-import oracle.kubernetes.operator.utils.Operator.RESTCertType;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.Operator.RESTCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assume;
@@ -632,9 +632,10 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       verifyOperatorDomainManagement(operator, domainnew, true);
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null) TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      if (domainnew != null) domainnew.destroy();
-
+      if (domain != null)
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      if (domainnew != null)
+        domainnew.destroy();
       if (operator != null) {
         operator.destroy();
       }
@@ -669,22 +670,20 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       operator = null;
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
-    } finally {
-      if (domain != null) TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-
-      if (operator != null) {
-        operator.destroy();
+      } finally {
+        if (domain != null)
+          TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+        if (operator != null) {
+          operator.destroy();
+        }
+        number++;
       }
-      number++;
-    }
-
     logger.info("SUCCESS - " + testMethodName);
   }
 
   private void verifyOperatorDomainManagement(
       Operator operator, Domain domain, boolean isAccessible) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-
       try {
         operator.verifyDomainExists(domain.getDomainUid());
         if (!isAccessible) {
@@ -697,7 +696,6 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
           if (!ex.getMessage()
               .contains(
                   "Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number)) {
-
           } else {
             break;
           }
