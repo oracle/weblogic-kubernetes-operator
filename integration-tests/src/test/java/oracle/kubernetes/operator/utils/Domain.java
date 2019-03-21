@@ -850,6 +850,13 @@ public class Domain {
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
   }
 
+  /**
+   * verify domain server pods get restarted after a property change
+   *
+   * @param oldPropertyString
+   * @param newPropertyString
+   * @throws Exception
+   */
   public void testDomainServerPodRestart(String oldPropertyString, String newPropertyString)
       throws Exception {
     logger.info("Inside testDomainServerPodRestart");
@@ -900,6 +907,11 @@ public class Domain {
     logger.info("Done - testDomainServerPodRestart");
   }
 
+  /**
+   * verify that admin server pod gets restarted.
+   *
+   * @throws Exception
+   */
   public void verifyAdminServerRestarted() throws Exception {
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
     TestUtils.checkPodTerminating(domainUid + "-" + adminServerName, domainNS);
@@ -909,6 +921,11 @@ public class Domain {
     Thread.sleep(10 * 1000);
   }
 
+  /**
+   * verify that managed server pods get restarted.
+   *
+   * @throws Exception
+   */
   public void verifyManagedServersRestarted() throws Exception {
     if (domainMap.get("serverStartPolicy") == null
         || (domainMap.get("serverStartPolicy") != null
