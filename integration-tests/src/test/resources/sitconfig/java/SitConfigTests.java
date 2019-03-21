@@ -110,10 +110,6 @@ public class SitConfigTests {
       String JDBC_URL = args[5];
       test.testSystemResourcesJDBCAttributeChange("JdbcTestDataSource-0", JDBC_URL);
     }
-
-    if (testName.equals("testSystemResourcesJDBCAttributeChangeSecret")) {
-      test.testSystemResourcesJDBCAttributeChangeSecret("JdbcTestDataSource-1");
-    }
     if (testName.equals("testCustomSitConfigOverridesForJms")) {
       test.testSystemResourcesJMSAttributeChange();
     }
