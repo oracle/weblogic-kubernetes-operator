@@ -128,7 +128,7 @@ public class ITSitConfig extends BaseTest {
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
-                + " 'sh runSitConfigTests.sh"
+                + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
                 + T3CHANNELPORT
@@ -163,7 +163,7 @@ public class ITSitConfig extends BaseTest {
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
-                + " 'sh runSitConfigTests.sh"
+                + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
                 + T3CHANNELPORT
@@ -196,7 +196,7 @@ public class ITSitConfig extends BaseTest {
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
-                + " 'sh runSitConfigTests.sh"
+                + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
                 + T3CHANNELPORT
@@ -226,11 +226,10 @@ public class ITSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    TestUtils.exec(fqdn);
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
-                + " 'sh runSitConfigTests.sh"
+                + " 'sh runSitConfigTests.sh "
                 + fqdn
                 + " "
                 + T3CHANNELPORT
@@ -278,17 +277,20 @@ public class ITSitConfig extends BaseTest {
       "jms-ClusterJmsSystemResource.xml",
       "version.txt"
     };
-    for (String file : files) {
+    for (String file : files) {      
       Path path = Paths.get(src_dir, file);
+      logger.log(Level.INFO, "Copying {0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       String content = new String(Files.readAllBytes(path), charset);
       content = content.replaceAll("JDBC_URL", JDBC_URL);
       path = Paths.get(dst_dir, file);
-      Files.write(path, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
+      logger.log(Level.INFO, "to {0}", path.toString());
+      Files.write(path, content.getBytes(charset));
     }
   }
 
   private void assertResult(ExecResult result) {
+    logger.log(Level.INFO, result.stdout().trim());
     Assert.assertFalse(result.stdout().toLowerCase().contains("error"));
     Assert.assertFalse(result.stderr().toLowerCase().contains("error"));
     Assert.assertEquals(0, result.exitValue());
