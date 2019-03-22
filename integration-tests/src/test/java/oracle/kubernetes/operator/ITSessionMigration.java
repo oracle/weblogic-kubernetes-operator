@@ -219,6 +219,8 @@ public class ITSessionMigration extends BaseTest {
   /**
    * Get HTTP response from the web app deployed on wls
    *
+   * @param webServiceURL - web server URL
+   * @param headerOption - option to save HTTP header info or use it
    * @throws Exception
    */
   private ExecResult getHTTPResponse(String webServiceURL, String headerOption) throws Exception {
@@ -244,6 +246,7 @@ public class ITSessionMigration extends BaseTest {
   /**
    * Stop the primary server
    *
+   * @param primaryServerName - weblogic primary server name
    * @throws Exception
    */
   private void stopPrimaryServer(String primaryServerName) throws Exception {
@@ -267,6 +270,8 @@ public class ITSessionMigration extends BaseTest {
   /**
    * Get the value of a HTTP attribute
    *
+   * @param httpResponseString - HTTP response
+   * @param attribute - attrubute name to find in the HTTP response
    * @throws Exception
    */
   private String getHttpResponseAttribute(String httpResponseString, String attribute)
@@ -290,6 +295,8 @@ public class ITSessionMigration extends BaseTest {
   /**
    * Build web server url
    *
+   * @param curlURLPath - URL path sent by curl
+   * @param paramToAppend - params need to be appended to the URL path
    * @throws Exception
    */
   private String buildWebServiceUrl(String curlURLPath, String paramToAppend) throws Exception {
@@ -315,6 +322,7 @@ public class ITSessionMigration extends BaseTest {
   /**
    * Execute a given curl command and verify the results
    *
+   * @param curlCmd - a curl command to execute
    * @throws Exception
    */
   private ExecResult execCurlCmd(String curlCmd) throws Exception {
