@@ -11,7 +11,7 @@ data:
   # echo -n "root" | base64
   root-user: cm9vdA==
   # echo -n "root123" | base64
-  root-password: cGFzc3dvcmQ=
+  root-password: cm9vdDEyMw==
 ---
 apiVersion: v1
 kind: Pod
@@ -44,8 +44,11 @@ metadata:
   name: @DOMAIN_UID@-mysql
   namespace: @NAMESPACE@
 spec:
+  type: NodePort
   ports:
   - port: 3306
+    protocol: TCP
+    targetPort: 3306
+    nodePort: 31306
   selector:
     app: @DOMAIN_UID@-mysql
-  clusterIP: None
