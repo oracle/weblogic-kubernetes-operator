@@ -56,7 +56,6 @@ public class BaseTest {
   private static String resultDir = "";
   private static String userProjectsDir = "";
   private static String projectRoot = "";
-  protected static String sitconfigDir = "";
   private static String username = "weblogic";
   private static String password = "welcome1";
   private static int maxIterationsPod = 50;
@@ -116,7 +115,6 @@ public class BaseTest {
     resultDir = resultRoot + "/acceptance_test_tmp";
     userProjectsDir = resultDir + "/user-projects";
     projectRoot = System.getProperty("user.dir") + "/..";
-    sitconfigDir = resultRoot + "/configoverridefiles";
 
     // BRANCH_NAME var is used in Jenkins job
     if (System.getenv("BRANCH_NAME") != null) {
@@ -160,16 +158,12 @@ public class BaseTest {
           "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
               + pvRoot
               + "/acceptance_test_pv\"");
-      logger.info("Creating " + sitconfigDir);
-      TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"mkdir -p " + sitconfigDir + "\"");
-      TestUtils.exec("/usr/local/packages/aime/ias/run_as_root \"chmod 777 " + sitconfigDir + "\"");
     }
 
     // create resultRoot, PVRoot, etc
     Files.createDirectories(Paths.get(resultRoot));
     Files.createDirectories(Paths.get(resultDir));
     Files.createDirectories(Paths.get(userProjectsDir));
-    Files.createDirectories(Paths.get(sitconfigDir));
 
     // create file handler
     FileHandler fh = new FileHandler(resultDir + "/java_test_suite.out");

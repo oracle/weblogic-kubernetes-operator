@@ -51,9 +51,9 @@ import weblogic.management.runtime.ServerRuntimeMBean;
  * weblogic-kubernetes-operator integration test suite.
  *
  * <p>The JUnit wrapper test class oracle.kubernetes.operator.ITSitConfig running in functional
- * integration test suite calls this Main class recursively to run individual override verification
- * tests. The class exits with exception if any of the asserts fail and exit status 1 or gracefully
- * exits with status 0 when all of the asserts pass.
+ * integration test suite calls this Main class to run individual override verification tests. The
+ * class exits with exception if any of the asserts fail and exit status 1 or gracefully exits with
+ * status 0 when all of the asserts pass.
  *
  * <p>The class takes a minimum of four arguments - administration server host, administration
  * server port, administration server user name and administration server password. When
