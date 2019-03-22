@@ -1,3 +1,7 @@
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package apps.httpsessionreptestapp;
 
 import java.io.*;
@@ -8,6 +12,11 @@ import weblogic.servlet.internal.MembershipControllerImpl;
 import weblogic.servlet.spi.WebServerRegistry;
 import java.util.Enumeration;
 
+/**
+ * Simple HTTP servlet class for a client to 
+ * 1. query weblogic primary and secondary server
+ * 2. set or get a count number 
+ */
 public class CounterServlet extends HttpServlet {    
   private String message;
   
@@ -15,16 +24,40 @@ public class CounterServlet extends HttpServlet {
     setServletName(this.getClass().getName()); 
   }
   
+  /**
+   * Method to handle GET method request.
+   * 
+   * @param request - HTTP request
+   * @param response - HTTP response
+   *
+   * @throws IOException, ServletException
+   */
   public void doGet(HttpServletRequest request,HttpServletResponse response)
 		throws IOException, ServletException {        
     process(request,response);  
   }
 
+  /**
+   * Method to handle POST method request.
+   * 
+   * @param request - HTTP request
+   * @param response - HTTP response
+   *
+   * @throws IOException, ServletException
+   */
   public void doPost(HttpServletRequest request,HttpServletResponse response)
 		throws IOException, ServletException {  
     process(request,response);  
   }
 
+  /**
+   * Method to handle PROCESS method request.
+   * 
+   * @param request - HTTP request
+   * @param response - HTTP response
+   *
+   * @throws IOException, ServletException
+   */
   protected void process(HttpServletRequest request, HttpServletResponse response)
 		throws IOException, ServletException    { 
 	
@@ -67,6 +100,13 @@ public class CounterServlet extends HttpServlet {
     }
   }
 
+  /**
+   * Method to return the primary server name
+   * 
+   * @param sessionId - HTTP session ID
+   * 
+   * @return the weblogic primary server name
+   */
   private String getPrimaryServer(String sessionId) {
     MembershipControllerImpl cluster = 
       (MembershipControllerImpl) WebServerRegistry.getInstance().getClusterProvider();
@@ -79,6 +119,13 @@ public class CounterServlet extends HttpServlet {
     return rsid.getPrimary().getServerName();
   }
 
+  /**
+   * Method to return the secondary server name
+   * 
+   * @param sessionId - HTTP session ID
+   * 
+   * @return the weblogic secondary server name
+   */
   private String getSecondaryServer(String sessionId) {
     MembershipControllerImpl cluster = 
       (MembershipControllerImpl) WebServerRegistry.getInstance().getClusterProvider();
@@ -91,10 +138,20 @@ public class CounterServlet extends HttpServlet {
     return rsid.getSecondary().getServerName();
   }
   
+  /**
+   * Method to get the servlet name
+   * 
+   * @return the servlet name
+   */
   public String getServletName() {
     return this.message;
   }
 
+  /**
+   * Method to set servlet name
+   * 
+   * @param sessionId - HTTP session ID  
+   */
   private void setServletName(String message) {
     this.message=message;
   }
