@@ -106,8 +106,7 @@ public class ITSitConfig extends BaseTest {
     if (!QUICKTEST) {
       destroySitConfigDomain();
       tearDown();
-      ExecResult result =
-          TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
+      ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
     }
   }
 
