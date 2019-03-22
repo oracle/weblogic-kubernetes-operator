@@ -422,6 +422,43 @@ public class TestUtils {
     return ExecCommand.exec(cmdKubectlSh.toString());
   }
 
+  public static void copyAppFilesToPod(
+      String appLocationOnHost, String appLocationInPod, String podName, String namespace)
+      throws Exception {
+    File appFileRoot = new File(appLocationOnHost);
+    File[] appFileList = appFileRoot.listFiles();
+    String fileLocationInPod = appLocationInPod;
+
+    if (appFileList == null) return;
+
+    for (File file : appFileList) {
+      if (file.isDirectory()) {
+        // Find dir recursively
+        copyAppFilesToPod(file.getAbsolutePath(), appLocationInPod, podName, namespace);
+      } else {
+        logger.info("Copy file: " + file.getAbsoluteFile().toString() + " to the pod: " + podName);
+
+        String fileParent = file.getParentFile().getName();
+        logger.fine("file Parent: " + fileParent);
+
+        if (!appLocationInPod.contains(fileParent)) {
+          // Copy files in child dir of appLocationInPod
+          fileLocationInPod = appLocationInPod + "/" + fileParent;
+        }
+
+        StringBuffer copyFileCmd = new StringBuffer(" -- bash -c 'cat > ");
+        copyFileCmd
+            .append(fileLocationInPod)
+            .append("/")
+            .append(file.getName())
+            .append("' < ")
+            .append(file.getAbsoluteFile().toString());
+
+        kubectlexecNoCheck(podName, namespace, copyFileCmd.toString());
+      }
+    }
+  }
+
   public static void kubectlexec(String podName, String namespace, String scriptPath)
       throws Exception {
 
