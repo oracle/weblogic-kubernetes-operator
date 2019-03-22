@@ -119,6 +119,9 @@ public interface ServerSpec {
   @Nonnull
   List<V1Container> getInitContainers();
 
+  @Nonnull
+  List<V1Container> getContainers();
+
   Map<String, String> getNodeSelectors();
 
   V1ResourceRequirements getResources();
