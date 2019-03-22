@@ -632,8 +632,12 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       verifyOperatorDomainManagement(operator, domainnew, true);
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null) TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
-      if (domainnew != null) domainnew.destroy();
+      if (domain != null) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+      if (domainnew != null) {
+        domainnew.destroy();
+      }
       if (operator != null) {
         operator.destroy();
       }
@@ -669,7 +673,9 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null) TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      if (domain != null) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
       if (operator != null) {
         operator.destroy();
       }
@@ -700,8 +706,9 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       }
       if (i == maxIterations - 1) {
         String errorMsg = "FAILURE: Operator can't access the domain " + domain.getDomainUid();
-        if (!isAccessible)
+        if (!isAccessible) {
           errorMsg = "FAILURE: Operator still can access the domain " + domain.getDomainUid();
+        }
         throw new RuntimeException(errorMsg);
       }
       logger.info("iteration " + i + " of " + maxIterations);
