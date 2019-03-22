@@ -915,10 +915,9 @@ public class Domain {
   public void verifyAdminServerRestarted() throws Exception {
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
     TestUtils.checkPodTerminating(domainUid + "-" + adminServerName, domainNS);
-    Thread.sleep(10 * 1000);
+
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
-    Thread.sleep(10 * 1000);
   }
 
   /**
@@ -940,7 +939,7 @@ public class Domain {
                 + i
                 + ") is Terminating");
         TestUtils.checkPodTerminating(domainUid + "-" + managedServerNameBase + i, domainNS);
-        Thread.sleep(10 * 1000);
+
         logger.info(
             "Checking if managed pod("
                 + domainUid
