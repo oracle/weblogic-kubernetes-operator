@@ -38,10 +38,7 @@ import weblogic.management.configuration.ServerMBean;
 import weblogic.management.configuration.WLDFSystemResourceMBean;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
 import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
-import weblogic.management.mbeanservers.edit.ConfigurationManagerMBean;
-import weblogic.management.mbeanservers.edit.EditServiceMBean;
 import weblogic.management.mbeanservers.runtime.RuntimeServiceMBean;
-import weblogic.management.runtime.DomainRuntimeMBean;
 import weblogic.management.runtime.ServerRuntimeMBean;
 
 /**
@@ -64,17 +61,11 @@ import weblogic.management.runtime.ServerRuntimeMBean;
  */
 public class SitConfigTests {
 
-  private MBeanServerConnection domainRuntimeMbs, editMbs, runtimeMbs;
+  private MBeanServerConnection runtimeMbs;
   private JMXConnector jmxConnector;
   private static ObjectName service;
-  private DomainRuntimeMBean domainRuntimeMBean;
-  private DomainRuntimeServiceMBean domainServiceMBean;
   private RuntimeServiceMBean runtimeServiceMBean;
   private ServerRuntimeMBean serverRuntime;
-  private EditServiceMBean editServiceMBean;
-
-  private DomainMBean editdomain, editTree;
-  private ConfigurationManagerMBean cfgMgr;
   private static final String JNDI = "/jndi/";
 
   private final String adminHost;
@@ -129,12 +120,12 @@ public class SitConfigTests {
   }
 
   /**
-   * Constructor
+   * Create connections to the MBean servers when the class is instantiated.
    *
-   * @param adminHost
-   * @param adminPort
-   * @param adminUser
-   * @param adminPassword
+   * @param adminHost - administration server t3 public address
+   * @param adminPort - administration server t3 public port
+   * @param adminUser - administration server user name
+   * @param adminPassword - - administration server password
    * @throws Exception
    */
   public SitConfigTests(String adminHost, String adminPort, String adminUser, String adminPassword)
@@ -146,6 +137,12 @@ public class SitConfigTests {
     createConnections();
   }
 
+  /**
+   * This method creates connection to the RuntimeMBean server Looks up the RuntimeService,
+   * DomainRuntimeService and EditService MBeans needed by the tests.
+   *
+   * @throws Exception
+   */
   private void createConnections() throws Exception {
     runtimeMbs =
         lookupMBeanServerConnection(
@@ -154,40 +151,31 @@ public class SitConfigTests {
             adminUser,
             adminPassword,
             RuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
-    domainRuntimeMbs =
-        lookupMBeanServerConnection(
-            adminHost,
-            adminPort,
-            adminUser,
-            adminPassword,
-            DomainRuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
-    editMbs =
-        lookupMBeanServerConnection(
-            adminHost, adminPort, adminUser, adminPassword, EditServiceMBean.MBEANSERVER_JNDI_NAME);
-
     ObjectName runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
     runtimeServiceMBean =
         (RuntimeServiceMBean)
             MBeanServerInvocationHandler.newProxyInstance(runtimeMbs, runtimeserviceObjectName);
-
     ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
-    domainServiceMBean =
-        (DomainRuntimeServiceMBean)
-            MBeanServerInvocationHandler.newProxyInstance(
-                domainRuntimeMbs, domainServiceObjectName);
-
-    ObjectName editserviceObjectName = new ObjectName(EditServiceMBean.OBJECT_NAME);
-    editServiceMBean =
-        (EditServiceMBean)
-            MBeanServerInvocationHandler.newProxyInstance(editMbs, editserviceObjectName);
   }
 
+  /**
+   * Method for creating a connection to a specific Mbean Server Accepts the following parameters
+   *
+   * @param host - Administration server hostname
+   * @param adminPort - Administration server T3 channel port
+   * @param user - - Administration server user name
+   * @param adminPassword - - Administration server password
+   * @param jndiName - jndi name of the MBean server
+   * @return MBeanServerConnection - MBean server connection created
+   * @throws MalformedURLException - throws MalformedURLException when URL is wrong
+   * @throws IOException - throws IOException when it cannot connect the MBean server
+   * @throws Exception - throws Exceptioni when created MBeanserver connection is null.
+   */
   private MBeanServerConnection lookupMBeanServerConnection(
       String host, String adminPort, String user, String adminPassword, String jndiName)
       throws MalformedURLException, IOException, Exception {
     JMXServiceURL serviceURL;
     MBeanServerConnection mBeanServerConnection;
-
     println(
         "Host: "
             + adminHost
@@ -331,6 +319,11 @@ public class SitConfigTests {
     }
   }
 
+  /**
+   * Looks up the ServerMBean from RuntimeServiceMBean
+   *
+   * @return
+   */
   private ServerMBean getServerMBean() {
     ServerMBean serverMBean = runtimeServiceMBean.getServerConfiguration();
     println("ServerMBean: " + serverMBean);
@@ -555,6 +548,11 @@ public class SitConfigTests {
     return wldfResource;
   }
 
+  /**
+   * prints messages
+   *
+   * @param msg - message to print
+   */
   protected static void println(String msg) {
     System.out.println("> " + msg);
   }
