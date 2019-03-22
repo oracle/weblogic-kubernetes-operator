@@ -14,8 +14,6 @@ import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
@@ -149,48 +147,39 @@ public class SitConfigTests {
   }
 
   private void createConnections() throws Exception {
-    try {
-      runtimeMbs =
-          lookupMBeanServerConnection(
-              adminHost,
-              adminPort,
-              adminUser,
-              adminPassword,
-              RuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
-      domainRuntimeMbs =
-          lookupMBeanServerConnection(
-              adminHost,
-              adminPort,
-              adminUser,
-              adminPassword,
-              DomainRuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
-      editMbs =
-          lookupMBeanServerConnection(
-              adminHost,
-              adminPort,
-              adminUser,
-              adminPassword,
-              EditServiceMBean.MBEANSERVER_JNDI_NAME);
+    runtimeMbs =
+        lookupMBeanServerConnection(
+            adminHost,
+            adminPort,
+            adminUser,
+            adminPassword,
+            RuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
+    domainRuntimeMbs =
+        lookupMBeanServerConnection(
+            adminHost,
+            adminPort,
+            adminUser,
+            adminPassword,
+            DomainRuntimeServiceMBean.MBEANSERVER_JNDI_NAME);
+    editMbs =
+        lookupMBeanServerConnection(
+            adminHost, adminPort, adminUser, adminPassword, EditServiceMBean.MBEANSERVER_JNDI_NAME);
 
-      ObjectName runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
-      runtimeServiceMBean =
-          (RuntimeServiceMBean)
-              MBeanServerInvocationHandler.newProxyInstance(runtimeMbs, runtimeserviceObjectName);
+    ObjectName runtimeserviceObjectName = new ObjectName(RuntimeServiceMBean.OBJECT_NAME);
+    runtimeServiceMBean =
+        (RuntimeServiceMBean)
+            MBeanServerInvocationHandler.newProxyInstance(runtimeMbs, runtimeserviceObjectName);
 
-      ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
-      domainServiceMBean =
-          (DomainRuntimeServiceMBean)
-              MBeanServerInvocationHandler.newProxyInstance(
-                  domainRuntimeMbs, domainServiceObjectName);
+    ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
+    domainServiceMBean =
+        (DomainRuntimeServiceMBean)
+            MBeanServerInvocationHandler.newProxyInstance(
+                domainRuntimeMbs, domainServiceObjectName);
 
-      ObjectName editserviceObjectName = new ObjectName(EditServiceMBean.OBJECT_NAME);
-      editServiceMBean =
-          (EditServiceMBean)
-              MBeanServerInvocationHandler.newProxyInstance(editMbs, editserviceObjectName);
-    } catch (MalformedObjectNameException ex) {
-      Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
-      throw new AssertionError(ex.getMessage());
-    }
+    ObjectName editserviceObjectName = new ObjectName(EditServiceMBean.OBJECT_NAME);
+    editServiceMBean =
+        (EditServiceMBean)
+            MBeanServerInvocationHandler.newProxyInstance(editMbs, editserviceObjectName);
   }
 
   private MBeanServerConnection lookupMBeanServerConnection(
