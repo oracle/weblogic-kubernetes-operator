@@ -387,7 +387,13 @@ public class SitConfigTests {
       Connection connection = dataSource.getConnection();
       Statement stmt = connection.createStatement();
       int createSchema = stmt.executeUpdate("CREATE SCHEMA `mysqldb` ;");
-      assert createSchema == 0 : "create schema failed";
+      println("create schema returned " + createSchema);
+      int createTable =
+          stmt.executeUpdate(
+              "CREATE TABLE IF NOT EXISTS mysqldb.testtable (title VARCHAR(255) NOT NULL,description TEXT)ENGINE=INNODB;");
+      println("create table table returned " + createTable);
+      assert createSchema == 1 : "create schema failed";
+      assert createTable == 0 : "create table failed";
     } catch (SQLException ex) {
       Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
     }
