@@ -27,7 +27,7 @@ import org.junit.Test;
 /** JUnit test class used for testing configuration override use cases. */
 public class ITSitConfig extends BaseTest {
 
-  private static String TESTSCRIPTDIR;
+  private static String TEST_RES_DIR;
   private static String ADMINPODNAME;
   private static final String DOMAINUID = "customsitconfigdomain";
   private static final String ADMINPORT = "30710";
@@ -38,7 +38,11 @@ public class ITSitConfig extends BaseTest {
   private static String KUBE_EXEC_CMD;
   private static Domain domain;
   private static Operator operator1;
-  private static String sitconfigDir = "";
+  private static String sitconfigTmpDir = "";
+  private static String mysqltmpDir = "";
+  private static String configOverrideDir = "";
+  private static String mysqlYamlFile = "";
+
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -55,11 +59,17 @@ public class ITSitConfig extends BaseTest {
       if (operator1 == null) {
         operator1 = TestUtils.createOperator(OPERATOR1_YAML);
       }
-      TESTSCRIPTDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
-      sitconfigDir = BaseTest.getResultDir() + "/configoverridefiles";
+      TEST_RES_DIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
+      sitconfigTmpDir = BaseTest.getResultDir() + "/sitconfigtemp";
+      mysqltmpDir = sitconfigTmpDir + "/mysql";
+      configOverrideDir = sitconfigTmpDir + "/configoverridefiles";
+      mysqlYamlFile = mysqltmpDir + "/mysql-dbservices.yml";
+      Files.createDirectories(Paths.get(sitconfigTmpDir));
+      Files.createDirectories(Paths.get(configOverrideDir));
+      Files.createDirectories(Paths.get(mysqltmpDir));
       // Create the MySql db container
-      ExecResult result =
-          TestUtils.exec("kubectl create -f " + TESTSCRIPTDIR + "/mysql/mysql-dbservices.yml");
+      copyMySqlFile();
+      ExecResult result = TestUtils.exec("kubectl create -f " + mysqlYamlFile);
       Assert.assertEquals(0, result.exitValue());
 
       fqdn = TestUtils.getHostName();
@@ -72,12 +82,12 @@ public class ITSitConfig extends BaseTest {
       // copy the jmx test client file the administratioin server weblogic server pod
       ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
       TestUtils.copyFileViaCat(
-          TESTSCRIPTDIR + "sitconfig/java/SitConfigTests.java",
+          TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
           "SitConfigTests.java",
           ADMINPODNAME,
           domain.getDomainNS());
       TestUtils.copyFileViaCat(
-          TESTSCRIPTDIR + "sitconfig/scripts/runSitConfigTests.sh",
+          TEST_RES_DIR + "sitconfig/scripts/runSitConfigTests.sh",
           "runSitConfigTests.sh",
           ADMINPODNAME,
           domain.getDomainNS());
@@ -97,7 +107,7 @@ public class ITSitConfig extends BaseTest {
       destroySitConfigDomain();
       tearDown();
       ExecResult result =
-          TestUtils.exec("kubectl delete -f " + TESTSCRIPTDIR + "/mysql/mysql-dbservices.yml");
+          TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
     }
   }
 
@@ -242,11 +252,11 @@ public class ITSitConfig extends BaseTest {
    * @throws Exception - if it cannot create the domain
    */
   private static Domain createSitConfigDomain() throws Exception {
-    String createDomainScript = TESTSCRIPTDIR + "/domain-home-on-pv/create-domain.py";
+    String createDomainScript = TEST_RES_DIR + "/domain-home-on-pv/create-domain.py";
     // load input yaml to map and add configOverrides
     Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
     domainMap.put("configOverrides", "sitconfigcm");
-    domainMap.put("configOverridesFile", sitconfigDir);
+    domainMap.put("configOverridesFile", configOverrideDir);
     domainMap.put("domainUID", DOMAINUID);
     domainMap.put("adminNodePort", new Integer(ADMINPORT));
     domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
@@ -279,9 +289,8 @@ public class ITSitConfig extends BaseTest {
    * @throws IOException
    */
   private static void copySitConfigFiles() throws IOException {
-    String src_dir = TESTSCRIPTDIR + "/sitconfig/configoverrides";
-    Files.createDirectories(Paths.get(sitconfigDir));
-    String dst_dir = sitconfigDir;
+    String src_dir = TEST_RES_DIR + "/sitconfig/configoverrides";
+    String dst_dir = configOverrideDir;
     String files[] = {
       "config.xml",
       "jdbc-JdbcTestDataSource-0.xml",
@@ -299,6 +308,23 @@ public class ITSitConfig extends BaseTest {
       logger.log(Level.INFO, "to {0}", path.toString());
       Files.write(path, content.getBytes(charset));
     }
+  }
+
+  /**
+   * a util method to copy MySql yaml template file replacing the NAMESPACE and DOMAINUID
+   *
+   * @throws IOException
+   */
+  private static void copyMySqlFile() throws IOException {
+    Path src = Paths.get(TEST_RES_DIR + "/mysql/mysql-dbservices.ymlt");
+    Path dst = Paths.get(mysqlYamlFile);
+    logger.log(Level.INFO, "Copying {0}", src.toString());
+    Charset charset = StandardCharsets.UTF_8;
+    String content = new String(Files.readAllBytes(src), charset);
+    content = content.replaceAll("@NAMESPACE@", "default");
+    content = content.replaceAll("@DOMAIN_UID@", DOMAINUID);
+    logger.log(Level.INFO, "to {0}", dst.toString());
+    Files.write(dst, content.getBytes(charset));
   }
 
   /**
