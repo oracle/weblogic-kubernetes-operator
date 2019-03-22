@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
@@ -276,7 +275,7 @@ public class ITSitConfig extends BaseTest {
       "jms-ClusterJmsSystemResource.xml",
       "version.txt"
     };
-    for (String file : files) {      
+    for (String file : files) {
       Path path = Paths.get(src_dir, file);
       logger.log(Level.INFO, "Copying {0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
