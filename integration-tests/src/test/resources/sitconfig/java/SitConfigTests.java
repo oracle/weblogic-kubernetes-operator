@@ -85,7 +85,7 @@ public class SitConfigTests {
   private final String adminPassword;
 
   /**
-   * @param args the args should include a minimum of these values administration server host,
+   * @param args the args should include a minimum of these values - administration server host,
    *     administration server port, administration server user name and administration server
    *     password. When testCustomSitConfigOverridesForJdbc test is run it expects an additional
    *     argument JDBC URL.
@@ -106,7 +106,7 @@ public class SitConfigTests {
 
     if (testName.equals("testCustomSitConfigOverridesForDomain")) {
       // the values passed to these verify methods are the attribute values overrrideen in the
-      // config.xml
+      // config.xml. These are just randomly chosen attributes and values to override
       test.verifyDebugFlagJMXCore(true);
       test.verifyDebugFlagServerLifeCycle(true);
       test.verifyMaxMessageSize(78787878);
