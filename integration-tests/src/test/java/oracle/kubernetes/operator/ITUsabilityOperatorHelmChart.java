@@ -684,7 +684,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
-  private void verifyOperatorDomainManagement(Operator operator, Domain domain, boolean isAccessible) throws Exception {
+  private void verifyOperatorDomainManagement(
+      Operator operator, Domain domain, boolean isAccessible) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
       try {
         operator.verifyDomainExists(domain.getDomainUid());
@@ -726,7 +727,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     return domain;
   }
 
-  private void upgradeOperatorDomainNamespaces(Operator operator, ArrayList<String> targetNamespaces) throws Exception {
+  private void upgradeOperatorDomainNamespaces(
+      Operator operator, ArrayList<String> targetNamespaces) throws Exception {
     logger.info("update operator with new target domain");
     String upgradeSet =
         "domainNamespaces="
