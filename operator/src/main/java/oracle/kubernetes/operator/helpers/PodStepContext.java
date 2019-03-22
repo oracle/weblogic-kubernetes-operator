@@ -623,6 +623,7 @@ public abstract class PodStepContext extends StepContextBase {
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec =
         new V1PodSpec()
+            .containers(getServerSpec().getContainers())
             .addContainersItem(
                 createContainer(tuningParameters)
                     .resources(getServerSpec().getResources())

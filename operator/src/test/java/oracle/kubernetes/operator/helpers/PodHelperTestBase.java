@@ -256,6 +256,10 @@ public abstract class PodHelperTestBase {
     return getCreatedPod().getSpec().getContainers().get(0);
   }
 
+  List<V1Container> getCreatedPodSpecContainers() {
+    return getCreatedPod().getSpec().getContainers();
+  }
+
   List<V1Container> getCreatedPodSpecInitContainers() {
     return getCreatedPod().getSpec().getInitContainers();
   }
