@@ -28,7 +28,9 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITSessionMigration extends BaseTest {
-  private static final String TESTAPPNAME = "httpsessionreplication";
+  private static final String testAppName = "httpsessionreptestapp";
+  private static final String scriptName = "buildDeployWebAppInPod.sh";
+
   private static Map<String, String> httpAttrMap;
 
   private static String httpHeaderFile;
@@ -52,7 +54,7 @@ public class ITSessionMigration extends BaseTest {
       // initialize test properties and create the directories
       initialize(APP_PROPS_FILE);
 
-      // create operator1
+      // Create operator1
       if (operator == null) {
         logger.info("Creating Operator & waiting for the script to complete execution");
         operator = TestUtils.createOperator(OPERATOR1_YAML);
@@ -63,15 +65,6 @@ public class ITSessionMigration extends BaseTest {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
         domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
         domain.verifyDomainCreated();
-
-        domain.deployWebAppViaREST(
-            TESTAPPNAME,
-            BaseTest.getProjectRoot() + "/src/integration-tests/apps/httpsessionreplication.war",
-            BaseTest.getUsername(),
-            BaseTest.getPassword());
-
-        // wait some time for deployment gets ready
-        Thread.sleep(10 * 1000);
       }
 
       httpHeaderFile = BaseTest.getResultDir() + "/headers";
@@ -82,6 +75,13 @@ public class ITSessionMigration extends BaseTest {
       httpAttrMap.put("primary", "(.*)primary>(.*)</primary(.*)");
       httpAttrMap.put("secondary", "(.*)secondary>(.*)</secondary(.*)");
       httpAttrMap.put("count", "(.*)countattribute>(.*)</countattribute(.*)");
+
+      // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
+      domain.buildWarDeployAppInPod(
+          testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+
+      // Wait some time for deployment gets ready
+      Thread.sleep(10 * 1000);
     }
   }
 
@@ -119,7 +119,7 @@ public class ITSessionMigration extends BaseTest {
     String domainNS = domainMap.get("namespace").toString();
     String domainUid = domain.getDomainUid();
 
-    String testAppPath = TESTAPPNAME + "/CounterServlet";
+    String testAppPath = testAppName + "/CounterServlet";
     String sessCreateTime = "sessioncreatetime";
     String primaryServ = "primary";
 
@@ -150,7 +150,7 @@ public class ITSessionMigration extends BaseTest {
 
     // Restore test env
     // Wait some time for ms pod to become ready
-    Thread.sleep(10 * 1000);
+    Thread.sleep(30 * 1000);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
     logger.info(
@@ -174,7 +174,7 @@ public class ITSessionMigration extends BaseTest {
     String domainUid = domain.getDomainUid();
 
     int counterNum = 4;
-    String testAppPath = TESTAPPNAME + "/CounterServlet";
+    String testAppPath = testAppName + "/CounterServlet";
     String webServiceSetUrl = testAppPath + "?setCounter=" + counterNum;
     String webServiceGetUrl = testAppPath + "?getCounter";
 
@@ -210,7 +210,7 @@ public class ITSessionMigration extends BaseTest {
 
     // Restore test env
     // Wait some time for ms pod to become ready
-    Thread.sleep(10 * 1000);
+    Thread.sleep(30 * 1000);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
     logger.info("SUCCESS - " + testMethodName + ". HTTP session state is migrated!");
