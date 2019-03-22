@@ -72,13 +72,14 @@ def createDataSource(dsName, dsJNDI, dsUrl, dsUser, dsPassword, dsTarget):
     set('Target', dsTarget)
     cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
     cmo.setName(dsName)
+    cmo.setDatasourceType('GENERIC')
 
     print 'create JDBCDataSourceParams'
     cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
     create('testDataSourceParams', 'JDBCDataSourceParams')
     cd('JDBCDataSourceParams/NO_NAME_0')
     set('JNDIName', java.lang.String(dsJNDI))
-    set('GlobalTransactionsProtocol', java.lang.String('None'))
+    set('GlobalTransactionsProtocol', java.lang.String('TwoPhaseCommit'))
 
     print 'create JDBCDriverParams'
     cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
@@ -101,7 +102,7 @@ def createDataSource(dsName, dsJNDI, dsUrl, dsUser, dsPassword, dsTarget):
     create('testJdbcConnectionPoolParams', 'JDBCConnectionPoolParams')
 
     cd('JDBCConnectionPoolParams/NO_NAME_0')
-    set('TestTableName', 'SQL SELECT 1 FROM DUAL')
+    cmo.setTestTableName('SQL SELECT 1\r\n\r\n\r\n')
     set('InitialCapacity', 0)
     set('MinCapacity', 0)
 
