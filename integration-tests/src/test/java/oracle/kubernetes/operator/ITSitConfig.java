@@ -60,7 +60,7 @@ public class ITSitConfig extends BaseTest {
       // Create the MySql db container
       ExecResult result =
           TestUtils.exec(
-              "kubectl create -f " + TESTSCRIPTDIR + "/sitconfig/mysql/mysql-dbservices.yml");
+              "kubectl create -f " + TESTSCRIPTDIR + "/mysql/mysql-dbservices.yml");
       Assert.assertEquals(0, result.exitValue());
 
       fqdn = TestUtils.getHostName();
@@ -99,7 +99,7 @@ public class ITSitConfig extends BaseTest {
       tearDown();
       ExecResult result =
           TestUtils.exec(
-              "kubectl delete -f " + TESTSCRIPTDIR + "/sitconfig/mysql/mysql-dbservices.yml");
+              "kubectl delete -f " + TESTSCRIPTDIR + "/mysql/mysql-dbservices.yml");
     }
   }
 
