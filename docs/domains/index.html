@@ -34,7 +34,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;width:0;height:0">
   <defs>
     <symbol viewBox="0 0 20 20" id="unlocked">
-      <path d="M15.8 8H14V5.6C14 2.703 12.665 1 10 1 7.334 1 6 2.703 6 5.6V6h2v-.801C8 3.754 8.797 3 10 3c1.203 0 2 .754 2 2.199V8H4c-.553 0-1 .646-1 1.199V17c0 .549.428 1.139.951 1.307l1.197.387C5.672 18.861 6.55 19 7.1 19h5.8c.549 0 1.428-.139 1.951-.307l1.196-.387c.524-.167.953-.757.953-1.306V9.199C17 8.646 16.352 8 15.8 8z"></path>
+          <path d="M15.8 8H14V5.6C14 2.703 12.665 1 10 1 7.334 1 6 2.703 6 5.6V6h2v-.801C8 3.754 8.797 3 10 3c1.203 0 2 .754 2 2.199V8H4c-.553 0-1 .646-1 1.199V17c0 .549.428 1.139.951 1.307l1.197.387C5.672 18.861 6.55 19 7.1 19h5.8c.549 0 1.428-.139 1.951-.307l1.196-.387c.524-.167.953-.757.953-1.306V9.199C17 8.646 16.352 8 15.8 8z"></path>
     </symbol>
 
     <symbol viewBox="0 0 20 20" id="locked">
@@ -1366,30 +1366,15 @@ window.onload = function() {
           "description": "Memory and cpu minimum requirements and limits for the server.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
-        "readinessProbe": {
-          "description": "Settings for the readiness probe associated with a server.",
-          "$ref": "#/definitions/ProbeTuning"
-        },
         "annotations": {
           "description": "The annotations to be attached to generated resources.",
           "$ref": "#/definitions/Map"
-        },
-        "containerSecurityContext": {
-          "description": "Container-level security attributes. Will override any matching pod-level attributes.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "env": {
           "description": "A list of environment variables to add to a server",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
-          }
-        },
-        "initContainers": {
-          "description": "Initialization containers",
-          "type": "array",
-          "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
         },
         "nodeSelector": {
@@ -1406,6 +1391,28 @@ window.onload = function() {
         "labels": {
           "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
           "$ref": "#/definitions/Map"
+        },
+        "readinessProbe": {
+          "description": "Settings for the readiness probe associated with a server.",
+          "$ref": "#/definitions/ProbeTuning"
+        },
+        "containers": {
+          "description": "Additional containers to be included in the server pod.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+          }
+        },
+        "containerSecurityContext": {
+          "description": "Container-level security attributes. Will override any matching pod-level attributes.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+        },
+        "initContainers": {
+          "description": "Initialization containers",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+          }
         }
       }
     },

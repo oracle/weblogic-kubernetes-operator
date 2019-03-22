@@ -52,4 +52,14 @@ public abstract class ClusterSpec {
   public List<V1Container> getInitContainers() {
     return Collections.emptyList();
   }
+
+  /**
+   * Returns the list of additional containers.
+   *
+   * @return a list of containers
+   */
+  @Nonnull
+  public List<V1Container> getContainers() {
+    return Collections.emptyList();
+  }
 }
