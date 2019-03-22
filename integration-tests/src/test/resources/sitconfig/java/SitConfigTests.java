@@ -391,7 +391,7 @@ public class SitConfigTests {
       int createTable =
           stmt.executeUpdate(
               "CREATE TABLE IF NOT EXISTS mysqldb.testtable (title VARCHAR(255) NOT NULL,description TEXT)ENGINE=INNODB;");
-      println("create table table returned " + createTable);
+      println("create table returned " + createTable);
       assert createSchema == 1 : "create schema failed";
       assert createTable == 0 : "create table failed";
     } catch (SQLException ex) {
