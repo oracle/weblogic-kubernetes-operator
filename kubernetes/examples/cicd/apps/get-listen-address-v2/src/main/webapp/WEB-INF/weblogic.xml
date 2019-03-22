@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<weblogic-web-app xmlns="http://www.bea.com/ns/weblogic/90">
+  <context-root>/get-listen-address</context-root>
+  <run-as-role-assignment>
+    <role-name>server-admin</role-name>
+    <run-as-principal-name>weblogic</run-as-principal-name>
+  </run-as-role-assignment>
+</weblogic-web-app>

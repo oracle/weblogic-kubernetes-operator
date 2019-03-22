@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+  <servlet>
+    <servlet-name>Get Listen Address Servlet</servlet-name>
+    <servlet-class>com.oracle.platform.GetListenAddressServlet</servlet-class>
+    <run-as>
+      <role-name>server-admin</role-name>
+    </run-as>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Get Listen Address Servlet</servlet-name>
+    <url-pattern>/listen</url-pattern>
+  </servlet-mapping>
+  <welcome-file-list>
+    <welcome-file>/listen</welcome-file>
+  </welcome-file-list>
+  <security-role>
+    <role-name>server-admin</role-name>
+  </security-role>
+</web-app>

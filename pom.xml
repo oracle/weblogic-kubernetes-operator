@@ -129,6 +129,7 @@
           <rulesets>
             <ruleset>weblogic-kubernetes-operator/pmd/weblogicx-ruleset.xml</ruleset>
           </rulesets>
+          <skip>${skip.pmd.check}</skip>
           <printFailingErrors>true</printFailingErrors>
           <failOnViolation>false</failOnViolation>
         </configuration>
@@ -457,6 +458,7 @@
     <sonar-jacoco-listeners.version>1.4</sonar-jacoco-listeners.version>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <jacoco.skip>false</jacoco.skip>
+    <skip.pmd.check>false</skip.pmd.check>
   </properties>
 
 </project>
