@@ -13,7 +13,7 @@
     </jdbc:jdbc-connection-pool-params>
     <jdbc:jdbc-driver-params>
         <jdbc:url jdbcf:combine-mode="replace">JDBC_URL</jdbc:url>
-        <jdbc:driver-name>oracle.jdbc.OracleDriver</jdbc:driver-name>
+        <jdbc:driver-name>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</jdbc:driver-name>
         <jdbc:properties>
             <jdbc:property>
                 <jdbc:name>user</jdbc:name>
