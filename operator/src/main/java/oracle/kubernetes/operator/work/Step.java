@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 
-/** Individual step in a processing flow */
+/** Individual step in a processing flow. */
 public abstract class Step {
   private Step next;
 
@@ -38,8 +38,9 @@ public abstract class Step {
    */
   public static Step chain(Step... stepGroups) {
     int start = getFirstNonNullIndex(stepGroups);
-    if (start >= stepGroups.length)
+    if (start >= stepGroups.length) {
       throw new IllegalArgumentException("No non-Null steps specified");
+    }
 
     for (int i = start + 1; i < stepGroups.length; i++) {
       addLink(stepGroups[start], stepGroups[i]);
@@ -48,7 +49,11 @@ public abstract class Step {
   }
 
   private static int getFirstNonNullIndex(Step[] stepGroups) {
-    for (int i = 0; i < stepGroups.length; i++) if (stepGroups[i] != null) return i;
+    for (int i = 0; i < stepGroups.length; i++) {
+      if (stepGroups[i] != null) {
+        return i;
+      }
+    }
 
     return stepGroups.length;
   }
@@ -91,7 +96,7 @@ public abstract class Step {
 
   /**
    * Create {@link NextAction} that indicates that the next step be invoked with the given {@link
-   * Packet}
+   * Packet}.
    *
    * @param packet Packet to provide when invoking the next step
    * @return The next action
@@ -104,7 +109,7 @@ public abstract class Step {
 
   /**
    * Create {@link NextAction} that indicates that the indicated step be invoked with the given
-   * {@link Packet}
+   * {@link Packet}.
    *
    * @param step The step
    * @param packet Packet to provide when invoking the next step
@@ -117,7 +122,7 @@ public abstract class Step {
   }
 
   /**
-   * Returns next action that will end the fiber processing
+   * Returns next action that will end the fiber processing.
    *
    * @param packet Packet
    * @return Next action that will end processing
@@ -127,7 +132,7 @@ public abstract class Step {
   }
 
   /**
-   * Returns next action that will terminate fiber processing with a throwable
+   * Returns next action that will terminate fiber processing with a throwable.
    *
    * @param throwable Throwable
    * @param packet Packet
@@ -140,7 +145,7 @@ public abstract class Step {
   }
 
   /**
-   * Create {@link NextAction} that indicates the the current step be retried after a delay
+   * Create {@link NextAction} that indicates the the current step be retried after a delay.
    *
    * @param packet Packet to provide when retrying this step
    * @param delay Delay time
@@ -154,7 +159,7 @@ public abstract class Step {
   }
 
   /**
-   * Create {@link NextAction} that indicates the the current fiber resume with the next step after
+   * Create {@link NextAction} that indicates the the current fiber resume with the next step after.
    * a delay.
    *
    * @param packet Packet to provide when retrying this step
@@ -216,7 +221,7 @@ public abstract class Step {
     return next;
   }
 
-  /** Multi-exception */
+  /** Multi-exception. */
   @SuppressWarnings("serial")
   public static class MultiThrowable extends RuntimeException {
     private final List<Throwable> throwables;
@@ -227,7 +232,7 @@ public abstract class Step {
     }
 
     /**
-     * The multiple exceptions wrapped by this exception
+     * The multiple exceptions wrapped by this exception.
      *
      * @return Multiple exceptions
      */

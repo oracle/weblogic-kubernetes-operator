@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
@@ -27,15 +29,14 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.ConflictRetry;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainList;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 /**
  * RestBackendImpl implements the backend of the WebLogic operator REST api by making calls to
@@ -69,11 +70,6 @@ public class RestBackendImpl implements RestBackend {
     userInfo = authenticate(accessToken);
     this.targetNamespaces = targetNamespaces;
     LOGGER.exiting();
-  }
-
-  private void authorize(String domainUID, String cluster, Operation operation) {
-    // TBD - should cluster atz be different than domain atz?
-    authorize(domainUID, operation);
   }
 
   private void authorize(String domainUID, Operation operation) {
@@ -152,7 +148,6 @@ public class RestBackendImpl implements RestBackend {
     return userInfo;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getDomainUIDs() {
     LOGGER.entering();
@@ -182,7 +177,6 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isDomainUID(String domainUID) {
     LOGGER.entering(domainUID);
@@ -192,7 +186,6 @@ public class RestBackendImpl implements RestBackend {
     return result;
   }
 
-  /** {@inheritDoc} */
   @Override
   public Set<String> getClusters(String domainUID) {
     LOGGER.entering(domainUID);
@@ -209,17 +202,15 @@ public class RestBackendImpl implements RestBackend {
     return result;
   }
 
-  /** {@inheritDoc} */
   @Override
   public boolean isCluster(String domainUID, String cluster) {
     LOGGER.entering(domainUID, cluster);
-    authorize(domainUID, cluster, Operation.list);
+    authorize(domainUID, Operation.list);
     boolean result = getClusters(domainUID).contains(cluster);
     LOGGER.exiting(result);
     return result;
   }
 
-  /** {@inheritDoc} */
   @Override
   public void scaleCluster(String domainUID, String cluster, int managedServerCount) {
     LOGGER.entering(domainUID, cluster, managedServerCount);
@@ -229,55 +220,43 @@ public class RestBackendImpl implements RestBackend {
           Status.BAD_REQUEST, MessageKeys.INVALID_MANAGE_SERVER_COUNT, managedServerCount);
     }
 
-    authorize(domainUID, cluster, Operation.update);
+    authorize(domainUID, Operation.update);
 
     List<Domain> domains = getDomainsList();
     Domain domain = findDomain(domainUID, domains);
 
-    String namespace = getNamespace(domainUID, domains);
-
     verifyWLSConfiguredClusterCapacity(domain, cluster, managedServerCount);
 
-    if (updateReplicasForDomain(domain, cluster, managedServerCount)) {
-      overwriteDomain(
-          namespace,
-          domain,
-          () -> getDomainForConflictRetry(domainUID, cluster, managedServerCount));
-    }
+    patchDomain(domain, cluster, managedServerCount);
     LOGGER.exiting();
   }
 
-  private boolean updateReplicasForDomain(Domain domain, String cluster, int newReplicaCount) {
-    if (newReplicaCount != domain.getReplicaCount(cluster)) {
-      domain.setReplicaCount(cluster, newReplicaCount);
-      return true;
-    }
-    return false;
-  }
+  private static final String NEW_CLUSTER =
+      "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
 
-  private void overwriteDomain(
-      String namespace, final Domain domain, ConflictRetry<Domain> conflictRetry) {
+  private void patchDomain(Domain domain, String cluster, int replicas) {
+    if (replicas == domain.getReplicaCount(cluster)) return;
+
     try {
-      // Write out the Domain with updated replica values
-      // TODO: Can we patch instead of replace?
+      JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+      int index = getClusterIndex(domain, cluster);
+      if (index < 0)
+        patchBuilder.add("/spec/clusters/0", String.format(NEW_CLUSTER, cluster, replicas));
+      else patchBuilder.replace("/spec/clusters/" + index + "/replicas", replicas);
+
       new CallBuilder()
-          .replaceDomainWithConflictRetry(domain.getDomainUID(), namespace, domain, conflictRetry);
+          .patchDomain(
+              domain.getDomainUID(), domain.getMetadata().getNamespace(), patchBuilder.build());
     } catch (ApiException e) {
-      LOGGER.finer(
-          String.format(
-              "Unexpected exception when updating Domain %s in namespace %s",
-              domain.getDomainUID(), namespace),
-          e);
-      throw new WebApplicationException(e.getMessage());
+      throw handleApiException(e);
     }
   }
 
-  Domain getDomainForConflictRetry(String domainUid, String cluster, int newReplicaCount) {
-    Domain domain = findDomain(domainUid, getDomainsList());
-    if (updateReplicasForDomain(domain, cluster, newReplicaCount)) {
-      return domain;
-    }
-    return null;
+  private int getClusterIndex(Domain domain, String cluster) {
+    for (int i = 0; i < domain.getSpec().getClusters().size(); i++)
+      if (cluster.equals(domain.getSpec().getClusters().get(i).getClusterName())) return i;
+
+    return -1;
   }
 
   private void verifyWLSConfiguredClusterCapacity(
@@ -287,13 +266,13 @@ public class RestBackendImpl implements RestBackend {
     WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domain.getDomainUID(), cluster);
 
     // Verify the current configured cluster size
-    int MaxClusterSize = wlsClusterConfig.getMaxClusterSize();
-    if (requestedSize > MaxClusterSize) {
+    int maxClusterSize = wlsClusterConfig.getMaxClusterSize();
+    if (requestedSize > maxClusterSize) {
       throw createWebApplicationException(
           Status.BAD_REQUEST,
           MessageKeys.SCALE_COUNT_GREATER_THAN_CONFIGURED,
           requestedSize,
-          MaxClusterSize,
+          maxClusterSize,
           cluster,
           cluster);
     }
@@ -307,14 +286,16 @@ public class RestBackendImpl implements RestBackend {
     return getWlsDomainConfig(domainUID).getClusterConfigs();
   }
 
-  static interface TopologyRetriever {
-    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUID);
+  interface TopologyRetriever {
+    WlsDomainConfig getWlsDomainConfig(String ns, String domainUID);
   }
 
-  static final TopologyRetriever INSTANCE =
+  private static final TopologyRetriever INSTANCE =
       (String ns, String domainUID) -> {
         Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUID);
-        if (s != null) return s.getWlsDomainConfig();
+        if (s != null) {
+          return s.getWlsDomainConfig();
+        }
         return null;
       };
 
@@ -328,7 +309,9 @@ public class RestBackendImpl implements RestBackend {
   WlsDomainConfig getWlsDomainConfig(String domainUID) {
     for (String ns : targetNamespaces) {
       WlsDomainConfig config = INSTANCE.getWlsDomainConfig(ns, domainUID);
-      if (config != null) return config;
+      if (config != null) {
+        return config;
+      }
     }
     return new WlsDomainConfig(null);
   }

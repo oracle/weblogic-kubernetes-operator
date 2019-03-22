@@ -24,6 +24,9 @@
 #   DELETE_FILES Delete local test files, and launch a job to delete PV 
 #                hosted test files (default true).
 #
+#   FAST_DELETE  Set to "--grace-period=1 --timeout=1" to speedup
+#                deletes and skip phase 2.
+#
 # --------------------
 # Detailed Description
 # --------------------
@@ -57,6 +60,7 @@ RESULT_DIR="$RESULT_ROOT/acceptance_test_tmp"
 USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 TMP_DIR="$RESULT_DIR/cleanup_tmp"
 JOB_NAME="weblogic-command-job"
+
 
 function fail {
   echo @@ cleanup.sh: Error "$@"
@@ -98,13 +102,13 @@ function deleteWithOneLabel {
   getResWithLabel $1
   # delete namespaced types
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
-    kubectl -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+    kubectl $FAST_DELETE -n $line delete $NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   done
 
   # delete non-namespaced types
   local no_namespace_count=`grep -c -v " -n " $1`
   if [ ! "$no_namespace_count" = "0" ]; then
-    kubectl delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
+    kubectl $FAST_DELETE delete $NOT_NAMESPACED_TYPES -l "$LABEL_SELECTOR"
   fi
 
   echo "@@ Waiting for pods to stop running."
@@ -136,7 +140,7 @@ function deleteWithOneLabel {
 function deleteNamespaces {
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
     if [ "$line" != "default" ]; then
-      kubectl delete namespace $line --ignore-not-found
+      kubectl $FAST_DELETE delete namespace $line --ignore-not-found
     fi
   done
 
@@ -246,7 +250,7 @@ function genericDelete {
         return 0
       fi
 
-      if [ "$iteration" = "first" ]; then
+      if [ "$iteration" = "first" ] && [ "$FAST_DELETE" = "" ]; then
         # in the first iteration we just wait to see if artifacts go away on there own
 
         echo "@@ Waiting for $artcount_total artifacts to delete.  Wait time $((mnow - mstart)) seconds (max=$maxwaitsecs).  Waiting for:"
@@ -269,8 +273,8 @@ function genericDelete {
 
         if [ ${artcount_no} -gt 0 ]; then
           cat "$resfile_no" | while read line; do
-            echo "kubectl delete $line --ignore-not-found"
-            kubectl delete $line --ignore-not-found
+            echo "kubectl $FAST_DELETE delete $line --ignore-not-found"
+            kubectl $FAST_DELETE delete $line --ignore-not-found
           done
         fi
 
@@ -292,9 +296,9 @@ function genericDelete {
 }
 
 function cleanup_tiller {
-  kubectl -n kube-system delete deployment tiller-deploy --ignore-not-found=true
-  kubectl delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
-  kubectl -n kube-system delete serviceaccount tiller --ignore-not-found=true
+  kubectl $FAST_DELETE -n kube-system delete deployment tiller-deploy --ignore-not-found=true
+  kubectl $FAST_DELETE delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
+  kubectl $FAST_DELETE -n kube-system delete serviceaccount tiller --ignore-not-found=true
 }
 
 function fail {
@@ -343,17 +347,24 @@ SUCCESS="$?"
 
 if [ "${DELETE_FILES:-true}" = "true" ]; then
 
-  # Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).
+  # Delete pv directories using a run (/sharedparent maps to PV_ROOT on the k8s cluster machines).
 
-  echo @@ Launching job to delete all pv contents.  This runs in the k8s cluster, /scratch mounts PV_ROOT.
-  $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
+  echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
+  # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
+  if [ "$WERCKER" = "true" ]; then
+	$SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
+  else 
+  	$SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
+  fi
   [ "$?" = "0" ] || SUCCESS="1"
+  echo @@ SUCCESS=$SUCCESS
 
   # Delete old test files owned by the current user.  
 
   echo @@ Deleting local $RESULT_DIR contents.
   rm -fr $RESULT_ROOT/acceptance_test_tmp
   [ "$?" = "0" ] || SUCCESS="1"
+  echo @@ SUCCESS=$SUCCESS
 
   echo @@ Deleting /tmp/test_suite.\* files.
   rm -f /tmp/test_suite.*

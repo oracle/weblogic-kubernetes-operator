@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -44,6 +44,7 @@ import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -60,8 +61,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainList;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.joda.time.DateTime;
 
 /** A Kubernetes Operator for WebLogic. */
@@ -143,14 +144,13 @@ public class Main {
       new AtomicReference<>(DateTime.now());
 
   private static String principal;
-  private static RestServer restServer = null;
   private static KubernetesVersion version = null;
 
   static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
 
   /**
-   * Entry point
+   * Entry point.
    *
    * @param args none, ignored
    */
@@ -360,7 +360,9 @@ public class Main {
         namespacesToStart.removeAll(isNamespaceStarted.keySet());
       }
 
-      if (!namespacesToStart.isEmpty()) runSteps(new StartNamespacesStep(namespacesToStart));
+      if (!namespacesToStart.isEmpty()) {
+        runSteps(new StartNamespacesStep(namespacesToStart));
+      }
     };
   }
 
@@ -385,7 +387,7 @@ public class Main {
   }
 
   private static Step readExistingDomains(String ns) {
-    LOGGER.info(MessageKeys.LISTING_DOMAINS);
+    LOGGER.fine(MessageKeys.LISTING_DOMAINS);
     return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
   }
 
@@ -424,7 +426,7 @@ public class Main {
   // -----------------------------------------------------------------------------
 
   /**
-   * Obtain the list of target namespaces
+   * Obtain the list of target namespaces.
    *
    * @return the collection of target namespace names
    */
@@ -448,13 +450,13 @@ public class Main {
 
   private static void startRestServer(String principal, Collection<String> targetNamespaces)
       throws Exception {
-    restServer = new RestServer(new RestConfigImpl(principal, targetNamespaces));
-    restServer.start(container);
+    RestServer.create(new RestConfigImpl(principal, targetNamespaces));
+    RestServer.getInstance().start(container);
   }
 
   private static void stopRestServer() {
-    restServer.stop();
-    restServer = null;
+    RestServer.getInstance().stop();
+    RestServer.destroy();
   }
 
   private static void startLivenessThread() {
@@ -478,7 +480,7 @@ public class Main {
     try {
       shutdownSignal.acquire();
     } catch (InterruptedException ignore) {
-      // ignoring
+      Thread.currentThread().interrupt();
     }
 
     isNamespaceStopping.forEach(
@@ -629,24 +631,11 @@ public class Main {
 
       if (result != null) {
         for (V1Service service : result.getItems()) {
-          String domainUID = ServiceWatcher.getServiceDomainUID(service);
-          String serverName = ServiceWatcher.getServiceServerName(service);
-          String channelName = ServiceWatcher.getServiceChannelName(service);
-          String clusterName = ServiceWatcher.getServiceClusterName(service);
+          String domainUID = ServiceHelper.getServiceDomainUID(service);
           if (domainUID != null) {
             DomainPresenceInfo info =
                 dpis.computeIfAbsent(domainUID, k -> new DomainPresenceInfo(ns, domainUID));
-            if (clusterName != null) {
-              info.getClusters().put(clusterName, service);
-            } else if (serverName != null) {
-              ServerKubernetesObjects sko =
-                  info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-              if (channelName != null) {
-                sko.getChannels().put(channelName, service);
-              } else {
-                sko.getService().set(service);
-              }
-            }
+            ServiceHelper.addToPresence(info, service);
           }
         }
       }
@@ -747,7 +736,9 @@ public class Main {
 
     @Override
     public void onCompletion(Packet packet) {
-      if (completionAction != null) completionAction.run();
+      if (completionAction != null) {
+        completionAction.run();
+      }
     }
 
     @Override

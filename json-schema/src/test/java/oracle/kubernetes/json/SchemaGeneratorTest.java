@@ -1,4 +1,4 @@
-// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -89,6 +89,16 @@ public class SchemaGeneratorTest {
 
   @SuppressWarnings("unused")
   private int[] intArray;
+
+  @Test
+  public void doNotGenerateSchemaForVolatileFields() throws NoSuchFieldException {
+    Object schema = generateForField(getClass().getDeclaredField("ignoreMe"));
+
+    assertThat(schema, hasNoJsonPath("$.ignoreMe"));
+  }
+
+  @SuppressWarnings("unused")
+  private volatile boolean ignoreMe;
 
   @Test
   public void generateSchemaForEnum() throws NoSuchFieldException {

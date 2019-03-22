@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: logstash
-        image: logstash:5 
+        image: logstash:6.6.0
         args: ["-f", "/logs/logstash.conf"]
         volumeMounts:
         - mountPath: /logs

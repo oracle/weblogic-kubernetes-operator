@@ -43,7 +43,7 @@ public final class NextAction {
   }
 
   /**
-   * Indicates that the next action should be to terminate the fiber
+   * Indicates that the next action should be to terminate the fiber.
    *
    * @param t Throwable
    * @param p Packet
@@ -113,7 +113,7 @@ public final class NextAction {
   }
 
   /**
-   * Returns the next step
+   * Returns the next step.
    *
    * @return Next step
    */
@@ -122,7 +122,7 @@ public final class NextAction {
   }
 
   /**
-   * Sets the next step
+   * Sets the next step.
    *
    * @param next Next step
    */
@@ -131,7 +131,7 @@ public final class NextAction {
   }
 
   /**
-   * Returns the last Packet
+   * Returns the last Packet.
    *
    * @return Packet
    */

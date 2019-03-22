@@ -48,6 +48,10 @@ public class WatchEvent<T> {
     return new WatchEvent<>("DELETED", object);
   }
 
+  public static <S> WatchEvent<S> createErrorEventWithoutStatus() {
+    return new WatchEvent<>(null);
+  }
+
   public static <S> WatchEvent<S> createErrorEvent(int statusCode) {
     return new WatchEvent<>(new V1Status().code(statusCode).message("Oops"));
   }

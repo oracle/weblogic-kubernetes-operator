@@ -4,7 +4,7 @@ Domain represents a WebLogic domain and how it will be realized in the Kubernete
 
 | Name | Type | Description |
 | --- | --- | --- |
-| apiVersion | string | The API version for the Domain. Must be 'weblogic.oracle/v2'. |
+| apiVersion | string | The API version for the Domain. |
 | kind | string | The type of resource. Must be 'Domain'. |
 | metadata | [Object Meta](k8s1.9.0.md#object-meta) | The domain meta-data. Must include the name and namespace. |
 | spec | [Domain Spec](#domain-spec) | The specification of the domain. Required |
@@ -20,10 +20,10 @@ DomainSpec is a description of a domain.
 | clusters | array of [Cluster](#cluster) | Configuration for the clusters. |
 | configOverrides | string | The name of the config map for optional WebLogic configuration overrides. |
 | configOverrideSecrets | array of string | A list of names of the secrets for optional WebLogic configuration overrides. |
-| domainHome | string | The folder for the Weblogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true |
+| domainHome | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true |
 | domainHomeInImage | boolean | True if this domain's home is defined in the docker image for the domain. Defaults to true. |
 | domainUID | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name |
-| image | string | The Weblogic Docker image; required when domainHomeInImage is true; otherwise, defaults to store/oracle/weblogic:12.2.1.3. |
+| image | string | The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to store/oracle/weblogic:12.2.1.3. |
 | imagePullPolicy | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | imagePullSecrets | array of [Local Object Reference](k8s1.9.0.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | includeServerOutInPodLog | boolean | If true (the default), the server .out file will be included in the pod's stdout. |
@@ -100,8 +100,10 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | Name | Type | Description |
 | --- | --- | --- |
 | annotations | Map | The annotations to be attached to generated resources. |
+| containers | array of [Container](k8s1.9.0.md#container) | Additional containers to be included in the server pod. |
 | containerSecurityContext | [Security Context](k8s1.9.0.md#security-context) | Container-level security attributes. Will override any matching pod-level attributes. |
 | env | array of [Env Var](k8s1.9.0.md#env-var) | A list of environment variables to add to a server |
+| initContainers | array of [Container](k8s1.9.0.md#container) | Initialization containers |
 | labels | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
 | livenessProbe | [Probe Tuning](#probe-tuning) | Settings for the liveness probe associated with a server. |
 | nodeSelector | Map | Selector which must match a node's labels for the pod to be scheduled on that node. |
@@ -127,7 +129,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | message | string | Human-readable message indicating details about last transition. |
 | reason | string | Unique, one-word, CamelCase reason for the condition's last transition. |
 | status | string | Status is the status of the condition. Can be True, False, Unknown. Required |
-| type | string | Type is the type of the condition. Currently, valid types are Progressing, Available, and Failure. Required |
+| type | string | The type of the condition. Valid types are Progressing, Available, and Failed. Required |
 
 ### Server Status
 
@@ -143,7 +145,9 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
+| annotations | Map | Annotations to associate with the external channel service |
 | channels | array of [Channel](#channel) | Specifies which of the admin server's WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server's node port service will not be created. |
+| labels | Map | Labels to associate with the external channel service |
 
 ### Probe Tuning
 

@@ -94,7 +94,9 @@ public class LoggingFormatter extends Formatter {
           headers = ae.getResponseHeaders();
         }
         String rb = ae.getResponseBody();
-        if (rb != null) body = rb;
+        if (rb != null) {
+          body = rb;
+        }
       }
     }
     String level = record.getLevel().getLocalizedName();

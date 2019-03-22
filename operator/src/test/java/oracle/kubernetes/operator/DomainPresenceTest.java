@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -6,7 +6,6 @@ package oracle.kubernetes.operator;
 
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
-import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
@@ -14,10 +13,8 @@ import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
 import static oracle.kubernetes.operator.WebLogicConstants.READINESS_PROBE_NOT_READY_STATE;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
@@ -53,9 +50,9 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.work.FiberGateFactoryStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainList;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
@@ -182,38 +179,20 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     return map;
   }
 
-  @Test
-  public void whenK8sHasOneDomainWithChannelService_createSkoEntry() {
-    addDomainResource(UID, NS);
-    V1Service serviceResource = addServiceResource(UID, NS, "admin", "channel1");
-
-    DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
-    testSupport.addComponent("DP", DomainProcessor.class, dp);
-
-    readExistingResources();
-
-    String serverName = "admin";
-    assertThat(
-        getServerKubernetesObjects(dp, UID, serverName).getChannels(),
-        hasEntry(equalTo("channel1"), sameInstance(serviceResource)));
-  }
-
   private ServerKubernetesObjects getServerKubernetesObjects(
       DomainProcessorStub dp, String uid, String serverName) {
     return dp.getDomainPresenceInfos().get(uid).getServers().get(serverName);
   }
 
-  private V1Service addServiceResource(
+  private void addServiceResource(
       String uid, String namespace, String serverName, String channelName) {
     V1Service service = createService(uid, namespace, serverName, channelName);
     services.getItems().add(service);
-    return service;
   }
 
   private V1Service createService(
       String uid, String namespace, String serverName, String channelName) {
     V1ObjectMeta metadata = createServerMetadata(uid, namespace, serverName);
-    metadata.putLabelsItem(CHANNELNAME_LABEL, channelName);
     return new V1Service().metadata(metadata);
   }
 

@@ -1,4 +1,4 @@
-// Copyright 2018,2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -20,10 +20,9 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
 @Mojo(
-  name = "generate",
-  defaultPhase = LifecyclePhase.PROCESS_CLASSES,
-  requiresDependencyResolution = ResolutionScope.COMPILE
-)
+    name = "generate",
+    defaultPhase = LifecyclePhase.PROCESS_CLASSES,
+    requiresDependencyResolution = ResolutionScope.COMPILE)
 public class JsonSchemaMojo extends AbstractMojo {
 
   private static final String DOT = "\\.";

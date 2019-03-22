@@ -26,9 +26,9 @@ import io.kubernetes.client.models.V1SecretReference;
 import java.io.IOException;
 import java.net.URL;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.junit.Test;
 
 public abstract class DomainTestBase {
@@ -39,7 +39,7 @@ public abstract class DomainTestBase {
   private static final V1SecretReference SECRET = new V1SecretReference().name("secret");
   private static final String NS = "test-namespace";
   private static final String DOMAIN_UID = "uid1";
-  private static final String DOMAIN_V2_SAMPLE_YAML = "v2/domain-sample.yaml";
+  private static final String DOMAIN_V2_SAMPLE_YAML = "model/domain-sample.yaml";
   private static final String IMAGE = "myimage";
   private static final String PULL_SECRET_NAME = "pull-secret";
   protected static final String CLUSTER_NAME = "cluster1";
@@ -395,7 +395,11 @@ public abstract class DomainTestBase {
     assertThat(
         serverSpec.getEnvironmentVariables(),
         both(hasItem(envVar("JAVA_OPTIONS", "-server")))
-            .and(hasItem(envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "))));
+            .and(
+                hasItem(
+                    envVar(
+                        "USER_MEM_ARGS",
+                        "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "))));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
   }
 

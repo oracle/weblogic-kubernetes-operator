@@ -5,7 +5,7 @@
 package oracle.kubernetes.operator;
 
 import com.google.common.base.Strings;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 class DomainPresenceControl {
 
@@ -17,7 +17,9 @@ class DomainPresenceControl {
   }
 
   private static void normalizeImage(DomainSpec spec) {
-    if (Strings.isNullOrEmpty(spec.getImage())) spec.setImage(KubernetesConstants.DEFAULT_IMAGE);
+    if (Strings.isNullOrEmpty(spec.getImage())) {
+      spec.setImage(KubernetesConstants.DEFAULT_IMAGE);
+    }
   }
 
   private static void normalizeImagePullPolicy(DomainSpec spec) {

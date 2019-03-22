@@ -12,10 +12,10 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-/** Failed or timed-out call retry strategy */
+/** Failed or timed-out call retry strategy. */
 public interface RetryStrategy {
   /**
-   * Initialization that provides reference to step that should be invoked on a retry attempt
+   * Initialization that provides reference to step that should be invoked on a retry attempt.
    *
    * @param retryStep Retry step
    */
