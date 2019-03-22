@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator;
@@ -8,11 +8,13 @@ import java.net.MalformedURLException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
@@ -29,7 +31,13 @@ import weblogic.j2ee.descriptor.wl.JDBCDataSourceBean;
 import weblogic.j2ee.descriptor.wl.JDBCDriverParamsBean;
 import weblogic.j2ee.descriptor.wl.JMSBean;
 import weblogic.j2ee.descriptor.wl.UniformDistributedTopicBean;
-import weblogic.management.configuration.*;
+import weblogic.management.configuration.DomainMBean;
+import weblogic.management.configuration.JDBCSystemResourceMBean;
+import weblogic.management.configuration.JMSSystemResourceMBean;
+import weblogic.management.configuration.NetworkAccessPointMBean;
+import weblogic.management.configuration.ServerDebugMBean;
+import weblogic.management.configuration.ServerMBean;
+import weblogic.management.configuration.WLDFSystemResourceMBean;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
 import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
 import weblogic.management.mbeanservers.edit.ConfigurationManagerMBean;
@@ -84,6 +92,7 @@ public class SitConfigTests {
    * @throws Exception
    */
   public static void main(String args[]) throws Exception {
+
     String adminHost = args[0];
     String adminPort = args[1];
     String adminUser = args[2];
@@ -106,13 +115,16 @@ public class SitConfigTests {
       test.verifyT3ChannelPublicAddress(adminHost);
       test.verifyT3ChannelPublicPort(30091);
     }
+
     if (testName.equals("testCustomSitConfigOverridesForJdbc")) {
       String JDBC_URL = args[5];
       test.testSystemResourcesJDBCAttributeChange("JdbcTestDataSource-0", JDBC_URL);
     }
+
     if (testName.equals("testCustomSitConfigOverridesForJms")) {
       test.testSystemResourcesJMSAttributeChange();
     }
+
     if (testName.equals("testCustomSitConfigOverridesForWldf")) {
       test.testSystemResourcesWLDFAttributeAdd();
     }
@@ -214,6 +226,7 @@ public class SitConfigTests {
     if (mBeanServerConnection == null) {
       throw new Exception("MBean server connection is null");
     }
+
     return mBeanServerConnection;
   }
 
@@ -287,6 +300,7 @@ public class SitConfigTests {
     boolean got = false;
     ServerMBean serverMBean = getServerMBean();
     NetworkAccessPointMBean[] networkAccessPoints = serverMBean.getNetworkAccessPoints();
+
     for (NetworkAccessPointMBean networkAccessPoint : networkAccessPoints) {
       if (networkAccessPoint.getName().equals("T3Channel")) {
         assert expectedValue.equals(networkAccessPoint.getPublicAddress())
@@ -303,6 +317,7 @@ public class SitConfigTests {
     boolean got = false;
     ServerMBean serverMBean = getServerMBean();
     NetworkAccessPointMBean[] networkAccessPoints = serverMBean.getNetworkAccessPoints();
+
     for (NetworkAccessPointMBean networkAccessPoint : networkAccessPoints) {
       if (networkAccessPoint.getName().equals("T3Channel")) {
         assert expectedValue == networkAccessPoint.getPublicPort()
