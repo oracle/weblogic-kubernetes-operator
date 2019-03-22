@@ -1,6 +1,3 @@
-<!-- Copyright 2019, Oracle Corporation and/or its affiliates. All rights
-        reserved. -->
-<!-- Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl. -->
 <?xml version='1.0' encoding='UTF-8'?>
 <d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain" xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
     <d:server>
