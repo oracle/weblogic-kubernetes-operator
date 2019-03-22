@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -24,6 +24,7 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/** JUnit test class used for testing configuration override use cases. */
 public class ITSitConfig extends BaseTest {
 
   private static String TESTSCRIPTDIR;
@@ -35,7 +36,6 @@ public class ITSitConfig extends BaseTest {
   private static String fqdn;
   private static String JDBC_URL;
   private static String KUBE_EXEC_CMD;
-
   private static Domain domain;
   private static Operator operator1;
 
@@ -94,16 +94,11 @@ public class ITSitConfig extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
-
       destroySitConfigDomain();
       tearDown();
       ExecResult result =
           TestUtils.exec(
               "kubectl delete -f " + TESTSCRIPTDIR + "/sitconfig/mysql/mysql-dbservices.yml");
-      logger.info("SUCCESS");
     }
   }
 

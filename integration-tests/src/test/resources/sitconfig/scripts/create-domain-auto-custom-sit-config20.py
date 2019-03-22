@@ -17,7 +17,6 @@ def createWLDFSystemResource(sysName, sysTarget):
 def createJMSSystemResource(sysResTarget):
     filestore = 'ClusterFileStore'
     jmsserver = 'ClusterJmsServer'
-    #sysResTarget='mycluster'
   
     jmsmodule = 'ClusterJmsSystemResource'
     subdeployment = 'ClusterSubDeployment'
@@ -51,7 +50,6 @@ def createJMSSystemResource(sysResTarget):
     cd('/JMSSystemResource/' + jmsmodule + '/JmsResource/NO_NAME_0')
     myt = create(urt, 'UniformDistributedTopic')
     myt.setJNDIName('jms/' + urt)
-    #myt.setSubDeploymentName(subdeployment)
     myt.setDefaultTargetingEnabled(true)
   
     cd('UniformDistributedTopic/' + urt)
@@ -149,8 +147,7 @@ setOption('DomainName', domain_name)
 # Configure the Administration Server
 # ===================================
 cd('/Servers/AdminServer')
-# Dont set listenaddress, introspector overrides automatically with sit-config
-#set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
+# Dont set listenaddress, introspector overrides automatically with config override
 set('ListenPort', admin_port)
 set('Name', admin_server_name)
 
@@ -158,14 +155,13 @@ create('T3Channel', 'NetworkAccessPoint')
 cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
 set('PublicPort', t3_channel_port)
 set('PublicAddress', 'junkvalue')
-# Dont set listenaddress, introspector overrides automatically with sit-config
-#set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
+# Dont set listenaddress, introspector overrides automatically with config override
 set('ListenPort', t3_channel_port)
 
 cd('/Servers/%s' % admin_server_name)
 create(admin_server_name, 'Log')
 cd('/Servers/%s/Log/%s' % (admin_server_name, admin_server_name))
-# Give incorrect filelog, introspector overrides with sit-config
+# Give incorrect filelog, introspector overrides with config override
 set('FileName', 'dirdoesnotexist')
 
 
@@ -226,7 +222,6 @@ else:
     set('DynamicClusterSize', number_of_ms)
     set('MaxDynamicClusterSize', number_of_ms)
     set('CalculatedListenPorts', false)
-    # set('Id', 1)
 
     print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);
 
@@ -235,7 +230,6 @@ createJMSSystemResource(cluster_name)
 createWLDFSystemResource("WLDF-MODULE-0", admin_server_name)
 
 # Write Domain
-# ============
 writeDomain(domain_path)
 closeTemplate()
 print 'Domain Created'
@@ -253,5 +247,4 @@ print 'Domain Updated'
 print 'Done'
 
 # Exit WLST
-# =========
 exit()
