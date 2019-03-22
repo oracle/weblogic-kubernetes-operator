@@ -1,4 +1,4 @@
-// Copyright 2017,2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -11,7 +11,6 @@ public interface LabelConstants {
   String DOMAINNAME_LABEL = "weblogic.domainName";
   String DOMAINHOME_LABEL = "weblogic.domainHome";
   String SERVERNAME_LABEL = "weblogic.serverName";
-  String CHANNELNAME_LABEL = "weblogic.channelName";
   String CLUSTERNAME_LABEL = "weblogic.clusterName";
   String CREATEDBYOPERATOR_LABEL = "weblogic.createdByOperator";
   String OPERATORNAME_LABEL = "weblogic.operatorName";
