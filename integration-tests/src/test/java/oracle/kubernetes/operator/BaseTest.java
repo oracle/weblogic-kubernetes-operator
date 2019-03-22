@@ -59,6 +59,7 @@ public class BaseTest {
   private static String leaseId = "";
   private static String branchName = "";
   private static String appLocationInPod = "/u01/oracle/apps";
+  private static String appLocationOnHost;
   private static Properties appProps;
 
   public static boolean QUICKTEST;
@@ -181,6 +182,8 @@ public class BaseTest {
             "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
       }
     }
+
+    appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
 
     logger.info("appProps = " + appProps);
     logger.info("maxIterationPod = " + appProps.getProperty("maxIterationsPod"));
@@ -542,6 +545,14 @@ public class BaseTest {
 
   public static String getBranchName() {
     return branchName;
+  }
+
+  public static String getAppLocationInPod() {
+    return appLocationInPod;
+  }
+
+  public static String getAppLocationOnHost() {
+    return appLocationOnHost;
   }
 
   private void copyScalingScriptToPod(

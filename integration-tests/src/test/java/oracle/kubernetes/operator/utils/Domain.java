@@ -1495,4 +1495,108 @@ public class Domain {
     TestUtils.checkPodCreated(domainUid + "-" + msName, domainNS);
     TestUtils.checkPodReady(domainUid + "-" + msName, domainNS);
   }
+
+  /**
+   * Run the shell script to build .war file and deploy the App in the admin pod
+   *
+   * @param webappName - Web App Name to be deployed
+   * @param scriptName - a shell script to build .war file and deploy the App in the admin pod
+   * @param username - weblogic user name
+   * @param password - weblogc password
+   * @throws Exception
+   */
+  private void callShellScriptToBuildWarDeployAppInPod(
+      String webappName, String scriptName, String username, String password) throws Exception {
+
+    String nodeHost = getHostNameForCurl();
+    String nodePort = getNodePort();
+    String appLocationInPod = BaseTest.getAppLocationInPod();
+
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(domainUid)
+        .append("-")
+        .append(adminServerName)
+        .append(" -- bash -c 'chmod +x -R ")
+        .append(appLocationInPod)
+        .append(" && sh ")
+        .append(appLocationInPod)
+        .append("/")
+        .append(scriptName)
+        .append(" ")
+        .append(nodeHost)
+        .append(" ")
+        .append(nodePort)
+        .append(" ")
+        .append(username)
+        .append(" ")
+        .append(password)
+        .append(" ")
+        .append(appLocationInPod)
+        .append("/")
+        .append(webappName)
+        .append(" ")
+        .append(webappName)
+        .append(" ")
+        .append(clusterName)
+        .append("'");
+
+    logger.info("Command to exec script file: " + cmdKubectlSh);
+    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+
+    String resultStr =
+        "Command= '"
+            + cmdKubectlSh
+            + "'"
+            + ", exitValue="
+            + result.exitValue()
+            + ", stdout='"
+            + result.stdout()
+            + "'"
+            + ", stderr='"
+            + result.stderr()
+            + "'";
+
+    if (!resultStr.contains("Unable to use a TTY") && result.exitValue() != 0) {
+      throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
+    }
+  }
+
+  /**
+   * Create dir to save Web App files Copy the shell script file and all App files over to the admin
+   * pod Run the shell script to build .war file and deploy the App in the admin pod
+   *
+   * @param webappName - Web App Name to be deployed
+   * @param scriptName - a shell script to build .war file and deploy the App in the admin pod
+   * @param username - weblogic user name
+   * @param password - weblogc password
+   * @throws Exception
+   */
+  public void buildWarDeployAppInPod(
+      String webappName, String scriptName, String username, String password) throws Exception {
+    String adminServerPod = domainUid + "-" + adminServerName;
+    // String scriptName = "buildDeployWebAppInPod.sh";
+
+    String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + webappName;
+    String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + webappName;
+    String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
+    String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
+
+    StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
+    mkdirCmd.append(appLocationInPod).append("/WEB-INF'");
+
+    // Create app dir in the pod
+    TestUtils.kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
+
+    // Copy shell script to the pod
+    TestUtils.copyFileViaCat(scriptPathOnHost, scriptPathInPod, adminServerPod, domainNS);
+
+    // Copy all App files to the admin pod
+    TestUtils.copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
+
+    // Run the script to build .war file and deploy the App in the pod
+    callShellScriptToBuildWarDeployAppInPod(webappName, scriptName, username, password);
+  }
 }
