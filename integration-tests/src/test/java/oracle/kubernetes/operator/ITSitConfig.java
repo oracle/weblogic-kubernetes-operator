@@ -38,7 +38,7 @@ public class ITSitConfig extends BaseTest {
   private static String KUBE_EXEC_CMD;
   private static Domain domain;
   private static Operator operator1;
-
+  private static String sitconfigDir = "";
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
@@ -56,6 +56,7 @@ public class ITSitConfig extends BaseTest {
         operator1 = TestUtils.createOperator(OPERATOR1_YAML);
       }
       TESTSCRIPTDIR = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
+      sitconfigDir = BaseTest.getResultDir() + "/configoverridefiles";
       // Create the MySql db container
       ExecResult result =
           TestUtils.exec(
@@ -281,6 +282,7 @@ public class ITSitConfig extends BaseTest {
    */
   private static void copySitConfigFiles() throws IOException {
     String src_dir = TESTSCRIPTDIR + "/sitconfig/configoverrides";
+    Files.createDirectories(Paths.get(sitconfigDir));
     String dst_dir = sitconfigDir;
     String files[] = {
       "config.xml",
