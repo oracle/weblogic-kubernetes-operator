@@ -234,6 +234,14 @@ public class ITSitConfig extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
+  /**
+   * Create Domain using the custom domain script create-domain-auto-custom-sit-config20.py
+   * Customizes the following attributes of the domain map configOverrides, configOverridesFile
+   * domain uid , admin node port and t3 channel port.
+   *
+   * @return - created domain
+   * @throws Exception - if it cannot create the domain
+   */
   private static Domain createSitConfigDomain() throws Exception {
     String createDomainScript = TESTSCRIPTDIR + "/domain-home-on-pv/create-domain.py";
     // load input yaml to map and add configOverrides
@@ -254,12 +262,23 @@ public class ITSitConfig extends BaseTest {
     return domain;
   }
 
+  /**
+   * Destroys the domain
+   *
+   * @throws Exception
+   */
   private static void destroySitConfigDomain() throws Exception {
     if (domain != null) {
       domain.destroy();
     }
   }
 
+  /**
+   * copy the configuration override files to a staging area after replacing the JDBC_URL token in
+   * jdbc-JdbcTestDataSource-0.xml
+   *
+   * @throws IOException
+   */
   private static void copySitConfigFiles() throws IOException {
     String src_dir = TESTSCRIPTDIR + "/sitconfig/configoverrides";
     String dst_dir = sitconfigDir;
@@ -282,6 +301,11 @@ public class ITSitConfig extends BaseTest {
     }
   }
 
+  /**
+   * Verifies the test run result doesn't contain any errors and exit status is 0
+   *
+   * @param result - ExecResult object containing result of the test run
+   */
   private void assertResult(ExecResult result) {
     logger.log(Level.INFO, result.stdout().trim());
     Assert.assertFalse(result.stdout().toLowerCase().contains("error"));
