@@ -1283,8 +1283,7 @@ public class Domain {
               + domainNS
               + " create secret generic "
               + domainUid
-              + "-"
-              + "test-secrets"
+              + "-test-secrets"
               + " --from-literal=hostname="
               + TestUtils.getHostName()
               + " --from-literal=dbusername=root"
