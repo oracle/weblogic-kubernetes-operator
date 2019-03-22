@@ -5,6 +5,20 @@
 set -u
 
 source waitUntil.sh
+
+function precheck() {
+  # check PV
+  if [ -z "$PV_ROOT" ] || [ ! -e "$PV_ROOT" ]; then
+    echo "PV_ROOT is not set correctly in file setenv.sh. It needs to point to an existing folder. Currently PV_ROOT is '$PV_ROOT'."
+    exit 1
+  fi
+  # check operator image
+  if [ $(docker images $WLS_OPERATOR_IMAGE | wc -l) = 1 ]; then
+    echo "Can not find the operator image $WLS_OPERATOR_IMAGE in docker. Pls fix it first."
+    exit 1
+  fi
+}
+
 function pullImages() {
   echo "pull docker images"
   #docker pull $WLS_OPERATOR_IMAGE 

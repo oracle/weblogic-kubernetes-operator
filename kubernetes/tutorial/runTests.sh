@@ -28,7 +28,7 @@ domainUrlVoyager=http://$HOSTNAME:30305/weblogic/
 
 # this need to be run once before any domain test
 function beforeAll() {
-  ./domain.sh checkPV
+  ./operator.sh precheck
   if [ $? != 0 ]; then
    exit 1
   fi
@@ -64,7 +64,7 @@ function cleanAll() {
 function setup() {
   cleanDomains
   echo "setup begin"
-  ./domain.sh checkPV
+  ./operator.sh precheck
   bash -e ./domain.sh createPV
   echo "setup end"
 }

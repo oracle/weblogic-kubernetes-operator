@@ -5,7 +5,7 @@ set -e   # Exit immediately if a command exits with a non-zero status.
 
 SECONDS=0
 source ./setenv.sh
-bash -e ./domain.sh checkPV
+bash -e ./operator.sh precheck
 
 # create domains
 bash -e ./operator.sh pullImages
