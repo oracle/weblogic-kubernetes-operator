@@ -84,10 +84,9 @@ def createDataSource(dsName, dsJNDI, dsUrl, dsUser, dsPassword, dsTarget):
     cd('/JDBCSystemResource/' + dsName + '/JdbcResource/' + dsName)
     create('testDriverParams', 'JDBCDriverParams')
     cd('JDBCDriverParams/NO_NAME_0')
-    set('DriverName', 'oracle.jdbc.OracleDriver')
+    set('DriverName', 'com.mysql.jdbc.jdbc2.optional.MysqlXADataSource')
     set('URL', dsUrl)
     set('PasswordEncrypted', dsPassword)
-    set('UseXADataSourceInterface', 'false')
 
     print 'create JDBCDriverParams Properties'
     create('testProperties', 'Properties')
