@@ -104,9 +104,9 @@ public class ITSitConfig extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
+      ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
       destroySitConfigDomain();
       tearDown();
-      ExecResult result = TestUtils.exec("kubectl delete -f " + mysqlYamlFile);
     }
   }
 
