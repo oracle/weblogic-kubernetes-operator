@@ -1504,6 +1504,8 @@ public class Domain {
    *
    * @param webappName - Web App Name to be deployed
    * @param scriptName - a shell script to build .war file and deploy the App in the admin pod
+   * @param archiveExt - archive extention
+   * @param infoDirNames - archive information dir location
    * @param username - weblogic user name
    * @param password - weblogc password
    * @throws Exception
