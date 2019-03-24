@@ -6,14 +6,17 @@ package oracle.kubernetes.operator.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
@@ -1506,7 +1509,13 @@ public class Domain {
    * @throws Exception
    */
   private void callShellScriptToBuildWarDeployAppInPod(
-      String webappName, String scriptName, String username, String password) throws Exception {
+      String webappName,
+      String scriptName,
+      String archiveExt,
+      String infoDirNames,
+      String username,
+      String password)
+      throws Exception {
 
     String nodeHost = getHostNameForCurl();
     String nodePort = getNodePort();
@@ -1541,6 +1550,10 @@ public class Domain {
         .append(webappName)
         .append(" ")
         .append(clusterName)
+        .append(" ")
+        .append(infoDirNames)
+        .append(" ")
+        .append(archiveExt)
         .append("'");
 
     logger.info("Command to exec script file: " + cmdKubectlSh);
@@ -1568,24 +1581,50 @@ public class Domain {
    * Create dir to save Web App files Copy the shell script file and all App files over to the admin
    * pod Run the shell script to build .war file and deploy the App in the admin pod
    *
-   * @param webappName - Web App Name to be deployed
+   * @param appName - Java App name to be deployed
    * @param scriptName - a shell script to build .war file and deploy the App in the admin pod
    * @param username - weblogic user name
    * @param password - weblogc password
+   * @param args - by default, a WAR file is created for a Web App and a EAR file is created for EJB
+   *     App. this varargs gives a client a chance to change EJB's archive extenyion to JAR
    * @throws Exception
    */
-  public void buildWarDeployAppInPod(
-      String webappName, String scriptName, String username, String password) throws Exception {
+  public void buildDeployJavaAppInPod(
+      String appName, String scriptName, String username, String password, String... args)
+      throws Exception {
     String adminServerPod = domainUid + "-" + adminServerName;
-    // String scriptName = "buildDeployWebAppInPod.sh";
 
-    String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + webappName;
-    String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + webappName;
+    String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + appName;
+    String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + appName;
     String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
     String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
 
+    final String initInfoDirName = "WEB-INF";
+    String archiveExt = "war";
+    String infoDirName = initInfoDirName;
+    File appFiles = new File(appLocationOnHost);
+
+    String[] subDirArr =
+        appFiles.list(
+            new FilenameFilter() {
+              @Override
+              public boolean accept(File dir, String name) {
+                return name.equals(initInfoDirName);
+              }
+            });
+
+    List<String> subDirList = Arrays.asList(subDirArr);
+
+    if (!subDirList.contains(infoDirName)) {
+      infoDirName = "META-INF";
+      // Create .ear file or .jar file for EJB
+      archiveExt = (args.length == 0) ? "ear" : args[0];
+    }
+
+    logger.info("Build and deploy: " + appName + "." + archiveExt + " in the admin pod");
+
     StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
-    mkdirCmd.append(appLocationInPod).append("/WEB-INF'");
+    mkdirCmd.append(appLocationInPod).append("/" + infoDirName + "'");
 
     // Create app dir in the pod
     TestUtils.kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
@@ -1597,6 +1636,7 @@ public class Domain {
     TestUtils.copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
 
     // Run the script to build .war file and deploy the App in the pod
-    callShellScriptToBuildWarDeployAppInPod(webappName, scriptName, username, password);
+    callShellScriptToBuildWarDeployAppInPod(
+        appName, scriptName, archiveExt, infoDirName, username, password);
   }
 }
