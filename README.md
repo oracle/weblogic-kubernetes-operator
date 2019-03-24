@@ -174,4 +174,3 @@ Install Operator from the repo:
 ```
 $ helm install weblogic-operator/weblogic-operator --name weblogic-operator
 ```
-
