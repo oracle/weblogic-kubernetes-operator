@@ -29,7 +29,7 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITSessionMigration extends BaseTest {
   private static final String testAppName = "httpsessionreptestapp";
-  private static final String scriptName = "buildDeployWebAppInPod.sh";
+  private static final String scriptName = "buildDeployAppInPod.sh";
 
   private static Map<String, String> httpAttrMap;
 
@@ -77,7 +77,7 @@ public class ITSessionMigration extends BaseTest {
       httpAttrMap.put("count", "(.*)countattribute>(.*)</countattribute(.*)");
 
       // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
-      domain.buildWarDeployAppInPod(
+      domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
 
       // Wait some time for deployment gets ready
