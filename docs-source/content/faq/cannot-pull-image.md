@@ -9,13 +9,13 @@ draft: false
 When you see these kinds of errors it means that Kubernetes cannot find your Docker image.
 The most common causes are: 
 
-* The `image` value is your domain resource is set incorrectly, meaning Kubernetes will be 
+* The `image` value in your domain resource is set incorrectly, meaning Kubernetes will be 
   trying to pull the wrong image
 * The image requires authentication or permission in order to pull it and you have not 
   configured Kubernetes with the necessary credentials, for example in an `imagePullSecret`
 * You built the image on a machine that is not where your `kubelet` is running and Kubernetes
   cannot see the image, meaning you need to copy the image to the worker nodes or put it in 
-  a Docker registry that is accessible the to worker nodes
+  a Docker registry that is accessible the to all of the worker nodes
 
 Let's review what happens when Kubernetes starts a pod.
 
@@ -24,7 +24,7 @@ Let's review what happens when Kubernetes starts a pod.
 The definition of the pod contains a list of container specifications.  Each container 
 specificiation contains the name (and optionally tag) of the image that should be used
 to run that container.  In the example above, there is a container called `c1` which is
-configured to use the docker image `some.registry.com/owner/domain1:1.0`.  This image
+configured to use the Docker image `some.registry.com/owner/domain1:1.0`.  This image
 name is in the format `registry address / owner / name : tag`, so in this case the 
 registry is `some.registry.com`, then owner is `owner`, the image name is `domain` 
 and the tag is `1.0`.  Tags are a lot like version numbers, but they are not required 
@@ -32,14 +32,14 @@ to be numbers or to be in any particular sequence or format.  If you omit the ta
 is assumed to be `latest`.
 
 {{% notice note %}}
-The docker tag `latest` is confusing - it does not actually mean the latest version of 
+The Docker tag `latest` is confusing - it does not actually mean the latest version of 
 the image that was created or published in the registry, it just literally means 
 whichever version the owner decided to call "latest".  Docker and Kubernetes make 
-some assumptions about latest, and it generally recommended to avoid using it and instead
+some assumptions about latest, and it is generally recommended to avoid using it and instead
 specify the actual version/tag that you really want. 
 {{% /notice %}}
 
-First, Kuberentes will check to see if the requested image is available in the local 
+First, Kubernetes will check to see if the requested image is available in the local 
 Docker image store on whichever worker node the pod was scheduled on.  If it is there,
 then it will use that image to start the container.  If it is not there, then Kubernetes
 will attempt to pull the image from a remote Docker registry.
@@ -57,32 +57,32 @@ store and start the container.
 #### Images that require authentication
 
 If the remote Docker registry requires authentication, then you will need to provide
-the authentication details in a Kubernetes `docker-registry` secret and tell Kubernetes
+the authentication details in a Kubernetes `Docker-registry` secret and tell Kubernetes
 to use that secret when pulling the image. 
 
 To create a secret, you can use the following command:
 
 ```
-kubectl create secret docker-registry secret1 \
-        --docker-server=some.registry.com \
-        --docker-username=bob \
-        --docker-password=bigSecret \
-        --docker-email=bob@some.com \
+kubectl create secret Docker-registry secret1 \
+        --Docker-server=some.registry.com \
+        --Docker-username=bob \
+        --Docker-password=bigSecret \
+        --Docker-email=bob@some.com \
         --namespace=default
 ```
 
-In this command, you would replace `secret1` with the name of the secret; the `docker-server`
-is set to the registry name, without the `https://` prefix; the `docker-username`, `docker-password`
-and `docker-email` are set to match the credentials you use the authenticate to the remote 
+In this command, you would replace `secret1` with the name of the secret; the `Docker-server`
+is set to the registry name, without the `https://` prefix; the `Docker-username`, `Docker-password`
+and `Docker-email` are set to match the credentials you use to authenticate to the remote 
 Docker registry; and the `namespace` must be set to the same namespace where you intend to
-use the image
+use the image.
 
 {{% notice note %}}
-Some registries may need a suffix making the `docker-server` something like `some.registry.com/v2`
+Some registries may need a suffix making the `Docker-server` something like `some.registry.com/v2`
 for example.  You will need to check with your registry provider's documentation to see if this is needed.
 {{% /notice %}}
 
-Once the secret is created, you need to tell Kubernetes to use it.  This is done by adding 
+After the secret is created, you need to tell Kubernetes to use it.  This is done by adding 
 an `imagePullSecret` to your Kubernetes YAML file.  In the case of a WebLogic domain, you 
 add the secret name to the `imagePullSecret` in the domain custom resource YAML file.  
 
@@ -127,25 +127,25 @@ remote Docker registries or if your images require different authentication cred
 
 #### Manually copying the image to your worker nodes
 
-If you are not able to use a remote Docker registry, for example if you Kubernetes cluster is 
+If you are not able to use a remote Docker registry, for example if your Kubernetes cluster is 
 in a secure network with no external access, you can manually copy the Docker images to the
 cluster instead. 
 
 On the machine where you created the image, export it into a tar file using this command:
 
 ```
-docker save domain1:1.0 > domain1.tar
+Docker save domain1:1.0 > domain1.tar
 ```
 
 Then copy that tar file to each worker node in your Kubernetes cluster and run this command
 on each node:
 
 ```
-docker load < domain1.tar
+Docker load < domain1.tar
 ```
 
 #### Restart pods to clear the error
 
-After you have ensured the images are accessible on all worker nodes, you may need to restart
+After you have ensured that the images are accessible on all worker nodes, you may need to restart
 the pods so that Kubernetes will attempt to pull the images again.   You can do this by 
 deleting the pods themselves, or deleting the domain resource and then recreating it. 
