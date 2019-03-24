@@ -1,3 +1,7 @@
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
@@ -25,7 +29,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public abstract class JobStepContext extends StepContextBase {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");

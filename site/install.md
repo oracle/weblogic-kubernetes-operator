@@ -130,6 +130,34 @@ If `weblogic-operator-namespace` exists, then it will be used.  If it does not e
 
 You can verify the operator installation by examining the output from the `helm install` command.
 
+### Alternatively, use the Helm chart from GitHub chart repository
+
+Add this repo to the Helm installation:
+
+```
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
+```
+
+Verify that the repository was added correctly:
+
+```
+$ helm repo list
+NAME           URL
+weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
+```
+
+Update with the latest information about charts from the chart repositories:
+
+```
+$ helm repo update
+```
+
+Install the operator from the repo:
+
+```
+$ helm install weblogic-operator/weblogic-operator --name weblogic-operator
+```
+
 ## Removing the operator
 
 The `helm delete` command is used to remove an operator release and its associated resources from the Kubernetes cluster.  The release name used with the `helm delete` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-helm-chart)).  For example:
@@ -395,7 +423,7 @@ The Helm installation will produce an error, similar to the following, if `exter
 ```
 Error: render error in "weblogic-operator/templates/main.yaml": template: weblogic-operator/templates/main.yaml:9:3: executing "weblogic-operator/templates/main.yaml"
     at <include "operator.va...>: error calling include: template: weblogic-operator/templates/_validate-inputs.tpl:42:14: executing "operator.validateInputs"
-    at <include "utils.endVa...>: error calling include: template: weblogic-operator/templates/_utils.tpl:22:6: executing "utils.endValidation" 
+    at <include "utils.endVa...>: error calling include: template: weblogic-operator/templates/_utils.tpl:22:6: executing "utils.endValidation"
     at <fail $scope.validati...>: error calling fail:
  string externalRestIdentitySecret must be specified
 

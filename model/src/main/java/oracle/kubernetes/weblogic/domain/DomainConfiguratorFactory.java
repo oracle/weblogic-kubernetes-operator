@@ -4,18 +4,18 @@
 
 package oracle.kubernetes.weblogic.domain;
 
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainV2Configurator;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 
 public class DomainConfiguratorFactory {
 
-  private static DomainConfigurator exemplar = new DomainV2Configurator();
+  private static DomainConfigurator exemplar = new DomainCommonConfigurator();
 
   public static DomainConfigurator forDomain(Domain domain) {
     return exemplar.createFor(domain);
   }
 
-  public static void selectV2DomainModel() {
-    exemplar = new DomainV2Configurator();
+  public static void selectCommonDomainModel() {
+    exemplar = new DomainCommonConfigurator();
   }
 }

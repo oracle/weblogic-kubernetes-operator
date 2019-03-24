@@ -16,13 +16,11 @@ import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -30,6 +28,7 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.JobHelper;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
@@ -51,22 +50,18 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
-import oracle.kubernetes.weblogic.domain.v2.AdminServer;
-import oracle.kubernetes.weblogic.domain.v2.AdminService;
-import oracle.kubernetes.weblogic.domain.v2.Channel;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import org.joda.time.DateTime;
+import oracle.kubernetes.weblogic.domain.model.AdminServer;
+import oracle.kubernetes.weblogic.domain.model.AdminService;
+import oracle.kubernetes.weblogic.domain.model.Channel;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 public class DomainProcessorImpl implements DomainProcessor {
   static final DomainProcessor INSTANCE = new DomainProcessorImpl();
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final FiberGateFactory FACTORY =
-      () -> {
-        return new FiberGate(Main.engine);
-      };
+  private static final FiberGateFactory FACTORY = () -> new FiberGate(Main.engine);
   private static final ConcurrentMap<String, FiberGate> makeRightFiberGates =
       new ConcurrentHashMap<>();
   private static final ConcurrentMap<String, FiberGate> statusFiberGates =
@@ -81,21 +76,21 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   // Map from namespace to map of domainUID to Domain
-  private static final ConcurrentMap<String, ConcurrentMap<String, DomainPresenceInfo>> domains =
+  private static final Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
       new ConcurrentHashMap<>();
 
   private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUID) {
-    return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUID);
+    return DOMAINS.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUID);
   }
 
   private static void registerDomainPresenceInfo(DomainPresenceInfo info) {
-    domains
+    DOMAINS
         .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
         .put(info.getDomainUID(), info);
   }
 
   private static void unregisterPresenceInfo(String ns, String domainUID) {
-    ConcurrentMap<String, DomainPresenceInfo> map = domains.get(ns);
+    Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
     if (map != null) {
       map.remove(domainUID);
     }
@@ -123,10 +118,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private DomainProcessorImpl() {}
+  public DomainProcessorImpl() {}
 
   public void stopNamespace(String ns) {
-    ConcurrentMap<String, DomainPresenceInfo> map = domains.get(ns);
+    Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
     if (map != null) {
       for (DomainPresenceInfo dpi : map.values()) {
         Domain dom = dpi.getDomain();
@@ -161,7 +156,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                         p,
                         (current, ob) -> {
                           if (current != null) {
-                            if (isOutdated(current.getMetadata(), metadata)) {
+                            if (KubernetesUtils.isFirstNewer(current.getMetadata(), metadata)) {
                               return current;
                             }
                           }
@@ -179,7 +174,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                         p,
                         (current, ob) -> {
                           if (current != null) {
-                            if (!isOutdated(current.getMetadata(), metadata)) {
+                            if (!KubernetesUtils.isFirstNewer(current.getMetadata(), metadata)) {
                               return ob;
                             }
                           }
@@ -195,7 +190,8 @@ public class DomainProcessorImpl implements DomainProcessor {
                             p,
                             (current, ob) -> {
                               if (current != null) {
-                                if (!isOutdated(current.getMetadata(), metadata)) {
+                                if (!KubernetesUtils.isFirstNewer(
+                                    current.getMetadata(), metadata)) {
                                   sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
                                   return null;
                                 }
@@ -220,196 +216,26 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   public void dispatchServiceWatch(Watch.Response<V1Service> item) {
-    V1Service s = item.object;
-    if (s != null) {
-      V1ObjectMeta metadata = s.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
-      String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
-      String channelName = metadata.getLabels().get(LabelConstants.CHANNELNAME_LABEL);
-      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
-      if (domainUID != null) {
-        DomainPresenceInfo existing =
-            getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
-        if (existing != null) {
-          switch (item.type) {
-            case "ADDED":
-              if (clusterName != null) {
-                existing
-                    .getClusters()
-                    .compute(
-                        clusterName,
-                        (key, current) -> {
-                          if (current != null) {
-                            if (isOutdated(current.getMetadata(), metadata)) {
-                              return current;
-                            }
-                          }
-                          return s;
-                        });
-              } else if (serverName != null) {
-                ServerKubernetesObjects sko =
-                    existing
-                        .getServers()
-                        .computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-                if (channelName != null) {
-                  sko.getChannels()
-                      .compute(
-                          channelName,
-                          (key, current) -> {
-                            if (current != null) {
-                              if (isOutdated(current.getMetadata(), metadata)) {
-                                return current;
-                              }
-                            }
-                            return s;
-                          });
-                } else {
-                  sko.getService()
-                      .accumulateAndGet(
-                          s,
-                          (current, ob) -> {
-                            if (current != null) {
-                              if (isOutdated(current.getMetadata(), metadata)) {
-                                return current;
-                              }
-                            }
-                            return ob;
-                          });
-                }
-              }
-              break;
-            case "MODIFIED":
-              if (clusterName != null) {
-                existing
-                    .getClusters()
-                    .compute(
-                        clusterName,
-                        (key, current) -> {
-                          if (current != null) {
-                            if (!isOutdated(current.getMetadata(), metadata)) {
-                              return s;
-                            }
-                          }
-                          return current;
-                        });
-              } else if (serverName != null) {
-                ServerKubernetesObjects sko =
-                    existing
-                        .getServers()
-                        .computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-                if (channelName != null) {
-                  sko.getChannels()
-                      .compute(
-                          channelName,
-                          (key, current) -> {
-                            if (current != null) {
-                              if (!isOutdated(current.getMetadata(), metadata)) {
-                                return s;
-                              }
-                            }
-                            return current;
-                          });
-                } else {
-                  sko.getService()
-                      .accumulateAndGet(
-                          s,
-                          (current, ob) -> {
-                            if (current != null) {
-                              if (!isOutdated(current.getMetadata(), metadata)) {
-                                return ob;
-                              }
-                            }
-                            return current;
-                          });
-                }
-              }
-              break;
-            case "DELETED":
-              if (clusterName != null) {
-                boolean removed =
-                    removeIfPresentAnd(
-                        existing.getClusters(),
-                        clusterName,
-                        (current) -> {
-                          return isOutdated(current.getMetadata(), metadata);
-                        });
-                if (removed && !existing.isDeleting()) {
-                  // Service was deleted, but clusters still contained a non-null entry
-                  LOGGER.info(
-                      MessageKeys.CLUSTER_SERVICE_DELETED,
-                      domainUID,
-                      metadata.getNamespace(),
-                      clusterName);
-                  makeRightDomainPresence(existing, true, false, true);
-                }
-              } else if (serverName != null) {
-                ServerKubernetesObjects sko = existing.getServers().get(serverName);
-                if (sko != null) {
-                  if (channelName != null) {
-                    boolean removed =
-                        removeIfPresentAnd(
-                            sko.getChannels(),
-                            channelName,
-                            (current) -> {
-                              return isOutdated(current.getMetadata(), metadata);
-                            });
-                    if (removed && !existing.isDeleting()) {
-                      // Service was deleted, but sko still contained a non-null entry
-                      LOGGER.info(
-                          MessageKeys.SERVER_SERVICE_DELETED,
-                          domainUID,
-                          metadata.getNamespace(),
-                          serverName);
-                      makeRightDomainPresence(existing, true, false, true);
-                    }
-                  } else {
-                    V1Service oldService =
-                        sko.getService()
-                            .getAndAccumulate(
-                                s,
-                                (current, ob) -> {
-                                  if (current != null) {
-                                    if (!isOutdated(current.getMetadata(), metadata)) {
-                                      return null;
-                                    }
-                                  }
-                                  return current;
-                                });
-                    if (oldService != null && !existing.isDeleting()) {
-                      // Service was deleted, but sko still contained a non-null entry
-                      LOGGER.info(
-                          MessageKeys.SERVER_SERVICE_DELETED,
-                          domainUID,
-                          metadata.getNamespace(),
-                          serverName);
-                      makeRightDomainPresence(existing, true, false, true);
-                    }
-                  }
-                }
-              }
-              break;
+    V1Service service = item.object;
+    String domainUID = ServiceHelper.getServiceDomainUID(service);
+    if (domainUID == null) return;
 
-            case "ERROR":
-            default:
-          }
-        }
-      }
-    }
-  }
+    DomainPresenceInfo domainPresenceInfo =
+        getExistingDomainPresenceInfo(service.getMetadata().getNamespace(), domainUID);
+    if (domainPresenceInfo == null) return;
 
-  private static <K, V> boolean removeIfPresentAnd(
-      ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
-    Objects.requireNonNull(predicateFunction);
-    for (V oldValue; (oldValue = map.get(key)) != null; ) {
-      if (predicateFunction.test(oldValue)) {
-        if (map.remove(key, oldValue)) {
-          return true;
-        }
-      } else {
-        return false;
-      }
+    switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
+        ServiceHelper.updatePresenceFromEvent(domainPresenceInfo, item.object);
+        break;
+      case "DELETED":
+        boolean removed = ServiceHelper.deleteFromEvent(domainPresenceInfo, item.object);
+        if (removed && !domainPresenceInfo.isDeleting())
+          makeRightDomainPresence(domainPresenceInfo, true, false, true);
+        break;
+      default:
     }
-    return false;
   }
 
   public void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
@@ -452,7 +278,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       if (message != null) {
         if (message.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE)) {
           String ns = event.getMetadata().getNamespace();
-          ConcurrentMap<String, DomainPresenceInfo> map = domains.get(ns);
+          Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
           if (map != null) {
             for (DomainPresenceInfo d : map.values()) {
               String domainUIDPlusDash = d.getDomainUID() + "-";
@@ -510,24 +336,6 @@ public class DomainProcessorImpl implements DomainProcessor {
    * event for a resource that was deleted, but has since been recreated, and 2)
    * a MODIFIED event for an object that has already had subsequent modifications.
    */
-  static boolean isOutdated(V1ObjectMeta current, V1ObjectMeta ob) {
-    if (ob == null) {
-      return true;
-    }
-    if (current == null) {
-      return false;
-    }
-
-    DateTime obTime = ob.getCreationTimestamp();
-    DateTime cuTime = current.getCreationTimestamp();
-
-    if (obTime.isAfter(cuTime)) {
-      return false;
-    }
-    return Integer.parseInt(ob.getResourceVersion())
-            < Integer.parseInt(current.getResourceVersion())
-        || obTime.isBefore(cuTime);
-  }
 
   private static void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
     AtomicInteger unchangedCount = new AtomicInteger(0);
@@ -639,7 +447,8 @@ public class DomainProcessorImpl implements DomainProcessor {
         Domain current = existing.getDomain();
         if (current != null) {
           // Is this an outdated watch event?
-          if (domain != null && isOutdated(current.getMetadata(), domain.getMetadata())) {
+          if (domain != null
+              && KubernetesUtils.isFirstNewer(current.getMetadata(), domain.getMetadata())) {
             LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
             return;
           }
@@ -785,20 +594,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       if (result != null) {
         for (V1Service service : result.getItems()) {
-          String serverName = ServiceWatcher.getServiceServerName(service);
-          String channelName = ServiceWatcher.getServiceChannelName(service);
-          String clusterName = ServiceWatcher.getServiceClusterName(service);
-          if (clusterName != null) {
-            info.getClusters().put(clusterName, service);
-          } else if (serverName != null) {
-            ServerKubernetesObjects sko =
-                info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-            if (channelName != null) {
-              sko.getChannels().put(channelName, service);
-            } else {
-              sko.getService().set(service);
-            }
-          }
+          ServiceHelper.addToPresence(info, service);
         }
       }
 
@@ -887,7 +683,13 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step strategy =
         Step.chain(
             domainIntrospectionSteps(
-                info, new DomainStatusStep(info, bringAdminServerUp(info, managedServerStrategy))));
+                info,
+                new DomainStatusStep(
+                    info,
+                    bringAdminServerUp(
+                        info,
+                        getPodAwaiterStepFactory(info.getNamespace()),
+                        managedServerStrategy))));
 
     strategy =
         DomainStatusUpdater.createProgressingStep(
@@ -899,6 +701,10 @@ public class DomainProcessorImpl implements DomainProcessor {
         new UpHeadStep(info),
         ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUID()),
         strategy);
+  }
+
+  private static PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
+    return Main.podWatchers.get(namespace);
   }
 
   static Step createDomainDownPlan(DomainPresenceInfo info) {
@@ -924,7 +730,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      PodWatcher pw = Main.podWatchers.get(info.getNamespace());
+      PodWatcher pw = (PodWatcher) Main.podWatchers.get(info.getNamespace());
       info.setDeleting(false);
       packet
           .getComponents()
@@ -969,7 +775,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     public NextAction apply(Packet packet) {
       info.setDeleting(true);
       unregisterStatusUpdater(ns, info.getDomainUID());
-      PodWatcher pw = Main.podWatchers.get(ns);
+      PodWatcher pw = (PodWatcher) Main.podWatchers.get(ns);
       packet
           .getComponents()
           .put(
@@ -991,8 +797,9 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
-  private static Step bringAdminServerUp(DomainPresenceInfo info, Step next) {
-    return Step.chain(bringAdminServerUpSteps(info, next));
+  static Step bringAdminServerUp(
+      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
+    return Step.chain(bringAdminServerUpSteps(info, podAwaiterStepFactory, next));
   }
 
   private static Step[] domainIntrospectionSteps(DomainPresenceInfo info, Step next) {
@@ -1007,13 +814,14 @@ public class DomainProcessorImpl implements DomainProcessor {
             next,
             jws,
             Main.isNamespaceStopping(dom.getMetadata().getNamespace())));
-    return resources.toArray(new Step[resources.size()]);
+    return resources.toArray(new Step[0]);
   }
 
-  private static Step[] bringAdminServerUpSteps(DomainPresenceInfo info, Step next) {
+  private static Step[] bringAdminServerUpSteps(
+      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
     List<Step> resources = new ArrayList<>();
-    resources.add(PodHelper.createAdminPodStep(null));
     resources.add(new BeforeAdminServiceStep(null));
+    resources.add(PodHelper.createAdminPodStep(null));
 
     Domain dom = info.getDomain();
     AdminServer adminServer = dom.getSpec().getAdminServer();
@@ -1024,8 +832,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     resources.add(ServiceHelper.createForServerStep(null));
-    resources.add(new WatchPodReadyAdminStep(Main.podWatchers, next));
-    return resources.toArray(new Step[resources.size()]);
+    resources.add(new WatchPodReadyAdminStep(podAwaiterStepFactory, next));
+    return resources.toArray(new Step[0]);
   }
 
   private static Step bringManagedServersUp(Step next) {

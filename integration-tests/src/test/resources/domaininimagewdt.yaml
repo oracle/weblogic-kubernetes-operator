@@ -9,3 +9,4 @@ exposeAdminT3Channel: true
 exposeAdminNodePort: true
 domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt
 domainHomeImageBase: "store/oracle/weblogic:12.2.1.3"
+logHomeOnPV: true

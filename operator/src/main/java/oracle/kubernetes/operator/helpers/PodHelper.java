@@ -21,19 +21,19 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public class PodHelper {
 
   private PodHelper() {}
 
   static class AdminPodStepContext extends PodStepContext {
-    private static final String INTERNAL_OPERATOR_CERT_FILE = "internalOperatorCert";
     static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
 
     AdminPodStepContext(Step conflictStep, Packet packet) {
@@ -116,7 +116,7 @@ public class PodHelper {
 
     @Override
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
-      List<V1EnvVar> vars = new ArrayList<>(getServerSpec().getEnvironmentVariables());
+      List<V1EnvVar> vars = createCopy(getServerSpec().getEnvironmentVariables());
       overrideContainerWeblogicEnvVars(vars);
       return vars;
     }
@@ -132,7 +132,7 @@ public class PodHelper {
     }
 
     private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
-      return tuningParameters.get(INTERNAL_OPERATOR_CERT_FILE);
+      return RestServer.getInstance().getInternalCertificateAsBase64PEM();
     }
   }
 
@@ -288,7 +288,7 @@ public class PodHelper {
     @Override
     @SuppressWarnings("unchecked")
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
-      List<V1EnvVar> envVars = (List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS);
+      List<V1EnvVar> envVars = createCopy((List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS));
 
       List<V1EnvVar> vars = new ArrayList<>();
       if (envVars != null) {
@@ -354,5 +354,15 @@ public class PodHelper {
       return new CallBuilder()
           .deletePodAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(next));
     }
+  }
+
+  public static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
+    ArrayList<V1EnvVar> copy = new ArrayList<>();
+    if (envVars != null) {
+      for (V1EnvVar envVar : envVars) {
+        copy.add(new V1EnvVar().name(envVar.getName()).value(envVar.getValue()));
+      }
+    }
+    return copy;
   }
 }

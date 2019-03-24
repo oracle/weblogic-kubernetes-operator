@@ -8,7 +8,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>2.1-SNAPSHOT</version>
+  <version>2.1</version>
 
   <modules>
     <module>build-tools</module>
@@ -64,7 +64,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.0.1</version>
+        <version>3.1.0</version>
         <configuration>
           <aggregate>true</aggregate>
           <show>public</show>
@@ -72,21 +72,8 @@
           <notimestamp>true</notimestamp>
           <bottom>
             <![CDATA[<p>Copyright 2018, {currentYear}, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
-          <doctitle>Oracle WebLogic Server Kubernetes Operator v${project.version} API</doctitle>
+          <doctitle>Oracle WebLogic Server Kubernetes Operator API</doctitle>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>com.coveo</groupId>
-        <artifactId>fmt-maven-plugin</artifactId>
-        <version>2.4.0</version>
-        <executions>
-          <execution>
-            <phase>test</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -116,7 +103,7 @@
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>8.13</version>
+            <version>8.18</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -157,7 +144,7 @@
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>3.1.10</version>
+        <version>3.1.11</version>
         <configuration>
           <xmlOutput>true</xmlOutput>
           <failOnError>false</failOnError>
@@ -193,7 +180,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
-        <version>2.3</version>
+        <version>3.0.0</version>
       </plugin>
     </plugins>
   </reporting>
@@ -207,7 +194,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
+            <version>1.6</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -252,7 +239,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
-            <version>2.20.1</version>
+            <version>2.22.1</version>
             <configuration> <!-- run tests in parallel -->
               <encoding>UTF-8</encoding>
               <argLine>${failsafeArgLine}</argLine>
@@ -309,6 +296,7 @@
                 </goals>
                 <configuration>
                   <destFile>${sonar.jacoco.reportPath}</destFile>
+                  <append>true</append>
                   <propertyName>surefireArgLine</propertyName>
                 </configuration>
               </execution>
@@ -333,6 +321,7 @@
                 </goals>
                 <configuration>
                   <destFile>${sonar.jacoco.itReportPath}</destFile>
+                  <append>true</append>
                   <propertyName>failsafeArgLine</propertyName>
                 </configuration>
               </execution>
@@ -344,6 +333,7 @@
                 </goals>
                 <configuration>
                   <dataFile>${sonar.jacoco.itReportPath}</dataFile>
+                  <append>true</append>
                   <outputDirectory>$jacoco.itOutputDir}</outputDirectory>
                 </configuration>
               </execution>
@@ -396,12 +386,12 @@
       <dependency>
         <groupId>io.kubernetes</groupId>
         <artifactId>client-java</artifactId>
-        <version>3.0.0</version>
+        <version>4.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.25</version>
+        <version>1.7.26</version>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
@@ -416,7 +406,7 @@
       <dependency>
         <groupId>com.meterware.simplestub</groupId>
         <artifactId>simplestub</artifactId>
-        <version>1.2.9</version>
+        <version>1.2.12</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -434,29 +424,28 @@
     <java.version>1.8</java.version>
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
-    <swagger-core-version>1.5.21</swagger-core-version>
+    <swagger-core-version>1.5.22</swagger-core-version>
     <jodatime-version>2.10.1</jodatime-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <junit-version>4.12</junit-version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jersey-version>2.26
-    </jersey-version> <!-- switched from 2.23 to 2.26 to get the RestServer to work -->
-    <jackson-version>2.9.7</jackson-version>
-    <snakeyaml-version>1.23</snakeyaml-version>
+    <jersey-version>2.28</jersey-version> <!-- switched from 2.23 to 2.26 to get the RestServer to work -->
+    <jackson-version>2.9.8</jackson-version>
+    <snakeyaml-version>1.24</snakeyaml-version>
     <guava-version>27.0.1-jre</guava-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
     <skip.unit.tests>false</skip.unit.tests>
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-    <jacoco.version>0.7.9</jacoco.version>
-    <sonar.jacoco.reportPath>${project.build.directory}/jacoco.exec</sonar.jacoco.reportPath>
-    <sonar.jacoco.itReportPath>${project.build.directory}/jacoco-it.exec</sonar.jacoco.itReportPath>
-    <jacoco.outputDir>${project.build.directory}/jacoco</jacoco.outputDir>
-    <jacoco.itOutputDir>${project.build.directory}/jacoco-it</jacoco.itOutputDir>
-    <jacoco.destFile>${project.build.directory}/jacoco.exec</jacoco.destFile>
-    <sonar-jacoco-listeners.version>1.4</sonar-jacoco-listeners.version>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+    <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
+    <sonar.jacoco.itReportPath>${project.basedir}/../target/jacoco-it.exec</sonar.jacoco.itReportPath>
+    <sonar.language>java</sonar.language>
+    <jacoco.version>0.8.3</jacoco.version>
+    <jacoco.outputDir>${project.basedir}/../target/jacoco</jacoco.outputDir>
+    <jacoco.itOutputDir>${project.basedir}/../target/jacoco-it</jacoco.itOutputDir>
+    <jacoco.destFile>${project.basedir}/../target/jacoco.exec</jacoco.destFile>
     <jacoco.skip>false</jacoco.skip>
     <skip.pmd.check>false</skip.pmd.check>
   </properties>
