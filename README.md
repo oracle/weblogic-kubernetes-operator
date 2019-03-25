@@ -31,17 +31,19 @@ This release was published on March 4, 2019.
 | --- | --- |
 |  |  |
 
-## Operator version 2.0
+# Documentation
 
-Documentation for the 2.0 release of the operator is available [here](site/v2.0/README.md).
+Documentation for the operator is available [here](https://oracle.github.io/weblogic-kubernetes-operator) and includes
+information for users and for developers.  It provides samples, reference material like API documentation, security
+information and a *Quick Start* guide if you just want to get up and running quickly.
 
-## Operator version 1.1
+## Documentation for old releases
 
-Documentation for the 1.1 release of the operator is available [here](site/v1.1/README.md).
+Documentation for old releases of the operator is available [here](site/README.md).
 
 # Backward compatibility guidelines
 
-The 2.0 release introduces some breaking changes and does not maintain compatibility with previous releases.
+The 2.0 release introduced some breaking changes and did not maintain compatibility with previous releases.
 
 Starting with the 2.0 release, future operator releases are intended to be backward compatible with respect to the domain
 resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created
@@ -49,65 +51,12 @@ by the operator Helm chart, Kubernetes resources created by the operator, and th
 maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
 maintained for one release after a replacement is available.
 
-# About this documentation
-
-This documentation includes sections targeted to different audiences.  To help you find what you are looking for more easily,
-please consult this table of contents:
-
-* The [Quick Start guide](site/quickstart.md) explains how to quickly get the operator running, using the defaults, nothing special.
-* The [User guide](site/user-guide.md) contains detailed usage information, including how to install and configure the operator,
-  and how to use it to create and manage WebLogic domains.  
-* The [Samples](kubernetes/samples/README.md) provide detailed example code and instructions that show you how to perform
-  various tasks related to the operator.
-* The [Developer guide](site/developer.md) provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to contribute to the operator code will find useful information here.  This section also includes
-  API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.
-* The [Contributing](#contributing-to-the-operator) section provides information about contribution requirements.
-
-
-# User guide
-
-The [User guide](site/user-guide.md) provides detailed information about all aspects of using the operator including:
-
-* Installing and configuring the operator.
-* Using the operator to create and manage WebLogic domains.
-* Manually creating WebLogic domains to be managed by the operator.
-* Scaling WebLogic clusters.
-* Configuring Kubernetes load balancers.
-* Configuring Elasticsearch and Kibana to access the operator's log files.
-* Shutting down domains.
-* Removing/deleting domains.
-* And much more!
-
-# Samples
-
-Please refer to our [samples](kubernetes/samples/README.md) for information about the available sample code.
-
 # Need more help? Have a suggestion? Come and say, "Hello!"
 
 We have a **public Slack channel** where you can get in touch with us to ask questions about using the operator or give us feedback
 or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
 please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include
 details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!"
-
-# Recent changes
-
-See [Recent changes](site/recent-changes.md) for changes to the operator, including any backward incompatible changes.
-
-# Developer guide
-
-Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.
-
-Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something to which you would like to contribute!
-
-## API documentation
-
-Documentation for APIs:
-
-* The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see [Using the operator's REST services](site/rest.md).
-
-* See the [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
-
-* See the [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
 
 # Contributing to the operator
 
