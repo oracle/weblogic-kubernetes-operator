@@ -48,7 +48,8 @@ public class ITSitConfig extends BaseTest {
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
-   * @throws Exception
+   * @throws Exception when the initialization, creating directories , copying files and domain
+   *     creation fails.
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
@@ -97,9 +98,9 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * Destroy domain, delete the MySql DB container and teardown
+   * Destroy domain, delete the MySQL DB container and teardown.
    *
-   * @throws Exception
+   * @throws Exception when domain destruction or MySQL container destruction fails
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
@@ -116,9 +117,9 @@ public class ITSitConfig extends BaseTest {
    * <p>The test checks the overridden config.xml attributes connect-timeout, max-message-size,
    * restart-max, JMXCore and ServerLifeCycle debug flags, the T3Channel public address. The
    * overridden are verified against the ServerConfig MBean tree. It does not verifies whether the
-   * overridden values are applied to the runtime
+   * overridden values are applied to the runtime.
    *
-   * @throws Exception
+   * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
   public void testCustomSitConfigOverridesForDomain() throws Exception {
@@ -153,7 +154,7 @@ public class ITSitConfig extends BaseTest {
    * whether the overridden values are applied to the runtime except the JDBC URL which is verified
    * at runtime by making a connection to the MySql database and executing a DDL statement.
    *
-   * @throws Exception
+   * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
   public void testCustomSitConfigOverridesForJdbc() throws Exception {
@@ -179,14 +180,14 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * This test covers custom resource use cases for JMS resource The JMS resource override file sets
-   * the following Delivery Failure Parameters. Redelivery limit and Expiration policy for a
-   * uniform-distributed-topic JMS resource
+   * This test covers custom resource use cases for JMS resource. The JMS resource override file
+   * sets the following Delivery Failure Parameters re delivery limit and expiration policy for a
+   * uniform-distributed-topic JMS resource.
    *
    * <p>The overridden values are verified against the ServerConfig MBean tree. It does not verifies
-   * whether the overridden values are applied to the runtime
+   * whether the overridden values are applied to the runtime.
    *
-   * @throws Exception
+   * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
   public void testCustomSitConfigOverridesForJms() throws Exception {
@@ -211,15 +212,15 @@ public class ITSitConfig extends BaseTest {
 
   /**
    * This test covers custom resource override use cases for diagnostics resource. It adds the
-   * following instrumentation monitors Connector_After_Inbound Connector_Around_Outbound
-   * Connector_Around_Tx Connector_Around_Work Connector_Before_Inbound and harvesters for
-   * weblogic.management.runtime.JDBCServiceRuntimeMBean
-   * weblogic.management.runtime.ServerRuntimeMBean
+   * following instrumentation monitors. Connector_After_Inbound, Connector_Around_Outbound,
+   * Connector_Around_Tx, Connector_Around_Work, Connector_Before_Inbound, and harvesters for
+   * weblogic.management.runtime.JDBCServiceRuntimeMBean,
+   * weblogic.management.runtime.ServerRuntimeMBean.
    *
    * <p>The overridden values are verified against the ServerConfig MBean tree. It does not verifies
-   * whether the overridden values are applied to the runtime
+   * whether the overridden values are applied to the runtime.
    *
-   * @throws Exception
+   * @throws Exception when the assertion fails due to unmatched values
    */
   @Test
   public void testCustomSitConfigOverridesForWldf() throws Exception {
@@ -271,9 +272,9 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * Destroys the domain
+   * Destroys the domain.
    *
-   * @throws Exception
+   * @throws Exception when domain destruction fails
    */
   private static void destroySitConfigDomain() throws Exception {
     if (domain != null) {
@@ -282,10 +283,10 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * copy the configuration override files to a staging area after replacing the JDBC_URL token in
-   * jdbc-JdbcTestDataSource-0.xml
+   * Copy the configuration override files to a staging area after replacing the JDBC_URL token in
+   * jdbc-JdbcTestDataSource-0.xml.
    *
-   * @throws IOException
+   * @throws IOException when copying files from source location to staging area fails
    */
   private static void copySitConfigFiles() throws IOException {
     String src_dir = TEST_RES_DIR + "/sitconfig/configoverrides";
@@ -310,9 +311,9 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * a util method to copy MySql yaml template file replacing the NAMESPACE and DOMAINUID
+   * A utility method to copy MySQL yaml template file replacing the NAMESPACE and DOMAINUID.
    *
-   * @throws IOException
+   * @throws IOException when copying files from source location to staging area fails
    */
   private static void copyMySqlFile() throws IOException {
     Path src = Paths.get(TEST_RES_DIR + "/mysql/mysql-dbservices.ymlt");
@@ -327,7 +328,7 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * Verifies the test run result doesn't contain any errors and exit status is 0
+   * Verifies the test run result doesn't contain any errors and exit status is 0.
    *
    * @param result - ExecResult object containing result of the test run
    */
