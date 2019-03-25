@@ -27,7 +27,7 @@ Documentation for prior releases of the operator is available [here](https://git
 
 #### Backward compatibility guidelines
 
-Starting from the 2.0 release, operator releases are backward compatible with respect to the domain
+Starting from the 2.0.1 release, operator releases are backward compatible with respect to the domain
 resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created
 by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to
 maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be

@@ -79,6 +79,16 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Operator Helm Chart using not preexisted target domains namespace | create chart using not preexisted target domains namespace as already running first operator, verify that deployment fails with expected error |
 | Operator Helm Chart add/delete target domain namespaces (domain1, domain2) | create operator helm chart managing domain1, use upgrade to add domain2. Verify that operator is able to manage added domain (domain2). Use helm upgrade to remove domain1, verify that operator not able to manage anymore the deleted one(domain1) |
 | Operator Helm Chart delete operator helm chart, leave domain running | create operator helm chart and start domain1, delete operator helm chart, verify domain1 is still functional |
+ 
+| Server Pods Restarted by modifying properties on the domain resource| Use Case |
+| --- | --- |
+| Server pods restarted by changing Env property | Verify admin and managed server pods being restarted by property change: "-Dweblogic.StdoutDebugEnabled=false" --> "-Dweblogic.StdoutDebugEnabled=true" |
+| Server pods restarted by changing image | Verify admin and managed server pods being restarted by property change: image: "store/oracle/weblogic:12.2.1.3" --> image: "store/oracle/weblogic:duplicate" |
+| Server pods restarted by changing imagePullPolicy | Verify  admin and managed server pods being restarted by property change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never |
+| Server pods restarted by changing includeServerOutInPodLog | Verify admin and managed server pods being restarted by property change: includeServerOutInPodLog: true --> includeServerOutInPodLog: false |
+| Server pods restarted by changing logHomeEnable | Verify admin and managed server pods being restarted by property change: logHomeEnabled: true --> logHomeEnabled: false |
+
+
 
 
 # Directory Configuration and Structure
