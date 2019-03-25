@@ -57,28 +57,28 @@ store and start the container.
 #### Images that require authentication
 
 If the remote Docker registry requires authentication, then you will need to provide
-the authentication details in a Kubernetes `Docker-registry` secret and tell Kubernetes
+the authentication details in a Kubernetes `docker-registry` secret and tell Kubernetes
 to use that secret when pulling the image. 
 
 To create a secret, you can use the following command:
 
 ```
-kubectl create secret Docker-registry secret1 \
-        --Docker-server=some.registry.com \
-        --Docker-username=bob \
-        --Docker-password=bigSecret \
-        --Docker-email=bob@some.com \
+kubectl create secret docker-registry secret1 \
+        --docker-server=some.registry.com \
+        --docker-username=bob \
+        --docker-password=bigSecret \
+        --docker-email=bob@some.com \
         --namespace=default
 ```
 
-In this command, you would replace `secret1` with the name of the secret; the `Docker-server`
-is set to the registry name, without the `https://` prefix; the `Docker-username`, `Docker-password`
-and `Docker-email` are set to match the credentials you use to authenticate to the remote 
+In this command, you would replace `secret1` with the name of the secret; the `docker-server`
+is set to the registry name, without the `https://` prefix; the `docker-username`, `docker-password`
+and `docker-email` are set to match the credentials you use to authenticate to the remote 
 Docker registry; and the `namespace` must be set to the same namespace where you intend to
 use the image.
 
 {{% notice note %}}
-Some registries may need a suffix making the `Docker-server` something like `some.registry.com/v2`
+Some registries may need a suffix making the `docker-server` something like `some.registry.com/v2`
 for example.  You will need to check with your registry provider's documentation to see if this is needed.
 {{% /notice %}}
 
@@ -136,14 +136,14 @@ cluster instead.
 On the machine where you created the image, export it into a tar file using this command:
 
 ```
-Docker save domain1:1.0 > domain1.tar
+docker save domain1:1.0 > domain1.tar
 ```
 
 Then copy that tar file to each worker node in your Kubernetes cluster and run this command
 on each node:
 
 ```
-Docker load < domain1.tar
+docker load < domain1.tar
 ```
 
 #### Restart pods to clear the error
