@@ -4,10 +4,15 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,6 +58,16 @@ public class TestUtils {
 
     // check for admin pod
     checkCmdInLoop(cmd.toString(), "Running", podName);
+  }
+
+  /** @param cmd - kubectl get pod <podname> -n namespace */
+  public static void checkPodTerminating(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    checkCmdInLoop(cmd.toString(), "Terminating", podName);
   }
 
   /**
@@ -191,7 +206,6 @@ public class TestUtils {
   public static ExecResult exec(String cmd) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
-      logger.info("Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
       throw new RuntimeException(
           "FAILURE: Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
     }
@@ -430,6 +444,14 @@ public class TestUtils {
     if (result.exitValue() != 0) {
       throw new RuntimeException("FAILURE: command failed, returned " + result.stderr());
     }
+  }
+
+  public static void kubectlapply(String yamlFile) throws Exception {
+
+    StringBuffer command = new StringBuffer();
+    command.append("kubectl apply  -f ").append(yamlFile);
+    logger.info("kubectl execut with command: " + command.toString());
+    exec(command.toString());
   }
 
   public static int makeOperatorPostRestCall(Operator operator, String url, String jsonObjStr)
@@ -1050,5 +1072,59 @@ public class TestUtils {
         break;
       }
     }
+  }
+
+  // create yaml file with changed property
+  public static void createNewYamlFile(
+      String inputYamlFile, String generatedYamlFile, String oldString, String newString)
+      throws Exception {
+    logger.info("Creating new  " + generatedYamlFile);
+
+    Files.copy(
+        new File(inputYamlFile).toPath(),
+        Paths.get(generatedYamlFile),
+        StandardCopyOption.REPLACE_EXISTING);
+
+    // read each line in input domain file and replace with intended changed property
+    BufferedReader reader = new BufferedReader(new FileReader(generatedYamlFile));
+    String line = "";
+    StringBuffer changedLines = new StringBuffer();
+    boolean isLineChanged = false;
+    while ((line = reader.readLine()) != null) {
+      if (line.contains(oldString)) {
+        String changedLine = line.replace(line.substring(line.indexOf(oldString)), newString);
+        changedLines.append(changedLine).append("\n");
+        isLineChanged = true;
+      }
+
+      if (!isLineChanged) {
+        changedLines.append(line).append("\n");
+      }
+      isLineChanged = false;
+    }
+    reader.close();
+    // writing to the file
+    Files.write(Paths.get(generatedYamlFile), changedLines.toString().getBytes());
+    logger.info("Done - generate the new yaml file ");
+  }
+
+  public static void copyFile(String fromFile, String toFile) throws Exception {
+    logger.info("Copying file from  " + fromFile + " to " + toFile);
+
+    Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
+  }
+
+  public static void dockerTagImage(String sourceImage, String targetImage) throws Exception {
+    logger.info("Tagging souceImage:  " + sourceImage + "  to " + targetImage);
+    String dockerCmd = "docker tag " + sourceImage + " " + targetImage;
+    logger.info("Executing cmd " + dockerCmd);
+    exec(dockerCmd);
+  }
+
+  public static void dockerRemoveImage(String imageName) throws Exception {
+    logger.info("Removing image:  " + imageName);
+    String dockerCmd = "docker rmi -f  " + imageName;
+    logger.info("Executing cmd " + dockerCmd);
+    exec(dockerCmd);
   }
 }
