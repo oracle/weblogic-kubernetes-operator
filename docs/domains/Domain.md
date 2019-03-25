@@ -100,6 +100,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | Name | Type | Description |
 | --- | --- | --- |
 | annotations | Map | The annotations to be attached to generated resources. |
+| containers | array of [Container](k8s1.9.0.md#container) | Additional containers to be included in the server pod. |
 | containerSecurityContext | [Security Context](k8s1.9.0.md#security-context) | Container-level security attributes. Will override any matching pod-level attributes. |
 | env | array of [Env Var](k8s1.9.0.md#env-var) | A list of environment variables to add to a server |
 | initContainers | array of [Container](k8s1.9.0.md#container) | Initialization containers |
