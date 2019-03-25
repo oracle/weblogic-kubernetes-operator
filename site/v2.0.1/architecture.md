@@ -21,7 +21,7 @@ The operator registers a Kubernetes custom resource definition called `domain.we
 
 The diagram below shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:
 
-![High level architecture](images/high-level-architecture.png)
+![High level architecture](../images/high-level-architecture.png)
 
 The Kubernetes cluster has several namespaces.  Components may be deployed into namespaces as follows:
 
@@ -34,7 +34,7 @@ The Kubernetes cluster has several namespaces.  Components may be deployed into 
 
 The diagram below shows how the various parts of a WebLogic domain are manifest in Kubernetes by the operator.
 
-![Domain architecture](images/domain-architecture2.png)
+![Domain architecture](../images/domain-architecture2.png)
 
 This diagram shows the following details:
 
@@ -48,7 +48,7 @@ This diagram shows the following details:
 
 The diagram below shows the components inside the containers running WebLogic Server instances:
 
-![Inside a container](images/inside-a-container.png)
+![Inside a container](../images/inside-a-container.png)
 
 The domain resource specifies a Docker image, defaulting to `store/oracle/weblogic:12.2.1.3`. All containers running WebLogic Server use this same Docker image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory.
 **Note**: During a rolling event caused by a change to the domain resource's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.

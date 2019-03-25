@@ -850,6 +850,13 @@ public class Domain {
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
   }
 
+  /**
+   * verify domain server pods get restarted after a property change
+   *
+   * @param oldPropertyString
+   * @param newPropertyString
+   * @throws Exception
+   */
   public void testDomainServerPodRestart(String oldPropertyString, String newPropertyString)
       throws Exception {
     logger.info("Inside testDomainServerPodRestart");
@@ -887,15 +894,13 @@ public class Domain {
                   + domainUid
                   + "/domain_new.yaml");
       logger.info("kubectl execut with command: " + command.toString());
-
-      ExecResult exeResult = TestUtils.exec(command.toString());
-      if (!exeResult.stdout().contains(domainUid))
-        throw new RuntimeException("FAILURE: domain not found, exiting!");
+      TestUtils.exec(command.toString());
 
       // verify the servers in the domain are being restarted in a sequence
       verifyAdminServerRestarted();
       verifyManagedServersRestarted();
-      // let domain.yaml include the new changed property
+
+      // make domain.yaml include the new changed property
       TestUtils.copyFile(
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml");
@@ -903,7 +908,7 @@ public class Domain {
     logger.info("Done - testDomainServerPodRestart");
   }
 
-  public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
+public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
     logger.info("Inside findServerPropertyChange");
     // get runtime server pod yaml file
     String outDir = BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/";
@@ -963,8 +968,7 @@ public class Domain {
     // kubectl apply the supplied domain yaml file under resources dir with changed property
     String yamlDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
     TestUtils.kubectlapply(yamlDir + fileNameWithChangedProperty);
-    Thread.sleep(10 * 1000);
-
+    
     // verify the servers in the domain are being restarted in a sequence
     verifyAdminServerRestarted();
     verifyManagedServersRestarted();
@@ -972,6 +976,24 @@ public class Domain {
     logger.info("Done - testDomainServerPodRestart with domainYamlWithChangedProperty");
   }
 
+  /**
+   * verify that admin server pod gets restarted.
+   *
+   * @throws Exception
+   */
+  public void verifyAdminServerRestarted() throws Exception {
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
+    TestUtils.checkPodTerminating(domainUid + "-" + adminServerName, domainNS);
+
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
+    TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
+  }
+
+  /**
+   * verify that managed server pods get restarted.
+   *
+   * @throws Exception
+   */
   public void verifyManagedServersRestarted() throws Exception {
     if (domainMap.get("serverStartPolicy") == null
         || (domainMap.get("serverStartPolicy") != null
@@ -986,7 +1008,7 @@ public class Domain {
                 + i
                 + ") is Terminating");
         TestUtils.checkPodTerminating(domainUid + "-" + managedServerNameBase + i, domainNS);
-        Thread.sleep(10 * 1000);
+
         logger.info(
             "Checking if managed pod("
                 + domainUid
