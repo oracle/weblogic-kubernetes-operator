@@ -18,18 +18,12 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 * Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-The fastest way to experience the operator is to follow the [Quick Start guide](site/quickstart.md), or you can peruse our [documentation](site), read our [blogs](https://blogs.oracle.com/weblogicserver/updated-weblogic-kubernetes-support-with-operator-20), or try out the [samples](kubernetes/samples/README.md).
+The fastest way to experience the operator is to follow the [Quick Start guide](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), or you can peruse our [documentation](https://oracle.github.io/weblogic-kubernetes-operator), read our [blogs](https://blogs.oracle.com/weblogicserver/updated-weblogic-kubernetes-support-with-operator-20), or try out the [samples](https://oracle.github.io/weblogic-kubernetes-operator/samples/).
 
 ***
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 2.0.1.
 This release was published on March 4, 2019.
 ***
-
-## Known issues
-
-| Issue | Description |
-| --- | --- |
-|  |  |
 
 # Documentation
 
@@ -37,15 +31,13 @@ Documentation for the operator is available [here](https://oracle.github.io/webl
 information for users and for developers.  It provides samples, reference material like API documentation, security
 information and a *Quick Start* guide if you just want to get up and running quickly.
 
-## Documentation for old releases
-
 Documentation for old releases of the operator is available [here](site/README.md).
 
 # Backward compatibility guidelines
 
 The 2.0 release introduced some breaking changes and did not maintain compatibility with previous releases.
 
-Starting with the 2.0 release, future operator releases are intended to be backward compatible with respect to the domain
+Starting with the 2.0.1 release, operator releases are intended to be backward compatible with respect to the domain
 resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created
 by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to
 maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
@@ -96,30 +88,3 @@ Only pull requests from committers that can be verified as having signed the OCA
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.
 
-## Use Helm Chart from GitHub chart repository
-
-Add this repo to Helm installation:
-
-```
-$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
-```
-
-Verify repository was added correctly:
-
-```
-$ helm repo list
-NAME           URL
-weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
-```
-
-Update with latest information about charts from chart repositories:
-
-```
-$ helm repo update
-```
-
-Install Operator from the repo:
-
-```
-$ helm install weblogic-operator/weblogic-operator --name weblogic-operator
-```
