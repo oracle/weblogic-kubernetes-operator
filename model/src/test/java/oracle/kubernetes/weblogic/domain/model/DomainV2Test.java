@@ -1032,6 +1032,76 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain2ReadFromYaml_ContainersAreReadFromServerSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    List<V1Container> serverSpecContainers = domain.getSpec().getContainers();
+    assertThat(serverSpecContainers.isEmpty(), is(false));
+    assertThat(serverSpecContainers.size(), is(1));
+    assertThat(serverSpecContainers.get(0).getName(), is("cont1"));
+    assertThat(serverSpecContainers.get(0).getImage(), is("busybox"));
+    assertThat(serverSpecContainers.get(0).getCommand().get(2), containsString("cat cont"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_ContainersAreReadFromAdminServerSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    List<V1Container> serverSpecContainers = domain.getAdminServerSpec().getContainers();
+    assertThat(serverSpecContainers.isEmpty(), is(false));
+    assertThat(serverSpecContainers.size(), is(2));
+    assertThat(serverSpecContainers.get(0).getName(), is("cont2"));
+    assertThat(serverSpecContainers.get(0).getImage(), is("busybox"));
+    assertThat(serverSpecContainers.get(0).getCommand().get(2), containsString("cat date"));
+    assertThat(serverSpecContainers.get(1).getName(), is("cont1"));
+    assertThat(serverSpecContainers.get(1).getImage(), is("busybox"));
+    assertThat(serverSpecContainers.get(1).getCommand().get(2), containsString("cat cont"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_ContainersAreReadFromManagedServerSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    List<V1Container> serverSpecContainers = domain.getServer("server1", null).getContainers();
+    assertThat(serverSpecContainers.isEmpty(), is(false));
+    assertThat(serverSpecContainers.size(), is(2));
+    assertThat(serverSpecContainers.get(0).getName(), is("cont3"));
+    assertThat(serverSpecContainers.get(0).getImage(), is("busybox"));
+    assertThat(serverSpecContainers.get(0).getCommand().get(2), containsString("cat ls"));
+    assertThat(serverSpecContainers.get(1).getName(), is("cont1"));
+    assertThat(serverSpecContainers.get(1).getImage(), is("busybox"));
+    assertThat(serverSpecContainers.get(1).getCommand().get(2), containsString("cat cont"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_ContainersAreInheritedFromServerSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    List<V1Container> serverSpecContainers = domain.getServer("server2", null).getContainers();
+    assertThat(serverSpecContainers.isEmpty(), is(false));
+    assertThat(serverSpecContainers.size(), is(1));
+    assertThat(serverSpecContainers.get(0).getName(), is("cont1"));
+    assertThat(serverSpecContainers.get(0).getImage(), is("busybox"));
+    assertThat(serverSpecContainers.get(0).getCommand().get(2), containsString("cat cont"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_ContainersAreReadFromClusteredServerSpec()
+      throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    List<V1Container> serverSpecContainers = domain.getCluster("cluster2").getContainers();
+    assertThat(serverSpecContainers.isEmpty(), is(false));
+    assertThat(serverSpecContainers.size(), is(2));
+    assertThat(serverSpecContainers.get(0).getName(), is("cont4"));
+    assertThat(serverSpecContainers.get(0).getImage(), is("busybox"));
+    assertThat(serverSpecContainers.get(0).getCommand().get(2), containsString("cat tmp"));
+    assertThat(serverSpecContainers.get(1).getName(), is("cont1"));
+    assertThat(serverSpecContainers.get(1).getImage(), is("busybox"));
+    assertThat(serverSpecContainers.get(1).getCommand().get(2), containsString("cat cont"));
+  }
+
+  @Test
   public void whenDomain2ReadFromYaml_serviceAnnotationsFound() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer("server2", "cluster1");

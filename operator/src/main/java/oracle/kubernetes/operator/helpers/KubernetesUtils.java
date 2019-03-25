@@ -6,11 +6,11 @@ package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1ObjectMeta;
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import javax.json.JsonPatchBuilder;
 import org.apache.commons.collections.MapUtils;
+import org.joda.time.DateTime;
 
 public class KubernetesUtils {
 
@@ -23,45 +23,6 @@ public class KubernetesUtils {
    */
   static <K, V> boolean mapEquals(Map<K, V> first, Map<K, V> second) {
     return Objects.equals(first, second) || (MapUtils.isEmpty(first) && MapUtils.isEmpty(second));
-  }
-
-  /**
-   * Returns true if the labels on the current artifact metadata match those on the build version.
-   * This excludes any weblogic-specific labels, as identified by the existence of the weblogic.
-   * prefix.
-   *
-   * @param build the desired version of the metadata
-   * @param current the current version of the metadata
-   * @return true if the labels match
-   */
-  static boolean areLabelsValid(V1ObjectMeta build, V1ObjectMeta current) {
-    return mapEquals(getCustomerLabels(current), getCustomerLabels(build));
-  }
-
-  private static Map<String, String> getCustomerLabels(V1ObjectMeta metadata) {
-    Map<String, String> result = new HashMap<>();
-    for (Map.Entry<String, String> entry : metadata.getLabels().entrySet()) {
-      if (!isOperatorLabel(entry)) {
-        result.put(entry.getKey(), entry.getValue());
-      }
-    }
-    return result;
-  }
-
-  private static boolean isOperatorLabel(Map.Entry<String, String> label) {
-    return label.getKey().startsWith("weblogic.");
-  }
-
-  /**
-   * Returns true if the annotations on the current artifact metadata match those on the build
-   * version.
-   *
-   * @param build the desired version of the metadata
-   * @param current the current version of the metadata
-   * @return true if the annotations match
-   */
-  static boolean areAnnotationsValid(V1ObjectMeta build, V1ObjectMeta current) {
-    return mapEquals(current.getAnnotations(), build.getAnnotations());
   }
 
   /**
@@ -99,7 +60,7 @@ public class KubernetesUtils {
    * @param current a map of the values found in a Kubernetes resource
    * @param required a map of the values specified for the resource by the domain
    */
-  public static void addPatches(
+  static void addPatches(
       JsonPatchBuilder patchBuilder,
       String basePath,
       Map<String, String> current,
@@ -140,5 +101,32 @@ public class KubernetesUtils {
         | IllegalAccessException e) {
       return new V1ObjectMeta();
     }
+  }
+
+  /**
+   * Returns true if the first metadata indicates a newer resource than does the second. 'Newer'
+   * indicates that the creation time is later. If two items have the same creation time, a higher
+   * resource version indicates the newer resource.
+   *
+   * @param first the first item to compare
+   * @param second the second item to compare
+   * @return true if the first object is newer than the second object
+   */
+  public static boolean isFirstNewer(V1ObjectMeta first, V1ObjectMeta second) {
+    if (second == null) return true;
+    if (first == null) return false;
+
+    DateTime time1 = first.getCreationTimestamp();
+    DateTime time2 = second.getCreationTimestamp();
+
+    if (time1.equals(time2)) {
+      return getResourceVersion(first) > getResourceVersion(second);
+    } else {
+      return time1.isAfter(time2);
+    }
+  }
+
+  private static int getResourceVersion(V1ObjectMeta metadata) {
+    return Integer.parseInt(metadata.getResourceVersion());
   }
 }
