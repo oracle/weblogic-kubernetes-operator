@@ -747,10 +747,20 @@ public class Domain {
     return domainUid;
   }
 
+  /**
+   * Get the name of the administration server in the domain
+   *
+   * @return
+   */
   public String getAdminServerName() {
     return adminServerName;
   }
 
+  /**
+   * Get the namespace in which the domain is running
+   *
+   * @return
+   */
   public String getDomainNS() {
     return domainNS;
   }
