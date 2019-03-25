@@ -161,34 +161,6 @@ public class RestBackendImplTest {
   }
 
   @Test
-  public void getDomainForConflictRetry_returnsBeforeDomain() {
-    configureDomain().withDefaultReplicaCount(2);
-
-    assertThat(
-        ((RestBackendImpl) restBackend)
-            .getDomainForConflictRetry(NAME1, "cluster1", REPLICA_LIMIT)
-            .getReplicaCount("cluster-1"),
-        equalTo(2));
-  }
-
-  @Test
-  public void getDomainForConflictRetry_ifSameReplicaCount_returnsNull() {
-    configureDomain().withDefaultReplicaCount(REPLICA_LIMIT);
-
-    assertThat(
-        ((RestBackendImpl) restBackend).getDomainForConflictRetry(NAME1, "cluster1", REPLICA_LIMIT),
-        nullValue());
-  }
-
-  @Test(expected = WebApplicationException.class)
-  public void getDomainForConflictRetry_ifDomainNotFound_throws() {
-    configureDomain().withDefaultReplicaCount(2);
-
-    ((RestBackendImpl) restBackend)
-        .getDomainForConflictRetry("noSuchUID", "cluster1", REPLICA_LIMIT);
-  }
-
-  @Test
   public void verify_getWlsDomainConfig_returnsWlsDomainConfig() {
     WlsDomainConfig wlsDomainConfig = ((RestBackendImpl) restBackend).getWlsDomainConfig(NAME1);
 
