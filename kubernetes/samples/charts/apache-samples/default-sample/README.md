@@ -16,7 +16,7 @@ After the domain is successfully created, deploy the sample web application, `te
 Refer to the [sample](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache), to build the Apache webtier Docker image.
 
 ## 3. Install the Apache webtier with a Helm chart
-The Apache webtier Helm chart [is located here](kubernetes/samples/charts/apache-webtier).
+The Apache webtier Helm chart [is located here](../../apache-webtier/README.md).
 Install the Apache webtier Helm chart into the default namespace with the default settings:
 ```
 $ cd kubernetes/samples/charts
