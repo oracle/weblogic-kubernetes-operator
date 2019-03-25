@@ -33,7 +33,7 @@ This release was published on March 4, 2019.
 
 # Documentation
 
-Documentation for the operation is available [here](https://oracle.github.io/weblogic-kubernetes-operator) and includes
+Documentation for the operator is available [here](https://oracle.github.io/weblogic-kubernetes-operator) and includes
 information for users and for developers.  It provides samples, reference material like API documentation, security
 information and a *Quick Start* guide if you just want to get up and running quickly.
 
