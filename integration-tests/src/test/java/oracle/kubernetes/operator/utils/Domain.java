@@ -947,19 +947,10 @@ public void findServerPropertyChange(String changedProperty, String serverName) 
                 + ".yaml file");
       }
     } finally {
-      // String cmdString = "rm -rf " + outDir + serverName + ".yaml";
-      // TestUtils.exec(cmdString);
+      String cmdString = "rm -rf " + outDir + serverName + ".yaml";
+      TestUtils.exec(cmdString);
     }
     logger.info("Done - findServerPropertyChange");
-  }
-
-  public void verifyAdminServerRestarted() throws Exception {
-    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
-    TestUtils.checkPodTerminating(domainUid + "-" + adminServerName, domainNS);
-    Thread.sleep(10 * 1000);
-    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
-    TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
-    Thread.sleep(10 * 1000);
   }
 
   public void testDomainServerPodRestart(String fileNameWithChangedProperty) throws Exception {
