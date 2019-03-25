@@ -850,6 +850,155 @@ public class Domain {
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
   }
 
+  public void testDomainServerPodRestart(String oldPropertyString, String newPropertyString)
+      throws Exception {
+    logger.info("Inside testDomainServerPodRestart");
+    String content =
+        new String(
+            Files.readAllBytes(
+                Paths.get(
+                    BaseTest.getUserProjectsDir()
+                        + "/weblogic-domains/"
+                        + domainUid
+                        + "/domain.yaml")));
+    boolean result = content.indexOf(newPropertyString) >= 0;
+    logger.info("The search result for " + newPropertyString + " is: " + result);
+    if (!result) {
+      TestUtils.createNewYamlFile(
+          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml",
+          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
+          oldPropertyString,
+          newPropertyString);
+      logger.info(
+          "Done - generate new domain.yaml for "
+              + domainUid
+              + " oldProperty: "
+              + oldPropertyString
+              + " newProperty: "
+              + newPropertyString);
+
+      // kubectl apply the new generated domain yaml file with changed property
+      StringBuffer command = new StringBuffer();
+      command
+          .append("kubectl apply  -f ")
+          .append(
+              BaseTest.getUserProjectsDir()
+                  + "/weblogic-domains/"
+                  + domainUid
+                  + "/domain_new.yaml");
+      logger.info("kubectl execut with command: " + command.toString());
+
+      ExecResult exeResult = TestUtils.exec(command.toString());
+      if (!exeResult.stdout().contains(domainUid))
+        throw new RuntimeException("FAILURE: domain not found, exiting!");
+
+      // verify the servers in the domain are being restarted in a sequence
+      verifyAdminServerRestarted();
+      verifyManagedServersRestarted();
+      // let domain.yaml include the new changed property
+      TestUtils.copyFile(
+          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
+          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml");
+    }
+    logger.info("Done - testDomainServerPodRestart");
+  }
+
+  public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
+    logger.info("Inside findServerPropertyChange");
+    // get runtime server pod yaml file
+    String outDir = BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/";
+    StringBuffer command = new StringBuffer();
+    command
+        .append("kubectl get po/")
+        .append(
+            domainUid
+                + "-"
+                + serverName
+                + " -o yaml -n "
+                + domainNS
+                + " > "
+                + outDir
+                + serverName
+                + ".yaml");
+    logger.info("kubectl execut with command: " + command.toString());
+    TestUtils.exec(command.toString());
+    Thread.sleep(10 * 1000);
+    try {
+      String content = new String(Files.readAllBytes(Paths.get(outDir + serverName + ".yaml")));
+      boolean result = content.indexOf(changedProperty) >= 0;
+      logger.info(
+          "Server name: "
+              + serverName
+              + " Search result for "
+              + changedProperty
+              + " is: "
+              + result);
+      if (!result) {
+        throw new Exception(
+            "FAILURE: didn't find the property: "
+                + changedProperty
+                + "in the "
+                + serverName
+                + ".yaml file");
+      }
+    } finally {
+      // String cmdString = "rm -rf " + outDir + serverName + ".yaml";
+      // TestUtils.exec(cmdString);
+    }
+    logger.info("Done - findServerPropertyChange");
+  }
+
+  public void verifyAdminServerRestarted() throws Exception {
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
+    TestUtils.checkPodTerminating(domainUid + "-" + adminServerName, domainNS);
+    Thread.sleep(10 * 1000);
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
+    TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
+    Thread.sleep(10 * 1000);
+  }
+
+  public void testDomainServerPodRestart(String fileNameWithChangedProperty) throws Exception {
+    logger.info("Inside testDomainServerPodRestart domainYamlWithChangedProperty");
+
+    // kubectl apply the supplied domain yaml file under resources dir with changed property
+    String yamlDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
+    TestUtils.kubectlapply(yamlDir + fileNameWithChangedProperty);
+    Thread.sleep(10 * 1000);
+
+    // verify the servers in the domain are being restarted in a sequence
+    verifyAdminServerRestarted();
+    verifyManagedServersRestarted();
+
+    logger.info("Done - testDomainServerPodRestart with domainYamlWithChangedProperty");
+  }
+
+  public void verifyManagedServersRestarted() throws Exception {
+    if (domainMap.get("serverStartPolicy") == null
+        || (domainMap.get("serverStartPolicy") != null
+            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
+      // check managed server pods
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        logger.info(
+            "Checking if managed pod("
+                + domainUid
+                + "-"
+                + managedServerNameBase
+                + i
+                + ") is Terminating");
+        TestUtils.checkPodTerminating(domainUid + "-" + managedServerNameBase + i, domainNS);
+        Thread.sleep(10 * 1000);
+        logger.info(
+            "Checking if managed pod("
+                + domainUid
+                + "-"
+                + managedServerNameBase
+                + i
+                + ") is Running");
+        TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+      }
+    }
+  }
+
   private void createSecret() throws Exception {
     Secret secret =
         new Secret(
@@ -896,7 +1045,12 @@ public class Domain {
           StandardCopyOption.REPLACE_EXISTING);
     }
 
-    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+    StringBuffer createDomainScriptCmd = new StringBuffer("export JAVA_HOME=");
+
+    createDomainScriptCmd
+        .append(System.getenv("JAVA_HOME"))
+        .append(" && export PATH=$JAVA_HOME/bin:$PATH && ")
+        .append(BaseTest.getResultDir());
 
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
