@@ -71,6 +71,21 @@ public class TestUtils {
   }
 
   /**
+   * check pod is in Terminating state
+   *
+   * @param cmd - kubectl get pod <podname> -n namespace
+   * @throws Exception
+   */
+  public static void checkPodTerminating(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    checkCmdInLoop(cmd.toString(), "Terminating", podName);
+  }
+
+  /**
    * @param cmd - kubectl get service <servicename> -n namespace
    * @throws Exception
    */
@@ -1074,7 +1089,15 @@ public class TestUtils {
     }
   }
 
-  // create yaml file with changed property
+  /**
+   * create yaml file with changed property
+   *
+   * @param inputYamlFile
+   * @param generatedYamlFile
+   * @param oldString
+   * @paramnewString
+   * @throws Exception
+   */
   public static void createNewYamlFile(
       String inputYamlFile, String generatedYamlFile, String oldString, String newString)
       throws Exception {
@@ -1108,23 +1131,17 @@ public class TestUtils {
     logger.info("Done - generate the new yaml file ");
   }
 
+
+  /**
+   * copy file from source to target
+   *
+   * @param fromFile
+   * @param toFile
+   * @throws Exception
+   */
   public static void copyFile(String fromFile, String toFile) throws Exception {
     logger.info("Copying file from  " + fromFile + " to " + toFile);
-
     Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
   }
 
-  public static void dockerTagImage(String sourceImage, String targetImage) throws Exception {
-    logger.info("Tagging souceImage:  " + sourceImage + "  to " + targetImage);
-    String dockerCmd = "docker tag " + sourceImage + " " + targetImage;
-    logger.info("Executing cmd " + dockerCmd);
-    exec(dockerCmd);
-  }
-
-  public static void dockerRemoveImage(String imageName) throws Exception {
-    logger.info("Removing image:  " + imageName);
-    String dockerCmd = "docker rmi -f  " + imageName;
-    logger.info("Executing cmd " + dockerCmd);
-    exec(dockerCmd);
-  }
 }
