@@ -17,6 +17,8 @@ description: "Useful Helm operations"
   * [Debugging options](#debugging-options)
 * [Common mistakes and solutions](#common-mistakes-and-solutions)
 
+Note that the operator Helm chart is available from the GitHub chart repository, see [Alternatively, install the operator Helm chart from GitHub chart repository](../../installation/#alternatively-install-the-operator-helm-chart-from-github-chart-repository).
+
 #### Useful Helm operations
 
 Show the available operator configuration parameters and their default values:
