@@ -182,7 +182,7 @@ public class ITPodsRestart extends BaseTest {
               + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
 
      TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
-      domain.testDomainServerPodRestart(
+     domain.testDomainServerPodRestart(
           "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
     } finally {
       TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
