@@ -128,7 +128,8 @@ public class ITOperator extends BaseTest {
       domain = TestUtils.createDomain(DOMAINONPV_WDT_YAML);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
-      testWLDFScaling(operator2, domain);
+      // bug 29514540 - commenting WLDF scaling test
+      // testWLDFScaling(operator2, domain);
       // TODO: Test Apache LB
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
@@ -248,7 +249,6 @@ public class ITOperator extends BaseTest {
     logger.info("Creating Domain domain6 & verifing the domain creation");
     // create domain
     Domain domain = null;
-    boolean testCompletedSuccessfully = false;
     try {
       domain = TestUtils.createDomain(DOMAIN_ADMINONLY_YAML);
       domain.verifyDomainCreated();
