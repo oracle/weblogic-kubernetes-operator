@@ -750,7 +750,7 @@ public class Domain {
   /**
    * Get the name of the administration server in the domain
    *
-   * @return
+   * @return the name of the admin server
    */
   public String getAdminServerName() {
     return adminServerName;
@@ -759,7 +759,7 @@ public class Domain {
   /**
    * Get the namespace in which the domain is running
    *
-   * @return
+   * @return the name of the domain name space
    */
   public String getDomainNS() {
     return domainNS;
