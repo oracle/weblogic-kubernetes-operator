@@ -353,6 +353,11 @@
   </url>
   
   <url>
+    <loc>/weblogic-kubernetes-operator/faq/</loc>
+    <lastmod>2019-02-23T08:14:59-05:00</lastmod>
+  </url>
+  
+  <url>
     <loc>/weblogic-kubernetes-operator/quickstart/cleanup/</loc>
     <lastmod>2019-02-22T15:44:42-05:00</lastmod>
   </url>
@@ -375,6 +380,11 @@
   <url>
     <loc>/weblogic-kubernetes-operator/developerguide/backwards-compatibility/</loc>
     <lastmod>2019-02-23T17:26:09-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/faq/cannot-pull-image/</loc>
+    <lastmod>2019-03-23T08:08:19-04:00</lastmod>
   </url>
   
   <url>
