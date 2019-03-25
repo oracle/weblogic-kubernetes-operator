@@ -195,6 +195,7 @@ public class TestUtils {
       throw new RuntimeException(
           "FAILURE: Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
     }
+    logger.info("Command " + cmd + " returned " + result.stdout());
     return result;
   }
 

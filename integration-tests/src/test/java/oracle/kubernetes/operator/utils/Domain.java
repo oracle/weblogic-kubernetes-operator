@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,6 +56,7 @@ public class Domain {
   private String weblogicDomainStorageSize;
   private String loadBalancer = "TRAEFIK";
   private int loadBalancerWebPort = 30305;
+  private String domainHomeImageBuildPath = "";
   private String userProjectsDir = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
@@ -883,48 +885,24 @@ public class Domain {
 
   private void callCreateDomainScript(String outputDir) throws Exception {
 
-    // copy create domain py script for domain on pv case
-    if (domainMap.containsKey("createDomainPyScript")
-        && !domainMap.containsKey("domainHomeImageBase")) {
-      Files.copy(
-          new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
-              .toPath(),
-          new File(
-                  BaseTest.getResultDir()
-                      + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
-              .toPath(),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
+    // call different create domain script based on the domain type
+    String createDomainScriptCmd = prepareCmdToCallCreateDomainScript(outputDir);
 
-    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
-
-    // call different create-domain.sh based on the domain type
+    // clone docker sample from github and copy create domain py script for domain in image case
     if (domainMap.containsKey("domainHomeImageBase")) {
-
-      // clone docker sample from github and copy create domain py script for domain in image case
-      gitCloneDockerImagesSample(domainMap);
-
-      createDomainScriptCmd
-          .append(
-              "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
-          .append(BaseTest.getUsername())
-          .append(" -p ")
-          .append(BaseTest.getPassword())
-          .append(" -k -i ");
-    } else {
-      createDomainScriptCmd.append(
-          "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
+      gitCloneDockerImagesSample();
     }
-    createDomainScriptCmd.append(generatedInputYamlFile);
 
-    // skip executing yaml if configOverrides
-    if (!domainMap.containsKey("configOverrides")) {
-      createDomainScriptCmd.append(" -e ");
-    }
-    createDomainScriptCmd.append(" -o ").append(outputDir);
+    // copy create domain py script for domain on pv case
+    copyCreateDomainPy();
+
+    // change CLUSTER_TYPE to CONFIGURED in create-domain-job-template.yaml for configured cluster
+    // in domain on pv
+    // as samples only support DYNAMIC cluster or copy config cluster topology for domain in image
+    changeClusterTypeInCreateDomainJobTemplate();
 
     logger.info("Running " + createDomainScriptCmd);
-    ExecResult result = ExecCommand.exec(createDomainScriptCmd.toString(), true);
+    ExecResult result = ExecCommand.exec(createDomainScriptCmd, true);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command "
@@ -939,7 +917,7 @@ public class Domain {
 
     // write configOverride and configOverrideSecrets to domain.yaml
     if (domainMap.containsKey("configOverrides")) {
-      appendToDomainYamlAndCreate(domainMap);
+      appendToDomainYamlAndCreate();
     }
   }
 
@@ -1204,16 +1182,13 @@ public class Domain {
     domainMap.put("logHome", "/shared/logs/" + domainUid);
     if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
-      /* domainMap.put(
-      "createDomainFilesDir",
-      BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/domain-home-on-pv"); */
       domainMap.put("image", imageName + ":" + imageTag);
     }
 
     if (domainMap.containsKey("domainHomeImageBuildPath")) {
+      domainHomeImageBuildPath = ((String) domainMap.get("domainHomeImageBuildPath")).trim();
       domainMap.put(
-          "domainHomeImageBuildPath",
-          BaseTest.getResultDir() + "/" + domainMap.get("domainHomeImageBuildPath"));
+          "domainHomeImageBuildPath", BaseTest.getResultDir() + "/" + domainHomeImageBuildPath);
     }
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
@@ -1337,10 +1312,8 @@ public class Domain {
     }
   }
 
-  private void gitCloneDockerImagesSample(Map domainMap) throws Exception {
-    if (domainMap.containsKey("domainHomeImageBuildPath")
-        && !(((String) domainMap.get("domainHomeImageBuildPath")).trim().isEmpty())) {
-      String domainHomeImageBuildPath = (String) domainMap.get("domainHomeImageBuildPath");
+  private void gitCloneDockerImagesSample() throws Exception {
+    if (!domainHomeImageBuildPath.isEmpty()) {
       StringBuffer removeAndClone = new StringBuffer();
       logger.info(
           "Checking if directory "
@@ -1369,19 +1342,10 @@ public class Domain {
                 + " "
                 + result.stdout());
       }
-
-      // copy create domain py script to cloned location
-      if (domainMap.containsKey("createDomainPyScript")) {
-        Files.copy(
-            new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
-                .toPath(),
-            new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py").toPath(),
-            StandardCopyOption.REPLACE_EXISTING);
-      }
     }
   }
 
-  private void appendToDomainYamlAndCreate(Map domainMap) throws Exception {
+  private void appendToDomainYamlAndCreate() throws Exception {
     String contentToAppend =
         "  configOverrides: "
             + domainUid
@@ -1398,16 +1362,7 @@ public class Domain {
     Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
 
     String command = "kubectl create -f " + domainYaml;
-    ExecResult result = ExecCommand.exec(command);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command "
-              + command
-              + " failed, returned "
-              + result.stdout()
-              + "\n"
-              + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(command);
     logger.info("Command returned " + result.stdout().trim());
   }
 
@@ -1428,6 +1383,107 @@ public class Domain {
         return result1.stdout().trim();
       } else {
         return result2.stdout().trim();
+      }
+    }
+  }
+
+  /**
+   * copy create-domain.py domain map contains createDomainPyScript
+   *
+   * @throws IOException
+   */
+  private void copyCreateDomainPy() throws IOException {
+
+    if (domainMap.containsKey("createDomainPyScript")) {
+      if (domainMap.containsKey("domainHomeImageBase")) {
+        // copy create domain py script to cloned location for domain in image case
+        if (domainMap.containsKey("createDomainPyScript")) {
+          Files.copy(
+              new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                  .toPath(),
+              new File(domainHomeImageBuildPath + "/container-scripts/create-wls-domain.py")
+                  .toPath(),
+              StandardCopyOption.REPLACE_EXISTING);
+        }
+      } else {
+        // domain on pv case
+        Files.copy(
+            new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                .toPath(),
+            new File(
+                    BaseTest.getResultDir()
+                        + "/samples/scripts/create-weblogic-domain/domain-home-on-pv/wlst/create-domain.py")
+                .toPath(),
+            StandardCopyOption.REPLACE_EXISTING);
+      }
+    }
+  }
+
+  /**
+   * prepare the command to call create-domain.sh based on the domain type
+   *
+   * @param outputDir
+   * @return
+   * @throws Exception
+   */
+  private String prepareCmdToCallCreateDomainScript(String outputDir) throws Exception {
+
+    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
+    // call different create-domain.sh based on the domain type
+    if (domainMap.containsKey("domainHomeImageBase")) {
+
+      createDomainScriptCmd
+          .append(
+              "/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -u ")
+          .append(BaseTest.getUsername())
+          .append(" -p ")
+          .append(BaseTest.getPassword())
+          .append(" -k -i ");
+    } else {
+      createDomainScriptCmd.append(
+          "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
+    }
+    createDomainScriptCmd.append(generatedInputYamlFile);
+
+    // skip executing yaml if configOverrides
+    if (!domainMap.containsKey("configOverrides")) {
+      createDomainScriptCmd.append(" -e ");
+    }
+
+    createDomainScriptCmd.append(" -o ").append(outputDir);
+    return createDomainScriptCmd.toString();
+  }
+
+  /**
+   * change cluster type in domain template or properties to CONFIGURED for configured cluster
+   *
+   * @throws Exception
+   */
+  private void changeClusterTypeInCreateDomainJobTemplate() throws Exception {
+
+    // change CLUSTER_TYPE to CONFIGURED in create-domain-job-template.yaml for configured cluster
+    // as samples only support DYNAMIC cluster
+    if (domainMap.containsKey("clusterType")
+        && domainMap.get("clusterType").toString().equalsIgnoreCase("CONFIGURED")) {
+
+      // domain in image
+      if (domainMap.containsKey("domainHomeImageBase")
+          && domainHomeImageBuildPath.contains("wdt")) {
+        Files.copy(
+            new File(
+                    BaseTest.getProjectRoot()
+                        + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml")
+                .toPath(),
+            Paths.get(
+                BaseTest.getResultDir()
+                    + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml"),
+            StandardCopyOption.REPLACE_EXISTING);
+      } else {
+        // domain on pv
+        StringBuffer createDomainJobTemplateFile = new StringBuffer(BaseTest.getResultDir());
+        createDomainJobTemplateFile.append(
+            "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml");
+        TestUtils.exec("sed -i -e 's?DYNAMIC?CONFIGURED?g' " + createDomainJobTemplateFile);
       }
     }
   }
