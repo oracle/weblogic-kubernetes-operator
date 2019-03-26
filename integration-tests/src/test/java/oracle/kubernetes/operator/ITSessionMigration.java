@@ -150,7 +150,7 @@ public class ITSessionMigration extends BaseTest {
 
     // Restore test env
     // Wait some time for ms pod to become ready
-    Thread.sleep(30 * 1000);
+    // Thread.sleep(30 * 1000);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
     logger.info(
@@ -210,7 +210,7 @@ public class ITSessionMigration extends BaseTest {
 
     // Restore test env
     // Wait some time for ms pod to become ready
-    Thread.sleep(30 * 1000);
+    // Thread.sleep(30 * 1000);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
     logger.info("SUCCESS - " + testMethodName + ". HTTP session state is migrated!");
