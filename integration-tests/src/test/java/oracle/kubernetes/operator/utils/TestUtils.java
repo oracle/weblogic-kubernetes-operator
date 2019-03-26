@@ -60,16 +60,6 @@ public class TestUtils {
     checkCmdInLoop(cmd.toString(), "Running", podName);
   }
 
-  /** @param cmd - kubectl get pod <podname> -n namespace */
-  public static void checkPodTerminating(String podName, String domainNS) throws Exception {
-
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
-
-    // check for admin pod
-    checkCmdInLoop(cmd.toString(), "Terminating", podName);
-  }
-
   /**
    * check pod is in Terminating state
    *
@@ -1131,7 +1121,6 @@ public class TestUtils {
     logger.info("Done - generate the new yaml file ");
   }
 
-
   /**
    * copy file from source to target
    *
@@ -1143,5 +1132,4 @@ public class TestUtils {
     logger.info("Copying file from  " + fromFile + " to " + toFile);
     Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
   }
-
 }
