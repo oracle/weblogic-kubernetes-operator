@@ -358,7 +358,8 @@ public class ITOperator extends BaseTest {
       domainMap.put("configOverrides", "sitconfigcm");
       domainMap.put(
           "configOverridesFile",
-          "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig");
+          BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig");
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put("adminNodePort", new Integer("30704"));
       domainMap.put("t3ChannelPort", new Integer("30051"));

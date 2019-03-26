@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jms:weblogic-jms
+    xmlns:jms="http://xmlns.oracle.com/weblogic/weblogic-jms"
+    xmlns:fr="http://xmlns.oracle.com/weblogic/weblogic-jms-fragment"
+    xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+    <jms:uniform-distributed-topic name="UniformReplicatedTestTopic">
+        <jms:notes fr:combine-mode="add">JMS System Resource UniformReplicatedTestTopic testSystemResourcesJMSAttributeChange</jms:notes>
+        <jms:delivery-failure-params>
+            <jms:redelivery-limit fr:combine-mode="replace">20</jms:redelivery-limit>
+            <jms:expiration-policy fr:combine-mode="replace">Discard</jms:expiration-policy>
+        </jms:delivery-failure-params>
+    </jms:uniform-distributed-topic>
+</jms:weblogic-jms>
