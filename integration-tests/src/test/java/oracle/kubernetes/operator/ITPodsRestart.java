@@ -63,7 +63,7 @@ public class ITPodsRestart extends BaseTest {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
-      
+
       destroyPodsRestartdomain();
       tearDown();
 
@@ -72,7 +72,7 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-  * Modify the domain scope env property on the domain resource using kubectl apply -f domain.yaml
+   * Modify the domain scope env property on the domain resource using kubectl apply -f domain.yaml
    * Verify that all the server pods in the domain got re-started. The property tested is: env:
    * "-Dweblogic.StdoutDebugEnabled=false"--> "-Dweblogic.StdoutDebugEnabled=true"
    *
@@ -181,8 +181,8 @@ public class ITPodsRestart extends BaseTest {
               + domain.getDomainUid()
               + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
 
-     TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
-     domain.testDomainServerPodRestart(
+      TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
+      domain.testDomainServerPodRestart(
           "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
     } finally {
       TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
@@ -193,8 +193,8 @@ public class ITPodsRestart extends BaseTest {
 
   /**
    * Modify the containerSecurityContext section at ServerPod Level using kubectl apply -f
-   * domain.yaml.Verify all the pods re-started serverPod: containerSecurityContext: runAsUser: 1000
-   * fsGroup: 2000
+   * domain.yaml.Verify all the pods re-started. The property tested is: serverPod:
+   * containerSecurityContext: runAsUser: 1000 fsGroup: 2000
    *
    * @throws Exception
    */
@@ -217,8 +217,8 @@ public class ITPodsRestart extends BaseTest {
       domain.findServerPropertyChange("runAsUser: 1000", "admin-server");
       domain.findServerPropertyChange("runAsUser: 1000", "managed-server1");
     } finally {
-      // bring back the domain into previous State
-      logger.info("in the finally block to bring back the domain into previous State");
+      // bring back the domain into previous state
+      logger.info("In the finally block to bring back the domain into previous State");
       String yamlFile =
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
       TestUtils.kubectlapply(yamlFile);
@@ -230,8 +230,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Modify the podSecurityContext section at ServerPod level using kubectl apply -f domain.yaml Add
-   * Verify all pod(s) re-started podSecurityContext: runAsUser: 1000 fsGroup: 2000 The generated
+   * Modify the podSecurityContext section at ServerPod level using kubectl apply -f domain.yaml.
+   * Verify all pod(s) re-started. The property tested is: podSecurityContext: runAsUser: 1000
+   * fsGroup: 2000
    *
    * @throws Exception
    */
@@ -266,8 +267,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Add imagePullSecrets section at Domain Level using kubectl apply -f domain.yaml Verify all pods
-   * re-started. imagePullSecrets:- name: imagePullSecr value: myImagePullSecret
+   * Add imagePullSecrets section at Domain Level using kubectl apply -f domain.yaml. Verify all pods
+   * re-started. The property tested is: imagePullSecrets:- name: imagePullSecr value:
+   * myImagePullSecret
    *
    * @throws Exception
    */
@@ -290,7 +292,7 @@ public class ITPodsRestart extends BaseTest {
       domain.findServerPropertyChange("myImagePullSecret", "admin-server");
       domain.findServerPropertyChange("myImagePullSecret", "managed-server1");
     } finally {
-      // bring back the domain into previous State
+      // bring back the domain into previous state
       String yamlFile =
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
       TestUtils.kubectlapply(yamlFile);
@@ -302,8 +304,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Modify/Add resources at ServerPod level using kubectl apply -f domain.yaml Verify all pods
-   * re-started. serverPod: resources: limits: cpu: "1" requests: cpu: "0.5" args: - -cpus - "2"
+   * Modify/Add resources at ServerPod level using kubectl apply -f domain.yaml. Verify all pods
+   * re-started. The property tested is:serverPod: resources: limits: cpu: "1" requests: cpu: "0.5"
+   * args: - -cpus - "2"
    *
    * @throws Exception
    */
@@ -325,7 +328,7 @@ public class ITPodsRestart extends BaseTest {
       domain.findServerPropertyChange("cpu: 500m", "admin-server");
       domain.findServerPropertyChange("cpu: 500m", "managed-server1");
     } finally {
-      // bring back the domain into previous State
+      // bring back the domain into previous state
       String yamlFile =
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
       TestUtils.kubectlapply(yamlFile);
@@ -338,7 +341,7 @@ public class ITPodsRestart extends BaseTest {
 
   /**
    * Modify the annotations at ServerPod level using kubectl apply -f domain.yaml. Verify all po
-   * re-started. annotations: custom: "DATETIME"
+   * re-started. The property tested is: annotations: "TSTAMP" --> "DATETIME"
    *
    * @throws Exception
    */
@@ -360,18 +363,12 @@ public class ITPodsRestart extends BaseTest {
       domain.testDomainServerPodRestart(domainYaml);
 
     } finally {
-      // bring back the domain into previous State
+      // bring back the domain into previous state
       String yamlFile =
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
       TestUtils.kubectlapply(yamlFile);
       domain.verifyAdminServerRestarted();
       domain.verifyManagedServersRestarted();
-
-      TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
-      domain.testDomainServerPodRestart(
-          "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
-    } finally {
-      TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
     }
 
     logger.info("SUCCESS - " + testMethodName);
