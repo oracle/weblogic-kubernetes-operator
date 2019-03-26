@@ -1,0 +1,54 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: @DOMAIN_UID@-mysql-secret
+  labels:
+    weblogic.domainUID: @DOMAIN_UID@
+data:
+  # echo -n "root" | base64
+  root-user: cm9vdA==
+  # echo -n "root123" | base64
+  root-password: cm9vdDEyMw==
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    weblogic.domainUID: @DOMAIN_UID@
+    app: @DOMAIN_UID@-mysql
+  name: @DOMAIN_UID@-mysql
+  namespace: @NAMESPACE@
+spec:
+  terminationGracePeriodSeconds: 5
+  containers:
+  - image: mysql:5.6
+    name: mysql
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: @DOMAIN_UID@-mysql-secret
+          key: root-password
+    ports:
+    - containerPort: 3306
+      name: mysql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    weblogic.domainUID: @DOMAIN_UID@
+  name: @DOMAIN_UID@-mysql
+  namespace: @NAMESPACE@
+spec:
+  type: NodePort
+  ports:
+  - port: 3306
+    protocol: TCP
+    targetPort: 3306
+    nodePort: 31306
+  selector:
+    app: @DOMAIN_UID@-mysql
