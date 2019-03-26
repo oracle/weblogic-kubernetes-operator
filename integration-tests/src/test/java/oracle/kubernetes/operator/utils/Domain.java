@@ -1013,7 +1013,7 @@ public class Domain {
       gitCloneDockerImagesSample();
     }
 
-    // copy create domain py script for domain on pv case
+    // copy create domain py script if domain map contains createDomainPyScript
     copyCreateDomainPy();
 
     // change CLUSTER_TYPE to CONFIGURED in create-domain-job-template.yaml for configured cluster
