@@ -192,7 +192,7 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Modify the containerSecurityContext section at ServerPod Level using kubectl apply -f
+   * Modify/Add the containerSecurityContext section at ServerPod Level using kubectl apply -f
    * domain.yaml.Verify all the pods re-started. The property tested is: serverPod:
    * containerSecurityContext: runAsUser: 1000 fsGroup: 2000
    *
@@ -225,7 +225,7 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Modify the podSecurityContext section at ServerPod level using kubectl apply -f domain.yaml.
+   * Modify/Add the podSecurityContext section at ServerPod level using kubectl apply -f domain.yaml.
    * Verify all pod(s) re-started. The property tested is: podSecurityContext: runAsUser: 1000
    * fsGroup: 2000
    *
@@ -258,7 +258,7 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Add imagePullSecrets section at Domain Level using kubectl apply -f domain.yaml. Verify all
+   * Modify/Add imagePullSecrets section at Domain Level using kubectl apply -f domain.yaml. Verify all
    * pods re-started. The property tested is: imagePullSecrets:- name: imagePullSecr value:
    * myImagePullSecret
    *
