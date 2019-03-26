@@ -52,8 +52,6 @@ public class Domain {
   private String clusterName;
   private String clusterType;
   private String serverStartPolicy;
-  private String weblogicDomainStorageReclaimPolicy;
-  private String weblogicDomainStorageSize;
   private String loadBalancer = "TRAEFIK";
   private int loadBalancerWebPort = 30305;
   private String domainHomeImageBuildPath = "";
@@ -61,8 +59,6 @@ public class Domain {
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
 
-  private String createDomainScript = "";
-  private String inputTemplateFile = "";
   private String generatedInputYamlFile;
 
   private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
@@ -119,9 +115,7 @@ public class Domain {
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
 
-    if (domainMap.get("serverStartPolicy") == null
-        || (domainMap.get("serverStartPolicy") != null
-            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         logger.info(
@@ -155,9 +149,8 @@ public class Domain {
               + "-external) is created");
       TestUtils.checkServiceCreated(domainUid + "-" + adminServerName + "-external", domainNS);
     }
-    if (domainMap.get("serverStartPolicy") == null
-        || (domainMap.get("serverStartPolicy") != null
-            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
+
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server services
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         logger.info(
@@ -181,18 +174,15 @@ public class Domain {
     // check admin pod
     logger.info("Checking if admin server is Running");
     TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
-    if (domainMap.get("serverStartPolicy") == null
-        || (domainMap.get("serverStartPolicy") != null
-            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
 
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         logger.info("Checking if managed server (" + managedServerNameBase + i + ") is Running");
         TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
       }
-    }
-    // check no additional servers are started
-    if (domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY")) {
+    } else {
+      // check no additional servers are started
       initialManagedServerReplicas = 0;
     }
     String additionalManagedServer =
@@ -824,6 +814,12 @@ public class Domain {
     }
   }
 
+  /**
+   * Create a map with attributes required to create PV and create PV dir by calling
+   * PersistentVolume
+   *
+   * @throws Exception
+   */
   private void createPV() throws Exception {
 
     Yaml yaml = new Yaml();
@@ -850,10 +846,6 @@ public class Domain {
       pvMap.put("weblogicDomainStorageSize", domainMap.get("weblogicDomainStorageSize"));
     }
     pvMap.put("namespace", domainNS);
-
-    weblogicDomainStorageReclaimPolicy = (String) pvMap.get("weblogicDomainStorageReclaimPolicy");
-    weblogicDomainStorageSize = (String) pvMap.get("weblogicDomainStorageSize");
-
     pvMap.put("weblogicDomainStorageNFSServer", TestUtils.getHostName());
 
     // set pv path
@@ -946,9 +938,7 @@ public class Domain {
    * @throws Exception
    */
   public void verifyManagedServersRestarted() throws Exception {
-    if (domainMap.get("serverStartPolicy") == null
-        || (domainMap.get("serverStartPolicy") != null
-            && !domainMap.get("serverStartPolicy").toString().trim().equals("ADMIN_ONLY"))) {
+    if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
         logger.info(
@@ -972,6 +962,11 @@ public class Domain {
     }
   }
 
+  /**
+   * create secret
+   *
+   * @throws Exception
+   */
   private void createSecret() throws Exception {
     Secret secret =
         new Secret(
@@ -996,6 +991,11 @@ public class Domain {
     }
   }
 
+  /**
+   * Generate domain values yaml using the doamin map
+   *
+   * @throws Exception
+   */
   private void generateInputYaml() throws Exception {
     Path parentDir =
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-domains/" + domainUid));
@@ -1003,6 +1003,13 @@ public class Domain {
     TestUtils.createInputFile(domainMap, generatedInputYamlFile);
   }
 
+  /**
+   * copy create-domain.py if domain Map contains, git clone docker-images for domain in image and
+   * call create-domain.sh script based on the domain type. Append configOverrides to domain.yaml.
+   *
+   * @param outputDir
+   * @throws Exception
+   */
   private void callCreateDomainScript(String outputDir) throws Exception {
 
     // call different create domain script based on the domain type
@@ -1233,6 +1240,13 @@ public class Domain {
     }
   }
 
+  /**
+   * Reads the create-domain-inputs.yaml from samples and overrides with attribute in input domain
+   * map. Initializes the variables for the attributes in the map to be used later.
+   *
+   * @param inputDomainMap
+   * @throws Exception
+   */
   private void initialize(Map<String, Object> inputDomainMap) throws Exception {
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
@@ -1281,8 +1295,8 @@ public class Domain {
     exposeAdminNodePort = ((Boolean) domainMap.get("exposeAdminNodePort")).booleanValue();
     t3ChannelPort = ((Integer) domainMap.get("t3ChannelPort")).intValue();
     clusterName = (String) domainMap.get("clusterName");
-    clusterType = (String) domainMap.get("clusterType");
-    serverStartPolicy = (String) domainMap.get("serverStartPolicy");
+    clusterType = (String) domainMap.getOrDefault("clusterType", "DYNAMIC");
+    serverStartPolicy = ((String) domainMap.get("serverStartPolicy")).trim();
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
@@ -1329,58 +1343,7 @@ public class Domain {
     domainMap.values().removeIf(Objects::isNull);
 
     // create config map and secret for custom sit config
-    if ((domainMap.get("configOverrides") != null)
-        && (domainMap.get("configOverridesFile") != null)) {
-      // write hostname in config file for public address
-
-      String configOverridesFile = domainMap.get("configOverridesFile").toString();
-
-      String cmd =
-          "kubectl -n "
-              + domainNS
-              + " create cm "
-              + domainUid
-              + "-"
-              + domainMap.get("configOverrides")
-              + " --from-file "
-              + configOverridesFile;
-      ExecResult result = ExecCommand.exec(cmd);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-      }
-      cmd =
-          "kubectl -n "
-              + domainNS
-              + " label cm "
-              + domainUid
-              + "-"
-              + domainMap.get("configOverrides")
-              + " weblogic.domainUID="
-              + domainUid;
-      result = ExecCommand.exec(cmd);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-      }
-      // create secret for custom sit config t3 public address
-      // create datasource secret for user and password
-      cmd =
-          "kubectl -n "
-              + domainNS
-              + " create secret generic "
-              + domainUid
-              + "-test-secrets"
-              + " --from-literal=hostname="
-              + TestUtils.getHostName()
-              + " --from-literal=dbusername=root"
-              + " --from-literal=dbpassword=root123";
-      result = ExecCommand.exec(cmd);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-      }
-    }
+    createConfigMapAndSecretForSitConfig();
   }
 
   private String getNodeHost() throws Exception {
@@ -1433,6 +1396,11 @@ public class Domain {
     }
   }
 
+  /**
+   * clone docker-images sample
+   *
+   * @throws Exception
+   */
   private void gitCloneDockerImagesSample() throws Exception {
     if (!domainHomeImageBuildPath.isEmpty()) {
       StringBuffer removeAndClone = new StringBuffer();
@@ -1466,6 +1434,11 @@ public class Domain {
     }
   }
 
+  /**
+   * append configOverrides to domain.yaml
+   *
+   * @throws Exception
+   */
   private void appendToDomainYamlAndCreate() throws Exception {
     String contentToAppend =
         "  configOverrides: "
@@ -1584,8 +1557,7 @@ public class Domain {
 
     // change CLUSTER_TYPE to CONFIGURED in create-domain-job-template.yaml for configured cluster
     // as samples only support DYNAMIC cluster
-    if (domainMap.containsKey("clusterType")
-        && domainMap.get("clusterType").toString().equalsIgnoreCase("CONFIGURED")) {
+    if (clusterType.equalsIgnoreCase("CONFIGURED")) {
 
       // domain in image
       if (domainMap.containsKey("domainHomeImageBase")
@@ -1602,6 +1574,58 @@ public class Domain {
             "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml");
         TestUtils.exec("sed -i -e 's?DYNAMIC?CONFIGURED?g' " + createDomainJobTemplateFile);
       }
+    }
+  }
+
+  /**
+   * create config map and secret for custom situational configuration
+   *
+   * @throws Exception
+   */
+  private void createConfigMapAndSecretForSitConfig() throws Exception {
+
+    if ((domainMap.get("configOverrides") != null)
+        && (domainMap.get("configOverridesFile") != null)) {
+      // write hostname in config file for public address
+      String configOverridesFile = domainMap.get("configOverridesFile").toString();
+
+      // create configmap
+      String cmd =
+          "kubectl -n "
+              + domainNS
+              + " create cm "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + " --from-file "
+              + configOverridesFile;
+      TestUtils.exec(cmd);
+
+      // create label for configmap
+      cmd =
+          "kubectl -n "
+              + domainNS
+              + " label cm "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + " weblogic.domainUID="
+              + domainUid;
+      TestUtils.exec(cmd);
+
+      // create secret for custom sit config t3 public address
+      // create datasource secret for user and password
+      cmd =
+          "kubectl -n "
+              + domainNS
+              + " create secret generic "
+              + domainUid
+              + "-test-secrets"
+              + " --from-literal=hostname="
+              + TestUtils.getHostName()
+              + " --from-literal=dbusername=root"
+              + " --from-literal=dbpassword=root123";
+      TestUtils.exec(cmd);
     }
   }
 }
