@@ -1597,17 +1597,18 @@ public class Domain {
   }
 
   /**
-   * Run the shell script to build .war file and deploy the App in the admin pod
+   * Run the shell script to build WAR, EAR or JAR file and deploy the App in the admin pod
    *
    * @param webappName - Web App Name to be deployed
-   * @param scriptName - a shell script to build .war file and deploy the App in the admin pod
+   * @param scriptName - a shell script to build WAR, EAR or JAR file and deploy the App in the
+   *     admin pod
    * @param archiveExt - archive extention
    * @param infoDirNames - archive information dir location
    * @param username - weblogic user name
    * @param password - weblogc password
    * @throws Exception
    */
-  private void callShellScriptToBuildWarDeployAppInPod(
+  private void callShellScriptToBuildDeployAppInPod(
       String webappName,
       String scriptName,
       String archiveExt,
@@ -1678,10 +1679,11 @@ public class Domain {
 
   /**
    * Create dir to save Web App files Copy the shell script file and all App files over to the admin
-   * pod Run the shell script to build .war file and deploy the App in the admin pod
+   * pod Run the shell script to build WAR, EAR or JAR file and deploy the App in the admin pod
    *
    * @param appName - Java App name to be deployed
-   * @param scriptName - a shell script to build .war file and deploy the App in the admin pod
+   * @param scriptName - a shell script to build WAR, EAR or JAR file and deploy the App in the
+   *     admin pod
    * @param username - weblogic user name
    * @param password - weblogc password
    * @param args - by default, a WAR file is created for a Web App and a EAR file is created for EJB
@@ -1698,9 +1700,12 @@ public class Domain {
     String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
     String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
 
+    // Default velues to build archive file
     final String initInfoDirName = "WEB-INF";
     String archiveExt = "war";
     String infoDirName = initInfoDirName;
+
+    // Get archive info dir name
     File appFiles = new File(appLocationOnHost);
 
     String[] subDirArr =
@@ -1714,6 +1719,7 @@ public class Domain {
 
     List<String> subDirList = Arrays.asList(subDirArr);
 
+    // Check archive file type
     if (!subDirList.contains(infoDirName)) {
       infoDirName = "META-INF";
       // Create .ear file or .jar file for EJB
@@ -1722,10 +1728,9 @@ public class Domain {
 
     logger.info("Build and deploy: " + appName + "." + archiveExt + " in the admin pod");
 
+    // Create app dir in the admin pod
     StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
     mkdirCmd.append(appLocationInPod).append("/" + infoDirName + "'");
-
-    // Create app dir in the pod
     TestUtils.kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
 
     // Copy shell script to the pod
@@ -1734,8 +1739,8 @@ public class Domain {
     // Copy all App files to the admin pod
     TestUtils.copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
 
-    // Run the script to build .war file and deploy the App in the pod
-    callShellScriptToBuildWarDeployAppInPod(
+    // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
+    callShellScriptToBuildDeployAppInPod(
         appName, scriptName, archiveExt, infoDirName, username, password);
   }
 }
