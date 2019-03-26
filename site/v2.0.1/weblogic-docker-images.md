@@ -81,7 +81,7 @@ use the "Product or Family (Advanced)" option, then choose "Oracle WebLogic Serv
 as the product, and set the release to "Oracle WebLogic Server 12.2.1.3.181016" as
 shown in the image below:
 
-![patch download page](images/patch-download.png)
+![patch download page](../images/patch-download.png)
 
 
 The `Dockerfile` in that sample lists the base image as follows:
