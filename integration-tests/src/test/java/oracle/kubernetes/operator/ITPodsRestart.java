@@ -218,12 +218,7 @@ public class ITPodsRestart extends BaseTest {
       domain.findServerPropertyChange("runAsUser: 1000", "managed-server1");
     } finally {
       // bring back the domain into previous state
-      logger.info("In the finally block to bring back the domain into previous State");
-      String yamlFile =
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
-      TestUtils.kubectlapply(yamlFile);
-      domain.verifyAdminServerRestarted();
-      domain.verifyManagedServersRestarted();
+      restoreDomain();
     }
 
     logger.info("SUCCESS - " + testMethodName);
@@ -256,19 +251,15 @@ public class ITPodsRestart extends BaseTest {
       domain.findServerPropertyChange("fsGroup: 2000", "managed-server1");
     } finally {
       // bring back the domain into previous State
-      String yamlFile =
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
-      TestUtils.kubectlapply(yamlFile);
-      domain.verifyAdminServerRestarted();
-      domain.verifyManagedServersRestarted();
+      restoreDomain();
     }
 
     logger.info("SUCCESS - " + testMethodName);
   }
 
   /**
-   * Add imagePullSecrets section at Domain Level using kubectl apply -f domain.yaml. Verify all pods
-   * re-started. The property tested is: imagePullSecrets:- name: imagePullSecr value:
+   * Add imagePullSecrets section at Domain Level using kubectl apply -f domain.yaml. Verify all
+   * pods re-started. The property tested is: imagePullSecrets:- name: imagePullSecr value:
    * myImagePullSecret
    *
    * @throws Exception
@@ -293,11 +284,7 @@ public class ITPodsRestart extends BaseTest {
       domain.findServerPropertyChange("myImagePullSecret", "managed-server1");
     } finally {
       // bring back the domain into previous state
-      String yamlFile =
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
-      TestUtils.kubectlapply(yamlFile);
-      domain.verifyAdminServerRestarted();
-      domain.verifyManagedServersRestarted();
+      restoreDomain();
     }
 
     logger.info("SUCCESS - " + testMethodName);
@@ -329,18 +316,14 @@ public class ITPodsRestart extends BaseTest {
       domain.findServerPropertyChange("cpu: 500m", "managed-server1");
     } finally {
       // bring back the domain into previous state
-      String yamlFile =
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
-      TestUtils.kubectlapply(yamlFile);
-      domain.verifyAdminServerRestarted();
-      domain.verifyManagedServersRestarted();
+      restoreDomain();
     }
 
     logger.info("SUCCESS - " + testMethodName);
   }
 
   /**
-   * Modify the annotations at ServerPod level using kubectl apply -f domain.yaml. Verify all po
+   * Modify the annotations at ServerPod level using kubectl apply -f domain.yaml. Verify all pods
    * re-started. The property tested is: annotations: "TSTAMP" --> "DATETIME"
    *
    * @throws Exception
@@ -364,11 +347,7 @@ public class ITPodsRestart extends BaseTest {
 
     } finally {
       // bring back the domain into previous state
-      String yamlFile =
-          BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
-      TestUtils.kubectlapply(yamlFile);
-      domain.verifyAdminServerRestarted();
-      domain.verifyManagedServersRestarted();
+      restoreDomain();
     }
 
     logger.info("SUCCESS - " + testMethodName);
@@ -393,5 +372,13 @@ public class ITPodsRestart extends BaseTest {
     if (domain != null) {
       domain.destroy();
     }
+  }
+
+  private static void restoreDomain() throws Exception {
+    String yamlFile =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    TestUtils.kubectlapply(yamlFile);
+    domain.verifyAdminServerRestarted();
+    domain.verifyManagedServersRestarted();
   }
 }
