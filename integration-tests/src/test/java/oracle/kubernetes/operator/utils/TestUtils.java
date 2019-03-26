@@ -563,7 +563,9 @@ public class TestUtils {
   }
 
   public static String getAccessToken(Operator operator) throws Exception {
-    StringBuffer secretCmd = new StringBuffer("kubectl get serviceaccount weblogic-operator ");
+    StringBuffer secretCmd =
+        new StringBuffer(
+            "kubectl get serviceaccount " + operator.getOperatorMap().get("serviceAccount"));
     secretCmd
         .append(" -n ")
         .append(operator.getOperatorNamespace())
@@ -850,6 +852,21 @@ public class TestUtils {
       operatorMap.put("externalRestEnabled", restEnabled);
     }
     return operatorMap;
+  }
+
+  public static Map<String, Object> createDomainMap(int number) {
+    Map<String, Object> domainMap = new HashMap<>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add("test" + number);
+    domainMap.put("domainUID", "test" + number);
+    domainMap.put("namespace", "test" + number);
+    domainMap.put("configuredManagedServerCount", 4);
+    domainMap.put("initialManagedServerReplicas", 2);
+    domainMap.put("exposeAdminT3Channel", true);
+    domainMap.put("exposeAdminNodePort", true);
+    domainMap.put("adminNodePort", 30700 + number);
+    domainMap.put("t3ChannelPort", 30000 + number);
+    return domainMap;
   }
 
   public static String callShellScriptByExecToPod(

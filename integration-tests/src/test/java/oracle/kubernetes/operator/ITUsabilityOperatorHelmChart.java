@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Map;
+import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
@@ -28,6 +29,8 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
 
   private static int number = 3;
   String oprelease = "op" + number;
+  private int waitTime = 5;
+  private int maxIterations = 60;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -560,14 +563,6 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
-  private void upgradeOperator(Operator operator, String upgradeSet) throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    operator.callHelmUpgrade(upgradeSet);
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
   /**
    * Helm installs the operator with default target domains namespaces
    *
@@ -595,5 +590,155 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       }
     }
     logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Create operator and verify its deployed successfully. Create domain1 and verify domain is
+   * started. Call helm upgrade to add domainnew to manage, verify both domains are managed by
+   * operator Call helm upgrade to remove first domain from operator target domains, verify it can't
+   * not be managed by operator anymore
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testAddRemoveDomainUpdateOperatorHC() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    logger.info("Creating Operator & waiting for the script to complete execution");
+    // create operator
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
+    Operator operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
+    operator.callHelmInstall();
+    Domain domain = null;
+    Domain domainnew = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      logger.info("kubectl create namespace test" + (number + 1));
+      ExecCommand.exec("kubectl create namespace test" + (number + 1));
+      domain = createVerifyDomain(number, operator);
+      ArrayList<String> targetDomainsNS =
+          (ArrayList<String>) (operator.getOperatorMap().get("domainNamespaces"));
+      targetDomainsNS.add("test" + (number + 1));
+      upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
+      domainnew = createVerifyDomain(number + 1, operator);
+      logger.info("verify that old domain is managed by operator after upgrade");
+      verifyOperatorDomainManagement(operator, domain, true);
+      logger.info("Upgrade to remove first domain");
+      targetDomainsNS.remove("test" + (number));
+      upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
+      logger.info("verify that old domain is not managed by operator");
+      verifyOperatorDomainManagement(operator, domain, false);
+      verifyOperatorDomainManagement(operator, domainnew, true);
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+      if (domainnew != null) {
+        domainnew.destroy();
+      }
+      if (operator != null) {
+        operator.destroy();
+      }
+      number++;
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Create operator and verify its deployed successfully. Create domain1 and verify domain is
+   * started. Delete operator and make sure domain1 is still functional
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testDeleteOperatorButNotDomain() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    logger.info("Creating Operator & waiting for the script to complete execution");
+    // create operator
+    Operator operator = null;
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
+      operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
+      operator.callHelmInstall();
+      domain = createVerifyDomain(number, operator);
+      logger.info("Deleting operator to check that domain functionality is not effected");
+      operator.destroy();
+      operator = null;
+      domain.testWlsLivenessProbe();
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null) {
+        TestUtils.deleteWeblogicDomainResources(domain.getDomainUid());
+      }
+      if (operator != null) {
+        operator.destroy();
+      }
+      number++;
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  private void verifyOperatorDomainManagement(
+      Operator operator, Domain domain, boolean isAccessible) throws Exception {
+    for (int i = 0; i < maxIterations; i++) {
+      try {
+        operator.verifyDomainExists(domain.getDomainUid());
+        if (!isAccessible) {
+          throw new RuntimeException("FAILURE: Operator still able to manage old namespace ");
+        } else {
+          break;
+        }
+      } catch (Exception ex) {
+        if (!isAccessible) {
+          if (!ex.getMessage()
+              .contains(
+                  "Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number)) {
+          } else {
+            break;
+          }
+        }
+      }
+      if (i == maxIterations - 1) {
+        String errorMsg = "FAILURE: Operator can't access the domain " + domain.getDomainUid();
+        if (!isAccessible) {
+          errorMsg = "FAILURE: Operator still can access the domain " + domain.getDomainUid();
+        }
+        throw new RuntimeException(errorMsg);
+      }
+      logger.info("iteration " + i + " of " + maxIterations);
+      Thread.sleep(waitTime * 1000);
+    }
+  }
+
+  private Domain createVerifyDomain(int number, Operator operator) throws Exception {
+    logger.info("create domain with UID : test" + number);
+    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
+    domain.verifyDomainCreated();
+    testAdminT3Channel(domain);
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    logger.info("verify that domain is managed by operator");
+    operator.verifyDomainExists(domain.getDomainUid());
+    return domain;
+  }
+
+  private void upgradeOperatorDomainNamespaces(
+      Operator operator, ArrayList<String> targetNamespaces) throws Exception {
+    logger.info("update operator with new target domain");
+    String upgradeSet =
+        "domainNamespaces="
+            + targetNamespaces
+                .toString()
+                .replaceAll("\\[", "{")
+                .replaceAll("\\]", "}")
+                .replaceAll(" ", "");
+    logger.info("update operator with new target domain " + upgradeSet);
+    operator.callHelmUpgrade(upgradeSet);
+    operator.getOperatorMap().replace("domainNamespaces", targetNamespaces);
   }
 }
