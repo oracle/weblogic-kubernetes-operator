@@ -899,7 +899,6 @@ public class Domain {
       // verify the servers in the domain are being restarted in a sequence
       verifyAdminServerRestarted();
       verifyManagedServersRestarted();
-
       // make domain.yaml include the new changed property
       TestUtils.copyFile(
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
@@ -908,7 +907,14 @@ public class Domain {
     logger.info("Done - testDomainServerPodRestart");
   }
 
-public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
+  /**
+   * Get runtime server yaml file and verify the changed property is that file
+   *
+   * @param changedProperty
+   * @param serverName
+   * @throws Exception
+   */
+  public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
     logger.info("Inside findServerPropertyChange");
     // get runtime server pod yaml file
     String outDir = BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/";
@@ -953,13 +959,20 @@ public void findServerPropertyChange(String changedProperty, String serverName) 
     logger.info("Done - findServerPropertyChange");
   }
 
+  /**
+   * verify domain server pods get restarted after the property change by kubectl apply -f
+   * newDomainYamlfileWithChangedProperty
+   *
+   * @param fileNameWithChangedProperty
+   * @throws Exception
+   */
   public void testDomainServerPodRestart(String fileNameWithChangedProperty) throws Exception {
     logger.info("Inside testDomainServerPodRestart domainYamlWithChangedProperty");
 
     // kubectl apply the supplied domain yaml file under resources dir with changed property
     String yamlDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
     TestUtils.kubectlapply(yamlDir + fileNameWithChangedProperty);
-    
+
     // verify the servers in the domain are being restarted in a sequence
     verifyAdminServerRestarted();
     verifyManagedServersRestarted();
@@ -1058,12 +1071,7 @@ public void findServerPropertyChange(String changedProperty, String serverName) 
           StandardCopyOption.REPLACE_EXISTING);
     }
 
-    StringBuffer createDomainScriptCmd = new StringBuffer("export JAVA_HOME=");
-
-    createDomainScriptCmd
-        .append(System.getenv("JAVA_HOME"))
-        .append(" && export PATH=$JAVA_HOME/bin:$PATH && ")
-        .append(BaseTest.getResultDir());
+    StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
 
     // call different create-domain.sh based on the domain type
     if (domainMap.containsKey("domainHomeImageBase")) {
