@@ -95,6 +95,11 @@ Configuration Overrides Usecases
 | JMS Resource Override | Override UniformDistributedTopic Delivery Failure Parameters, `redelivery-limit` and `expiration-policy`. The JMX test client verifies the serverConfig MBean tree for the expected delivery failure parameters, `redelivery-limit` and `expiration-policy`. |
 | WLDF Resource Override | Override `wldf-instrumentation-monitor` and `harvester` in a diagnostics module. The test client verifies the new instrumentation monitors/harvesters set by getting the WLDF resource from serverConfig tree with expected values.  |
 
+| Session Migration | Use Case |
+| --- | --- |
+| Primary Server Repick | A backup server becomes the primary server when a primary server fails|
+| HTTP Session Migration | Verify in-memory HTTP session State replication |
+
 # Directory Configuration and Structure
  
 Directory structure of source code:
