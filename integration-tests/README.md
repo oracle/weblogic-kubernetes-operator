@@ -77,15 +77,25 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Two Operators using same External Https Port | create chart using same https rest port as already running first operator, verify that deployment fails with expected error |
 | Two Operators using same target domains namespace | create chart using target domains namespace as already running first operator, verify that deployment fails with expected error |
 | Operator Helm Chart using not preexisted target domains namespace | create chart using not preexisted target domains namespace as already running first operator, verify that deployment fails with expected error |
+| Operator Helm Chart add/delete target domain namespaces (domain1, domain2) | create operator helm chart managing domain1, use upgrade to add domain2. Verify that operator is able to manage added domain (domain2). Use helm upgrade to remove domain1, verify that operator not able to manage anymore the deleted one(domain1) |
+| Operator Helm Chart delete operator helm chart, leave domain running | create operator helm chart and start domain1, delete operator helm chart, verify domain1 is still functional |
  
 | Server Pods Restarted by modifying properties on the domain resource| Use Case |
 | --- | --- |
-| Server pods restarted by changing Env property | Verify admin and managed server pods being restarted by property change: "-Dweblogic.StdoutDebugEnabled=false" --> "-Dweblogic.StdoutDebugEnabled=true" |
-| Server pods restarted by changing image | Verify admin and managed server pods being restarted by property change: image: "store/oracle/weblogic:12.2.1.3" --> image: "store/oracle/weblogic:duplicate" |
+| Server pods restarted by changing Env property | Verify admin and managed server pods being restarted by property change: `-Dweblogic.StdoutDebugEnabled=false` --> `-Dweblogic.StdoutDebugEnabled=true` |
+| Server pods restarted by changing image | Verify admin and managed server pods being restarted by property change: image: `store/oracle/weblogic:12.2.1.3` --> image: `store/oracle/weblogic:duplicate` |
 | Server pods restarted by changing imagePullPolicy | Verify  admin and managed server pods being restarted by property change: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never |
 | Server pods restarted by changing includeServerOutInPodLog | Verify admin and managed server pods being restarted by property change: includeServerOutInPodLog: true --> includeServerOutInPodLog: false |
 | Server pods restarted by changing logHomeEnable | Verify admin and managed server pods being restarted by property change: logHomeEnabled: true --> logHomeEnabled: false |
 
+Configuration Overrides Usecases
+
+| Override | Usecase |
+| --- | --- |
+| Configuration override | Override the administration server properties `connect-timeout`, `max-message-size`, `restart-max`, `debug-server-life-cycle` and `debug-jmx-core` debug flags. Also T3Channel public address using Kubernetes secret. The override is verified by JMX client connecting to the serverConfig MBean tree and the values are checked against the expected values. The test client connects to the overridden T3 public address and port to connect to the MBean servers |
+| JDBC Resource Override | Override JDBC connection pool properties; `initialCapacity`, `maxCapacity`, `test-connections-on-reserve`, `connection-harvest-max-count`, `inactive-connection-timeout-seconds`. Override the JDBC driver parameters like data source `URL`, `DB` `user` and `password` using kubernetes secret. The test verifies the overridden functionality datasource `URL`, `user`, `password` by getting the data source connection and running DDL statement it is connected to. |
+| JMS Resource Override | Override UniformDistributedTopic Delivery Failure Parameters, `redelivery-limit` and `expiration-policy`. The JMX test client verifies the serverConfig MBean tree for the expected delivery failure parameters, `redelivery-limit` and `expiration-policy`. |
+| WLDF Resource Override | Override `wldf-instrumentation-monitor` and `harvester` in a diagnostics module. The test client verifies the new instrumentation monitors/harvesters set by getting the WLDF resource from serverConfig tree with expected values.  |
 
 
 # Directory Configuration and Structure
@@ -96,7 +106,7 @@ A new module "integration-tests" is added to the Maven project `weblogic-kuberne
 
 `weblogic-kubernetes-operator/integration-tests` - location of module pom.xml  
 `weblogic-kubernetes-operator/integration-tests/src/test/java` - integration test(JUnit) classes and utility classes  
-`weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files (see Configuration Files section) and other scripts.
+`weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files (see Configuration Files section) and other scripts
 
 Directory structure used for the test run:
 
