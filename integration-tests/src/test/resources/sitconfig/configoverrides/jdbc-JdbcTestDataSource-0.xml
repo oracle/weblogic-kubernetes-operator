@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jdbc:jdbc-data-source
+    xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
+    xmlns:jdbcf="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
+    xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+    <jdbc:name>JdbcTestDataSource-0</jdbc:name>
+    <jdbc:jdbc-connection-pool-params>
+        <jdbc:initial-capacity jdbcf:combine-mode="replace">2</jdbc:initial-capacity>
+        <jdbc:max-capacity jdbcf:combine-mode="replace">12</jdbc:max-capacity>
+        <jdbc:test-connections-on-reserve jdbcf:combine-mode="add">true</jdbc:test-connections-on-reserve>
+        <jdbc:connection-harvest-max-count jdbcf:combine-mode="add">7</jdbc:connection-harvest-max-count>
+        <jdbc:inactive-connection-timeout-seconds jdbcf:combine-mode="add">120</jdbc:inactive-connection-timeout-seconds>
+    </jdbc:jdbc-connection-pool-params>
+    <jdbc:jdbc-driver-params>
+        <jdbc:url jdbcf:combine-mode="replace">JDBC_URL</jdbc:url>
+        <jdbc:driver-name>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</jdbc:driver-name>
+        <jdbc:properties>
+            <jdbc:property>
+                <jdbc:name>user</jdbc:name>
+                <jdbc:value jdbcf:combine-mode="replace">${secret:customsitconfigdomain-test-secrets.dbusername}</jdbc:value>
+            </jdbc:property>
+        </jdbc:properties>
+        <jdbc:password-encrypted jdbcf:combine-mode="replace">${secret:customsitconfigdomain-test-secrets.dbpassword:encrypt}</jdbc:password-encrypted>
+    </jdbc:jdbc-driver-params>
+</jdbc:jdbc-data-source>
