@@ -1571,15 +1571,11 @@ public class Domain {
       // domain in image
       if (domainMap.containsKey("domainHomeImageBase")
           && domainHomeImageBuildPath.contains("wdt")) {
-        Files.copy(
-            new File(
-                    BaseTest.getProjectRoot()
-                        + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml")
-                .toPath(),
-            Paths.get(
-                BaseTest.getResultDir()
-                    + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml"),
-            StandardCopyOption.REPLACE_EXISTING);
+        TestUtils.copyFile(
+            BaseTest.getProjectRoot()
+                + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml",
+            BaseTest.getResultDir()
+                + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
       } else {
         // domain on pv
         StringBuffer createDomainJobTemplateFile = new StringBuffer(BaseTest.getResultDir());
