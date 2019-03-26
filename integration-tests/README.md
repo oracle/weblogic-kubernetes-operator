@@ -16,6 +16,7 @@ Wercker runs only Quick test use cases, Jenkins runs both Quick and Full test us
 
 Use Cases covered in integration tests for the operator is available [here](USECASES.MD)
 
+
 # Directory Configuration and Structure
  
 Directory structure of source code:
@@ -24,7 +25,7 @@ A new module "integration-tests" is added to the Maven project `weblogic-kuberne
 
 `weblogic-kubernetes-operator/integration-tests` - location of module pom.xml  
 `weblogic-kubernetes-operator/integration-tests/src/test/java` - integration test(JUnit) classes and utility classes  
-`weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files (see Configuration Files section) and other scripts.
+`weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files (see Configuration Files section) and other scripts
 
 Directory structure used for the test run:
 
