@@ -447,7 +447,7 @@ public class TestUtils {
    * Copy all App files to the k8s pod
    *
    * @param appLocationOnHost - App location on the local host
-   * @param appLocationInPod - App location on the lk8s pod
+   * @param appLocationInPod - App location on the k8s pod
    * @param podName - the k8s pod name
    * @param namespace - namespace the k8s pod is in
    * @throws Exception
