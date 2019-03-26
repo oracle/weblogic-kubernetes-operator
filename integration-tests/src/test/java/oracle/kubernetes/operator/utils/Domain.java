@@ -749,6 +749,24 @@ public class Domain {
   public String getDomainUid() {
     return domainUid;
   }
+
+  /**
+   * Get the name of the administration server in the domain
+   *
+   * @return the name of the admin server
+   */
+  public String getAdminServerName() {
+    return adminServerName;
+  }
+
+  /**
+   * Get the namespace in which the domain is running
+   *
+   * @return the name of the domain name space
+   */
+  public String getDomainNS() {
+    return domainNS;
+  }
   /**
    * test liveness probe for managed server 1
    *
@@ -1353,7 +1371,6 @@ public class Domain {
               + "-"
               + domainMap.get("configOverrides")
               + " --from-file "
-              + BaseTest.getProjectRoot()
               + configOverridesFile;
       ExecResult result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
@@ -1375,15 +1392,17 @@ public class Domain {
             "FAILURE: command " + cmd + " failed, returned " + result.stderr());
       }
       // create secret for custom sit config t3 public address
+      // create datasource secret for user and password
       cmd =
           "kubectl -n "
               + domainNS
               + " create secret generic "
               + domainUid
-              + "-"
-              + "t3publicaddress "
+              + "-test-secrets"
               + " --from-literal=hostname="
-              + TestUtils.getHostName();
+              + TestUtils.getHostName()
+              + " --from-literal=dbusername=root"
+              + " --from-literal=dbpassword=root123";
       result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
@@ -1495,7 +1514,7 @@ public class Domain {
             + "\n"
             + "  configOverrideSecrets: [ \""
             + domainUid
-            + "-t3publicaddress\" ]"
+            + "-test-secrets\" ]"
             + "\n";
 
     String domainYaml =
