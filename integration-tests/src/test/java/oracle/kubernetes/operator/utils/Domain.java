@@ -908,7 +908,7 @@ public class Domain {
   }
 
   /**
-   * Get runtime server yaml file and verify the changed property is that file
+   * Get runtime server yaml file and verify the changed property is in that file
    *
    * @param changedProperty
    * @param serverName
