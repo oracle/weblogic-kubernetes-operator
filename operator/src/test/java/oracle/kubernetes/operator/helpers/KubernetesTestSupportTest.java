@@ -51,6 +51,7 @@ import org.junit.Test;
 
 public class KubernetesTestSupportTest {
   private static final String NS = "namespace1";
+  private static final String POD_LOG_CONTENTS = "asdfghjkl";
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   List<Memento> mementos = new ArrayList<>();
 
@@ -332,6 +333,16 @@ public class KubernetesTestSupportTest {
 
     assertThat(packet.getSPI(CallResponse.class).getStatusCode(), equalTo(CallBuilder.NOT_FOUND));
     assertThat(packet.getSPI(CallResponse.class).getE(), notNullValue());
+  }
+
+  @Test
+  public void whenDefined_readPodLog() {
+    TestResponseStep<String> endStep = new TestResponseStep<>();
+    testSupport.definePodLog("name", "namespace", POD_LOG_CONTENTS);
+
+    testSupport.runSteps(new CallBuilder().readPodLogAsync("name", "namespace", endStep));
+
+    assertThat(endStep.callResponse.getResult(), equalTo(POD_LOG_CONTENTS));
   }
 
   static class TestResponseStep<T> extends DefaultResponseStep<T> {

@@ -85,6 +85,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String PV = "PersistentVolume";
   public static final String PVC = "PersistentVolumeClaim";
   public static final String POD = "Pod";
+  public static final String PODLOG = "PodLog";
   public static final String SERVICE = "Service";
   public static final String SUBJECT_ACCESS_REVIEW = "SubjectAccessReview";
   public static final String TOKEN_REVIEW = "TokenReview";
@@ -94,7 +95,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
    *
    * @return a memento which can be used to restore the production factory
    */
-  public Memento install() {
+  public Memento install() throws NoSuchFieldException {
     support(CUSTOM_RESOURCE_DEFINITION, V1beta1CustomResourceDefinition.class);
     support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
     support(TOKEN_REVIEW, V1TokenReview.class);
@@ -105,10 +106,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(EVENT, V1Event.class, this::createEventList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
+    supportNamespaced(PODLOG, String.class);
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPVCList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
 
-    return new CallBuilderMemento();
+    return new KubernetesTestSupportMemento();
   }
 
   private V1ConfigMapList createConfigMapList(List<V1ConfigMap> items) {
@@ -159,6 +161,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     repositories.put(resourceName, new DataRepository<>(resourceClass, toList));
   }
 
+  private <T> void supportNamespaced(String resourceName, Class<T> resourceClass) {
+    dataTypes.put(resourceClass, resourceName);
+    repositories.put(resourceName, new NamespacedDataRepository<>(resourceClass, null));
+  }
+
   private <T> void supportNamespaced(
       String resourceName, Class<T> resourceClass, Function<List<T>, Object> toList) {
     dataTypes.put(resourceClass, resourceName);
@@ -182,6 +189,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
   @SafeVarargs
   public final <T> void defineResources(T... resources) {
     for (T resource : resources) getDataRepository(resource).createResourceInNamespace(resource);
+  }
+
+  public void definePodLog(String name, String namespace, Object contents) {
+    repositories.get(PODLOG).createResourceInNamespace(name, namespace, contents);
   }
 
   @SuppressWarnings("unchecked")
@@ -228,19 +239,21 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   */
 
-  private class CallBuilderMemento implements Memento {
+  private class KubernetesTestSupportMemento implements Memento {
 
-    {
-      {
-        CallBuilder.setStepFactory(new AsyncRequestStepFactoryImpl());
-        CallBuilder.setCallDispatcher(new CallDispatcherImpl());
-      }
+    private List<Memento> mementos = new ArrayList<>();
+
+    public KubernetesTestSupportMemento() throws NoSuchFieldException {
+      //      mementos.add(installEngine());
+      CallBuilder.setStepFactory(new AsyncRequestStepFactoryImpl());
+      CallBuilder.setCallDispatcher(new CallDispatcherImpl());
     }
 
     @Override
     public void revert() {
       CallBuilder.resetStepFactory();
       CallBuilder.resetCallDispatcher();
+      for (Memento memento : mementos) memento.revert();
     }
 
     @Override
@@ -307,6 +320,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
       createResource(getMetadata(resource).getNamespace(), resource);
     }
 
+    @SuppressWarnings("unchecked")
+    void createResourceInNamespace(String name, String namespace, Object resource) {
+      data.put(name, (T) resource);
+    }
+
     T createResource(String namespace, T resource) {
       String name = getName(resource);
       if (name != null) {
@@ -346,7 +364,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private boolean includesLabel(Map<String, String> labels, String key, String value) {
-      if (!labels.containsKey(key)) return false;
+      if (labels == null || !labels.containsKey(key)) return false;
       return value == null || value.equals(labels.get(key));
     }
 
@@ -418,11 +436,16 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return resource;
     }
 
-    V1Status deleteResource(String namespace, String name) {
-      if (!hasElementWithName(name)) throw new NotFoundException();
+    V1Status deleteResource(String name, String namespace) {
+      if (!hasElementWithName(name))
+        throw new NotFoundException(getResourceName(), name, namespace);
       data.remove(name);
 
       return new V1Status().code(200);
+    }
+
+    private String getResourceName() {
+      return dataTypes.get(resourceType);
     }
 
     public V1Status deleteResourceCollection(String namespace) {
@@ -430,13 +453,13 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return new V1Status().code(200);
     }
 
-    public T readResource(String namespace, String name) {
-      if (!data.containsKey(name)) throw new NotFoundException();
+    public T readResource(String name, String namespace) {
+      if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
       return data.get(name);
     }
 
-    public T patchResource(String namespace, String name, List<JsonObject> body) {
-      if (!data.containsKey(name)) throw new NotFoundException();
+    public T patchResource(String name, String namespace, List<JsonObject> body) {
+      if (!data.containsKey(name)) throw new NotFoundException(getResourceName(), name, namespace);
 
       JsonPatch patch = Json.createPatch(toJsonArray(body));
       JsonStructure result = patch.apply(toJsonStructure(data.get(name)));
@@ -509,8 +532,13 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
+    void createResourceInNamespace(String name, String namespace, Object resource) {
+      inNamespace(namespace).createResourceInNamespace(name, namespace, resource);
+    }
+
+    @Override
     T createResource(String namespace, T resource) {
-      return inNamespace(namespace).createResource(null, resource);
+      return inNamespace(namespace).createResource(namespace, resource);
     }
 
     private DataRepository<T> inNamespace(String namespace) {
@@ -518,23 +546,23 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
-    V1Status deleteResource(String namespace, String name) {
-      return inNamespace(namespace).deleteResource(null, name);
+    V1Status deleteResource(String name, String namespace) {
+      return inNamespace(namespace).deleteResource(name, namespace);
     }
 
     @Override
     public V1Status deleteResourceCollection(String namespace) {
-      return inNamespace(namespace).deleteResourceCollection(null);
+      return inNamespace(namespace).deleteResourceCollection(namespace);
     }
 
     @Override
-    public T readResource(String namespace, String name) {
-      return inNamespace(namespace).readResource(null, name);
+    public T readResource(String name, String namespace) {
+      return inNamespace(namespace).readResource(name, namespace);
     }
 
     @Override
-    public T patchResource(String namespace, String name, List<JsonObject> body) {
-      return inNamespace(namespace).patchResource(null, name, body);
+    public T patchResource(String name, String namespace, List<JsonObject> body) {
+      return inNamespace(namespace).patchResource(name, namespace, body);
     }
 
     @Override
@@ -669,7 +697,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private Object deleteResource(DataRepository dataRepository) {
-      return dataRepository.deleteResource(requestParams.namespace, requestParams.name);
+      return dataRepository.deleteResource(requestParams.name, requestParams.namespace);
     }
 
     @SuppressWarnings("unchecked")
@@ -679,7 +707,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private Object patchResource(DataRepository dataRepository) {
       return dataRepository.patchResource(
-          requestParams.namespace, requestParams.name, asJsonObject(requestParams.body));
+          requestParams.name, requestParams.namespace, asJsonObject(requestParams.body));
     }
 
     private Object listResources(DataRepository dataRepository) {
@@ -687,7 +715,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private <T> T readResource(DataRepository<T> dataRepository) {
-      return dataRepository.readResource(requestParams.namespace, requestParams.name);
+      return dataRepository.readResource(requestParams.name, requestParams.namespace);
     }
 
     public Object deleteCollection(DataRepository dataRepository) {
@@ -763,7 +791,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
-  static class NotFoundException extends RuntimeException {}
+  class NotFoundException extends RuntimeException {
+    public NotFoundException(String resourceType, String name, String namespace) {
+      super(String.format("No %s named %s found in namespace %s", resourceType, name, namespace));
+    }
+  }
 
   static class HttpErrorException extends RuntimeException {
     private int status;
