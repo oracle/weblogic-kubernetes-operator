@@ -118,7 +118,7 @@ port=`echo ${STATUS} | python cmds.py`
 echo "port: $port" >> scalingAction.log
 
 # Reteive Custom Resource Domain 
-DOMAIN=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" $kubernetes_master/apis/weblogic.oracle/v2/namespaces/$wls_domain_namespace/domains/$domain_uid`
+DOMAIN=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" $kubernetes_master/apis/weblogic.oracle/v3alpha1/namespaces/$wls_domain_namespace/domains/$domain_uid`
 if [ $? -ne 0 ]
   then
     echo "Failed to retrieve WebLogic Domain Custom Resource Definition" >> scalingAction.log
