@@ -40,6 +40,12 @@ If `weblogic-operator-namespace` exists, then it will be used.  If it does not e
 
 You can verify the operator installation by examining the output from the `helm install` command.
 
+{{% notice note %}}
+When the operator image is stored in a private registry, see
+[WebLogic operator image pull secret]({{<relref "/security/secrets.md#weblogic-operator-image-pull-secret">}})
+for more information on specifying the registry credentials.
+{{% /notice %}}
+
 #### Alternatively, install the operator Helm chart from GitHub chart repository
 
 Add this repository to the Helm installation:
