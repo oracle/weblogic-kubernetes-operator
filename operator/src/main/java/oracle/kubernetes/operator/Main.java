@@ -127,7 +127,7 @@ public class Main {
   }
 
   static final Engine engine = new Engine(wrappedExecutorService);
-  private static final DomainProcessor processor = DomainProcessor.getInstance();
+  private static final DomainProcessor processor = new DomainProcessorImpl();
 
   static final ConcurrentMap<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();
   static final ConcurrentMap<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
@@ -196,6 +196,8 @@ public class Main {
     principal = "system:serviceaccount:" + operatorNamespace + ":" + serviceAccountName;
 
     LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, operatorNamespace);
+    JobWatcher.defineFactory(
+        threadFactory, tuningAndConfig.getWatchTuning(), Main::isNamespaceStopping);
 
     Collection<String> targetNamespaces = getTargetNamespaces();
     StringBuilder tns = new StringBuilder();
@@ -527,6 +529,15 @@ public class Main {
         initialResourceVersion,
         tuningAndConfig.getWatchTuning(),
         processor::dispatchDomainWatch,
+        isNamespaceStopping(ns));
+  }
+
+  private static void createJobWatcher(String ns, String initialResourceVersion) {
+    JobWatcher.create(
+        threadFactory,
+        ns,
+        initialResourceVersion,
+        tuningAndConfig.getWatchTuning(),
         isNamespaceStopping(ns));
   }
 

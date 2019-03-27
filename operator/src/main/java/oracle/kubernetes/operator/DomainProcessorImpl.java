@@ -57,7 +57,6 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 public class DomainProcessorImpl implements DomainProcessor {
-  static final DomainProcessor INSTANCE = new DomainProcessorImpl();
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -808,12 +807,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     resources.add(
         JobHelper.deleteDomainIntrospectorJobStep(
             dom.getDomainUID(), dom.getMetadata().getNamespace(), null));
-    resources.add(
-        JobHelper.createDomainIntrospectorJobStep(
-            Main.tuningAndConfig.getWatchTuning(),
-            next,
-            jws,
-            Main.isNamespaceStopping(dom.getMetadata().getNamespace())));
+    resources.add(JobHelper.createDomainIntrospectorJobStep(next));
     return resources.toArray(new Step[0]);
   }
 
