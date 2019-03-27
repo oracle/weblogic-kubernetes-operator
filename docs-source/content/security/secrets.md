@@ -84,7 +84,7 @@ under **Domain security**.
 
 The helm chart for installing the operator has an option to specify the
 image pull secret used for the operator's image when using a private registry.
-The Kubernetes `Sercret` of type `docker-registry` should be created in the namespace
+The Kubernetes `Secret` of type `docker-registry` should be created in the namespace
 where the operator is deployed.
 
 Here is an example of using the `helm install` command to set the image name and image pull secret:
