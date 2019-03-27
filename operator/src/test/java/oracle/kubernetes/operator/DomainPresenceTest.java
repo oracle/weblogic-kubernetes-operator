@@ -38,7 +38,6 @@ import oracle.kubernetes.operator.helpers.KubernetesServiceType;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.work.FiberGateFactoryStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -65,7 +64,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
-    mementos.add(FiberGateFactoryStub.install(testSupport));
+    mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
     testSupport.addContainerComponent("TF", ThreadFactory.class, this);
 
     isNamespaceStopping = getStoppingVariable();
