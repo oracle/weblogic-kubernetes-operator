@@ -4,7 +4,8 @@
 
 package oracle.kubernetes.operator;
 
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.Step;
@@ -16,13 +17,12 @@ public interface DomainProcessorDelegate {
 
   boolean isNamespaceRunning(String namespace);
 
-  String getPrincipal();
-
   KubernetesVersion getVersion();
 
   FiberGate createFiberGate();
 
   void runSteps(Step firstStep);
 
-  ScheduledExecutorService getExecutor();
+  ScheduledFuture<?> scheduleWithFixedDelay(
+      Runnable command, long initialDelay, long delay, TimeUnit unit);
 }

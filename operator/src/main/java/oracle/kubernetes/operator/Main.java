@@ -25,6 +25,7 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -718,11 +719,6 @@ public class Main {
     }
 
     @Override
-    public String getPrincipal() {
-      return principal;
-    }
-
-    @Override
     public KubernetesVersion getVersion() {
       return version;
     }
@@ -738,8 +734,9 @@ public class Main {
     }
 
     @Override
-    public ScheduledExecutorService getExecutor() {
-      return Main.engine.getExecutor();
+    public ScheduledFuture<?> scheduleWithFixedDelay(
+        Runnable command, long initialDelay, long delay, TimeUnit unit) {
+      return Main.engine.getExecutor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
   }
 }
