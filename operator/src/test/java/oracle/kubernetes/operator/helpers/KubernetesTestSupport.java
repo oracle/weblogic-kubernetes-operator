@@ -17,8 +17,11 @@ import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1ConfigMapList;
+import io.kubernetes.client.models.V1Event;
+import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1JobList;
+import io.kubernetes.client.models.V1ListMeta;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
@@ -33,6 +36,7 @@ import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import java.io.StringReader;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,6 +47,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.json.Json;
@@ -69,10 +75,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private Map<String, DataRepository<?>> repositories = new HashMap<>();
   private Map<Class<?>, String> dataTypes = new HashMap<>();
   private Failure failure;
+  private long resourceVersion;
 
   public static final String CONFIG_MAP = "ConfigMap";
   public static final String CUSTOM_RESOURCE_DEFINITION = "CRD";
   public static final String DOMAIN = "Domain";
+  public static final String EVENT = "Event";
   public static final String JOB = "Job";
   public static final String PV = "PersistentVolume";
   public static final String PVC = "PersistentVolumeClaim";
@@ -90,12 +98,13 @@ public class KubernetesTestSupport extends FiberTestSupport {
     support(CUSTOM_RESOURCE_DEFINITION, V1beta1CustomResourceDefinition.class);
     support(SUBJECT_ACCESS_REVIEW, V1SubjectAccessReview.class);
     support(TOKEN_REVIEW, V1TokenReview.class);
+    support(PV, V1PersistentVolume.class, this::createPVList);
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList);
+    supportNamespaced(EVENT, V1Event.class, this::createEventList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
-    supportNamespaced(PV, V1PersistentVolume.class, this::createPVList);
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPVCList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
 
@@ -103,37 +112,51 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   private V1ConfigMapList createConfigMapList(List<V1ConfigMap> items) {
-    return new V1ConfigMapList().items(items);
+    return new V1ConfigMapList().metadata(createListMeta()).items(items);
   }
 
   private DomainList createDomainList(List<Domain> items) {
-    return new DomainList().withItems(items);
+    return new DomainList().withMetadata(createListMeta()).withItems(items);
+  }
+
+  private V1EventList createEventList(List<V1Event> items) {
+    return new V1EventList().metadata(createListMeta()).items(items);
   }
 
   private V1PersistentVolumeList createPVList(List<V1PersistentVolume> items) {
-    return new V1PersistentVolumeList().items(items);
+    return new V1PersistentVolumeList().metadata(createListMeta()).items(items);
   }
 
   private V1PersistentVolumeClaimList createPVCList(List<V1PersistentVolumeClaim> items) {
-    return new V1PersistentVolumeClaimList().items(items);
+    return new V1PersistentVolumeClaimList().metadata(createListMeta()).items(items);
   }
 
   private V1PodList createPodList(List<V1Pod> items) {
-    return new V1PodList().items(items);
+    return new V1PodList().metadata(createListMeta()).items(items);
   }
 
   private V1JobList createJobList(List<V1Job> items) {
-    return new V1JobList().items(items);
+    return new V1JobList().metadata(createListMeta()).items(items);
   }
 
   private V1ServiceList createServiceList(List<V1Service> items) {
-    return new V1ServiceList().items(items);
+    return new V1ServiceList().metadata(createListMeta()).items(items);
   }
 
-  @SuppressWarnings("SameParameterValue")
+  private V1ListMeta createListMeta() {
+    return new V1ListMeta().resourceVersion(Long.toString(++resourceVersion));
+  }
+
   private void support(String resourceName, Class<?> resourceClass) {
     dataTypes.put(resourceClass, resourceName);
     repositories.put(resourceName, new DataRepository<>(resourceClass));
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private <T> void support(
+      String resourceName, Class<?> resourceClass, Function<List<T>, Object> toList) {
+    dataTypes.put(resourceClass, resourceName);
+    repositories.put(resourceName, new DataRepository<>(resourceClass, toList));
   }
 
   private <T> void supportNamespaced(
@@ -261,11 +284,17 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private class DataRepository<T> {
     private Map<String, T> data = new HashMap<>();
     private Class<?> resourceType;
+    private Function<List<T>, Object> listFactory;
     private List<Consumer<T>> onCreateActions = new ArrayList<>();
     private List<Consumer<T>> onUpdateActions = new ArrayList<>();
 
     public DataRepository(Class<?> resourceType) {
       this.resourceType = resourceType;
+    }
+
+    public DataRepository(Class<?> resourceType, Function<List<T>, Object> listFactory) {
+      this.resourceType = resourceType;
+      this.listFactory = listFactory;
     }
 
     public DataRepository(Class<?> resourceType, NamespacedDataRepository<T> parent) {
@@ -290,12 +319,17 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     Object listResources(String namespace, String fieldSelector, String... labelSelectors) {
-      throw new UnsupportedOperationException("list operation not supported");
+      if (listFactory == null)
+        throw new UnsupportedOperationException("list operation not supported");
+
+      return listFactory.apply(getResources(fieldSelector, labelSelectors));
     }
 
     List<T> getResources(String fieldSelector, String... labelSelectors) {
-      assert fieldSelector == null : "field selector not implemented";
-      return data.values().stream().filter(withLabels(labelSelectors)).collect(Collectors.toList());
+      return data.values().stream()
+          .filter(withFields(fieldSelector))
+          .filter(withLabels(labelSelectors))
+          .collect(Collectors.toList());
     }
 
     private Predicate<Object> withLabels(String[] labelSelectors) {
@@ -316,6 +350,66 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return value == null || value.equals(labels.get(key));
     }
 
+    private Predicate<Object> withFields(String fieldSelector) {
+      return o -> (fieldSelector == null) || allSelectorsMatch(o, fieldSelector);
+    }
+
+    private boolean allSelectorsMatch(Object o, String fieldSelector) {
+      return Arrays.stream(fieldSelector.split(",")).allMatch(f -> hasField(o, f));
+    }
+
+    private final String path = "\\w+(?:.\\w+)*";
+    private final String op = "=|==|!=";
+    private final String value = ".*";
+    private final Pattern fieldPat = Pattern.compile("(" + path + ")(" + op + ")(" + value + ")");
+
+    private boolean hasField(Object object, String fieldSpec) {
+      Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
+      if (!fieldMatcher.find()) return false;
+
+      return new FieldMatcher(fieldSpec).matches(object);
+    }
+
+    class FieldMatcher {
+      private String path;
+      private String op;
+      private String value;
+
+      FieldMatcher(String fieldSpec) {
+        Matcher fieldMatcher = fieldPat.matcher(fieldSpec);
+        if (fieldMatcher.find()) {
+          path = fieldMatcher.group(1);
+          op = fieldMatcher.group(2);
+          value = fieldMatcher.group(3);
+        }
+      }
+
+      boolean matches(Object object) {
+        String fieldValue = getFieldValue(object);
+        boolean matches = fieldValue.equals(value);
+        if (op.equals("!=")) return !matches;
+        else return matches;
+      }
+
+      private String getFieldValue(Object object) {
+        String[] split = path.split("\\.");
+        Object result = object;
+        for (String link : split) result = result == null ? null : getSubField(result, link);
+        return result == null ? "" : result.toString();
+      }
+
+      private Object getSubField(Object object, String fieldName) {
+        try {
+          Class<?> aClass = object.getClass();
+          Field field = aClass.getDeclaredField(fieldName);
+          field.setAccessible(true);
+          return field.get(object);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+          return "";
+        }
+      }
+    }
+
     T replaceResource(String name, T resource) {
       setName(resource, name);
 
@@ -328,6 +422,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
       if (!hasElementWithName(name)) throw new NotFoundException();
       data.remove(name);
 
+      return new V1Status().code(200);
+    }
+
+    public V1Status deleteResourceCollection(String namespace) {
+      data.clear();
       return new V1Status().code(200);
     }
 
@@ -424,6 +523,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
+    public V1Status deleteResourceCollection(String namespace) {
+      return inNamespace(namespace).deleteResourceCollection(null);
+    }
+
+    @Override
     public T readResource(String namespace, String name) {
       return inNamespace(namespace).readResource(null, name);
     }
@@ -489,6 +593,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
       Object execute(CallContext callContext, DataRepository dataRepository) {
         return callContext.patchResource(dataRepository);
       }
+    },
+    deleteCollection {
+      @Override
+      Object execute(CallContext callContext, DataRepository dataRepository) {
+        return callContext.deleteCollection(dataRepository);
+      }
     };
 
     abstract Object execute(CallContext callContext, DataRepository dataRepository);
@@ -521,6 +631,17 @@ public class KubernetesTestSupport extends FiberTestSupport {
       int i = indexOfFirstCapital(callName);
       resourceType = callName.substring(i);
       operation = Operation.valueOf(callName.substring(0, i));
+
+      if (isDeleteCollection()) selectDeleteCollectionOperation();
+    }
+
+    private boolean isDeleteCollection() {
+      return resourceType.endsWith("Collection");
+    }
+
+    private void selectDeleteCollectionOperation() {
+      resourceType = resourceType.substring(0, resourceType.indexOf("Collection"));
+      operation = Operation.deleteCollection;
     }
 
     private int indexOfFirstCapital(String callName) {
@@ -567,6 +688,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private <T> T readResource(DataRepository<T> dataRepository) {
       return dataRepository.readResource(requestParams.namespace, requestParams.name);
+    }
+
+    public Object deleteCollection(DataRepository dataRepository) {
+      return dataRepository.deleteResourceCollection(requestParams.namespace);
     }
   }
 
