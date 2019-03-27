@@ -241,10 +241,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private class KubernetesTestSupportMemento implements Memento {
 
-    private List<Memento> mementos = new ArrayList<>();
-
     public KubernetesTestSupportMemento() throws NoSuchFieldException {
-      //      mementos.add(installEngine());
       CallBuilder.setStepFactory(new AsyncRequestStepFactoryImpl());
       CallBuilder.setCallDispatcher(new CallDispatcherImpl());
     }
@@ -253,7 +250,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
     public void revert() {
       CallBuilder.resetStepFactory();
       CallBuilder.resetCallDispatcher();
-      for (Memento memento : mementos) memento.revert();
     }
 
     @Override

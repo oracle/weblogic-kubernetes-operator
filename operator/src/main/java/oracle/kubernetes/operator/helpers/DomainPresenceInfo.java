@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import java.util.Collection;
 import java.util.Collections;
@@ -75,6 +76,10 @@ public class DomainPresenceInfo {
     return getSko(serverName).getService().get();
   }
 
+  public V1Pod getServerPod(String serverName) {
+    return getSko(serverName).getPod().get();
+  }
+
   void setServerServiceFromEvent(String serverName, V1Service event) {
     getSko(serverName).getService().accumulateAndGet(event, this::getNewerService);
   }
@@ -102,7 +107,7 @@ public class DomainPresenceInfo {
     clusters.remove(clusterName);
   }
 
-  V1Service getClusterService(String clusterName) {
+  public V1Service getClusterService(String clusterName) {
     return clusters.get(clusterName);
   }
 
