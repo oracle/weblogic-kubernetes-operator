@@ -32,7 +32,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.rest.RestTest;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -117,11 +117,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         PodAwaiterStepFactory.class,
         (pod, next) -> terminalStep);
 
-    /**/
     V1Pod existingPod = createPod(testSupport.getPacket());
-    /*/
-    V1Pod existingPod = createPodModel();
-    /**/
     mutator.mutate(existingPod);
     initializeExistingPod(existingPod);
 
@@ -210,7 +206,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   public void whenAdminPodCreated_hasOperatorCertEnvVariable() {
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
-        hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, RestTest.OP_CERT_DATA));
+        hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, InMemoryCertificates.INTERNAL_CERT_DATA));
   }
 
   @Test

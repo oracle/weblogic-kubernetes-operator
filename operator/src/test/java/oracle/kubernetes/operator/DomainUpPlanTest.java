@@ -28,9 +28,8 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
-import oracle.kubernetes.operator.rest.RestServer;
-import oracle.kubernetes.operator.rest.RestTest;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -66,10 +65,9 @@ public class DomainUpPlanTest {
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
+    mementos.add(InMemoryCertificates.install());
 
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
-
-    RestServer.create(new RestTest.TestRestConfigImpl());
   }
 
   @After
@@ -77,8 +75,6 @@ public class DomainUpPlanTest {
     for (Memento memento : mementos) memento.revert();
 
     testSupport.throwOnCompletionFailure();
-
-    RestServer.destroy();
   }
 
   @Test
