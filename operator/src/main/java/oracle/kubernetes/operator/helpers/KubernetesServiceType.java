@@ -93,7 +93,7 @@ public enum KubernetesServiceType {
 
   void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {}
 
-  V1Service withTypeLabel(V1Service service) {
+  public V1Service withTypeLabel(V1Service service) {
     Optional.ofNullable(service)
         .map(V1Service::getMetadata)
         .ifPresent(meta -> meta.putLabelsItem(SERVICE_TYPE, toString()));
