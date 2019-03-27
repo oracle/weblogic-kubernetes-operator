@@ -63,7 +63,7 @@ public class DomainUpPlanTest {
   }
 
   @Before
-  public void setUp() {
+  public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
 
