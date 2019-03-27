@@ -14,10 +14,6 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public interface DomainProcessor {
 
-  public static DomainProcessor getInstance() {
-    return DomainProcessorImpl.INSTANCE;
-  }
-
   public void makeRightDomainPresence(
       DomainPresenceInfo info,
       boolean explicitRecheck,
