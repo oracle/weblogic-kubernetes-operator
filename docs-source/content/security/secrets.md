@@ -82,7 +82,7 @@ under **Domain security**.
 
 #### WebLogic operator image pull secret
 
-The helm chart for installing the operator has an option to specify the
+The Helm chart for installing the operator has an option to specify the
 image pull secret used for the operator's image when using a private registry.
 The Kubernetes `Secret` of type `docker-registry` should be created in the namespace
 where the operator is deployed.
