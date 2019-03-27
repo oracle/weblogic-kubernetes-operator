@@ -951,7 +951,7 @@ public class Domain {
                 + ".yaml");
     logger.info("kubectl execut with command: " + command.toString());
     TestUtils.exec(command.toString());
-    Thread.sleep(10 * 1000);
+
     try {
       String content = new String(Files.readAllBytes(Paths.get(outDir + serverName + ".yaml")));
       boolean result = content.indexOf(changedProperty) >= 0;
