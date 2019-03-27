@@ -92,11 +92,7 @@ public class Domain {
   public void verifyDomainCreated() throws Exception {
     StringBuffer command = new StringBuffer();
     command.append("kubectl get domain ").append(domainUid).append(" -n ").append(domainNS);
-    ExecResult result = ExecCommand.exec(command.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILED: command to get domain " + command + " failed with " + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(command.toString());
     if (!result.stdout().contains(domainUid))
       throw new RuntimeException("FAILURE: domain not found, exiting!");
 
@@ -262,11 +258,7 @@ public class Domain {
           .append(password)
           .append(" -H X-Requested-By:Integration-Test --write-out %{http_code} -o /dev/null");
       logger.info("cmd for curl " + cmd);
-      ExecResult result = ExecCommand.exec(cmd.toString());
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-      }
+      ExecResult result = TestUtils.exec(cmd.toString());
       String output = result.stdout().trim();
       logger.info("output " + output);
       if (!output.equals("200")) {
@@ -372,11 +364,7 @@ public class Domain {
         .append("/management/weblogic/latest/edit/appDeployments")
         .append(" --write-out %{http_code} -o /dev/null");
     logger.fine("Command to deploy webapp " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
     if (!output.contains("202")) {
       throw new RuntimeException("FAILURE: Webapp deployment failed with response code " + output);
@@ -506,16 +494,7 @@ public class Domain {
         .append(domainUid)
         .append("/domain.yaml");
     logger.info("Running " + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command "
-              + cmd
-              + " failed, returned "
-              + result.stdout()
-              + "\n"
-              + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(cmd.toString());
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
 
@@ -534,11 +513,7 @@ public class Domain {
         .append("/weblogic-domains/")
         .append(domainUid)
         .append("/domain.yaml");
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
     logger.info("command to delete domain " + cmd + " \n returned " + output);
     verifyDomainDeleted(replicas);
@@ -552,11 +527,7 @@ public class Domain {
   public void shutdown() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
     String cmd = "kubectl delete domain " + domainUid + " -n " + domainNS;
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
     logger.info("command to delete domain " + cmd + " \n returned " + output);
     verifyDomainDeleted(replicas);
@@ -575,11 +546,7 @@ public class Domain {
             + " -n "
             + domainNS
             + " -p '{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}' --type merge";
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(cmd);
     String output = result.stdout().trim();
     logger.info("command to shutdown domain " + cmd + " \n returned " + output);
     verifyServerPodsDeleted(replicas);
@@ -597,11 +564,7 @@ public class Domain {
             + " -n "
             + domainNS
             + " -p '{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}' --type merge";
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(cmd);
     String output = result.stdout().trim();
     logger.info("command to restart domain " + cmd + " \n returned " + output);
     verifyPodsCreated();
@@ -715,16 +678,7 @@ public class Domain {
         .append(responseBodyFile);
     logger.info("cmd for curl " + cmd);
 
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command "
-              + cmd
-              + " failed, returned "
-              + result.stderr()
-              + "\n "
-              + result.stdout());
-    }
+    ExecResult result = TestUtils.exec(cmd.toString());
 
     String output = result.stdout().trim();
     logger.info("output " + output);
@@ -785,11 +739,7 @@ public class Domain {
         .append(domainNS)
         .append(" | grep Endpoints | awk '{print $2}'");
 
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: Commmand " + cmd + " failed, cluster service is not ready.");
-    }
+    ExecResult result = TestUtils.exec(cmd.toString());
     logger.info("Cluster service Endpoint " + result.stdout());
     return new StringTokenizer(result.stdout(), ",").countTokens();
   }
@@ -806,12 +756,8 @@ public class Domain {
 
     logger.info("Cmd to get the admins service node port " + cmd);
 
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() == 0) {
-      return new Integer(result.stdout().trim()).intValue();
-    } else {
-      throw new RuntimeException("Cmd failed " + result.stderr() + " \n " + result.stdout());
-    }
+    ExecResult result = TestUtils.exec(cmd.toString());
+    return new Integer(result.stdout().trim()).intValue();
   }
 
   /**
@@ -979,16 +925,7 @@ public class Domain {
         String.format(
             "kubectl label secret %s weblogic.domainUID=%s -n %s",
             secret.getSecretName(), domainUid, domainNS);
-    ExecResult result = ExecCommand.exec(labelCmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to label secret \""
-              + labelCmd
-              + "\" failed, returned "
-              + result.stdout()
-              + "\n"
-              + result.stderr());
-    }
+    TestUtils.exec(labelCmd);
   }
 
   /**
@@ -1161,11 +1098,7 @@ public class Domain {
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
-      ExecResult result = ExecCommand.exec(curlCmd.toString());
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command " + curlCmd + " failed, returned " + result.stderr());
-      }
+      ExecResult result = TestUtils.exec(curlCmd);
       String responseCode = result.stdout().trim();
       if (!responseCode.equals("200")) {
         logger.info(
@@ -1200,18 +1133,9 @@ public class Domain {
     logger.info("Calling webapp 20 times " + curlCmd);
     // number of times to call webapp
     for (int i = 0; i < 20; i++) {
-      ExecResult result = ExecCommand.exec(curlCmd.toString());
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command "
-                + curlCmd
-                + " failed, returned "
-                + result.stderr()
-                + " \n "
-                + result.stdout());
-      } else {
-        logger.info("webapp invoked successfully for curlCmd:" + curlCmd);
-      }
+      ExecResult result = TestUtils.exec(curlCmd);
+
+      logger.info("webapp invoked successfully for curlCmd:" + curlCmd);
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
         // logger.info("response: " + response);
@@ -1356,11 +1280,7 @@ public class Domain {
             + domainNS
             + " | grep Node:";
 
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(cmd);
     String nodePortHost = result.stdout();
     // logger.info("nodePortHost "+nodePortHost);
     if (nodePortHost.contains(":") && nodePortHost.contains("/")) {
@@ -1379,11 +1299,7 @@ public class Domain {
         .append(" -n ")
         .append(domainNS)
         .append(" | grep \"Node Port:\"");
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
+    ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout();
     if (output.contains("Node Port")) {
       return output.substring(output.indexOf(":") + 1).trim();
@@ -1421,16 +1337,7 @@ public class Domain {
           .append(BaseTest.getResultDir())
           .append("/docker-images");
       logger.info("Executing cmd " + removeAndClone);
-      ExecResult result = ExecCommand.exec(removeAndClone.toString());
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command "
-                + removeAndClone
-                + " failed "
-                + result.stderr()
-                + " "
-                + result.stdout());
-      }
+      ExecResult result = TestUtils.exec(removeAndClone.toString());
     }
   }
 
