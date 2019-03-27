@@ -81,6 +81,14 @@ public class ServiceHelper {
     KubernetesServiceType.getType(service).updateFromEvent(info, service);
   }
 
+  public static V1Service[] getServerServices(DomainPresenceInfo info) {
+    return KubernetesServiceType.SERVER.getServices(info);
+  }
+
+  public static boolean isServerService(V1Service service) {
+    return KubernetesServiceType.getType(service) == KubernetesServiceType.SERVER;
+  }
+
   public static boolean deleteFromEvent(DomainPresenceInfo info, V1Service service) {
     return KubernetesServiceType.getType(service).deleteFromEvent(info, service);
   }
