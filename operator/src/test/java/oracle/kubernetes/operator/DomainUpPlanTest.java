@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainUpPlanTest.ContainerPortMatcher.hasContainerPort;
 import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStep;
 import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStepsInOrder;
@@ -56,6 +57,8 @@ public class DomainUpPlanTest {
           .withSpec(new DomainSpec().withDomainUID(UID).withWebLogicCredentialsSecret(SECRET));
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
+  private DomainProcessorImpl processor =
+      new DomainProcessorImpl(createStrictStub(DomainProcessorDelegateStub.class));
 
   private DomainPresenceStep getDomainPresenceStep() {
     return DomainPresenceStep.createDomainPresenceStep(domain, adminStep, managedServersStep);
@@ -109,7 +112,7 @@ public class DomainUpPlanTest {
   public void whenNotShuttingDown_selectAdminServerStep() {
     configurator.setShuttingDown(false);
 
-    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
+    Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(plan, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
   }
@@ -118,7 +121,7 @@ public class DomainUpPlanTest {
   public void whenShuttingDown_selectManagedServerStepOnly() {
     configurator.setShuttingDown(true);
 
-    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
+    Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
         plan,
@@ -128,7 +131,7 @@ public class DomainUpPlanTest {
 
   @Test
   public void useSequenceBeforeAdminServerStep() {
-    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
+    Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
         plan,
@@ -257,6 +260,13 @@ public class DomainUpPlanTest {
       else
         description.appendValueList(
             "expected steps in order to include: ", ",", ".", expectedSteps);
+    }
+  }
+
+  abstract static class DomainProcessorDelegateStub implements DomainProcessorDelegate {
+    @Override
+    public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
+      return new NullPodWaiter();
     }
   }
 }

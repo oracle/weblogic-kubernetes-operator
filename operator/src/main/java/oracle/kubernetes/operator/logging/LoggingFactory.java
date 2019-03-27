@@ -15,7 +15,7 @@ public class LoggingFactory {
   // map from resourceBundleName to facade
   private static final Map<String, LoggingFacade> facade = new HashMap<String, LoggingFacade>();
 
-  private static JSON json = null;
+  private static JSON json = new JSON();
 
   public static void setJSON(JSON json) {
     LoggingFactory.json = json;
