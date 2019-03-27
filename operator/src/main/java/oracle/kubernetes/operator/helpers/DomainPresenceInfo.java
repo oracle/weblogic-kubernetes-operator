@@ -76,6 +76,13 @@ public class DomainPresenceInfo {
     return getSko(serverName).getService().get();
   }
 
+  V1Service[] getServiceServices() {
+    return servers.values().stream()
+        .map(ServerKubernetesObjects::getService)
+        .map(AtomicReference::get)
+        .toArray(V1Service[]::new);
+  }
+
   public V1Pod getServerPod(String serverName) {
     return getSko(serverName).getPod().get();
   }
