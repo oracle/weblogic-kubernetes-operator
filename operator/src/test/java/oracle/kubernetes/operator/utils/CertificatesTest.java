@@ -10,8 +10,10 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import oracle.kubernetes.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,6 +23,8 @@ public class CertificatesTest {
 
   @Before
   public void setUp() throws Exception {
+    mementos.add(
+        TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(FileNotFoundException.class));
     mementos.add(InMemoryCertificates.installWithoutData());
   }
 
