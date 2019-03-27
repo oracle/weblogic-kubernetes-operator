@@ -28,6 +28,11 @@ public enum KubernetesServiceType {
     boolean deleteFromEvent(DomainPresenceInfo info, V1Service event) {
       return info.deleteServerServiceFromEvent(ServiceHelper.getServerName(event), event);
     }
+
+    @Override
+    V1Service[] getServices(DomainPresenceInfo presenceInfo) {
+      return presenceInfo.getServiceServices();
+    }
   },
   EXTERNAL {
     @Override
@@ -102,5 +107,9 @@ public enum KubernetesServiceType {
 
   boolean deleteFromEvent(DomainPresenceInfo info, V1Service service) {
     return false;
+  }
+
+  V1Service[] getServices(DomainPresenceInfo info) {
+    return new V1Service[0];
   }
 }
