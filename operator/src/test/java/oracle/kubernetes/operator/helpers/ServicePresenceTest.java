@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.builders.WatchEvent;
@@ -51,7 +53,8 @@ public class ServicePresenceTest {
   private DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
   private List<Memento> mementos = new ArrayList<>();
   private Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
-  private DomainProcessorImpl processor = new DomainProcessorImpl();
+  private DomainProcessorImpl processor =
+      new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
   private long clock;
   private Packet packet = new Packet();
 

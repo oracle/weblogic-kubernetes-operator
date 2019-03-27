@@ -70,6 +70,10 @@ public class FiberTestSupport {
     return schedule.containsItemAt(time, unit);
   }
 
+  public Engine getEngine() {
+    return engine;
+  }
+
   /**
    * Sets the simulated time, thus triggering the execution of any runnable items associated with
    * earlier times.
