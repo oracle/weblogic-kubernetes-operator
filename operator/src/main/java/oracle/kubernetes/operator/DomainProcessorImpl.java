@@ -365,13 +365,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                           registerStatusUpdater(
                               info.getNamespace(),
                               info.getDomainUID(),
-                              delegate
-                                  .getExecutor()
-                                  .scheduleWithFixedDelay(
-                                      r,
-                                      main.eventualLongDelay,
-                                      main.eventualLongDelay,
-                                      TimeUnit.SECONDS));
+                              delegate.scheduleWithFixedDelay(
+                                  r,
+                                  main.eventualLongDelay,
+                                  main.eventualLongDelay,
+                                  TimeUnit.SECONDS));
                         }
                       } else {
                         // reset to trying after shorter delay because of changed status
@@ -379,13 +377,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                         registerStatusUpdater(
                             info.getNamespace(),
                             info.getDomainUID(),
-                            delegate
-                                .getExecutor()
-                                .scheduleWithFixedDelay(
-                                    r,
-                                    main.initialShortDelay,
-                                    main.initialShortDelay,
-                                    TimeUnit.SECONDS));
+                            delegate.scheduleWithFixedDelay(
+                                r,
+                                main.initialShortDelay,
+                                main.initialShortDelay,
+                                TimeUnit.SECONDS));
                       }
                     }
 
@@ -397,13 +393,8 @@ public class DomainProcessorImpl implements DomainProcessor {
                       registerStatusUpdater(
                           info.getNamespace(),
                           info.getDomainUID(),
-                          delegate
-                              .getExecutor()
-                              .scheduleWithFixedDelay(
-                                  r,
-                                  main.initialShortDelay,
-                                  main.initialShortDelay,
-                                  TimeUnit.SECONDS));
+                          delegate.scheduleWithFixedDelay(
+                              r, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
                     }
                   });
             } catch (Throwable t) {
@@ -416,10 +407,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     registerStatusUpdater(
         info.getNamespace(),
         info.getDomainUID(),
-        delegate
-            .getExecutor()
-            .scheduleWithFixedDelay(
-                command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+        delegate.scheduleWithFixedDelay(
+            command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
   }
 
   public void makeRightDomainPresence(
@@ -726,7 +715,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
-      packet.put(ProcessingConstants.PRINCIPAL, delegate.getPrincipal());
       return doNext(packet);
     }
   }
@@ -770,7 +758,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
-      packet.put(ProcessingConstants.PRINCIPAL, delegate.getPrincipal());
       return doNext(packet);
     }
   }

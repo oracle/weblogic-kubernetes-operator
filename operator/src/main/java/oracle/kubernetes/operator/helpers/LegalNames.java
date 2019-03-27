@@ -28,7 +28,7 @@ public class LegalNames {
     return toDNS1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUID, clusterName));
   }
 
-  static String toJobIntrospectorName(String domainUID) {
+  public static String toJobIntrospectorName(String domainUID) {
     return toDNS1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUID));
   }
 
