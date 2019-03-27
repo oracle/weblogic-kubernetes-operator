@@ -40,6 +40,11 @@ public abstract class TuningParametersStub implements TuningParameters {
   }
 
   @Override
+  public MainTuning getMainTuning() {
+    return new MainTuning(2, 2, 2, 2, 2, 2, 2L, 2L);
+  }
+
+  @Override
   public CallBuilderTuning getCallBuilderTuning() {
     return null;
   }
