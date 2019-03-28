@@ -30,44 +30,10 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITServerDiscovery extends BaseTest {
-
-  // property file used to customize operator properties for operator inputs yaml
-  private static String operatorYmlFile = "operator1.yaml";
-
-  // file used to customize domain properties for domain, PV and LB inputs yaml
-  private static String domainonpvwlstFile = "domainonpvwlst.yaml";
-
-  // property file used to configure constants for integration tests
-  private static String appPropsFile = "OperatorIT.properties";
-  private static String domainYaml;
-  private static String testYamlFileName = "custom-domaint.yaml";
   private static String testDomainYamlFile;
 
   private static Operator operator;
   private static Domain domain;
-
-  private static boolean QUICKTEST;
-  private static boolean SMOKETEST;
-  private static boolean JENKINS;
-  private static boolean INGRESSPERDOMAIN = true;
-
-  // Set QUICKTEST env var to true to run a small subset of tests.
-  // Set SMOKETEST env var to true to run an even smaller subset
-  // of tests, plus leave domain1 up and running when the test completes.
-  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  static {
-    QUICKTEST =
-        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
-    SMOKETEST =
-        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
-    if (SMOKETEST) QUICKTEST = true;
-    if (System.getenv("JENKINS") != null) {
-      JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
-    }
-    if (System.getenv("INGRESSPERDOMAIN") != null) {
-      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
-    }
-  }
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -83,22 +49,24 @@ public class ITServerDiscovery extends BaseTest {
   public static void staticPrepare() throws Exception {
     if (!QUICKTEST) {
       // initialize test properties and create the directories
-      initialize(appPropsFile);
+      initialize(APP_PROPS_FILE);
 
-      // create operator1
+      // Create operator1
       if (operator == null) {
         logger.info("Creating Operator & waiting for the script to complete execution");
-        operator = TestUtils.createOperator(operatorYmlFile);
+        operator = TestUtils.createOperator(OPERATOR1_YAML);
       }
 
       // create domain
       if (domain == null) {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
-        domain = TestUtils.createDomain(domainonpvwlstFile);
+        domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
         domain.verifyDomainCreated();
       }
 
-      domainYaml =
+      final String testYamlFileName = "custom-domaint.yaml";
+
+      String domainYaml =
           BaseTest.getUserProjectsDir()
               + "/weblogic-domains/"
               + domain.getDomainUid()
@@ -125,19 +93,18 @@ public class ITServerDiscovery extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
+    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    logger.info("BEGIN");
+    logger.info("Run once, release cluster lease");
 
-      tearDown();
+    tearDown();
 
-      logger.info("SUCCESS");
-    }
+    logger.info("SUCCESS");
   }
 
   /**
-   * Verify that a running Operator connects to a pre-configed and newly started MS
+   * Restart Operator and verify that it connects to a pre-configed and newly started managed server
+   * by applying a modified domain.yaml
    *
    * @throws Exception
    */
@@ -147,41 +114,15 @@ public class ITServerDiscovery extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    String cmd = "kubectl apply -f " + testDomainYamlFile;
-    logger.info("Start a new managed server using command:\n" + cmd);
-    ExecResult result = ExecCommand.exec(cmd);
-
-    logger.info("Check the newly created managed server is running");
-    int replicas = 3;
-    varifyPodReady(replicas);
-
-    // restore the test env
-    int msDecrNum = 1;
-    scaleDownAndVarify(msDecrNum);
-
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Verify that after bounce Operator, it reconnects to a pre-configed and newly started MS
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testOPReconnToNewMS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
     logger.info("Stop the Operator");
-    stopOperator();
+    operator.stopUsingReplicas();
 
     String cmd = "kubectl apply -f " + testDomainYamlFile;
     logger.info("Start a new managed server, managed-server3 using command:\n" + cmd);
     ExecResult result = ExecCommand.exec(cmd);
 
     logger.info("Start the Operator");
-    startOperator();
+    operator.startUsingReplicas();
 
     logger.info("Check the newly created managed-server3 is running");
     int replicas = 3;
@@ -195,38 +136,10 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Verify that after bounce Operator, it discovers running servers and connect to them in place.
-   * It's able to scale down the cluster
+   * Restart Operator and verify that it discovers running servers and a newly started server by
+   * scaling up cluster.
    *
-   * @throws Exception
-   */
-  @Test
-  public void testOPReconnToRunningMSAndScaleDown() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    logger.info("Restart the Operator");
-    stopOperator();
-    startOperator();
-
-    int msDecrNum = 1;
-    scaleDownAndVarify(msDecrNum);
-
-    logger.info("Check managed-server1 is still running");
-    int replicas = 1;
-    varifyPodReady(replicas);
-
-    // restore the test env
-    int msIncrNum = 1;
-    scaleUpAndVarify(msDecrNum);
-
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Verify that after bounce Operator, it discovers running servers and connect to them in place.
-   * It's able to scale up the cluster
+   * <p>Verify that the cluster scale up is noy impacted
    *
    * @throws Exception
    */
@@ -237,8 +150,7 @@ public class ITServerDiscovery extends BaseTest {
     logTestBegin(testMethodName);
 
     logger.info("Restart the Operator");
-    stopOperator();
-    startOperator();
+    operator.restartUsingReplicas();
 
     int msIncrNum = 1;
     scaleUpAndVarify(msIncrNum);
@@ -251,48 +163,10 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Verify that after bounce Operator, it discovers running servers and connect to them in place.
-   * It's able to scale up the cluster when domain has App deployed
+   * Restart both Operator and admin server and verify that it discovers running servers and a newly
+   * started server by scaling up cluster.
    *
-   * @throws Exception
-   */
-  @Test
-  public void testOPReconnToRunningMSWApp() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    domain.deployWebAppViaREST(
-        BaseTest.TESTWEBAPP,
-        BaseTest.getProjectRoot() + "/src/integration-tests/apps/testwebapp.war",
-        BaseTest.getUsername(),
-        BaseTest.getPassword());
-
-    domain.verifyWebAppLoadBalancing(BaseTest.TESTWEBAPP);
-
-    logger.info("Restart the Operator");
-    stopOperator();
-    startOperator();
-
-    int msIncrNum = 1;
-    scaleUpAndVarify(msIncrNum);
-
-    // Give each ms in the cluster to respond
-    int replicaCnt = getReplicaCnt();
-    for (int i = 0; i < replicaCnt + 2; i++) {
-      domain.verifyWebAppLoadBalancing(BaseTest.TESTWEBAPP);
-    }
-
-    // restore the test env
-    int msDecrNum = 1;
-    scaleDownAndVarify(msDecrNum);
-
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Verify that after bounce Operator and admin server, the Operator discovers running ms and
-   * connect to them in place. It's able to scale down the cluster
+   * <p>Verify that the cluster scale up is noy impacted
    *
    * @throws Exception
    */
@@ -309,7 +183,7 @@ public class ITServerDiscovery extends BaseTest {
     String adminServerPodName = domainUid + "-" + adminServerName;
 
     logger.info("Stop the Operator");
-    stopOperator();
+    operator.stopUsingReplicas();
 
     String cmd = "kubectl delete po/" + adminServerPodName + " -n " + domainNS;
     logger.info("Stop admin server <" + adminServerPodName + "> using command:\n" + cmd);
@@ -319,23 +193,23 @@ public class ITServerDiscovery extends BaseTest {
     TestUtils.checkPodDeleted(adminServerPodName, domainNS);
 
     logger.info("Start the Operator and admin server");
-    startOperator();
+    operator.startUsingReplicas();
 
     logger.info("Checking admin server <" + adminServerPodName + "> is running");
     TestUtils.checkPodReady(adminServerPodName, domainNS);
 
-    int msDecrNum = 1;
-    scaleDownAndVarify(msDecrNum);
-
-    // restore the test env
     int msIncrNum = 1;
     scaleUpAndVarify(msIncrNum);
+
+    // restore the test env
+    int msDecrNum = 1;
+    scaleDownAndVarify(msDecrNum);
 
     logger.info("SUCCESS - " + testMethodName);
   }
 
   /**
-   * Verify that after bounce the Operator, it discovers stopped ms and re-start them.
+   * Restart Operator and verify the liveness probe by killing all managed servers
    *
    * @throws Exception
    */
@@ -351,7 +225,7 @@ public class ITServerDiscovery extends BaseTest {
     String domainUid = domain.getDomainUid();
 
     logger.info("Stop the Operator");
-    stopOperator();
+    operator.stopUsingReplicas();
 
     // Delte all managed servers in the cluster
     int replicaCnt = getReplicaCnt();
@@ -366,7 +240,7 @@ public class ITServerDiscovery extends BaseTest {
     }
 
     logger.info("Start the Operator");
-    startOperator();
+    operator.startUsingReplicas();
 
     for (int i = 1; i <= replicaCnt; i++) {
       String msPodName = domainUid + "-" + managedServerNameBase + i;
@@ -378,7 +252,7 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Verify that when a ms dead, the Operator re-starts it.
+   * Verify the liveness probe by killing a managed server
    *
    * @throws Exception
    */
@@ -408,6 +282,12 @@ public class ITServerDiscovery extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
+  /**
+   * a help method to scale down cluster and verify
+   *
+   * @param decrNum - number of servers to scale down
+   * @throws Exception
+   */
   private void scaleDownAndVarify(int decrNum) throws Exception {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -438,6 +318,12 @@ public class ITServerDiscovery extends BaseTest {
     }
   }
 
+  /**
+   * a help method to scale up cluster and verify
+   *
+   * @param incrNum - number of servers to scale up
+   * @throws Exception
+   */
   private void scaleUpAndVarify(int incrNum) throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
@@ -456,8 +342,9 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Verify that after bounce Operator, it reconnects to a pre-configed and newly started MS
+   * a help method to verify that server pods are running
    *
+   * @param replicas - a number of replicas
    * @throws Exception
    */
   private void varifyPodReady(int replicas) throws Exception {
@@ -488,37 +375,11 @@ public class ITServerDiscovery extends BaseTest {
     }
   }
 
-  private void stopOperator() throws Exception {
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    String operNS = operator.getOperatorNamespace();
-    String cmd = "kubectl scale --replicas=0 deployment/weblogic-operator" + " -n " + operNS;
-    logger.info("Undeploy Operator using command:\n" + cmd);
-
-    ExecResult result = ExecCommand.exec(cmd);
-
-    logger.info("stdout : \n" + result.stdout());
-
-    logger.info("Checking if operator pod is deleted");
-    TestUtils.checkPodDeleted("", operNS);
-  }
-
-  private void startOperator() throws Exception {
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    String operNS = operator.getOperatorNamespace();
-    String cmd = "kubectl scale --replicas=1 deployment/weblogic-operator" + " -n " + operNS;
-    logger.info("Deploy Operator using command:\n" + cmd);
-
-    ExecResult result = ExecCommand.exec(cmd);
-
-    logger.info("Checking if operator pod is running");
-    operator.verifyPodCreated();
-    operator.verifyOperatorReady();
-  }
-
+  /**
+   * a help method to return the number of replicas in cluster
+   *
+   * @throws Exception
+   */
   private int getReplicaCnt() throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
