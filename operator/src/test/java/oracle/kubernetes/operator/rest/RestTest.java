@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -284,12 +284,6 @@ public class RestTest {
             .header(HttpHeaders.AUTHORIZATION, "Bearer ")
             .get();
     verifyNotAuthenticated(r);
-  }
-
-  @Test
-  public void testGetInternalCertificateAsBase64PEM() {
-    String internalCertData = RestServer.getInstance().getInternalCertificateAsBase64PEM();
-    assertEquals(internalCertData, RestTest.OP_CERT_DATA);
   }
 
   private VersionModel createLatestVersion() {

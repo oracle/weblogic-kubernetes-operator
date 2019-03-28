@@ -12,14 +12,10 @@ import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import javax.validation.constraints.NotNull;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -115,32 +111,18 @@ public class JobHelper {
   /**
    * Factory for {@link Step} that creates WebLogic domain introspector job.
    *
-   * @param tuning Watch tuning parameters
    * @param next Next processing step
-   * @param jws Map of JobWatcher objects, keyed by the string value of the name of a namespace
-   * @param isStopping Stop signal
    * @return Step for creating job
    */
-  public static Step createDomainIntrospectorJobStep(
-      WatchTuning tuning,
-      Step next,
-      @NotNull Map<String, JobWatcher> jws,
-      @NotNull AtomicBoolean isStopping) {
+  public static Step createDomainIntrospectorJobStep(Step next) {
 
-    return new DomainIntrospectorJobStep(tuning, next, jws, isStopping);
+    return new DomainIntrospectorJobStep(next);
   }
 
   static class DomainIntrospectorJobStep extends Step {
-    private final WatchTuning tuning;
-    private final Map<String, JobWatcher> jws;
-    private final AtomicBoolean isStopping;
 
-    DomainIntrospectorJobStep(
-        WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
+    DomainIntrospectorJobStep(Step next) {
       super(next);
-      this.tuning = tuning;
-      this.jws = jws;
-      this.isStopping = isStopping;
     }
 
     @Override
@@ -149,12 +131,12 @@ public class JobHelper {
       if (runIntrospector(packet, info)) {
         JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
 
-        packet.putIfAbsent(START_TIME, Long.valueOf(System.currentTimeMillis()));
+        packet.putIfAbsent(START_TIME, System.currentTimeMillis());
 
         return doNext(
             context.createNewJob(
                 readDomainIntrospectorPodLogStep(
-                    tuning, ConfigMapHelper.createSitConfigMapStep(getNext()), jws, isStopping)),
+                    ConfigMapHelper.createSitConfigMapStep(getNext()))),
             packet);
       }
 
@@ -163,14 +145,15 @@ public class JobHelper {
   }
 
   private static boolean runIntrospector(Packet packet, DomainPresenceInfo info) {
-    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    LOGGER.fine("runIntrospector topology: " + config);
+    WlsDomainConfig topology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    LOGGER.fine("runIntrospector topology: " + topology);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    if (config == null || (runningServersCount(info) == 0 && creatingServers(info))) {
-      return true;
-    }
-    return false;
+    return topology == null || isBringingUpNewDomain(info);
+  }
+
+  private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
+    return runningServersCount(info) == 0 && creatingServers(info);
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
@@ -180,7 +163,7 @@ public class JobHelper {
   /**
    * TODO: Enhance determination of when we believe we're creating WLS managed server pods.
    *
-   * @param info
+   * @param info the domain presence info
    * @return True, if creating servers
    */
   static boolean creatingServers(DomainPresenceInfo info) {
@@ -262,43 +245,35 @@ public class JobHelper {
       return MessageKeys.JOB_DELETED;
     }
 
-    protected void logJobDeleted(String domainUID, String namespace, String jobName) {
+    void logJobDeleted(String domainUID, String namespace, String jobName) {
       LOGGER.info(getJobDeletedMessageKey(), domainUID, namespace, jobName);
     }
 
     private Step deleteJob(Step next) {
       String jobName = JobHelper.createJobName(this.domainUID);
       logJobDeleted(this.domainUID, namespace, jobName);
-      Step step =
-          new CallBuilder()
-              .deleteJobAsync(
-                  jobName,
-                  this.namespace,
-                  new V1DeleteOptions().propagationPolicy("Foreground"),
-                  new DefaultResponseStep<>(next));
-      return step;
+      return new CallBuilder()
+          .deleteJobAsync(
+              jobName,
+              this.namespace,
+              new V1DeleteOptions().propagationPolicy("Foreground"),
+              new DefaultResponseStep<>(next));
     }
   }
 
-  private static Step createWatchDomainIntrospectorJobReadyStep(
-      WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
-    return new WatchDomainIntrospectorJobReadyStep(tuning, next, jws, isStopping);
+  private static Step createWatchDomainIntrospectorJobReadyStep(Step next) {
+    return new WatchDomainIntrospectorJobReadyStep(next);
   }
 
   /**
    * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log.
    *
-   * @param tuning Watch tuning parameters
    * @param next Next processing step
    * @return Step for reading WebLogic domain introspector pod log
    */
-  static Step readDomainIntrospectorPodLogStep(
-      WatchTuning tuning, Step next, Map<String, JobWatcher> jws, AtomicBoolean isStopping) {
+  private static Step readDomainIntrospectorPodLogStep(Step next) {
     return createWatchDomainIntrospectorJobReadyStep(
-        tuning,
-        readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)),
-        jws,
-        isStopping);
+        readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)));
   }
 
   private static class ReadDomainIntrospectorPodLogStep extends Step {
@@ -318,16 +293,14 @@ public class JobHelper {
     }
 
     private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, Step next) {
-      Step step =
-          new CallBuilder()
-              .readPodLogAsync(
-                  jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
-      return step;
+      return new CallBuilder()
+          .readPodLogAsync(
+              jobPodName, namespace, new ReadDomainIntrospectorPodLogResponseStep(next));
     }
   }
 
   private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
-    public ReadDomainIntrospectorPodLogResponseStep(Step nextStep) {
+    ReadDomainIntrospectorPodLogResponseStep(Step nextStep) {
       super(nextStep);
     }
 
@@ -376,7 +349,7 @@ public class JobHelper {
    * @param next Next processing step
    * @return Step for reading WebLogic domain introspector pod
    */
-  public static Step readDomainIntrospectorPodStep(Step next) {
+  private static Step readDomainIntrospectorPodStep(Step next) {
     return new ReadDomainIntrospectorPodStep(next);
   }
 
@@ -396,24 +369,18 @@ public class JobHelper {
     }
 
     private Step readDomainIntrospectorPod(String domainUID, String namespace, Step next) {
-
-      Step step =
-          new CallBuilder()
-              .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
-              .listPodAsync(namespace, new PodListStep(domainUID, namespace, next));
-
-      return step;
+      return new CallBuilder()
+          .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
+          .listPodAsync(namespace, new PodListStep(domainUID, namespace, next));
     }
   }
 
   private static class PodListStep extends ResponseStep<V1PodList> {
-    private final String ns;
     private final String domainUID;
 
     PodListStep(String domainUID, String ns, Step next) {
       super(next);
       this.domainUID = domainUID;
-      this.ns = ns;
     }
 
     @Override
