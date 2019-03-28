@@ -4,10 +4,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+
 import io.kubernetes.client.models.V1ObjectMeta;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.LabelConstants;
 import org.apache.commons.collections.MapUtils;
@@ -133,6 +136,16 @@ public class KubernetesUtils {
 
   public static V1ObjectMeta withOperatorLabels(V1ObjectMeta meta, String uid) {
     return meta.putLabelsItem(LabelConstants.DOMAINUID_LABEL, uid)
-        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true");
+  }
+
+  static boolean isOperatorCreated(V1ObjectMeta metadata) {
+    return Boolean.parseBoolean(getOperatorCreatedLabel(metadata));
+  }
+
+  private static String getOperatorCreatedLabel(V1ObjectMeta metadata) {
+    return Optional.ofNullable(metadata.getLabels())
+        .map(labels -> labels.get(CREATEDBYOPERATOR_LABEL))
+        .orElse("false");
   }
 }

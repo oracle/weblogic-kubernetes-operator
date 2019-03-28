@@ -6,8 +6,15 @@ package oracle.kubernetes.operator;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -24,6 +31,7 @@ import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -151,6 +159,46 @@ public class DomainProcessorTest {
 
     assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
+  }
+
+  @Test
+  public void whenDomainShutDown_removeAllPodsAndServices() {
+    defineServerResources(ADMIN_SERVER_NAME);
+    Arrays.stream(managedServerNames).forEach(this::defineServerResources);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, true, true);
+
+    assertThat(getRunningServices(), empty());
+    assertThat(getRunningPods(), empty());
+  }
+
+  @Test
+  public void whenDomainShutDown_ignoreNonOperatorServices() {
+    defineServerResources(ADMIN_SERVER_NAME);
+    Arrays.stream(managedServerNames).forEach(this::defineServerResources);
+    testSupport.defineResources(createNonOperatorService());
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, true, true);
+
+    assertThat(getRunningServices(), contains(createNonOperatorService()));
+    assertThat(getRunningPods(), empty());
+  }
+
+  private V1Service createNonOperatorService() {
+    return new V1Service()
+        .metadata(
+            new V1ObjectMeta()
+                .name("do-not-delete-service")
+                .namespace(NS)
+                .putLabelsItem("serviceType", "SERVER")
+                .putLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
+                .putLabelsItem(DOMAINNAME_LABEL, UID)
+                .putLabelsItem(DOMAINUID_LABEL, UID)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
+                .putLabelsItem(SERVERNAME_LABEL, ADMIN_SERVER_NAME))
+        .spec(new V1ServiceSpec().type("ClusterIP"));
   }
 
   private Stream<V1Service> getServerServices() {
