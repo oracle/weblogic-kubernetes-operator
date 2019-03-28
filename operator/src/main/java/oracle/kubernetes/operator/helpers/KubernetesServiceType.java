@@ -81,6 +81,7 @@ public enum KubernetesServiceType {
   private static final String SERVICE_TYPE = "serviceType";
 
   static KubernetesServiceType getType(V1Service service) {
+    if (!KubernetesUtils.isOperatorCreated(service.getMetadata())) return EXTERNAL;
     String type = ServiceHelper.getLabelValue(service, SERVICE_TYPE);
     if (type != null) return KubernetesServiceType.valueOf(type);
 
