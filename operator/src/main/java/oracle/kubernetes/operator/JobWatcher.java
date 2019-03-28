@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -45,16 +46,16 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       new ConcurrentHashMap<>();
 
   /**
-   * If a JobWatcher has already been created, returns it.
+   * Returns a cached JobWatcher, if present; otherwise, creates a new one.
    *
    * @param domain the domain for which the job watcher is to be returned
-   * @return a cached jobwatcher, or null.
+   * @return a cached jobwatcher.
    */
-  public static JobWatcher getOrCreateFor(Domain domain) {
+  public static @Nonnull JobWatcher getOrCreateFor(Domain domain) {
     return JOB_WATCHERS.computeIfAbsent(getNamespace(domain), n -> factory.createFor(domain));
   }
 
-  static String getNamespace(Domain domain) {
+  private static String getNamespace(Domain domain) {
     return domain.getMetadata().getNamespace();
   }
 
