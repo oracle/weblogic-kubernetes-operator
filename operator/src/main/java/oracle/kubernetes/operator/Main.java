@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.JSON;
 import io.kubernetes.client.models.V1EventList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
@@ -18,21 +17,21 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CRDHelper;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -57,12 +56,14 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
+import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
 /** A Kubernetes Operator for WebLogic. */
@@ -77,7 +78,7 @@ public class Main {
     private final ThreadFactory delegate = ThreadFactorySingleton.getInstance();
 
     @Override
-    public Thread newThread(Runnable r) {
+    public Thread newThread(@Nonnull Runnable r) {
       return delegate.newThread(
           () -> {
             ContainerResolver.getDefault().enterContainer(container);
@@ -90,7 +91,7 @@ public class Main {
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
 
-  static final TuningParameters tuningAndConfig;
+  private static final TuningParameters tuningAndConfig;
 
   static {
     try {
@@ -126,27 +127,28 @@ public class Main {
                 callBuilderFactory));
   }
 
-  static final Engine engine = new Engine(wrappedExecutorService);
-  private static final DomainProcessor processor = DomainProcessor.getInstance();
+  private static Engine engine = new Engine(wrappedExecutorService);
 
-  static final ConcurrentMap<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();
-  static final ConcurrentMap<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
+  private static final Map<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();
+  private static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
 
   private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
   private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
   private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
   private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
 
-  static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
-
-  private static final String operatorNamespace = getOperatorNamespace();
+  private static final String operatorNamespace = computeOperatorNamespace();
   private static final AtomicReference<DateTime> lastFullRecheck =
       new AtomicReference<>(DateTime.now());
+
+  private static final DomainProcessorDelegateImpl delegate = new DomainProcessorDelegateImpl();
+  private static final DomainProcessor processor = new DomainProcessorImpl(delegate);
 
   private static String principal;
   private static KubernetesVersion version = null;
 
-  static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
+  private static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
       "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
 
   /**
@@ -189,31 +191,19 @@ public class Main {
   }
 
   private static void begin() {
-    String serviceAccountName = tuningAndConfig.get("serviceaccount");
-    if (serviceAccountName == null) {
-      serviceAccountName = "default";
-    }
+    String serviceAccountName =
+        Optional.ofNullable(tuningAndConfig.get("serviceaccount")).orElse("default");
     principal = "system:serviceaccount:" + operatorNamespace + ":" + serviceAccountName;
 
     LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, operatorNamespace);
+    JobWatcher.defineFactory(
+        threadFactory, tuningAndConfig.getWatchTuning(), Main::isNamespaceStopping);
 
     Collection<String> targetNamespaces = getTargetNamespaces();
-    StringBuilder tns = new StringBuilder();
-    Iterator<String> it = targetNamespaces.iterator();
-    while (it.hasNext()) {
-      tns.append(it.next());
-      if (it.hasNext()) {
-        tns.append(", ");
-      }
-    }
-    LOGGER.info(MessageKeys.OP_CONFIG_TARGET_NAMESPACES, tns.toString());
+    LOGGER.info(MessageKeys.OP_CONFIG_TARGET_NAMESPACES, StringUtils.join(targetNamespaces, ", "));
     LOGGER.info(MessageKeys.OP_CONFIG_SERVICE_ACCOUNT, serviceAccountName);
 
     try {
-      // Initialize logging factory with JSON serializer for later logging
-      // that includes k8s objects
-      LoggingFactory.setJSON(new JSON());
-
       version = HealthCheckHelper.performK8sVersionCheck();
 
       runSteps(
@@ -241,18 +231,10 @@ public class Main {
     }
   }
 
-  static KubernetesVersion getVersion() {
-    return version;
-  }
-
-  static String getPrincipal() {
-    return principal;
-  }
-
   private static class StartNamespacesStep extends Step {
     private final Collection<String> targetNamespaces;
 
-    public StartNamespacesStep(Collection<String> targetNamespaces) {
+    StartNamespacesStep(Collection<String> targetNamespaces) {
       this.targetNamespaces = targetNamespaces;
     }
 
@@ -311,30 +293,17 @@ public class Main {
     }
   }
 
-  static AtomicBoolean isNamespaceStopping(String ns) {
+  private static AtomicBoolean isNamespaceStopping(String ns) {
     return isNamespaceStopping.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
 
-  static Fiber runSteps(Step firstStep) {
-    return runSteps(firstStep, null);
+  private static void runSteps(Step firstStep) {
+    runSteps(firstStep, null);
   }
 
-  static Fiber runSteps(Step firstStep, Runnable completionAction) {
+  private static void runSteps(Step firstStep, Runnable completionAction) {
     Fiber f = engine.createFiber();
     f.start(firstStep, new Packet(), andThenDo(completionAction));
-    return f;
-  }
-
-  public static Packet runStepsToCompletion(Step firstStep)
-      throws InterruptedException, ExecutionException {
-    return runStepsToCompletion(firstStep, null);
-  }
-
-  public static Packet runStepsToCompletion(Step firstStep, Runnable completionAction)
-      throws InterruptedException, ExecutionException {
-    Fiber f = runSteps(firstStep, completionAction);
-    f.get();
-    return f.getPacket();
   }
 
   private static NullCompletionCallback andThenDo(Runnable completionAction) {
@@ -430,6 +399,7 @@ public class Main {
    *
    * @return the collection of target namespace names
    */
+  @SuppressWarnings("SameParameterValue")
   private static Collection<String> getTargetNamespaces(String tnValue, String namespace) {
     Collection<String> targetNamespaces = new ArrayList<>();
 
@@ -468,14 +438,7 @@ public class Main {
   private static final Semaphore shutdownSignal = new Semaphore(0);
 
   private static void waitForDeath() {
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread() {
-              @Override
-              public void run() {
-                shutdownSignal.release();
-              }
-            });
+    Runtime.getRuntime().addShutdownHook(new Thread(shutdownSignal::release));
 
     try {
       shutdownSignal.acquire();
@@ -483,10 +446,7 @@ public class Main {
       Thread.currentThread().interrupt();
     }
 
-    isNamespaceStopping.forEach(
-        (key, value) -> {
-          value.set(true);
-        });
+    isNamespaceStopping.forEach((key, value) -> value.set(true));
   }
 
   private static EventWatcher createEventWatcher(String ns, String initialResourceVersion) {
@@ -530,18 +490,12 @@ public class Main {
         isNamespaceStopping(ns));
   }
 
-  static String getOperatorNamespace() {
-    String namespace = System.getenv("OPERATOR_NAMESPACE");
-    if (namespace == null) {
-      namespace = "default";
-    }
-    return namespace;
+  private static String computeOperatorNamespace() {
+    return Optional.ofNullable(System.getenv("OPERATOR_NAMESPACE")).orElse("default");
   }
 
-  public static Collection<String> getTargetNamespaces() {
-    String namespace = getOperatorNamespace();
-
-    return getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), namespace);
+  private static Collection<String> getTargetNamespaces() {
+    return getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), operatorNamespace);
   }
 
   private static class DomainListStep extends ResponseStep<DomainList> {
@@ -744,6 +698,45 @@ public class Main {
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
       LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+    }
+  }
+
+  private static class DomainProcessorDelegateImpl implements DomainProcessorDelegate {
+
+    @Override
+    public String getOperatorNamespace() {
+      return operatorNamespace;
+    }
+
+    @Override
+    public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
+      return podWatchers.get(namespace);
+    }
+
+    @Override
+    public boolean isNamespaceRunning(String namespace) {
+      return !isNamespaceStopping.get(namespace).get();
+    }
+
+    @Override
+    public KubernetesVersion getVersion() {
+      return version;
+    }
+
+    @Override
+    public FiberGate createFiberGate() {
+      return new FiberGate(Main.engine);
+    }
+
+    @Override
+    public void runSteps(Step firstStep) {
+      Main.runSteps(firstStep);
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleWithFixedDelay(
+        Runnable command, long initialDelay, long delay, TimeUnit unit) {
+      return Main.engine.getExecutor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
   }
 }

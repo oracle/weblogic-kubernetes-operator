@@ -15,20 +15,35 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.*;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1ConfigMapVolumeSource;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1JobCondition;
+import io.kubernetes.client.models.V1JobSpec;
+import io.kubernetes.client.models.V1JobStatus;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1PodTemplateSpec;
+import io.kubernetes.client.models.V1SecretReference;
+import io.kubernetes.client.models.V1SecretVolumeSource;
+import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.VersionConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -293,12 +308,7 @@ public class DomainIntrospectorJobTest {
   }
 
   FiberTestSupport.StepFactory getStepFactory() {
-    return next ->
-        JobHelper.createDomainIntrospectorJobStep(
-            new WatchTuning(30, 0),
-            next,
-            new ConcurrentHashMap<String, JobWatcher>(),
-            new AtomicBoolean(false));
+    return next -> JobHelper.createDomainIntrospectorJobStep(next);
   }
 
   V1PodList createListPods() {
