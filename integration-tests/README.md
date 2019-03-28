@@ -16,11 +16,6 @@ Wercker runs only Quick test use cases, Jenkins runs both Quick and Full test us
 
 Use Cases covered in integration tests for the operator is available [here](USECASES.MD)
 
-| Session Migration | Use Case |
-| --- | --- |
-| Primary Server Repick | A backup server becomes the primary server when a primary server fails|
-| HTTP Session Migration | Verify in-memory HTTP session State replication |
-
 # Directory Configuration and Structure
  
 Directory structure of source code:
