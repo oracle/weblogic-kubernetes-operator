@@ -1,11 +1,11 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
+import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
+import static oracle.kubernetes.operator.LabelConstants.getCreatedbyOperatorSelector;
 
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
@@ -54,7 +54,7 @@ public class DeleteDomainStep extends Step {
 
   private Step deleteServices() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .withLabelSelectors(forDomainUidSelector(domainUID), getCreatedbyOperatorSelector())
         .listServiceAsync(
             namespace,
             new ActionResponseStep<V1ServiceList>() {
@@ -66,13 +66,13 @@ public class DeleteDomainStep extends Step {
 
   private Step deletePods() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .withLabelSelectors(forDomainUidSelector(domainUID), getCreatedbyOperatorSelector())
         .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(null));
   }
 
   private Step deletePersistentVolumes() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .withLabelSelectors(forDomainUidSelector(domainUID), getCreatedbyOperatorSelector())
         .listPersistentVolumeAsync(
             new ActionResponseStep<V1PersistentVolumeList>() {
               @Override
@@ -84,7 +84,7 @@ public class DeleteDomainStep extends Step {
 
   private Step deletePersistentVolumeClaims() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .withLabelSelectors(forDomainUidSelector(domainUID), getCreatedbyOperatorSelector())
         .listPersistentVolumeClaimAsync(
             namespace,
             new ActionResponseStep<V1PersistentVolumeClaimList>() {
