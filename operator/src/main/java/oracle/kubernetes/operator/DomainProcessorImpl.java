@@ -512,7 +512,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Step readExistingPods(DomainPresenceInfo info) {
     return new CallBuilder()
         .withLabelSelectors(
-            LabelConstants.forDomainUid(info.getDomainUID()),
+            LabelConstants.forDomainUidSelector(info.getDomainUID()),
             LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listPodAsync(info.getNamespace(), new PodListStep(info));
   }
@@ -520,7 +520,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private Step readExistingServices(DomainPresenceInfo info) {
     return new CallBuilder()
         .withLabelSelectors(
-            LabelConstants.forDomainUid(info.getDomainUID()),
+            LabelConstants.forDomainUidSelector(info.getDomainUID()),
             LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listServiceAsync(info.getNamespace(), new ServiceListStep(info));
   }

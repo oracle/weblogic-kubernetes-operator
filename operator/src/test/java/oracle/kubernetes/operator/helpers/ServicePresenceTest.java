@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
@@ -244,7 +245,11 @@ public class ServicePresenceTest {
   @Test
   public void whenEventContainsServiceWithClusterNameAndNoTypeLabel_addAsClusterService() {
     V1Service service =
-        new V1Service().metadata(createMetadata().putLabelsItem(CLUSTERNAME_LABEL, CLUSTER));
+        new V1Service()
+            .metadata(
+                createMetadata()
+                    .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
+                    .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER));
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
@@ -372,6 +377,7 @@ public class ServicePresenceTest {
         new V1Service()
             .metadata(
                 createMetadata()
+                    .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
                     .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER)
                     .putLabelsItem(SERVERNAME_LABEL, SERVER));
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(service).toWatchResponse();
