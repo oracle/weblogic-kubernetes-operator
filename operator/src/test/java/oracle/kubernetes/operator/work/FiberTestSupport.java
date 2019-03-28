@@ -86,6 +86,11 @@ public class FiberTestSupport {
     return schedule.containsItemAt(time, unit);
   }
 
+  /**
+   * Returns the engine used by this support object.
+   *
+   * @return the current engine object
+   */
   public Engine getEngine() {
     return engine;
   }
