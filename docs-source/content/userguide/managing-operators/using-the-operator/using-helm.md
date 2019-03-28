@@ -2,7 +2,7 @@
 title: "Use Helm"
 date: 2019-02-23T17:08:43-05:00
 weight: 1
-description: "Useful Helm operations"
+description: "Useful Helm operations."
 ---
 
 #### Contents
@@ -101,7 +101,7 @@ javaLoggingLevel:  "FINE"
 
 Specifies the Docker image containing the operator code.
 
-Defaults to `weblogic-kubernetes-operator:2.0`.
+Defaults to `weblogic-kubernetes-operator:2.1`.
 
 Example:
 ```

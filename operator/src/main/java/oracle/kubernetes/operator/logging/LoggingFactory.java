@@ -1,4 +1,4 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -15,7 +15,7 @@ public class LoggingFactory {
   // map from resourceBundleName to facade
   private static final Map<String, LoggingFacade> facade = new HashMap<String, LoggingFacade>();
 
-  private static JSON json = null;
+  private static JSON json = new JSON();
 
   public static void setJSON(JSON json) {
     LoggingFactory.json = json;

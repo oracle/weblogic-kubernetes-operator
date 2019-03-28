@@ -8,6 +8,7 @@ description: "Kubernetes secrets for the WebLogic operator"
 #### Contents
 * [WebLogic domain credentials secret](#weblogic-domain-credentials-secret)
 * [WebLogic domain image pull secret](#weblogic-domain-image-pull-secret)
+* [WebLogic operator image pull secret](#weblogic-operator-image-pull-secret)
 * [WebLogic operator configuration override secrets](#weblogic-operator-configuration-override-secrets)
 * [WebLogic operator external REST interface secret](#weblogic-operator-external-rest-interface-secret)
 * [WebLogic operator internal REST interface secret](#weblogic-operator-internal-rest-interface-secret)
@@ -71,12 +72,34 @@ username:  8 bytes
 #### WebLogic domain image pull secret
 
 The WebLogic domain that the operator manages can have images that are protected
-in the registry. The `imagePullSecrets` setting can be used to specify the
+in the registry. The `imagePullSecrets` setting on the `Domain` can be used to specify the
 Kubernetes `Secret` that holds the registry credentials.
 
 {{% notice info %}}
 For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}})
 under **Domain security**.
+{{% /notice %}}
+
+#### WebLogic operator image pull secret
+
+The Helm chart for installing the operator has an option to specify the
+image pull secret used for the operator's image when using a private registry.
+The Kubernetes `Secret` of type `docker-registry` should be created in the namespace
+where the operator is deployed.
+
+Here is an example of using the `helm install` command to set the image name and image pull secret:
+```bash
+$ helm install kubernetes/charts/weblogic-operator \
+  --set "image=my.io/my-operator-image:1.0" \
+  --set "imagePullSecrets[0].name=my-operator-image-pull-secret" \
+  --name my-weblogic-operator --namespace weblogic-operator-ns \
+  --wait
+```
+
+{{% notice info %}}
+For more information, see
+[Install the operator Helm chart]({{<relref "/userguide/managing-operators/installation/_index.md#install-the-operator-helm-chart">}})
+under **User Guide**.
 {{% /notice %}}
 
 #### WebLogic operator configuration override secrets
