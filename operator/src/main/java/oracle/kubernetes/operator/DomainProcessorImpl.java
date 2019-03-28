@@ -141,11 +141,10 @@ public class DomainProcessorImpl implements DomainProcessor {
       String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
       String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
       if (domainUID != null && serverName != null) {
-        DomainPresenceInfo existing =
-            getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
-        if (existing != null) {
+        DomainPresenceInfo info = getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
+        if (info != null) {
           ServerKubernetesObjects sko =
-              existing.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
+              info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
           switch (item.type) {
             case "ADDED":
               sko.getPod()
@@ -194,11 +193,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                             }
                             return current;
                           });
-              if (oldPod != null && !existing.isDeleting()) {
+              if (oldPod != null && info.isNotDeleting()) {
                 // Pod was deleted, but sko still contained a non-null entry
                 LOGGER.info(
                     MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
-                makeRightDomainPresence(existing, true, false, true);
+                makeRightDomainPresence(info, true, false, true);
               }
               break;
 
@@ -215,19 +214,18 @@ public class DomainProcessorImpl implements DomainProcessor {
     String domainUID = ServiceHelper.getServiceDomainUID(service);
     if (domainUID == null) return;
 
-    DomainPresenceInfo domainPresenceInfo =
+    DomainPresenceInfo info =
         getExistingDomainPresenceInfo(service.getMetadata().getNamespace(), domainUID);
-    if (domainPresenceInfo == null) return;
+    if (info == null) return;
 
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
-        ServiceHelper.updatePresenceFromEvent(domainPresenceInfo, item.object);
+        ServiceHelper.updatePresenceFromEvent(info, item.object);
         break;
       case "DELETED":
-        boolean removed = ServiceHelper.deleteFromEvent(domainPresenceInfo, item.object);
-        if (removed && !domainPresenceInfo.isDeleting())
-          makeRightDomainPresence(domainPresenceInfo, true, false, true);
+        boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
+        if (removed && info.isNotDeleting()) makeRightDomainPresence(info, true, false, true);
         break;
       default:
     }
@@ -483,7 +481,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     public NextAction apply(Packet packet) {
       registerDomainPresenceInfo(info);
       Step strategy = getNext();
-      if (!info.isPopulated() && !info.isDeleting()) {
+      if (!info.isPopulated() && info.isNotDeleting()) {
         strategy = Step.chain(readExistingPods(info), readExistingServices(info), strategy);
       }
       return doNext(strategy, packet);

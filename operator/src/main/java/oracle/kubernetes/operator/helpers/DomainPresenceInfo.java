@@ -174,8 +174,8 @@ public class DomainPresenceInfo {
     return deletedService != null;
   }
 
-  public boolean isDeleting() {
-    return isDeleting.get();
+  public boolean isNotDeleting() {
+    return !isDeleting.get();
   }
 
   public void setDeleting(boolean deleting) {
