@@ -135,7 +135,7 @@ Below are the load balancer attributes:
 
 Below are the custom attributes:
 - createDomainPyScript is used to provide a custom create-domain.py script for domain on pv using WLST or create-wls-domain.py for domain in image 
-- clusterType is used to create a CONFIGURED or DYNAMIC Cluster. This is supported for domain on pv using WLST or domain in image using WDT configurations. Default is DYNAMIC
+- clusterType is used to create a CONFIGURED or DYNAMIC Cluster. Default is DYNAMIC. This is supported for domain on pv using WLST or domain in image using WDT configurations. 
   
 # How does it work
 
