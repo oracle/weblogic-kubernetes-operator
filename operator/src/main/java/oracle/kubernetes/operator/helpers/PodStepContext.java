@@ -4,7 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
+import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 import io.kubernetes.client.custom.IntOrString;
@@ -529,7 +529,7 @@ public abstract class PodStepContext extends StepContextBase {
       String domainUID = getDomainUID();
       Step list =
           new CallBuilder()
-              .withLabelSelectors(forDomainUid(domainUID))
+              .withLabelSelectors(forDomainUidSelector(domainUID))
               .listPersistentVolumeAsync(
                   new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
                     @Override
