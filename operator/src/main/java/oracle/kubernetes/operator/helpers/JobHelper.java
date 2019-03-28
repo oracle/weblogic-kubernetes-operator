@@ -145,11 +145,15 @@ public class JobHelper {
   }
 
   private static boolean runIntrospector(Packet packet, DomainPresenceInfo info) {
-    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    LOGGER.fine("runIntrospector topology: " + config);
+    WlsDomainConfig topology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+    LOGGER.fine("runIntrospector topology: " + topology);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    return config == null || (runningServersCount(info) == 0 && creatingServers(info));
+    return topology == null || isBringingUpNewDomain(info);
+  }
+
+  private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
+    return runningServersCount(info) == 0 && creatingServers(info);
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
