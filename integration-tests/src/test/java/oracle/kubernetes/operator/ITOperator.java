@@ -128,8 +128,7 @@ public class ITOperator extends BaseTest {
       domain = TestUtils.createDomain(DOMAINONPV_WDT_YAML);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
-      // bug 29514540 - commenting WLDF scaling test
-      // testWLDFScaling(operator2, domain);
+      testWLDFScaling(operator2, domain);
       // TODO: Test Apache LB
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
