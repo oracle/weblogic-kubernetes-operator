@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.utils;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 
+import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.DirectoryStream;
@@ -21,19 +22,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
 public abstract class InMemoryFileSystem extends FileSystem {
   private FileSystemProviderStub provider = createStrictStub(FileSystemProviderStub.class);
 
-  private static InMemoryFileSystem instance = createStrictStub(InMemoryFileSystem.class);
+  private static InMemoryFileSystem instance;
 
-  public static InMemoryFileSystem getInstance() {
-    return instance;
+  public static InMemoryFileSystem createInstance() {
+    return instance = createStrictStub(InMemoryFileSystem.class);
   }
 
-  public static void defineFile(String filePath, String contents) {
+  public void defineFile(String filePath, String contents) {
     instance.defineFileContents(filePath, contents);
   }
 
@@ -106,32 +108,65 @@ public abstract class InMemoryFileSystem extends FileSystem {
 
     @Override
     public SeekableByteChannel newByteChannel(
-        Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) {
-      return createStrictStub(SeekableByteChannelStub.class, fileContents.get(getFilePath(path)));
+        Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs)
+        throws FileNotFoundException {
+      return Optional.ofNullable(fileContents.get(getFilePath(path)))
+          .map(s -> createStrictStub(SeekableByteChannelStub.class, s))
+          .orElseThrow(() -> new FileNotFoundException(path.toString()));
     }
 
     private BasicFileAttributes createAttributes(String filePath) {
       return createStrictStub(BasicFileAttributesStub.class, isDirectory(filePath));
     }
 
-    private boolean isDirectory(String filePath) {
+    private PathType isDirectory(String filePath) {
       for (String key : fileContents.keySet()) {
-        if (key.startsWith(filePath + '/')) return true;
+        if (key.startsWith(filePath + '/')) return PathType.DIRECTORY;
+        if (key.equals(filePath)) return PathType.FILE;
       }
+      return PathType.NONE;
+    }
+  }
+
+  enum PathType {
+    DIRECTORY {
+      @Override
+      boolean isDirectory() {
+        return true;
+      }
+    },
+    FILE {
+      @Override
+      boolean isRegularFile() {
+        return true;
+      }
+    },
+    NONE;
+
+    boolean isDirectory() {
+      return false;
+    };
+
+    boolean isRegularFile() {
       return false;
     }
   }
 
   abstract static class BasicFileAttributesStub implements BasicFileAttributes {
-    private boolean isDirectory;
+    private PathType pathType;
 
-    BasicFileAttributesStub(boolean isDirectory) {
-      this.isDirectory = isDirectory;
+    BasicFileAttributesStub(PathType pathType) {
+      this.pathType = pathType;
     }
 
     @Override
     public boolean isDirectory() {
-      return isDirectory;
+      return pathType.isDirectory();
+    }
+
+    @Override
+    public boolean isRegularFile() {
+      return pathType.isRegularFile();
     }
 
     @Override
@@ -164,7 +199,7 @@ public abstract class InMemoryFileSystem extends FileSystem {
     private int index = 0;
 
     SeekableByteChannelStub(String contents) {
-      this.contents = contents.getBytes();
+      this.contents = Optional.ofNullable(contents).map(String::getBytes).orElse(null);
     }
 
     @Override
