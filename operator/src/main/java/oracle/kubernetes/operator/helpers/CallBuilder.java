@@ -960,7 +960,7 @@ public class CallBuilder {
   public Step deleteCollectionPodAsync(String namespace, ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
         responseStep,
-        new RequestParams("deleteCollection", namespace, null, null),
+        new RequestParams("deletePodCollection", namespace, null, null),
         DELETECOLLECTION_POD);
   }
 
