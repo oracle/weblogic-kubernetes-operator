@@ -5,16 +5,16 @@ draft: false
 weight: 9
 ---
 
-This documentation is produced using [Hugo](http://gohugo.io).  To make an 
+This documentation is produced using [Hugo](http://gohugo.io).  To make an
 update to the documentation, follow this process:
 
-1. Clone the repository if you have not already
+1. If you have not already done so, clone the repository.
 
     ```
     git clone https://github.com/oracle/weblogic-kubernetes-operator
     ```
 
-2. Create a new branch from master
+2. Create a new branch from master.
 
     ```
     git checkout master
@@ -22,14 +22,14 @@ update to the documentation, follow this process:
     git checkout -b your-branch
     ```
 
-3. Make your documentation updates by editing the source files in 
+3. Make your documentation updates by editing the source files in
 `docs-source/content`.
 {{% notice note %}}
-Make sure you only check in the changes from the `docs-source/content` area;
+Make sure you _only_ check in the changes from the `docs-source/content` area;
 do not build the site and check in the static files.
 {{% /notice %}}
 
-4. If you wish to view your changes you can run the site locally using 
+4. If you wish to view your changes, you can run the site locally using
 these commands; the site will be available on the URL shown here:
 
     ```
@@ -38,7 +38,6 @@ these commands; the site will be available on the URL shown here:
     ```
 
 5. When you are ready to submit your changes, push your branch to `origin`
-and submit a pull request. Remember to follow the guidelines in the 
+and submit a pull request. Remember to follow the guidelines in the
 [CONTRIBUTING](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/CONTRIBUTING.md)
 document.
-

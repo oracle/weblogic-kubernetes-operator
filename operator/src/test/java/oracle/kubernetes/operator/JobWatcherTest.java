@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -9,6 +9,8 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.models.V1Job;
@@ -24,6 +26,7 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
@@ -33,6 +36,8 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   private static final int INITIAL_RESOURCE_VERSION = 234;
   private Packet packet;
   private V1Job job = new V1Job().metadata(new V1ObjectMeta().name("test"));
+  private static final String NS = "ns1";
+  private static final String VERSION = "123";
 
   public void setUp() throws Exception {
     super.setUp();
@@ -146,7 +151,28 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     assertThat(listeningStep.wasPerformed, is(true));
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @Test
+  public void afterFactoryDefined_createWatcherForDomain() {
+    AtomicBoolean stopping = new AtomicBoolean(true);
+    JobWatcher.defineFactory(this, tuning, ns -> stopping);
+    Domain domain =
+        new Domain().withMetadata(new V1ObjectMeta().namespace(NS).resourceVersion(VERSION));
+
+    assertThat(JobWatcher.getOrCreateFor(domain), notNullValue());
+  }
+
+  @Test
+  public void afterWatcherCreated_itIsCached() {
+    AtomicBoolean stopping = new AtomicBoolean(true);
+    JobWatcher.defineFactory(this, tuning, ns -> stopping);
+    Domain domain =
+        new Domain().withMetadata(new V1ObjectMeta().namespace(NS).resourceVersion(VERSION));
+    JobWatcher firstWatcher = JobWatcher.getOrCreateFor(domain);
+
+    assertThat(JobWatcher.getOrCreateFor(domain), sameInstance(firstWatcher));
+  }
+
+  @SuppressWarnings({"rawtypes"})
   public void receivedEvents_areSentToListeners() {
     // Override as JobWatcher doesn't currently implement listener for callback
   }
