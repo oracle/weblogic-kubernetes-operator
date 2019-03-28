@@ -121,6 +121,17 @@ public class Operator {
   }
 
   /**
+   * verifies operator pod is deleted
+   *
+   * @throws Exception
+   */
+  public void verifyPodDeleted() throws Exception {
+    logger.info("Checking if Operator pod is deleted");
+    // empty string for pod name as there is only one pod
+    TestUtils.checkPodDeleted("", operatorNS);
+  }
+
+  /**
    * verifies operator pod is ready
    *
    * @throws Exception
@@ -493,6 +504,49 @@ public class Operator {
     if (System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null) {
       operatorMap.put("imagePullPolicy", System.getenv("IMAGE_PULL_POLICY_OPERATOR"));
     }
+  }
+
+  /**
+   * restart operator pod using replicas
+   *
+   * @throws Exception
+   */
+  public void restartUsingReplicas() throws Exception {
+    stopUsingReplicas();
+    startUsingReplicas();
+  }
+
+  /**
+   * stop operator pod by scaling its replicaset to 0
+   *
+   * @throws Exception
+   */
+  public void stopUsingReplicas() throws Exception {
+    String cmd = "kubectl scale --replicas=0 deployment/weblogic-operator" + " -n " + operatorNS;
+    logger.info("Undeploy Operator using command:\n" + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd);
+
+    logger.info("stdout : \n" + result.stdout());
+
+    logger.info("Checking if operator pod is deleted");
+    verifyPodDeleted();
+  }
+
+  /**
+   * start operator pod by scaling its replicaset to 1
+   *
+   * @throws Exception
+   */
+  public void startUsingReplicas() throws Exception {
+    String cmd = "kubectl scale --replicas=1 deployment/weblogic-operator" + " -n " + operatorNS;
+    logger.info("Deploy Operator using command:\n" + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd);
+
+    logger.info("Checking if operator pod is running");
+    verifyPodCreated();
+    verifyOperatorReady();
   }
 
   public String getOperatorNamespace() {

@@ -99,8 +99,16 @@ Configuration Overrides Usecases
 
 | Session Migration | Use Case |
 | --- | --- |
-| Primary Server Repick | A backup server becomes the primary server when a primary server fails|
-| HTTP Session Migration | Verify in-memory HTTP session State replication |
+| Primary server repick | a backup server becomes the primary server when a primary server fails|
+| HTTP session nigration | verify in-memory HTTP session State replication |
+
+| Server Discovery | Use Case |
+| --- | --- |
+| Discover a newly started server | restart Operator and verify that it discovers to newly started server by applying a modified domain.yaml  |
+| Discover running servers | restart Operator and verify that it discovers running servers and a newly started server by scaling up cluster |
+| Discover running servers | restart both Operator and admin server. Verify Operator connects to newly started server by scaling up cluster |
+| Liveness probe | restart Operator and verify the liveness probe by killing all managed servers in the cluster |
+| Liveness probe | Verify the liveness probe by killing a managed server |  
 
 # Directory Configuration and Structure
  
