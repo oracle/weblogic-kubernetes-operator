@@ -25,8 +25,8 @@ import org.junit.runners.MethodSorters;
 /**
  * Simple JUnit test file used for testing Operator.
  *
- * <p>This test is used for creating Operator(s) and multiple domains which are managed by the
- * Operator(s).
+ * <p>This test is used for creating Operator(s) and domain(s) which are managed by the Operator(s).
+ * And to test WLS server discovery feature.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITServerDiscovery extends BaseTest {
@@ -38,10 +38,8 @@ public class ITServerDiscovery extends BaseTest {
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes.
-   *
-   * <p>It also create operator and verify its deployed successfully. Create domain and verify
-   * domain is created.
+   * the resultRoot, pvRoot and projectRoot attributes. It also creates Operator, domain and a test
+   * domain yaml file.
    *
    * @throws Exception
    */
@@ -87,7 +85,7 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories
+   * Releases k8s cluster lease, archives result, pv directories.
    *
    * @throws Exception
    */
@@ -103,8 +101,8 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Restart Operator and verify that it connects to a pre-configed and newly started managed server
-   * by applying a modified domain.yaml
+   * Stop Operator. Start a managed server by applying a modified domain.yaml. Restart Operator and
+   * verify that it connects to this newly started managed server.
    *
    * @throws Exception
    */
@@ -136,10 +134,8 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Restart Operator and verify that it discovers running servers and a newly started server by
-   * scaling up cluster.
-   *
-   * <p>Verify that the cluster scale up is noy impacted
+   * Stop and restart Operator and verify that it discovers running servers and a newly started
+   * server by scaling up cluster. Verify that the cluster scale up is noy impacted.
    *
    * @throws Exception
    */
@@ -163,10 +159,8 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Restart both Operator and admin server and verify that it discovers running servers and a newly
-   * started server by scaling up cluster.
-   *
-   * <p>Verify that the cluster scale up is noy impacted
+   * Stop Operator and admin server. Restart Operator. Verify that it restarts admin server and
+   * discovers running servers. Verify that the cluster scale up is noy impacted.
    *
    * @throws Exception
    */
@@ -209,7 +203,8 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Restart Operator and verify the liveness probe by killing all managed servers
+   * Stop Operator. Kill all managed servers. Restart Operator. Verify that it restarts all managed
+   * servers.
    *
    * @throws Exception
    */
@@ -252,7 +247,8 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Verify the liveness probe by killing a managed server
+   * Stop Operator. Kill one managed server. Restart Operator. Verify that it restarts the killed
+   * managed server.
    *
    * @throws Exception
    */
@@ -282,12 +278,6 @@ public class ITServerDiscovery extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
-  /**
-   * a help method to scale down cluster and verify
-   *
-   * @param decrNum - number of servers to scale down
-   * @throws Exception
-   */
   private void scaleDownAndVarify(int decrNum) throws Exception {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -318,12 +308,6 @@ public class ITServerDiscovery extends BaseTest {
     }
   }
 
-  /**
-   * a help method to scale up cluster and verify
-   *
-   * @param incrNum - number of servers to scale up
-   * @throws Exception
-   */
   private void scaleUpAndVarify(int incrNum) throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
@@ -341,12 +325,6 @@ public class ITServerDiscovery extends BaseTest {
     varifyPodReady(replicas);
   }
 
-  /**
-   * a help method to verify that server pods are running
-   *
-   * @param replicas - a number of replicas
-   * @throws Exception
-   */
   private void varifyPodReady(int replicas) throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
@@ -375,11 +353,6 @@ public class ITServerDiscovery extends BaseTest {
     }
   }
 
-  /**
-   * a help method to return the number of replicas in cluster
-   *
-   * @throws Exception
-   */
   private int getReplicaCnt() throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
