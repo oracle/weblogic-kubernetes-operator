@@ -498,6 +498,12 @@ public class TestUtils {
     }
   }
 
+  /**
+   * exec kubectl apply -f yamlFile
+   *
+   * @param yamlFile
+   * @throws Exception
+   */
   public static void kubectlapply(String yamlFile) throws Exception {
 
     StringBuffer command = new StringBuffer();

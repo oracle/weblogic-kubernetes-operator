@@ -193,8 +193,8 @@ public class ITPodsRestart extends BaseTest {
 
   /**
    * Modify/Add the containerSecurityContext section at ServerPod Level using kubectl apply -f
-   * domain.yaml.Verify all the pods re-started. The property tested is: serverPod:
-   * containerSecurityContext: runAsUser: 1000 fsGroup: 2000
+   * cont.security.context.domain.yaml. Verify all the pods re-started. The property tested is:
+   * serverPod: containerSecurityContext: runAsUser: 1000 fsGroup: 2000
    *
    * @throws Exception
    */
@@ -226,8 +226,8 @@ public class ITPodsRestart extends BaseTest {
 
   /**
    * Modify/Add the podSecurityContext section at ServerPod level using kubectl apply -f
-   * domain.yaml. Verify all pod(s) re-started. The property tested is: podSecurityContext:
-   * runAsUser: 1000 fsGroup: 2000
+   * pod.security.context.domain.yaml. Verify all the pods re-started. The property tested is:
+   * podSecurityContext: runAsUser: 1000 fsGroup: 2000
    *
    * @throws Exception
    */
@@ -258,9 +258,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Modify/Add imagePullSecrets section at Domain Level using kubectl apply -f domain.yaml. Verify
-   * all pods re-started. The property tested is: imagePullSecrets:- name: imagePullSecr value:
-   * myImagePullSecret
+   * Modify/Add imagePullSecrets section at Domain Level using kubectl apply -f secret.domain.yaml.
+   * Verify all pods re-started. The property tested is: imagePullSecrets:- name: imagePullSecr
+   * value: myImagePullSecret
    *
    * @throws Exception
    */
@@ -291,9 +291,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Modify/Add resources at ServerPod level using kubectl apply -f domain.yaml. Verify all pods
-   * re-started. The property tested is: resources: limits: cpu: "1" requests: cpu: "0.5" args: -
-   * -cpus - "2"
+   * Modify/Add resources at ServerPod level using kubectl apply -f resource.domain.yaml. Verify all
+   * pods re-started. The property tested is: resources: limits: cpu: "1" requests: cpu: "0.5" args:
+   * - -cpus - "2"
    *
    * @throws Exception
    */
@@ -323,8 +323,8 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Modify the annotations at ServerPod level using kubectl apply -f domain.yaml. Verify all pods
-   * re-started. The property tested is: annotations: "TSTAMP" --> "DATETIME"
+   * Modify the annotations at ServerPod level using kubectl apply -f annotation.domain.yaml. Verify
+   * all pods re-started. The property tested is: annotations: "TSTAMP" --> "DATETIME"
    *
    * @throws Exception
    */
