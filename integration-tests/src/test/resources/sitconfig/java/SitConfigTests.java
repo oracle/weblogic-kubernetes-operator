@@ -62,6 +62,7 @@ import weblogic.management.runtime.ServerRuntimeMBean;
 public class SitConfigTests {
 
   private MBeanServerConnection runtimeMbs;
+  private DomainMBean domainMBean = null;
   private JMXConnector jmxConnector;
   private static ObjectName service;
   private RuntimeServiceMBean runtimeServiceMBean;
@@ -107,6 +108,7 @@ public class SitConfigTests {
       test.verifyRestartMax(5);
       test.verifyT3ChannelPublicAddress(adminHost);
       test.verifyT3ChannelPublicPort(30091);
+      test.verifyServer1MaxMessageSize(77777777);
     }
 
     if (testName.equals("testCustomSitConfigOverridesForJdbc")) {
@@ -161,7 +163,9 @@ public class SitConfigTests {
     runtimeServiceMBean =
         (RuntimeServiceMBean)
             MBeanServerInvocationHandler.newProxyInstance(runtimeMbs, runtimeserviceObjectName);
+    
     ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
+
   }
 
   /**
@@ -290,6 +294,25 @@ public class SitConfigTests {
     assert expectedValue == got
         : "Didn't get the expected value " + expectedValue + " for MaxMessageSize";
   }
+  
+  protected void verifyServer1MaxMessageSize(int expectedValue) {
+	  ServerMBean[] serverMBS = null;
+	  String serverName = null;
+	  
+	  DomainMBean domainMB = getDomainMBean();
+	  serverMBS = domainMB.getServers();
+	  for (ServerMBean smb : ServerMBS) {
+		 serverName = sm.getName();
+		 if (serverName.contains("managed-server1")) {
+			 int got = smb.getMaxMessageSize();
+			 assert expectedValue == got
+				        : "Didn't get the expected value " + expectedValue + " for Server1 MaxMessageSize";
+		 }
+		 else {
+			 assert("Couldn't find managed-server1 !");
+		 }
+	  }
+  }
 
   /**
    * A utility method to check if the Network Access Point public-address in the ServerConfig tree
@@ -342,6 +365,13 @@ public class SitConfigTests {
     println("ServerMBean: " + serverMBean);
 
     return serverMBean;
+  }
+  
+  private DomainMBean getDomainMBean() {
+	DomainMBean domainMBean = runtimeServiceMBean.getDomainConfiguration();
+    println("DomainMBean: " + domainMBean);
+    
+    return domainMBean;
   }
 
   /**
