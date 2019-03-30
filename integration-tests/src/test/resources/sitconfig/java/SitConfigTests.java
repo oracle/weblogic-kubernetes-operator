@@ -30,6 +30,8 @@ import weblogic.j2ee.descriptor.wl.JDBCDriverParamsBean;
 import weblogic.j2ee.descriptor.wl.JMSBean;
 import weblogic.j2ee.descriptor.wl.UniformDistributedTopicBean;
 import weblogic.management.configuration.DomainMBean;
+import weblogic.management.mbeanservers.edit.EditServiceMBean;
+import weblogic.management.mbeanservers.edit.ConfigurationManagerMBean;
 import weblogic.management.configuration.JDBCSystemResourceMBean;
 import weblogic.management.configuration.JMSSystemResourceMBean;
 import weblogic.management.configuration.NetworkAccessPointMBean;
@@ -296,22 +298,18 @@ public class SitConfigTests {
   }
   
   protected void verifyServer1MaxMessageSize(int expectedValue) {
-	  ServerMBean[] serverMBS = null;
-	  String serverName = null;
+	  String serverName = "managed-server1";
 	  
-	  DomainMBean domainMB = getDomainMBean();
-	  serverMBS = domainMB.getServers();
-	  for (ServerMBean smb : ServerMBS) {
-		 serverName = sm.getName();
-		 if (serverName.contains("managed-server1")) {
-			 int got = smb.getMaxMessageSize();
-			 assert expectedValue == got
-				        : "Didn't get the expected value " + expectedValue + " for Server1 MaxMessageSize";
-		 }
-		 else {
-			 assert("Couldn't find managed-server1 !");
-		 }
-	  }
+	  EditServiceMBean editSvc = getEditService();
+	  ConfigurationManagerMBean cfgMgr = editSvc.getConfigurationManager();
+      cfgMgr.startEdit(-1, -1);
+      DomainMBean editDomainMBean = editSvc.getDomainConfiguration();
+      
+      ServerMBean serverMbean = editDomainMBean.lookupServer(serverName);
+	  int got = serverMbean.getMaxMessageSize();
+	  System.out.println("DEBUG: MaxMessageSize of " + serverName + " is : " + got);
+	  assert expectedValue == got
+		 : "Didn't get the expected value " + expectedValue + " for " + serverName + " MaxMessageSize";
   }
 
   /**
@@ -367,11 +365,13 @@ public class SitConfigTests {
     return serverMBean;
   }
   
-  private DomainMBean getDomainMBean() {
-	DomainMBean domainMBean = runtimeServiceMBean.getDomainConfiguration();
-    println("DomainMBean: " + domainMBean);
-    
-    return domainMBean;
+  //Get edit Service
+  private EditServiceMBean getEditService() throws Exception {
+      MBeanServerConnection msc = lookupMBeanServerConnection(adminHost, adminPort, adminUser, adminPassword, "weblogic.management.mbeanservers.edit");
+      ObjectName serviceObjectName = new ObjectName(EditServiceMBean.OBJECT_NAME);
+      EditServiceMBean editSvc = (EditServiceMBean)
+             MBeanServerInvocationHandler.newProxyInstance(msc, serviceObjectName);
+     return editSvc;
   }
 
   /**
