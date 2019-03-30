@@ -300,6 +300,7 @@ public class SitConfigTests {
   protected void verifyServer1MaxMessageSize(int expectedValue) {
 	  String serverName = "managed-server1";
 	  
+	  try {
 	  EditServiceMBean editSvc = getEditService();
 	  ConfigurationManagerMBean cfgMgr = editSvc.getConfigurationManager();
       cfgMgr.startEdit(-1, -1);
@@ -307,7 +308,10 @@ public class SitConfigTests {
       
       ServerMBean serverMbean = editDomainMBean.lookupServer(serverName);
 	  int got = serverMbean.getMaxMessageSize();
-	  System.out.println("DEBUG: MaxMessageSize of " + serverName + " is : " + got);
+	  }
+	  catch (Exception e) {
+		  e.printStackTrace();
+	  }
 	  assert expectedValue == got
 		 : "Didn't get the expected value " + expectedValue + " for " + serverName + " MaxMessageSize";
   }
