@@ -110,7 +110,7 @@ public class SitConfigTests {
       test.verifyRestartMax(5);
       test.verifyT3ChannelPublicAddress(adminHost);
       test.verifyT3ChannelPublicPort(30091);
-      test.verifyServer1MaxMessageSize(77777777);
+      test.verifyMSSeverMaxMessageSize(77777777,"managed-server1");
     }
 
     if (testName.equals("testCustomSitConfigOverridesForJdbc")) {
@@ -297,8 +297,15 @@ public class SitConfigTests {
         : "Didn't get the expected value " + expectedValue + " for MaxMessageSize";
   }
   
-  protected void verifyServer1MaxMessageSize(int expectedValue) {
-	  String serverName = "managed-server1";
+  /**
+   * A utility method to check if the max-message-size in the ServerConfig tree of a managed server matches with the
+   * expected value, a integer value set in the configuration override file config.xml. Uses Java
+   * assertions to verify if both the values match.
+   *
+   * @param expectedValue - integer value to be checked in the max-message-size attribute in
+   *     EditMBean in ServerConfig tree
+   */
+  protected void verifyMSSeverMaxMessageSize(int expectedValue,String serverName) {
 	  
 	  try {
 	  EditServiceMBean editSvc = getEditService();
@@ -308,12 +315,12 @@ public class SitConfigTests {
       
       ServerMBean serverMbean = editDomainMBean.lookupServer(serverName);
 	  int got = serverMbean.getMaxMessageSize();
-	  }
-	  catch (Exception e) {
-		  e.printStackTrace();
-	  }
 	  assert expectedValue == got
 		 : "Didn't get the expected value " + expectedValue + " for " + serverName + " MaxMessageSize";
+	  }
+      catch (Exception e) {
+	    e.printStackTrace();
+      }
   }
 
   /**
@@ -369,6 +376,11 @@ public class SitConfigTests {
     return serverMBean;
   }
   
+  /**
+   * Looks up the EditServiceMBean from MBeanServerConnection.
+   *
+   * @return the EditServiceMBean reference
+   */
   //Get edit Service
   private EditServiceMBean getEditService() throws Exception {
       MBeanServerConnection msc = lookupMBeanServerConnection(adminHost, adminPort, adminUser, adminPassword, "weblogic.management.mbeanservers.edit");
