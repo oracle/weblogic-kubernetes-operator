@@ -20,7 +20,11 @@ public interface LabelConstants {
   String CLUSTERRESTARTVERSION_LABEL = "weblogic.clusterRestartVersion";
   String SERVERRESTARTVERSION_LABEL = "weblogic.serverRestartVersion";
 
-  static String forDomainUid(String uid) {
+  static String forDomainUidSelector(String uid) {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);
+  }
+
+  static String getCreatedbyOperatorSelector() {
+    return String.format("%s=%s", CREATEDBYOPERATOR_LABEL, "true");
   }
 }

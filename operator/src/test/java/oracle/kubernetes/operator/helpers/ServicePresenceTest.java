@@ -4,7 +4,9 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
@@ -27,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.builders.WatchEvent;
@@ -51,7 +54,8 @@ public class ServicePresenceTest {
   private DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
   private List<Memento> mementos = new ArrayList<>();
   private Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
-  private DomainProcessorImpl processor = new DomainProcessorImpl();
+  private DomainProcessorImpl processor =
+      new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
   private long clock;
   private Packet packet = new Packet();
 
@@ -241,7 +245,11 @@ public class ServicePresenceTest {
   @Test
   public void whenEventContainsServiceWithClusterNameAndNoTypeLabel_addAsClusterService() {
     V1Service service =
-        new V1Service().metadata(createMetadata().putLabelsItem(CLUSTERNAME_LABEL, CLUSTER));
+        new V1Service()
+            .metadata(
+                createMetadata()
+                    .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
+                    .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER));
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
@@ -369,6 +377,7 @@ public class ServicePresenceTest {
         new V1Service()
             .metadata(
                 createMetadata()
+                    .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
                     .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER)
                     .putLabelsItem(SERVERNAME_LABEL, SERVER));
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(service).toWatchResponse();

@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainUpPlanTest.ContainerPortMatcher.hasContainerPort;
 import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStep;
 import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStepsInOrder;
@@ -28,9 +29,8 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
-import oracle.kubernetes.operator.rest.RestServer;
-import oracle.kubernetes.operator.rest.RestTest;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -57,19 +57,20 @@ public class DomainUpPlanTest {
           .withSpec(new DomainSpec().withDomainUID(UID).withWebLogicCredentialsSecret(SECRET));
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
+  private DomainProcessorImpl processor =
+      new DomainProcessorImpl(createStrictStub(DomainProcessorDelegateStub.class));
 
   private DomainPresenceStep getDomainPresenceStep() {
     return DomainPresenceStep.createDomainPresenceStep(domain, adminStep, managedServersStep);
   }
 
   @Before
-  public void setUp() {
+  public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
+    mementos.add(InMemoryCertificates.install());
 
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
-
-    RestServer.create(new RestTest.TestRestConfigImpl());
   }
 
   @After
@@ -77,8 +78,6 @@ public class DomainUpPlanTest {
     for (Memento memento : mementos) memento.revert();
 
     testSupport.throwOnCompletionFailure();
-
-    RestServer.destroy();
   }
 
   @Test
@@ -113,7 +112,7 @@ public class DomainUpPlanTest {
   public void whenNotShuttingDown_selectAdminServerStep() {
     configurator.setShuttingDown(false);
 
-    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
+    Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(plan, hasChainWithStepsInOrder("AdminPodStep", "ManagedServersUpStep"));
   }
@@ -122,7 +121,7 @@ public class DomainUpPlanTest {
   public void whenShuttingDown_selectManagedServerStepOnly() {
     configurator.setShuttingDown(true);
 
-    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
+    Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
         plan,
@@ -132,7 +131,7 @@ public class DomainUpPlanTest {
 
   @Test
   public void useSequenceBeforeAdminServerStep() {
-    Step plan = DomainProcessorImpl.createDomainUpPlan(new DomainPresenceInfo(domain));
+    Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
         plan,
@@ -261,6 +260,13 @@ public class DomainUpPlanTest {
       else
         description.appendValueList(
             "expected steps in order to include: ", ",", ".", expectedSteps);
+    }
+  }
+
+  abstract static class DomainProcessorDelegateStub implements DomainProcessorDelegate {
+    @Override
+    public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
+      return new NullPodWaiter();
     }
   }
 }

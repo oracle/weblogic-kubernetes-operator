@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+     Licensed under the Universal Permissive License v 1.0 as shown at
+     http://oss.oracle.com/licenses/upl.-->
+<weblogic-web-app xmlns="http://www.bea.com/ns/weblogic/90">
+  <description> weblogic.xml for memory persistence </description>
+
+  <session-descriptor>
+    <persistent-store-type>replicated_if_clustered</persistent-store-type>
+  </session-descriptor>
+
+</weblogic-web-app>
