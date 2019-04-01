@@ -59,14 +59,19 @@ public class TestUtils {
   abstract static class TestLogHandler extends Handler {
     private Throwable throwable;
     private List<Throwable> ignoredExceptions = new ArrayList<>();
+    private List<Class<? extends Throwable>> ignoredClasses = new ArrayList<>();
     private Collection<LogRecord> logRecords = new ArrayList<>();
     private List<String> messagesToTrack = new ArrayList<>();
 
     @Override
     public void publish(LogRecord record) {
-      if (record.getThrown() != null && !ignoredExceptions.contains(record.getThrown()))
+      if (record.getThrown() != null && !shouldIgnore(record.getThrown()))
         throwable = record.getThrown();
       if (messagesToTrack.contains(record.getMessage())) logRecords.add(record);
+    }
+
+    boolean shouldIgnore(Throwable thrown) {
+      return ignoredExceptions.contains(thrown) || ignoredClasses.contains(thrown.getClass());
     }
 
     void throwLoggedThrowable() {
@@ -80,6 +85,10 @@ public class TestUtils {
 
     void ignoreLoggedException(Throwable t) {
       ignoredExceptions.add(t);
+    }
+
+    void ignoreLoggedException(Class<? extends Throwable> t) {
+      ignoredClasses.add(t);
     }
 
     void collectLogMessages(Collection<LogRecord> collection, String[] messages) {
@@ -144,6 +153,13 @@ public class TestUtils {
 
     public ConsoleHandlerMemento ignoringLoggedExceptions(Throwable... throwables) {
       for (Throwable throwable : throwables) testHandler.ignoreLoggedException(throwable);
+      return this;
+    }
+
+    @SafeVarargs
+    public final ConsoleHandlerMemento ignoringLoggedExceptions(
+        Class<? extends Throwable>... classes) {
+      for (Class<? extends Throwable> klass : classes) testHandler.ignoreLoggedException(klass);
       return this;
     }
 

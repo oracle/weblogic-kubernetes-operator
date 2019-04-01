@@ -6,14 +6,17 @@ package oracle.kubernetes.operator.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
@@ -1532,7 +1535,7 @@ public class Domain {
     logger.info("Command returned " + result.stdout().trim());
   }
 
-  private String getHostNameForCurl() throws Exception {
+  public String getHostNameForCurl() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
     } else {
@@ -1551,5 +1554,212 @@ public class Domain {
         return result2.stdout().trim();
       }
     }
+  }
+
+  public int getLoadBalancerWebPort() {
+    return loadBalancerWebPort;
+  }
+
+  /**
+   * Shut down a ms by setting serverStartPolicy to NEVER
+   *
+   * @throws Exception
+   */
+  public void shutdownManagedServerUsingServerStartPolicy(String msName) throws Exception {
+    String cmd =
+        "kubectl patch domain "
+            + domainUid
+            + " -n "
+            + domainNS
+            + " -p '{\"spec\":{\"managedServers\":[{\"serverName\":\""
+            + msName
+            + "\",\"serverStartPolicy\":\"NEVER\"}]}}' --type merge";
+
+    logger.info("command to shutdown managed server <" + msName + "> is: " + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
+    logger.info("output from shutting down managed server:\n" + output);
+
+    TestUtils.checkPodDeleted(domainUid + "-" + msName, domainNS);
+  }
+
+  /**
+   * Restart a ms by setting serverStartPolicy to IF_NEEDED
+   *
+   * @throws Exception
+   */
+  public void restartManagedServerUsingServerStartPolicy(String msName) throws Exception {
+    String cmd =
+        "kubectl patch domain "
+            + domainUid
+            + " -n "
+            + domainNS
+            + " -p '{\"spec\":{\"managedServers\":[{\"serverName\":\""
+            + msName
+            + "\",\"serverStartPolicy\":\"IF_NEEDED\"}]}}' --type merge";
+
+    logger.info("command to restart managed server <" + msName + "> is: " + cmd);
+
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
+    logger.info("output from restarting managed server:\n" + output);
+
+    TestUtils.checkPodCreated(domainUid + "-" + msName, domainNS);
+    TestUtils.checkPodReady(domainUid + "-" + msName, domainNS);
+  }
+
+  /**
+   * Run the shell script to build WAR, EAR or JAR file and deploy the App in the admin pod
+   *
+   * @param webappName - Web App Name to be deployed
+   * @param scriptName - a shell script to build WAR, EAR or JAR file and deploy the App in the
+   *     admin pod
+   * @param archiveExt - archive extention
+   * @param infoDirNames - archive information dir location
+   * @param username - weblogic user name
+   * @param password - weblogc password
+   * @throws Exception
+   */
+  private void callShellScriptToBuildDeployAppInPod(
+      String webappName,
+      String scriptName,
+      String archiveExt,
+      String infoDirNames,
+      String username,
+      String password)
+      throws Exception {
+
+    String nodeHost = getHostNameForCurl();
+    String nodePort = getNodePort();
+    String appLocationInPod = BaseTest.getAppLocationInPod();
+
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(domainUid)
+        .append("-")
+        .append(adminServerName)
+        .append(" -- bash -c 'chmod +x -R ")
+        .append(appLocationInPod)
+        .append(" && sh ")
+        .append(appLocationInPod)
+        .append("/")
+        .append(scriptName)
+        .append(" ")
+        .append(nodeHost)
+        .append(" ")
+        .append(nodePort)
+        .append(" ")
+        .append(username)
+        .append(" ")
+        .append(password)
+        .append(" ")
+        .append(appLocationInPod)
+        .append("/")
+        .append(webappName)
+        .append(" ")
+        .append(webappName)
+        .append(" ")
+        .append(clusterName)
+        .append(" ")
+        .append(infoDirNames)
+        .append(" ")
+        .append(archiveExt)
+        .append("'");
+
+    logger.info("Command to exec script file: " + cmdKubectlSh);
+    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+
+    String resultStr =
+        "Command= '"
+            + cmdKubectlSh
+            + "'"
+            + ", exitValue="
+            + result.exitValue()
+            + ", stdout='"
+            + result.stdout()
+            + "'"
+            + ", stderr='"
+            + result.stderr()
+            + "'";
+
+    if (!resultStr.contains("Unable to use a TTY") && result.exitValue() != 0) {
+      throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
+    }
+  }
+
+  /**
+   * Create dir to save Web App files Copy the shell script file and all App files over to the admin
+   * pod Run the shell script to build WAR, EAR or JAR file and deploy the App in the admin pod
+   *
+   * @param appName - Java App name to be deployed
+   * @param scriptName - a shell script to build WAR, EAR or JAR file and deploy the App in the
+   *     admin pod
+   * @param username - weblogic user name
+   * @param password - weblogc password
+   * @param args - by default, a WAR file is created for a Web App and a EAR file is created for EJB
+   *     App. this varargs gives a client a chance to change EJB's archive extenyion to JAR
+   * @throws Exception
+   */
+  public void buildDeployJavaAppInPod(
+      String appName, String scriptName, String username, String password, String... args)
+      throws Exception {
+    String adminServerPod = domainUid + "-" + adminServerName;
+
+    String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + appName;
+    String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + appName;
+    String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
+    String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
+
+    // Default velues to build archive file
+    final String initInfoDirName = "WEB-INF";
+    String archiveExt = "war";
+    String infoDirName = initInfoDirName;
+
+    // Get archive info dir name
+    File appFiles = new File(appLocationOnHost);
+
+    String[] subDirArr =
+        appFiles.list(
+            new FilenameFilter() {
+              @Override
+              public boolean accept(File dir, String name) {
+                return name.equals(initInfoDirName);
+              }
+            });
+
+    List<String> subDirList = Arrays.asList(subDirArr);
+
+    // Check archive file type
+    if (!subDirList.contains(infoDirName)) {
+      infoDirName = "META-INF";
+      // Create .ear file or .jar file for EJB
+      archiveExt = (args.length == 0) ? "ear" : args[0];
+    }
+
+    logger.info("Build and deploy: " + appName + "." + archiveExt + " in the admin pod");
+
+    // Create app dir in the admin pod
+    StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
+    mkdirCmd.append(appLocationInPod).append("/" + infoDirName + "'");
+    TestUtils.kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
+
+    // Copy shell script to the pod
+    TestUtils.copyFileViaCat(scriptPathOnHost, scriptPathInPod, adminServerPod, domainNS);
+
+    // Copy all App files to the admin pod
+    TestUtils.copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
+
+    // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
+    callShellScriptToBuildDeployAppInPod(
+        appName, scriptName, archiveExt, infoDirName, username, password);
   }
 }

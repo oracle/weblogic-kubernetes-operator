@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,12 +10,15 @@ import io.kubernetes.client.models.V1JobCondition;
 import io.kubernetes.client.models.V1JobStatus;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -28,19 +31,36 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final Map<String, JobWatcher> JOB_WATCHERS = new HashMap<>();
+  private static JobWatcherFactory factory;
 
-  private final String ns;
+  private final String namespace;
 
   // Map of Pod name to Complete
   private final ConcurrentMap<String, Complete> completeCallbackRegistrations =
       new ConcurrentHashMap<>();
 
   /**
-   * Factory for JobWatcher.
+   * Returns a cached JobWatcher, if present; otherwise, creates a new one.
+   *
+   * @param domain the domain for which the job watcher is to be returned
+   * @return a cached jobwatcher.
+   */
+  public static @Nonnull JobWatcher getOrCreateFor(Domain domain) {
+    return JOB_WATCHERS.computeIfAbsent(getNamespace(domain), n -> factory.createFor(domain));
+  }
+
+  private static String getNamespace(Domain domain) {
+    return domain.getMetadata().getNamespace();
+  }
+
+  /**
+   * Creates a new JobWatcher and caches it by namespace.
    *
    * @param factory thread factory
    * @param ns Namespace
@@ -61,17 +81,27 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   }
 
   private JobWatcher(
-      String ns, String initialResourceVersion, WatchTuning tuning, AtomicBoolean isStopping) {
+      String namespace,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping);
     setListener(this);
-    this.ns = ns;
+    this.namespace = namespace;
+  }
+
+  static void defineFactory(
+      ThreadFactory threadFactory,
+      WatchTuning tuning,
+      Function<String, AtomicBoolean> isNamespaceStopping) {
+    factory = new JobWatcherFactory(threadFactory, tuning, isNamespaceStopping);
   }
 
   @Override
   public WatchI<V1Job> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
         .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .createJobWatch(ns);
+        .createJobWatch(namespace);
   }
 
   public void receivedResponse(Watch.Response<V1Job> item) {
@@ -219,6 +249,32 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                     packet.clone(),
                     null);
           });
+    }
+  }
+
+  static class JobWatcherFactory {
+    private ThreadFactory threadFactory;
+    private WatchTuning watchTuning;
+
+    private Function<String, AtomicBoolean> isNamespaceStopping;
+
+    JobWatcherFactory(
+        ThreadFactory threadFactory,
+        WatchTuning watchTuning,
+        Function<String, AtomicBoolean> isNamespaceStopping) {
+      this.threadFactory = threadFactory;
+      this.watchTuning = watchTuning;
+      this.isNamespaceStopping = isNamespaceStopping;
+    }
+
+    JobWatcher createFor(Domain domain) {
+      String namespace = getNamespace(domain);
+      return create(
+          threadFactory,
+          namespace,
+          domain.getMetadata().getResourceVersion(),
+          watchTuning,
+          isNamespaceStopping.apply(namespace));
     }
   }
 

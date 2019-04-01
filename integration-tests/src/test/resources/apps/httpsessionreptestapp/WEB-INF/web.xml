@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+     Licensed under the Universal Permissive License v 1.0 as shown at
+     http://oss.oracle.com/licenses/upl.-->
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee web-app_2_4.xsd" version="2.4">
+	
+  <servlet>
+    <servlet-name>CounterServlet</servlet-name>
+    <servlet-class>apps.httpsessionreptestapp.CounterServlet</servlet-class>
+  </servlet>
+	
+  <servlet-mapping>
+    <servlet-name>CounterServlet</servlet-name>
+    <url-pattern>/CounterServlet</url-pattern>
+  </servlet-mapping>
+</web-app>
