@@ -93,9 +93,9 @@ public class SitConfigTests {
     String adminHost = args[0];
     String adminPort = args[1];
     String adminUser = args[2];
-    String adminPassword = args[3];
-    String testName = args[4];
-    String serverName = args[5];
+    String adminPassword = args[3];    
+    String serverName = args[4];
+    String testName = args[5];
 
     SitConfigTests test =
         new SitConfigTests(adminHost, adminPort, adminUser, adminPassword, serverName);
