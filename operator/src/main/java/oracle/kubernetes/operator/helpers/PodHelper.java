@@ -21,8 +21,8 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -96,9 +96,7 @@ public class PodHelper {
     }
 
     private V1EnvVar internalCertEnvValue() {
-      return new V1EnvVar()
-          .name(INTERNAL_OPERATOR_CERT_ENV)
-          .value(getInternalOperatorCertFile(TuningParameters.getInstance()));
+      return new V1EnvVar().name(INTERNAL_OPERATOR_CERT_ENV).value(getInternalOperatorCertFile());
     }
 
     private Optional<V1Container> getContainer(V1Pod v1Pod) {
@@ -131,8 +129,8 @@ public class PodHelper {
       return getServerSpec().getPodAnnotations();
     }
 
-    private String getInternalOperatorCertFile(TuningParameters tuningParameters) {
-      return RestServer.getInstance().getInternalCertificateAsBase64PEM();
+    private String getInternalOperatorCertFile() {
+      return Certificates.getOperatorInternalCertificateData();
     }
   }
 
@@ -356,7 +354,7 @@ public class PodHelper {
     }
   }
 
-  public static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
+  static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
     ArrayList<V1EnvVar> copy = new ArrayList<>();
     if (envVars != null) {
       for (V1EnvVar envVar : envVars) {

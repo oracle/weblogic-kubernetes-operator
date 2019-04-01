@@ -28,6 +28,11 @@ public enum KubernetesServiceType {
     boolean deleteFromEvent(DomainPresenceInfo info, V1Service event) {
       return info.deleteServerServiceFromEvent(ServiceHelper.getServerName(event), event);
     }
+
+    @Override
+    V1Service[] getServices(DomainPresenceInfo presenceInfo) {
+      return presenceInfo.getServiceServices();
+    }
   },
   EXTERNAL {
     @Override
@@ -76,6 +81,7 @@ public enum KubernetesServiceType {
   private static final String SERVICE_TYPE = "serviceType";
 
   static KubernetesServiceType getType(V1Service service) {
+    if (!KubernetesUtils.isOperatorCreated(service.getMetadata())) return EXTERNAL;
     String type = ServiceHelper.getLabelValue(service, SERVICE_TYPE);
     if (type != null) return KubernetesServiceType.valueOf(type);
 
@@ -93,7 +99,7 @@ public enum KubernetesServiceType {
 
   void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {}
 
-  V1Service withTypeLabel(V1Service service) {
+  public V1Service withTypeLabel(V1Service service) {
     Optional.ofNullable(service)
         .map(V1Service::getMetadata)
         .ifPresent(meta -> meta.putLabelsItem(SERVICE_TYPE, toString()));
@@ -102,5 +108,9 @@ public enum KubernetesServiceType {
 
   boolean deleteFromEvent(DomainPresenceInfo info, V1Service service) {
     return false;
+  }
+
+  V1Service[] getServices(DomainPresenceInfo info) {
+    return new V1Service[0];
   }
 }
