@@ -110,7 +110,7 @@ public class SitConfigTests {
       test.verifyRestartMax(5);
       test.verifyT3ChannelPublicAddress(adminHost);
       test.verifyT3ChannelPublicPort(30091);
-      test.verifyMSSeverMaxMessageSize(77777777,"managed-server1");
+      test.verifyMsSeverMaxMessageSize(77777777,"managed-server1");
     }
 
     if (testName.equals("testCustomSitConfigOverridesForJdbc")) {
@@ -305,7 +305,7 @@ public class SitConfigTests {
    * @param expectedValue - integer value to be checked in the max-message-size attribute in
    *     EditMBean in ServerConfig tree
    */
-  protected void verifyMSSeverMaxMessageSize(int expectedValue,String serverName) {
+  protected void verifyMsSeverMaxMessageSize(int expectedValue,String serverName) {
 	  
 	  try {
 	  EditServiceMBean editSvc = getEditService();
