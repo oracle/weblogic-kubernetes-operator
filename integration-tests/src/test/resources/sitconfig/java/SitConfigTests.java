@@ -64,7 +64,10 @@ import weblogic.management.runtime.ServerRuntimeMBean;
 public class SitConfigTests {
 
   private MBeanServerConnection runtimeMbs;
+  private MBeanServerConnection editMbs;
   private DomainMBean domainMBean = null;
+  private EditServiceMBean editServiceMBean = null;
+  private ConfigurationManagerMBean cfgMgr;
   private JMXConnector jmxConnector;
   private static ObjectName service;
   private RuntimeServiceMBean runtimeServiceMBean;
@@ -93,7 +96,7 @@ public class SitConfigTests {
     String adminHost = args[0];
     String adminPort = args[1];
     String adminUser = args[2];
-    String adminPassword = args[3];    
+    String adminPassword = args[3];
     String serverName = args[4];
     String testName = args[5];
 
@@ -109,7 +112,6 @@ public class SitConfigTests {
       test.verifyDebugFlagJMXCore(serverName, true);
       test.verifyDebugFlagServerLifeCycle(serverName, true);
       test.verifyMaxMessageSize(serverName, 78787878);
-      test.verifyMaxMessageSize(serverName, 77777777);
       test.verifyConnectTimeout(serverName, 120);
       test.verifyRestartMax(serverName, 5);
       test.verifyT3ChannelPublicAddress(serverName, adminHost);
@@ -177,8 +179,17 @@ public class SitConfigTests {
     runtimeServiceMBean =
         (RuntimeServiceMBean)
             MBeanServerInvocationHandler.newProxyInstance(runtimeMbs, runtimeserviceObjectName);
-
     ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
+    editMbs =
+        lookupMBeanServerConnection(
+            adminHost, adminPort, adminUser, adminPassword, EditServiceMBean.MBEANSERVER_JNDI_NAME);
+    ObjectName serviceObjectName = new ObjectName(EditServiceMBean.OBJECT_NAME);
+    editServiceMBean =
+        (EditServiceMBean)
+            MBeanServerInvocationHandler.newProxyInstance(editMbs, serviceObjectName);
+    cfgMgr = editServiceMBean.getConfigurationManager();
+
+    cfgMgr.startEdit(-1, -1);
   }
 
   /**
@@ -254,11 +265,14 @@ public class SitConfigTests {
    * with the expected value, a boolean value set in the configuration override file config.xml.Uses
    * Java assertions to verify if both the values match.
    *
+   * @param serverName name of the weblogic server instance for which the debug flag to be checked
+   *     as a String
    * @param expectedValue - boolean value to be checked in the debug-server-life-cycle attribute in
    *     ServerMBean in ServerConfig MBean tree * @param serverName - name of the weblogic server
    *     instance for which the debug flag to be checked as a String
    */
-  protected void verifyDebugFlagServerLifeCycle(String serverName, boolean expectedValue) {
+  protected void verifyDebugFlagServerLifeCycle(String serverName, boolean expectedValue)
+       {
     ServerMBean serverMBean = getServerMBean(serverName);
     ServerDebugMBean serverDebugMBean = serverMBean.getServerDebug();
     boolean debugFlag = serverDebugMBean.getDebugServerLifeCycle();
@@ -276,7 +290,7 @@ public class SitConfigTests {
    * @param serverName - name of the weblogic server instance for which the connect timeout to be
    *     checked as a String
    */
-  protected void verifyConnectTimeout(String serverName, int expectedValue) {
+  protected void verifyConnectTimeout(String serverName, int expectedValue)  {
     ServerMBean serverMBean = getServerMBean(serverName);
     int got = serverMBean.getConnectTimeout();
     assert expectedValue == got
@@ -318,43 +332,17 @@ public class SitConfigTests {
   }
 
   /**
-   * A utility method to check if the max-message-size in the ServerConfig tree of a managed server
-   * matches with the expected value, a integer value set in the configuration override file
-   * config.xml. Uses Java assertions to verify if both the values match.
-   *
-   * @param expectedValue - integer value to be checked in the max-message-size attribute in
-   *     EditMBean in ServerConfig tree
-   */
-  protected void verifyMsSeverMaxMessageSize(int expectedValue, String serverName) {
-
-    try {
-      EditServiceMBean editSvc = getEditService();
-      ConfigurationManagerMBean cfgMgr = editSvc.getConfigurationManager();
-      cfgMgr.startEdit(-1, -1);
-      DomainMBean editDomainMBean = editSvc.getDomainConfiguration();
-
-      ServerMBean serverMbean = editDomainMBean.lookupServer(serverName);
-      int got = serverMbean.getMaxMessageSize();
-      assert expectedValue == got
-          : "Didn't get the expected value "
-              + expectedValue
-              + " for "
-              + serverName
-              + " MaxMessageSize";
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
-  /**
    * A utility method to check if the Network Access Point public-address in the ServerConfig tree
    * matches with the expected value, a string value set in the configuration override file
    * config.xml. Uses Java assertions to verify if both the values match.
    *
+   * @param serverName name of the weblogic server instance for which the t3 public address to be checked
+   *     as a String
    * @param expectedValue - string value to be checked in the public-address attribute in
    *     ServerMBean in ServerConfig tree.
    */
-  protected void verifyT3ChannelPublicAddress(String serverName, String expectedValue) {
+  protected void verifyT3ChannelPublicAddress(String serverName, String expectedValue)
+       {
     boolean got = false;
     ServerMBean serverMBean = getServerMBean(serverName);
     NetworkAccessPointMBean[] networkAccessPoints = serverMBean.getNetworkAccessPoints();
@@ -396,35 +384,8 @@ public class SitConfigTests {
    * @return the ServerMBean reference
    */
   private ServerMBean getServerMBean(String serverName) {
-    ServerMBean servermbean = null;
-    ServerMBean[] servers = runtimeServiceMBean.getDomainConfiguration().getServers();
-    for (ServerMBean server : servers) {
-      if (server.getName().equals(serverName)) {
-        servermbean = server;
-      }
-    }
-    println("ServerMBean: " + servermbean);
-    return servermbean;
-  }
-
-  /**
-   * Looks up the EditServiceMBean from MBeanServerConnection.
-   *
-   * @return the EditServiceMBean reference
-   */
-  // Get edit Service
-  private EditServiceMBean getEditService() throws Exception {
-    MBeanServerConnection msc =
-        lookupMBeanServerConnection(
-            adminHost,
-            adminPort,
-            adminUser,
-            adminPassword,
-            "weblogic.management.mbeanservers.edit");
-    ObjectName serviceObjectName = new ObjectName(EditServiceMBean.OBJECT_NAME);
-    EditServiceMBean editSvc =
-        (EditServiceMBean) MBeanServerInvocationHandler.newProxyInstance(msc, serviceObjectName);
-    return editSvc;
+    DomainMBean editDomainMBean = editServiceMBean.getDomainConfiguration();
+    return editDomainMBean.lookupServer(serverName);
   }
 
   /**
