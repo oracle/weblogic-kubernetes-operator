@@ -342,7 +342,6 @@ public class SitConfigTests {
     boolean got = false;
     ServerMBean serverMBean = getServerMBean(serverName);
     NetworkAccessPointMBean[] networkAccessPoints = serverMBean.getNetworkAccessPoints();
-
     for (NetworkAccessPointMBean networkAccessPoint : networkAccessPoints) {
       if (networkAccessPoint.getName().equals("T3Channel")) {
         assert expectedValue.equals(networkAccessPoint.getPublicAddress())
@@ -364,7 +363,6 @@ public class SitConfigTests {
     boolean got = false;
     ServerMBean serverMBean = getServerMBean(serverName);
     NetworkAccessPointMBean[] networkAccessPoints = serverMBean.getNetworkAccessPoints();
-
     for (NetworkAccessPointMBean networkAccessPoint : networkAccessPoints) {
       if (networkAccessPoint.getName().equals("T3Channel")) {
         assert expectedValue == networkAccessPoint.getPublicPort()
