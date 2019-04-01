@@ -188,7 +188,6 @@ public class SitConfigTests {
         (EditServiceMBean)
             MBeanServerInvocationHandler.newProxyInstance(editMbs, serviceObjectName);
     cfgMgr = editServiceMBean.getConfigurationManager();
-
     cfgMgr.startEdit(-1, -1);
   }
 
@@ -238,7 +237,6 @@ public class SitConfigTests {
     if (mBeanServerConnection == null) {
       throw new Exception("MBean server connection is null");
     }
-
     return mBeanServerConnection;
   }
 
@@ -271,8 +269,7 @@ public class SitConfigTests {
    *     ServerMBean in ServerConfig MBean tree * @param serverName - name of the weblogic server
    *     instance for which the debug flag to be checked as a String
    */
-  protected void verifyDebugFlagServerLifeCycle(String serverName, boolean expectedValue)
-       {
+  protected void verifyDebugFlagServerLifeCycle(String serverName, boolean expectedValue) {
     ServerMBean serverMBean = getServerMBean(serverName);
     ServerDebugMBean serverDebugMBean = serverMBean.getServerDebug();
     boolean debugFlag = serverDebugMBean.getDebugServerLifeCycle();
@@ -290,7 +287,7 @@ public class SitConfigTests {
    * @param serverName - name of the weblogic server instance for which the connect timeout to be
    *     checked as a String
    */
-  protected void verifyConnectTimeout(String serverName, int expectedValue)  {
+  protected void verifyConnectTimeout(String serverName, int expectedValue) {
     ServerMBean serverMBean = getServerMBean(serverName);
     int got = serverMBean.getConnectTimeout();
     assert expectedValue == got
@@ -336,13 +333,12 @@ public class SitConfigTests {
    * matches with the expected value, a string value set in the configuration override file
    * config.xml. Uses Java assertions to verify if both the values match.
    *
-   * @param serverName name of the weblogic server instance for which the t3 public address to be checked
-   *     as a String
+   * @param serverName name of the weblogic server instance for which the t3 public address to be
+   *     checked as a String
    * @param expectedValue - string value to be checked in the public-address attribute in
    *     ServerMBean in ServerConfig tree.
    */
-  protected void verifyT3ChannelPublicAddress(String serverName, String expectedValue)
-       {
+  protected void verifyT3ChannelPublicAddress(String serverName, String expectedValue) {
     boolean got = false;
     ServerMBean serverMBean = getServerMBean(serverName);
     NetworkAccessPointMBean[] networkAccessPoints = serverMBean.getNetworkAccessPoints();
