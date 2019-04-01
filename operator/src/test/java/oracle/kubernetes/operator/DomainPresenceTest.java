@@ -4,14 +4,11 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
-import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
-import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static oracle.kubernetes.operator.WebLogicConstants.READINESS_PROBE_NOT_READY_STATE;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -20,21 +17,13 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
-import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Event;
-import io.kubernetes.client.models.V1EventList;
-import io.kubernetes.client.models.V1ListMeta;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.models.V1PersistentVolumeClaimList;
-import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodList;
 import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.models.V1Status;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,14 +33,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.KubernetesServiceType;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
-import oracle.kubernetes.operator.work.FiberGateFactoryStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -64,29 +52,21 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String UID = "UID1";
-  private final DomainList domains = createEmptyDomainList();
-  private final V1ServiceList services = createEmptyServiceList();
-  private final V1EventList events = createEmptyEventList();
-  private final V1PodList pods = createEmptyPodList();
-  private final V1ConfigMap domainConfigMap = createEmptyConfigMap();
-  private final V1PersistentVolumeList persistentVolumes = createEmptyPersistentVolumeList();
-  private final V1PersistentVolumeClaimList claims = createEmptyPersistentVolumeClaimList();
 
   private List<Memento> mementos = new ArrayList<>();
-  private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private Map<String, AtomicBoolean> isNamespaceStopping;
 
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
-    mementos.add(testSupport.installRequestStepFactory());
+    mementos.add(testSupport.install());
     mementos.add(ClientFactoryStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(installStub(ThreadFactorySingleton.class, "INSTANCE", this));
-    mementos.add(FiberGateFactoryStub.install(testSupport));
+    mementos.add(StaticStubSupport.install(Main.class, "engine", testSupport.getEngine()));
     testSupport.addContainerComponent("TF", ThreadFactory.class, this);
 
-    getStartedVariable();
     isNamespaceStopping = getStoppingVariable();
     isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
   }
@@ -94,11 +74,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
       throws NoSuchFieldException {
     return StaticStubSupport.install(containingClass, fieldName, newValue);
-  }
-
-  private Map<String, AtomicBoolean> getStartedVariable() throws NoSuchFieldException {
-    Memento startedMemento = StaticStubSupport.preserve(Main.class, "isNamespaceStarted");
-    return startedMemento.getOriginalValue();
   }
 
   private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
@@ -119,7 +94,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   public abstract static class DomainProcessorStub implements DomainProcessor {
     private final Map<String, DomainPresenceInfo> dpis = new HashMap<>();
 
-    public Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
+    Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
     }
 
@@ -144,16 +119,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private void readExistingResources() {
-    readExistingResources(false);
-  }
-
-  private void readExistingResources(boolean isDelete) {
-    createCannedListDomainResponses(isDelete);
     testSupport.runStepsToCompletion(Main.readExistingResources("operator", NS));
   }
 
   private void addDomainResource(String uid, String namespace) {
-    domains.getItems().add(createDomain(uid, namespace));
+    testSupport.defineResources(createDomain(uid, namespace));
   }
 
   private Domain createDomain(String uid, String namespace) {
@@ -166,106 +136,80 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
                 .creationTimestamp(DateTime.now()));
   }
 
-  private Map<String, String> createMap(String key1, String value1) {
+  private Map<String, String> createMap(String key1, String value1) { // todo use ImmutableMap
     Map<String, String> map = new HashMap<>();
     map.put(key1, value1);
-    return map;
-  }
-
-  private Map<String, String> createMap(String key1, String value1, String key2, String value2) {
-    Map<String, String> map = new HashMap<>();
-    map.put(key1, value1);
-    map.put(key2, value2);
     return map;
   }
 
   private ServerKubernetesObjects getServerKubernetesObjects(
       DomainProcessorStub dp, String uid, String serverName) {
-    return dp.getDomainPresenceInfos().get(uid).getServers().get(serverName);
+    return getDomainPresenceInfo(dp, uid).getServers().get(serverName);
   }
 
-  private void addServiceResource(
-      String uid, String namespace, String serverName, String channelName) {
-    V1Service service = createService(uid, namespace, serverName, channelName);
-    services.getItems().add(service);
+  private DomainPresenceInfo getDomainPresenceInfo(DomainProcessorStub dp, String uid) {
+    return dp.getDomainPresenceInfos().get(uid);
   }
 
-  private V1Service createService(
-      String uid, String namespace, String serverName, String channelName) {
-    V1ObjectMeta metadata = createServerMetadata(uid, namespace, serverName);
-    return new V1Service().metadata(metadata);
-  }
-
-  private V1ObjectMeta createMetadata(String uid, String namespace, String name) {
-    return createMetadata(uid, name).namespace(namespace);
-  }
-
-  private V1ObjectMeta createMetadata(String uid, String name) {
-    return new V1ObjectMeta().name(name).labels(createMap(DOMAINUID_LABEL, uid));
+  private V1Service createServerService(String uid, String namespace, String serverName) {
+    V1ObjectMeta metadata =
+        createNamespacedMetadata(uid, namespace)
+            .name(LegalNames.toServerServiceName(uid, serverName))
+            .putLabelsItem(SERVERNAME_LABEL, serverName);
+    return KubernetesServiceType.SERVER.withTypeLabel(new V1Service().metadata(metadata));
   }
 
   private V1ObjectMeta createServerMetadata(String uid, String namespace, String serverName) {
-    return createServerMetadata(uid, serverName).namespace(namespace);
+    return createNamespacedMetadata(uid, namespace)
+        .name(LegalNames.toServerServiceName(uid, serverName))
+        .putLabelsItem(SERVERNAME_LABEL, serverName);
   }
 
-  private V1ObjectMeta createServerMetadata(String uid, String name) {
+  private V1ObjectMeta createNamespacedMetadata(String uid, String namespace) {
+    return createMetadata(uid).namespace(namespace);
+  }
+
+  private V1ObjectMeta createMetadata(String uid) {
     return new V1ObjectMeta()
-        .name(LegalNames.toServerName(uid, name))
-        .labels(createMap(DOMAINUID_LABEL, uid, SERVERNAME_LABEL, name));
+        .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
+        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, uid)
+        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
-  private void addPersistentVolumeResource(String uid, String name) {
-    V1PersistentVolume volume = new V1PersistentVolume().metadata(createMetadata(uid, name));
-    persistentVolumes.getItems().add(volume);
+  private V1ObjectMeta createMetadata(String uid, String name) {
+    return createMetadata(uid).name(name);
   }
 
-  private void addPersistentVolumeClaimResource(String uid, String namespace, String name) {
-    V1PersistentVolumeClaim claim =
-        new V1PersistentVolumeClaim().metadata(createMetadata(uid, namespace, name));
-    claims.getItems().add(claim);
+  private V1ObjectMeta createMetadata(String uid, String namespace, String name) {
+    return createNamespacedMetadata(uid, namespace).name(name);
   }
 
   @Test
-  public void whenK8sHasOneDomainWithoutChannelService_createSkoEntry() {
+  public void whenK8sHasOneDomain_recordAdminServerService() {
     addDomainResource(UID, NS);
-    V1Service serviceResource = addServiceResource(UID, NS, "admin");
+    V1Service service = createServerService(UID, NS, "admin");
+    testSupport.defineResources(service);
 
     DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
 
     readExistingResources();
 
-    assertThat(
-        getServerKubernetesObjects(dp, UID, "admin").getService().get(), equalTo(serviceResource));
-  }
-
-  private V1Service addServiceResource(String uid, String namespace, String serverName) {
-    V1Service service = createService(uid, namespace, serverName);
-    services.getItems().add(service);
-    return service;
-  }
-
-  private V1Service createService(String uid, String namespace, String serverName) {
-    return new V1Service().metadata(createServerMetadata(uid, namespace, serverName));
+    assertThat(getDomainPresenceInfo(dp, UID).getServerService("admin"), equalTo(service));
   }
 
   @Test
-  public void whenK8sHasOneDomainWithPod_createSkoEntry() {
+  public void whenK8sHasOneDomainWithPod_recordPodPresence() {
     addDomainResource(UID, NS);
-    V1Pod podResource = addPodResource(UID, NS, "admin");
+    V1Pod pod = createPodResource(UID, NS, "admin");
+    testSupport.defineResources(pod);
 
     DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
     testSupport.addComponent("DP", DomainProcessor.class, dp);
 
     readExistingResources();
 
-    assertThat(getServerKubernetesObjects(dp, UID, "admin").getPod().get(), equalTo(podResource));
-  }
-
-  private V1Pod addPodResource(String uid, String namespace, String serverName) {
-    V1Pod pod = createPodResource(uid, namespace, serverName);
-    pods.getItems().add(pod);
-    return pod;
+    assertThat(getServerKubernetesObjects(dp, UID, "admin").getPod().get(), equalTo(pod));
   }
 
   private V1Pod createPodResource(String uid, String namespace, String serverName) {
@@ -289,6 +233,10 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         equalTo("do something!"));
   }
 
+  private void addPodResource(String uid, String namespace, String serverName) {
+    testSupport.defineResources(createPodResource(uid, namespace, serverName));
+  }
+
   @Test
   public void whenK8sHasOneDomainWithOtherEvent_ignoreIt() {
     addDomainResource(UID, NS);
@@ -305,155 +253,31 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   private void addEventResource(String uid, String serverName, String message) {
-    events.getItems().add(createEventResource(uid, serverName, message));
+    testSupport.defineResources(createEventResource(uid, serverName, message));
   }
 
   private V1Event createEventResource(String uid, String serverName, String message) {
     return new V1Event()
+        .metadata(createNamespacedMetadata(uid, NS))
         .involvedObject(new V1ObjectReference().name(LegalNames.toServerName(uid, serverName)))
         .message(message);
   }
 
-  @SuppressWarnings("unchecked")
-  private void createCannedListDomainResponses(boolean isDelete) {
-    testSupport.createCannedResponse("listDomain").withNamespace(NS).returning(domains);
-    testSupport
-        .createCannedResponse("listService")
-        .withNamespace(NS)
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL)
-        .returning(services);
-    testSupport
-        .createCannedResponse("listEvent")
-        .withNamespace(NS)
-        .withFieldSelector(Main.READINESS_PROBE_FAILURE_EVENT_FILTER)
-        .returning(events);
-    testSupport
-        .createCannedResponse("listPod")
-        .withNamespace(NS)
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, CREATEDBYOPERATOR_LABEL)
-        .returning(pods);
-    testSupport
-        .createCannedResponse("readConfigMap")
-        .withNamespace(NS)
-        .withName(DOMAIN_CONFIG_MAP_NAME)
-        .returning(domainConfigMap);
-    testSupport
-        .createCannedResponse("replaceConfigMap")
-        .withNamespace(NS)
-        .withName(DOMAIN_CONFIG_MAP_NAME)
-        .ignoringBody()
-        .returning(domainConfigMap);
-    if (!isDelete) {
-      testSupport
-          .createCannedResponse("readConfigMap")
-          .withNamespace(NS)
-          .withName(UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
-          .returning(createEmptyConfigMap());
-    }
-  }
-
-  private DomainList createEmptyDomainList() {
-    return new DomainList().withMetadata(createListMetadata());
-  }
-
-  private V1ListMeta createListMetadata() {
-    return new V1ListMeta().resourceVersion("1");
-  }
-
-  private V1ServiceList createEmptyServiceList() {
-    return new V1ServiceList().metadata(createListMetadata());
-  }
-
-  private V1EventList createEmptyEventList() {
-    return new V1EventList().metadata(createListMetadata());
-  }
-
-  private V1PodList createEmptyPodList() {
-    return new V1PodList().metadata(createListMetadata());
-  }
-
-  private V1ConfigMap createEmptyConfigMap() {
-    return new V1ConfigMap().metadata(createObjectMetaData()).data(new HashMap<>());
-  }
-
-  private V1ObjectMeta createObjectMetaData() {
-    return new V1ObjectMeta().resourceVersion("1");
-  }
-
-  private V1PersistentVolumeList createEmptyPersistentVolumeList() {
-    return new V1PersistentVolumeList().metadata(createListMetadata());
-  }
-
-  private V1PersistentVolumeClaimList createEmptyPersistentVolumeClaimList() {
-    return new V1PersistentVolumeClaimList().metadata(createListMetadata());
-  }
-
-  @SuppressWarnings("unchecked")
   @Test
   public void whenStrandedResourcesExist_removeThem() {
-    addServiceResource(UID, NS, "admin");
-    addServiceResource(UID, NS, "ms1", "channel1");
-    addPersistentVolumeResource(UID, "volume1");
-    addPersistentVolumeClaimResource(UID, NS, "claim1");
-
-    testSupport
-        .createCannedResponse("deleteService")
-        .withNamespace(NS)
-        .withName(LegalNames.toServerName(UID, "admin"))
-        .ignoringBody()
-        .returning(new V1Status());
-    testSupport
-        .createCannedResponse("deleteService")
-        .withNamespace(NS)
-        .withName(LegalNames.toServerName(UID, "ms1"))
-        .ignoringBody()
-        .returning(new V1Status());
-
-    testSupport
-        .createCannedResponse("listService")
-        .withNamespace(NS)
-        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
-        .returning(services);
-
-    testSupport
-        .createCannedResponse("deleteCollection")
-        .withNamespace(NS)
-        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
-        .returning(new V1Status());
-
-    testSupport
-        .createCannedResponse("deleteConfigMap")
-        .withNamespace(NS)
-        .withName(UID + "-weblogic-domain-introspect-cm")
-        .ignoringBody()
-        .returning(new V1Status());
-
-    testSupport
-        .createCannedResponse("listPersistentVolume")
-        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
-        .returning(persistentVolumes);
-    testSupport
-        .createCannedResponse("deletePersistentVolume")
-        .withName("volume1")
-        .ignoringBody()
-        .returning(new V1Status());
-
-    testSupport
-        .createCannedResponse("listPersistentVolumeClaim")
-        .withLabelSelectors(forDomainUid(UID), CREATEDBYOPERATOR_LABEL)
-        .withNamespace(NS)
-        .returning(claims);
-    testSupport
-        .createCannedResponse("deletePersistentVolumeClaim")
-        .withNamespace(NS)
-        .withName("claim1")
-        .ignoringBody()
-        .returning(new V1Status());
+    V1Service service1 = createServerService(UID, NS, "admin");
+    V1Service service2 = createServerService(UID, NS, "ms1");
+    V1PersistentVolume volume = new V1PersistentVolume().metadata(createMetadata(UID, "volume1"));
+    V1PersistentVolumeClaim claim =
+        new V1PersistentVolumeClaim().metadata(createMetadata(UID, NS, "claim1"));
+    testSupport.defineResources(service1, service2, volume, claim);
 
     isNamespaceStopping.get(NS).set(false);
 
-    readExistingResources(true);
+    readExistingResources();
 
-    testSupport.verifyAllDefinedResponsesInvoked();
+    assertThat(testSupport.getResources(KubernetesTestSupport.SERVICE), empty());
+    assertThat(testSupport.getResources(KubernetesTestSupport.PV), empty());
+    assertThat(testSupport.getResources(KubernetesTestSupport.PVC), empty());
   }
 }
