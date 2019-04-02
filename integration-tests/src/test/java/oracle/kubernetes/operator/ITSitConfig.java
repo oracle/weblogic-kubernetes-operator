@@ -141,8 +141,7 @@ public class ITSitConfig extends BaseTest {
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
-  
-  
+
   /**
    * This test covers custom configuration override use cases for config.xml.
    *
