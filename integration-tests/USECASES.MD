@@ -2,14 +2,14 @@
 
 Java integration tests cover the below use cases:
 
-Quick test Configuration & Use Cases - 
+## Quick test Configuration & Use Cases - 
 
 |  |  |
 | --- | --- |
 | Operator Configuration | operator1 deployed in `weblogic-operator1` namespace and manages domains in `default` and `test1` namespaces |
 | Domain Configuration | Domain on PV using WLST, Traefik load balancer |
 
-Basic Use Cases
+**Basic Use Cases**
 
 1. Create operator `operator1` which manages `default` and `test1` namespaces, verify it's deployed successfully, pods created, operator ready and verify external REST service, if configured.
 2. Create domain `domain1` in `default` namespace and verify the pods, services are created and servers are in ready state.
@@ -17,7 +17,7 @@ Basic Use Cases
 4. Verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST.
 5. Verify web app load balancing by accessing the webapp using `loadBalancerWebPort`.
 
-Advanced Use Cases
+**Advanced Use Cases**
 
 6. Verify domain life cycle (destroy and create) should not have any impact on operator managing the domain and web app load balancing and admin external service.
 7. Cluster scale up/down using operator REST endpoint, webapp load balancing should adjust accordingly.
@@ -29,7 +29,7 @@ Also the below use cases are covered for Quick test:
 10. Shutdown the domain by changing domain `serverStartPolicy` to `NEVER`.
 
 
-Full test Configuration & Use Cases - Runs Quick test Configuration & Use cases and the below
+## Full test Configuration & Use Cases - Runs Quick test Configuration & Use cases and the below
 
 |  |  |
 | --- | --- |
@@ -74,9 +74,7 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Server pods restarted by changing includeServerOutInPodLog | Verify admin and managed server pods being restarted by property change: includeServerOutInPodLog: true --> includeServerOutInPodLog: false |
 | Server pods restarted by changing logHomeEnable | Verify admin and managed server pods being restarted by property change: logHomeEnabled: true --> logHomeEnabled: false |
 
-Configuration Overrides Usecases
-
-| Override | Usecase |
+| Overrides | Usecase |
 | --- | --- |
 | Configuration override | Override the administration server properties `connect-timeout`, `max-message-size`, `restart-max`, `debug-server-life-cycle` and `debug-jmx-core` debug flags. Also T3Channel public address using Kubernetes secret. The override is verified by JMX client connecting to the serverConfig MBean tree and the values are checked against the expected values. The test client connects to the overridden T3 public address and port to connect to the MBean servers |
 | JDBC Resource Override | Override JDBC connection pool properties; `initialCapacity`, `maxCapacity`, `test-connections-on-reserve`, `connection-harvest-max-count`, `inactive-connection-timeout-seconds`. Override the JDBC driver parameters like data source `URL`, `DB` `user` and `password` using kubernetes secret. The test verifies the overridden functionality datasource `URL`, `user`, `password` by getting the data source connection and running DDL statement it is connected to. |

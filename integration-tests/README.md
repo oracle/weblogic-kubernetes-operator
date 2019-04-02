@@ -98,7 +98,7 @@ externalRestEnabled: true
 javaLoggingLevel: FINE
 ```
 
-src/integration-tests/resources/domainonpvwlst.yaml - See "Input Yaml to the test". For all the properties that are not defined here, the default values in the sample inputs are used while generating inputs yaml.
+src/integration-tests/resources/domainonpvwlst.yaml - See [Input Yaml to the test](#input-yaml-to-the-test). For all the properties that are not defined here, the default values in the sample inputs are used while generating inputs yaml.
 
 ```
 adminServerName: admin-server
@@ -126,7 +126,7 @@ The input yaml file(for example, domainonpvwlst.yaml) to the java test is used t
 - custom attributes that are used to provide more flexibility for creating the domain.
 
 Below are the load balancer attributes:
-- loadBalancer: value can be TRAEFIK or VOYAGER, default is TRAEFIK
+- loadBalancer: value can be `TRAEFIK` or `VOYAGER`, default is `TRAEFIK`
 - loadBalancerWebPort: web port for the load balancer
 - ingressPerDomain: create ingress per domain or one ingress for all domains in multiple domain configuration, default is true. 
 
