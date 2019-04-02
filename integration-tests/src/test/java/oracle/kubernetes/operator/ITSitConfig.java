@@ -112,7 +112,8 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * This test covers custom configuration override use cases for config.xml.
+   * This test covers custom configuration override use cases for config.xml for administration
+   * server.
    *
    * <p>The test checks the overridden config.xml attributes connect-timeout, max-message-size,
    * restart-max, JMXCore and ServerLifeCycle debug flags, the T3Channel public address. The
@@ -143,12 +144,11 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * This test covers custom configuration override use cases for config.xml.
+   * This test covers custom configuration override use cases for config.xml for managed server.
    *
-   * <p>The test checks the overridden config.xml attributes connect-timeout, max-message-size,
-   * restart-max, JMXCore and ServerLifeCycle debug flags, the T3Channel public address. The
-   * overridden are verified against the ServerConfig MBean tree. It does not verifies whether the
-   * overridden values are applied to the runtime.
+   * <p>The test checks the overridden config.xml attributes max-message-size. The overridden are
+   * verified against the ServerConfig MBean tree. It does not verifies whether the overridden
+   * values are applied to the runtime.
    *
    * @throws Exception when the assertion fails due to unmatched values
    */
