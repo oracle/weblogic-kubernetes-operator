@@ -331,34 +331,26 @@ public class BaseTest {
     logger.info("Inside testWSLoadBalancing");
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     Map<String, Object> domainMap = domain.getDomainMap();
-    // check if the property is set to true
-    Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
 
-    if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
-      ExecResult result =
-          TestUtils.kubectlexecNoCheck(
-              domain.getDomainUid() + ("-") + domainMap.get("adminServerName"),
-              "" + domainMap.get("namespace"),
-              " -- mkdir -p " + appLocationInPod);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command to create directory "
-                + appLocationInPod
-                + " in the pod failed, returned "
-                + result.stderr()
-                + " "
-                + result.stdout());
-      }
-
-      buildDeployWebServiceApp(domain, TESTWSAPP);
-      // invoke webservice via servlet client
-      domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
-
-    } else {
-      logger.info("exposeAdminT3Channel is false, can not test WSLoadBalancing");
+    ExecResult result =
+        TestUtils.kubectlexecNoCheck(
+            domain.getDomainUid() + ("-") + domainMap.get("adminServerName"),
+            "" + domainMap.get("namespace"),
+            " -- mkdir -p " + appLocationInPod);
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to create directory "
+              + appLocationInPod
+              + " in the pod failed, returned "
+              + result.stderr()
+              + " "
+              + result.stdout());
     }
 
-    logger.info("Done - testWSLoadBalance");
+    buildDeployWebServiceApp(domain, TESTWSAPP);
+    // invoke webservice via servlet client
+    domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
+    logger.info("Done - testWSLoadBalancing");
   }
 
   /**
@@ -380,6 +372,7 @@ public class BaseTest {
     } else {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     }
+    testWSLoadBalancing(domain);
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     domain.verifyHasClusterServiceChannelPort("TCP", 8011, TESTWEBAPP + "/");
     logger.info("Done - testDomainLifecyle");
