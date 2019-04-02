@@ -379,7 +379,7 @@ public class BaseTest {
       testAdminT3Channel(domain);
     } else {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
-      domain.verifyWebAppLoadBalancing(TESTWSAPP);
+      domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
     }
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     domain.verifyHasClusterServiceChannelPort("TCP", 8011, TESTWEBAPP + "/");
