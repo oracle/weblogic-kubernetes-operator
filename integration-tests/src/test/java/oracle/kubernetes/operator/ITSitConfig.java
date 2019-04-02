@@ -136,6 +136,7 @@ public class ITSitConfig extends BaseTest {
                 + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + domain.getAdminServerName()
+                + " "
                 + testMethod
                 + "'");
     assertResult(result);
@@ -166,7 +167,7 @@ public class ITSitConfig extends BaseTest {
                 + fqdn
                 + " "
                 + T3CHANNELPORT
-                + " weblogic welcome1 managed-server1"
+                + " weblogic welcome1 managed-server1 "
                 + testMethod
                 + "'");
     assertResult(result);
@@ -203,6 +204,7 @@ public class ITSitConfig extends BaseTest {
                 + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + domain.getAdminServerName()
+                + " "
                 + testMethod
                 + " "
                 + JDBC_URL
@@ -237,6 +239,7 @@ public class ITSitConfig extends BaseTest {
                 + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + domain.getAdminServerName()
+                + " "
                 + testMethod
                 + "'");
     assertResult(result);
@@ -271,6 +274,7 @@ public class ITSitConfig extends BaseTest {
                 + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + domain.getAdminServerName()
+                + " "
                 + testMethod
                 + "'");
     assertResult(result);
