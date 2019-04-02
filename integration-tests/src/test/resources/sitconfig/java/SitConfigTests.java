@@ -37,9 +37,7 @@ import weblogic.management.configuration.ServerDebugMBean;
 import weblogic.management.configuration.ServerMBean;
 import weblogic.management.configuration.WLDFSystemResourceMBean;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
-import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
 import weblogic.management.mbeanservers.edit.ConfigurationManagerMBean;
-import weblogic.management.mbeanservers.edit.EditServiceMBean;
 import weblogic.management.mbeanservers.runtime.RuntimeServiceMBean;
 import weblogic.management.runtime.ServerRuntimeMBean;
 
@@ -65,8 +63,6 @@ public class SitConfigTests {
 
   private MBeanServerConnection runtimeMbs;
   private MBeanServerConnection editMbs;
-  private DomainMBean domainMBean = null;
-  private EditServiceMBean editServiceMBean = null;
   private ConfigurationManagerMBean cfgMgr;
   private JMXConnector jmxConnector;
   private static ObjectName service;
@@ -74,8 +70,8 @@ public class SitConfigTests {
   private ServerRuntimeMBean serverRuntime;
   private static final String JNDI = "/jndi/";
 
-  private final String adminHost;
-  private final String adminPort;
+  private String adminHost;
+  private String adminPort;
   private final String adminUser;
   private final String adminPassword;
   private final String serverName;
@@ -121,6 +117,7 @@ public class SitConfigTests {
     if (testName.equals("testCustomSitConfigOverridesForDomainMS")) {
       // the values passed to these verify methods are the attribute values overrrideen in the
       // config.xml. These are just randomly chosen attributes and values to override
+      test.connectToManagedServer(serverName);
       test.verifyMaxMessageSize(serverName, 77777777);
     }
 
@@ -179,16 +176,6 @@ public class SitConfigTests {
     runtimeServiceMBean =
         (RuntimeServiceMBean)
             MBeanServerInvocationHandler.newProxyInstance(runtimeMbs, runtimeserviceObjectName);
-    ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
-    editMbs =
-        lookupMBeanServerConnection(
-            adminHost, adminPort, adminUser, adminPassword, EditServiceMBean.MBEANSERVER_JNDI_NAME);
-    ObjectName serviceObjectName = new ObjectName(EditServiceMBean.OBJECT_NAME);
-    editServiceMBean =
-        (EditServiceMBean)
-            MBeanServerInvocationHandler.newProxyInstance(editMbs, serviceObjectName);
-    cfgMgr = editServiceMBean.getConfigurationManager();
-    cfgMgr.startEdit(-1, -1);
   }
 
   /**
@@ -378,8 +365,10 @@ public class SitConfigTests {
    * @return the ServerMBean reference
    */
   private ServerMBean getServerMBean(String serverName) {
-    DomainMBean editDomainMBean = editServiceMBean.getDomainConfiguration();
-    return editDomainMBean.lookupServer(serverName);
+    ServerMBean serverMBean = runtimeServiceMBean.getServerConfiguration();
+    println("ServerMBean: " + serverMBean);
+
+    return serverMBean;
   }
 
   /**
@@ -610,6 +599,21 @@ public class SitConfigTests {
     WLDFSystemResourceMBean wldfResource = domain.lookupWLDFSystemResource(resourceName);
     assert wldfResource != null : "WLDF resource is null";
     return wldfResource;
+  }
+
+  private void connectToManagedServer(String serverName) throws Exception {
+    ServerMBean[] servers = runtimeServiceMBean.getDomainConfiguration().getServers();
+    try {
+      for (ServerMBean server : servers) {
+        if (server.getName().equals(serverName)) {
+          adminHost = server.getListenAddress();
+          adminPort = String.valueOf(server.getListenPort());
+        }
+      }
+    } finally {
+      jmxConnector.close();
+      createConnections();
+    }
   }
 
   /**
