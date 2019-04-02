@@ -37,7 +37,7 @@ import weblogic.management.configuration.ServerDebugMBean;
 import weblogic.management.configuration.ServerMBean;
 import weblogic.management.configuration.WLDFSystemResourceMBean;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
-import weblogic.management.mbeanservers.edit.ConfigurationManagerMBean;
+import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
 import weblogic.management.mbeanservers.runtime.RuntimeServiceMBean;
 import weblogic.management.runtime.ServerRuntimeMBean;
 
@@ -62,8 +62,6 @@ import weblogic.management.runtime.ServerRuntimeMBean;
 public class SitConfigTests {
 
   private MBeanServerConnection runtimeMbs;
-  private MBeanServerConnection editMbs;
-  private ConfigurationManagerMBean cfgMgr;
   private JMXConnector jmxConnector;
   private static ObjectName service;
   private RuntimeServiceMBean runtimeServiceMBean;
@@ -74,7 +72,6 @@ public class SitConfigTests {
   private String adminPort;
   private final String adminUser;
   private final String adminPassword;
-  private final String serverName;
 
   /**
    * Main method to create the SitConfigTests object and run the configuration override tests. To
@@ -92,12 +89,10 @@ public class SitConfigTests {
     String adminHost = args[0];
     String adminPort = args[1];
     String adminUser = args[2];
-    String adminPassword = args[3];
-    String serverName = args[4];
-    String testName = args[5];
+    String adminPassword = args[3];    
+    String testName = args[4];
 
-    SitConfigTests test =
-        new SitConfigTests(adminHost, adminPort, adminUser, adminPassword, serverName);
+    SitConfigTests test = new SitConfigTests(adminHost, adminPort, adminUser, adminPassword);
 
     ServerRuntimeMBean runtimeMBean = test.runtimeServiceMBean.getServerRuntime();
     println("Sitconfig State:" + runtimeMBean.isInSitConfigState());
@@ -105,24 +100,25 @@ public class SitConfigTests {
     if (testName.equals("testCustomSitConfigOverridesForDomain")) {
       // the values passed to these verify methods are the attribute values overrrideen in the
       // config.xml. These are just randomly chosen attributes and values to override
-      test.verifyDebugFlagJMXCore(serverName, true);
-      test.verifyDebugFlagServerLifeCycle(serverName, true);
-      test.verifyMaxMessageSize(serverName, 78787878);
-      test.verifyConnectTimeout(serverName, 120);
-      test.verifyRestartMax(serverName, 5);
-      test.verifyT3ChannelPublicAddress(serverName, adminHost);
-      test.verifyT3ChannelPublicPort(serverName, 30091);
+      test.verifyDebugFlagJMXCore(true);
+      test.verifyDebugFlagServerLifeCycle(true);
+      test.verifyMaxMessageSize(78787878);
+      test.verifyConnectTimeout(120);
+      test.verifyRestartMax(5);
+      test.verifyT3ChannelPublicAddress(adminHost);
+      test.verifyT3ChannelPublicPort(30091);
     }
-
+    
     if (testName.equals("testCustomSitConfigOverridesForDomainMS")) {
       // the values passed to these verify methods are the attribute values overrrideen in the
       // config.xml. These are just randomly chosen attributes and values to override
+      String serverName = args[5];
       test.connectToManagedServer(serverName);
-      test.verifyMaxMessageSize(serverName, 77777777);
+      test.verifyMaxMessageSize(77777777);
     }
 
     if (testName.equals("testCustomSitConfigOverridesForJdbc")) {
-      String JDBC_URL = args[6];
+      String JDBC_URL = args[5];
       test.testSystemResourcesJDBCAttributeChange("JdbcTestDataSource-0", JDBC_URL);
     }
 
@@ -141,19 +137,16 @@ public class SitConfigTests {
    * @param adminHost - administration server t3 public address
    * @param adminPort - administration server t3 public port
    * @param adminUser - administration server user name
-   * @param adminPassword - administration server password
-   * @param serverName - name of the server for which the configuration values to be checked
+   * @param adminPassword - - administration server password
    * @throws Exception when connection cannot be created for reasons like incorrect administration
    *     server name, port , user name , password or administration server not running
    */
-  public SitConfigTests(
-      String adminHost, String adminPort, String adminUser, String adminPassword, String serverName)
+  public SitConfigTests(String adminHost, String adminPort, String adminUser, String adminPassword)
       throws Exception {
     this.adminHost = adminHost;
     this.adminPort = adminPort;
     this.adminUser = adminUser;
     this.adminPassword = adminPassword;
-    this.serverName = serverName;
     createConnections();
   }
 
@@ -176,6 +169,7 @@ public class SitConfigTests {
     runtimeServiceMBean =
         (RuntimeServiceMBean)
             MBeanServerInvocationHandler.newProxyInstance(runtimeMbs, runtimeserviceObjectName);
+    ObjectName domainServiceObjectName = new ObjectName(DomainRuntimeServiceMBean.OBJECT_NAME);
   }
 
   /**
@@ -224,6 +218,7 @@ public class SitConfigTests {
     if (mBeanServerConnection == null) {
       throw new Exception("MBean server connection is null");
     }
+
     return mBeanServerConnection;
   }
 
@@ -234,11 +229,9 @@ public class SitConfigTests {
    *
    * @param expectedValue - boolean value to be checked in the debug-jmx-core attribute in
    *     ServerMBean in ServerConfig tree.
-   * @param serverName - name of the weblogic server instance for which the debug flag to be checked
-   *     as a String
    */
-  protected void verifyDebugFlagJMXCore(String serverName, boolean expectedValue) {
-    ServerMBean serverMBean = getServerMBean(serverName);
+  protected void verifyDebugFlagJMXCore(boolean expectedValue) {
+    ServerMBean serverMBean = getServerMBean();
     ServerDebugMBean serverDebugMBean = serverMBean.getServerDebug();
     boolean debugFlag = serverDebugMBean.getDebugJMXCore();
     assert expectedValue == debugFlag
@@ -250,14 +243,11 @@ public class SitConfigTests {
    * with the expected value, a boolean value set in the configuration override file config.xml.Uses
    * Java assertions to verify if both the values match.
    *
-   * @param serverName name of the weblogic server instance for which the debug flag to be checked
-   *     as a String
    * @param expectedValue - boolean value to be checked in the debug-server-life-cycle attribute in
-   *     ServerMBean in ServerConfig MBean tree * @param serverName - name of the weblogic server
-   *     instance for which the debug flag to be checked as a String
+   *     ServerMBean in ServerConfig MBean tree
    */
-  protected void verifyDebugFlagServerLifeCycle(String serverName, boolean expectedValue) {
-    ServerMBean serverMBean = getServerMBean(serverName);
+  protected void verifyDebugFlagServerLifeCycle(boolean expectedValue) {
+    ServerMBean serverMBean = getServerMBean();
     ServerDebugMBean serverDebugMBean = serverMBean.getServerDebug();
     boolean debugFlag = serverDebugMBean.getDebugServerLifeCycle();
     assert expectedValue == debugFlag
@@ -271,11 +261,9 @@ public class SitConfigTests {
    *
    * @param expectedValue - integer value to be checked in the connect-timeout attribute in
    *     ServerMBean in ServerConfig tree.
-   * @param serverName - name of the weblogic server instance for which the connect timeout to be
-   *     checked as a String
    */
-  protected void verifyConnectTimeout(String serverName, int expectedValue) {
-    ServerMBean serverMBean = getServerMBean(serverName);
+  protected void verifyConnectTimeout(int expectedValue) {
+    ServerMBean serverMBean = getServerMBean();
     int got = serverMBean.getConnectTimeout();
     assert expectedValue == got
         : "Didn't get the expected value " + expectedValue + " for ConnectTimeout";
@@ -288,11 +276,9 @@ public class SitConfigTests {
    *
    * @param expectedValue - integer value to be checked in the restart-max attribute in ServerMBean
    *     in ServerConfig tree.
-   * @param serverName - name of the weblogic server instance for which the restart max to be
-   *     checked as a String
    */
-  protected void verifyRestartMax(String serverName, int expectedValue) {
-    ServerMBean serverMBean = getServerMBean(serverName);
+  protected void verifyRestartMax(int expectedValue) {
+    ServerMBean serverMBean = getServerMBean();
     int got = serverMBean.getRestartMax();
     assert expectedValue == got
         : "Didn't get the expected value " + expectedValue + " for RestartMax";
@@ -305,11 +291,9 @@ public class SitConfigTests {
    *
    * @param expectedValue - integer value to be checked in the max-message-size attribute in
    *     ServerMBean in ServerConfig tree
-   * @param serverName - name of the weblogic server instance for which the max message size to be
-   *     checked as a String
    */
-  protected void verifyMaxMessageSize(String serverName, int expectedValue) {
-    ServerMBean serverMBean = getServerMBean(serverName);
+  protected void verifyMaxMessageSize(int expectedValue) {
+    ServerMBean serverMBean = getServerMBean();
     int got = serverMBean.getMaxMessageSize();
     assert expectedValue == got
         : "Didn't get the expected value " + expectedValue + " for MaxMessageSize";
@@ -320,15 +304,14 @@ public class SitConfigTests {
    * matches with the expected value, a string value set in the configuration override file
    * config.xml. Uses Java assertions to verify if both the values match.
    *
-   * @param serverName name of the weblogic server instance for which the t3 public address to be
-   *     checked as a String
    * @param expectedValue - string value to be checked in the public-address attribute in
    *     ServerMBean in ServerConfig tree.
    */
-  protected void verifyT3ChannelPublicAddress(String serverName, String expectedValue) {
+  protected void verifyT3ChannelPublicAddress(String expectedValue) {
     boolean got = false;
-    ServerMBean serverMBean = getServerMBean(serverName);
+    ServerMBean serverMBean = getServerMBean();
     NetworkAccessPointMBean[] networkAccessPoints = serverMBean.getNetworkAccessPoints();
+
     for (NetworkAccessPointMBean networkAccessPoint : networkAccessPoints) {
       if (networkAccessPoint.getName().equals("T3Channel")) {
         assert expectedValue.equals(networkAccessPoint.getPublicAddress())
@@ -343,13 +326,12 @@ public class SitConfigTests {
    *
    * @param expectedValue - integer value to be checked in the public-port attribute in ServerMBean
    *     in ServerConfig tree
-   * @param serverName - name of the weblogic server instance for which the t3 port to be checked as
-   *     a String
    */
-  protected void verifyT3ChannelPublicPort(String serverName, int expectedValue) {
+  protected void verifyT3ChannelPublicPort(int expectedValue) {
     boolean got = false;
-    ServerMBean serverMBean = getServerMBean(serverName);
+    ServerMBean serverMBean = getServerMBean();
     NetworkAccessPointMBean[] networkAccessPoints = serverMBean.getNetworkAccessPoints();
+
     for (NetworkAccessPointMBean networkAccessPoint : networkAccessPoints) {
       if (networkAccessPoint.getName().equals("T3Channel")) {
         assert expectedValue == networkAccessPoint.getPublicPort()
@@ -361,10 +343,9 @@ public class SitConfigTests {
   /**
    * Looks up the ServerMBean from RuntimeServiceMBean.
    *
-   * @param the name weblogic server instance for which to lookup the ServerMBean
    * @return the ServerMBean reference
    */
-  private ServerMBean getServerMBean(String serverName) {
+  private ServerMBean getServerMBean() {
     ServerMBean serverMBean = runtimeServiceMBean.getServerConfiguration();
     println("ServerMBean: " + serverMBean);
 
@@ -601,7 +582,7 @@ public class SitConfigTests {
     return wldfResource;
   }
 
-  private void connectToManagedServer(String serverName) throws Exception {
+    private void connectToManagedServer(String serverName) throws Exception {
     ServerMBean[] servers = runtimeServiceMBean.getDomainConfiguration().getServers();
     try {
       for (ServerMBean server : servers) {
