@@ -135,15 +135,14 @@ public class ITSitConfig extends BaseTest {
                 + " "
                 + T3CHANNELPORT
                 + " weblogic welcome1 "
-                + domain.getAdminServerName()
-                + " "
                 + testMethod
                 + "'");
     assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
-
+  
+  
   /**
    * This test covers custom configuration override use cases for config.xml.
    *
@@ -167,9 +166,9 @@ public class ITSitConfig extends BaseTest {
                 + fqdn
                 + " "
                 + T3CHANNELPORT
-                + " weblogic welcome1 managed-server1 "
+                + " weblogic welcome1 "
                 + testMethod
-                + "'");
+                + " managed-server1'");
     assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
@@ -203,8 +202,6 @@ public class ITSitConfig extends BaseTest {
                 + " "
                 + T3CHANNELPORT
                 + " weblogic welcome1 "
-                + domain.getAdminServerName()
-                + " "
                 + testMethod
                 + " "
                 + JDBC_URL
@@ -238,8 +235,6 @@ public class ITSitConfig extends BaseTest {
                 + " "
                 + T3CHANNELPORT
                 + " weblogic welcome1 "
-                + domain.getAdminServerName()
-                + " "
                 + testMethod
                 + "'");
     assertResult(result);
@@ -273,8 +268,6 @@ public class ITSitConfig extends BaseTest {
                 + " "
                 + T3CHANNELPORT
                 + " weblogic welcome1 "
-                + domain.getAdminServerName()
-                + " "
                 + testMethod
                 + "'");
     assertResult(result);
