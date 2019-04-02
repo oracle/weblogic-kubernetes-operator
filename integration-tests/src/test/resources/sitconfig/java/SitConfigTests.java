@@ -89,7 +89,7 @@ public class SitConfigTests {
     String adminHost = args[0];
     String adminPort = args[1];
     String adminUser = args[2];
-    String adminPassword = args[3];    
+    String adminPassword = args[3];
     String testName = args[4];
 
     SitConfigTests test = new SitConfigTests(adminHost, adminPort, adminUser, adminPassword);
@@ -108,7 +108,7 @@ public class SitConfigTests {
       test.verifyT3ChannelPublicAddress(adminHost);
       test.verifyT3ChannelPublicPort(30091);
     }
-    
+
     if (testName.equals("testCustomSitConfigOverridesForDomainMS")) {
       // the values passed to these verify methods are the attribute values overrrideen in the
       // config.xml. These are just randomly chosen attributes and values to override
@@ -582,7 +582,7 @@ public class SitConfigTests {
     return wldfResource;
   }
 
-    private void connectToManagedServer(String serverName) throws Exception {
+  private void connectToManagedServer(String serverName) throws Exception {
     ServerMBean[] servers = runtimeServiceMBean.getDomainConfiguration().getServers();
     try {
       for (ServerMBean server : servers) {
