@@ -582,6 +582,13 @@ public class SitConfigTests {
     return wldfResource;
   }
 
+  /**
+   * Looks up the managed server public listen address and port, closes the existing MBeanServer
+   * connection to admin server and creates MBeanServer connection to the given managed server
+   *
+   * @param serverName name of the managed server to which to create MBeanServerConnection
+   * @throws Exception when connection close fails or when new connection to managed server fails.
+   */
   private void connectToManagedServer(String serverName) throws Exception {
     ServerMBean[] servers = runtimeServiceMBean.getDomainConfiguration().getServers();
     try {
