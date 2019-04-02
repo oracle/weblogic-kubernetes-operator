@@ -769,7 +769,7 @@ public class Domain {
    *
    * @throws Exception If the file create-pv-pvc-inputs.yaml does not exist, is a directory rather
    *     than a regular file, or for some other reason cannot be opened for reading. or if an I/O
-   *     error occurs or any errors while creating PV dir or generating PV/PVC input file or any  
+   *     error occurs or any errors while creating PV dir or generating PV/PVC input file or any
    *     errors while executing sample create-pv-pvc.sh script
    */
   private void createPV() throws Exception {
