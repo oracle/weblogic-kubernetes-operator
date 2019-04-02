@@ -26,6 +26,8 @@ import oracle.kubernetes.operator.utils.TestUtils;
 public class BaseTest {
   public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   public static final String TESTWEBAPP = "testwebapp";
+  public static final String TESTWSAPP = "testwsapp";
+  public static final String TESTWSSERVICE = "TestWSApp";
 
   // property file used to customize operator properties for operator inputs yaml
 
@@ -321,6 +323,45 @@ public class BaseTest {
   }
 
   /**
+   * Verify t3channel port by deploying webapp using the port
+   *
+   * @throws Exception
+   */
+  public void testWSLoadBalancing(Domain domain) throws Exception {
+    logger.info("Inside testWSLoadBalancing");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    Map<String, Object> domainMap = domain.getDomainMap();
+    // check if the property is set to true
+    Boolean exposeAdmint3Channel = (Boolean) domainMap.get("exposeAdminT3Channel");
+
+    if (exposeAdmint3Channel != null && exposeAdmint3Channel.booleanValue()) {
+      ExecResult result =
+          TestUtils.kubectlexecNoCheck(
+              domain.getDomainUid() + ("-") + domainMap.get("adminServerName"),
+              "" + domainMap.get("namespace"),
+              " -- mkdir -p " + appLocationInPod);
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command to create directory "
+                + appLocationInPod
+                + " in the pod failed, returned "
+                + result.stderr()
+                + " "
+                + result.stdout());
+      }
+
+      buildDeployWebServiceApp(domain, TESTWSAPP);
+      // invoke webservice via servlet client
+      domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
+
+    } else {
+      logger.info("exposeAdminT3Channel is false, can not test WSLoadBalancing");
+    }
+
+    logger.info("Done - testWSLoadBalance");
+  }
+
+  /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
    * balancing and node port service
    *
@@ -338,6 +379,7 @@ public class BaseTest {
       testAdminT3Channel(domain);
     } else {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
+      domain.verifyWebAppLoadBalancing(TESTWSAPP);
     }
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     domain.verifyHasClusterServiceChannelPort("TCP", 8011, TESTWEBAPP + "/");
@@ -568,6 +610,17 @@ public class BaseTest {
         "/shared/domains/" + domainUID + "/bin/scripts/scalingAction.sh",
         podName,
         domainNS);
+  }
+
+  private void buildDeployWebServiceApp(Domain domain, String testAppName) throws Exception {
+    String scriptName = "buildDeployWSAndWSClientAppInPod.sh";
+    if (!testAppName.contains("ws")) {
+      throw new RuntimeException(
+          "FAILURE: Application Name must contain ws to indicate webservice type");
+    }
+    // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
+    domain.buildDeployWebServiceAppInPod(
+        testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), TESTWSSERVICE);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
