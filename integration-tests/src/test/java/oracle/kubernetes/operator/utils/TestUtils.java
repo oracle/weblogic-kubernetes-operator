@@ -8,6 +8,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Map;
@@ -937,6 +940,46 @@ public class TestUtils {
     k8sTestUtils.verifyPvs(domain1LabelSelector, 0);
     k8sTestUtils.verifyNoClusterRoles(domain1LabelSelector);
     k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
+  }
+
+  public static OracleDB createOracleDB(String dbPropsFile) throws Exception {
+    OracleDB oracledb = new OracleDB(dbPropsFile);
+
+    // check the db is ready
+    String dbnamespace = oracledb.getNamespace();
+
+    String cmd = "kubectl get pod -n " + dbnamespace + " -o jsonpath=\"{.items[0].metadata.name}\"";
+    ExecResult result = ExecCommand.exec(cmd);
+    String podName = result.stdout();
+
+    logger.info("DEBUG: db namespace=" + dbnamespace);
+    logger.info("DEBUG: podname=" + podName);
+    TestUtils.checkPodReady("", dbnamespace);
+
+    // check the db is ready to use
+    cmd = "kubectl logs " + podName + " -n " + dbnamespace;
+    logger.info("Running command: " + cmd);
+    result = ExecCommand.exec(cmd);
+    int timeout = 15;
+    int i = 0;
+    while ((i < timeout) && !result.stdout().contains("The database is ready for use")) {
+      logger.info("checking whether db is ready to use, iteration " + i + "/15");
+      Thread.sleep(10000);
+      result = ExecCommand.exec(cmd);
+      i++;
+    }
+
+    return oracledb;
+  }
+
+  /** Replaces the string matching the given search pattern with a new string. */
+  public static void replaceStringInFile(String filename, String originalString, String newString)
+      throws Exception {
+    Path path = Paths.get(filename);
+
+    String content = new String(Files.readAllBytes(path));
+    content = content.replaceAll(originalString, newString);
+    Files.write(path, content.getBytes());
   }
 
   private static KeyStore createKeyStore(Operator operator) throws Exception {

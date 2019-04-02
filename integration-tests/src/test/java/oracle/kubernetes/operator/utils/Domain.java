@@ -31,46 +31,50 @@ public class Domain {
   public static final String CREATE_DOMAIN_JOB_MESSAGE =
       "Domain base_domain was created and will be started by the WebLogic Kubernetes Operator";
 
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
-  private Map<String, Object> domainMap;
-  private Map<String, Object> pvMap;
+  protected Map<String, Object> domainMap;
+  protected Map<String, Object> pvMap;
 
   // attributes from domain properties
-  private String domainUid = "";
+  protected String domainUid = "";
   // default values as in create-weblogic-domain-inputs.yaml, generated yaml file will have the
   // customized property values
-  private String domainNS;
-  private String adminServerName;
-  private String managedServerNameBase;
-  private int initialManagedServerReplicas;
-  private int configuredManagedServerCount;
-  private boolean exposeAdminT3Channel;
-  private boolean exposeAdminNodePort;
-  private int t3ChannelPort;
-  private String clusterName;
-  private String clusterType;
-  private String serverStartPolicy;
-  private String weblogicDomainStorageReclaimPolicy;
-  private String weblogicDomainStorageSize;
-  private String loadBalancer = "TRAEFIK";
-  private int loadBalancerWebPort = 30305;
-  private String userProjectsDir = "";
-  private String projectRoot = "";
-  private boolean ingressPerDomain = true;
+  protected String domainNS;
+  protected String adminServerName;
+  protected String managedServerNameBase;
+  protected int initialManagedServerReplicas;
+  protected int configuredManagedServerCount;
+  protected boolean exposeAdminT3Channel;
+  protected boolean exposeAdminNodePort;
+  protected int t3ChannelPort;
+  protected String clusterName;
+  protected String clusterType;
+  protected String serverStartPolicy;
+  protected String weblogicDomainStorageReclaimPolicy;
+  protected String weblogicDomainStorageSize;
+  protected String loadBalancer = "TRAEFIK";
+  protected int loadBalancerWebPort = 30305;
+  protected String userProjectsDir = "";
+  protected String projectRoot = "";
+  protected boolean ingressPerDomain = true;
 
-  private String createDomainScript = "";
-  private String inputTemplateFile = "";
-  private String generatedInputYamlFile;
+  protected String createDomainScript = "";
+  protected String inputTemplateFile = "";
+  protected String generatedInputYamlFile;
 
-  private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
-  private static int waitTime = BaseTest.getWaitTimePod();
+  protected static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
+  protected static int waitTime = BaseTest.getWaitTimePod();
 
-  private boolean voyager;
+  protected boolean voyager;
   // LB_TYPE is an evn var. Set to "VOYAGER" to use it as loadBalancer
-  private static String LB_TYPE;
+  protected static String LB_TYPE;
   // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  private static boolean INGRESSPERDOMAIN = true;
+  protected static boolean INGRESSPERDOMAIN = true;
+
+  public Domain() throws Exception {
+    domainMap = new HashMap<>();
+  }
 
   public Domain(String inputYaml) throws Exception {
     // read input domain yaml to test
@@ -804,7 +808,7 @@ public class Domain {
     }
   }
 
-  private void createPV() throws Exception {
+  protected void createPV() throws Exception {
 
     Yaml yaml = new Yaml();
     InputStream pv_is =
@@ -850,7 +854,7 @@ public class Domain {
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
   }
 
-  private void createSecret() throws Exception {
+  protected void createSecret() throws Exception {
     Secret secret =
         new Secret(
             domainNS,
@@ -874,14 +878,14 @@ public class Domain {
     }
   }
 
-  private void generateInputYaml() throws Exception {
+  protected void generateInputYaml() throws Exception {
     Path parentDir =
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-domains/" + domainUid));
     generatedInputYamlFile = parentDir + "/weblogic-domain-values.yaml";
     TestUtils.createInputFile(domainMap, generatedInputYamlFile);
   }
 
-  private void callCreateDomainScript(String outputDir) throws Exception {
+  protected void callCreateDomainScript(String outputDir) throws Exception {
 
     // copy create domain py script for domain on pv case
     if (domainMap.containsKey("createDomainPyScript")
@@ -943,7 +947,7 @@ public class Domain {
     }
   }
 
-  private void createLoadBalancer() throws Exception {
+  protected void createLoadBalancer() throws Exception {
     Map<String, Object> lbMap = new HashMap<String, Object>();
     lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);
@@ -999,7 +1003,7 @@ public class Domain {
     new LoadBalancer(lbMap);
   }
 
-  private void callShellScriptByExecToPod(
+  protected void callShellScriptByExecToPod(
       String username, String password, String webappName, String appLocationInPod)
       throws Exception {
 
@@ -1054,7 +1058,7 @@ public class Domain {
       throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
   }
 
-  private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
+  protected void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
     for (int i = 0; i < maxIterations; i++) {
       ExecResult result = ExecCommand.exec(curlCmd.toString());
       if (result.exitValue() != 0) {
@@ -1085,7 +1089,7 @@ public class Domain {
     }
   }
 
-  private void callWebAppAndCheckForServerNameInResponse(
+  protected void callWebAppAndCheckForServerNameInResponse(
       String curlCmd, boolean verifyLoadBalancing) throws Exception {
     // map with server names and boolean values
     HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
@@ -1287,7 +1291,7 @@ public class Domain {
     }
   }
 
-  private String getNodeHost() throws Exception {
+  protected String getNodeHost() throws Exception {
     String cmd =
         "kubectl describe pod "
             + domainUid
@@ -1313,7 +1317,7 @@ public class Domain {
     }
   }
 
-  private String getNodePort() throws Exception {
+  protected String getNodePort() throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl describe domain ")
         .append(domainUid)
@@ -1337,7 +1341,7 @@ public class Domain {
     }
   }
 
-  private void gitCloneDockerImagesSample(Map domainMap) throws Exception {
+  protected void gitCloneDockerImagesSample(Map domainMap) throws Exception {
     if (domainMap.containsKey("domainHomeImageBuildPath")
         && !(((String) domainMap.get("domainHomeImageBuildPath")).trim().isEmpty())) {
       String domainHomeImageBuildPath = (String) domainMap.get("domainHomeImageBuildPath");
@@ -1381,7 +1385,7 @@ public class Domain {
     }
   }
 
-  private void appendToDomainYamlAndCreate(Map domainMap) throws Exception {
+  protected void appendToDomainYamlAndCreate(Map domainMap) throws Exception {
     String contentToAppend =
         "  configOverrides: "
             + domainUid
@@ -1411,7 +1415,7 @@ public class Domain {
     logger.info("Command returned " + result.stdout().trim());
   }
 
-  private String getHostNameForCurl() throws Exception {
+  protected String getHostNameForCurl() throws Exception {
     if (System.getenv("K8S_NODEPORT_HOST") != null) {
       return System.getenv("K8S_NODEPORT_HOST");
     } else {
