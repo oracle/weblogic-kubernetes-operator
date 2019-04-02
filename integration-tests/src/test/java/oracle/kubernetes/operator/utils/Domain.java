@@ -1315,9 +1315,11 @@ public class Domain {
   }
 
   /**
-   * clone docker-images sample
+   * Remove docker-images sample directory if exists and clone latest from github for domain home in
+   * image.
    *
-   * @throws Exception
+   * @throws Exception if could not run the command successfully to clone of docker-images sample
+   *     from github
    */
   private void gitCloneDockerImagesSample() throws Exception {
     if (!domainHomeImageBuildPath.isEmpty()) {
@@ -1339,14 +1341,16 @@ public class Domain {
           .append(BaseTest.getResultDir())
           .append("/docker-images");
       logger.info("Executing cmd " + removeAndClone);
-      ExecResult result = TestUtils.exec(removeAndClone.toString());
+      TestUtils.exec(removeAndClone.toString());
     }
   }
 
   /**
-   * append configOverrides to domain.yaml
+   * append configOverrides and configOverrideSecrets section to the generated domain.yaml and
+   * create the domain crd by calling kubectl create on the generated domain.yaml
    *
-   * @throws Exception
+   * @throws Exception if any error occurs writing to the file or if could not run kubectl create
+   *     command
    */
   private void appendToDomainYamlAndCreate() throws Exception {
     String contentToAppend =
@@ -1391,9 +1395,10 @@ public class Domain {
   }
 
   /**
-   * copy create-domain.py domain map contains createDomainPyScript
+   * Option to provide custom create-domain.py script. Copies create-domain.py to the correct
+   * location if domain map contains createDomainPyScript attribute.
    *
-   * @throws IOException
+   * @throws IOException if error occurs when readin or writing the file
    */
   private void copyCreateDomainPy() throws IOException {
 
@@ -1425,11 +1430,11 @@ public class Domain {
   /**
    * prepare the command to call create-domain.sh based on the domain type
    *
-   * @param outputDir
-   * @return
-   * @throws Exception
+   * @param outputDir directory for the generated Kubernetes YAML files for the domain when
+   *     create-domain.sh is called
+   * @return the command
    */
-  private String prepareCmdToCallCreateDomainScript(String outputDir) throws Exception {
+  private String prepareCmdToCallCreateDomainScript(String outputDir) {
 
     StringBuffer createDomainScriptCmd = new StringBuffer(BaseTest.getResultDir());
     // call different create-domain.sh based on the domain type
@@ -1458,9 +1463,11 @@ public class Domain {
   }
 
   /**
-   * change cluster type in domain template or properties to CONFIGURED for configured cluster
+   * Option to provide cluster type. Change cluster type in domain template to CONFIGURED or use
+   * configured cluster topology if clusterType is CONFIGURED
    *
-   * @throws Exception
+   * @throws Exception when errors occured during reading/writing the file or executing the command
+   *     to change the value in create-domain-job-template.yaml
    */
   private void changeClusterTypeInCreateDomainJobTemplate() throws Exception {
 
@@ -1627,9 +1634,11 @@ public class Domain {
   }
 
   /**
-   * create config map and secret for custom situational configuration
+   * create config map and label with domainUid and create secret used in custom situational
+   * configuration which contains hostname, db user, db password
    *
-   * @throws Exception
+   * @throws Exception when any of the kubectl commands to create config map, label, secret fails or
+   *     if could not run them
    */
   private void createConfigMapAndSecretForSitConfig() throws Exception {
 
