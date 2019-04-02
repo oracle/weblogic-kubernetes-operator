@@ -764,10 +764,13 @@ public class Domain {
   }
 
   /**
-   * Create a map with attributes required to create PV and create PV dir by calling
+   * Create a map with attributes required to create PV/PVC and create PV dir by calling
    * PersistentVolume
    *
-   * @throws Exception
+   * @throws Exception If the file create-pv-pvc-inputs.yaml does not exist, is a directory rather
+   *     than a regular file, or for some other reason cannot be opened for reading. or if an I/O
+   *     error occurs or any errors while creating PV dir or generating PV/PVC input file or any  
+   *     errors while executing sample create-pv-pvc.sh script
    */
   private void createPV() throws Exception {
 
@@ -912,9 +915,10 @@ public class Domain {
   }
 
   /**
-   * create secret
+   * create a Kubernetes secret and labels the secret with domainUid. This secret is used for
+   * weblogicCredentialsSecretName in the domain inputs
    *
-   * @throws Exception
+   * @throws Exception when the kubectl create secret command fails or label secret fails
    */
   private void createSecret() throws Exception {
     Secret secret =
@@ -932,9 +936,10 @@ public class Domain {
   }
 
   /**
-   * Generate domain values yaml using the doamin map
+   * Creates a directory using domainUid under userProjects weblogic-domains location. Creates
+   * weblogic-domain-values.yaml files using the domain map inputs at this new location.
    *
-   * @throws Exception
+   * @throws Exception if the dir/file can not be created
    */
   private void generateInputYaml() throws Exception {
     Path parentDir =
@@ -944,11 +949,14 @@ public class Domain {
   }
 
   /**
-   * copy create-domain.py if domain Map contains, git clone docker-images for domain in image and
-   * call create-domain.sh script based on the domain type. Append configOverrides to domain.yaml.
+   * copy create-domain.py if domain Map contains createDomainPyScript, git clone docker-images for
+   * domain in image and call create-domain.sh script based on the domain type. Append
+   * configOverrides to domain.yaml.
    *
-   * @param outputDir
-   * @throws Exception
+   * @param outputDir directory for the generated Kubernetes YAML files for the domain when
+   *     create-domain.sh is called
+   * @throws Exception if git clone fails or if createDomainPyScript can not be copied or if the
+   *     cluster topology file can not be copied or if create-domain.sh fails
    */
   private void callCreateDomainScript(String outputDir) throws Exception {
 
@@ -1171,8 +1179,9 @@ public class Domain {
    * Reads the create-domain-inputs.yaml from samples and overrides with attribute in input domain
    * map. Initializes the variables for the attributes in the map to be used later.
    *
-   * @param inputDomainMap
-   * @throws Exception
+   * @param inputDomainMap domain, LB, PV and custom input attributes for the domain
+   * @throws Exception if removing the results dir fails or if create-domain-inputs.yaml cannot be
+   *     accessed to read or if creating config map or secret fails for configoverrides
    */
   private void initialize(Map<String, Object> inputDomainMap) throws Exception {
     domainMap = inputDomainMap;
@@ -1253,16 +1262,6 @@ public class Domain {
     }
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
-      if (System.getenv("WERCKER") != null) {
-        // create docker registry secrets
-        TestUtils.createDockerRegistrySecret(
-            System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
-            System.getenv("REPO_SERVER"),
-            System.getenv("REPO_USERNAME"),
-            System.getenv("REPO_PASSWORD"),
-            System.getenv("REPO_EMAIL"),
-            domainNS);
-      }
     } else {
       domainMap.put("imagePullSecretName", "docker-store");
     }
