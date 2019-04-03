@@ -81,11 +81,11 @@
 2) In the standalone client java file, call:
 
         String scriptName = `buildDeployWSAndWSClientAppInPod.sh`;
-        domain.buildDeployWebServiceAppInPod(`[appName]`, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+        TestUtils.buildDeployWebServiceAppInPod(domain, `[appName]`, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
          
     With no extra variables it will use `TestWSApp` Web Service. To customize Web Service name, pass extra argument to the script with desired `[wsName]` value.
           
-          domain.buildDeployWebServiceAppInPod(testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), `[wsName]`);
+          TestUtils.buildDeployWebServiceAppInPod(domain, testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), `[wsName]`);
 
             a. Create dir in the admin pod to save WS and WS Client Apps files
             b. Copy the shell script file and all App files over to the admin pod
