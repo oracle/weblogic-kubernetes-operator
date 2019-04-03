@@ -1624,21 +1624,14 @@ public class Domain {
    *
    * @param webappName - Web App Name to be deployed
    * @param scriptName - a shell script to build WAR, EAR or JAR file and deploy the App in the
-   *     admin pod //@param archiveExt - archive extention //@param infoDirNames - archive
-   *     information dir location
+   *     admin pod
    * @param username - weblogic user name
    * @param password - weblogc password
    * @param args - optional args to add for script if needed
    * @throws Exception
    */
   private void callShellScriptToBuildDeployAppInPod(
-      String webappName,
-      String scriptName,
-      // String archiveExt,
-      // String infoDirNames,
-      String username,
-      String password,
-      String... args)
+      String webappName, String scriptName, String username, String password, String... args)
       throws Exception {
 
     String nodeHost = getHostNameForCurl();
@@ -1675,10 +1668,6 @@ public class Domain {
         .append(" ")
         .append(clusterName)
         .append(" ")
-        // .append(infoDirNames)
-        // .append(" ")
-        // .append(archiveExt)
-        //    .append(" ")
         .append(String.join(" ", args).toString())
         .append("'");
 
@@ -1726,7 +1715,7 @@ public class Domain {
     String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
     String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
 
-    // Default velues to build archive file
+    // Default values to build archive file
     final String initInfoDirName = "WEB-INF";
     String archiveExt = "war";
     String infoDirName = initInfoDirName;
@@ -1789,7 +1778,7 @@ public class Domain {
     String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
     String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
 
-    // Default velues to build archive file
+    // Default values to build archive file
     final String initInfoDirName = "WEB-INF";
     String archiveExt = "war";
     String infoDirName = initInfoDirName;
