@@ -15,6 +15,11 @@ import org.yaml.snakeyaml.Yaml;
 /** Domain class with all the utility methods for a Domain. */
 public class JRFDomain extends Domain {
 
+  public static final String FMWINFRA_DOCKER_IMAGENAME =
+      "phx.ocir.io/weblogick8s/oracle/fmw-infrastructure";
+  public static final String FMWINFRA_DOCKER_IMAGETAG = "12.2.1.3";
+  public static final String OCIR_REPO_SERVER = "phx.ocir.io";
+
   public JRFDomain(String inputYaml) throws Exception {
     // read input domain yaml to test
     this(TestUtils.loadYaml(inputYaml));
@@ -86,13 +91,13 @@ public class JRFDomain extends Domain {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
 
-    String imageName = "phx.ocir.io/weblogick8s/oracle/fmw-infrastructure";
+    String imageName = FMWINFRA_DOCKER_IMAGENAME;
     if (System.getenv("IMAGE_NAME_FMWINFRA") != null) {
       imageName = System.getenv("IMAGE_NAME_FMWINFRA");
       logger.info("IMAGE_NAME_FMWINFRA " + imageName);
     }
 
-    String imageTag = "12.2.1.3";
+    String imageTag = FMWINFRA_DOCKER_IMAGETAG;
     if (System.getenv("IMAGE_TAG_FMWINFRA") != null) {
       imageTag = System.getenv("IMAGE_TAG_FMWINFRA");
       logger.info("IMAGE_TAG_FMWINFRA " + imageTag);
@@ -116,16 +121,16 @@ public class JRFDomain extends Domain {
           "domainHomeImageBuildPath",
           BaseTest.getResultDir() + "/" + domainMap.get("domainHomeImageBuildPath"));
     }
-    if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
-      domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
+    if (System.getenv("IMAGE_PULL_SECRET_FMWINFRA") != null) {
+      domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_FMWINFRA"));
       if (System.getenv("WERCKER") != null) {
         // create docker registry secrets
         TestUtils.createDockerRegistrySecret(
-            System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"),
-            System.getenv("REPO_SERVER"),
-            System.getenv("REPO_USERNAME"),
-            System.getenv("REPO_PASSWORD"),
-            System.getenv("REPO_EMAIL"),
+            System.getenv("IMAGE_PULL_SECRET_FMWINFRA"),
+            System.getenv(OCIR_REPO_SERVER),
+            System.getenv("OCIR_REPO_USERNAME"),
+            System.getenv("OCIR_REPO_PASSWORD"),
+            System.getenv("OCIR_REPO_EMAIL"),
             domainNS);
       }
     } else {
