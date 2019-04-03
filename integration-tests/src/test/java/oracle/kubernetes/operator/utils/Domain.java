@@ -981,22 +981,41 @@ public class Domain {
   }
 
   /**
-   * verify domain server pods get restarted after the property change by kubectl apply -f
-   * newDomainYamlfileWithChangedProperty
+   * verify domain server pods get restarted after the property change by kubectl apply -f new
+   * domain yaml file with added/changed property
    *
-   * @param fileNameWithChangedProperty
-   * @throws Exception
+   * @param fileNameWithChangedProperty - the fragment of domain yaml file with new added property
+   *     change
+   * @throws Exception - IOException when file is copied or errors occurred if the tested server is
+   *     not restarted
    */
   public void testDomainServerPodRestart(String fileNameWithChangedProperty) throws Exception {
     logger.info("Inside testDomainServerPodRestart domainYamlWithChangedProperty");
 
-    // kubectl apply the supplied domain yaml file under resources dir with changed property
-    String yamlDir = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/";
-    TestUtils.kubectlapply(yamlDir + fileNameWithChangedProperty);
+    // copy the original domain.yaml to domain_new.yaml
+    TestUtils.copyFile(
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml",
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml");
+
+    // append the file with changed property to the end of domain_new.yaml
+    TestUtils.concatFile(
+        BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/"
+            + fileNameWithChangedProperty,
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml");
+
+    // kubectl apply the new constructed domain_new.yaml
+    TestUtils.kubectlapply(
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml");
 
     // verify the servers in the domain are being restarted in a sequence
     verifyAdminServerRestarted();
     verifyManagedServersRestarted();
+
+    // make domain.yaml include the new changed property
+    TestUtils.copyFile(
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml");
 
     logger.info("Done - testDomainServerPodRestart with domainYamlWithChangedProperty");
   }
