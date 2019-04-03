@@ -347,7 +347,7 @@ public class BaseTest {
               + result.stdout());
     }
 
-    buildDeployWebServiceApp(domain, TESTWSAPP);
+    buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
     // invoke webservice via servlet client
     domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
     logger.info("Done - testWSLoadBalancing");
@@ -604,15 +604,13 @@ public class BaseTest {
         domainNS);
   }
 
-  private void buildDeployWebServiceApp(Domain domain, String testAppName) throws Exception {
+  private void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
+      throws Exception {
     String scriptName = "buildDeployWSAndWSClientAppInPod.sh";
-    if (!testAppName.contains("ws")) {
-      throw new RuntimeException(
-          "FAILURE: Application Name must contain ws to indicate webservice type");
-    }
-    // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
+    // Build WS and WS client WARs in the admin pod and deploy it from the admin pod to a weblogic
+    // target
     domain.buildDeployWebServiceAppInPod(
-        testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), TESTWSSERVICE);
+        testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), wsName);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
