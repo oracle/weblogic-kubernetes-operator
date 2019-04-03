@@ -760,6 +760,15 @@ public class Domain {
   }
 
   /**
+   * Get the name of the cluster in the domain
+   *
+   * @return the name of the cluster
+   */
+  public String getClusterName() {
+    return clusterName;
+  }
+
+  /**
    * Get the namespace in which the domain is running
    *
    * @return the name of the domain name space
@@ -1630,7 +1639,7 @@ public class Domain {
    * @param args - optional args to add for script if needed
    * @throws Exception
    */
-  private void callShellScriptToBuildDeployAppInPod(
+  public void callShellScriptToBuildDeployAppInPod(
       String webappName, String scriptName, String username, String password, String... args)
       throws Exception {
 
@@ -1737,6 +1746,7 @@ public class Domain {
     // Check archive file type
     if (!subDirList.contains(infoDirName)) {
       infoDirName = "META-INF";
+
       // Create .ear file or .jar file for EJB
       archiveExt = (args.length == 0) ? "ear" : args[0];
     }
@@ -1756,68 +1766,5 @@ public class Domain {
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     callShellScriptToBuildDeployAppInPod(
         appName, scriptName, username, password, infoDirName, archiveExt);
-  }
-  /**
-   * Create dir to save Web App files Copy the shell script file and all App files over to the admin
-   * pod Run the shell script to build WAR, EAR or JAR file and deploy the App in the admin pod
-   *
-   * @param appName - WebService App name to be deployed
-   * @param scriptName - a shell script to build and deploy the App in the admin pod
-   * @param username - weblogic user name
-   * @param password - weblogc password
-   * @param args - by default it use TestWSApp name for webservices impl files, or add arg for
-   *     different name
-   * @throws Exception
-   */
-  public void buildDeployWebServiceAppInPod(
-      String appName, String scriptName, String username, String password, String... args)
-      throws Exception {
-    String adminServerPod = domainUid + "-" + adminServerName;
-    String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + appName;
-    String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + appName;
-    String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
-    String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
-
-    // Default values to build archive file
-    final String initInfoDirName = "WEB-INF";
-    String archiveExt = "war";
-    String infoDirName = initInfoDirName;
-    String wsServiceName = (args.length == 0) ? BaseTest.TESTWSSERVICE : args[0];
-    String clusterDNS =
-        getDomainUid()
-            + "-cluster-"
-            + this.clusterName
-            + "."
-            + getDomainNS()
-            + ".svc.cluster.local:8001";
-
-    logger.info(
-        "Build and deploy WebService App: "
-            + appName
-            + "."
-            + archiveExt
-            + " in the admin pod with web service name "
-            + wsServiceName);
-
-    // Create app dir in the admin pod
-    StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
-    mkdirCmd.append(appLocationInPod).append("/WEB-INF'");
-    TestUtils.kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
-
-    // Copy shell script to the admin pod
-    TestUtils.copyFileViaCat(scriptPathOnHost, scriptPathInPod, adminServerPod, domainNS);
-
-    // Copy all App files to the admin pod
-    TestUtils.copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
-
-    // Copy all App files to the admin pod
-    TestUtils.copyAppFilesToPod(
-        appLocationOnHost + "/WEB-INF", appLocationInPod + "/WEB-INF", adminServerPod, domainNS);
-
-    logger.info("Creating WebService and WebService Servlet Client Applications");
-
-    // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
-    callShellScriptToBuildDeployAppInPod(
-        appName, scriptName, username, password, clusterDNS, wsServiceName);
   }
 }
