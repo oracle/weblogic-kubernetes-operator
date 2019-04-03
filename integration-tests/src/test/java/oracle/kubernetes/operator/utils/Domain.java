@@ -872,7 +872,7 @@ public class Domain {
   }
 
   /**
-   * verify domain server pods get restarted after a property change
+   * Verify domain server pods get restarted after a property change.
    *
    * @param oldPropertyString
    * @param newPropertyString
@@ -929,11 +929,12 @@ public class Domain {
   }
 
   /**
-   * Get runtime server yaml file and verify the changed property is in that file
+   * Get runtime server yaml file and verify the changed property is in that file.
    *
-   * @param changedProperty
-   * @param serverName
-   * @throws Exception
+   * @param changedProperty - the changed/added property
+   * @param serverName - server name that is being tested
+   * @throws Exception - test FAILURE Exception if the changed property is not found in the server
+   *     yaml file
    */
   public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
     logger.info("Inside findServerPropertyChange");

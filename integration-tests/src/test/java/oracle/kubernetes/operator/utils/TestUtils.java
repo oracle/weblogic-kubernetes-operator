@@ -500,10 +500,10 @@ public class TestUtils {
   }
 
   /**
-   * exec kubectl apply -f yamlFile
+   * The method to execute kubectl apply -f yamlFile.
    *
-   * @param yamlFile
-   * @throws Exception
+   * @param yamlFile - yaml file name
+   * @throws Exception - errors occurred while execute kubectl apply
    */
   public static void kubectlapply(String yamlFile) throws Exception {
 
@@ -1205,13 +1205,13 @@ public class TestUtils {
   }
 
   /**
-   * append source file to the end of target file
+   * Method to append source file to the end of target file.
    *
    * @param sourceFile - source file name
    * @param targetFile - target file name
-   * @throws Exception
+   * @throws Exception - IOException during FileReader or FileWrite close call
    */
-  public static void concatFile(String sourceFile, String targetFile) throws Exception {
+  public static void concatFile(String sourceFile, String targetFile) throws IOException {
     FileReader fr = null;
     FileWriter fw = null;
     try {
