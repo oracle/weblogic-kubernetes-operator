@@ -323,31 +323,16 @@ public class BaseTest {
   }
 
   /**
-   * Verify Load Balancing by deploying and invoking webservicebapp
+   * Verify Load Balancing by deploying and invoking webservicebapp.
    *
-   * @throws Exception
+   * @throws Exception exception reported as a failure to build, deploy or verify load balancing for
+   *     Web Service app
    */
   public void testWSLoadBalancing(Domain domain) throws Exception {
     logger.info("Inside testWSLoadBalancing");
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-    Map<String, Object> domainMap = domain.getDomainMap();
-
-    ExecResult result =
-        TestUtils.kubectlexecNoCheck(
-            domain.getDomainUid() + ("-") + domainMap.get("adminServerName"),
-            "" + domainMap.get("namespace"),
-            " -- mkdir -p " + appLocationInPod);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create directory "
-              + appLocationInPod
-              + " in the pod failed, returned "
-              + result.stderr()
-              + " "
-              + result.stdout());
-    }
-
     buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
+
     // invoke webservice via servlet client
     domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
     logger.info("Done - testWSLoadBalancing");
@@ -609,8 +594,8 @@ public class BaseTest {
     String scriptName = "buildDeployWSAndWSClientAppInPod.sh";
     // Build WS and WS client WARs in the admin pod and deploy it from the admin pod to a weblogic
     // target
-    domain.buildDeployWebServiceAppInPod(
-        testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), wsName);
+    TestUtils.buildDeployWebServiceAppInPod(
+        domain, testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), wsName);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
