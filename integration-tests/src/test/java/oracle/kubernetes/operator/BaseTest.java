@@ -325,6 +325,7 @@ public class BaseTest {
   /**
    * Verify Load Balancing by deploying and invoking webservicebapp.
    *
+   * @param domain - domain where the app will be tested
    * @throws Exception exception reported as a failure to build, deploy or verify load balancing for
    *     Web Service app
    */
