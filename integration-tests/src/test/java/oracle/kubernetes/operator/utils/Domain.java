@@ -765,7 +765,7 @@ public class Domain {
 
   /**
    * Create a map with attributes required to create PV/PVC and create PV dir by calling
-   * PersistentVolume
+   * PersistentVolume.
    *
    * @throws Exception If the file create-pv-pvc-inputs.yaml does not exist, is a directory rather
    *     than a regular file, or for some other reason cannot be opened for reading. or if an I/O
@@ -915,8 +915,8 @@ public class Domain {
   }
 
   /**
-   * create a Kubernetes secret and labels the secret with domainUid. This secret is used for
-   * weblogicCredentialsSecretName in the domain inputs
+   * Create a Kubernetes secret and label the secret with domainUid. This secret is used for
+   * weblogicCredentialsSecretName in the domain inputs.
    *
    * @throws Exception when the kubectl create secret command fails or label secret fails
    */
@@ -949,7 +949,7 @@ public class Domain {
   }
 
   /**
-   * copy create-domain.py if domain Map contains createDomainPyScript, git clone docker-images for
+   * Copy create-domain.py if domain Map contains createDomainPyScript, git clone docker-images for
    * domain in image and call create-domain.sh script based on the domain type. Append
    * configOverrides to domain.yaml.
    *
@@ -1346,8 +1346,8 @@ public class Domain {
   }
 
   /**
-   * append configOverrides and configOverrideSecrets section to the generated domain.yaml and
-   * create the domain crd by calling kubectl create on the generated domain.yaml
+   * Append configOverrides and configOverrideSecrets section to the generated domain.yaml and
+   * create the domain crd by calling kubectl create on the generated domain.yaml.
    *
    * @throws Exception if any error occurs writing to the file or if could not run kubectl create
    *     command
@@ -1428,7 +1428,7 @@ public class Domain {
   }
 
   /**
-   * prepare the command to call create-domain.sh based on the domain type
+   * Prepare the command to call create-domain.sh based on the domain type.
    *
    * @param outputDir directory for the generated Kubernetes YAML files for the domain when
    *     create-domain.sh is called
@@ -1464,7 +1464,7 @@ public class Domain {
 
   /**
    * Option to provide cluster type. Change cluster type in domain template to CONFIGURED or use
-   * configured cluster topology if clusterType is CONFIGURED
+   * configured cluster topology if clusterType is CONFIGURED.
    *
    * @throws Exception when errors occured during reading/writing the file or executing the command
    *     to change the value in create-domain-job-template.yaml
