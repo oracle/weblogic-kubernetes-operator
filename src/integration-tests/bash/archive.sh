@@ -39,6 +39,16 @@ function archive {
   rm -f $OUTFILE
 
   find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*jar" | sort -r | awk '{ if (NR>10) print $NF }' | xargs rm -f
+  if [ "$JENKINS" = "true" ]; then
+  	# Jenkins can only publish logs under the workspace
+	mkdir -p ${WORKSPACE}/logdir/
+	cp $ARCHIVE ${WORKSPACE}/logdir/
+	if [ "$?" = "0" ]; then
+		echo Copy complete. Archive $ARCHIVE copied to ${WORKSPACE}/logdir/
+	else 
+		echo Failed to copy archive $ARCHIVE to ${WORKSPACE}/logdir/
+	fi
+  fi
    
   trace Archived to \'$ARCHIVE\'.
 }
