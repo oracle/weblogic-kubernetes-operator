@@ -194,9 +194,11 @@ public class ITPodsRestart extends BaseTest {
   /**
    * Modify/Add the containerSecurityContext section at ServerPod Level using kubectl apply -f
    * cont.security.context.domain.yaml. Verify all the pods re-started. The property tested is:
-   * serverPod: containerSecurityContext: runAsUser: 1000 fsGroup: 2000
+   * serverPod: containerSecurityContext: runAsUser: 1000 fsGroup: 1000.
    *
-   * @throws Exception
+   * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
+   *     are not restarted or after restart the server yaml file doesn't include the new added
+   *     property
    */
   @Test
   public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
@@ -204,22 +206,23 @@ public class ITPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
+    // firstly ensure that original domain.yaml doesn't include the property-to-be-added
+    String domainFileName =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    boolean result = TestUtils.checkFileIncludeProperty("fsGroup: 1000", domainFileName);
+    Assert.assertFalse(result);
+
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "cont.security.context.domain.yaml";
-    try {
-      logger.info(
-          "About to testDomainServerPodRestart for Domain: "
-              + domain.getDomainUid()
-              + " change container securityContext:\n"
-              + "   runAsUser: 1000\n"
-              + "   fsGroup: 2000 ");
-      domain.testDomainServerPodRestart(domainYaml);
-      domain.findServerPropertyChange("runAsUser: 1000", "admin-server");
-      domain.findServerPropertyChange("runAsUser: 1000", "managed-server1");
-    } finally {
-      // bring back the domain into previous state
-      restoreDomain();
-    }
+    logger.info(
+        "About to testDomainServerPodRestart for Domain: "
+            + domain.getDomainUid()
+            + " change container securityContext:\n"
+            + " runAsUser: 1000\n"
+            + " fsGroup: 1000 ");
+    domain.testDomainServerPodRestart(domainYaml);
+    domain.findServerPropertyChange("securityContext", "admin-server");
+    domain.findServerPropertyChange("securityContext", "managed-server1");
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -227,9 +230,11 @@ public class ITPodsRestart extends BaseTest {
   /**
    * Modify/Add the podSecurityContext section at ServerPod level using kubectl apply -f
    * pod.security.context.domain.yaml. Verify all the pods re-started. The property tested is:
-   * podSecurityContext: runAsUser: 1000 fsGroup: 2000
+   * podSecurityContext: runAsUser: 1000 fsGroup: 2000.
    *
-   * @throws Exception
+   * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
+   *     are not restarted or after restart the server yaml file doesn't include the new added
+   *     property
    */
   @Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
@@ -237,65 +242,36 @@ public class ITPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
+    // firstly ensure that original domain.yaml doesn't include the property-to-be-added
+    String domainFileName =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    boolean result = TestUtils.checkFileIncludeProperty("fsGroup: 2000", domainFileName);
+    Assert.assertFalse(result);
+
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "pod.security.context.domain.yaml";
-    try {
-      logger.info(
-          "About to testDomainServerPodRestart for Domain: "
-              + domain.getDomainUid()
-              + " change securityContext:\n"
-              + "   runAsUser: 1000\n"
-              + "   fsGroup: 2000 ");
-      domain.testDomainServerPodRestart(domainYaml);
-      domain.findServerPropertyChange("fsGroup: 2000", "admin-server");
-      domain.findServerPropertyChange("fsGroup: 2000", "managed-server1");
-    } finally {
-      // bring back the domain into previous State
-      restoreDomain();
-    }
+
+    logger.info(
+        "About to testDomainServerPodRestart for Domain: "
+            + domain.getDomainUid()
+            + " change securityContext:\n"
+            + "   runAsUser: 1000\n"
+            + "   fsGroup: 2000 ");
+    domain.testDomainServerPodRestart(domainYaml);
+    domain.findServerPropertyChange("fsGroup: 2000", "admin-server");
+    domain.findServerPropertyChange("fsGroup: 2000", "managed-server1");
 
     logger.info("SUCCESS - " + testMethodName);
   }
 
   /**
-   * Modify/Add imagePullSecrets section at Domain Level using kubectl apply -f secret.domain.yaml.
-   * Verify all pods re-started. The property tested is: imagePullSecrets:- name: imagePullSecr
-   * value: myImagePullSecret
+   * Modify/Add resources at ServerPod level using kubectl apply -f domain.yaml. Verify all pods
+   * re-started. The property tested is: resources: limits: cpu: "1" requests: cpu: "0.5" args: -
+   * -cpus - "2".
    *
-   * @throws Exception
-   */
-  @Test
-  public void testServerPodsRestartByChangingImagePullSecrets() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    // domainYaml: the yaml file name with changed property under resources dir
-    String domainYaml = "secret.domain.yaml";
-    try {
-      logger.info(
-          "About to testDomainServerPodRestart for Domain: "
-              + domain.getDomainUid()
-              + " change imagePullSecrets:\n"
-              + "   name: imagePullSecret\n"
-              + "   value: myImagePullSecret ");
-      domain.testDomainServerPodRestart(domainYaml);
-      domain.findServerPropertyChange("myImagePullSecret", "admin-server");
-      domain.findServerPropertyChange("myImagePullSecret", "managed-server1");
-    } finally {
-      // bring back the domain into previous state
-      restoreDomain();
-    }
-
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Modify/Add resources at ServerPod level using kubectl apply -f resource.domain.yaml. Verify all
-   * pods re-started. The property tested is: resources: limits: cpu: "1" requests: cpu: "0.5" args:
-   * - -cpus - "2"
-   *
-   * @throws Exception
+   * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
+   *     are not restarted or after restart the server yaml file doesn't include the new added
+   *     property
    */
   @Test
   public void testServerPodsRestartByChangingResource() throws Exception {
@@ -303,52 +279,23 @@ public class ITPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
+    // firstly ensure that original domain.yaml doesn't include the property-to-be-addeded
+    String domainFileName =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    boolean result = TestUtils.checkFileIncludeProperty("cpu: 500m", domainFileName);
+    Assert.assertFalse(result);
+
     // domainYaml: the yaml file name with changed property under resources dir
     String domainYaml = "resource.domain.yaml";
-    try {
-      logger.info(
-          "About to testDomainServerPodRestart for Domain: "
-              + domain.getDomainUid()
-              + " change resource:\n"
-              + "   cpu: 500m");
-      domain.testDomainServerPodRestart(domainYaml);
-      domain.findServerPropertyChange("cpu: 500m", "admin-server");
-      domain.findServerPropertyChange("cpu: 500m", "managed-server1");
-    } finally {
-      // bring back the domain into previous state
-      restoreDomain();
-    }
 
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Modify the annotations at ServerPod level using kubectl apply -f annotation.domain.yaml. Verify
-   * all pods re-started. The property tested is: annotations: "TSTAMP" --> "DATETIME"
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testServerPodsRestartByChangingAnnotation() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    // domainYaml: the yaml file name with changed property under resources dir
-    String domainYaml = "annotation.domain.yaml";
-    try {
-      logger.info(
-          "About to testDomainServerPodRestart for Domain: "
-              + domain.getDomainUid()
-              + " change annotation"
-              + "   annotations:\n"
-              + "     custom: \"DATETIME\"");
-      domain.testDomainServerPodRestart(domainYaml);
-
-    } finally {
-      // bring back the domain into previous state
-      restoreDomain();
-    }
+    logger.info(
+        "About to testDomainServerPodRestart for Domain: "
+            + domain.getDomainUid()
+            + " change resource:\n"
+            + "   cpu: 500m");
+    domain.testDomainServerPodRestart(domainYaml);
+    domain.findServerPropertyChange("cpu: 500m", "admin-server");
+    domain.findServerPropertyChange("cpu: 500m", "managed-server1");
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -372,13 +319,5 @@ public class ITPodsRestart extends BaseTest {
     if (domain != null) {
       domain.destroy();
     }
-  }
-
-  private static void restoreDomain() throws Exception {
-    String yamlFile =
-        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
-    TestUtils.kubectlapply(yamlFile);
-    domain.verifyAdminServerRestarted();
-    domain.verifyManagedServersRestarted();
   }
 }
