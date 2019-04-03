@@ -323,7 +323,7 @@ public class BaseTest {
   }
 
   /**
-   * Verify t3channel port by deploying webapp using the port
+   * Verify Load Balancing by deploying and invoking webservicebapp
    *
    * @throws Exception
    */
