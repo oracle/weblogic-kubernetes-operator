@@ -114,6 +114,16 @@ function state_dump {
    			else 
    				echo Run failed. 
    			fi
+   			if [ "$JENKINS" = "true" ]; then
+	   			# Jenkins can only publish logs under the workspace
+				mkdir -p ${WORKSPACE}/logdir/
+				cp $ARCHIVE ${WORKSPACE}/logdir/
+				if [ "$?" = "0" ]; then
+	   				echo Copy complete. Archive $ARCHIVE copied to ${WORKSPACE}/logdir/
+	   			else 
+	   				echo Failed to copy archive $ARCHIVE to ${WORKSPACE}/logdir/
+	   			fi
+	   		fi
 	 	else
      		# command failed
   			cat $RESULT_DIR/pvarchive.b64 | head -100
