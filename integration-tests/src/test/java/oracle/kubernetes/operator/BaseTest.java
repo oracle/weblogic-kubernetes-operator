@@ -597,7 +597,7 @@ public class BaseTest {
     }
   }
 
-  public static void tearDown() throws Exception {
+  public static void tearDown(String iTClassName) throws Exception {
     logger.log(
         Level.INFO,
         "TEARDOWN: Starting Test Run TearDown (cleanup and state-dump)."
@@ -606,8 +606,11 @@ public class BaseTest {
             + "after the tearDown completes. Note that tearDown itself may report errors,"
             + " but this won't affect the outcome of the test results.");
     StringBuffer cmd =
-        new StringBuffer("export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && ");
-    cmd.append(BaseTest.getProjectRoot())
+        new StringBuffer(
+            "export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && export IT_CLASS=");
+    cmd.append(iTClassName)
+        .append(" && ")
+        .append(BaseTest.getProjectRoot())
         .append("/integration-tests/src/test/resources/statedump.sh");
     logger.info("Running " + cmd);
 

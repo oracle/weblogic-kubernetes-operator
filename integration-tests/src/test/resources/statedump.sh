@@ -17,7 +17,7 @@ function state_dump {
      local SCRIPTPATH="$PROJECT_ROOT/src/integration-tests/bash"
      local LEASE_ID="$LEASE_ID"
      local ARCHIVE_DIR="$RESULT_ROOT/acceptance_test_pv_archive"
-     local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.jar"
+     local ARCHIVE_FILE="IntSuite.${IT_CLASS}.PV.`date '+%Y%m%d%H%M%S'`.jar"
      local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
 
      if [ ! -d "$RESULT_DIR" ]; then

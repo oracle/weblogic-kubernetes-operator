@@ -24,7 +24,7 @@ function fail {
 function archive {
   local SOURCE_DIR="${1?}"
   local ARCHIVE_DIR="${2?}"
-  local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.jar"
+  local ARCHIVE_FILE="IntSuite.${IT_CLASS}.TMP.`date '+%Y%m%d%H%M%S'`.jar"
   local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
   local OUTFILE="/tmp/$ARCHIVE_FILE"
 
