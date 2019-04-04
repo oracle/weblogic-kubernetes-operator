@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -22,10 +21,10 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
-import oracle.kubernetes.weblogic.domain.v2.ServerHealth;
-import oracle.kubernetes.weblogic.domain.v2.SubsystemHealth;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.ServerHealth;
+import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.joda.time.DateTime;
 
 public class ReadHealthStep extends Step {
@@ -57,7 +56,6 @@ public class ReadHealthStep extends Step {
 
     String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
 
-    ServerKubernetesObjects sko = info.getServers().get(serverName);
     String secretName =
         spec.getWebLogicCredentialsSecret() == null
             ? null
@@ -67,24 +65,24 @@ public class ReadHealthStep extends Step {
         HttpClient.createAuthenticatedClientForServer(
             namespace,
             secretName,
-            new ReadHealthWithHttpClientStep(sko.getService().get(), getNext()));
+            new ReadHealthWithHttpClientStep(info.getServerService(serverName), getNext()));
     return doNext(getClient, packet);
   }
 
-  public static String getRetrieveHealthSearchUrl() {
+  private static String getRetrieveHealthSearchUrl() {
     return "/management/weblogic/latest/serverRuntime/search";
   }
 
   // overallHealthState, healthState
 
-  public static String getRetrieveHealthSearchPayload() {
+  private static String getRetrieveHealthSearchPayload() {
     return "{ fields: [ 'overallHealthState', 'activationTime' ], links: [] }";
   }
 
   static final class ReadHealthWithHttpClientStep extends Step {
     private final V1Service service;
 
-    public ReadHealthWithHttpClientStep(V1Service service, Step next) {
+    ReadHealthWithHttpClientStep(V1Service service, Step next) {
       super(next);
       this.service = service;
     }
@@ -93,8 +91,6 @@ public class ReadHealthStep extends Step {
     public NextAction apply(Packet packet) {
       try {
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
-        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-        Domain dom = info.getDomain();
 
         String serviceURL = HttpClient.getServiceURL(service);
         if (serviceURL != null) {

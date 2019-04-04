@@ -4,7 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
+import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 import io.kubernetes.client.custom.IntOrString;
@@ -50,8 +50,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -529,7 +529,7 @@ public abstract class PodStepContext extends StepContextBase {
       String domainUID = getDomainUID();
       Step list =
           new CallBuilder()
-              .withLabelSelectors(forDomainUid(domainUID))
+              .withLabelSelectors(forDomainUidSelector(domainUID))
               .listPersistentVolumeAsync(
                   new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
                     @Override
@@ -582,14 +582,10 @@ public abstract class PodStepContext extends StepContextBase {
   // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
-    getPodLabels()
-        .entrySet()
-        .stream()
+    getPodLabels().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putLabelsItem(e.getKey(), e.getValue()));
-    getPodAnnotations()
-        .entrySet()
-        .stream()
+    getPodAnnotations().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
     return pod;
@@ -627,12 +623,14 @@ public abstract class PodStepContext extends StepContextBase {
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec =
         new V1PodSpec()
+            .containers(getServerSpec().getContainers())
             .addContainersItem(
                 createContainer(tuningParameters)
                     .resources(getServerSpec().getResources())
                     .securityContext(getServerSpec().getContainerSecurityContext()))
             .nodeSelector(getServerSpec().getNodeSelectors())
-            .securityContext(getServerSpec().getPodSecurityContext());
+            .securityContext(getServerSpec().getPodSecurityContext())
+            .initContainers(getServerSpec().getInitContainers());
 
     podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());
 

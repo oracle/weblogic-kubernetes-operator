@@ -2,7 +2,7 @@
 title: "The REST API"
 date: 2019-02-23T17:08:32-05:00
 weight: 3
-Description: "Use the operator's REST services"
+Description: "Use the operator's REST services."
 ---
 
 #### Use the operator's REST services
@@ -70,8 +70,7 @@ REST_ADDR="https://${KUBERNETES_SERVER}:${REST_PORT}"
 SECRET=`kubectl get serviceaccount weblogic-operator -n weblogic-operator -o jsonpath='{.secrets[0].name}'`
 ENCODED_TOKEN=`kubectl get secret ${SECRET} -n weblogic-operator -o jsonpath='{.data.token}'`
 TOKEN=`echo ${ENCODED_TOKEN} | base64 --decode`
-OPERATOR_CERT_SECRET=`grep externalRestIdentitySecret weblogic-operator.yaml | awk '{ print $2 }'`
-OPERATOR_CERT_DATA=`kubectl get secret ${OPERATOR_CERT_SECRET} -n weblogic-operator -o jsonpath='{.data.tls\.crt}'`
+OPERATOR_CERT_DATA=`kubectl get secret -n weblogic-operator weblogic-operator-external-rest-identity -o jsonpath='{.data.tls\.crt}'`
 OPERATOR_CERT_FILE="/tmp/operator.cert.pem"
 echo ${OPERATOR_CERT_DATA} | base64 --decode > ${OPERATOR_CERT_FILE}
 cat ${OPERATOR_CERT_FILE}

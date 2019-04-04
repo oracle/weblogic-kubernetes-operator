@@ -21,8 +21,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class WatchBuilder {
   /** Always true for watches. */
@@ -98,10 +98,10 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedServiceCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -143,10 +143,10 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedPodCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -188,10 +188,10 @@ public class WatchBuilder {
         return new BatchV1Api(client)
             .listNamespacedJobCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -233,10 +233,10 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedEventCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -276,12 +276,12 @@ public class WatchBuilder {
 
       try {
         return new WeblogicApi(client)
-            .listWebLogicOracleV2NamespacedDomainCall(
+            .listNamespacedDomainCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
@@ -326,10 +326,10 @@ public class WatchBuilder {
         return new CoreV1Api(client)
             .listNamespacedConfigMapCall(
                 namespace,
+                callParams.getIncludeUninitialized(),
                 callParams.getPretty(),
                 START_LIST,
                 callParams.getFieldSelector(),
-                callParams.getIncludeUninitialized(),
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
