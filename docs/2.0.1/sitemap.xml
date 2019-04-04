@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/security/domain-security/image-protection/</loc>
+    <lastmod>2019-03-08T19:00:49-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/security/certificates/</loc>
+    <lastmod>2019-03-06T21:14:18-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/credentials/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/manually-create-domain/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/storage/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/requirements/</loc>
+    <lastmod>2019-02-23T17:19:19-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/</loc>
+    <lastmod>2019-02-23T17:11:34-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/using-helm/</loc>
+    <lastmod>2019-02-23T17:08:43-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/startup/</loc>
+    <lastmod>2019-02-23T17:04:41-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/installation/</loc>
+    <lastmod>2019-02-23T16:47:21-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-in-image/base-images/</loc>
+    <lastmod>2019-02-23T16:45:55-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/choosing-a-model/</loc>
+    <lastmod>2019-02-23T16:44:54-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/prepare/</loc>
+    <lastmod>2019-02-23T16:43:45-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/overview/prepare/</loc>
+    <lastmod>2019-02-23T16:43:10-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/introduction/</loc>
+    <lastmod>2019-02-23T16:40:54-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/reference/javadoc/</loc>
+    <lastmod>2019-02-22T16:17:01-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/quickstart/introduction/</loc>
+    <lastmod>2019-02-22T15:44:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/quickstart/</loc>
+    <lastmod>2019-02-22T15:27:38-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/recent-changes/</loc>
+    <lastmod>2019-02-22T15:27:38-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/security/domain-security/</loc>
+    <lastmod>2019-03-08T19:17:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/security/domain-security/weblogic-channels/</loc>
+    <lastmod>2019-03-08T19:07:36-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/restarting/</loc>
+    <lastmod>2019-02-23T20:58:51-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/demo/</loc>
+    <lastmod>2019-02-23T20:51:59-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/domain-home-on-pv/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/</loc>
+    <lastmod>2019-02-23T17:08:18-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-resource/</loc>
+    <lastmod>2019-02-23T16:43:45-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/</loc>
+    <lastmod>2019-02-23T16:43:10-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/overview/</loc>
+    <lastmod>2019-02-23T16:43:10-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/overview/k8s-setup/</loc>
+    <lastmod>2019-02-23T16:43:10-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/reference/swagger/</loc>
+    <lastmod>2019-02-22T16:17:07-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/quickstart/prerequisites/</loc>
+    <lastmod>2019-02-22T15:44:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/</loc>
+    <lastmod>2019-02-22T15:27:48-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/architecture/</loc>
+    <lastmod>2019-02-23T20:51:45-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/wlst/</loc>
+    <lastmod>2019-02-23T17:39:19-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/security/encryption/</loc>
+    <lastmod>2019-02-23T17:36:29-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/domain-home-in-image/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/building/</loc>
+    <lastmod>2019-02-23T17:19:24-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/the-rest-api/</loc>
+    <lastmod>2019-02-23T17:08:32-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/scaling/</loc>
+    <lastmod>2019-02-23T17:04:45-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/persistent-storage/</loc>
+    <lastmod>2019-02-23T16:45:09-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/</loc>
+    <lastmod>2019-02-23T16:43:38-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/overview/database/</loc>
+    <lastmod>2019-02-23T16:43:10-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/reference/domain-resource/</loc>
+    <lastmod>2019-02-22T16:17:07-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/quickstart/get-images/</loc>
+    <lastmod>2019-02-22T15:44:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/</loc>
+    <lastmod>2019-02-22T15:28:03-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/design/</loc>
+    <lastmod>2019-02-23T20:51:51-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/security/service-accounts/</loc>
+    <lastmod>2019-02-23T17:36:12-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/delete-domain/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/rest/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/integration-tests/</loc>
+    <lastmod>2019-02-23T17:23:22-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/branching/</loc>
+    <lastmod>2019-02-23T17:19:29-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-in-image/</loc>
+    <lastmod>2019-02-23T16:45:16-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/</loc>
+    <lastmod>2019-02-23T16:43:45-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/quickstart/install/</loc>
+    <lastmod>2019-02-22T15:44:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/</loc>
+    <lastmod>2019-02-22T15:27:54-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/ingress/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/coding-standards/</loc>
+    <lastmod>2019-02-23T17:24:10-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/security/rbac/</loc>
+    <lastmod>2019-02-23T17:15:36-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/configoverrides/</loc>
+    <lastmod>2019-02-23T16:45:16-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/reference/</loc>
+    <lastmod>2019-02-22T16:16:39-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/quickstart/prepare/</loc>
+    <lastmod>2019-02-22T15:44:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/ingress/</loc>
+    <lastmod>2019-02-23T20:46:32-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/security/secrets/</loc>
+    <lastmod>2019-02-23T17:36:33-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/security/</loc>
+    <lastmod>2019-02-23T17:34:48-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/samples/simple/elastic-stack/</loc>
+    <lastmod>2019-02-23T17:32:31-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/code-structure/</loc>
+    <lastmod>2019-02-23T17:25:04-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/quickstart/create-domain/</loc>
+    <lastmod>2019-02-22T15:44:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/</loc>
+    <lastmod>2019-02-23T17:39:00-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/asynchronous-call-model/</loc>
+    <lastmod>2019-02-23T17:20:00-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/faq/</loc>
+    <lastmod>2019-02-23T08:14:59-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/quickstart/cleanup/</loc>
+    <lastmod>2019-02-22T15:44:42-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/domain-processing/</loc>
+    <lastmod>2019-02-23T17:20:20-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/</loc>
+    <lastmod>2019-02-23T16:50:09-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/documentation/</loc>
+    <lastmod>2019-03-19T07:13:22-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/developerguide/backwards-compatibility/</loc>
+    <lastmod>2019-02-23T17:26:09-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/faq/cannot-pull-image/</loc>
+    <lastmod>2019-03-23T08:08:19-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/release-notes/</loc>
+    <lastmod>2019-03-15T11:25:28-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/</loc>
+    <lastmod>2019-03-08T19:00:49-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>/weblogic-kubernetes-operator/2.0.1/tags/</loc>
+    <priority>0</priority>
+  </url>
+  
+</urlset>
