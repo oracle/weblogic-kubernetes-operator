@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.54.0" />
-    <meta name="description" content="Use the operator&#39;s REST services">
+    <meta name="description" content="Use the operator&#39;s REST services.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
@@ -12,17 +12,17 @@
     <title>The REST API :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1553824875" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1554400281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1554400281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1554400281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1554400281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1554400281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1554400281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1554400281" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1554400281" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1553824875"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1554400281"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1553824875"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1553824875"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1554400281"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1554400281"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1553824875"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1554400281"></script>
 
     
   </div>
@@ -2041,8 +2041,7 @@ REST_ADDR=&quot;https://${KUBERNETES_SERVER}:${REST_PORT}&quot;
 SECRET=`kubectl get serviceaccount weblogic-operator -n weblogic-operator -o jsonpath='{.secrets[0].name}'`
 ENCODED_TOKEN=`kubectl get secret ${SECRET} -n weblogic-operator -o jsonpath='{.data.token}'`
 TOKEN=`echo ${ENCODED_TOKEN} | base64 --decode`
-OPERATOR_CERT_SECRET=`grep externalRestIdentitySecret weblogic-operator.yaml | awk '{ print $2 }'`
-OPERATOR_CERT_DATA=`kubectl get secret ${OPERATOR_CERT_SECRET} -n weblogic-operator -o jsonpath='{.data.tls\.crt}'`
+OPERATOR_CERT_DATA=`kubectl get secret -n weblogic-operator weblogic-operator-external-rest-identity -o jsonpath='{.data.tls\.crt}'`
 OPERATOR_CERT_FILE=&quot;/tmp/operator.cert.pem&quot;
 echo ${OPERATOR_CERT_DATA} | base64 --decode &gt; ${OPERATOR_CERT_FILE}
 cat ${OPERATOR_CERT_FILE}
@@ -3478,20 +3477,20 @@ if (!doNotTrack) {
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1553824875"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1554400282"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1553824875"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1554400282"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1553824875" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1553824875"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1554400282" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1554400282"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

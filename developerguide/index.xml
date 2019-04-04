@@ -100,8 +100,8 @@ After this, the operator starts watches for changes to Domain resources and any 
       
       <guid>/weblogic-kubernetes-operator/developerguide/documentation/</guid>
       <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
- Clone the repository if you have not already
-git clone https://github.com/oracle/weblogic-kubernetes-operator  Create a new branch from master
+ If you have not already done so, clone the repository.
+git clone https://github.com/oracle/weblogic-kubernetes-operator  Create a new branch from master.
 git checkout master git pull origin master git checkout -b your-branch  Make your documentation updates by editing the source files in docs-source/content. Make sure you only check in the changes from the docs-source/content area; do not build the site and check in the static files.</description>
     </item>
     
@@ -111,7 +111,7 @@ git checkout master git pull origin master git checkout -b your-branch  Make you
       <pubDate>Sat, 23 Feb 2019 17:26:09 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/developerguide/backwards-compatibility/</guid>
-      <description>Starting with the 2.0 release, future operator releases must be backward compatible with respect to the domain resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We will maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.</description>
+      <description>Starting with the 2.0.1 release, operator releases must be backward compatible with respect to the domain resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We will maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.</description>
     </item>
     
   </channel>

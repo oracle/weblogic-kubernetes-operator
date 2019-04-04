@@ -18,8 +18,8 @@
       
       <guid>/weblogic-kubernetes-operator/faq/cannot-pull-image/</guid>
       <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
- When you see these kinds of errors it means that Kubernetes cannot find your Docker image. The most common causes are:
- The image value in your domain resource is set incorrectly, meaning Kubernetes will be trying to pull the wrong image The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret You built the image on a machine that is not where your kubelet is running and Kubernetes cannot see the image, meaning you need to copy the image to the worker nodes or put it in a Docker registry that is accessible the to all of the worker nodes  Let&amp;rsquo;s review what happens when Kubernetes starts a pod.</description>
+ When you see these kinds of errors, it means that Kubernetes cannot find your Docker image. The most common causes are:
+ The image value in your domain resource is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
     </item>
     
   </channel>

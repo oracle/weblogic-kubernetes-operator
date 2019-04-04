@@ -12,17 +12,17 @@
     <title>Cannot Pull Image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1553824875" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1553824875" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1554400282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1554400282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1554400282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1554400282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1554400282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1554400282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1554400282" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1554400282" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1553824875"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1554400282"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1553824875"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1553824875"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1554400282"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1554400282"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1553824875"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1554400282"></script>
 
     
   </div>
@@ -1966,17 +1966,17 @@
 <p>My domain will not start and I see errors like <code>ImagePullBackoff</code> or <code>Cannot pull image</code></p>
 </blockquote>
 
-<p>When you see these kinds of errors it means that Kubernetes cannot find your Docker image.
+<p>When you see these kinds of errors, it means that Kubernetes cannot find your Docker image.
 The most common causes are:</p>
 
 <ul>
 <li>The <code>image</code> value in your domain resource is set incorrectly, meaning Kubernetes will be
-trying to pull the wrong image</li>
+trying to pull the wrong image.</li>
 <li>The image requires authentication or permission in order to pull it and you have not
-configured Kubernetes with the necessary credentials, for example in an <code>imagePullSecret</code></li>
+configured Kubernetes with the necessary credentials, for example in an <code>imagePullSecret</code>.</li>
 <li>You built the image on a machine that is not where your <code>kubelet</code> is running and Kubernetes
 cannot see the image, meaning you need to copy the image to the worker nodes or put it in
-a Docker registry that is accessible the to all of the worker nodes</li>
+a Docker registry that is accessible the to all of the worker nodes.</li>
 </ul>
 
 <p>Let&rsquo;s review what happens when Kubernetes starts a pod.</p>
@@ -1984,17 +1984,17 @@ a Docker registry that is accessible the to all of the worker nodes</li>
 <p><img src="/weblogic-kubernetes-operator/images/image-pull.png" alt="Pulling an image" /></p>
 
 <p>The definition of the pod contains a list of container specifications.  Each container
-specificiation contains the name (and optionally tag) of the image that should be used
+specification contains the name (and optionally, tag) of the image that should be used
 to run that container.  In the example above, there is a container called <code>c1</code> which is
 configured to use the Docker image <code>some.registry.com/owner/domain1:1.0</code>.  This image
 name is in the format <code>registry address / owner / name : tag</code>, so in this case the
-registry is <code>some.registry.com</code>, then owner is <code>owner</code>, the image name is <code>domain</code>
+registry is <code>some.registry.com</code>, the owner is <code>owner</code>, the image name is <code>domain</code>
 and the tag is <code>1.0</code>.  Tags are a lot like version numbers, but they are not required
 to be numbers or to be in any particular sequence or format.  If you omit the tag, it
 is assumed to be <code>latest</code>.</p>
 
 <div class="notices note" ><p>The Docker tag <code>latest</code> is confusing - it does not actually mean the latest version of
-the image that was created or published in the registry, it just literally means
+the image that was created or published in the registry; it just literally means
 whichever version the owner decided to call &ldquo;latest&rdquo;.  Docker and Kubernetes make
 some assumptions about latest, and it is generally recommended to avoid using it and instead
 specify the actual version/tag that you really want.</p>
@@ -3411,20 +3411,20 @@ if (!doNotTrack) {
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1553824875"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1554400282"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1553824875"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1553824875"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1554400282"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1554400282"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1553824875" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1553824875"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1554400282" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1554400282"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
