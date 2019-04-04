@@ -7,7 +7,9 @@ theme = "hugo-theme-learn"
 
 publishDir = "docs"
 
+# analytics
+googleAnalytics = "UA-129126578-2"
+
 # For search functionality
 [outputs]
 home = [ "HTML", "RSS", "JSON"]
-
