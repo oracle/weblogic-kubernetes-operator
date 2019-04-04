@@ -721,7 +721,6 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
     domain.verifyDomainCreated();
     testAdminT3Channel(domain);
-    testWSLoadBalancing(domain);
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
     logger.info("verify that domain is managed by operator");
     operator.verifyDomainExists(domain.getDomainUid());
