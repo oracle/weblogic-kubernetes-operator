@@ -12,17 +12,17 @@
     <title>Scaling :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1554400581" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1554400581" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1554400581" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1554400581" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1554400581" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1554400581" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1554400581" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1554400581" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1554409273" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1554409273" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1554409273" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1554409273" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1554409273" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1554409273" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1554409273" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1554409273" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1554400581"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1554409273"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1554400581"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1554400581"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1554409273"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1554409273"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1554400581"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1554409273"></script>
 
     
   </div>
@@ -2258,7 +2258,7 @@ details about <a href="https://blogs.oracle.com/weblogicserver/using-prometheus-
 
 <h4 id="debugging-scalingaction-sh">Debugging scalingAction.sh</h4>
 
-<p>The <a href="/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script was designed to be executed within the
+<p>The <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> script was designed to be executed within the
 Administration Server pod because the associated diagnostic module is targed to the Administration Server.</p>
 
 <p>The easiest way to verify and debug the <code>scalingAction.sh</code> script is to open a shell on the running Administration Server pod and execute the script on the command line.</p>
@@ -2267,7 +2267,7 @@ Administration Server pod because the associated diagnostic module is targed to 
 
 <ul>
 <li>The domain home is in <code>/u01/oracle/user-projects/domains/domain1</code> (that is, the domain home is inside a Docker image).</li>
-<li>The Dockerfile copied <a href="/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> to <code>/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh</code>.</li>
+<li>The Dockerfile copied <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh"><code>scalingAction.sh</code></a> to <code>/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh</code>.</li>
 </ul>
 
 <pre><code>&gt; kubectl exec -it domain1-admin-server /bin/bash
@@ -3668,20 +3668,20 @@ if (!doNotTrack) {
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1554400581"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1554400581"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1554400581"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1554400581"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1554400581"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1554400581"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1554400581"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1554409273"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1554409273"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1554409273"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1554409273"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1554409273"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1554409273"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1554409273"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1554400581"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1554400581"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1554400581"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1554409273"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1554409273"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1554409273"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1554400581" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1554400581"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1554409273" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1554409273"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
