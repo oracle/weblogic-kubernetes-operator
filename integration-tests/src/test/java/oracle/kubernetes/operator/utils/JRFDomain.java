@@ -1,4 +1,4 @@
-// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -12,7 +12,9 @@ import java.util.Objects;
 import oracle.kubernetes.operator.BaseTest;
 import org.yaml.snakeyaml.Yaml;
 
-/** Domain class with all the utility methods for a Domain. */
+/**
+ * JRF Domain class with all the utility methods
+ */
 public class JRFDomain extends Domain {
 
   public static final String FMWINFRA_DOCKER_IMAGENAME =
@@ -20,11 +22,22 @@ public class JRFDomain extends Domain {
   public static final String FMWINFRA_DOCKER_IMAGETAG = "12.2.1.3";
   public static final String OCIR_REPO_SERVER = "phx.ocir.io";
 
+  /**
+   * JRFDomain constructor
+   * @param inputYaml - jrf domain input yaml file, which should contain the properties used for jrf domain creation
+   * @throws Exception - if any error occurs
+   */
   public JRFDomain(String inputYaml) throws Exception {
     // read input domain yaml to test
     this(TestUtils.loadYaml(inputYaml));
   }
 
+  /**
+   * JRFDomain constructor
+   * @param inputDomainMap - jrf domain input properties map, which should contain the properties used for domain
+   *                       creation
+   * @throws Exception - if any error occurs
+   */
   public JRFDomain(Map<String, Object> inputDomainMap) throws Exception {
     initialize(inputDomainMap);
     createPV();
@@ -35,6 +48,11 @@ public class JRFDomain extends Domain {
     // createLoadBalancer();
   }
 
+  /**
+   * initialize the domain creation input properties
+   * @param inputDomainMap - jrf domain input properties map
+   * @throws Exception - if any error occurs
+   */
   private void initialize(Map<String, Object> inputDomainMap) throws Exception {
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
@@ -87,6 +105,7 @@ public class JRFDomain extends Domain {
     clusterType = (String) domainMap.get("clusterType");
     serverStartPolicy = (String) domainMap.get("serverStartPolicy");
 
+    // write hostname in domain input map for public address
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
@@ -142,7 +161,6 @@ public class JRFDomain extends Domain {
     // create config map and secret for custom sit config
     if ((domainMap.get("configOverrides") != null)
         && (domainMap.get("configOverridesFile") != null)) {
-      // write hostname in config file for public address
 
       String configOverridesFile = domainMap.get("configOverridesFile").toString();
 
@@ -158,8 +176,7 @@ public class JRFDomain extends Domain {
               + configOverridesFile;
       ExecResult result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+        throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
       }
       cmd =
           "kubectl -n "
@@ -172,8 +189,7 @@ public class JRFDomain extends Domain {
               + domainUid;
       result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+        throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
       }
       // create secret for custom sit config t3 public address
       cmd =
@@ -187,8 +203,7 @@ public class JRFDomain extends Domain {
               + TestUtils.getHostName();
       result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+        throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
       }
     }
   }

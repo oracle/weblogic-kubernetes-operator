@@ -1,10 +1,15 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
-// Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl.
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+//   Licensed under the Universal Permissive License v 1.0 as shown at
+//   http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import oracle.kubernetes.operator.utils.*;
+import oracle.kubernetes.operator.utils.TestUtils;
+import oracle.kubernetes.operator.utils.OracleDB;
+import oracle.kubernetes.operator.utils.ExecCommand;
+import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.JRFDomain;
+import oracle.kubernetes.operator.utils.Operator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -12,9 +17,9 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 /**
- * Simple JUnit test file used for testing Operator.
+ * Simple JUnit test file used for testing Operator for JRF domains.
  *
- * <p>This test is used for creating Operator(s) and multiple domains which are managed by the
+ * <p>This test is used for creating Operator(s) and multiple JRF domains which are managed by the
  * Operator(s).
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -41,7 +46,6 @@ public class JrfInOperator extends BaseTest {
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset
-  // of tests, plus leave domain1 up and running when the test completes.
   static {
     QUICKTEST =
         System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
@@ -57,8 +61,9 @@ public class JrfInOperator extends BaseTest {
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
+   * It also creates Oracle DB pod which used for RCU.
    *
-   * @throws Exception
+   * @throws Exception - if an error occurs when load property file or create DB pod
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
@@ -94,9 +99,10 @@ public class JrfInOperator extends BaseTest {
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories
+   * This method will run once after all test methods are finished. It Releases k8s cluster lease,
+   * archives result, pv directories.
    *
-   * @throws Exception
+   * @throws Exception - if any error occurs
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
@@ -129,11 +135,11 @@ public class JrfInOperator extends BaseTest {
   }
 
   /**
-   * Create operator and verify its deployed successfully. Create jrf domain and verify domain is
+   * Create operator and verify it's deployed successfully. Create jrf domain and verify domain is
    * started. Verify liveness probe by killing managed server 1 process 3 times to kick pod
    * auto-restart. Shutdown the domain by changing domain serverStartPolicy to NEVER.
    *
-   * @throws Exception
+   * @throws Exception - if any error occurs when create operator and jrf domains
    */
   @Test
   public void testJRFDomainOnPVUsingWLST() throws Exception {
@@ -157,12 +163,15 @@ public class JrfInOperator extends BaseTest {
       jrfdomain = new JRFDomain(jrfdomainonpvwlstFile);
       jrfdomain.verifyDomainCreated();
 
-      if (!SMOKETEST) jrfdomain.testWlsLivenessProbe();
+      if (!SMOKETEST) {
+        jrfdomain.testWlsLivenessProbe();
+      }
 
       testCompletedSuccessfully = true;
     } finally {
-      if (jrfdomain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
+      if (jrfdomain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
         jrfdomain.shutdownUsingServerStartPolicy();
+      }
     }
 
     logger.info("SUCCESS - " + testMethodName);

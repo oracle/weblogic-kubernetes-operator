@@ -942,6 +942,12 @@ public class TestUtils {
     k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
   }
 
+  /**
+   * create oracle db pod in the k8s cluster
+   * @param dbPropsFile - db properties file
+   * @return - OracleDB instance
+   * @throws Exception - if any error occurs when creating Oracle DB pod
+   */
   public static OracleDB createOracleDB(String dbPropsFile) throws Exception {
     OracleDB oracledb = new OracleDB(dbPropsFile);
 
@@ -972,7 +978,13 @@ public class TestUtils {
     return oracledb;
   }
 
-  /** Replaces the string matching the given search pattern with a new string. */
+  /**
+   * Replaces the string matching the given search pattern with a new string.
+   * @param filename - filename in which the string will be replaced
+   * @param originalString - the string which needs to be replaced
+   * @param newString - the new string to replace
+   * @throws Exception - if any error occurs
+   */
   public static void replaceStringInFile(String filename, String originalString, String newString)
       throws Exception {
     Path path = Paths.get(filename);
