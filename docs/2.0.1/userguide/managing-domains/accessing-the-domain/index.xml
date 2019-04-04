@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Accessing the domain on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/</link>
+    <description>Recent content in Accessing the domain on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 17:39:00 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Using WLST</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/wlst/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/wlst/</guid>
+      <description>You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes. If the Administration Server was configured to expose a T3 channel using the exposeAdminT3Channel setting when creating the domain, then the matching T3 service can be used to connect. For example, if the domainUID is domain1, and the Administration Server name is admin-server, then the service would be called:
+domain1-admin-server-external  This service will be in the same namespace as the domain.</description>
+    </item>
+    
+  </channel>
+</rss>
