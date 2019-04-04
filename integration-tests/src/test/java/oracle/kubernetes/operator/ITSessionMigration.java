@@ -97,7 +97,7 @@ public class ITSessionMigration extends BaseTest {
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
 
-      tearDown();
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
       logger.info("SUCCESS");
     }
