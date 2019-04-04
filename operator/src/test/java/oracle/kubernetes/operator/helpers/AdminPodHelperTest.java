@@ -24,6 +24,7 @@ import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Status;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -40,9 +42,7 @@ import org.junit.Test;
 
 @SuppressWarnings("SameParameterValue")
 public class AdminPodHelperTest extends PodHelperTestBase {
-  private static final String INTERNAL_OPERATOR_CERT_FILE_PARAM = "internalOperatorCert";
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
-  private static final String CERTFILE = "certfile";
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -117,11 +117,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         PodAwaiterStepFactory.class,
         (pod, next) -> terminalStep);
 
-    /**/
     V1Pod existingPod = createPod(testSupport.getPacket());
-    /*/
-    V1Pod existingPod = createPodModel();
-    /**/
     mutator.mutate(existingPod);
     initializeExistingPod(existingPod);
 
@@ -208,10 +204,9 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenAdminPodCreated_hasOperatorCertEnvVariable() {
-    putTuningParameter(INTERNAL_OPERATOR_CERT_FILE_PARAM, CERTFILE);
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
-        hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, CERTFILE));
+        hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, InMemoryCertificates.INTERNAL_CERT_DATA));
   }
 
   @Test
@@ -245,6 +240,20 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         allOf(
             hasEnvVar("item1", "find uid1 at /u01/oracle/user_projects/domains"),
             hasEnvVar("item2", "ADMIN_SERVER is ADMIN_SERVER:7001")));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentItemsWithVariable_createPodShouldNotChangeItsValue()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    final String ITEM_RAW_VALUE = "find uid1 at $(DOMAIN_HOME)";
+    configureAdminServer().withEnvironmentVariable("item1", ITEM_RAW_VALUE);
+
+    getCreatedPod();
+
+    getConfiguredDomainSpec().getAdminServer().getEnv();
+    assertThat(
+        getConfiguredDomainSpec().getAdminServer().getEnv(),
+        allOf(hasEnvVar("item1", ITEM_RAW_VALUE)));
   }
 
   @Test
@@ -328,6 +337,96 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         getCreatedPodSpecContainer().getVolumeMounts(),
         allOf(
             hasVolumeMount("volume1", "/domain-path1"), hasVolumeMount("volume2", "/server-path")));
+  }
+
+  @Test
+  public void whenDomainHasInitContainers_createAdminPodWithThem() {
+    getConfigurator()
+        .withInitContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasInitContainers_createAdminPodWithThem() {
+    getConfigurator()
+        .configureAdminServer()
+        .withInitContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasDuplicateInitContainers_createAdminPodWithCombination() {
+    getConfigurator()
+        .withInitContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /top"))
+        .configureAdminServer()
+        .withInitContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecInitContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenDomainHasContainers_createAdminPodWithThem() {
+    getConfigurator()
+        .withContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasContainers_createAdminPodWithThem() {
+    getConfigurator()
+        .configureAdminServer()
+        .withContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
+  }
+
+  @Test
+  public void whenServerHasDuplicateContainers_createAdminPodWithCombination() {
+    getConfigurator()
+        .withContainer(
+            createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
+        .withContainer(createContainer("container2", "oraclelinux", "ls /top"))
+        .configureAdminServer()
+        .withContainer(createContainer("container2", "oraclelinux", "ls /oracle"));
+
+    assertThat(
+        getCreatedPodSpecContainers(),
+        allOf(
+            hasContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"),
+            hasContainer("container2", "oraclelinux", "ls /oracle")));
   }
 
   @Test

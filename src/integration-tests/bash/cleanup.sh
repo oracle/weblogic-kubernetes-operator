@@ -61,6 +61,7 @@ USER_PROJECTS_DIR="$RESULT_DIR/user-projects"
 TMP_DIR="$RESULT_DIR/cleanup_tmp"
 JOB_NAME="weblogic-command-job"
 
+
 function fail {
   echo @@ cleanup.sh: Error "$@"
   exit 1
@@ -341,22 +342,29 @@ deleteWithLabels
 #   arg3 - keywords in deletable artificats
 
 echo @@ Starting genericDelete
-genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier"
+genericDelete "all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress" "crd,pv,ns,clusterroles,clusterrolebindings" "logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql"
 SUCCESS="$?"
 
 if [ "${DELETE_FILES:-true}" = "true" ]; then
 
-  # Delete pv directories using a job (/scratch maps to PV_ROOT on the k8s cluster machines).
+  # Delete pv directories using a run (/sharedparent maps to PV_ROOT on the k8s cluster machines).
 
-  echo @@ Launching job to delete all pv contents.  This runs in the k8s cluster, /scratch mounts PV_ROOT.
-  $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
+  echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
+  # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
+  if [ "$WERCKER" = "true" ]; then
+	$SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
+  else 
+  	$SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
+  fi
   [ "$?" = "0" ] || SUCCESS="1"
+  echo @@ SUCCESS=$SUCCESS
 
   # Delete old test files owned by the current user.  
 
   echo @@ Deleting local $RESULT_DIR contents.
   rm -fr $RESULT_ROOT/acceptance_test_tmp
   [ "$?" = "0" ] || SUCCESS="1"
+  echo @@ SUCCESS=$SUCCESS
 
   echo @@ Deleting /tmp/test_suite.\* files.
   rm -f /tmp/test_suite.*

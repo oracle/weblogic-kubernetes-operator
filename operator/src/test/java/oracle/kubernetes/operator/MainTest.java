@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -11,6 +11,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Test;
@@ -18,7 +19,7 @@ import org.junit.Test;
 public class MainTest {
 
   private static final String NS = "default";
-  final String DOMAIN_UID = "domain-uid-for-testing";
+  private static final String DOMAIN_UID = "domain-uid-for-testing";
 
   @After
   public void tearDown() {}
@@ -85,7 +86,7 @@ public class MainTest {
 
     V1ObjectMeta domain2Meta = createMetadata(CREATION_DATETIME);
 
-    assertFalse(DomainProcessorImpl.isOutdated(domainMeta, domain2Meta));
+    assertFalse(KubernetesUtils.isFirstNewer(domainMeta, domain2Meta));
   }
 
   @Test
@@ -96,7 +97,7 @@ public class MainTest {
     DateTime DELETE_DATETIME = CREATION_DATETIME.plusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(DELETE_DATETIME);
 
-    assertFalse(DomainProcessorImpl.isOutdated(domainMeta, domain2Meta));
+    assertFalse(KubernetesUtils.isFirstNewer(domainMeta, domain2Meta));
   }
 
   @Test
@@ -107,13 +108,13 @@ public class MainTest {
     DateTime DELETE_DATETIME = CREATION_DATETIME.minusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(DELETE_DATETIME);
 
-    assertTrue(DomainProcessorImpl.isOutdated(domainMeta, domain2Meta));
+    assertTrue(KubernetesUtils.isFirstNewer(domainMeta, domain2Meta));
   }
 
-  Method getTargetNamespaces;
+  private Method getTargetNamespaces;
 
-  @SuppressWarnings("unchecked")
-  Collection<String> invoke_getTargetNamespaces(String tnValue, String namespace)
+  @SuppressWarnings({"unchecked", "SameParameterValue"})
+  private Collection<String> invoke_getTargetNamespaces(String tnValue, String namespace)
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     if (getTargetNamespaces == null) {
       getTargetNamespaces =

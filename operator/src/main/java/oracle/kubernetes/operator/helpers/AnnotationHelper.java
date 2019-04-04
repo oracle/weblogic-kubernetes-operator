@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Yaml;
 import java.util.function.Function;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -15,8 +16,7 @@ public class AnnotationHelper {
   private static final boolean DEBUG = false;
   static final String SHA256_ANNOTATION = "weblogic.sha256";
   private static final String HASHED_STRING = "hashedString";
-  private static Function<V1Pod, String> HASH_FUNCTION =
-      pod -> DigestUtils.sha256Hex(Yaml.dump(pod));
+  private static Function<Object, String> HASH_FUNCTION = o -> DigestUtils.sha256Hex(Yaml.dump(o));
 
   /**
    * Marks metadata with annotations that let Prometheus know how to retrieve metrics from the
@@ -33,8 +33,12 @@ public class AnnotationHelper {
     meta.putAnnotationsItem("prometheus.io/scrape", "true");
   }
 
-  static V1Pod withSha256Hash(V1Pod pod) {
+  public static V1Pod withSha256Hash(V1Pod pod) {
     return DEBUG ? addHashAndDebug(pod) : addHash(pod);
+  }
+
+  public static V1Service withSha256Hash(V1Service service) {
+    return addHash(service);
   }
 
   private static V1Pod addHashAndDebug(V1Pod pod) {
@@ -49,11 +53,20 @@ public class AnnotationHelper {
     return pod;
   }
 
-  static String getHash(V1Pod pod) {
-    return pod.getMetadata().getAnnotations().get(SHA256_ANNOTATION);
+  private static V1Service addHash(V1Service service) {
+    service.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(service));
+    return service;
   }
 
   static String getDebugString(V1Pod pod) {
     return pod.getMetadata().getAnnotations().get(HASHED_STRING);
+  }
+
+  static String getHash(V1Pod pod) {
+    return pod.getMetadata().getAnnotations().get(SHA256_ANNOTATION);
+  }
+
+  static String getHash(V1Service service) {
+    return service.getMetadata().getAnnotations().get(SHA256_ANNOTATION);
   }
 }
