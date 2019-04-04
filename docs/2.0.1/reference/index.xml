@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Reference on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/reference/</link>
+    <description>Recent content in Reference on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 22 Feb 2019 16:16:39 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/reference/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Javadoc</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/reference/javadoc/</link>
+      <pubDate>Fri, 22 Feb 2019 16:17:01 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/reference/javadoc/</guid>
+      <description>You can view the Java API documentation here.</description>
+    </item>
+    
+    <item>
+      <title>Swagger</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/reference/swagger/</link>
+      <pubDate>Fri, 22 Feb 2019 16:17:07 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/reference/swagger/</guid>
+      <description>You can view the Swagger REST API documentation here.</description>
+    </item>
+    
+    <item>
+      <title>Domain resource</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/reference/domain-resource/</link>
+      <pubDate>Fri, 22 Feb 2019 16:17:07 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/reference/domain-resource/</guid>
+      <description>View a domain resource reference document here.</description>
+    </item>
+    
+  </channel>
+</rss>
