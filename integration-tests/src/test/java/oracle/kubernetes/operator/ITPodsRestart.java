@@ -64,7 +64,7 @@ public class ITPodsRestart extends BaseTest {
       logger.info("Run once, release cluster lease");
 
       destroyPodsRestartdomain();
-      tearDown();
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
       logger.info("SUCCESS");
     }
