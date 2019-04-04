@@ -1,13 +1,11 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
-import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
@@ -50,41 +48,5 @@ public class ServiceWatcher extends Watcher<V1Service> {
     return watchBuilder
         .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
         .createServiceWatch(ns);
-  }
-
-  static String getServiceDomainUID(V1Service service) {
-    V1ObjectMeta meta = service.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.DOMAINUID_LABEL);
-    }
-    return null;
-  }
-
-  static String getServiceServerName(V1Service service) {
-    V1ObjectMeta meta = service.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.SERVERNAME_LABEL);
-    }
-    return null;
-  }
-
-  static String getServiceChannelName(V1Service service) {
-    V1ObjectMeta meta = service.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.CHANNELNAME_LABEL);
-    }
-    return null;
-  }
-
-  static String getServiceClusterName(V1Service service) {
-    V1ObjectMeta meta = service.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.CLUSTERNAME_LABEL);
-    }
-    return null;
   }
 }

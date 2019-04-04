@@ -24,4 +24,4 @@ voyager:
   # web port
   webPort: 30305
   # stats port
-  statsPort: 30315
+  #statsPort: 30315

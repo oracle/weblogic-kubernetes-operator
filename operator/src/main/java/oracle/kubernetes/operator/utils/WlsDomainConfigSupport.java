@@ -26,6 +26,11 @@ public class WlsDomainConfigSupport {
     this.domain = domain;
   }
 
+  public WlsDomainConfigSupport withAdminServerName(String adminServerName) {
+    setAdminServerName(adminServerName);
+    return this;
+  }
+
   public void setAdminServerName(String adminServerName) {
     this.adminServerName = adminServerName;
   }
@@ -47,8 +52,10 @@ public class WlsDomainConfigSupport {
    * @param serverName the name of the server.
    * @param listenPort the listen port
    */
-  public void addWlsServer(String serverName, Integer listenPort) {
-    wlsServers.put(serverName, createServerConfig(serverName, listenPort));
+  public WlsServerConfig addWlsServer(String serverName, Integer listenPort) {
+    WlsServerConfig serverConfig = createServerConfig(serverName, listenPort);
+    wlsServers.put(serverName, serverConfig);
+    return serverConfig;
   }
 
   private static WlsServerConfig createServerConfig(String serverName, Integer listenPort) {
@@ -134,14 +141,20 @@ public class WlsDomainConfigSupport {
   static class ServerConfigBuilder {
     private String name;
     private Integer listenPort;
+    private Integer adminPort;
 
     ServerConfigBuilder(String name, Integer listenPort) {
       this.name = name;
       this.listenPort = listenPort;
     }
 
+    ServerConfigBuilder withAdminPort(Integer adminPort) {
+      this.adminPort = adminPort;
+      return this;
+    }
+
     WlsServerConfig build() {
-      return new WlsServerConfig(name, listenPort, null, null, false, null, null, null, false);
+      return new WlsServerConfig(name, null, null, listenPort, null, adminPort, null);
     }
   }
 

@@ -1,17 +1,18 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
 
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
 import java.util.Arrays;
 import javax.annotation.Nonnull;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -199,6 +200,10 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withAdditionalVolume(String name, String path);
 
   public abstract DomainConfigurator withAdditionalVolumeMount(String name, String path);
+
+  public abstract DomainConfigurator withInitContainer(V1Container initContainer);
+
+  public abstract DomainConfigurator withContainer(V1Container container);
 
   public abstract DomainConfigurator withPodLabel(String name, String value);
 

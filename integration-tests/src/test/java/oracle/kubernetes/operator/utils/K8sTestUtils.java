@@ -89,10 +89,10 @@ public class K8sTestUtils {
     V1PodList v1PodList =
         coreV1Api.listNamespacedPod(
             namespace,
+            Boolean.FALSE,
             Boolean.FALSE.toString(),
             null,
             null,
-            Boolean.FALSE,
             labelSelectors,
             null,
             null,
@@ -202,9 +202,7 @@ public class K8sTestUtils {
     // TODO verify {domainUID}-cluster-1
     assertEquals(
         "Number of labeled ingress", labeledIngressList.getItems().size(), expectedLabeled);
-    labeledIngressList
-        .getItems()
-        .stream()
+    labeledIngressList.getItems().stream()
         .forEach(li -> li.getMetadata().getNamespace().equals(domainNs));
     V1beta1IngressList traefikIngressList =
         extensionsV1beta1Api.listIngressForAllNamespaces(
@@ -218,9 +216,7 @@ public class K8sTestUtils {
             null,
             Boolean.FALSE);
     assertEquals("Number of Traefik ingress", traefikIngressList.getItems().size(), 1);
-    traefikIngressList
-        .getItems()
-        .stream()
+    traefikIngressList.getItems().stream()
         .forEach(ti -> ti.getMetadata().getNamespace().equals(domainNs));
   }
 
@@ -303,10 +299,10 @@ public class K8sTestUtils {
   public void verifyPvs(String labelSelectors, int expected) throws Exception {
     V1PersistentVolumeList v1PersistentVolumeList =
         coreV1Api.listPersistentVolume(
+            Boolean.TRUE,
             Boolean.FALSE.toString(),
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             null,
@@ -318,10 +314,10 @@ public class K8sTestUtils {
   public void verifyNoClusterRoles(String domain1Ls) throws Exception {
     V1ClusterRoleList v1ClusterRoleList =
         rbacAuthorizationV1Api.listClusterRole(
+            Boolean.TRUE,
             Boolean.FALSE.toString(),
             null,
             null,
-            Boolean.TRUE,
             domain1Ls,
             null,
             null,
@@ -333,10 +329,10 @@ public class K8sTestUtils {
   public void verifyNoClusterRoleBindings(String labelSelectors) throws Exception {
     V1ClusterRoleBindingList v1ClusterRoleBindingList =
         rbacAuthorizationV1Api.listClusterRoleBinding(
+            Boolean.TRUE,
             Boolean.FALSE.toString(),
             null,
             null,
-            Boolean.TRUE,
             labelSelectors,
             null,
             null,

@@ -4,11 +4,17 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -52,6 +58,21 @@ public class TestUtils {
 
     // check for admin pod
     checkCmdInLoop(cmd.toString(), "Running", podName);
+  }
+
+  /**
+   * check pod is in Terminating state
+   *
+   * @param cmd - kubectl get pod <podname> -n namespace
+   * @throws Exception
+   */
+  public static void checkPodTerminating(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    checkCmdInLoop(cmd.toString(), "Terminating", podName);
   }
 
   /**
@@ -190,6 +211,7 @@ public class TestUtils {
   public static ExecResult exec(String cmd) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
+      logger.info("Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
       throw new RuntimeException(
           "FAILURE: Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
     }
@@ -253,6 +275,52 @@ public class TestUtils {
     return false;
   }
 
+  /**
+   * kubectl describe service serviceName -n namespace
+   *
+   * @param namespace namespace where the service is located
+   * @param serviceName name of the service to be described
+   * @return String containing output of the kubectl describe service command
+   * @throws Exception
+   */
+  public static String describeService(String namespace, String serviceName) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl describe service ");
+    cmd.append(serviceName);
+    cmd.append(" -n ").append(namespace);
+    logger.info(
+        " Describe service "
+            + serviceName
+            + " in namespage "
+            + namespace
+            + " with command: '"
+            + cmd
+            + "'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String stdout = result.stdout();
+    logger.info(" Service " + serviceName + " found: ");
+    logger.info(stdout);
+    return stdout;
+  }
+
+  /**
+   * kubectl get pods -o wide -n namespace
+   *
+   * @param namespace namespace in which the pods are to be listed
+   * @return String containing output of the kubectl get pods command
+   * @throws Exception
+   */
+  public static String getPods(String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer("kubectl get pods -o wide ");
+    cmd.append(" -n ").append(namespace);
+    logger.info(" Get pods in namespage " + namespace + " with command: '" + cmd + "'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String stdout = result.stdout();
+    logger.info(" Pods found: ");
+    logger.info(stdout);
+    return stdout;
+  }
   /**
    * First, kill the mgd server process in the container three times to cause the node manager to
    * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
@@ -375,6 +443,52 @@ public class TestUtils {
     return ExecCommand.exec(cmdKubectlSh.toString());
   }
 
+  /**
+   * Copy all App files to the k8s pod
+   *
+   * @param appLocationOnHost - App location on the local host
+   * @param appLocationInPod - App location on the k8s pod
+   * @param podName - the k8s pod name
+   * @param namespace - namespace the k8s pod is in
+   * @throws Exception
+   */
+  public static void copyAppFilesToPod(
+      String appLocationOnHost, String appLocationInPod, String podName, String namespace)
+      throws Exception {
+    File appFileRoot = new File(appLocationOnHost);
+    File[] appFileList = appFileRoot.listFiles();
+    String fileLocationInPod = appLocationInPod;
+
+    if (appFileList == null) return;
+
+    for (File file : appFileList) {
+      if (file.isDirectory()) {
+        // Find dir recursively
+        copyAppFilesToPod(file.getAbsolutePath(), appLocationInPod, podName, namespace);
+      } else {
+        logger.info("Copy file: " + file.getAbsoluteFile().toString() + " to the pod: " + podName);
+
+        String fileParent = file.getParentFile().getName();
+        logger.fine("file Parent: " + fileParent);
+
+        if (!appLocationInPod.contains(fileParent)) {
+          // Copy files in child dir of appLocationInPod
+          fileLocationInPod = appLocationInPod + "/" + fileParent;
+        }
+
+        StringBuffer copyFileCmd = new StringBuffer(" -- bash -c 'cat > ");
+        copyFileCmd
+            .append(fileLocationInPod)
+            .append("/")
+            .append(file.getName())
+            .append("' < ")
+            .append(file.getAbsoluteFile().toString());
+
+        kubectlexecNoCheck(podName, namespace, copyFileCmd.toString());
+      }
+    }
+  }
+
   public static void kubectlexec(String podName, String namespace, String scriptPath)
       throws Exception {
 
@@ -449,7 +563,9 @@ public class TestUtils {
   }
 
   public static String getAccessToken(Operator operator) throws Exception {
-    StringBuffer secretCmd = new StringBuffer("kubectl get serviceaccount weblogic-operator ");
+    StringBuffer secretCmd =
+        new StringBuffer(
+            "kubectl get serviceaccount " + operator.getOperatorMap().get("serviceAccount"));
     secretCmd
         .append(" -n ")
         .append(operator.getOperatorNamespace())
@@ -723,6 +839,36 @@ public class TestUtils {
     }
   }
 
+  public static Map<String, Object> createOperatorMap(int number, boolean restEnabled) {
+    Map<String, Object> operatorMap = new HashMap<>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add("test" + number);
+    operatorMap.put("releaseName", "op" + number);
+    operatorMap.put("domainNamespaces", targetDomainsNS);
+    operatorMap.put("serviceAccount", "weblogic-operator" + number);
+    operatorMap.put("namespace", "weblogic-operator" + number);
+    if (restEnabled) {
+      operatorMap.put("externalRestHttpsPort", 31000 + number);
+      operatorMap.put("externalRestEnabled", restEnabled);
+    }
+    return operatorMap;
+  }
+
+  public static Map<String, Object> createDomainMap(int number) {
+    Map<String, Object> domainMap = new HashMap<>();
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add("test" + number);
+    domainMap.put("domainUID", "test" + number);
+    domainMap.put("namespace", "test" + number);
+    domainMap.put("configuredManagedServerCount", 4);
+    domainMap.put("initialManagedServerReplicas", 2);
+    domainMap.put("exposeAdminT3Channel", true);
+    domainMap.put("exposeAdminNodePort", true);
+    domainMap.put("adminNodePort", 30700 + number);
+    domainMap.put("t3ChannelPort", 30000 + number);
+    return domainMap;
+  }
+
   public static String callShellScriptByExecToPod(
       String scriptPath, String arguments, String podName, String namespace) throws Exception {
 
@@ -987,5 +1133,59 @@ public class TestUtils {
         break;
       }
     }
+  }
+
+  /**
+   * create yaml file with changed property
+   *
+   * @param inputYamlFile
+   * @param generatedYamlFile
+   * @param oldString
+   * @paramnewString
+   * @throws Exception
+   */
+  public static void createNewYamlFile(
+      String inputYamlFile, String generatedYamlFile, String oldString, String newString)
+      throws Exception {
+    logger.info("Creating new  " + generatedYamlFile);
+
+    Files.copy(
+        new File(inputYamlFile).toPath(),
+        Paths.get(generatedYamlFile),
+        StandardCopyOption.REPLACE_EXISTING);
+
+    // read each line in input domain file and replace with intended changed property
+    BufferedReader reader = new BufferedReader(new FileReader(generatedYamlFile));
+    String line = "";
+    StringBuffer changedLines = new StringBuffer();
+    boolean isLineChanged = false;
+    while ((line = reader.readLine()) != null) {
+      if (line.contains(oldString)) {
+        String changedLine = line.replace(line.substring(line.indexOf(oldString)), newString);
+        changedLines.append(changedLine).append("\n");
+        isLineChanged = true;
+      }
+
+      if (!isLineChanged) {
+        changedLines.append(line).append("\n");
+      }
+      isLineChanged = false;
+    }
+    reader.close();
+    // writing to the file
+    Files.write(Paths.get(generatedYamlFile), changedLines.toString().getBytes());
+    logger.info("Done - generate the new yaml file ");
+  }
+
+  /**
+   * copy file from source to target
+   *
+   * @param fromFile
+   * @param toFile
+   * @throws Exception
+   */
+  public static void copyFile(String fromFile, String toFile) throws Exception {
+    logger.info("Copying file from  " + fromFile + " to " + toFile);
+    Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
   }
 }

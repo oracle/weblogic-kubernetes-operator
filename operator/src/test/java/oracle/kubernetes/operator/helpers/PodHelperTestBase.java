@@ -19,6 +19,12 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.ProbeMatcher.
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.VolumeMountMatcher.writableVolumeMount;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_INITIAL_DELAY;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_PERIOD;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_TIMEOUT;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_INITIAL_DELAY;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
+import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -34,7 +40,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
@@ -57,24 +62,23 @@ import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.TuningParametersImpl;
 import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -86,8 +90,8 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.v2.Domain;
-import oracle.kubernetes.weblogic.domain.v2.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.After;
@@ -108,12 +112,6 @@ public abstract class PodHelperTestBase {
   private static final String STORAGE_VOLUME_NAME = "weblogic-domain-storage-volume";
   private static final String LATEST_IMAGE = "image:latest";
   private static final String VERSIONED_IMAGE = "image:1.2.3";
-  private static final int READINESS_INITIAL_DELAY = 1;
-  private static final int READINESS_TIMEOUT = 2;
-  private static final int READINESS_PERIOD = 3;
-  private static final int LIVENESS_INITIAL_DELAY = 4;
-  private static final int LIVENESS_PERIOD = 6;
-  private static final int LIVENESS_TIMEOUT = 5;
   private static final int CONFIGURED_DELAY = 21;
   private static final int CONFIGURED_TIMEOUT = 27;
   private static final int CONFIGURED_PERIOD = 35;
@@ -153,6 +151,17 @@ public abstract class PodHelperTestBase {
     return configurator;
   }
 
+  Method getDomainSpec;
+
+  DomainSpec getConfiguredDomainSpec()
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    if (getDomainSpec == null) {
+      getDomainSpec = DomainConfigurator.class.getDeclaredMethod("getDomainSpec");
+      getDomainSpec.setAccessible(true);
+    }
+    return (DomainSpec) getDomainSpec.invoke(configurator);
+  }
+
   @Before
   public void setUp() throws Exception {
     mementos.add(
@@ -161,8 +170,8 @@ public abstract class PodHelperTestBase {
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(TuningParametersStub.install());
-    mementos.add(
-        StaticStubSupport.install(AnnotationHelper.class, "HASH_FUNCTION", new UnitTestHash()));
+    mementos.add(UnitTestHash.install());
+    mementos.add(InMemoryCertificates.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
@@ -241,6 +250,14 @@ public abstract class PodHelperTestBase {
 
   V1Container getCreatedPodSpecContainer() {
     return getCreatedPod().getSpec().getContainers().get(0);
+  }
+
+  List<V1Container> getCreatedPodSpecContainers() {
+    return getCreatedPod().getSpec().getContainers();
+  }
+
+  List<V1Container> getCreatedPodSpecInitContainers() {
+    return getCreatedPod().getSpec().getInitContainers();
   }
 
   @Test
@@ -442,6 +459,15 @@ public abstract class PodHelperTestBase {
 
   static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
     return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
+  }
+
+  static V1Container createContainer(String name, String image, String... command) {
+    return new V1Container().name(name).image(image).command(Arrays.asList(command));
+  }
+
+  static Matcher<Iterable<? super V1Container>> hasContainer(
+      String name, String image, String... command) {
+    return hasItem(createContainer(name, image, command));
   }
 
   @Test
@@ -928,37 +954,6 @@ public abstract class PodHelperTestBase {
     void mutate(V1Pod pod);
   }
 
-  abstract static class TuningParametersStub implements TuningParameters {
-    static Map<String, String> namedParameters;
-
-    static Memento install() throws NoSuchFieldException {
-      namedParameters = new HashMap<>();
-      return StaticStubSupport.install(
-          TuningParametersImpl.class, "INSTANCE", createStrictStub(TuningParametersStub.class));
-    }
-
-    @Override
-    public PodTuning getPodTuning() {
-      return new PodTuning(
-          READINESS_INITIAL_DELAY,
-          READINESS_TIMEOUT,
-          READINESS_PERIOD,
-          LIVENESS_INITIAL_DELAY,
-          LIVENESS_TIMEOUT,
-          LIVENESS_PERIOD);
-    }
-
-    @Override
-    public CallBuilderTuning getCallBuilderTuning() {
-      return null;
-    }
-
-    @Override
-    public String get(Object key) {
-      return namedParameters.get(key);
-    }
-  }
-
   static class PodFetcher implements BodyMatcher {
     private String podName;
     V1Pod createdPod;
@@ -1112,13 +1107,6 @@ public abstract class PodHelperTestBase {
         actualInstructions.add(new Gson().toJson((JsonElement) instruction));
 
       return actualInstructions.equals(expectedInstructions);
-    }
-  }
-
-  static class UnitTestHash implements Function<V1Pod, String> {
-    @Override
-    public String apply(V1Pod v1Pod) {
-      return Integer.toString(v1Pod.hashCode());
     }
   }
 }
