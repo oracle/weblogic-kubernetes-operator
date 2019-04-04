@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain" xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment" xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
+    <d:server>
+        <d:name>admin-server</d:name>
+        <d:connect-timeout f:combine-mode="add">120</d:connect-timeout>
+        <d:restart-max f:combine-mode="add">5</d:restart-max>
+        <d:max-message-size f:combine-mode="add">78787878</d:max-message-size>
+        <d:server-debug f:combine-mode="add">
+            <d:debug-server-life-cycle f:combine-mode="add">true</d:debug-server-life-cycle>
+            <d:debug-jmx-core f:combine-mode="replace">true</d:debug-jmx-core>
+        </d:server-debug>
+        <d:network-access-point>
+            <d:name>T3Channel</d:name>
+            <d:public-address f:combine-mode="replace">${secret:customsitconfigdomain-test-secrets.hostname}</d:public-address>
+        </d:network-access-point>
+    </d:server>
+</d:domain>

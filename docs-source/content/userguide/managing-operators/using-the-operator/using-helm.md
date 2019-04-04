@@ -2,7 +2,7 @@
 title: "Use Helm"
 date: 2019-02-23T17:08:43-05:00
 weight: 1
-description: "Useful Helm operations"
+description: "Useful Helm operations."
 ---
 
 #### Contents
@@ -16,6 +16,8 @@ description: "Useful Helm operations"
   * [REST interface configuration](#rest-interface-configuration)
   * [Debugging options](#debugging-options)
 * [Common mistakes and solutions](#common-mistakes-and-solutions)
+
+Note that the operator Helm chart is available from the GitHub chart repository, see [Alternatively, install the operator Helm chart from GitHub chart repository](../../installation/#alternatively-install-the-operator-helm-chart-from-github-chart-repository).
 
 #### Useful Helm operations
 
@@ -99,7 +101,7 @@ javaLoggingLevel:  "FINE"
 
 Specifies the Docker image containing the operator code.
 
-Defaults to `weblogic-kubernetes-operator:2.0.1`.
+Defaults to `weblogic-kubernetes-operator:2.1`.
 
 Example:
 ```

@@ -1,4 +1,4 @@
-// Copyright 2018 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,6 +10,7 @@ import java.util.Objects;
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion {
   static KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
+  public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(1, 10);
   private static final String[] MINIMUM_K8S_VERSIONS = {"1.10.11", "1.11.5", "1.12.3"};
 
   private final int major;

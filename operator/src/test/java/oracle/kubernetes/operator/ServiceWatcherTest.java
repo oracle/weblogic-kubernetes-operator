@@ -1,20 +1,15 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.LabelConstants.CHANNELNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-import com.google.common.collect.ImmutableMap;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
@@ -34,7 +29,7 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndLabelSelector() throws Exception {
+  public void initialRequest_specifiesStartingResourceVersionAndLabelSelector() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(
@@ -56,53 +51,5 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
   @Override
   protected ServiceWatcher createWatcher(String ns, AtomicBoolean stopping, int rv) {
     return ServiceWatcher.create(this, ns, Integer.toString(rv), tuning, this, stopping);
-  }
-
-  @Test
-  public void whenServiceHasNoDomainUid_returnNull() throws Exception {
-    V1Service service = new V1Service().metadata(new V1ObjectMeta());
-
-    assertThat(ServiceWatcher.getServiceDomainUID(service), nullValue());
-  }
-
-  @Test
-  public void whenServiceHasDomainUid_returnIt() throws Exception {
-    V1Service service =
-        new V1Service()
-            .metadata(new V1ObjectMeta().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1")));
-
-    assertThat(ServiceWatcher.getServiceDomainUID(service), equalTo("domain1"));
-  }
-
-  @Test
-  public void whenServiceHasNoServerName_returnNull() throws Exception {
-    V1Service service = new V1Service().metadata(new V1ObjectMeta());
-
-    assertThat(ServiceWatcher.getServiceServerName(service), nullValue());
-  }
-
-  @Test
-  public void whenServiceHasServerName_returnIt() throws Exception {
-    V1Service service =
-        new V1Service()
-            .metadata(new V1ObjectMeta().labels(ImmutableMap.of(SERVERNAME_LABEL, "myserver")));
-
-    assertThat(ServiceWatcher.getServiceServerName(service), equalTo("myserver"));
-  }
-
-  @Test
-  public void whenServiceHasNoChannelName_returnNull() throws Exception {
-    V1Service service = new V1Service().metadata(new V1ObjectMeta());
-
-    assertThat(ServiceWatcher.getServiceChannelName(service), nullValue());
-  }
-
-  @Test
-  public void whenServiceHasChannelName_returnIt() throws Exception {
-    V1Service service =
-        new V1Service()
-            .metadata(new V1ObjectMeta().labels(ImmutableMap.of(CHANNELNAME_LABEL, "channel1")));
-
-    assertThat(ServiceWatcher.getServiceChannelName(service), equalTo("channel1"));
   }
 }

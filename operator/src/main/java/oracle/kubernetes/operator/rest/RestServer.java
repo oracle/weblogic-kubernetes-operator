@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -49,19 +49,68 @@ public class RestServer {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int CORE_POOL_SIZE = 3;
 
+  private static RestServer INSTANCE = null;
+
   private RestConfig config;
 
   // private String baseHttpUri;
   private String baseExternalHttpsUri;
   private String baseInternalHttpsUri;
 
-  HttpServer externalHttpsServer;
-  HttpServer internalHttpsServer;
+  private HttpServer externalHttpsServer;
+  private HttpServer internalHttpsServer;
 
   private static final String SSL_PROTOCOL = "TLSv1.2";
   private static final String[] SSL_PROTOCOLS = {
     SSL_PROTOCOL
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
+
+  /**
+   * Create singleton instance of the WebLogic Operator's RestServer. Should only be called once.
+   *
+   * @param restConfig - the WebLogic Operator's REST configuration. Throws IllegalStateException if
+   *     instance already created.
+   */
+  public static synchronized void create(RestConfig restConfig) {
+    LOGGER.entering();
+    try {
+      if (INSTANCE == null) {
+        INSTANCE = new RestServer(restConfig);
+        return;
+      }
+
+      throw new IllegalStateException();
+    } finally {
+      LOGGER.exiting();
+    }
+  }
+
+  /**
+   * Accessor for obtaining reference to the RestServer singleton instance.
+   *
+   * @return RestServer - Singleton instance of the RestServer
+   */
+  public static synchronized RestServer getInstance() {
+    return INSTANCE;
+  }
+
+  /**
+   * Release RestServer singleton instance. Should only be called once. Throws IllegalStateException
+   * if singleton instance not created.
+   */
+  public static void destroy() {
+    LOGGER.entering();
+    try {
+      if (INSTANCE != null) {
+        INSTANCE = null;
+        return;
+      }
+
+      throw new IllegalStateException();
+    } finally {
+      LOGGER.exiting();
+    }
+  }
 
   /**
    * Constructs the WebLogic Operator REST server.
@@ -70,7 +119,7 @@ public class RestServer {
    *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
    *     implementation that does the real work behind the REST api.
    */
-  public RestServer(RestConfig config) {
+  private RestServer(RestConfig config) {
     LOGGER.entering();
     this.config = config;
     baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
@@ -83,7 +132,7 @@ public class RestServer {
    *
    * @return the uri
    */
-  public String getExternalHttpsUri() {
+  String getExternalHttpsUri() {
     return baseExternalHttpsUri;
   }
 
@@ -92,7 +141,7 @@ public class RestServer {
    *
    * @return the uri
    */
-  public String getInternalHttpsUri() {
+  String getInternalHttpsUri() {
     return baseInternalHttpsUri;
   }
 
