@@ -8,7 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities | Change |
 | --- | --- | --- | --- |
-| TBD | v2.1 | no  |  
+| April 4, 2019 | v2.1 | no  |  Added support for initContainers.
 | March 4, 2019 | v2.0.1 | no  | OpenShift support is now certified.  Many bug fixes, including fixes for configuration overrides, cluster services, and domain status processing.  
 | January 24, 2019 | v2.0 | yes; not compatible with 1.x releases, but is compatible with 2.0-rc2. | Final version numbers and documentation updates.  
 | January 16, 2019 | v2.0-rc2 | yes | Schema updates are completed, and various bugs fixed.
