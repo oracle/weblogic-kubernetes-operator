@@ -12,9 +12,7 @@ import java.util.Objects;
 import oracle.kubernetes.operator.BaseTest;
 import org.yaml.snakeyaml.Yaml;
 
-/**
- * JRF Domain class with all the utility methods
- */
+/** JRF Domain class with all the utility methods */
 public class JRFDomain extends Domain {
 
   public static final String FMWINFRA_DOCKER_IMAGENAME =
@@ -24,7 +22,9 @@ public class JRFDomain extends Domain {
 
   /**
    * JRFDomain constructor
-   * @param inputYaml - jrf domain input yaml file, which should contain the properties used for jrf domain creation
+   *
+   * @param inputYaml - jrf domain input yaml file, which should contain the properties used for jrf
+   *     domain creation
    * @throws Exception - if any error occurs
    */
   public JRFDomain(String inputYaml) throws Exception {
@@ -34,8 +34,9 @@ public class JRFDomain extends Domain {
 
   /**
    * JRFDomain constructor
-   * @param inputDomainMap - jrf domain input properties map, which should contain the properties used for domain
-   *                       creation
+   *
+   * @param inputDomainMap - jrf domain input properties map, which should contain the properties
+   *     used for domain creation
    * @throws Exception - if any error occurs
    */
   public JRFDomain(Map<String, Object> inputDomainMap) throws Exception {
@@ -50,6 +51,7 @@ public class JRFDomain extends Domain {
 
   /**
    * initialize the domain creation input properties
+   *
    * @param inputDomainMap - jrf domain input properties map
    * @throws Exception - if any error occurs
    */

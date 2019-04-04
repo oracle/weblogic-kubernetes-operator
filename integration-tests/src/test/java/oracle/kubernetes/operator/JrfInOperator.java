@@ -4,12 +4,12 @@
 
 package oracle.kubernetes.operator;
 
-import oracle.kubernetes.operator.utils.TestUtils;
-import oracle.kubernetes.operator.utils.OracleDB;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.JRFDomain;
 import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.OracleDB;
+import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -60,8 +60,8 @@ public class JrfInOperator extends BaseTest {
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes.
-   * It also creates Oracle DB pod which used for RCU.
+   * the resultRoot, pvRoot and projectRoot attributes. It also creates Oracle DB pod which used for
+   * RCU.
    *
    * @throws Exception - if an error occurs when load property file or create DB pod
    */
