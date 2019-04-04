@@ -15,6 +15,7 @@ function setup_jenkins {
   set -x
   id
 
+  docker login -u teamsldi_us@oracle.com -p $docker_pass  wlsldi-v2.docker.oraclecorp.com
   docker images
 
   pull_tag_images
@@ -22,7 +23,7 @@ function setup_jenkins {
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   # create a docker image for the operator code being tested
   docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
-  docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
+  docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest
   
   docker images
     
@@ -91,6 +92,28 @@ function pull_tag_images {
    	  docker pull $IMAGE_NAME_FMWINFRA:$IMAGE_TAG_FMWINFRA
   fi
   set -x
+  echo "Pull and tag the images we need"
+  docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
+  docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
+
+  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
+  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
+}
+
+function create_image_pull_secret_jenkins {
+  echo "Creating Secret"
+  kubectl create secret docker-registry wlsldi-secret  \
+    --docker-server=wlsldi-v2.docker.oraclecorp.com \
+    --docker-username=teamsldi_us@oracle.com \
+    --docker-password=$docker_pass \
+    --docker-email=teamsldi_us@oracle.com
+
+  echo "Checking Secret"
+  local SECRET="`kubectl get secret wlsldi-secret | grep wlsldi | wc | awk ' { print $1; }'`"
+  if [ "$SECRET" != "1" ]; then
+    echo 'secret wlsldi-secret was not created successfully'
+    exit 1
+  fi
 }
 
 function get_wlthint3client_from_image {
@@ -118,7 +141,7 @@ if [ -z "$BRANCH_NAME" ]; then
   fi
 fi
 export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
-export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-weblogic-kubernetes-operator}
+export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
 
 cd $PROJECT_ROOT
 if [ $? -ne 0 ]; then

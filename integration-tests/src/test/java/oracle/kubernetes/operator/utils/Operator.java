@@ -372,7 +372,7 @@ public class Operator {
     } else {
       operatorMap.put(
           "image",
-          "weblogic-kubernetes-operator"
+          "wlsldi-v2.docker.oraclecorp.com/weblogic-operator"
               + ":test_"
               + BaseTest.getBranchName().replaceAll("/", "_"));
     }
