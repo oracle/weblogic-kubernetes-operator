@@ -1,0 +1,3355 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.47.1" />
+    <meta name="description" content="">
+
+
+    <link rel="icon" href="/weblogic-kubernetes-operator/2.0.1/images/favicon.png" type="image/png">
+
+    <title> :: WebLogic Kubernetes Operator</title>
+
+    
+    <link href="/weblogic-kubernetes-operator/2.0.1/css/nucleus.css?1554382007" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.0.1/css/fontawesome-all.min.css?1554382007" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.0.1/css/hybrid.css?1554382007" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.0.1/css/featherlight.min.css?1554382007" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.0.1/css/perfect-scrollbar.min.css?1554382007" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.0.1/css/auto-complete.css?1554382007" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.0.1/css/theme.css?1554382007" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/2.0.1/css/hugo-theme.css?1554382007" rel="stylesheet">
+    
+
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/jquery-2.x.min.js?1554382007"></script>
+
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+    </style>
+    
+  </head>
+  <body class="" data-url="/weblogic-kubernetes-operator/2.0.1/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="/weblogic-kubernetes-operator/2.0.1/">
+  <img src="/weblogic-kubernetes-operator/2.0.1//images/logo.png" height="60"><br/>
+  Kubernetes Operator
+</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fas fa-search"></i></label>
+    <input data-search-input id="search-by" type="search" placeholder="Search...">
+    <span data-search-clear=""><i class="fas fa-times"></i></span>
+</div>
+
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.0.1/js/lunr.min.js?1554382007"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.0.1/js/auto-complete.js?1554382007"></script>
+<script type="text/javascript">
+    
+        var baseurl = "\/weblogic-kubernetes-operator\/2.0.1\/";
+    
+</script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/2.0.1/js/search.js?1554382007"></script>
+
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+        <li><a  class="padding" href="/weblogic-kubernetes-operator/">Home</a></li>
+        
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/quickstart/" title="Quick Start" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/">
+          <b>1. </b>Quick Start
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/quickstart/introduction/" title="Introduction" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/introduction/">
+        Introduction
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/quickstart/prerequisites/" title="Prerequisites" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/prerequisites/">
+        Prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/quickstart/get-images/" title="Get images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/get-images/">
+        Get images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/quickstart/install/" title="Install the operator and load balancer" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/install/">
+        Install the operator and load balancer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/quickstart/prepare/" title="Prepare for a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/prepare/">
+        Prepare for a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/quickstart/create-domain/" title="Create a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/create-domain/">
+        Create a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/quickstart/cleanup/" title="Clean up" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/cleanup/">
+        Clean up
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/" title="User Guide" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/">
+          <b>2. </b>User Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/" title="Introduction" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/">
+          Introduction
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/introduction/" title="Get started" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/introduction/">
+        Get started
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/demo/" title="Demo" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/demo/">
+        Demo
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/architecture/" title="Architecture" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/architecture/">
+        Architecture
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/design/" title="Design philosophy" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/design/">
+        Design philosophy
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/overview/" title="Overview" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/overview/">
+          Overview
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/overview/prepare/" title="Prepare your environment" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/overview/prepare/">
+        Prepare your environment
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/overview/k8s-setup/" title="Set up Kubernetes" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/overview/k8s-setup/">
+        Set up Kubernetes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/overview/database/" title="Run a database" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/overview/database/">
+        Run a database
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/" title="Manage operators" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/">
+          Manage operators
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/installation/" title="Install the operator" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/installation/">
+          Install the operator
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/" title="Use the operator" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/">
+          <b> </b>Use the operator
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/using-helm/" title="Use Helm" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/using-helm/">
+        Use Helm
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/the-rest-api/" title="The REST API" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/the-rest-api/">
+        The REST API
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/" title="Manage domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/">
+          Manage domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/choosing-a-model/" title="Choose a model" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/choosing-a-model/">
+          <b> </b>Choose a model
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/prepare/" title="Prepare to run a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/prepare/">
+        <b> </b>Prepare to run a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-resource/" title="Domain resource" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-resource/">
+        <b> </b>Domain resource
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/persistent-storage/" title="Persistent storage" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/persistent-storage/">
+          <b> </b>Persistent storage
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-in-image/" title="Domain in image" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-in-image/">
+          <b> </b>Domain in image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-in-image/base-images/" title="Base images" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-in-image/base-images/">
+          Base images
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/configoverrides/" title="Configuration overrides" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/configoverrides/">
+          <b> </b>Configuration overrides
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/ingress/" title="Ingress" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/ingress/">
+          <b> </b>Ingress
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/" title="Accessing the domain" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/">
+          <b> </b>Accessing the domain
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/wlst/" title="Using WLST" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/accessing-the-domain/wlst/">
+        Using WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/" title="Domain life cycle" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/">
+          <b> </b>Domain life cycle
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/startup/" title="Startup and shutdown" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/startup/">
+        Startup and shutdown
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/restarting/" title="Restarting" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/restarting/">
+        Restarting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/scaling/" title="Scaling" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/scaling/">
+        Scaling
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/" title="Samples" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/">
+          <b>3. </b>Samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/" title="Simple samples" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/">
+          <b> </b>Simple samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/credentials/" title="Credentials" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/credentials/">
+          Credentials
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/storage/" title="Storage" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/storage/">
+          Storage
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/" title="Domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/">
+          Domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/manually-create-domain/" title="Manually" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/manually-create-domain/">
+          Manually
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/domain-home-on-pv/" title="Domain home on a PV" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/domain-home-on-pv/">
+          Domain home on a PV
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/domain-home-in-image/" title="Domain home in image" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/domain-home-in-image/">
+          Domain home in image
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/delete-domain/" title="Delete domain resources" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/domains/delete-domain/">
+          Delete domain resources
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/rest/" title="REST APIs" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/rest/">
+          REST APIs
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/ingress/" title="Ingress" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/ingress/">
+          Ingress
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/samples/simple/elastic-stack/" title="Elastic Stack" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/samples/simple/elastic-stack/">
+          Elastic Stack
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/" title="Developer Guide" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/">
+          <b>4. </b>Developer Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/requirements/" title="Requirements" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/requirements/">
+        Requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/building/" title="Building" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/building/">
+        Building
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/integration-tests/" title="Integration tests" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/integration-tests/">
+        Integration tests
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/branching/" title="Branching" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/branching/">
+        Branching
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/coding-standards/" title="Coding standards" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/coding-standards/">
+        Coding standards
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/code-structure/" title="Code structure" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/code-structure/">
+        Code structure
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/asynchronous-call-model/" title="Asynchronous call model" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/asynchronous-call-model/">
+        Asynchronous call model
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/domain-processing/" title="Domain processing" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/domain-processing/">
+        Domain processing
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/documentation/" title="Documentation" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/documentation/">
+        Documentation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/developerguide/backwards-compatibility/" title="Backward compatibility" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/backwards-compatibility/">
+        Backward compatibility
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/reference/" title="Reference" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/reference/">
+          <b>5. </b>Reference
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/reference/javadoc/" title="Javadoc" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/reference/javadoc/">
+        Javadoc
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/reference/swagger/" title="Swagger" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/reference/swagger/">
+        Swagger
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/reference/domain-resource/" title="Domain resource" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/reference/domain-resource/">
+        Domain resource
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/security/" title="Security" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/security/">
+          <b>6. </b>Security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/security/certificates/" title="Certificates" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/security/certificates/">
+        Certificates
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/security/domain-security/" title="Domain security" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/security/domain-security/">
+          Domain security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/security/domain-security/image-protection/" title="Docker image protection" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/security/domain-security/image-protection/">
+        Docker image protection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/security/domain-security/weblogic-channels/">
+        Channels
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/security/encryption/" title="Encryption" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/security/encryption/">
+        Encryption
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/security/service-accounts/" title="Service accounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/security/service-accounts/">
+        Service accounts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/security/rbac/" title="RBAC" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/security/rbac/">
+        RBAC
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/security/secrets/" title="Secrets" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/security/secrets/">
+        Secrets
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/faq/" title="Frequently asked questions" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/2.0.1/faq/">
+          <b>7. </b>Frequently asked questions
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/2.0.1/faq/cannot-pull-image/" title="Cannot Pull Image" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/2.0.1/faq/cannot-pull-image/">
+        Cannot Pull Image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+         
+        <li><a  class="padding" href="/weblogic-kubernetes-operator/release-notes">Release Notes</a></li>
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      <table border="1" bgcolor=white>
+<tr><td align="center"><p style="color:red">You are viewing the archived documentation for version 2.0.1.  To view the documentation for the
+    current release, please <a href="https://oracle.github.io/weblogic-kubernetes-operator" style="color:blue">click here</a>
+</td></tr>
+</table>
+<p>&nbsp;</p>
+<p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
+<p>&nbsp;</p>
+<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
+<p><a href="https://weblogic-slack-inviter.herokuapp.com/"><i class="fab fa-slack"></i> Public Slack #operator</a></p>
+<p>&nbsp;</p>
+<img src="http://build.weblogick8s.org:8080/buildStatus/icon?job=weblogic-kubernetes-operator">
+    </section>
+  </div>
+</nav>
+
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+
+        
+        <div id="body-inner">
+          
+
+        
+
+<span id="sidebar-toggle-span">
+<a href="#" id="sidebar-toggle" data-sidebar-toggle=""><i class="fas fa-bars"></i> navigation</a>
+</span>
+
+ 
+
+
+<h3 id="oracle-weblogic-server-kubernetes-operator">Oracle WebLogic Server Kubernetes Operator</h3>
+
+<p>Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we&rsquo;ve provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:</p>
+
+<ul>
+<li>Create WebLogic domains in a Kubernetes persistent volume. This persistent volume can reside in an NFS file system or other Kubernetes volume types.</li>
+<li>Create a WebLogic domain in a Docker image.</li>
+<li>Override certain aspects of the WebLogic domain configuration.</li>
+<li>Define WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).</li>
+<li>Start servers based on declarative startup parameters and desired states.</li>
+<li>Manage WebLogic configured or dynamic clusters.</li>
+<li>Expose the WebLogic Server Administration Console outside the Kubernetes cluster, if desired.</li>
+<li>Expose T3 channels outside the Kubernetes domain, if desired.</li>
+<li>Expose HTTP paths on a WebLogic domain outside the Kubernetes domain with load balancing and update the load balancer when Managed Servers in the WebLogic domain are started or stopped.</li>
+<li>Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.</li>
+<li>Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.</li>
+</ul>
+
+<p>The fastest way to experience the operator is to follow the <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/">Quick Start guide</a>, or you can peruse our <a href="/weblogic-kubernetes-operator/2.0.1/userguide/">documentation</a>, read our <a href="https://blogs.oracle.com/weblogicserver/updated-weblogic-kubernetes-support-with-operator-20">blogs</a>, or try out the <a href="/weblogic-kubernetes-operator/2.0.1/samples/">samples</a>.</p>
+
+<hr />
+
+<p>The <a href="https://github.com/oracle/weblogic-kubernetes-operator/releases">current release of the operator</a> is 2.0.1.
+This release was published on March 4, 2019.</p>
+
+<hr />
+
+<h4 id="operator-earlier-versions">Operator earlier versions</h4>
+
+<p>Documentation for prior releases of the operator is available <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/site/README.md">here</a>.</p>
+
+<h4 id="backward-compatibility-guidelines">Backward compatibility guidelines</h4>
+
+<p>Starting from the 2.0.1 release, operator releases are backward compatible with respect to the domain
+resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created
+by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to
+maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
+maintained for one release after a replacement is available.</p>
+
+<h3 id="about-this-documentation">About this documentation</h3>
+
+<p>This documentation includes sections targeted to different audiences.  To help you find what you are looking for more easily,
+please consult this table of contents:</p>
+
+<ul>
+<li>The <a href="/weblogic-kubernetes-operator/2.0.1/quickstart/">Quick Start guide</a> explains how to quickly get the operator running, using the defaults, nothing special.</li>
+<li>The <a href="/weblogic-kubernetes-operator/2.0.1/userguide/">User guide</a> contains detailed usage information, including how to install and configure the operator,
+and how to use it to create and manage WebLogic domains.<br /></li>
+<li>The <a href="/weblogic-kubernetes-operator/2.0.1/samples/">Samples</a> provide detailed example code and instructions that show you how to perform
+various tasks related to the operator.</li>
+<li>The <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/">Developer guide</a> provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to contribute to the operator code will find useful information here.  This section also includes
+API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.</li>
+<li>The <a href="#contributing-to-the-operator">Contributing</a> section provides information about contribution requirements.</li>
+</ul>
+
+<h3 id="user-guide">User guide</h3>
+
+<p>The <a href="/weblogic-kubernetes-operator/2.0.1/userguide/">User guide</a> provides detailed information about all aspects of using the operator including:</p>
+
+<ul>
+<li>Installing and configuring the operator.</li>
+<li>Using the operator to create and manage WebLogic domains.</li>
+<li>Manually creating WebLogic domains to be managed by the operator.</li>
+<li>Scaling WebLogic clusters.</li>
+<li>Configuring Kubernetes load balancers.</li>
+<li>Configuring Elasticsearch and Kibana to access the operator&rsquo;s log files.</li>
+<li>Shutting down domains.</li>
+<li>Removing/deleting domains.</li>
+<li>And much more!</li>
+</ul>
+
+<h3 id="samples">Samples</h3>
+
+<p>Please refer to our <a href="/weblogic-kubernetes-operator/2.0.1/samples/">samples</a> for information about the available sample code.</p>
+
+<h3 id="need-more-help-have-a-suggestion-come-and-say-hello">Need more help? Have a suggestion? Come and say, &ldquo;Hello!&rdquo;</h3>
+
+<p>We have a <strong>public Slack channel</strong> where you can get in touch with us to ask questions about using the operator or give us feedback
+or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
+please <a href="https://weblogic-slack-inviter.herokuapp.com/">visit this site to get an invitation</a>.  The invitation email will include
+details of how to access our Slack workspace.  After you are logged in, please come to <code>#operator</code> and say, &ldquo;hello!&rdquo;</p>
+
+<h3 id="recent-changes-and-known-issues">Recent changes and known issues</h3>
+
+<p>See the <a href="/weblogic-kubernetes-operator/2.0.1/release-notes/">Release Notes</a>  for recent changes to the operator and known issues.</p>
+
+<h3 id="developer-guide">Developer guide</h3>
+
+<p>Developers interested in this project are encouraged to read the <a href="/weblogic-kubernetes-operator/2.0.1/developerguide/">Developer guide</a> to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.</p>
+
+<p>Please take a look at our <a href="https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list">wish list</a> to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something to which you would like to contribute!</p>
+
+<h3 id="api-documentation">API documentation</h3>
+
+<p>Documentation for APIs:</p>
+
+<ul>
+<li><p>The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see <a href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/the-rest-api/#use-the-operator-s-rest-services">Use the operator&rsquo;s REST services</a>.</p></li>
+
+<li><p>See the <a href="https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html">Swagger</a> documentation for the operator&rsquo;s REST interface.</p></li>
+
+<li><p>See the <a href="https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html">Javadoc</a> for the operator.</p></li>
+</ul>
+
+<h3 id="contributing-to-the-operator">Contributing to the operator</h3>
+
+<p>Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the operator or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended that you create an issue and discuss the proposed changes with the existing developers first.</p>
+
+<p>If you want to submit a pull request to fix a bug or enhance an existing feature, please first open an issue and link to that issue when you submit your pull request.</p>
+
+<p>If you have any questions about a possible submission, feel free to open an issue too.</p>
+
+<h4 id="contributing-to-the-oracle-weblogic-server-kubernetes-operator-repository">Contributing to the Oracle WebLogic Server Kubernetes Operator repository</h4>
+
+<p>Pull requests can be made under The Oracle Contributor Agreement (OCA), which is available at <a href="https://www.oracle.com/technetwork/community/oca-486395.html">https://www.oracle.com/technetwork/community/oca-486395.html</a>.</p>
+
+<p>For pull requests to be accepted, the bottom of the commit message must have the following line, using the contributor’s name and e-mail address as it appears in the OCA Signatories list.</p>
+
+<pre><code>Signed-off-by: Your Name &lt;you@example.org&gt;
+</code></pre>
+
+<p>This can be automatically added to pull requests by committing with:</p>
+
+<pre><code>git commit --signoff
+</code></pre>
+
+<p>Only pull requests from committers that can be verified as having signed the OCA can be accepted.</p>
+
+<h4 id="pull-request-process">Pull request process</h4>
+
+<ul>
+<li>Fork the repository.</li>
+<li>Create a branch in your fork to implement the changes. We recommend using the issue number as part of your branch name, for example, <code>1234-fixes</code>.</li>
+<li>Ensure that any documentation is updated with the changes that are required by your fix.</li>
+<li>Ensure that any samples are updated if the base image has been changed.</li>
+<li>Submit the pull request. Do not leave the pull request blank. Explain exactly what your changes are meant to do and provide simple steps on how to validate your changes. Ensure that you reference the issue you created as well. We will assign the pull request to 2-3 people for review before it is merged.</li>
+</ul>
+
+<h4 id="introducing-a-new-dependency">Introducing a new dependency</h4>
+
+<p>Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.</p>
+	
+  
+        
+        </div> 
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+        
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+        
+        
+
+
+	 
+	 
+		
+		
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/2.0.1/quickstart/" title="Quick Start" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+    
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/clipboard.min.js?1554382007"></script>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/perfect-scrollbar.min.js?1554382007"></script>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/perfect-scrollbar.jquery.min.js?1554382007"></script>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/jquery.sticky.js?1554382007"></script>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/featherlight.min.js?1554382007"></script>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/html5shiv-printshiv.min.js?1554382007"></script>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/highlight.pack.js?1554382007"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/modernizr.custom.71422.js?1554382007"></script>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/learn.js?1554382007"></script>
+    <script src="/weblogic-kubernetes-operator/2.0.1/js/hugo-learn.js?1554382007"></script>
+
+    <link href="/weblogic-kubernetes-operator/2.0.1/mermaid/mermaid.css?1554382007" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/2.0.1/mermaid/mermaid.js?1554382007"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+    
+
+  </body>
+</html>
+

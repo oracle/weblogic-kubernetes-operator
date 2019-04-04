@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Use the operator on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/</link>
+    <description>Recent content in Use the operator on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 17:08:18 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Use Helm</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/using-helm/</link>
+      <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/using-helm/</guid>
+      <description>Contents  Useful Helm operations Operator Helm configuration values  Overall operator information Creating the operator pod WebLogic domain management Elastic Stack integration REST interface configuration Debugging options  Common mistakes and solutions  Useful Helm operations Show the available operator configuration parameters and their default values:
+$ helm inspect values kubernetes/charts/weblogic-operator  Show the custom values you configured for the operator Helm release:
+$ helm get values weblogic-operator  Show all of the values your operator Helm release is using:</description>
+    </item>
+    
+    <item>
+      <title>The REST API</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/the-rest-api/</link>
+      <pubDate>Sat, 23 Feb 2019 17:08:32 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/managing-operators/using-the-operator/the-rest-api/</guid>
+      <description>Use the operator&amp;rsquo;s REST services The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations. Swagger documentation for the REST API is available here.
+You can access most of the REST services using GET, for example:
+ To obtain a list of domains, send a GET request to the URL /operator/latest/domains To obtain a list of clusters in a domain, send a GET request to the URL /operator/latest/domains/&amp;lt;domainUID&amp;gt;/clusters  All of the REST services require authentication.</description>
+    </item>
+    
+  </channel>
+</rss>
