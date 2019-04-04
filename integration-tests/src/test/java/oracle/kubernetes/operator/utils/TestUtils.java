@@ -1222,7 +1222,7 @@ public class TestUtils {
     String archiveExt = "war";
     String infoDirName = initInfoDirName;
     String domainNS = domain.getDomainNS();
-    String managedServerPort = (String) domain.getDomainMap().get("managedServerPort");
+    int managedServerPort = ((Integer) (domain.getDomainMap()).get("managedServerPort")).intValue();
     String wsServiceName = (args.length == 0) ? BaseTest.TESTWSSERVICE : args[0];
     String clusterDNS =
         domain.getDomainUid()
