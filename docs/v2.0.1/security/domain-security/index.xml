@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Domain security on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/security/domain-security/</link>
+    <description>Recent content in Domain security on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 08 Mar 2019 19:17:42 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/security/domain-security/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Docker image protection</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/security/domain-security/image-protection/</link>
+      <pubDate>Fri, 08 Mar 2019 19:00:49 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/security/domain-security/image-protection/</guid>
+      <description>WebLogic domain in Docker image protection Oracle strongly recommends storing the Docker images that contain a WebLogic domain home as private in the Docker registry. In addition to any local registry, public Docker registries include Docker Hub and the Oracle Cloud Infrastructure Registry (OCIR).
+ The WebLogic domain home that is part of a Docker image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, data source password).</description>
+    </item>
+    
+    <item>
+      <title>Channels</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/security/domain-security/weblogic-channels/</link>
+      <pubDate>Fri, 08 Mar 2019 19:07:36 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/security/domain-security/weblogic-channels/</guid>
+      <description>WebLogic T3 channels Oracle recommends not to expose any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary. If exposing any of these channels, limit access using controls like security lists or set up a Bastion to provide access.
+ When accessing T3/RMI based channels, the preferred approach is to kubectl exec into the Kubernetes pod and then run wlst or set up Bastion access and then run wlst from the Bastion host to connect to the Kubernetes cluster.</description>
+    </item>
+    
+  </channel>
+</rss>
