@@ -1242,9 +1242,10 @@ public class TestUtils {
     // Create app dir in the admin pod
     StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
     mkdirCmd.append(appLocationInPod + "'");
-    // Create app dir in the admin pod
 
+    // Create app dir in the admin pod
     kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
+
     // Create WEB-INF in the app dir
     mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
     mkdirCmd.append(appLocationInPod + "/WEB-INF'");
