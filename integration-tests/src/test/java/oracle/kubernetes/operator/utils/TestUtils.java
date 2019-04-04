@@ -1222,6 +1222,7 @@ public class TestUtils {
     String archiveExt = "war";
     String infoDirName = initInfoDirName;
     String domainNS = domain.getDomainNS();
+    String managedServerPort = (String) domain.getDomainMap().get("managedServerPort");
     String wsServiceName = (args.length == 0) ? BaseTest.TESTWSSERVICE : args[0];
     String clusterDNS =
         domain.getDomainUid()
@@ -1229,8 +1230,8 @@ public class TestUtils {
             + domain.getClusterName()
             + "."
             + domainNS
-            + ".svc.cluster.local:8001";
-
+            + ".svc.cluster.local:"
+            + managedServerPort;
     logger.info(
         "Build and deploy WebService App: "
             + appName
