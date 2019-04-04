@@ -13,8 +13,8 @@
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/../../common/utility.sh
-source ${scriptDir}/../../common/validate.sh
+source ${scriptDir}/../common/utility.sh
+source ${scriptDir}/../common/validate.sh
 
 function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
@@ -106,7 +106,7 @@ function createRCUConfigmap {
   fi
  
   # create the configmap and label it properly
-  local cmName=${domainUID}-create-ruc-sample-domain-job-cm
+  local cmName=${domainUID}-create-rcu-sample-domain-job-cm
   kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir
 
   echo Checking the configmap $cmName was created
