@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Manage domains on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/</link>
+    <description>Recent content in Manage domains on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 16:43:45 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Prepare to run a domain</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/prepare/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/prepare/</guid>
+      <description>Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
+ Create the domain namespace(s). One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.
+$ kubectl create namespace domain-namespace-1  Replace domain-namespace-1 with name you want to use. The name must follow standard Kubernetes naming conventions, that is, lower case, numbers, and hyphens.
+ Create a Kubernetes secret containing the Administration Server boot credentials.</description>
+    </item>
+    
+    <item>
+      <title>Domain resource</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-resource/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-resource/</guid>
+      <description>Use this document to set up and configure your own domain resource which can be used to configure your WLS domain. Then, you can use the domain resource to start the Kubernetes artifacts of the corresponding domain.
+Swagger documentation is available here.
+Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the resource:
+ Make sure the WebLogic operator is running. Create a Kubernetes namespace for the domain resource unless the intention is to use the default namespace.</description>
+    </item>
+    
+  </channel>
+</rss>
