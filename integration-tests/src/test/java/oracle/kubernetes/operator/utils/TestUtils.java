@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -497,20 +496,6 @@ public class TestUtils {
     if (result.exitValue() != 0) {
       throw new RuntimeException("FAILURE: command failed, returned " + result.stderr());
     }
-  }
-
-  /**
-   * The method to execute kubectl apply -f yamlFile.
-   *
-   * @param yamlFile - yaml file name
-   * @throws Exception - errors occurred while execute kubectl apply
-   */
-  public static void kubectlapply(String yamlFile) throws Exception {
-
-    StringBuffer command = new StringBuffer();
-    command.append("kubectl apply  -f ").append(yamlFile);
-    logger.info("kubectl execut with command: " + command.toString());
-    exec(command.toString());
   }
 
   public static int makeOperatorPostRestCall(Operator operator, String url, String jsonObjStr)
@@ -1202,54 +1187,5 @@ public class TestUtils {
   public static void copyFile(String fromFile, String toFile) throws Exception {
     logger.info("Copying file from  " + fromFile + " to " + toFile);
     Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
-  }
-
-  /**
-   * Method to append source file to the end of target file.
-   *
-   * @param sourceFile - source file name
-   * @param targetFile - target file name
-   * @throws Exception - IOException during FileReader or FileWrite close call
-   */
-  public static void concatFile(String sourceFile, String targetFile) throws IOException {
-    FileReader fr = null;
-    FileWriter fw = null;
-    try {
-      fr = new FileReader(sourceFile);
-      fw = new FileWriter(targetFile, true);
-      int c = fr.read();
-      while (c != -1) {
-        fw.write(c);
-        c = fr.read();
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-    } finally {
-      if (fr != null) {
-        fr.close();
-      }
-      if (fw != null) {
-        fw.close();
-      }
-    }
-  }
-
-  /**
-   * check whether a certain property(String)is included in the file
-   *
-   * @param property
-   * @param fileName
-   * @return result of above checking
-   */
-  public static boolean checkFileIncludeProperty(String property, String fileName) {
-    boolean result = false;
-    try {
-      String content = new String(Files.readAllBytes(Paths.get(fileName)));
-      result = content.indexOf(property) >= 0;
-      logger.info("the result for checkFileIncludeProperty " + fileName + " result: " + result);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return result;
   }
 }
