@@ -1,6 +1,6 @@
 # Oracle WebLogic Server Kubernetes Operator Documentation
 
-**WARNING** This directory contains the documentation for version 1.0 of the operator, which is an old release. 
+**WARNING** This directory contains the documentation for version 1.0 of the operator, which is an old release.
 
 If you wish to view documentation for the current version [please click here](..).
 
@@ -159,13 +159,13 @@ You can choose a load balancer provider for your WebLogic domains running in a K
 
 ## Shutting down a domain
 
-For information about how to shut down a domain running in Kubernetes, see [Shutting down a domain](site/shutdown-domain.md) .
+For information about how to shut down a domain running in Kubernetes, see [Shutting down a domain](shutdown-domain.md) .
 
 ## Removing a domain
 
-To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](/kubernetes/delete-weblogic-domain-resources.sh) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
+To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/delete-domain) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
 
-The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](/kubernetes/create-weblogic-domain.sh) script or the [integration tests](/src/integration-tests/bash/run.sh).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
+The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/) script or the [integration tests](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/src/integration-tests/bash).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
 
 ```
 kubectl -n <Namespace> label <ResourceType> <ResourceName> domainUID=<domainUID>

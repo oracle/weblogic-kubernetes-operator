@@ -1,6 +1,6 @@
 # Oracle WebLogic Server Kubernetes Operator Documentation
 
-**WARNING** This directory contains the documentation for version 1.1 of the operator, which is an old release. 
+**WARNING** This directory contains the documentation for version 1.1 of the operator, which is an old release.
 
 If you wish to view documentation for the current version [please click here](..).
 
@@ -153,9 +153,9 @@ For more information, see [Scaling a WebLogic cluster](scaling.md).
 ## Load balancing with an Ingress controller or a web server
 
 You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. Please refer to the following sections for information about the current capabilities and setup instructions for each of the supported load balancers.
-* [Load balancing with Voyager/HAProxy](voyager.md) 
+* [Load balancing with Voyager/HAProxy](voyager.md)
 * [Load balancing with Traefik](traefik.md)
-* [Load balancing with the Apache HTTP Server](apache.md) 
+* [Load balancing with the Apache HTTP Server](apache.md)
 
 [comment]: # (Exporting operator logs to ELK.  The operator provides an option to export its log files to the ELK stack. Please refer to [ELK integration]site/elk.md for information about this capability.)
 
@@ -165,15 +165,15 @@ For information about how to shut down a domain running in Kubernetes, see [Shut
 
 ## Removing a domain
 
-To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](/kubernetes/delete-weblogic-domain-resources.sh) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
+To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/delete-domain) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
 
-The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](/kubernetes/create-weblogic-domain.sh) script or the [integration tests](/src/integration-tests/bash/run.sh).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
+The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/) script or the [integration tests](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/src/integration-tests/bash).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
 
 ```
 kubectl -n <Namespace> label <ResourceType> <ResourceName> domainUID=<domainUID>
 ```
 
-By default, the domain's persistent volume claim and the persistent volume are created by the [Create WebLogic domain](/kubernetes/create-weblogic-domain.sh) script, and are removed by the [Delete WebLogic domain resources](/kubernetes/delete-weblogic-domain-resources.sh) script. To manually remove the persistent volume claim and the persistent volume, use these commands:
+By default, the domain's persistent volume claim and the persistent volume are created by the [Create WebLogic domain](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/) script, and are removed by the [Delete WebLogic domain resources](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/delete-domain) script. To manually remove the persistent volume claim and the persistent volume, use these commands:
 
 ```
 kubectl delete pvc PVC-NAME -n NAMESPACE
@@ -194,7 +194,7 @@ This can be achieved by following the steps below. For convenience of discussion
   -o /path/to/weblogic-operator-output-directory
 ```
 
-* Delete the domain using the [Delete WebLogic domain resources](/kubernetes/delete-weblogic-domain-resources.sh) script.
+* Delete the domain using the [Delete WebLogic domain resources](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/delete-domain) script.
 
 ```
 ./delete-weblogic-domain-resources.sh -d <domainUID>
@@ -203,8 +203,8 @@ This can be achieved by following the steps below. For convenience of discussion
 * Delete the contents of the physical volume using the appropriate tools. See the descriptions in the previous section for removing a domain.
 * Delete the contents in the `weblogic-domains/<domainUID>` directory under the output directory that is specified when the domain is originally created, which is `/path/to/weblogic-operator-output-directory` in our example.
 * Update the create WebLogic domain inputs file `create-domain-job-inputs.yaml`.
-* Recreate all resources that are labeled with the `domainUID`, but are not created by the [Create WebLogic domain](kubernetes/create-weblogic-domain.sh) script. One example of such resources is the `secret` for the domain credentials, which often is created manually and may be labeled with `domainUID`. Any resources that are not labeled with the `domainUID` are not affected because they are not deleted by the [Delete WebLogic domain resources](kubernetes/delete-weblogic-domain-resources.sh) script.
-* Recreate the domain using the [Create WebLogic domain](kubectles/create-weblogic-domain.sh) script with the updated create WebLogic domain inputs file.
+* Recreate all resources that are labeled with the `domainUID`, but are not created by the [Create WebLogic domain](kubernetes/create-weblogic-domain.sh) script. One example of such resources is the `secret` for the domain credentials, which often is created manually and may be labeled with `domainUID`. Any resources that are not labeled with the `domainUID` are not affected because they are not deleted by the [Delete WebLogic domain resources](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/delete-domain) script.
+* Recreate the domain using the [Create WebLogic domain](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/) script with the updated create WebLogic domain inputs file.
 
 If for some reason the last step fails, then repeat the steps above after deleting the failed create WebLogic domain job, using the following command. The `<output-dir>` is the directory that is specified to the create WebLogic domain script via the `-o` option, which is `/path/to/weblogic-operator-output-directory` in our example if the same command is used to recreate the domain.
 
@@ -228,7 +228,7 @@ To remove more than one operator, repeat these steps for each operator namespace
 
 # Developer guide
 
-Developers interested in this project are encouraged to read the [Developer guide](site/developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
+Developers interested in this project are encouraged to read the [Developer guide](developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
 
 Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something you would like to contribute to!
 
