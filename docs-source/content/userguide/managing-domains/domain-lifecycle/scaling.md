@@ -255,7 +255,7 @@ details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kube
 
 ### Helpful Tips
 #### Debugging scalingAction.sh
-The [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) script was designed to be executed within the
+The [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) script was designed to be executed within the
 Administration Server pod because the associated diagnostic module is targed to the Administration Server.
 
 The easiest way to verify and debug the `scalingAction.sh` script is to open a shell on the running Administration Server pod and execute the script on the command line.
@@ -263,7 +263,7 @@ The easiest way to verify and debug the `scalingAction.sh` script is to open a s
 The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
 
 * The domain home is in `/u01/oracle/user-projects/domains/domain1` (that is, the domain home is inside a Docker image).
-* The Dockerfile copied [`scalingAction.sh`](/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
+* The Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```
 > kubectl exec -it domain1-admin-server /bin/bash
