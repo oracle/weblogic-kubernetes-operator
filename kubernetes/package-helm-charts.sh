@@ -30,7 +30,9 @@ fi
 
 if [ $srctime \> $dsttime ];
 then
-  mkdir $SCRIPTPATH/../docs/charts
+  if [[ ! -e $SCRIPTPATH/../docs/charts ]]; then
+    mkdir $SCRIPTPATH/../docs/charts
+  fi
   mv -f $helm_package $SCRIPTPATH/../docs/charts/
   helm repo index $SCRIPTPATH/../docs/charts/ --url https://oracle.github.io/weblogic-kubernetes-operator/charts
 else
