@@ -36,7 +36,7 @@ Licensed under the Universal Permissive License v 1.0 as shown at http://oss.ora
 
 
         <!--filter token="WSDL_URL" value="http://${host}:${lbwebport}/${wsName}/${wsName}?WSDL" /-->
-        <filter token="WSDL_URL" value="http://${clusterDNS}/${wsName}/${wsName}?WSDL" />
+        <filter token="WSDL_URL" value="http://${clusterUrl}/${wsName}/${wsName}?WSDL" />
 
         <copy file="${wsapp.app.src.dir}/WEB-INF/weblogic_temp.xml"
               tofile="${wsapp.out.dir}/${wsName}Servlet/WEB-INF/weblogic.xml" filtering="true" overwrite="true"/>
