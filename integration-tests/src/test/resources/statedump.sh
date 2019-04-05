@@ -116,12 +116,12 @@ function state_dump {
    			fi
    			if [ "$JENKINS" = "true" ]; then
 	   			# Jenkins can only publish logs under the workspace
-				mkdir -p ${WORKSPACE}/logdir/
-				cp $ARCHIVE ${WORKSPACE}/logdir/
+				mkdir -p ${JENKINS_RESULTS_DIR}
+				cp $ARCHIVE ${JENKINS_RESULTS_DIR}
 				if [ "$?" = "0" ]; then
-	   				echo Copy complete. Archive $ARCHIVE copied to ${WORKSPACE}/logdir/
+	   				echo Copy complete. Archive $ARCHIVE copied to ${JENKINS_RESULTS_DIR}
 	   			else 
-	   				echo Failed to copy archive $ARCHIVE to ${WORKSPACE}/logdir/
+	   				echo Failed to copy archive $ARCHIVE to ${JENKINS_RESULTS_DIR}
 	   			fi
 	   		fi
 	 	else
@@ -155,7 +155,11 @@ function state_dump {
   rm -rf ${RESULT_DIR}/samples
   
   # now archive all the local test files
-  $SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
+  if [ "$JENKINS" = "true" ]; then
+  	$SCRIPTPATH/archive.sh "${RESULT_DIR}" "${JENKINS_RESULTS_DIR}"
+  else 
+  	$SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
+  fi
   
   echo Done with state dump
 }

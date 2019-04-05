@@ -38,17 +38,12 @@ function archive {
   [ $? -eq 0 ] || fail "Could not archive, 'jar cf $ARCHIVE $SOURCE_DIR' command failed: `cat $OUTFILE`"
   rm -f $OUTFILE
 
-  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite*jar" | sort -r | awk '{ if (NR>10) print $NF }' | xargs rm -f
-  if [ "$JENKINS" = "true" ]; then
-  	# Jenkins can only publish logs under the workspace
-	mkdir -p ${WORKSPACE}/logdir/
-	cp $ARCHIVE ${WORKSPACE}/logdir/
-	if [ "$?" = "0" ]; then
-		echo Copy complete. Archive $ARCHIVE copied to ${WORKSPACE}/logdir/
-	else 
-		echo Failed to copy archive $ARCHIVE to ${WORKSPACE}/logdir/
-	fi
+  # Jenkins log cleanup is managed on Jenkins job config
+  if [ ! "$JENKINS" = "true" ]; then
+	  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite.${IT_CLASS}.PV.*jar" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm -f
+	  find $ARCHIVE_DIR -maxdepth 1 -name "IntSuite.${IT_CLASS}.TMP.*jar" | sort -r | awk '{ if (NR>5) print $NF }' | xargs rm -f
   fi
+ 
    
   trace Archived to \'$ARCHIVE\'.
 }
