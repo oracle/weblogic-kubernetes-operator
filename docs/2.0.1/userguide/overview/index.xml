@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Overview on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/userguide/overview/</link>
+    <description>Recent content in Overview on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 16:43:10 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/userguide/overview/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Prepare your environment</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/overview/prepare/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/overview/prepare/</guid>
+      <description>Set up your Kubernetes cluster If you need help setting up a Kubernetes environment, check our cheat sheet.
+After creating Kubernetes clusters, you can optionally:
+ Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs.  Load balance with an Ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster.</description>
+    </item>
+    
+    <item>
+      <title>Set up Kubernetes</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/overview/k8s-setup/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/overview/k8s-setup/</guid>
+      <description>Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Google, or Amazon. Cloud providers allow you to provision a managed Kubernetes environment from their management consoles. You could also set up Kubernetes manually using compute resources on a cloud.</description>
+    </item>
+    
+    <item>
+      <title>Run a database</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/overview/database/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/overview/database/</guid>
+      <description>Run the Oracle database in Kubernetes If you wish to run the Oracle database inside your Kubernetes cluster, in order to place your state store, leasing tables, and such, in that database, then you can use this sample to install the database.
+You must configure your database to store its DB files on persistent storage. Refer to your cloud vendor&amp;rsquo;s documentation for details of available storage providers and how to create a persistent volume and attach it to a pod.</description>
+    </item>
+    
+  </channel>
+</rss>
