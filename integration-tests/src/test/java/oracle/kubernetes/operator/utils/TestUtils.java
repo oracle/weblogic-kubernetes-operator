@@ -211,9 +211,20 @@ public class TestUtils {
   public static ExecResult exec(String cmd) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
-      logger.info("Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
+      logger.info(
+          "Command "
+              + cmd
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
       throw new RuntimeException(
-          "FAILURE: Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
+          "FAILURE: Command "
+              + cmd
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
     }
     return result;
   }
