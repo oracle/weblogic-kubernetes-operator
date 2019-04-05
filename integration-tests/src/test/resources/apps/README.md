@@ -93,11 +93,11 @@
 
 3) `[wsName].war` and `[wsName]Servlet.war` files are created at `/u01/oracle/apps/[appName]` in the admin pod
      
-       sh buildDeployWSAndWSClientAppInPod.sh node-hostname node-port username password dir-in-pod-to-save-app-files appname deploy-target clusterdns wsname
+       sh buildDeployWSAndWSClientAppInPod.sh node-hostname node-port username password dir-in-pod-to-save-app-files appname deploy-target clusterurl wsname
         
       for example: for appName=testwsapp, wsName=TestWSApp:
            
-          buildDeployWSAndWSClientAppInPod.sh slc13kef.us.oracle.com 30701 weblogic welcome1 /u01/oracle/apps/testwsapp testwsapp cluster-1 domainonpvwlst-cluster-cluster-1.default.svc.cluster.local:8001 TestWSApp
+          buildDeployWSAndWSClientAppInPod.sh slc13kef.us.oracle.com 30701 weblogic welcome1 /u01/oracle/apps/testwsapp testwsapp cluster-1 10.111.78.193:8001 TestWSApp
         
           a. Create directories to save the binaries
           b. Compile java files ( TestWSApp.java, TestWSAppServlet.java)
