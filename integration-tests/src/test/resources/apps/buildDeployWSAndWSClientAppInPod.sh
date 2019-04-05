@@ -28,7 +28,7 @@ PASSWORD=${4:-welcome1}
 APP_DIR_INPOD=$5
 APP_NAME=$6
 DEPLOY_TARGET=$7
-CLUSTER_DNS=$8
+CLUSTER_URL=$8
 WS_NAME=$9
 ARCHIVE_FILE_WS=${APP_DIR_INPOD}/${WS_NAME}.war
 ARCHIVE_FILE_SERVLET=${APP_DIR_INPOD}/${WS_NAME}Servlet.war
@@ -47,7 +47,7 @@ cd ${APP_DIR_INPOD}
 
 echo -e "calling ant to build webservice and it's servlet client"
 
-ant build -Dhost=${HOST}  -DclusterDNS=${CLUSTER_DNS} -DappLocationInPod=${PWD} -DwsName=${WS_NAME} -DappName=${APP_NAME}
+ant build -Dhost=${HOST}  -DclusterUrl=${CLUSTER_URL} -DappLocationInPod=${PWD} -DwsName=${WS_NAME} -DappName=${APP_NAME}
 cp ${APP_DIR_INPOD}/buildfiles/${WS_NAME}.war ${APP_DIR_INPOD}/.
 cp ${APP_DIR_INPOD}/buildfiles/${WS_NAME}Servlet.war ${APP_DIR_INPOD}/.
 

@@ -1258,7 +1258,7 @@ public class TestUtils {
     int managedServerPort = ((Integer) (domain.getDomainMap()).get("managedServerPort")).intValue();
     String wsServiceName = (args.length == 0) ? BaseTest.TESTWSSERVICE : args[0];
     /*
-    String clusterDNS =
+    String clusterURL =
         domain.getDomainUid()
             + "-cluster-"
             + domain.getClusterName()
@@ -1267,7 +1267,7 @@ public class TestUtils {
             + ".svc.cluster.local:"
             + managedServerPort;
             */
-    String clusterDNS =
+    String clusterURL =
         retrieveClusterIP(domain.getDomainUid(), domain.getClusterName(), domainNS)
             + ":"
             + managedServerPort;
@@ -1305,6 +1305,6 @@ public class TestUtils {
 
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(
-        appName, scriptName, username, password, clusterDNS, wsServiceName);
+        appName, scriptName, username, password, clusterURL, wsServiceName);
   }
 }
