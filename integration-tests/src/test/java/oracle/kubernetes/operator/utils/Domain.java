@@ -488,7 +488,6 @@ public class Domain {
           .append(domainUid)
           .append(".org' ")
           .append(testAppUrl.toString());
-
       // curl cmd to get response code
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
       curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
