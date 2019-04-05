@@ -43,3 +43,4 @@ release.properties
 dependency-reduced-pom.xml
 *.ipr
 *.iws
+docs-source/docs
