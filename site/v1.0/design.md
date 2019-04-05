@@ -1,4 +1,4 @@
-> **WARNING** This documentation is for version 1.0 of the operator.  To view documenation for the current release, [please click here](/site).
+> **WARNING** This documentation is for version 1.0 of the operator.  To view documentation for the current release, [please click here](/site).
 
 # Design philosophy
 
