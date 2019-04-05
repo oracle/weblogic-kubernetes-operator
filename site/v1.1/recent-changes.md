@@ -1,4 +1,4 @@
-> **WARNING** This documentation is for version 1.1 of the operator.  To view documenation for the current release, [please click here](/site).
+> **WARNING** This documentation is for version 1.1 of the operator.  To view documentation for the current release, [please click here](/site).
 
 # Recent changes to the Oracle WebLogic Server Kubernetes Operator
 
@@ -7,8 +7,8 @@ This document tracks recent changes to the operator, especially ones that introd
 ## Release 1.1
 
 ###### Changes:
-* Improvements to documentation that describe how to scale a WebLogic cluster. 
-* Add documentation to list steps needed to restart domain when changes have been made to the domain properties. 
+* Improvements to documentation that describe how to scale a WebLogic cluster.
+* Add documentation to list steps needed to restart domain when changes have been made to the domain properties.
 * Operator resumes processing after Domain resource deleted and recreated.
 * Corrected WebLogic cluster instability when `startupControl` is set to `"ALL"`.
 * Expose server name via javaOptions.
@@ -24,7 +24,7 @@ This document tracks recent changes to the operator, especially ones that introd
 ## Release 1.0
 
 ###### Changes:
-* Added support for dynamic clusters. 
+* Added support for dynamic clusters.
 * Added support for Apache HTTP Server, the Voyager Ingress Controller.
 * Added support for PV in NFS storage for multi-node environments.
 

@@ -32,7 +32,7 @@ Currently, we recommend that you use NFS version 3.0 for running WebLogic Server
 
 Persistent volumes and claims are described in YAML files. For each persistent volume, you should create one persistent volume YAML file and one persistent volume claim YAML file. In the example below, you will find two YAML templates, one for the volume and one for the claim. As stated above, they either can be dedicated to a specific domain, or shared across multiple domains. For the use cases where a volume will be dedicated to a particular domain, it is a best practice to label it with `weblogic.domainUID=[domain name]`. This makes it easy to search for, and clean up resources associated with that particular domain.
 
-For sample YAML templates, refer to the [Persistent volumes example](../kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md).
+For sample YAML templates, refer to the [Persistent volumes example](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/README.md).
 
 # Kubernetes resources
 
