@@ -14,6 +14,7 @@ Wercker runs only Quick test use cases, Jenkins runs both Quick and Full test us
 
 # Use Cases
 
+<<<<<<< HEAD
 Java integration tests cover the below use cases:
 
 Quick test Configuration & Use Cases - 
@@ -110,6 +111,8 @@ Configuration Overrides Usecases
 | Liveness probe | restart Operator and verify the liveness probe by killing all managed servers in the cluster |
 | Liveness probe | Verify the liveness probe by killing a managed server |  
 
+Use Cases covered in integration tests for the operator is available [here](USECASES.MD)
+
 # Directory Configuration and Structure
  
 Directory structure of source code:
@@ -192,7 +195,7 @@ externalRestEnabled: true
 javaLoggingLevel: FINE
 ```
 
-src/integration-tests/resources/domainonpvwlst.yaml - input/customized properties for PV/Load Balancer/WebLogic Domain. Any property can be provided here from kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml and kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml. For all the properties that are not defined here, the default values in the sample inputs are used while generating inputs yaml.
+src/integration-tests/resources/domainonpvwlst.yaml - See [Input Yaml to the test](#input-yaml-to-the-test). For all the properties that are not defined here, the default values in the sample inputs are used while generating inputs yaml.
 
 ```
 adminServerName: admin-server
@@ -211,7 +214,25 @@ namespace: default
 
 Certain properties like weblogicDomainStoragePath, image, externalOperatorCert are populated at run time.
 
+# Input Yaml to the test
 
+The input yaml file(for example, domainonpvwlst.yaml) to the java test is used to override any or all the attributes in
+- samples domain inputs - click [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml) to see samples create-domain-inputs file
+- PV/PVC inputs - click [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml) to see PV/PVC inputs file
+- load balancer attributes and
+- custom attributes that are used to provide more flexibility for creating the domain.
+
+Below are the load balancer attributes:
+- loadBalancer: value can be `TRAEFIK` or `VOYAGER`, default is `TRAEFIK`
+- loadBalancerWebPort: web port for the load balancer
+- ingressPerDomain: create ingress per domain or one ingress for all domains in multiple domain configuration, default is true. 
+
+**Note: System env variables LB_TYPE, INGRESSPERDOMAIN take precedence over the domain input attributes. These variables apply for the entire run, not just one domain.**
+
+Below are the custom attributes:
+- createDomainPyScript is used to provide a custom create-domain.py script for domain on pv using WLST or create-wls-domain.py for domain in image 
+- clusterType is used to create a CONFIGURED or DYNAMIC Cluster. Default is DYNAMIC. This is supported for domain on pv using WLST or domain in image using WDT configurations. 
+  
 # How does it work
 
 When the tests are run with mvn command, 

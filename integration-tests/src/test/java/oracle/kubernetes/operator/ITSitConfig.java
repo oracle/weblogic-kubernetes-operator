@@ -112,12 +112,13 @@ public class ITSitConfig extends BaseTest {
   }
 
   /**
-   * This test covers custom configuration override use cases for config.xml.
+   * This test covers custom configuration override use cases for config.xml for administration
+   * server.
    *
    * <p>The test checks the overridden config.xml attributes connect-timeout, max-message-size,
    * restart-max, JMXCore and ServerLifeCycle debug flags, the T3Channel public address. The
-   * overridden are verified against the ServerConfig MBean tree. It does not verifies whether the
-   * overridden values are applied to the runtime.
+   * overridden values are verified against the ServerConfig MBean tree. It does not verifies
+   * whether the overridden values are applied to the runtime.
    *
    * @throws Exception when the assertion fails due to unmatched values
    */
@@ -137,6 +138,36 @@ public class ITSitConfig extends BaseTest {
                 + " weblogic welcome1 "
                 + testMethod
                 + "'");
+    assertResult(result);
+    testCompletedSuccessfully = true;
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  /**
+   * This test covers custom configuration override use cases for config.xml for managed server.
+   *
+   * <p>The test checks the overridden config.xml server template attribute max-message-size. The
+   * overridden values are verified against the ServerConfig MBean tree. It does not verifies
+   * whether the overridden values are applied to the runtime.
+   *
+   * @throws Exception when the assertion fails due to unmatched values
+   */
+  @Test
+  public void testCustomSitConfigOverridesForDomainMS() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    boolean testCompletedSuccessfully = false;
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh "
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + " managed-server1'");
     assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
