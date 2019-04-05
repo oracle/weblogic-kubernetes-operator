@@ -1190,6 +1190,39 @@ public class TestUtils {
   }
 
   /**
+   * retrieve IP address info for cluster service.
+   *
+   * @param domainUID - name of domain.
+   * @param clusterName - name Web Logic cluster
+   * @param domainNS - domain namespace
+   * @throws Exception - exception will be thrown if kubectl command will fail
+   */
+  public static String retrieveClusterIP(String domainUID, String clusterName, String domainNS)
+      throws Exception {
+    // kubectl get service domainonpvwlst-cluster-cluster-1 | grep ClusterIP | awk '{print $3}'
+    StringBuffer cmd = new StringBuffer("kubectl get service ");
+    cmd.append(domainUID);
+    cmd.append("-cluster-");
+    cmd.append(clusterName);
+    cmd.append(" -n ").append(domainNS);
+    cmd.append(" | grep ClusterIP | awk '{print $3}' ");
+    logger.info(
+        " Get ClusterIP for "
+            + clusterName
+            + " in namespace "
+            + domainNS
+            + " with command: '"
+            + cmd
+            + "'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String stdout = result.stdout();
+    logger.info(" ClusterIP for cluster: " + clusterName + " found: ");
+    logger.info(stdout);
+    return stdout;
+  }
+
+  /**
    * Create dir to save Web Service App files. Copy the shell script file and all App files over to
    * the admin pod Run the shell script to build WARs files and deploy the Web Service App and it's
    * client Servlet App in the admin pod
@@ -1224,6 +1257,7 @@ public class TestUtils {
     String domainNS = domain.getDomainNS();
     int managedServerPort = ((Integer) (domain.getDomainMap()).get("managedServerPort")).intValue();
     String wsServiceName = (args.length == 0) ? BaseTest.TESTWSSERVICE : args[0];
+    /*
     String clusterDNS =
         domain.getDomainUid()
             + "-cluster-"
@@ -1231,6 +1265,11 @@ public class TestUtils {
             + "."
             + domainNS
             + ".svc.cluster.local:"
+            + managedServerPort;
+            */
+    String clusterDNS =
+        retrieveClusterIP(domain.getDomainUid(), domain.getClusterName(), domainNS)
+            + ":"
             + managedServerPort;
     logger.info(
         "Build and deploy WebService App: "
