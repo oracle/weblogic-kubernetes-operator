@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Introduction on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/</link>
+    <description>Recent content in Introduction on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 16:43:10 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/userguide/introduction/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Get started</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/introduction/</link>
+      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/introduction/</guid>
+      <description>An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The Oracle WebLogic Server Kubernetes Operator follows the standard Kubernetes operator pattern, and simplifies the management and operation of WebLogic domains and deployments.
+You can have one or more operators in your Kubernetes cluster that manage one or more WebLogic domains each. We provide a Helm chart to manage the installation and configuration of the operator.</description>
+    </item>
+    
+    <item>
+      <title>Demo</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/demo/</link>
+      <pubDate>Sat, 23 Feb 2019 20:51:59 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/demo/</guid>
+      <description>This video provides a demonstration of the WebLogic Server Kubernetes Operator.
+   This video provides a demonstration of the WebLogic Server Kubernetes Operator.</description>
+    </item>
+    
+    <item>
+      <title>Architecture</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/architecture/</link>
+      <pubDate>Sat, 23 Feb 2019 20:51:45 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/architecture/</guid>
+      <description>The operator consists of the following parts:
+ The operator runtime, a process that runs in a Docker container deployed into a Kubernetes pod and which performs the actual management tasks. The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains. A Helm chart for installing the operator runtime and related resources.</description>
+    </item>
+    
+    <item>
+      <title>Design philosophy</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/design/</link>
+      <pubDate>Sat, 23 Feb 2019 20:51:51 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/introduction/design/</guid>
+      <description>The Oracle WebLogic Server Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment. It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
+Human operators are normally responsible for starting and stopping environments, initiating backups, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.</description>
+    </item>
+    
+  </channel>
+</rss>

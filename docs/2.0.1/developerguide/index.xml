@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Developer Guide on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/developerguide/</link>
+    <description>Recent content in Developer Guide on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 22 Feb 2019 15:27:54 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/developerguide/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Requirements</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/requirements/</link>
+      <pubDate>Sat, 23 Feb 2019 17:19:19 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/requirements/</guid>
+      <description>In addition to the requirements listed in the User guide, the following software is also required to obtain and build the operator:
+ Git (1.8 or later recommended) Java Developer Kit (1.8u131 or later recommended; please use 1.8, tests will not work on 1.9 or later versions) Apache Maven (3.3 or later recommended)  The operator is written primarily in Java, BASH shell scripts, and WLST scripts. The Java code uses features introduced in Java 1.</description>
+    </item>
+    
+    <item>
+      <title>Building</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/building/</link>
+      <pubDate>Sat, 23 Feb 2019 17:19:24 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/building/</guid>
+      <description>The operator is built using Apache Maven. The build machine will also need to have Docker installed.
+To build the operator, issue the following command in the project directory:
+$ mvn clean install  This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.
+Contributions must conform to coding and formatting standards.</description>
+    </item>
+    
+    <item>
+      <title>Integration tests</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/integration-tests/</link>
+      <pubDate>Sat, 23 Feb 2019 17:23:22 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/integration-tests/</guid>
+      <description>The project includes integration tests that can be run against a Kubernetes cluster. If you want to use these tests, you will need to provide your own Kubernetes cluster. The Kubernetes cluster must meet the version number requirements and have Helm installed. Ensure that the operator Docker image is in a Docker registry visible to the Kubernetes cluster.
+You will need to obtain the kube.config file for an administrative user and make it available on the machine running the build.</description>
+    </item>
+    
+    <item>
+      <title>Branching</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/branching/</link>
+      <pubDate>Sat, 23 Feb 2019 17:19:29 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/branching/</guid>
+      <description>The master branch is protected and contains source for the most recently published release, including release candidates.
+The develop branch is protected and contains source for the latest completed features and bug fixes. While this branch contains active work, we expect to keep it always &amp;ldquo;ready to release.&amp;rdquo; Therefore, longer running feature work will be performed on specific branches, such as feature/dynamic-clusters.
+Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to develop when these smaller work items are completed.</description>
+    </item>
+    
+    <item>
+      <title>Coding standards</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/coding-standards/</link>
+      <pubDate>Sat, 23 Feb 2019 17:24:10 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/coding-standards/</guid>
+      <description>This project has adopted the following coding standards:
+ Code will be formated using Oracle / WebLogic standards, which are identical to the Google Java Style. Javadoc must be provided for all public packages, classes, and methods, and must include all parameters and returns. Javadoc is not required for methods that override or implement methods that are already documented. All non-trivial methods should include LOGGER.entering() and LOGGER.exiting() calls. The LOGGER.</description>
+    </item>
+    
+    <item>
+      <title>Code structure</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/code-structure/</link>
+      <pubDate>Sat, 23 Feb 2019 17:25:04 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/code-structure/</guid>
+      <description>This project has the following directory structure:
+ docs: Generated Javadoc and Swagger integration-tests: Integration test suite json-schema: Java model to JSON schema generator json-schema-maven-plugin: Maven plugin for schema generator kubernetes/charts: Helm charts kubernetes/samples: All samples, including for WebLogic domain creation model: Domain resource Java model operator: Operator runtime site: This documentation src/scripts: Scripts operator injects into WebLogic server instance Pods swagger: Swagger files for the Kubernetes API server and domain resource  Watch package The Watch API in the Kubernetes Java client provides a watch capability across a specific list of resources for a limited amount of time.</description>
+    </item>
+    
+    <item>
+      <title>Asynchronous call model</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/asynchronous-call-model/</link>
+      <pubDate>Sat, 23 Feb 2019 17:20:00 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/asynchronous-call-model/</guid>
+      <description>Our expectation is that customers will task the operator with managing hundreds of WebLogic domains across dozens of Kubernetes namespaces. Therefore, we have designed the operator with an efficient user-level threads pattern. We&amp;rsquo;ve used that pattern to implement an asynchronous call model for Kubernetes API requests. This call model has built-in support for timeouts, retries with exponential back-off, and lists that exceed the requested maximum size using the continuance functionality.</description>
+    </item>
+    
+    <item>
+      <title>Domain processing</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/domain-processing/</link>
+      <pubDate>Sat, 23 Feb 2019 17:20:20 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/domain-processing/</guid>
+      <description>When the operator starts, it lists all existing Domain resources and processes these domains to create the necessary Kubernetes resources, such as Pods and Services, if they don&amp;rsquo;t already exist. This initialization also includes looking for any stranded resources that, while created by the operator, no longer correlate with a Domain resource.
+After this, the operator starts watches for changes to Domain resources and any changes to other resources created by the operator.</description>
+    </item>
+    
+    <item>
+      <title>Documentation</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/documentation/</link>
+      <pubDate>Tue, 19 Mar 2019 07:13:22 -0400</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/documentation/</guid>
+      <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
+ Clone the repository if you have not already
+git clone https://github.com/oracle/weblogic-kubernetes-operator  Create a new branch from master
+git checkout master git pull origin master git checkout -b your-branch  Make your documentation updates by editing the source files in docs-source/content. Make sure you only check in the changes from the docs-source/content area; do not build the site and check in the static files.</description>
+    </item>
+    
+    <item>
+      <title>Backward compatibility</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/developerguide/backwards-compatibility/</link>
+      <pubDate>Sat, 23 Feb 2019 17:26:09 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/developerguide/backwards-compatibility/</guid>
+      <description>Starting with the 2.0 release, future operator releases must be backward compatible with respect to the domain resource schema, operator Helm chart input values, configuration overrides template, Kubernetes resources created by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We will maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be maintained for one release after a replacement is available.</description>
+    </item>
+    
+  </channel>
+</rss>
