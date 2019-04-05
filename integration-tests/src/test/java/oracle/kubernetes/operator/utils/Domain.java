@@ -874,9 +874,9 @@ public class Domain {
   /**
    * Verify domain server pods get restarted after a property change.
    *
-   * @param oldPropertyString
-   * @param newPropertyString
-   * @throws Exception
+   * @param oldPropertyString - the old property value
+   * @param newPropertyString - the new property value
+   * @throws Exception - IOException or errors occurred if the tested server is not restarted
    */
   public void verifyDomainServerPodRestart(String oldPropertyString, String newPropertyString)
       throws Exception {
@@ -969,13 +969,12 @@ public class Domain {
   }
 
   /**
-   * verify domain server pods get restarted after the property change by kubectl apply -f new
-   * domain yaml file with added/changed property
+   * Verify domain server pods get restarted after the property change by kubectl apply -f new
+   * domain yaml file with added/changed property.
    *
    * @param fileNameWithChangedProperty - the fragment of domain yaml file with new added property
    *     change
-   * @throws Exception - IOException when file is copied or errors occurred if the tested server is
-   *     not restarted
+   * @throws Exception - IOException or errors occurred if the tested server is not restarted
    */
   public void verifyDomainServerPodRestart(String fileNameWithChangedProperty) throws Exception {
     logger.info("Inside testDomainServerPodRestart domainYamlWithChangedProperty");
