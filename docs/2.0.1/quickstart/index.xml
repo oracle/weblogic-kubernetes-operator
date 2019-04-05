@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Quick Start on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/quickstart/</link>
+    <description>Recent content in Quick Start on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 22 Feb 2019 15:27:38 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/quickstart/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Introduction</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/quickstart/introduction/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/quickstart/introduction/</guid>
+      <description>Use this Quick Start guide to create a WebLogic deployment in a Kubernetes cluster with the Oracle WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
+Important note for users of operator releases before 2.0   Click here to expand   If you have an older version of the operator installed on your cluster, for example, a 1.</description>
+    </item>
+    
+    <item>
+      <title>Prerequisites</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/quickstart/prerequisites/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/quickstart/prerequisites/</guid>
+      <description>For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our cheat sheet. This guide assumes a single node cluster.
+The operator uses Helm to create and deploy the necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see Install Helm and Tiller.
+You should clone this repository to your local machine so that you have access to the various sample files mentioned throughout this guide:</description>
+    </item>
+    
+    <item>
+      <title>Get images</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/quickstart/get-images/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/quickstart/get-images/</guid>
+      <description>Get these images and put them into your local registry.  If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store and accept the license agreement for the WebLogic Server image.
+ Log in to the Docker store from your Docker client:
+$ docker login  Pull the operator image:
+$ docker pull oracle/weblogic-kubernetes-operator:2.0.1  Pull the Traefik load balancer image:
+$ docker pull traefik:1.</description>
+    </item>
+    
+    <item>
+      <title>Install the operator and load balancer</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/quickstart/install/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/quickstart/install/</guid>
+      <description>Grant the Helm service account the cluster-admin role. $ cat &amp;lt;&amp;lt;EOF | kubectl apply -f - apiVersion: rbac.authorization.k8s.io/v1 kind: ClusterRoleBinding metadata: name: helm-user-cluster-admin-role roleRef: apiGroup: rbac.authorization.k8s.io kind: ClusterRole name: cluster-admin subjects: - kind: ServiceAccount name: default namespace: kube-system EOF  Create a Traefik (Ingress-based) load balancer. Use helm to install the Traefik load balancer. Use the values.yaml in the sample but set kubernetes.namespaces specifically.
+$ helm install stable/traefik \ --name traefik-operator \ --namespace traefik \ --values kubernetes/samples/charts/traefik/values.</description>
+    </item>
+    
+    <item>
+      <title>Prepare for a domain</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/quickstart/prepare/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/quickstart/prepare/</guid>
+      <description> Create a namespace that can host one or more domains:
+$ kubectl create namespace sample-domain1-ns  Use helm to configure the operator to manage domains in this namespace:
+$ helm upgrade \ --reuse-values \ --set &amp;quot;domainNamespaces={sample-domain1-ns}&amp;quot; \ --wait \ sample-weblogic-operator \ kubernetes/charts/weblogic-operator  Configure Traefik to manage Ingresses created in this namespace:
+$ helm upgrade \ --reuse-values \ --set &amp;quot;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;quot; \ --wait \ traefik-operator \ stable/traefik   </description>
+    </item>
+    
+    <item>
+      <title>Create a domain</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/quickstart/create-domain/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/quickstart/create-domain/</guid>
+      <description>Create a Kubernetes secret containing the username and password for the domain using the create-weblogic-credentials script:
+$ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \ -u weblogic -p welcome1 -n sample-domain1-ns -d sample-domain1  The sample will create a secret named domainUID-weblogic-credentials where the domainUID is replaced with the value you provided. For example, the command above would create a secret named sample-domain1-weblogic-credentials.
+ Create a new image with a domain home by running the create-domain script.</description>
+    </item>
+    
+    <item>
+      <title>Clean up</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/quickstart/cleanup/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/quickstart/cleanup/</guid>
+      <description>Remove the domain.  Remove the domain&amp;rsquo;s Ingress by using helm:
+$ helm delete --purge sample-domain1-ingress  Remove the domain resources by using the sample delete-weblogic-domain-resources script:
+$ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1  Use kubectl to confirm that the server pods and domain resource are gone:
+$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns   Remove the domain namespace.  Configure the Traefik load balancer to stop managing the Ingresses in the domain namespace:</description>
+    </item>
+    
+  </channel>
+</rss>
