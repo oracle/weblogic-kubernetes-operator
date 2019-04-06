@@ -14,7 +14,6 @@ Wercker runs only Quick test use cases, Jenkins runs both Quick and Full test us
 
 # Use Cases
 
-<<<<<<< HEAD
 Java integration tests cover the below use cases:
 
 Quick test Configuration & Use Cases - 
