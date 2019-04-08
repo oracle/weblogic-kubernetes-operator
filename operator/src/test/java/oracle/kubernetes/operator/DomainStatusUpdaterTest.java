@@ -34,7 +34,6 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
 import oracle.kubernetes.operator.helpers.BodyMatcher;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.utils.RandomStringGenerator;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -78,8 +77,8 @@ public class DomainStatusUpdaterTest {
 
     domain.setStatus(new DomainStatus());
 
-    info.getServers().putIfAbsent("server1", createServerKubernetesObjects("server1"));
-    info.getServers().putIfAbsent("server2", createServerKubernetesObjects("server2"));
+    defineServerPod("server1");
+    defineServerPod("server2");
     testSupport.addDomainPresenceInfo(info);
     testSupport
         .createCannedResponse("replaceDomain")
@@ -103,12 +102,6 @@ public class DomainStatusUpdaterTest {
     public boolean matches(Object actualBody) {
       return recordBody(actualBody);
     }
-  }
-
-  private ServerKubernetesObjects createServerKubernetesObjects(String serverName) {
-    ServerKubernetesObjects sko = new ServerKubernetesObjects();
-    sko.getPod().set(new V1Pod().metadata(createPodMetadata(serverName)).spec(new V1PodSpec()));
-    return sko;
   }
 
   private V1ObjectMeta createPodMetadata(String serverName) {
@@ -171,7 +164,7 @@ public class DomainStatusUpdaterTest {
   }
 
   private V1Pod getPod(String serverName) {
-    return info.getServers().get(serverName).getPod().get();
+    return info.getServerPod(serverName);
   }
 
   @Test
@@ -252,6 +245,10 @@ public class DomainStatusUpdaterTest {
 
   @Test
   public void whenStatusUnchanged_statusStepDoesNotUpdateDomain() {
+    info = new DomainPresenceInfo(domain);
+    testSupport.addDomainPresenceInfo(info);
+    defineServerPod("server1");
+
     domain.setStatus(
         new DomainStatus()
             .withServers(
@@ -266,7 +263,6 @@ public class DomainStatusUpdaterTest {
                 new DomainCondition(Available)
                     .withStatus("True")
                     .withReason(SERVERS_READY_REASON)));
-    info.getServers().remove("server2");
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
@@ -513,8 +509,16 @@ public class DomainStatusUpdaterTest {
   }
 
   private void definePodWithCluster(String serverName, String clusterName) {
-    info.getServers().putIfAbsent(serverName, createServerKubernetesObjects(serverName));
+    defineServerPod(serverName);
     setClusterAndNodeName(getPod(serverName), clusterName, serverName);
+  }
+
+  private void defineServerPod(String serverName) {
+    info.setServerPod(serverName, createPod(serverName));
+  }
+
+  private V1Pod createPod(String serverName) {
+    return new V1Pod().metadata(createPodMetadata(serverName)).spec(new V1PodSpec());
   }
 
   @Test
