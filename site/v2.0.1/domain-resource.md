@@ -15,7 +15,7 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 
 Domain resources are defined using the domain resource YAML files. For each WLS domain you want to create and configure, you should create one domain resource YAML file and apply it. In the example referenced below, the sample script, `create-domain.sh`, generates a domain resource YAML file that you can use as a basis. Copy the file and override the default settings so that it matches all the WLS domain parameters that define your WLS domain.
 
-See the [WebLogic sample domain home on a persistent volume README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md).
+See the [WebLogic sample domain home on a persistent volume README](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README.md).
 
 # Kubernetes resources
 

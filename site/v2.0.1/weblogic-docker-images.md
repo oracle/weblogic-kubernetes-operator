@@ -105,7 +105,7 @@ run WebLogic 12.2.1.3 in Kubernetes using the operator.
 ## Creating a custom image with your domain inside the image
 
 You can also create a Docker image with the WebLogic domain inside the image.
-[Samples](/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md)
+[Samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md)
 are provided that demonstrate how to create the image using:
 
 * WLST to define the domain, or
