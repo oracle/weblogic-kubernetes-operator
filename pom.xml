@@ -70,6 +70,10 @@
                 <requireMavenVersion>
                   <version>${maven.version.range}</version>
                 </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>${java.version.range}</version>
+                </requireJavaVersion>
+                <requirePluginVersions></requirePluginVersions>
               </rules>
             </configuration>
           </execution>
@@ -79,6 +83,26 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
         <version>${maven-release-plugin-version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>${maven-clean-plugin-version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>${maven-install-plugin-version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>${maven-site-plugin-version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin-version}</version>
       </plugin>
 
       <plugin>
@@ -490,6 +514,12 @@
         <type>maven-plugin</type>
       </dependency>
       <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>${exec-maven-plugin-version}</version>
@@ -533,6 +563,7 @@
   </dependencies>
 
   <properties>
+    <java.version.range>11</java.version.range>
     <maven.version.range>[3.5.2,)</maven.version.range>
     <maven-enforcer-plugin-version>3.0.0-M2</maven-enforcer-plugin-version>
     <maven-clean-plugin-version>3.1.0</maven-clean-plugin-version>
@@ -548,6 +579,7 @@
     <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.1.0</maven-javadoc-plugin-version>
     <maven-failsafe-plugin-version>3.0.0-M3</maven-failsafe-plugin-version>
+    <maven-dependency-plugin-version>3.1.1</maven-dependency-plugin-version>
     <exec-maven-plugin-version>1.6.0</exec-maven-plugin-version>
     <swagger-core-version>1.5.22</swagger-core-version>
     <jodatime-version>2.10.1</jodatime-version>
