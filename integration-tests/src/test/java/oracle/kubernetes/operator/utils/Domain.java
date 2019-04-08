@@ -815,13 +815,13 @@ public class Domain {
   }
 
   /**
-   * verify domain server pods get restarted after a property change
+   * Verify domain server pods get restarted after a property change.
    *
-   * @param oldPropertyString
-   * @param newPropertyString
-   * @throws Exception
+   * @param oldPropertyString - the old property value
+   * @param newPropertyString - the new property value
+   * @throws Exception - IOException or errors occurred if the tested server is not restarted
    */
-  public void testDomainServerPodRestart(String oldPropertyString, String newPropertyString)
+  public void verifyDomainServerPodRestart(String oldPropertyString, String newPropertyString)
       throws Exception {
     logger.info("Inside testDomainServerPodRestart");
     String content =
@@ -869,6 +869,91 @@ public class Domain {
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml");
     }
     logger.info("Done - testDomainServerPodRestart");
+  }
+
+  /**
+   * Get runtime server yaml file and verify the changed property is in that file.
+   *
+   * @param changedProperty - the changed/added property
+   * @param serverName - server name that is being tested
+   * @throws Exception - test FAILURE Exception if the changed property is not found in the server
+   *     yaml file
+   */
+  public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
+    logger.info("Inside findServerPropertyChange");
+    // get runtime server pod yaml file
+    String outDir = BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/";
+    StringBuffer command = new StringBuffer();
+    command
+        .append("kubectl get po/")
+        .append(
+            domainUid
+                + "-"
+                + serverName
+                + " -o yaml -n "
+                + domainNS
+                + "|"
+                + "grep "
+                + "\""
+                + changedProperty
+                + "\"");
+    logger.info("kubectl execut with command: " + command.toString());
+    TestUtils.exec(command.toString());
+
+    String result = ((TestUtils.exec(command.toString())).stdout());
+    logger.info(
+        "in the method findServerPropertyChange, " + command.toString() + " return " + result);
+    if (!result.contains(changedProperty)) {
+      throw new Exception(
+          "FAILURE: didn't find the property: " + changedProperty + " for the server" + serverName);
+    }
+
+    logger.info("Done - findServerPropertyChange");
+  }
+
+  /**
+   * Verify domain server pods get restarted after the property change by kubectl apply -f new
+   * domain yaml file with added/changed property.
+   *
+   * @param fileNameWithChangedProperty - the fragment of domain yaml file with new added property
+   *     change
+   * @throws Exception - IOException or errors occurred if the tested server is not restarted
+   */
+  public void verifyDomainServerPodRestart(String fileNameWithChangedProperty) throws Exception {
+    logger.info("Inside testDomainServerPodRestart domainYamlWithChangedProperty");
+
+    String newDomainYamlFile =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml";
+    String domainYamlFile =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    String fileWithChangedProperty =
+        BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/"
+            + fileNameWithChangedProperty;
+
+    // copy the original domain.yaml to domain_new.yaml
+    TestUtils.copyFile(domainYamlFile, newDomainYamlFile);
+
+    // append the file with changed property to the end of domain_new.yaml
+    Files.write(
+        Paths.get(newDomainYamlFile),
+        Files.readAllBytes(Paths.get(fileWithChangedProperty)),
+        StandardOpenOption.APPEND);
+
+    // kubectl apply the new constructed domain_new.yaml
+    StringBuffer command = new StringBuffer();
+    command.append("kubectl apply  -f ").append(newDomainYamlFile);
+    logger.info("kubectl execut with command: " + command.toString());
+    TestUtils.exec(command.toString());
+
+    // verify the servers in the domain are being restarted in a sequence
+    verifyAdminServerRestarted();
+    verifyManagedServersRestarted();
+
+    // make domain.yaml include the new changed property
+    TestUtils.copyFile(newDomainYamlFile, domainYamlFile);
+
+    logger.info("Done - testDomainServerPodRestart with domainYamlWithChangedProperty");
   }
 
   /**
