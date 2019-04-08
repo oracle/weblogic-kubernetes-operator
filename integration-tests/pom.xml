@@ -153,6 +153,51 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>${maven-jar-plugin-version}</version>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-pmd-plugin</artifactId>
+				<version>${maven-pmd-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-site-plugin</artifactId>
+				<version>${maven-site-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven-javadoc-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>${maven-clean-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>${maven-checkstyle-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-install-plugin</artifactId>
+				<version>${maven-install-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>${maven-deploy-plugin-version}</version>
+			</plugin>
+			<plugin>
+			  <groupId>com.github.spotbugs</groupId>
+			  <artifactId>spotbugs-maven-plugin</artifactId>
+			  <version>${spotbugs-maven-plugin-version}</version>
+			</plugin>
+			<plugin>
+			  <groupId>org.jacoco</groupId>
+			  <artifactId>jacoco-maven-plugin</artifactId>
+			  <version>${jacoco.version}</version>
+			</plugin>
 		</plugins>
 	</build>
 
