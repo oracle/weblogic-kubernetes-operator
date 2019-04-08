@@ -610,7 +610,7 @@ public class BaseTest {
             "export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && export IT_CLASS=");
     cmd.append(iTClassName);
     if (JENKINS) {
-      cmd.append(" && export JENKINS_RESULTS_DIR=${WORKSPACE}/${BUILD_TAG} ");
+      cmd.append(" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} ");
     }
     cmd.append(" && ")
         .append(BaseTest.getProjectRoot())
