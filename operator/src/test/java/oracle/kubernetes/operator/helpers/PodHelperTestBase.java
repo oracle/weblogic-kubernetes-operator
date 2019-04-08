@@ -830,24 +830,16 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenCompliantPodExists_recordIt() {
+  public void whenCompliantPodExists_logIt() {
     initializeExistingPod();
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsFine(getExistsMessageKey()));
-    ServerKubernetesObjects sko =
-        domainPresenceInfo
-            .getServers()
-            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
-    assertThat(sko.getPod().get(), equalTo(createPodModel()));
+    assertThat(domainPresenceInfo.getServerPod(serverName), equalTo(createPodModel()));
   }
 
   void initializeExistingPod(V1Pod pod) {
-    ServerKubernetesObjects sko =
-        domainPresenceInfo
-            .getServers()
-            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
-    sko.getPod().set(pod);
+    domainPresenceInfo.setServerPod(getServerName(), pod);
   }
 
   abstract String getExistsMessageKey();
