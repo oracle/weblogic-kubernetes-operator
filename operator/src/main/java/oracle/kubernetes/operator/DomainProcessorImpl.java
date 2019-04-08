@@ -238,15 +238,15 @@ public class DomainProcessorImpl implements DomainProcessor {
     if (status == null) return;
 
     Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
-          .map(m-> m.get(domainUid))
-          .ifPresent(info-> info.setLastKnownServerStatus(serverName, status));
+        .map(m -> m.get(domainUid))
+        .ifPresent(info -> info.setLastKnownServerStatus(serverName, status));
   }
 
   private static String getReadinessStatus(V1Event event) {
     return Optional.ofNullable(event.getMessage())
-          .filter(m-> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
-          .map(m-> m.substring(m.lastIndexOf(':') + 1).trim())
-          .orElse(null);
+        .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
+        .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
+        .orElse(null);
   }
 
   /**
