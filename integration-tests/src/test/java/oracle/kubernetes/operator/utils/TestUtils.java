@@ -1257,16 +1257,6 @@ public class TestUtils {
     String domainNS = domain.getDomainNS();
     int managedServerPort = ((Integer) (domain.getDomainMap()).get("managedServerPort")).intValue();
     String wsServiceName = (args.length == 0) ? BaseTest.TESTWSSERVICE : args[0];
-    /*
-    String clusterURL =
-        domain.getDomainUid()
-            + "-cluster-"
-            + domain.getClusterName()
-            + "."
-            + domainNS
-            + ".svc.cluster.local:"
-            + managedServerPort;
-            */
     String clusterURL =
         retrieveClusterIP(domain.getDomainUid(), domain.getClusterName(), domainNS)
             + ":"
