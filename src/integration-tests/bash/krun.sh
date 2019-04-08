@@ -11,7 +11,7 @@
 #    - This script is an expansion of https://gist.github.com/yuanying/3aa7d59dcce65470804ab43def646ab6
 #
 
-IMAGE='store/oracle/serverjre:8'
+IMAGE='openjdk:11-oracle'
 IMAGEPULLPOLICY='IfNotPresent'
 IMAGEPULLSECRETS=''
 IPSCOMMA=''
