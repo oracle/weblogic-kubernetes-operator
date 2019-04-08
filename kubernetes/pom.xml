@@ -31,6 +31,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin-version}</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
@@ -48,6 +49,17 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin-version}</version>
+        <configuration>
+          <release>11</release>
+          <compilerArgs>
+            <arg>-Xpkginfo:always</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>com.coveo</groupId>
         <artifactId>fmt-maven-plugin</artifactId>
         <version>2.8</version>
@@ -63,7 +75,7 @@
       <plugin>
 	<groupId>org.codehaus.mojo</groupId>
 	<artifactId>exec-maven-plugin</artifactId>
-	<version>1.6.0</version>
+	<version>${exec-maven-plugin-version}</version>
 	<executions>
 	    <execution><!-- helm chart package-->
 		<id>package-helm-charts</id>
@@ -132,8 +144,12 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
-            <version>2.22.1</version>
-            <executions>
+            <version>${maven-failsafe-plugin-version}</version>
+            <configuration>
+              <argLine>
+                --illegal-access=permit
+              </argLine>
+            </configuration>            <executions>
               <execution>
                 <goals>
                   <goal>integration-test</goal>

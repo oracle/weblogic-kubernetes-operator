@@ -32,7 +32,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
+                <version>${exec-maven-plugin-version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -45,7 +45,18 @@
                     <mainClass>oracle.kubernetes.operator.SwaggerBuildHelper</mainClass>
                 </configuration>
             </plugin>
-      
+
+         <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-compiler-plugin</artifactId>
+           <version>${maven-compiler-plugin-version}</version>
+           <configuration>
+             <release>11</release>
+             <compilerArgs>
+               <arg>-Xpkginfo:always</arg>
+             </compilerArgs>
+           </configuration>
+         </plugin>
       		<plugin>
 				<groupId>com.coveo</groupId>
 				<artifactId>fmt-maven-plugin</artifactId>
