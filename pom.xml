@@ -173,6 +173,11 @@
         </executions>
         <dependencies>
           <dependency>
+            <groupId>oracle.kubernetes</groupId>
+            <artifactId>build-tools</artifactId>
+            <version>1.0</version>
+          </dependency>
+          <dependency>
             <groupId>net.sourceforge.pmd</groupId>
             <artifactId>pmd-java</artifactId>
             <version>6.8.0</version>
@@ -197,6 +202,11 @@
           </execution>
         </executions>
         <dependencies>
+          <dependency>
+            <groupId>oracle.kubernetes</groupId>
+            <artifactId>build-tools</artifactId>
+            <version>1.0</version>
+          </dependency>
           <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs</artifactId>
