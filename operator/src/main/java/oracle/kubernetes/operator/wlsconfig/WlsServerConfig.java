@@ -25,6 +25,30 @@ public class WlsServerConfig {
   public WlsServerConfig() {}
 
   /**
+   * Creates a server configuration.
+   *
+   * @param name the server name
+   * @param listenAddress the listen address
+   * @param listenPort the listen port
+   */
+  public WlsServerConfig(String name, String listenAddress, int listenPort) {
+    this.name = name;
+    this.listenAddress = listenAddress;
+    this.listenPort = listenPort;
+  }
+
+  /**
+   * Set the listen address for this server configuration.
+   *
+   * @param listenAddress the listen address
+   * @return this object
+   */
+  public WlsServerConfig withListenAddress(String listenAddress) {
+    this.listenAddress = listenAddress;
+    return this;
+  }
+
+  /**
    * Return the name of this WLS server.
    *
    * @return The name of this WLS server
