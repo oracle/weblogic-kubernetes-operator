@@ -354,7 +354,7 @@ if [ "${DELETE_FILES:-true}" = "true" ]; then
   if [ "$WERCKER" = "true" ]; then
 	$SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
   else 
-  	$SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
+  	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
   fi
   [ "$?" = "0" ] || SUCCESS="1"
   echo @@ SUCCESS=$SUCCESS
