@@ -28,7 +28,7 @@ public class WatchPodReadyAdminStep extends Step {
     DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
     WlsDomainConfig domainTopology =
         (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    V1Pod adminPod = info.getServers().get(domainTopology.getAdminServerName()).getPod().get();
+    V1Pod adminPod = info.getServerPod(domainTopology.getAdminServerName());
 
     PodAwaiterStepFactory pw = podAwaiterStepFactory;
     packet

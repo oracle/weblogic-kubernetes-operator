@@ -4,12 +4,15 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static oracle.kubernetes.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS;
+import static oracle.kubernetes.operator.wlsconfig.WlsDomainConfigTest.WlsServerConfigMatcher.withServerConfig;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
@@ -21,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
@@ -30,15 +34,15 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-/** Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved. */
+/** Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved. */
 public class WlsDomainConfigTest {
 
   private Domain domain = new Domain().withSpec(new DomainSpec());
-  private DomainSpec domainSpec = domain.getSpec();
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(null);
 
@@ -427,6 +431,68 @@ public class WlsDomainConfigTest {
     return false;
   }
 
+  @Test
+  public void whenTopologyGenerated_containsDomainValidFlag() {
+    WlsDomainConfig domainConfig = new WlsDomainConfig();
+
+    assertThat(domainConfig.toTopology(), hasJsonPath("domainValid", equalTo("true")));
+  }
+
+  @Test
+  public void whenTopologyGenerated_containsDomainName() {
+    WlsDomainConfig domainConfig = new WlsDomainConfig("test-domain");
+
+    assertThat(domainConfig.toTopology(), hasJsonPath("domain.name", equalTo("test-domain")));
+  }
+
+  @Test
+  public void whenTopologyGenerated_containsAdminServerName() {
+    WlsDomainConfig domainConfig =
+        new WlsDomainConfig("test-domain").withAdminServer("admin-server", "admin-host", 7001);
+
+    assertThat(
+        domainConfig.toTopology(), hasJsonPath("domain.adminServerName", equalTo("admin-server")));
+  }
+
+  @Test
+  public void whenTopologyGenerated_containsAdminServerSpec() {
+    WlsDomainConfig domainConfig =
+        new WlsDomainConfig("test-domain").withAdminServer("admin-server", "admin-host", 7001);
+
+    assertThat(
+        domainConfig.toTopology(),
+        hasJsonPath("domain.servers", withServerConfig("admin-server", "admin-host", 7001)));
+  }
+
+  @Test
+  public void whenYamlGenerated_containsClusterConfig() {
+    WlsDomainConfig domainConfig =
+        new WlsDomainConfig("test-domain").withCluster(new WlsClusterConfig("cluster1"));
+
+    assertThat(
+        domainConfig.toTopology(),
+        hasJsonPath("domain.configuredClusters[*].name", contains("cluster1")));
+  }
+
+  @Test
+  public void whenYamlGenerated_containsClusteredServerConfigs() {
+    WlsDomainConfig domainConfig =
+        new WlsDomainConfig("test-domain")
+            .withCluster(
+                new WlsClusterConfig("cluster1")
+                    .addServerConfig(new WlsServerConfig("ms1", "host1", 8001))
+                    .addServerConfig(new WlsServerConfig("ms2", "host2", 8001)));
+
+    assertThat(
+        domainConfig.toTopology(),
+        hasJsonPath(
+            "domain.configuredClusters[0].servers", withServerConfig("ms1", "host1", 8001)));
+    assertThat(
+        domainConfig.toTopology(),
+        hasJsonPath(
+            "domain.configuredClusters[0].servers", withServerConfig("ms2", "host2", 8001)));
+  }
+
   private final String JSON_STRING_MIXED_CLUSTER =
       "{     \"name\": \"base_domain\",\n "
           + "\"servers\": {\"items\": [\n"
@@ -730,4 +796,52 @@ public class WlsDomainConfigTest {
           + "        \"networkAccessPoints\": {\"items\": []}\n"
           + "    }\n"
           + "]}}";
+
+  @SuppressWarnings("unused")
+  static class WlsServerConfigMatcher
+      extends org.hamcrest.TypeSafeDiagnosingMatcher<
+          java.util.List<java.util.Map<String, Object>>> {
+    private String expectedName;
+    private String expectedAddress;
+    private int expectedPort;
+
+    private WlsServerConfigMatcher(String expectedName, String expectedAddress, int expectedPort) {
+      this.expectedName = expectedName;
+      this.expectedAddress = expectedAddress;
+      this.expectedPort = expectedPort;
+    }
+
+    static WlsServerConfigMatcher withServerConfig(
+        String serverName, String listenAddress, int port) {
+      return new WlsServerConfigMatcher(serverName, listenAddress, port);
+    }
+
+    @Override
+    protected boolean matchesSafely(
+        List<Map<String, Object>> configs, Description mismatchDescription) {
+      for (Map<String, Object> config : configs) {
+        if (isExpectedConfig(config)) return true;
+      }
+
+      mismatchDescription.appendText(configs.toString());
+      return false;
+    }
+
+    private boolean isExpectedConfig(Map<String, Object> item) {
+      return expectedName.equals(item.get("name"))
+          && expectedAddress.equals(item.get("listenAddress"))
+          && Objects.equals(expectedPort, item.get("listenPort"));
+    }
+
+    @Override
+    public void describeTo(Description description) {
+      description
+          .appendText("name: ")
+          .appendValue(expectedName)
+          .appendText(", listenAddress: ")
+          .appendValue(expectedAddress)
+          .appendText(", listenPort: ")
+          .appendValue(expectedPort);
+    }
+  }
 }
