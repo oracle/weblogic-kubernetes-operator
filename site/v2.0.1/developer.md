@@ -77,7 +77,6 @@ $ docker build --build-arg VERSION=<version> -t weblogic-kubernetes-operator:som
 
 Replace `<version>` with the version of the project found in the `pom.xml` file in the project root directory.
 
-**Note**: If you have not used the base image (`store/oracle/serverjre:8`) before, you will need to visit the [Docker Store web interface](https://store.docker.com/images/oracle-serverjre-8) and accept the license agreement before the Docker Store will give you permission to pull that image.
 
 We recommend that you use a tag other than `latest`, to make it easy to distinguish your image.  In the example above, the tag could be the GitHub ID of the developer.
 
@@ -194,12 +193,12 @@ In this sample, the caller creates an `Engine`, `Fiber`, linked set of `Step` in
 static class SomeClass {
   public static void main(String[] args) {
     Engine engine = new Engine("worker-pool");
-  
+
     Fiber fiber = engine.createFiber();
-  
+
     Step step = new StepOne(new StepTwo(new StepThree(null)));
       Packet packet = new Packet();
-  
+
     fiber.start(
         step,
         packet,
