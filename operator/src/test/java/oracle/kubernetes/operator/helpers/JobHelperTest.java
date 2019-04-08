@@ -190,7 +190,10 @@ public class JobHelperTest {
 
     MatcherAssert.assertThat(
         getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
-        allOf(hasEnvVar("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom")));
+        allOf(
+            hasEnvVar(
+                "USER_MEM_ARGS",
+                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom")));
   }
 
   @Test
@@ -198,7 +201,7 @@ public class JobHelperTest {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo)
-        .withEnvironmentVariable("USER_MEM_ARGS", "-Xms64m -Xmx256m");
+        .withEnvironmentVariable("USER_MEM_ARGS", "-XX:+UseContainerSupport");
 
     Packet packet = new Packet();
     packet
@@ -211,7 +214,7 @@ public class JobHelperTest {
 
     MatcherAssert.assertThat(
         getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
-        allOf(hasEnvVar("USER_MEM_ARGS", "-Xms64m -Xmx256m")));
+        allOf(hasEnvVar("USER_MEM_ARGS", "-XX:+UseContainerSupport")));
   }
 
   @Test
