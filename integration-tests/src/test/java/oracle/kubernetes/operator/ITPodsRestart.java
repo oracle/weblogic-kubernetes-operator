@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.Operator;
@@ -26,6 +28,7 @@ public class ITPodsRestart extends BaseTest {
 
   private static Domain domain = null;
   private static Operator operator1;
+  private static String domainUid = "";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -84,10 +87,10 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     logger.info(
-        "About to testDomainServerPodRestart for Domain: "
+        "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  env property: StdoutDebugEnabled=false to StdoutDebugEnabled=true");
-    domain.testDomainServerPodRestart(
+    domain.verifyDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
 
     logger.info("SUCCESS - " + testMethodName);
@@ -107,10 +110,10 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     logger.info(
-        "About to testDomainServerPodRestart for Domain: "
+        "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  logHomeEnabled: true -->  logHomeEnabled: false");
-    domain.testDomainServerPodRestart("logHomeEnabled: true", "logHomeEnabled: false");
+    domain.verifyDomainServerPodRestart("logHomeEnabled: true", "logHomeEnabled: false");
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -129,10 +132,10 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     logger.info(
-        "About to testDomainServerPodRestart for Domain: "
+        "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + " imagePullPolicy: IfNotPresent -->  imagePullPolicy: Never ");
-    domain.testDomainServerPodRestart(
+    domain.verifyDomainServerPodRestart(
         "imagePullPolicy: \"IfNotPresent\"", "imagePullPolicy: \"Never\" ");
 
     logger.info("SUCCESS - " + testMethodName);
@@ -152,10 +155,10 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     logger.info(
-        "About to testDomainServerPodRestart for Domain: "
+        "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  includeServerOutInPodLog: true -->  includeServerOutInPodLog: false");
-    domain.testDomainServerPodRestart(
+    domain.verifyDomainServerPodRestart(
         "includeServerOutInPodLog: true", "includeServerOutInPodLog: false");
 
     logger.info("SUCCESS - " + testMethodName);
@@ -176,16 +179,128 @@ public class ITPodsRestart extends BaseTest {
 
     try {
       logger.info(
-          "About to testDomainServerPodRestart for Domain: "
+          "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
               + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
 
       TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
-      domain.testDomainServerPodRestart(
+      domain.verifyDomainServerPodRestart(
           "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
     } finally {
       TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
     }
+
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Modify/Add the containerSecurityContext section at ServerPod Level using kubectl apply -f
+   * cont.security.context.domain.yaml. Verify all the pods re-started. The property tested is:
+   * serverPod: containerSecurityContext: runAsUser: 1000 fsGroup: 1000.
+   *
+   * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
+   *     are not restarted or after restart the server yaml file doesn't include the new added
+   *     property
+   */
+  @Test
+  public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    // firstly ensure that original domain.yaml doesn't include the property-to-be-added
+    String domainFileName =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    boolean result =
+        (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("fsGroup: 1000");
+    Assert.assertFalse(result);
+
+    // domainYaml: the yaml file name with changed property under resources dir
+    String domainYaml = "cont.security.context.domain.yaml";
+    logger.info(
+        "About to verifyDomainServerPodRestart for Domain: "
+            + domain.getDomainUid()
+            + " change container securityContext:\n"
+            + " runAsUser: 1000\n"
+            + " fsGroup: 1000 ");
+    domain.verifyDomainServerPodRestart(domainYaml);
+    domain.findServerPropertyChange("securityContext", "admin-server");
+    domain.findServerPropertyChange("securityContext", "managed-server1");
+
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Modify/Add the podSecurityContext section at ServerPod level using kubectl apply -f
+   * pod.security.context.domain.yaml. Verify all the pods re-started. The property tested is:
+   * podSecurityContext: runAsUser: 1000 fsGroup: 2000.
+   *
+   * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
+   *     are not restarted or after restart the server yaml file doesn't include the new added
+   *     property
+   */
+  @Test
+  public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    // firstly ensure that original domain.yaml doesn't include the property-to-be-added
+    String domainFileName =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    boolean result =
+        (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("fsGroup: 2000");
+    Assert.assertFalse(result);
+
+    // domainYaml: the yaml file name with changed property under resources dir
+    String domainYaml = "pod.security.context.domain.yaml";
+
+    logger.info(
+        "About to verifyDomainServerPodRestart for Domain: "
+            + domain.getDomainUid()
+            + " change securityContext:\n"
+            + "   runAsUser: 1000\n"
+            + "   fsGroup: 2000 ");
+    domain.verifyDomainServerPodRestart(domainYaml);
+    domain.findServerPropertyChange("fsGroup: 2000", "admin-server");
+    domain.findServerPropertyChange("fsGroup: 2000", "managed-server1");
+
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Modify/Add resources at ServerPod level using kubectl apply -f domain.yaml. Verify all pods
+   * re-started. The property tested is: resources: limits: cpu: "1" requests: cpu: "0.5" args: -
+   * -cpus - "2".
+   *
+   * @throws Exception - assertion fails due to unmatched value or errors occurred if tested servers
+   *     are not restarted or after restart the server yaml file doesn't include the new added
+   *     property
+   */
+  @Test
+  public void testServerPodsRestartByChangingResource() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    // firstly ensure that original domain.yaml doesn't include the property-to-be-addeded
+    String domainFileName =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    boolean result =
+        (new String(Files.readAllBytes(Paths.get(domainFileName)))).contains("cpu: 500m");
+    Assert.assertFalse(result);
+
+    // domainYaml: the yaml file name with changed property under resources dir
+    String domainYaml = "resource.domain.yaml";
+
+    logger.info(
+        "About to verifyDomainServerPodRestart for Domain: "
+            + domain.getDomainUid()
+            + " change resource:\n"
+            + "   cpu: 500m");
+    domain.verifyDomainServerPodRestart(domainYaml);
+    domain.findServerPropertyChange("cpu: 500m", "admin-server");
+    domain.findServerPropertyChange("cpu: 500m", "managed-server1");
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -196,7 +311,9 @@ public class ITPodsRestart extends BaseTest {
     domainMap.put("domainUID", "domainpodsrestart");
     domainMap.put("initialManagedServerReplicas", new Integer("1"));
 
-    logger.info("Creating Domain domain& verifing the domain creation");
+    domainUid = (String) domainMap.get("domainUID");
+    logger.info("Creating and verifying the domain creation with domainUid: " + domainUid);
+
     domain = TestUtils.createDomain(domainMap);
     domain.verifyDomainCreated();
 
