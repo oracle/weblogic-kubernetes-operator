@@ -32,6 +32,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin-version}</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
@@ -73,8 +74,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.7.0</version>
+        <version>${maven-compiler-plugin-version}</version>
         <configuration>
+          <release>11</release>
           <compilerArgs>
             <arg>-Xpkginfo:always</arg>
           </compilerArgs>
@@ -116,7 +118,7 @@
 
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>${maven-resources-plugin-version}</version>
         <executions>
           <execution>
             <phase>install</phase>

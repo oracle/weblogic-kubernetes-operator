@@ -16,10 +16,10 @@
 #
 
 box:
-  id: store/oracle/serverjre
+  id: openjdk
   username: $DOCKER_USERNAME
   password: $DOCKER_PASSWORD
-  tag: 8
+  tag: 11-oracle
 
 # This is the main build pipeline that builds the codebase and runs unit tests.
 build:
