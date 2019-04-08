@@ -1158,8 +1158,8 @@ public class Domain {
     // number of times to call webapp
 
     for (int i = 0; i < maxIterations; i++) {
-      ExecResult result = ExecCommand.exec(curlCmd.toString());  
-      logger.info("webapp invoked successfully for curlCmd:" + curlCmd)
+      ExecResult result = ExecCommand.exec(curlCmd.toString());
+      logger.info("webapp invoked successfully for curlCmd:" + curlCmd);
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
         for (String key : managedServers.keySet()) {
@@ -1170,7 +1170,7 @@ public class Domain {
         }
       }
     }
-    
+
     logger.info("ManagedServers " + managedServers);
 
     // error if any managedserver value is false
