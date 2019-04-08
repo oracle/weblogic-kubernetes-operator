@@ -44,6 +44,10 @@
                 <requireMavenVersion>
                   <version>${maven.version.range}</version>
                 </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>${java.version.range}</version>
+                </requireJavaVersion>
+                <requirePluginVersions></requirePluginVersions>
               </rules>
             </configuration>
           </execution>
