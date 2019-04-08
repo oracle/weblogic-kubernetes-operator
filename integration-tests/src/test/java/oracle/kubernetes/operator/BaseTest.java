@@ -597,6 +597,16 @@ public class BaseTest {
     }
   }
 
+  /**
+   * Calls statedump.sh which places k8s logs, descriptions, etc in directory
+   * $RESULT_DIR/state-dump-logs and calls archive.sh on RESULT_DIR locally, and on PV_ROOT via a
+   * job or pod. Also calls cleanup.sh which does a best-effort delete of acceptance test k8s
+   * artifacts, the local test tmp directory, and the potentially remote domain pv directories.
+   *
+   * @param iTClassName - IT class name to be used in the archive file name
+   * @throws Exception when errors while running statedump.sh or cleanup.sh scripts or while
+   *     renewing the lease for wercker run
+   */
   public static void tearDown(String iTClassName) throws Exception {
     logger.log(
         Level.INFO,
