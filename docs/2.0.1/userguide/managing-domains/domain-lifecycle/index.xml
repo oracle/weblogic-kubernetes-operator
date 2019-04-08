@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Domain life cycle on WebLogic Kubernetes Operator</title>
+    <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/</link>
+    <description>Recent content in Domain life cycle on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 23 Feb 2019 16:50:09 -0500</lastBuildDate>
+    
+	<atom:link href="/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Startup and shutdown</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/startup/</link>
+      <pubDate>Sat, 23 Feb 2019 17:04:41 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/startup/</guid>
+      <description>Contents  Starting and stopping servers  Common starting and stopping scenarios  Restarting servers  Rolling restarts Common restarting scenarios   There are properties on the domain resource that specify which servers should be running and which servers should be restarted. To start, stop, or restart servers, modify these properties on the domain resource (for example, by using kubectl or the Kubernetes REST API). The operator will notice the changes and apply them.</description>
+    </item>
+    
+    <item>
+      <title>Restarting</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/restarting/</link>
+      <pubDate>Sat, 23 Feb 2019 20:58:51 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/restarting/</guid>
+      <description>This document describes when to restart servers in the Oracle WebLogic Server in Kubernetes environment.
+Overview There are many situations where changes to the Oracle WebLogic Server in Kubernetes environment require that all the servers in a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.
+One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogic Servers by creating and deleting their corresponding Kubernetes pods.</description>
+    </item>
+    
+    <item>
+      <title>Scaling</title>
+      <link>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/scaling/</link>
+      <pubDate>Sat, 23 Feb 2019 17:04:45 -0500</pubDate>
+      
+      <guid>/weblogic-kubernetes-operator/2.0.1/userguide/managing-domains/domain-lifecycle/scaling/</guid>
+      <description>WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by manually configuring each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template. With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to manually configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands.</description>
+    </item>
+    
+  </channel>
+</rss>
