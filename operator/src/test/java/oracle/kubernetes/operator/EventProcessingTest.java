@@ -41,11 +41,13 @@ public class EventProcessingTest {
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
-  private final V1ObjectReference serverReference
-        = new V1ObjectReference().name(LegalNames.toEventName(UID, ADMIN_NAME));
-  private final V1Event event = new V1Event()
-        .metadata(new V1ObjectMeta().namespace(NS))
-        .involvedObject(serverReference).message(createReadinessProbeMessage(WebLogicConstants.UNKNOWN_STATE));
+  private final V1ObjectReference serverReference =
+      new V1ObjectReference().name(LegalNames.toEventName(UID, ADMIN_NAME));
+  private final V1Event event =
+      new V1Event()
+          .metadata(new V1ObjectMeta().namespace(NS))
+          .involvedObject(serverReference)
+          .message(createReadinessProbeMessage(WebLogicConstants.UNKNOWN_STATE));
 
   @Before
   public void setUp() throws Exception {
