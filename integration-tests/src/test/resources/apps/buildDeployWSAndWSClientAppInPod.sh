@@ -56,18 +56,18 @@ echo -e "curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-
 curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -F "model={ name: '${APP_NAME}', targets: [ { identity: [ clusters, '${DEPLOY_TARGET}' ] } ] }" -F "sourcePath=@${ARCHIVE_FILE_WS}" -H "Prefer:respond-async" -X POST http://${HOST}:${PORT}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployWS.out
 sleep 10
 grep -q "STATE_RUNNING" ${APP_DIR_INPOD}/deployWS.out
- cres=$?
- [[ $cres != 0 ]] && echo "[FAIL] Unable to deploy wsapp ..."
- [[ $cres == 0 ]] && echo "[SUCCESS] wsapp is deployed  ..."
+cres=$?
+[[ $cres != 0 ]] && echo "[FAIL] Unable to deploy wsapp ..." && exit -1
+[[ $cres == 0 ]] && echo "[SUCCESS] wsapp is deployed  ..."
 
 echo "Deploy ${APP_NAME}Servlet using curl:"
 echo -e "curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -F \"model={ name: '${APP_NAME}servlet', targets: [ { identity: [ clusters, '${DEPLOY_TARGET}' ] } ] }\" -F \"sourcePath=@${ARCHIVE_FILE_SERVLET}\" -H \"Prefer:respond-async\" -X POST http://${HOST}:${PORT}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployWSServlet.out\n"
 curl --noproxy '*' --silent  --user ${USER}:${PASSWORD} -H X-Requested-By:MyClient -H Accept:application/json -H Content-Type:multipart/form-data -F "model={ name: '${APP_NAME}servlet', targets: [ { identity: [ clusters, '${DEPLOY_TARGET}' ] } ] }" -F "sourcePath=@${ARCHIVE_FILE_SERVLET}" -H "Prefer:respond-async" -X POST http://${HOST}:${PORT}/management/weblogic/latest/edit/appDeployments -o ${APP_DIR_INPOD}/deployWSServlet.out
 sleep 10
 grep -q "STATE_RUNNING" ${APP_DIR_INPOD}/deployWSServlet.out
- cres=$?
- [[ $cres != 0 ]] && echo "[FAIL] Unable to deploy wsclientapp ..."
- [[ $cres == 0 ]] && echo "[SUCCESS] wsclientapp is deployed  ..."
+cres=$?
+[[ $cres != 0 ]] && echo "[FAIL] Unable to deploy wsclientapp ..." exit -1
+[[ $cres == 0 ]] && echo "[SUCCESS] wsclientapp is deployed  ..."
 
 
 rm -rf ${APP_DIR_INPOD}/buildfiles
