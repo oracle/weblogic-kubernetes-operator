@@ -5,6 +5,8 @@
 package oracle.kubernetes.operator;
 
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
@@ -15,16 +17,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -62,59 +63,53 @@ public class ServerStatusReader {
 
     @Override
     public NextAction apply(Packet packet) {
-      ConcurrentMap<String, String> serverStateMap = new ConcurrentHashMap<>();
-      packet.put(ProcessingConstants.SERVER_STATE_MAP, serverStateMap);
+      packet.put(SERVER_STATE_MAP, new ConcurrentHashMap<String, String>());
+      packet.put(SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
 
-      ConcurrentMap<String, ServerHealth> serverHealthMap = new ConcurrentHashMap<>();
-      packet.put(ProcessingConstants.SERVER_HEALTH_MAP, serverHealthMap);
-
-      Collection<StepAndPacket> startDetails = new ArrayList<>();
-      for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-        String serverName = entry.getKey();
-        ServerKubernetesObjects sko = entry.getValue();
-        if (sko != null) {
-          V1Pod pod = sko.getPod().get();
-          if (pod != null) {
-            Packet p = packet.clone();
-            startDetails.add(
-                new StepAndPacket(
-                    createServerStatusReaderStep(sko, pod, serverName, timeoutSeconds), p));
-          }
-        }
-      }
+      Collection<StepAndPacket> startDetails =
+          info.getServerPods()
+              .map(pod -> createStatusReaderStep(packet, pod))
+              .collect(Collectors.toList());
 
       if (startDetails.isEmpty()) {
         return doNext(packet);
+      } else {
+        return doForkJoin(getNext(), packet, startDetails);
       }
-      return doForkJoin(getNext(), packet, startDetails);
+    }
+
+    private StepAndPacket createStatusReaderStep(Packet packet, V1Pod pod) {
+      return new StepAndPacket(
+          createServerStatusReaderStep(info, pod, PodHelper.getPodServerName(pod), timeoutSeconds),
+          packet.clone());
     }
   }
 
   /**
    * Creates asynchronous step to read WebLogic server state from a particular pod.
    *
-   * @param sko Server objects
+   * @param info the domain presence
    * @param pod The pod
    * @param serverName Server name
    * @param timeoutSeconds Timeout in seconds
    * @return Created step
    */
   private static Step createServerStatusReaderStep(
-      ServerKubernetesObjects sko, V1Pod pod, String serverName, long timeoutSeconds) {
+      DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
     return new ServerStatusReaderStep(
-        sko, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, null));
+        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, null));
   }
 
   private static class ServerStatusReaderStep extends Step {
-    private final ServerKubernetesObjects sko;
+    private final DomainPresenceInfo info;
     private final V1Pod pod;
     private final String serverName;
     private final long timeoutSeconds;
 
     ServerStatusReaderStep(
-        ServerKubernetesObjects sko, V1Pod pod, String serverName, long timeoutSeconds, Step next) {
+        DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds, Step next) {
       super(next);
-      this.sko = sko;
+      this.info = info;
       this.pod = pod;
       this.serverName = serverName;
       this.timeoutSeconds = timeoutSeconds;
@@ -124,14 +119,14 @@ public class ServerStatusReader {
     public NextAction apply(Packet packet) {
       @SuppressWarnings("unchecked")
       ConcurrentMap<String, String> serverStateMap =
-          (ConcurrentMap<String, String>) packet.get(ProcessingConstants.SERVER_STATE_MAP);
+          (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
 
-      if (PodWatcher.getReadyStatus(pod)) {
-        sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
+      if (PodHelper.getReadyStatus(pod)) {
+        info.setLastKnownServerStatus(serverName, WebLogicConstants.RUNNING_STATE);
         serverStateMap.put(serverName, WebLogicConstants.RUNNING_STATE);
         return doNext(packet);
       } else {
-        String lastKnownState = sko.getLastKnownStatus().get();
+        String lastKnownState = info.getLastKnownServerStatus(serverName);
         if (lastKnownState != null) {
           serverStateMap.put(serverName, lastKnownState);
           return doNext(packet);
@@ -192,7 +187,7 @@ public class ServerStatusReader {
     public NextAction apply(Packet packet) {
       @SuppressWarnings("unchecked")
       ConcurrentMap<String, String> serverStateMap =
-          (ConcurrentMap<String, String>) packet.get(ProcessingConstants.SERVER_STATE_MAP);
+          (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
       String state = serverStateMap.get(serverName);
 
       if (WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
