@@ -8,7 +8,7 @@ import oracle.kubernetes.operator.work.Step;
 public class ServerDownFinalizeStep extends Step {
   private final String serverName;
 
-  public ServerDownFinalizeStep(String serverName, Step next) {
+  ServerDownFinalizeStep(String serverName, Step next) {
     super(next);
     this.serverName = serverName;
   }

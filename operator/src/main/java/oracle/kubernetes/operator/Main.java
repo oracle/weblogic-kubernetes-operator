@@ -41,8 +41,8 @@ import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -658,14 +658,12 @@ public class Main {
 
       if (result != null) {
         for (V1Pod pod : result.getItems()) {
-          String domainUID = PodWatcher.getPodDomainUID(pod);
-          String serverName = PodWatcher.getPodServerName(pod);
+          String domainUID = PodHelper.getPodDomainUID(pod);
+          String serverName = PodHelper.getPodServerName(pod);
           if (domainUID != null && serverName != null) {
             DomainPresenceInfo info =
                 dpis.computeIfAbsent(domainUID, k -> new DomainPresenceInfo(ns, domainUID));
-            ServerKubernetesObjects sko =
-                info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-            sko.getPod().set(pod);
+            info.setServerPod(serverName, pod);
           }
         }
       }

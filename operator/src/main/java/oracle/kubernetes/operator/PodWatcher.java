@@ -7,8 +7,6 @@ package oracle.kubernetes.operator;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodCondition;
-import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +19,7 @@ import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -92,7 +91,7 @@ public class PodWatcher extends Watcher<V1Pod>
       case "ADDED":
       case "MODIFIED":
         V1Pod pod = item.object;
-        Boolean isReady = isReady(pod);
+        Boolean isReady = PodHelper.isReady(pod);
         String podName = pod.getMetadata().getName();
         if (isReady) {
           OnReady ready = readyCallbackRegistrations.remove(podName);
@@ -109,67 +108,6 @@ public class PodWatcher extends Watcher<V1Pod>
     listener.receivedResponse(item);
 
     LOGGER.exiting();
-  }
-
-  static boolean isTerminating(V1Pod pod) {
-    return pod.getMetadata().getDeletionTimestamp() != null
-        || pod.getMetadata().getDeletionGracePeriodSeconds() != null;
-  }
-
-  static boolean isReady(V1Pod pod) {
-    boolean ready = getReadyStatus(pod);
-    if (ready) {
-      LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
-    }
-    return ready;
-  }
-
-  static boolean getReadyStatus(V1Pod pod) {
-    V1PodStatus status = pod.getStatus();
-    if (status != null) {
-      if ("Running".equals(status.getPhase())) {
-        List<V1PodCondition> conds = status.getConditions();
-        if (conds != null) {
-          for (V1PodCondition cond : conds) {
-            if ("Ready".equals(cond.getType())) {
-              if ("True".equals(cond.getStatus())) {
-                return true;
-              }
-            }
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  static boolean isFailed(V1Pod pod) {
-    V1PodStatus status = pod.getStatus();
-    if (status != null) {
-      if ("Failed".equals(status.getPhase())) {
-        LOGGER.severe(MessageKeys.POD_IS_FAILED, pod.getMetadata().getName());
-        return true;
-      }
-    }
-    return false;
-  }
-
-  static String getPodDomainUID(V1Pod pod) {
-    V1ObjectMeta meta = pod.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.DOMAINUID_LABEL);
-    }
-    return null;
-  }
-
-  static String getPodServerName(V1Pod pod) {
-    V1ObjectMeta meta = pod.getMetadata();
-    Map<String, String> labels = meta.getLabels();
-    if (labels != null) {
-      return labels.get(LabelConstants.SERVERNAME_LABEL);
-    }
-    return null;
   }
 
   /**
@@ -193,7 +131,7 @@ public class PodWatcher extends Watcher<V1Pod>
 
     @Override
     public NextAction apply(Packet packet) {
-      if (isReady(pod)) {
+      if (PodHelper.isReady(pod)) {
         return doNext(packet);
       }
 
@@ -242,7 +180,7 @@ public class PodWatcher extends Watcher<V1Pod>
                                   V1Pod result,
                                   int statusCode,
                                   Map<String, List<String>> responseHeaders) {
-                                if (result != null && isReady(result)) {
+                                if (result != null && PodHelper.isReady(result)) {
                                   if (didResume.compareAndSet(false, true)) {
                                     readyCallbackRegistrations.remove(metadata.getName(), ready);
                                     fiber.resume(packet);
