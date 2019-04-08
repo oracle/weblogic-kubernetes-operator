@@ -1,55 +1,7 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
-
-  <parent>
-    <groupId>oracle.kubernetes</groupId>
-    <artifactId>operator-parent</artifactId>
-    <version>2.2</version>
-  </parent>
-
-
   <groupId>oracle.kubernetes</groupId>
   <artifactId>build-tools</artifactId>
+  <version>1.0</version>
   <name>Build Tools</name>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-enforcer-plugin</artifactId>
-        <version>${maven-enforcer-plugin-version}</version>
-        <executions>
-          <execution>
-            <id>enforce-maven</id>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <requireMavenVersion>
-                  <version>${maven.version.range}</version>
-                </requireMavenVersion>
-                <requireJavaVersion>
-                  <version>${java.version.range}</version>
-                </requireJavaVersion>
-                <requirePluginVersions></requirePluginVersions>
-              </rules>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin-version}</version>
-        <configuration>
-          <release>11</release>
-          <compilerArgs>
-            <arg>-Xpkginfo:always</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-
 </project>
