@@ -187,7 +187,7 @@
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>3.1.11</version>
+        <version>${spotbugs-maven-plugin-version}</version>
         <configuration>
           <xmlOutput>true</xmlOutput>
           <failOnError>false</failOnError>
@@ -210,7 +210,7 @@
           <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs</artifactId>
-            <version>3.1.11</version>
+            <version>${spotbugs-maven-plugin-version}</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -581,6 +581,7 @@
     <maven-failsafe-plugin-version>3.0.0-M3</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.1.1</maven-dependency-plugin-version>
     <exec-maven-plugin-version>1.6.0</exec-maven-plugin-version>
+    <spotbugs-maven-plugin-version>3.1.11</spotbugs-maven-plugin-version>
     <swagger-core-version>1.5.22</swagger-core-version>
     <jodatime-version>2.10.1</jodatime-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
