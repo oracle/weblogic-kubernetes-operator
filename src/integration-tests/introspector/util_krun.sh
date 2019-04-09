@@ -14,7 +14,7 @@
 #    - Image secret parameter hasn't been tested.
 #
 
-IMAGE='store/oracle/serverjre:8'
+IMAGE='openjdk:11-oracle'
 IMAGEPULLPOLICY='IfNotPresent'
 IMAGEPULLSECRETS=''
 IPSCOMMA=''
