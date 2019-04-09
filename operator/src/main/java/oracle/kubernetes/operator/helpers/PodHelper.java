@@ -9,7 +9,9 @@ import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodCondition;
 import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1PodStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +22,8 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.Certificates;
@@ -30,8 +34,85 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public class PodHelper {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private PodHelper() {}
+
+  /**
+   * Creates an admin server pod resource, based on the specified packet
+   *
+   * @param packet a packet describing the domain model and topology.
+   * @return an appropriate Kubernetes resource
+   */
+  public static V1Pod createAdminServerPodModel(Packet packet) {
+    return new AdminPodStepContext(null, packet).createPodModel();
+  }
+
+  /**
+   * Creates a managed server pod resource, based on the specified packet
+   *
+   * @param packet a packet describing the domain model and topology.
+   * @return an appropriate Kubernetes resource
+   */
+  static V1Pod createManagedServerPodModel(Packet packet) {
+    return new ManagedPodStepContext(null, packet).createPodModel();
+  }
+
+  public static boolean isReady(V1Pod pod) {
+    boolean ready = getReadyStatus(pod);
+    if (ready) {
+      LOGGER.info(MessageKeys.POD_IS_READY, pod.getMetadata().getName());
+    }
+    return ready;
+  }
+
+  public static boolean getReadyStatus(V1Pod pod) {
+    V1PodStatus status = pod.getStatus();
+    if (status != null) {
+      if ("Running".equals(status.getPhase())) {
+        List<V1PodCondition> conds = status.getConditions();
+        if (conds != null) {
+          for (V1PodCondition cond : conds) {
+            if ("Ready".equals(cond.getType())) {
+              if ("True".equals(cond.getStatus())) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  public static boolean isFailed(V1Pod pod) {
+    V1PodStatus status = pod.getStatus();
+    if (status != null) {
+      if ("Failed".equals(status.getPhase())) {
+        LOGGER.severe(MessageKeys.POD_IS_FAILED, pod.getMetadata().getName());
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static String getPodDomainUID(V1Pod pod) {
+    V1ObjectMeta meta = pod.getMetadata();
+    Map<String, String> labels = meta.getLabels();
+    if (labels != null) {
+      return labels.get(LabelConstants.DOMAINUID_LABEL);
+    }
+    return null;
+  }
+
+  public static String getPodServerName(V1Pod pod) {
+    V1ObjectMeta meta = pod.getMetadata();
+    Map<String, String> labels = meta.getLabels();
+    if (labels != null) {
+      return labels.get(LabelConstants.SERVERNAME_LABEL);
+    }
+    return null;
+  }
 
   static class AdminPodStepContext extends PodStepContext {
     static final String INTERNAL_OPERATOR_CERT_ENV = "INTERNAL_OPERATOR_CERT";
@@ -313,26 +394,26 @@ public class PodHelper {
   /**
    * Factory for {@link Step} that deletes server pod.
    *
-   * @param sko Server Kubernetes Objects
+   * @param serverName the name of the server whose pod is to be deleted
    * @param next Next processing step
    * @return Step for deleting server pod
    */
-  public static Step deletePodStep(ServerKubernetesObjects sko, Step next) {
-    return new DeletePodStep(sko, next);
+  public static Step deletePodStep(String serverName, Step next) {
+    return new DeletePodStep(serverName, next);
   }
 
   private static class DeletePodStep extends Step {
-    private final ServerKubernetesObjects sko;
+    private final String serverName;
 
-    DeletePodStep(ServerKubernetesObjects sko, Step next) {
+    DeletePodStep(String serverName, Step next) {
       super(next);
-      this.sko = sko;
+      this.serverName = serverName;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      V1Pod oldPod = removePodFromRecord();
+      V1Pod oldPod = info.removeServerPod(serverName);
 
       if (oldPod != null) {
         String name = oldPod.getMetadata().getName();
@@ -340,11 +421,6 @@ public class PodHelper {
       } else {
         return doNext(packet);
       }
-    }
-
-    // Set pod to null so that watcher doesn't try to recreate pod
-    private V1Pod removePodFromRecord() {
-      return sko.getPod().getAndSet(null);
     }
 
     private Step deletePod(String name, String namespace, Step next) {
