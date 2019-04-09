@@ -105,7 +105,7 @@ public class HttpClientTest {
             .metadata(new V1ObjectMeta().namespace(NAMESPACE).name(SERVICE_NAME));
 
     String url = HttpClient.getServiceURL(service);
-    assertEquals("http://" + SERVICE_NAME + "." + NAMESPACE + ".svc.cluster.local:" + PORT, url);
+    assertEquals("http://" + SERVICE_NAME + "." + NAMESPACE + ".pod.cluster.local:" + PORT, url);
   }
 
   abstract static class ClientStub implements Client {

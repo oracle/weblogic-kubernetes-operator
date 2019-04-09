@@ -4,8 +4,9 @@
 
 package oracle.kubernetes.operator.http;
 
-import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.Arrays;
 import java.util.Map;
@@ -15,12 +16,10 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
-import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -249,44 +248,54 @@ public class HttpClient {
   }
 
   /**
-   * Returns the URL to access the service; using the service clusterIP and port.
-   *
-   * @param name The name of the Service that you want the URL for.
-   * @param namespace The Namespace in which the Service you want the URL for is defined.
-   * @return The URL of the Service, or null if it is not found
-   */
-  public static String getServiceURL(String name, String namespace) {
-    if (SERVICE_URL != null) {
-      return SERVICE_URL;
-    }
-    try {
-      CallBuilderFactory factory =
-          ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
-      return getServiceURL(factory.create().readService(name, namespace));
-    } catch (ApiException e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
-    }
-    return null;
-  }
-
-  /**
    * Returns the URL to access the Service; using the Service clusterIP and port.
    *
    * @param service The name of the Service that you want the URL for.
    * @return The URL of the Service or null if the URL cannot be found.
    */
   public static String getServiceURL(V1Service service) {
+    return getServiceURL(service, null, null);
+  }
+
+  /**
+   * Returns the URL to access the Service; using the Service clusterIP and port. If the service is
+   * headless, then the pod's IP is returned, if available.
+   *
+   * @param service The name of the Service that you want the URL for.
+   * @param pod The pod for headless services
+   * @param adminPort administration port name
+   * @return The URL of the Service or null if the URL cannot be found.
+   */
+  public static String getServiceURL(V1Service service, V1Pod pod, String adminPort) {
     if (service != null) {
       V1ServiceSpec spec = service.getSpec();
       if (spec != null) {
-        String portalIP =
-            "None".equalsIgnoreCase(spec.getClusterIP())
-                ? service.getMetadata().getName()
+        String portalIP = spec.getClusterIP();
+        if ("None".equalsIgnoreCase(spec.getClusterIP())) {
+          if (pod != null && pod.getStatus().getPodIP() != null) {
+            portalIP = pod.getStatus().getPodIP();
+          } else {
+            portalIP =
+                service.getMetadata().getName()
                     + "."
                     + service.getMetadata().getNamespace()
-                    + ".svc.cluster.local"
-                : spec.getClusterIP();
-        int port = spec.getPorts().iterator().next().getPort();
+                    + ".pod.cluster.local";
+          }
+        }
+        int port = -1; // uninitialized
+        if (adminPort != null) {
+          for (V1ServicePort sp : spec.getPorts()) {
+            if (adminPort.equals(sp.getName())) {
+              port = sp.getPort();
+              break;
+            }
+          }
+          if (port == -1) {
+            return null;
+          }
+        } else {
+          port = spec.getPorts().iterator().next().getPort();
+        }
         portalIP += ":" + port;
         String serviceURL = HTTP_PROTOCOL + portalIP;
         LOGGER.fine(MessageKeys.SERVICE_URL, serviceURL);

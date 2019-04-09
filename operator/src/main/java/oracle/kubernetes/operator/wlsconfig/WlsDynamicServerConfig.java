@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains configuration of a WLS server that belongs to a dynamic cluster. */
 public class WlsDynamicServerConfig extends WlsServerConfig {
@@ -105,10 +104,5 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
   @Override
   public boolean isDynamicServer() {
     return true;
-  }
-
-  @Override
-  public String toString() {
-    return new ToStringBuilder(this).toString();
   }
 }
