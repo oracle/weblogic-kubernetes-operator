@@ -26,6 +26,8 @@ import oracle.kubernetes.operator.utils.TestUtils;
 public class BaseTest {
   public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   public static final String TESTWEBAPP = "testwebapp";
+  public static final String TESTWSAPP = "testwsapp";
+  public static final String TESTWSSERVICE = "TestWSApp";
 
   // property file used to customize operator properties for operator inputs yaml
 
@@ -321,6 +323,23 @@ public class BaseTest {
   }
 
   /**
+   * Verify Load Balancing by deploying and invoking webservicebapp.
+   *
+   * @param domain - domain where the app will be tested
+   * @throws Exception exception reported as a failure to build, deploy or verify load balancing for
+   *     Web Service app
+   */
+  public void testWSLoadBalancing(Domain domain) throws Exception {
+    logger.info("Inside testWSLoadBalancing");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
+
+    // invoke webservice via servlet client
+    domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
+    logger.info("Done - testWSLoadBalancing");
+  }
+
+  /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
    * balancing and node port service
    *
@@ -339,6 +358,9 @@ public class BaseTest {
     } else {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     }
+
+    // intermittent failure, see OWLS-73416
+    // testWSLoadBalancing(domain);
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     domain.verifyHasClusterServiceChannelPort("TCP", 8011, TESTWEBAPP + "/");
     logger.info("Done - testDomainLifecyle");
@@ -568,6 +590,15 @@ public class BaseTest {
         "/shared/domains/" + domainUID + "/bin/scripts/scalingAction.sh",
         podName,
         domainNS);
+  }
+
+  private void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
+      throws Exception {
+    String scriptName = "buildDeployWSAndWSClientAppInPod.sh";
+    // Build WS and WS client WARs in the admin pod and deploy it from the admin pod to a weblogic
+    // target
+    TestUtils.buildDeployWebServiceAppInPod(
+        domain, testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), wsName);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
