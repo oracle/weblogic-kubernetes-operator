@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
@@ -52,6 +53,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -575,19 +577,62 @@ public abstract class PodStepContext extends StepContextBase {
     return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
   }
 
-  // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
+    // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
     getPodLabels().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putLabelsItem(e.getKey(), e.getValue()));
     getPodAnnotations().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
+
+    insertShutdownEnvironmentVariables(pod);
     return pod;
   }
 
-  private static boolean isCustomerItem(Map.Entry<String, String> entry) {
+  /**
+   * Inserts into the pod the environment variables related to shutdown behavior.
+   *
+   * @param pod The pod
+   */
+  final void insertShutdownEnvironmentVariables(V1Pod pod) {
+    String shutdownType = GRACEFUL_SHUTDOWNTYPE;
+    int timeout = Shutdown.DEFAULT_TIMEOUT;
+    boolean ignoreSessions = Shutdown.DEFAULT_IGNORESESSIONS;
+    String serverName = null;
+    String clusterName = null;
+    Map<String, String> labels = pod.getMetadata().getLabels();
+    if (labels != null) {
+      serverName = labels.get(LabelConstants.SERVERNAME_LABEL);
+      clusterName = labels.get(LabelConstants.CLUSTERNAME_LABEL);
+    }
+
+    ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
+    if (serverSpec != null) {
+      Shutdown shutdown = serverSpec.getShutdown();
+      shutdownType = shutdown.getShutdownType();
+      timeout = shutdown.getTimeoutSeconds();
+      ignoreSessions = shutdown.getIgnoreSessions();
+    }
+
+    for (V1Container c : pod.getSpec().getContainers()) {
+      if (KubernetesConstants.CONTAINER_NAME.equals(c.getName())) {
+        List<V1EnvVar> env = c.getEnv();
+        if (scan != null) {
+          Integer localAdminPort = scan.getLocalAdminProtocolChannelPort();
+          addDefaultEnvVarIfMissing(env, "LOCAL_ADMIN_PORT", String.valueOf(localAdminPort));
+          addDefaultEnvVarIfMissing(env, "LOCAL_ADMIN_PROTOCOL", localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
+        }
+        addDefaultEnvVarIfMissing(env, "SHUTDOWN_FORCED", String.valueOf(!GRACEFUL_SHUTDOWNTYPE.equals(shutdownType)));
+        addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(timeout));
+        addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(ignoreSessions));
+        break;
+      }
+    }
+  }
+
+    private static boolean isCustomerItem(Map.Entry<String, String> entry) {
     return !entry.getKey().startsWith("weblogic.");
   }
 

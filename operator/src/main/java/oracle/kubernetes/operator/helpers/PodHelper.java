@@ -32,9 +32,12 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 public class PodHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  private static final int DEFAULT_ADDITIONAL_DELETE_TIME = 10;
 
   private PodHelper() {}
 
@@ -415,16 +418,30 @@ public class PodHelper {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
       V1Pod oldPod = info.removeServerPod(serverName);
 
+      long gracePeriodSeconds = Shutdown.DEFAULT_TIMEOUT;
+      String serverName = null;
+      String clusterName = null;
+      Map<String, String> labels = oldPod.getMetadata().getLabels();
+      if (labels != null) {
+        serverName = labels.get(LabelConstants.SERVERNAME_LABEL);
+        clusterName = labels.get(LabelConstants.CLUSTERNAME_LABEL);
+      }
+
+      ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
+      if (serverSpec != null) {
+        gracePeriodSeconds = serverSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
+      }
+
       if (oldPod != null) {
         String name = oldPod.getMetadata().getName();
-        return doNext(deletePod(name, info.getNamespace(), getNext()), packet);
+        return doNext(deletePod(name, info.getNamespace(), gracePeriodSeconds, getNext()), packet);
       } else {
         return doNext(packet);
       }
     }
 
-    private Step deletePod(String name, String namespace, Step next) {
-      V1DeleteOptions deleteOptions = new V1DeleteOptions();
+    private Step deletePod(String name, String namespace, long gracePeriodSeconds, Step next) {
+      V1DeleteOptions deleteOptions = new V1DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       return new CallBuilder()
           .deletePodAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(next));
     }

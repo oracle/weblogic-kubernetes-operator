@@ -51,11 +51,16 @@ public class UpdateDynamicClusterStep extends Step {
         DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
         WlsDomainConfig domainTopology =
             (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+        WlsServerConfig adminConfig =
+            domainTopology.getServerConfig(domainTopology.getAdminServerName());
 
         long startTime = System.currentTimeMillis();
 
         String serviceURL =
-            HttpClient.getServiceURL(info.getServerService(domainTopology.getAdminServerName()));
+            HttpClient.getServiceURL(
+                info.getServerService(domainTopology.getAdminServerName()),
+                info.getServerPod(domainTopology.getAdminServerName()),
+                adminConfig.getAdminProtocolChannelName());
 
         boolean successful =
             updateDynamicClusterSizeWithServiceURL(
