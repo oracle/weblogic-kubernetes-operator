@@ -472,7 +472,6 @@ public class Domain {
           .append(domainUid)
           .append(".org' ")
           .append(testAppUrl.toString());
-
       // curl cmd to get response code
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
       curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
@@ -707,6 +706,15 @@ public class Domain {
    */
   public String getAdminServerName() {
     return adminServerName;
+  }
+
+  /**
+   * Get the name of the cluster in the domain
+   *
+   * @return the name of the cluster
+   */
+  public String getClusterName() {
+    return clusterName;
   }
 
   /**
@@ -1202,7 +1210,7 @@ public class Domain {
       String responseCode = result.stdout().trim();
       if (!responseCode.equals("200")) {
         logger.info(
-            "testwebapp did not return 200 status code, got "
+            "callWebApp did not return 200 status code, got "
                 + responseCode
                 + ", iteration "
                 + i
@@ -1210,14 +1218,14 @@ public class Domain {
                 + maxIterations);
         if (i == (maxIterations - 1)) {
           throw new RuntimeException(
-              "FAILURE: testwebapp did not return 200 status code, got " + responseCode);
+              "FAILURE: callWebApp did not return 200 status code, got " + responseCode);
         }
         try {
           Thread.sleep(waitTime * 1000);
         } catch (InterruptedException ignore) {
         }
       } else {
-        logger.info("testwebapp returned 200 response code, iteration " + i);
+        logger.info("callWebApp returned 200 response code, iteration " + i);
         break;
       }
     }
@@ -1225,20 +1233,24 @@ public class Domain {
 
   private void callWebAppAndCheckForServerNameInResponse(
       String curlCmd, boolean verifyLoadBalancing) throws Exception {
+    callWebAppAndCheckForServerNameInResponse(curlCmd, verifyLoadBalancing, 50);
+  }
+
+  private void callWebAppAndCheckForServerNameInResponse(
+      String curlCmd, boolean verifyLoadBalancing, int maxIterations) throws Exception {
     // map with server names and boolean values
     HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
     for (int i = 1; i <= TestUtils.getClusterReplicas(domainUid, clusterName, domainNS); i++) {
       managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
     }
-    logger.info("Calling webapp 20 times " + curlCmd);
+    logger.info("Calling webapp " + maxIterations + " times " + curlCmd);
     // number of times to call webapp
-    for (int i = 0; i < 20; i++) {
-      ExecResult result = TestUtils.exec(curlCmd);
 
+    for (int i = 0; i < maxIterations; i++) {
+      ExecResult result = ExecCommand.exec(curlCmd.toString());
       logger.info("webapp invoked successfully for curlCmd:" + curlCmd);
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
-        // logger.info("response: " + response);
         for (String key : managedServers.keySet()) {
           if (response.contains(key)) {
             managedServers.put(key, new Boolean(true));
@@ -1247,6 +1259,7 @@ public class Domain {
         }
       }
     }
+
     logger.info("ManagedServers " + managedServers);
 
     // error if any managedserver value is false
@@ -1647,19 +1660,13 @@ public class Domain {
    * @param webappName - Web App Name to be deployed
    * @param scriptName - a shell script to build WAR, EAR or JAR file and deploy the App in the
    *     admin pod
-   * @param archiveExt - archive extention
-   * @param infoDirNames - archive information dir location
    * @param username - weblogic user name
    * @param password - weblogc password
+   * @param args - optional args to add for script if needed
    * @throws Exception
    */
-  private void callShellScriptToBuildDeployAppInPod(
-      String webappName,
-      String scriptName,
-      String archiveExt,
-      String infoDirNames,
-      String username,
-      String password)
+  public void callShellScriptToBuildDeployAppInPod(
+      String webappName, String scriptName, String username, String password, String... args)
       throws Exception {
 
     String nodeHost = getHostNameForCurl();
@@ -1696,9 +1703,7 @@ public class Domain {
         .append(" ")
         .append(clusterName)
         .append(" ")
-        .append(infoDirNames)
-        .append(" ")
-        .append(archiveExt)
+        .append(String.join(" ", args).toString())
         .append("'");
 
     logger.info("Command to exec script file: " + cmdKubectlSh);
@@ -1799,7 +1804,7 @@ public class Domain {
     String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
     String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
 
-    // Default velues to build archive file
+    // Default values to build archive file
     final String initInfoDirName = "WEB-INF";
     String archiveExt = "war";
     String infoDirName = initInfoDirName;
@@ -1821,6 +1826,7 @@ public class Domain {
     // Check archive file type
     if (!subDirList.contains(infoDirName)) {
       infoDirName = "META-INF";
+
       // Create .ear file or .jar file for EJB
       archiveExt = (args.length == 0) ? "ear" : args[0];
     }
@@ -1837,9 +1843,8 @@ public class Domain {
 
     // Copy all App files to the admin pod
     TestUtils.copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
-
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     callShellScriptToBuildDeployAppInPod(
-        appName, scriptName, archiveExt, infoDirName, username, password);
+        appName, scriptName, username, password, infoDirName, archiveExt);
   }
 }
