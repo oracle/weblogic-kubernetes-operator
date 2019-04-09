@@ -106,10 +106,10 @@ integration-test-java:
       chmod +x ./kubectl
       mv ./kubectl /usr/local/bin/kubectl
 
-      # install maven, includes java as dependency
-      curl -LO http://repos.fedorapeople.org/repos/dchen/apache-maven/epel-apache-maven.repo
-      mv epel-apache-maven.repo /etc/yum.repos.d/
-      yum install -y apache-maven
+      # install maven
+      curl -LO http://www-us.apache.org/dist/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz
+      tar -xf apache-maven-3.6.0-bin.tar.gz
+      mv apache-maven-3.6.0/ /usr/share/apache-maven/
       export M2_HOME="/usr/share/apache-maven"
       export PATH=$M2_HOME/bin:$PATH:$JAVA_HOME/bin
 
