@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
@@ -175,7 +175,7 @@ cat <<EOF > ${nm_props_file}
   JavaHome=${JAVA_HOME}
   LogLevel=FINEST
   DomainsFileEnabled=true
-  ListenAddress=${SERVICE_NAME}
+  ListenAddress=127.0.0.1
   NativeVersionEnabled=true
   ListenPort=5556
   LogToStderr=true
