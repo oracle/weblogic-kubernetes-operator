@@ -87,6 +87,7 @@ Typical attributes for overrides include:
 * Server and domain log locations
 * Node Manager related configuration
 * Changing any existing MBean name
+* Adding or removing a module (for example, a JDBC module)
 
 **Specifically, do not use custom overrides for:**
 
@@ -94,6 +95,7 @@ Typical attributes for overrides include:
   * Servers
   * Clusters
   * Network Access Points (custom channels)
+  * Modules
 * Changing any of the following:
   * Dynamic cluster size
   * Default, SSL, and Admin channel `Enabled`, listen address, and port
@@ -122,7 +124,7 @@ The operator requires a different file name format for override templates than W
 | JDBC module     |  `jdbc-MODULENAME.xml`  |
 | Diagnostics module     |  `diagnostics-MODULENAME.xml`  |
 
-A `MODULENAME` must correspond to the MBean name of a system resource defined in your original `config.xml` file.
+A `MODULENAME` must correspond to the MBean name of a system resource defined in your original `config.xml` file. It's not possible to add a new module via overrides. If you need your overrides to setup a new module, then have your original configuration specify 'skeleton' modules that can be overridden.
 
 #### Override template schemas
 
@@ -184,24 +186,28 @@ The secret macro `SECRETNAME` field must reference the name of a Kubernetes secr
 
 #### Override template syntax special requirements
 
-**Check each item below to ensure custom situational configuration takes effect:**
+**Check each item below for best practices and to ensure custom situational configuration takes effect:**
 
 * Reference the name of the current bean and each parent bean in any hierarchy you override.
   * Note that the `combine-mode` verbs (`add` and `replace`) should be omitted for beans that are already defined in your original domain home configuration.
-     * See [Override template samples](#override-template-samples) for examples.
+       * See [Override template samples](#override-template-samples) for examples.
 * Use situational config `replace` and `add` verbs as follows:
   * If you are adding a new bean that doesn't already exist in your original domain home `config.xml`, then specify `add` on the MBean itself and on each attribute within the bean.
        * See the `server-debug` stanza in [Override template samples](#override-template-samples) for an example.
   * If you are adding a new attribute to an existing bean in the domain home `config.xml`, then the attribute needs an `add` verb.
        * See the `max-message-size` stanza in [Override template samples](#override-template-samples) for an example.
   * If you are changing the value of an existing attribute within a domain home `config.xml`, then the attribute needs a `replace` verb.
-    * See the `public-address` stanza in  [Override template samples](#override-template-samples) for an example.
+       * See the `public-address` stanza in  [Override template samples](#override-template-samples) for an example.
 * When overriding `config.xml`:
   * The XML namespace (`xmlns:` in the XML) must be exactly as specified in [Override template schemas](#override-template-schemas).
        * For example, use `d:` to reference `config.xml` beans and attributes, `f:` for `add` and `replace` `domain-fragment` verbs, and `s:` to reference the situational configuration schema.
   * Avoid specifying the domain name stanza, as this may cause some overrides to be ignored (for example, server-template scoped overrides).
 * When overriding modules:
   * It is a best practice to use XML namespace abbreviations `jms:`, `jdbc:`, and `wldf:` respectively for JMS, JDBC, and WLDF (diagnostics) module override files.
+  * A module must already exist in your original configuration if you want to override it; it's not possible to add a new module via overrides. If you need your overrides to setup a new module, then have your original configuration specify 'skeleton' modules that can be overridden.
+  * See [Overriding a data source module](#overriding-a-data-source-module) for best practice advice. Note that similar advice applies generally too other module types.
+* Consider having your original configuration reference invalid usernames, passwords, and URLs:
+  * If your original (non-overridden) configuration references non-working usernames, passwords, and URLS, then this helps guard against accidentally deploying a working configuration that's invalid for the intended environment. For example, if your base configuration references a working QA database, and there is some mistake in setting up overrides, then it's possible the running servers will connect to the QA database when you deploy to your production environment.
 
 #### Override template samples
 
@@ -240,6 +246,11 @@ The following `config.xml` override file demonstrates:
 
 The following `jdbc-testDS.xml` override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named `testDS` via `secret macros`.  The generated situational configuration that replaces the macros with secret values will be located in the `DOMAIN_HOME/optconfig/jdbc` directory.   The `password-encrypted` field will be populated with an encrypted value because it uses a secret macro with an `:encrypt` suffix.  The secret is named `dbsecret` and contains three keys: `url`, `username`, and `password`.
 
+Best practices for data source modules and their overrides:
+
+* A data source module must already exist in your original configuration if you want to override it; it's not possible to add a new module via overrides. If you need your overrides to setup a new module, then have your original configuration specify 'skeleton' modules that can be overridden. See the next two bullets for the typical contents of a skeleton data source module.
+* Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the datasource successfully connect to a database that's wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes deployment could cause your production applications to use your QA database.
+* Set your original (non-overridden) `JDBCConnectionPoolParams` `MinCapacity` and `InitialCapacity` to `0`, and set your original `DriverName` to a reference an existing JDBC Driver. This ensures you can still successfully boot a server even when you have configured invalid URL/username/password values, your database isn't running, and/or you haven't been specified your overrides yet.
 
 ```
 <?xml version='1.0' encoding='UTF-8'?>
