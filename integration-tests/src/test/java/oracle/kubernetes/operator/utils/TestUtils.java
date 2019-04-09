@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
@@ -193,6 +194,12 @@ public class TestUtils {
         .append(" | wc -l");
 
     checkCmdInLoopForDelete(cmd.toString(), "\"" + domainUid + "\" not found", domainUid);
+  }
+
+  public static void checkNamespaceDeleted(String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get ns ").append(namespace);
+    checkCmdInLoopForDelete(cmd.toString(), "\"" + namespace + "\" not found", namespace);
   }
 
   public static void deletePVC(String pvcName, String namespace, String domainUid)
@@ -1050,6 +1057,51 @@ public class TestUtils {
     k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
   }
 
+  /**
+   * create oracle db pod in the k8s cluster
+   *
+   * @param dbPropsFile - db properties file
+   * @return - OracleDB instance
+   * @throws Exception - if any error occurs when creating Oracle DB pod
+   */
+  public static OracleDB createOracleDB(String dbPropsFile) throws Exception {
+    OracleDB oracledb = new OracleDB(dbPropsFile);
+
+    // check the db is ready
+    String dbnamespace = oracledb.getNamespace();
+
+    String cmd = "kubectl get pod -n " + dbnamespace + " -o jsonpath=\"{.items[0].metadata.name}\"";
+    ExecResult result = ExecCommand.exec(cmd);
+    String podName = result.stdout();
+
+    logger.info("DEBUG: db namespace=" + dbnamespace);
+    logger.info("DEBUG: podname=" + podName);
+    TestUtils.checkPodReady("", dbnamespace);
+
+    // check the db is ready to use
+    cmd = "kubectl logs " + podName + " -n " + dbnamespace;
+    checkCmdInLoop(cmd, "The database is ready for use", podName);
+
+    return oracledb;
+  }
+
+  /**
+   * Replaces the string matching the given search pattern with a new string.
+   *
+   * @param filename - filename in which the string will be replaced
+   * @param originalString - the string which needs to be replaced
+   * @param newString - the new string to replace
+   * @throws Exception - if any error occurs
+   */
+  public static void replaceStringInFile(String filename, String originalString, String newString)
+      throws Exception {
+    Path path = Paths.get(filename);
+
+    String content = new String(Files.readAllBytes(path));
+    content = content.replaceAll(originalString, newString);
+    Files.write(path, content.getBytes());
+  }
+
   private static KeyStore createKeyStore(Operator operator) throws Exception {
     // get operator external certificate from weblogic-operator.yaml
     String opExtCertFile = getExternalOperatorCertificate(operator);
@@ -1094,7 +1146,7 @@ public class TestUtils {
         logger.info(
             "Pod "
                 + k8sObjName
-                + " is not Running Ite ["
+                + " is not Running/Ready Ite ["
                 + i
                 + "/"
                 + BaseTest.getMaxIterationsPod()
