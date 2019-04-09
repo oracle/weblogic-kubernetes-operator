@@ -30,7 +30,8 @@
 		<src-integration-test>${project.basedir}/src/test/java</src-integration-test>
 		<resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
 	</properties>
-	<build>
+
+<!--	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -53,7 +54,7 @@
 							<skip>${skipITs}</skip>
 						</configuration>
 					</execution>
-					<execution><!-- pull or build images, create secrets, etc -->
+					<execution>
 						<id>${setupenvid}</id>
 						<phase>pre-integration-test</phase>
 						<goals>
@@ -104,15 +105,12 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>2.22.1</version>
-				<configuration> <!-- run tests in parallel -->
+				<configuration>
 					<encoding>UTF-8</encoding>
 					<argLine>${failsafeArgLine}</argLine>
 					<failIfNoTests>false</failIfNoTests>
 					<systemPropertyVariables>
-						<!-- Add any system properties here -->
-						<!--<project.build.directory>${project.build.directory}</project.build.directory> -->
-						<!--<weblogic.operator.root.directory>${basedir}/..</weblogic.operator.root.directory> -->
-						<!--<TAGS>${env.TAGS}</TAGS> -->
+
 						<maxThreads>3</maxThreads>
 					</systemPropertyVariables>
 					<additionalClasspathElements>
@@ -136,7 +134,6 @@
 						<configuration>
 							<skipTests>${skipITs}</skipTests>
 							<systemPropertyVariables>
-								<!-- Set JUL Formatting -->
 								<java.util.logging.SimpleFormatter.format>%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS %4$-6s %2$s %5$s%6$s%n</java.util.logging.SimpleFormatter.format>
 							</systemPropertyVariables>
 							<trimStackTrace>false</trimStackTrace>
@@ -146,7 +143,7 @@
 			</plugin>
 		</plugins>
 	</build>
-
+-->
 	<dependencies>
 		<!-- test dependencies -->
 		<dependency>
@@ -205,6 +202,231 @@
 		</dependency>
 	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>${maven-enforcer-plugin-version}</version>
+				<executions>
+					<execution>
+						<id>enforce-maven</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireMavenVersion>
+									<version>${maven.version.range}</version>
+								</requireMavenVersion>
+								<requireJavaVersion>
+									<version>${java.version.range}</version>
+								</requireJavaVersion>
+								<requirePluginVersions></requirePluginVersions>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin-version}</version>
+				<configuration>
+					<release>11</release>
+					<compilerArgs>
+						<arg>-Xpkginfo:always</arg>
+					</compilerArgs>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.coveo</groupId>
+				<artifactId>fmt-maven-plugin</artifactId>
+				<version>2.8</version>
+				<executions>
+					<execution>
+						<phase>test</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>${maven-release-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>${maven-resources-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin-version}</version>
+				<configuration>
+					<skipTests>true</skipTests>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>${maven-jar-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-pmd-plugin</artifactId>
+				<version>${maven-pmd-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-site-plugin</artifactId>
+				<version>${maven-site-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven-javadoc-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>${maven-clean-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>${maven-checkstyle-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-install-plugin</artifactId>
+				<version>${maven-install-plugin-version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>${maven-deploy-plugin-version}</version>
+			</plugin>
+			<plugin>
+			  <groupId>com.github.spotbugs</groupId>
+			  <artifactId>spotbugs-maven-plugin</artifactId>
+			  <version>${spotbugs-maven-plugin-version}</version>
+			</plugin>
+			<plugin>
+			  <groupId>org.jacoco</groupId>
+			  <artifactId>jacoco-maven-plugin</artifactId>
+			  <version>${jacoco.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<skip>${skipITs}</skip>
+						</configuration>
+					</execution>
+					<execution>
+						<id>${setupenvid}</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<skip>${skipITs}</skip>
+							<executable>${resource-integration-test}/${setupenvid}.sh</executable>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>add-test-source</id>
+						<phase>generate-test-resources</phase>
+						<goals>
+							<goal>add-test-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${src-integration-test}</source>
+							</sources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>add-test-resource</id>
+						<phase>generate-test-resources</phase>
+						<goals>
+							<goal>add-test-resource</goal>
+						</goals>
+						<configuration>
+							<resources>
+								<resource>
+									<directory>${resource-integration-test}</directory>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>${maven-failsafe-plugin-version}</version>
+				<configuration>
+					<argLine>
+						--illegal-access=permit
+					</argLine>
+					<encoding>UTF-8</encoding>
+					<argLine>
+						--illegal-access=permit
+					</argLine>
+					<argLine>${failsafeArgLine}</argLine>
+					<failIfNoTests>false</failIfNoTests>
+					<systemPropertyVariables>
+						<maxThreads>3</maxThreads>
+					</systemPropertyVariables>
+					<additionalClasspathElements>
+						<additionalClasspathElement>${project.basedir}/src/test/resources/wlthint3client.jar</additionalClasspathElement>
+					</additionalClasspathElements>
+					<includes>
+						<include>
+							${includes-failsafe}
+						</include>
+					</includes>
+				</configuration>
+
+				<executions>
+					<execution>
+						<id>integration-tests</id>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+						<phase>integration-test</phase>
+						<configuration>
+							<skipTests>${skipITs}</skipTests>
+							<systemPropertyVariables>
+								<java.util.logging.SimpleFormatter.format>%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS %4$-6s %2$s %5$s%6$s%n</java.util.logging.SimpleFormatter.format>
+							</systemPropertyVariables>
+							<trimStackTrace>false</trimStackTrace>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 	<profiles>
 
@@ -222,7 +444,7 @@
 					<plugin>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>exec-maven-plugin</artifactId>
-						<version>1.6.0</version>
+						<version>${exec-maven-plugin-version}</version>
 						<executions>
 							<execution>
 								<goals>
@@ -278,10 +500,19 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-failsafe-plugin</artifactId>
+
 						<version>2.22.1</version>
 						<configuration>
+
+						<version>${maven-failsafe-plugin-version}</version>
+						<configuration>
+							<argLine>
+								illegal-access=permit
+							</argLine>
 							<encoding>UTF-8</encoding>
-							<argLine>${failsafeArgLine}</argLine>
+							<argLine>
+								illegal-access=permit
+							</argLine>
 							<failIfNoTests>false</failIfNoTests>
 							<systemPropertyVariables>
 
@@ -438,7 +669,7 @@
 				<skipITs>true</skipITs>
 
 			</properties>
-			<build>
+<!--			<build>
 				<plugins>
 					<plugin>
 						<groupId>com.coveo</groupId>
@@ -455,7 +686,7 @@
 					</plugin>
 				</plugins>
 			</build>
+-->
 		</profile>
 	</profiles>
-
 </project>
