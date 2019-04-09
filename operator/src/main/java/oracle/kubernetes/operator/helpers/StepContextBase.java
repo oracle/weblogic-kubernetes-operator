@@ -38,7 +38,8 @@ public abstract class StepContextBase implements StepContextConstants {
 
     List<V1EnvVar> vars = getConfiguredEnvVars(tuningParameters);
 
-    addDefaultEnvVarIfMissing(vars, "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom");
+    addDefaultEnvVarIfMissing(
+        vars, "USER_MEM_ARGS", "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom");
 
     hideAdminUserCredentials(vars);
     doSubstitution(vars);
