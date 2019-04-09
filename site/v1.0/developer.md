@@ -1,4 +1,4 @@
-> **WARNING** This documentation is for version 1.0 of the operator.  To view documenation for the current release, [please click here](/site).
+> **WARNING** This documentation is for version 1.0 of the operator.  To view documentation for the current release, [please click here](/site).
 
 # Developer guide
 
@@ -29,20 +29,20 @@ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 ## Operator branching model
 
-The ```master``` branch is protected and will always contain source for the latest, generally available (GA) 
+The ```master``` branch is protected and will always contain source for the latest, generally available (GA)
 release of the operator, including any critical hot fixes.  No general pull requests will be merged to this branch.
 
 Active work will be performed on the ```develop``` branch.  This branch is also protected.  Please submit pull
 requests to this branch unless you are collaborating on a feature and have another target branch.  
 Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README] (README.md).
 
-Longer running feature work will be performed on specific branches, such as ```feature/dynamic-clusters```.  Since we want 
+Longer running feature work will be performed on specific branches, such as ```feature/dynamic-clusters```.  Since we want
 to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we
-encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into 
+encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into
 their own shorter-lived branches and create pull requests to ```develop``` when these smaller work items are complete.
 
 When it is time for a release, we will branch off ```develop``` to create a per-release branch.  Here, we will update version
-numbers, rebuild javadoc, if necessary, and perform any other pre-release updates.  Finally, this release branch will be merged 
+numbers, rebuild javadoc, if necessary, and perform any other pre-release updates.  Finally, this release branch will be merged
 to ```master```.
 
 ## Building the operator

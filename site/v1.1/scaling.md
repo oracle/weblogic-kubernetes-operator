@@ -1,4 +1,4 @@
-> **WARNING** This documentation is for version 1.1 of the operator.  To view documenation for the current release, [please click here](/site).
+> **WARNING** This documentation is for version 1.1 of the operator.  To view documentation for the current release, [please click here](/site).
 
 # Scaling a WebLogic cluster
 
@@ -114,25 +114,25 @@ are used to enable and configure the external REST endpoint:
 #    interface.  They are specified by the 'externalOperatorCert' and
 #    'eternalOperatorKey' properties.
 externalRestOption: NONE
-  
+
 # The node port that should be allocated for the external operator REST https interface.
 # This parameter is required if 'externalRestOption' is not 'NONE'.
 # Otherwise, it is ignored.
 externalRestHttpsPort: 31001
-  
+
 # The subject alternative names to put into the generated self-signed certificate
 # for the external WebLogic Operator REST https interface, for example:
 #   DNS:myhost,DNS:localhost,IP:127.0.0.1
 # This parameter is required if 'externalRestOption' is 'SELF_SIGNED_CERT'.
 # Otherwise, it is ignored.
 externalSans:
-  
+
 # The customer supplied certificate to use for the external operator REST
 # https interface.  The value must be a string containing a base64 encoded PEM certificate.
 # This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
 # Otherwise, it is ignored.
 externalOperatorCert:
-  
+
 # The customer supplied private key to use for the external operator REST
 # https interface.  The value must be a string containing a base64 encoded PEM key.
 # This parameter is required if 'externalRestOption' is 'CUSTOM_CERT'.
@@ -331,31 +331,31 @@ size=3 #New cluster size
 domdir=${PWD}
 ns=weblogic-operator # Operator NameSpace
 domainuid=domain1
-  
+
 # Retrieve service account name for given namespace   
 sec=`kubectl get serviceaccount ${ns} -n ${ns} -o jsonpath='{.secrets[0].name}'`
 #echo "Secret [${sec}]"
-  
+
 # Retrieve base64 encoded secret for the given service account   
 enc_token=`kubectl get secret ${sec} -n ${ns} -o jsonpath='{.data.token}'`
 #echo "enc_token [${enc_token}]"
-  
+
 # Decode the base64 encoded token  
 token=`echo ${enc_token} | base64 --decode`
 #echo "token [${token}]"
-  
+
 # Retrieve SSL certificate for the external REST endpoint from the generated yaml file for the Operator  
 operator_cert_data=`kubectl get cm -n ${ns} weblogic-operator-cm -o jsonpath='{.data.externalOperatorCert}'`
 #echo "operator_cert_data [${operator_cert_data}]"
-  
+
 # clean up any temporary files
 rm -rf operator.rest.response.body operator.rest.stderr operator.cert.pem
-  
+
 # Decode and store the encoded SSL certificate into a pem file  
 echo ${operator_cert_data} | base64 --decode > operator.cert.pem
-  
+
 echo "Rest EndPoint url https://${ophost}:${opport}/operator/v1/domains/${domainuid}/clusters/${cluster}/scale"
-  
+
 # Issue 'curl' request to external REST endpoint  
 curl --noproxy '*' -v --cacert operator.cert.pem \
 -H "Authorization: Bearer ${token}" \
