@@ -32,4 +32,6 @@ public interface KubernetesConstants {
   String DOMAIN_CONFIG_MAP_NAME = "weblogic-domain-cm";
   String DOMAIN_DEBUG_CONFIG_MAP_SUFFIX = "-weblogic-domain-debug-cm";
   String INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX = "-weblogic-domain-introspect-cm";
+
+  String GRACEFUL_SHUTDOWNTYPE = ShutdownType.Graceful.name();
 }
