@@ -98,8 +98,8 @@ public class BaseTest {
     username = appProps.getProperty("username", username);
     password = appProps.getProperty("password", password);
     maxIterationsPod =
-        new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
-    waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
+        Integer.parseInt(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod));
+    waitTimePod = Integer.parseInt(appProps.getProperty("waitTimePod", "" + waitTimePod));
     if (System.getenv("RESULT_ROOT") != null) {
       resultRoot = System.getenv("RESULT_ROOT");
     } else {

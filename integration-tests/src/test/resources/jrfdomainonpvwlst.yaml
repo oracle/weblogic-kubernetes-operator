@@ -1,0 +1,27 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# This domain inputs file is used to create domain on pv using wlst option and traefik load balancer.
+
+adminServerName: adminserver
+domainUID: jrfdomain1
+clusterName: infracluster
+configuredManagedServerCount: 1
+initialManagedServerReplicas: 1
+managedServerNameBase: infraserver
+#weblogicDomainStoragePath will be ignored, PV dir will be created at /<baseDir>/<USER>/acceptance_test_pv
+#weblogicDomainStoragePath: /scratch/external-domain-home/pv001/
+exposeAdminT3Channel: true
+t3ChannelPort: 30013
+exposeAdminNodePort: true
+namespace: jrfdomains
+#loadBalancer: TRAEFIK
+#ingressPerDomain: true
+#createDomainPyScript: integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py
+#voyagerWebPort: 30305
+image: phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3
+logHome: /shared/logs/jrfdomain1
+createDomainScriptsMountPath: /u01/weblogic
+createDomainScriptName: create-domain-job.sh
+createDomainFilesDir: integration-tests/src/test/resources/domain-home-on-pv/jrf
+domainPVMountPath: /shared
