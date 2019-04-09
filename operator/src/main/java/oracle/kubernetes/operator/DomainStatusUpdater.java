@@ -15,7 +15,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -31,7 +30,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -195,11 +194,7 @@ public class DomainStatusUpdater {
       }
 
       private boolean isHasFailedPod() {
-        return getServers().values().stream().anyMatch(this::isPodFailed);
-      }
-
-      private boolean isPodFailed(ServerKubernetesObjects sko) {
-        return Optional.ofNullable(sko.getPod().get()).map(PodWatcher::isFailed).orElse(false);
+        return getInfo().getServerPods().anyMatch(PodHelper::isFailed);
       }
 
       Map<String, ServerStatus> getServerStatuses() {
@@ -237,11 +232,9 @@ public class DomainStatusUpdater {
       }
 
       private String getNodeName(String serverName) {
-        return getPod(serverName).map(p -> p.getSpec().getNodeName()).orElse(null);
-      }
-
-      private Optional<V1Pod> getPod(String serverName) {
-        return Optional.ofNullable(getServers().get(serverName)).map(s -> s.getPod().get());
+        return Optional.ofNullable(getInfo().getServerPod(serverName))
+            .map(p -> p.getSpec().getNodeName())
+            .orElse(null);
       }
 
       private String getClusterName(String serverName) {
@@ -251,21 +244,17 @@ public class DomainStatusUpdater {
       }
 
       private String getClusterNameFromPod(String serverName) {
-        return getPod(serverName)
+        return Optional.ofNullable(getInfo().getServerPod(serverName))
             .map(p -> p.getMetadata().getLabels().get(CLUSTERNAME_LABEL))
             .orElse(null);
       }
 
       private Collection<String> getServerNames() {
-        Set<String> result = new HashSet<>(getServers().keySet());
+        Set<String> result = new HashSet<>(getInfo().getServerNames());
         if (config != null) {
           result.addAll(config.getServerConfigs().keySet());
         }
         return result;
-      }
-
-      private Map<String, ServerKubernetesObjects> getServers() {
-        return getInfo().getServers();
       }
     }
   }
