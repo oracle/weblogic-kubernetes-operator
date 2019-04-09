@@ -24,13 +24,11 @@ import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.models.V1Status;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -527,55 +525,27 @@ public class ServiceHelper {
   }
 
   /**
-   * Factory for {@link Step} that deletes per-managed server and channel services.
+   * Factory for {@link Step} that deletes services associated with a specific server.
    *
-   * @param sko Server Kubernetes Objects
    * @param next Next processing step
    * @return Step for deleting per-managed server and channel services
    */
-  public static Step deleteServicesStep(ServerKubernetesObjects sko, Step next) {
-    return new DeleteServicesIteratorStep(sko, next);
-  }
-
-  private static class DeleteServicesIteratorStep extends Step {
-    private final ServerKubernetesObjects sko;
-
-    DeleteServicesIteratorStep(ServerKubernetesObjects sko, Step next) {
-      super(next);
-      this.sko = sko;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Collection<StepAndPacket> startDetails = new ArrayList<>();
-
-      startDetails.add(new StepAndPacket(new DeleteServiceStep(sko, null), packet.clone()));
-      ConcurrentMap<String, V1Service> channels = sko.getChannels();
-      for (Map.Entry<String, V1Service> entry : channels.entrySet()) {
-        startDetails.add(
-            new StepAndPacket(
-                new DeleteChannelServiceStep(channels, entry.getKey(), null), packet.clone()));
-      }
-
-      if (startDetails.isEmpty()) {
-        return doNext(packet);
-      }
-      return doForkJoin(getNext(), packet, startDetails);
-    }
+  public static Step deleteServicesStep(String serverName, Step next) {
+    return new DeleteServiceStep(serverName, next);
   }
 
   private static class DeleteServiceStep extends Step {
-    private final ServerKubernetesObjects sko;
+    private final String serverName;
 
-    DeleteServiceStep(ServerKubernetesObjects sko, Step next) {
+    DeleteServiceStep(String serverName, Step next) {
       super(next);
-      this.sko = sko;
+      this.serverName = serverName;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      V1Service oldService = removeServiceFromRecord();
+      V1Service oldService = info.removeServerService(serverName);
 
       if (oldService != null) {
         return doNext(
@@ -588,46 +558,6 @@ public class ServiceHelper {
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
       return new CallBuilder()
           .deleteServiceAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(getNext()));
-    }
-
-    // Set service to null so that watcher doesn't try to recreate service
-    private V1Service removeServiceFromRecord() {
-      return sko.getService().getAndSet(null);
-    }
-  }
-
-  private static class DeleteChannelServiceStep extends Step {
-    private final ConcurrentMap<String, V1Service> channels;
-    private final String channelName;
-
-    DeleteChannelServiceStep(
-        ConcurrentMap<String, V1Service> channels, String channelName, Step next) {
-      super(next);
-      this.channels = channels;
-      this.channelName = channelName;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      V1Service oldService = removeServiceFromRecord();
-
-      if (oldService != null) {
-        return doNext(
-            deleteService(oldService.getMetadata().getName(), info.getNamespace()), packet);
-      }
-      return doNext(packet);
-    }
-
-    Step deleteService(String name, String namespace) {
-      V1DeleteOptions deleteOptions = new V1DeleteOptions();
-      return new CallBuilder()
-          .deleteServiceAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(getNext()));
-    }
-
-    // Set service to null so that watcher doesn't try to recreate service
-    private V1Service removeServiceFromRecord() {
-      return channels.remove(channelName);
     }
   }
 
