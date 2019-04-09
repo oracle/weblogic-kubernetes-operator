@@ -213,7 +213,7 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
+      value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
     # volumes:
     # - name: weblogic-domain-storage-volume
     #   persistentVolumeClaim:
