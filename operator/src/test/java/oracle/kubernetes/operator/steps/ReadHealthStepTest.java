@@ -7,7 +7,6 @@ package oracle.kubernetes.operator.steps;
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
@@ -58,7 +57,7 @@ public class ReadHealthStepTest {
     Packet packet = Stub.createStub(PacketStub.class).withServerName(SERVER_NAME);
 
     ReadHealthWithHttpClientStep withHttpClientStep =
-        new ReadHealthWithHttpClientStep(service, next);
+        new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
     assertThat(logRecords, containsFine(WLS_HEALTH_READ_FAILED, SERVER_NAME));

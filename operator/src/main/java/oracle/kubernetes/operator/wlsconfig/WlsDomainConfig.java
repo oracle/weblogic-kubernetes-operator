@@ -9,13 +9,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.WlsDomain;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains a snapshot of configuration for a WebLogic Domain. */
 public class WlsDomainConfig implements WlsDomain {
@@ -437,67 +439,6 @@ public class WlsDomainConfig implements WlsDomain {
     return getClusterConfigs().get(clusterName).getMaxClusterSize();
   }
 
-  public WlsDomainConfig withAdminServer(String adminServerName, String listenAddress, int port) {
-    setAdminServerName(adminServerName);
-    addWlsServer(adminServerName, listenAddress, port);
-    return this;
-  }
-
-  public WlsDomainConfig addWlsServer(String name, String listenAddress, int port) {
-    getServers().add(new WlsServerConfig(name, listenAddress, port));
-    return this;
-  }
-
-  public WlsDomainConfig withCluster(WlsClusterConfig clusterConfig) {
-    configuredClusters.add(clusterConfig);
-    return this;
-  }
-
-  /**
-   * Returns the topology equivalent of the domain configuration, as a map. It may be converted to
-   * YAML or JSON via an object mapper.
-   *
-   * @return a map containing the topology
-   */
-  public Map<String, Object> toTopology() {
-    Map<String, Object> topology = new HashMap<>();
-    topology.put("domainValid", "true");
-    topology.put("domain", createDomainTopology());
-    return topology;
-  }
-
-  private Map<String, Object> createDomainTopology() {
-    Map<String, Object> domainTopology = new HashMap<>();
-    domainTopology.put("name", name);
-    domainTopology.put("adminServerName", adminServerName);
-    domainTopology.put("configuredClusters", createClustersList());
-    domainTopology.put("servers", createServersList(servers));
-    return domainTopology;
-  }
-
-  private List<Map<String, Object>> createClustersList() {
-    return configuredClusters.stream().map(this::createTopology).collect(Collectors.toList());
-  }
-
-  private Map<String, Object> createTopology(WlsClusterConfig cluster) {
-    Map<String, Object> topology = new HashMap<>();
-    topology.put("name", cluster.getName());
-    topology.put("servers", createServersList(cluster.getServers()));
-    return topology;
-  }
-
-  private List<Map<String, Object>> createServersList(List<WlsServerConfig> servers) {
-    return servers.stream().map(this::createTopology).collect(Collectors.toList());
-  }
-
-  private Map<String, Object> createTopology(WlsServerConfig server) {
-    Map<String, Object> topology = new HashMap<>();
-    topology.put("name", server.getName());
-    topology.put("listenAddress", server.getListenAddress());
-    topology.put("listenPort", server.getListenPort());
-    return topology;
-  }
-
   /** Object used by the {@link #parseJson(String)} method to return multiple parsed objects. */
   static class ParsedJson {
     String domainName;
@@ -510,22 +451,48 @@ public class WlsDomainConfig implements WlsDomain {
 
   @Override
   public String toString() {
-    return "WlsDomainConfig{"
-        + "name='"
-        + name
-        + '\''
-        + ", adminServerName='"
-        + adminServerName
-        + '\''
-        + ", configuredClusters="
-        + configuredClusters
-        + ", servers="
-        + servers
-        + ", serverTemplates="
-        + serverTemplates
-        + ", wlsMachineConfigs="
-        + wlsMachineConfigs
-        + '}';
+    return new ToStringBuilder(this)
+        .append("name", name)
+        .append("adminServerName", adminServerName)
+        .append("configuredClusters", configuredClusters)
+        .append("servers", servers)
+        .append("serverTemplates", serverTemplates)
+        .append("wlsMachineConfigs", wlsMachineConfigs)
+        .toString();
+  }
+
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder =
+        new HashCodeBuilder()
+            .append(name)
+            .append(adminServerName)
+            .append(configuredClusters)
+            .append(servers)
+            .append(serverTemplates)
+            .append(wlsMachineConfigs);
+    return builder.toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof WlsDomainConfig)) {
+      return false;
+    }
+
+    WlsDomainConfig rhs = ((WlsDomainConfig) other);
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .append(name, rhs.name)
+            .append(adminServerName, rhs.adminServerName)
+            .append(configuredClusters, rhs.configuredClusters)
+            .append(servers, rhs.servers)
+            .append(serverTemplates, rhs.serverTemplates)
+            .append(wlsMachineConfigs, rhs.wlsMachineConfigs);
+    return builder.isEquals();
   }
 
   public void processDynamicClusters() {
