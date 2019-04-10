@@ -26,6 +26,11 @@
 		</license>
 	</licenses>
 
+	<properties>
+		<src-integration-test>${project.basedir}/src/test/java</src-integration-test>
+		<resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
+	</properties>
+
 	<dependencies>
 		<!-- test dependencies -->
 		<dependency>
@@ -314,8 +319,6 @@
 		<profile>
 			<id>java-integration-tests</id>
 			<properties>
-				<src-integration-test>${project.basedir}/src/test/java</src-integration-test>
-				<resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
 				<skipITs>false</skipITs>
 				<setupenvid>setupenv</setupenvid>
 				<includes-failsafe>**/IT*</includes-failsafe>
@@ -324,8 +327,6 @@
 		<profile>
 			<id>jrf-integration-tests</id>
 			<properties>
-				<src-integration-test>${project.basedir}/src/test/java</src-integration-test>
-				<resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
 				<skipITs>false</skipITs>
 				<setupenvid>setupjrfenv</setupenvid>
 				<includes-failsafe>**/JrfInOperatorTest.java</includes-failsafe>
