@@ -622,9 +622,13 @@ public abstract class PodStepContext extends StepContextBase {
         if (scan != null) {
           Integer localAdminPort = scan.getLocalAdminProtocolChannelPort();
           addDefaultEnvVarIfMissing(env, "LOCAL_ADMIN_PORT", String.valueOf(localAdminPort));
-          addDefaultEnvVarIfMissing(env, "LOCAL_ADMIN_PROTOCOL", localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
+          addDefaultEnvVarIfMissing(
+              env,
+              "LOCAL_ADMIN_PROTOCOL",
+              localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
         }
-        addDefaultEnvVarIfMissing(env, "SHUTDOWN_FORCED", String.valueOf(!GRACEFUL_SHUTDOWNTYPE.equals(shutdownType)));
+        addDefaultEnvVarIfMissing(
+            env, "SHUTDOWN_FORCED", String.valueOf(!GRACEFUL_SHUTDOWNTYPE.equals(shutdownType)));
         addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(timeout));
         addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(ignoreSessions));
         break;
@@ -632,7 +636,7 @@ public abstract class PodStepContext extends StepContextBase {
     }
   }
 
-    private static boolean isCustomerItem(Map.Entry<String, String> entry) {
+  private static boolean isCustomerItem(Map.Entry<String, String> entry) {
     return !entry.getKey().startsWith("weblogic.");
   }
 
