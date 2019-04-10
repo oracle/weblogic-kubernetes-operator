@@ -13,7 +13,7 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/traceUtils.sh
 [ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1
 
-trace "Stop server ${SERVER_NAME}"
+trace "Stop server ${SERVER_NAME}" &>> /u01/oracle/stopserver.out
 
 checkEnv SERVER_NAME || exit 1
 
@@ -28,27 +28,27 @@ function check_for_shutdown() {
   state=`${SCRIPTPATH}/readState.sh`
   exit_status=$?
   if [ $exit_status -ne 0 ]; then
-    trace "Node manager not running or server instance not found; assuming shutdown"
+    trace "Node manager not running or server instance not found; assuming shutdown" &>> /u01/oracle/stopserver.out
     return 0
   fi
 
   if [ "$state" = "SHUTDOWN" ]; then
-    trace "Server is shutdown"
+    trace "Server is shutdown" &>> /u01/oracle/stopserver.out
     return 0
   fi
 
   if [[ "$state" =~ ^FAILED ]]; then
-    trace "Server in failed state"
+    trace "Server in failed state" &>> /u01/oracle/stopserver.out
     return 0
   fi
 
-  trace "Server is currently in state $state"
+  trace "Server is currently in state $state" &>> /u01/oracle/stopserver.out
   return 1
 }
 
 # Check if the server is already shutdown
 check_for_shutdown
-[ $? -eq 0 ] && trace "Server already shutdown or failed" && exit 0
+[ $? -eq 0 ] && trace "Server already shutdown or failed" &>> /u01/oracle/stopserver.out && exit 0
 
 # Otherwise, connect to the node manager and stop the server instance
 [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace "Error: missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
@@ -60,14 +60,28 @@ timeout=${SHUTDOWN_TIMEOUT:-30}
 ignoreSessions=${SHUTDOWN_IGNORE_SESSIONS:-false}
 force=${SHUTDOWN_FORCED:-true}
 
-${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py $localAdminPort $localAdminProtocol $timeout $ignoreSessions $force
+trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> /u01/oracle/stopserver.out
+${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py $localAdminPort $localAdminProtocol $timeout $ignoreSessions $force &>> /u01/oracle/stopserver.out
+trace "After stop-server.py" &>> /u01/oracle/stopserver.out
 
-# Return status of 2 means failed to stop a server through the NodeManager.
-# Look to see if there is a server process that can be killed.
-if [ $? -eq 2 ]; then
-  pid=$(jps -v | grep '[D]weblogic.Name=${SERVER_NAME}' | awk '{print $1}')
-  if [ ! -z $pid ]; then
-    trace "Killing the server process $pid"
-    kill -15 $pid
-  fi
+# at this point node manager should have terminated the server
+# but let's try looking for the server process and
+# kill the server if the process still exists,
+# just in case we failed to stop it via wlst
+pid=$(jps -v | grep "[D]weblogic.Name=${SERVER_NAME}" | awk '{print $1}')
+if [ ! -z $pid ]; then
+  echo "Killing the server process $pid" &>> /u01/oracle/stopserver.out
+  kill -15 $pid
 fi
+
+# stop node manager process
+#
+trace "Stopping NodeManager" &>> /u01/oracle/stopserver.out
+pid=$(jps | grep "NodeManager" | awk '{print $1}')
+trace "PID=[${pid}]" &>> /u01/oracle/stopserver.out
+if [ ! -z $pid ]; then
+  echo "Killing NodeManager process $pid" &>> /u01/oracle/stopserver.out
+  kill -15 $pid
+fi
+
+trace "Exit script"  &>> /u01/oracle/stopserver.out
