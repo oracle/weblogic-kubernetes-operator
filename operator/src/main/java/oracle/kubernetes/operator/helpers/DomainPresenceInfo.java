@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
+import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
@@ -76,6 +78,10 @@ public class DomainPresenceInfo {
     return getSko(serverName).getService().get();
   }
 
+  public V1Service removeServerService(String serverName) {
+    return getSko(serverName).getService().getAndSet(null);
+  }
+
   V1Service[] getServiceServices() {
     return servers.values().stream()
         .map(ServerKubernetesObjects::getService)
@@ -83,14 +89,145 @@ public class DomainPresenceInfo {
         .toArray(V1Service[]::new);
   }
 
-  public V1Pod getServerPod(String serverName) {
-    return getSko(serverName).getPod().get();
+  /**
+   * Specifies the pod associated with an operator-managed server.
+   *
+   * @param serverName the name of the server
+   * @param pod the pod
+   */
+  public void setServerPod(String serverName, V1Pod pod) {
+    getSko(serverName).getPod().set(pod);
   }
 
+  /**
+   * Returns the pod associated with an operator-managed server.
+   *
+   * @param serverName the name of the server
+   * @return the corresponding pod, or null if none exists
+   */
+  public V1Pod getServerPod(String serverName) {
+    return getPod(getSko(serverName));
+  }
+
+  /**
+   * Returns a stream of all server pods present.
+   *
+   * @return a pod stream
+   */
+  public Stream<V1Pod> getServerPods() {
+    return getServers().values().stream().map(this::getPod).filter(Objects::nonNull);
+  }
+
+  private V1Pod getPod(ServerKubernetesObjects sko) {
+    return sko.getPod().get();
+  }
+
+  /**
+   * Returns a collection of all servers defined.
+   *
+   * @return the servers
+   */
+  public Collection<String> getServerNames() {
+    return getServers().keySet();
+  }
+
+  /**
+   * Applies an add or modify event for a server pod. If the current pod is newer than the one
+   * associated with the event, ignores the event.
+   *
+   * @param serverName the name of the server associated with the event
+   * @param event the pod associated with the event
+   */
+  public void setServerPodFromEvent(String serverName, V1Pod event) {
+    updateStatus(serverName, event);
+    getSko(serverName).getPod().accumulateAndGet(event, this::getNewerPod);
+  }
+
+  private void updateStatus(String serverName, V1Pod event) {
+    if (PodHelper.isReady(event)) {
+      getSko(serverName).getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
+    } else {
+      getSko(serverName).getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
+    }
+  }
+
+  private V1Pod getNewerPod(V1Pod first, V1Pod second) {
+    return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
+  }
+
+  private V1ObjectMeta getMetadata(V1Pod pod) {
+    return pod == null ? null : pod.getMetadata();
+  }
+
+  /**
+   * Computes the result of a delete attempt. If the current pod is newer than the one associated
+   * with the delete event, returns it; otherwise returns null, thus deleting the value.
+   *
+   * @param serverName the server name associated with the pod
+   * @param event the pod associated with the delete event
+   * @return the new value for the pod.
+   */
+  public boolean deleteServerPodFromEvent(String serverName, V1Pod event) {
+    if (serverName == null) return false;
+    ServerKubernetesObjects sko = getSko(serverName);
+    V1Pod deletedPod = sko.getPod().getAndAccumulate(event, this::getNewerCurrentOrNull);
+    if (deletedPod != null) sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
+    return deletedPod != null;
+  }
+
+  private V1Pod getNewerCurrentOrNull(V1Pod pod, V1Pod event) {
+    return KubernetesUtils.isFirstNewer(getMetadata(pod), getMetadata(event)) ? pod : null;
+  }
+
+  /**
+   * Removes the pod associated with the specified server name, if any.
+   *
+   * @param serverName the name of the server
+   * @return the deleted pod, or null if there was no such pod
+   */
+  public V1Pod removeServerPod(String serverName) {
+    return getSko(serverName).getPod().getAndSet(null);
+  }
+
+  /**
+   * Returns the last status reported for the specified server.
+   *
+   * @param serverName the name of the server
+   * @return the corresponding reported status
+   */
+  public String getLastKnownServerStatus(String serverName) {
+    return getSko(serverName).getLastKnownStatus().get();
+  }
+
+  /**
+   * Setss the last status reported for the specified server.
+   *
+   * @param serverName the name of the server
+   * @param status the new status
+   */
+  public void setLastKnownServerStatus(String serverName, String status) {
+    getSko(serverName).getLastKnownStatus().set(status);
+  }
+
+  /**
+   * Applies an add or modify event for a server service. If the current service is newer than the
+   * one associated with the event, ignores the event.
+   *
+   * @param serverName the name of the server associated with the event
+   * @param event the service associated with the event
+   */
   void setServerServiceFromEvent(String serverName, V1Service event) {
     getSko(serverName).getService().accumulateAndGet(event, this::getNewerService);
   }
 
+  /**
+   * Given the service associated with a server service-deleted event, removes the service if it is
+   * not older than the one recorded.
+   *
+   * @param serverName the name of the associated server
+   * @param event the service associated with the event
+   * @return true if the service was actually removed
+   */
   boolean deleteServerServiceFromEvent(String serverName, V1Service event) {
     if (serverName == null) return false;
     V1Service deletedService =
