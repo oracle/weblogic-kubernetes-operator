@@ -324,7 +324,7 @@ public class ITPodsRestart extends BaseTest {
             + "/weblogic-domains/"
             + domain.getDomainUid()
             + "/domain.yaml";
-    try {      
+    try {
       logger.log(
           Level.INFO,
           "Running kubectl get Domain {0} -n {1} --output json",
