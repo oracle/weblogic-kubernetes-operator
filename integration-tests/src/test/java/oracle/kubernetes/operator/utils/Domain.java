@@ -468,7 +468,6 @@ public class Domain {
           .append(domainUid)
           .append(".org' ")
           .append(testAppUrl.toString());
-
       // curl cmd to get response code
       StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
       curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
@@ -706,6 +705,15 @@ public class Domain {
   }
 
   /**
+   * Get the name of the cluster in the domain
+   *
+   * @return the name of the cluster
+   */
+  public String getClusterName() {
+    return clusterName;
+  }
+
+  /**
    * Get the namespace in which the domain is running
    *
    * @return the name of the domain name space
@@ -815,13 +823,13 @@ public class Domain {
   }
 
   /**
-   * verify domain server pods get restarted after a property change
+   * Verify domain server pods get restarted after a property change.
    *
-   * @param oldPropertyString
-   * @param newPropertyString
-   * @throws Exception
+   * @param oldPropertyString - the old property value
+   * @param newPropertyString - the new property value
+   * @throws Exception - IOException or errors occurred if the tested server is not restarted
    */
-  public void testDomainServerPodRestart(String oldPropertyString, String newPropertyString)
+  public void verifyDomainServerPodRestart(String oldPropertyString, String newPropertyString)
       throws Exception {
     logger.info("Inside testDomainServerPodRestart");
     String content =
@@ -869,6 +877,91 @@ public class Domain {
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml");
     }
     logger.info("Done - testDomainServerPodRestart");
+  }
+
+  /**
+   * Get runtime server yaml file and verify the changed property is in that file.
+   *
+   * @param changedProperty - the changed/added property
+   * @param serverName - server name that is being tested
+   * @throws Exception - test FAILURE Exception if the changed property is not found in the server
+   *     yaml file
+   */
+  public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
+    logger.info("Inside findServerPropertyChange");
+    // get runtime server pod yaml file
+    String outDir = BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/";
+    StringBuffer command = new StringBuffer();
+    command
+        .append("kubectl get po/")
+        .append(
+            domainUid
+                + "-"
+                + serverName
+                + " -o yaml -n "
+                + domainNS
+                + "|"
+                + "grep "
+                + "\""
+                + changedProperty
+                + "\"");
+    logger.info("kubectl execut with command: " + command.toString());
+    TestUtils.exec(command.toString());
+
+    String result = ((TestUtils.exec(command.toString())).stdout());
+    logger.info(
+        "in the method findServerPropertyChange, " + command.toString() + " return " + result);
+    if (!result.contains(changedProperty)) {
+      throw new Exception(
+          "FAILURE: didn't find the property: " + changedProperty + " for the server" + serverName);
+    }
+
+    logger.info("Done - findServerPropertyChange");
+  }
+
+  /**
+   * Verify domain server pods get restarted after the property change by kubectl apply -f new
+   * domain yaml file with added/changed property.
+   *
+   * @param fileNameWithChangedProperty - the fragment of domain yaml file with new added property
+   *     change
+   * @throws Exception - IOException or errors occurred if the tested server is not restarted
+   */
+  public void verifyDomainServerPodRestart(String fileNameWithChangedProperty) throws Exception {
+    logger.info("Inside testDomainServerPodRestart domainYamlWithChangedProperty");
+
+    String newDomainYamlFile =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml";
+    String domainYamlFile =
+        BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
+    String fileWithChangedProperty =
+        BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/"
+            + fileNameWithChangedProperty;
+
+    // copy the original domain.yaml to domain_new.yaml
+    TestUtils.copyFile(domainYamlFile, newDomainYamlFile);
+
+    // append the file with changed property to the end of domain_new.yaml
+    Files.write(
+        Paths.get(newDomainYamlFile),
+        Files.readAllBytes(Paths.get(fileWithChangedProperty)),
+        StandardOpenOption.APPEND);
+
+    // kubectl apply the new constructed domain_new.yaml
+    StringBuffer command = new StringBuffer();
+    command.append("kubectl apply  -f ").append(newDomainYamlFile);
+    logger.info("kubectl execut with command: " + command.toString());
+    TestUtils.exec(command.toString());
+
+    // verify the servers in the domain are being restarted in a sequence
+    verifyAdminServerRestarted();
+    verifyManagedServersRestarted();
+
+    // make domain.yaml include the new changed property
+    TestUtils.copyFile(newDomainYamlFile, domainYamlFile);
+
+    logger.info("Done - testDomainServerPodRestart with domainYamlWithChangedProperty");
   }
 
   /**
@@ -1113,7 +1206,7 @@ public class Domain {
       String responseCode = result.stdout().trim();
       if (!responseCode.equals("200")) {
         logger.info(
-            "testwebapp did not return 200 status code, got "
+            "callWebApp did not return 200 status code, got "
                 + responseCode
                 + ", iteration "
                 + i
@@ -1121,14 +1214,14 @@ public class Domain {
                 + maxIterations);
         if (i == (maxIterations - 1)) {
           throw new RuntimeException(
-              "FAILURE: testwebapp did not return 200 status code, got " + responseCode);
+              "FAILURE: callWebApp did not return 200 status code, got " + responseCode);
         }
         try {
           Thread.sleep(waitTime * 1000);
         } catch (InterruptedException ignore) {
         }
       } else {
-        logger.info("testwebapp returned 200 response code, iteration " + i);
+        logger.info("callWebApp returned 200 response code, iteration " + i);
         break;
       }
     }
@@ -1136,20 +1229,24 @@ public class Domain {
 
   private void callWebAppAndCheckForServerNameInResponse(
       String curlCmd, boolean verifyLoadBalancing) throws Exception {
+    callWebAppAndCheckForServerNameInResponse(curlCmd, verifyLoadBalancing, 50);
+  }
+
+  private void callWebAppAndCheckForServerNameInResponse(
+      String curlCmd, boolean verifyLoadBalancing, int maxIterations) throws Exception {
     // map with server names and boolean values
     HashMap<String, Boolean> managedServers = new HashMap<String, Boolean>();
     for (int i = 1; i <= TestUtils.getClusterReplicas(domainUid, clusterName, domainNS); i++) {
       managedServers.put(domainUid + "-" + managedServerNameBase + i, new Boolean(false));
     }
-    logger.info("Calling webapp 20 times " + curlCmd);
+    logger.info("Calling webapp " + maxIterations + " times " + curlCmd);
     // number of times to call webapp
-    for (int i = 0; i < 20; i++) {
-      ExecResult result = TestUtils.exec(curlCmd);
 
+    for (int i = 0; i < maxIterations; i++) {
+      ExecResult result = ExecCommand.exec(curlCmd.toString());
       logger.info("webapp invoked successfully for curlCmd:" + curlCmd);
       if (verifyLoadBalancing) {
         String response = result.stdout().trim();
-        // logger.info("response: " + response);
         for (String key : managedServers.keySet()) {
           if (response.contains(key)) {
             managedServers.put(key, new Boolean(true));
@@ -1158,6 +1255,7 @@ public class Domain {
         }
       }
     }
+
     logger.info("ManagedServers " + managedServers);
 
     // error if any managedserver value is false
@@ -1558,19 +1656,13 @@ public class Domain {
    * @param webappName - Web App Name to be deployed
    * @param scriptName - a shell script to build WAR, EAR or JAR file and deploy the App in the
    *     admin pod
-   * @param archiveExt - archive extention
-   * @param infoDirNames - archive information dir location
    * @param username - weblogic user name
    * @param password - weblogc password
+   * @param args - optional args to add for script if needed
    * @throws Exception
    */
-  private void callShellScriptToBuildDeployAppInPod(
-      String webappName,
-      String scriptName,
-      String archiveExt,
-      String infoDirNames,
-      String username,
-      String password)
+  public void callShellScriptToBuildDeployAppInPod(
+      String webappName, String scriptName, String username, String password, String... args)
       throws Exception {
 
     String nodeHost = getHostNameForCurl();
@@ -1607,9 +1699,7 @@ public class Domain {
         .append(" ")
         .append(clusterName)
         .append(" ")
-        .append(infoDirNames)
-        .append(" ")
-        .append(archiveExt)
+        .append(String.join(" ", args).toString())
         .append("'");
 
     logger.info("Command to exec script file: " + cmdKubectlSh);
@@ -1710,7 +1800,7 @@ public class Domain {
     String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
     String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
 
-    // Default velues to build archive file
+    // Default values to build archive file
     final String initInfoDirName = "WEB-INF";
     String archiveExt = "war";
     String infoDirName = initInfoDirName;
@@ -1732,6 +1822,7 @@ public class Domain {
     // Check archive file type
     if (!subDirList.contains(infoDirName)) {
       infoDirName = "META-INF";
+
       // Create .ear file or .jar file for EJB
       archiveExt = (args.length == 0) ? "ear" : args[0];
     }
@@ -1748,9 +1839,8 @@ public class Domain {
 
     // Copy all App files to the admin pod
     TestUtils.copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
-
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     callShellScriptToBuildDeployAppInPod(
-        appName, scriptName, archiveExt, infoDirName, username, password);
+        appName, scriptName, username, password, infoDirName, archiveExt);
   }
 }
