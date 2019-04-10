@@ -110,6 +110,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | podSecurityContext | [Pod Security Context](k8s1.9.0.md#pod-security-context) | Pod-level security attributes. |
 | readinessProbe | [Probe Tuning](#probe-tuning) | Settings for the readiness probe associated with a server. |
 | resources | [Resource Requirements](k8s1.9.0.md#resource-requirements) | Memory and cpu minimum requirements and limits for the server. |
+| shutdown | [Shutdown](#shutdown) | Configures how the operator should shutdown the server instance. |
 | volumeMounts | array of [Volume Mount](k8s1.9.0.md#volume-mount) | Additional volume mounts for the server pod. |
 | volumes | array of [Volume](k8s1.9.0.md#volume) | Additional volumes to be created in the server pod. |
 
@@ -156,6 +157,16 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | initialDelaySeconds | number | The number of seconds before the first check is performed |
 | periodSeconds | number | The number of seconds between checks |
 | timeoutSeconds | number | The number of seconds with no response that indicates a failure |
+
+### Shutdown
+
+Shutdown describes the configuration for shutting down a server instance.
+
+| Name | Type | Description |
+| --- | --- | --- |
+| ignoreSessions | boolean | For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling. Not required. Defaults to false. |
+| shutdownType | string | Tells the operator how to shutdown server instances. Not required. Defaults to graceful shutdown. |
+| timeoutSeconds | number | For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Not required. Defaults to 30 seconds. |
 
 ### Server Health
 
