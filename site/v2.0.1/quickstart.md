@@ -73,7 +73,7 @@ EOF
 
 ## 3. Create a Traefik (Ingress-based) load balancer.
 
-Use `helm` to install the [Traefik](../kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](../kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
+Use `helm` to install the [Traefik](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md) load balancer. Use the [values.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) in the sample but set `kubernetes.namespaces` specifically.
 ```
 $ helm install stable/traefik \
 --name traefik-operator \
@@ -145,7 +145,7 @@ $ helm upgrade \
 
 ## 6. Create a domain in the domain namespace.
 
-a. Create a Kubernetes secret containing the `username` and `password` for the domain using the [`create-weblogic-credentials`](../kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
+a. Create a Kubernetes secret containing the `username` and `password` for the domain using the [`create-weblogic-credentials`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 
 ```
 $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \
@@ -156,8 +156,8 @@ The sample will create a secret named `domainUID-weblogic-credentials` where the
 with the value you provided.  For example, the command above would create a secret named
 `sample-domain1-weblogic-credentials`.
 
-b.	Create a new image with a domain home by running the [`create-domain`](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script.
-Follow the directions in the [README](../kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file,
+b.	Create a new image with a domain home by running the [`create-domain`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script.
+Follow the directions in the [README](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/README.md) file,
 including:
 
 * Copying the sample `kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
@@ -214,7 +214,7 @@ You should also see all the Kubernetes services for the domain.
 $ kubectl get services -n sample-domain1-ns
 ```
 
-d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](../kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
+d.	Create an Ingress for the domain, in the domain namespace, by using the [sample](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
 ```
 $ helm install kubernetes/samples/charts/ingress-per-domain \
   --name sample-domain1-ingress \
@@ -261,7 +261,7 @@ a.	Remove the domain's Ingress by using `helm`:
 ```
 $ helm delete --purge sample-domain1-ingress
 ```
-b.	Remove the domain resources by using the sample [`delete-weblogic-domain-resources`](../kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script.
+b.	Remove the domain resources by using the sample [`delete-weblogic-domain-resources`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script.
 ```
 $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
 ```
