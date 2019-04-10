@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCRD;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -326,27 +327,32 @@ public class ITPodsRestart extends BaseTest {
     try {
       logger.info("Modifying the Domain CRD..");
       DomainCRD crd = new DomainCRD();
-      String yaml =
-          crd.addRestartVersionToAdminServer(
-              TestUtils.exec(
-                      "kubectl get Domain "
-                          + domain.getDomainUid()
-                          + " -n "
-                          + domain.getDomainNS()
-                          + " --output json")
-                  .stdout(),
-              "v1.1");
+      logger.log(
+          Level.INFO,
+          "Running kubectl get Domain {0} -n {1} --output json",
+          new Object[] {domain.getDomainUid(), domain.getDomainNS()});
+      String jsonCrd =
+          TestUtils.exec(
+                  "kubectl get Domain "
+                      + domain.getDomainUid()
+                      + " -n "
+                      + domain.getDomainNS()
+                      + " --output json")
+              .stdout();
+      logger.info(jsonCrd);
+      String yaml = crd.addRestartVersionToAdminServer(jsonCrd, "v1.1");
+      logger.info(yaml);
       Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
-      logger.info("Path of the modified domain.yaml :" + path.toString());
+      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, yaml.getBytes(charset));
-      logger.info("Running kubectl apply -f " + path.toString());
+      logger.log(Level.INFO, "Running kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the admin server is restarted");
       domain.verifyAdminServerRestarted();
     } finally {
-      logger.info("Running kubectl apply -f " + originalYaml);
+      logger.log(Level.INFO, "Running kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the admin server is restarted");
       domain.verifyAdminServerRestarted();
