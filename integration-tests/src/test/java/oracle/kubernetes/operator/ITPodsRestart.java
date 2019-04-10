@@ -337,10 +337,12 @@ public class ITPodsRestart extends BaseTest {
                   .stdout(),
               "v1.1");
       Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
+      logger.info("Path of the modified domain.yaml :" + path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, yaml.getBytes(charset));
       logger.info("Running kubectl apply -f " + path.toString());
-      logger.info(TestUtils.exec("kubectl apply -f " + path.toString()).stdout());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      logger.info(exec.stdout());
       logger.info("Verifying if the admin server is restarted");
       domain.verifyAdminServerRestarted();
     } finally {
