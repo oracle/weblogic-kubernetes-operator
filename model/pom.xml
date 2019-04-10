@@ -30,6 +30,30 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin-version}</version>
+        <executions>
+          <execution>
+            <id>enforce-maven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>${maven.version.range}</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>${java.version.range}</version>
+                </requireJavaVersion>
+                <requirePluginVersions></requirePluginVersions>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
         <version>3.0.0</version>
@@ -54,8 +78,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.7.0</version>
+        <version>${maven-compiler-plugin-version}</version>
         <configuration>
+          <release>11</release>
           <compilerArgs>
             <arg>-Xpkginfo:always</arg>
           </compilerArgs>
@@ -97,7 +122,7 @@
 
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>${maven-resources-plugin-version}</version>
         <executions>
           <execution>
             <phase>install</phase>

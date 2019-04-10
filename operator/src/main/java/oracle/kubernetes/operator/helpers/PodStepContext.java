@@ -224,10 +224,6 @@ public abstract class PodStepContext extends StepContextBase {
 
   abstract String getServerName();
 
-  ServerKubernetesObjects getSko() {
-    return info.getServers().computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
-  }
-
   // ----------------------- step methods ------------------------------
 
   // Prevent the watcher from recreating pod with old spec
@@ -236,7 +232,7 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private void setRecordedPod(V1Pod pod) {
-    getSko().getPod().set(pod);
+    info.setServerPod(getServerName(), pod);
   }
 
   /**
@@ -387,7 +383,7 @@ public abstract class PodStepContext extends StepContextBase {
 
     @Override
     public NextAction apply(Packet packet) {
-      V1Pod currentPod = getSko().getPod().get();
+      V1Pod currentPod = info.getServerPod(getServerName());
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
@@ -575,7 +571,7 @@ public abstract class PodStepContext extends StepContextBase {
 
   // ---------------------- model methods ------------------------------
 
-  private V1Pod createPodModel() {
+  V1Pod createPodModel() {
     return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
   }
 
