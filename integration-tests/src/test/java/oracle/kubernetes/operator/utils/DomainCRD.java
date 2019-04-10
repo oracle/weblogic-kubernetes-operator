@@ -108,12 +108,7 @@ public class DomainCRD {
    * @return - spec node entry from Domain CRD JSON tree
    */
   private JsonNode getSpecNode(JsonNode root) {
-    JsonNode items = root.get("items");
-    JsonNode spec = null;
-    for (JsonNode item : items) {
-      spec = item.path("spec");
-    }
-    return spec;
+    return root.path("spec");
   }
 
   /**
@@ -123,12 +118,7 @@ public class DomainCRD {
    * @return - administration server node entry from Domain CRD JSON tree
    */
   private JsonNode getAdminServerNode(JsonNode root) {
-    JsonNode items = root.get("items");
-    JsonNode adminServer = null;
-    for (JsonNode item : items) {
-      adminServer = item.path("spec").path("adminServer");
-    }
-    return adminServer;
+    return root.path("spec").path("adminServer");
   }
 
   /**
@@ -139,15 +129,11 @@ public class DomainCRD {
    * @return - cluster node entry from Domain CRD JSON tree
    */
   private JsonNode getClusterNode(JsonNode root, String clusterName) {
-    ArrayNode items = (ArrayNode) root.get("items");
-    ArrayNode clusters;
+    ArrayNode clusters = (ArrayNode) root.path("spec").path("clusters");
     JsonNode clusterNode = null;
-    for (JsonNode item : items) {
-      clusters = (ArrayNode) item.path("spec").path("clusters");
-      for (JsonNode cluster : clusters) {
-        if (cluster.get("clusterName").asText().equals(clusterName)) {
-          clusterNode = cluster;
-        }
+    for (JsonNode cluster : clusters) {
+      if (cluster.get("clusterName").asText().equals(clusterName)) {
+        clusterNode = cluster;
       }
     }
     return clusterNode;
@@ -163,23 +149,20 @@ public class DomainCRD {
    */
   private JsonNode getManagedServerNode(
       ObjectMapper objectMapper, JsonNode root, String managedServerName) {
-    ArrayNode items = (ArrayNode) root.get("items");
     ArrayNode managedservers = null;
     JsonNode managedserverNode = null;
-    for (JsonNode item : items) {
-      managedservers = (ArrayNode) item.path("spec").path("managedServers");
-      if (managedservers.size() != 0) {
-        for (JsonNode managedserver : managedservers) {
-          if (managedserver.get("serverName").equals(managedServerName)) {
-            managedserverNode = managedserver;
-          }
+    managedservers = (ArrayNode) root.path("spec").path("managedServers");
+    if (managedservers.size() != 0) {
+      for (JsonNode managedserver : managedservers) {
+        if (managedserver.get("serverName").equals(managedServerName)) {
+          managedserverNode = managedserver;
         }
-      } else {
-        ObjectNode managedserver = objectMapper.createObjectNode();
-        managedserver.put("serverName", managedServerName);
-        managedservers.add(managedserver);
-        managedserverNode = managedserver;
       }
+    } else {
+      ObjectNode managedserver = objectMapper.createObjectNode();
+      managedserver.put("serverName", managedServerName);
+      managedservers.add(managedserver);
+      managedserverNode = managedserver;
     }
     return managedserverNode;
   }
