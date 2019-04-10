@@ -421,18 +421,19 @@ public class PodHelper {
       long gracePeriodSeconds = Shutdown.DEFAULT_TIMEOUT;
       String serverName = null;
       String clusterName = null;
-      Map<String, String> labels = oldPod.getMetadata().getLabels();
-      if (labels != null) {
-        serverName = labels.get(LabelConstants.SERVERNAME_LABEL);
-        clusterName = labels.get(LabelConstants.CLUSTERNAME_LABEL);
-      }
-
-      ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
-      if (serverSpec != null) {
-        gracePeriodSeconds = serverSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
-      }
-
       if (oldPod != null) {
+        Map<String, String> labels = oldPod.getMetadata().getLabels();
+        if (labels != null) {
+          serverName = labels.get(LabelConstants.SERVERNAME_LABEL);
+          clusterName = labels.get(LabelConstants.CLUSTERNAME_LABEL);
+        }
+
+        ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
+        if (serverSpec != null) {
+          gracePeriodSeconds =
+              serverSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
+        }
+
         String name = oldPod.getMetadata().getName();
         return doNext(deletePod(name, info.getNamespace(), gracePeriodSeconds, getNext()), packet);
       } else {
