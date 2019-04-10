@@ -4,14 +4,11 @@
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -19,17 +16,11 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1JobCondition;
-import io.kubernetes.client.models.V1JobStatus;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1SecretReference;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
@@ -37,8 +28,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import oracle.kubernetes.TestUtils;
@@ -46,53 +35,48 @@ import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
-import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
-import oracle.kubernetes.operator.work.FiberGate;
-import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class DomainProcessorTest {
-  private static final String UID = "test-domain";
-  private static final String NS = "namespace";
-  private static final String ADMIN_SERVER_NAME = "admin";
-  private static final String INTROSPECTION_JOB = "jobPod";
+  private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
   private static final int MAX_SERVERS = 5;
   private static final String MS_PREFIX = "managed-server";
   private static final int MIN_REPLICAS = 2;
   private static final int NUM_ADMIN_SERVERS = 1;
   private static final int NUM_JOB_PODS = 1;
+  private static final String[] MANAGED_SERVER_NAMES =
+      IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
 
   private List<Memento> mementos = new ArrayList<>();
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private DomainConfigurator domainConfigurator;
-  private String[] managedServerNames =
-      IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
   private Map<String, DomainPresenceInfo> presenceInfoMap = new HashMap<>();
-  private DomainProcessorDelegateStub delegate =
-      createStrictStub(DomainProcessorDelegateStub.class, testSupport);
-  private DomainProcessorImpl processor = new DomainProcessorImpl(delegate);
-  private Domain domain =
-      new Domain()
-          .withMetadata(withTimestamps(new V1ObjectMeta().name(UID).namespace(NS)))
-          .withSpec(
-              new DomainSpec()
-                  .withWebLogicCredentialsSecret(new V1SecretReference().name("secret-name")));
+  private DomainProcessorImpl processor =
+      new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
+  private Domain domain = DomainProcessorTestSetup.createTestDomain();
 
-  private static V1ObjectMeta withTimestamps(V1ObjectMeta meta) {
-    return meta.creationTimestamp(DateTime.now()).resourceVersion("1");
+  private static WlsDomainConfig createDomainConfig() {
+    WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
+    for (String serverName : MANAGED_SERVER_NAMES) {
+      clusterConfig.addServerConfig(new WlsServerConfig(serverName, "domain1-" + serverName, 8001));
+    }
+    return new WlsDomainConfig("base_domain")
+        .withAdminServer(ADMIN_NAME, "domain1-admin-server", 7001)
+        .withCluster(clusterConfig);
   }
 
   @Before
@@ -105,29 +89,7 @@ public class DomainProcessorTest {
     mementos.add(UnitTestHash.install());
 
     domainConfigurator = DomainConfiguratorFactory.forDomain(domain);
-    testSupport.addToPacket(JOB_POD_NAME, INTROSPECTION_JOB);
-    testSupport.doOnCreate(
-        KubernetesTestSupport.JOB,
-        job ->
-            ((V1Job) job)
-                .setStatus(
-                    new V1JobStatus()
-                        .addConditionsItem(new V1JobCondition().type("Complete").status("True"))));
-    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, INTROSPECT_RESULT);
-    testSupport.defineResources(
-        new V1Pod()
-            .metadata(
-                new V1ObjectMeta()
-                    .putLabelsItem("job-name", "")
-                    .name(LegalNames.toJobIntrospectorName(UID))
-                    .namespace(NS)),
-        new V1ConfigMap()
-            .metadata(
-                new V1ObjectMeta().name(UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX).namespace(NS))
-            .data(new HashMap<>(ImmutableMap.of("topology.yaml", TOPOLOGY_YAML))),
-        new V1Job()
-            .metadata(
-                new V1ObjectMeta().name(LegalNames.toJobIntrospectorName(UID)).namespace(NS)));
+    new DomainProcessorTestSetup(testSupport).defineKubernetesResources(createDomainConfig());
   }
 
   @After
@@ -142,16 +104,17 @@ public class DomainProcessorTest {
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     processor.makeRightDomainPresence(info, true, false, false);
 
-    assertServerPodAndServicePresent(info, ADMIN_SERVER_NAME);
-    for (String serverName : managedServerNames) assertServerPodAndServicePresent(info, serverName);
+    assertServerPodAndServicePresent(info, ADMIN_NAME);
+    for (String serverName : MANAGED_SERVER_NAMES)
+      assertServerPodAndServicePresent(info, serverName);
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
   }
 
   @Test
   public void whenDomainScaledDown_removeExcessPodsAndServices() {
-    defineServerResources(ADMIN_SERVER_NAME);
-    Arrays.stream(managedServerNames).forEach(this::defineServerResources);
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -163,8 +126,8 @@ public class DomainProcessorTest {
 
   @Test
   public void whenDomainShutDown_removeAllPodsAndServices() {
-    defineServerResources(ADMIN_SERVER_NAME);
-    Arrays.stream(managedServerNames).forEach(this::defineServerResources);
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     processor.makeRightDomainPresence(info, true, true, true);
@@ -175,8 +138,8 @@ public class DomainProcessorTest {
 
   @Test
   public void whenDomainShutDown_ignoreNonOperatorServices() {
-    defineServerResources(ADMIN_SERVER_NAME);
-    Arrays.stream(managedServerNames).forEach(this::defineServerResources);
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     testSupport.defineResources(createNonOperatorService());
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -191,13 +154,13 @@ public class DomainProcessorTest {
         .metadata(
             new V1ObjectMeta()
                 .name("do-not-delete-service")
-                .namespace(NS)
+                .namespace(DomainProcessorTestSetup.NS)
                 .putLabelsItem("serviceType", "SERVER")
                 .putLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
-                .putLabelsItem(DOMAINNAME_LABEL, UID)
-                .putLabelsItem(DOMAINUID_LABEL, UID)
+                .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
+                .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
-                .putLabelsItem(SERVERNAME_LABEL, ADMIN_SERVER_NAME))
+                .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
         .spec(new V1ServiceSpec().type("ClusterIP"));
   }
 
@@ -222,13 +185,15 @@ public class DomainProcessorTest {
         new V1Pod()
             .metadata(
                 withServerLabels(
-                    new V1ObjectMeta().name(LegalNames.toServerName(UID, serverName)).namespace(NS),
+                    new V1ObjectMeta()
+                        .name(LegalNames.toPodName(DomainProcessorTestSetup.UID, serverName))
+                        .namespace(DomainProcessorTestSetup.NS),
                     serverName))
             .spec(new V1PodSpec()));
   }
 
   private V1ObjectMeta withServerLabels(V1ObjectMeta meta, String serverName) {
-    return KubernetesUtils.withOperatorLabels(meta, UID)
+    return KubernetesUtils.withOperatorLabels(DomainProcessorTestSetup.UID, meta)
         .putLabelsItem(SERVERNAME_LABEL, serverName);
   }
 
@@ -238,8 +203,10 @@ public class DomainProcessorTest {
             .metadata(
                 withServerLabels(
                     new V1ObjectMeta()
-                        .name(LegalNames.toServerServiceName(UID, serverName))
-                        .namespace(NS),
+                        .name(
+                            LegalNames.toServerServiceName(
+                                DomainProcessorTestSetup.UID, serverName))
+                        .namespace(DomainProcessorTestSetup.NS),
                     serverName)));
   }
 
@@ -247,105 +214,4 @@ public class DomainProcessorTest {
     assertThat(serverName + " server service", info.getServerService(serverName), notNullValue());
     assertThat(serverName + " pod", info.getServerPod(serverName), notNullValue());
   }
-
-  abstract static class DomainProcessorDelegateStub implements DomainProcessorDelegate {
-    private FiberTestSupport testSupport;
-
-    public DomainProcessorDelegateStub(FiberTestSupport testSupport) {
-      this.testSupport = testSupport;
-    }
-
-    @Override
-    public boolean isNamespaceRunning(String namespace) {
-      return true;
-    }
-
-    @Override
-    public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
-      return (pod, next) -> next;
-    }
-
-    @Override
-    public KubernetesVersion getVersion() {
-      return KubernetesVersion.TEST_VERSION;
-    }
-
-    @Override
-    public FiberGate createFiberGate() {
-      return testSupport.createFiberGate();
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(
-        Runnable command, long initialDelay, long delay, TimeUnit unit) {
-      return testSupport.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-    }
-  }
-
-  private static final String TOPOLOGY_YAML =
-      "domainValid: true\n"
-          + "domain:\n"
-          + "  name: \"base_domain\"\n"
-          + "  adminServerName: \""
-          + ADMIN_SERVER_NAME
-          + "\"\n"
-          + "  configuredClusters:\n"
-          + "    - name: \""
-          + CLUSTER
-          + "\"\n"
-          + "      servers:\n"
-          + "        - name: \""
-          + MS_PREFIX
-          + "1\"\n"
-          + "          listenPort: 8001\n"
-          + "          listenAddress: \"domain1-managed-server1\"\n"
-          + "        - name: \""
-          + MS_PREFIX
-          + "2\"\n"
-          + "          listenPort: 8001\n"
-          + "          listenAddress: \"domain1-managed-server2\"\n"
-          + "        - name: \""
-          + MS_PREFIX
-          + "3\"\n"
-          + "          listenPort: 8001\n"
-          + "          listenAddress: \"domain1-managed-server3\"\n"
-          + "        - name: \""
-          + MS_PREFIX
-          + "4\"\n"
-          + "          listenPort: 8001\n"
-          + "          listenAddress: \"domain1-managed-server4\"\n"
-          + "        - name: \""
-          + MS_PREFIX
-          + "5\"\n"
-          + "          listenPort: 8001\n"
-          + "          listenAddress: \"domain1-managed-server5\"\n"
-          + "  servers:\n"
-          + "    - name: \""
-          + ADMIN_SERVER_NAME
-          + "\"\n"
-          + "      listenPort: 7001\n"
-          + "      listenAddress: \"domain1-admin-server\"\n";
-
-  private static final String INTROSPECT_RESULT =
-      ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
-          + "#WebLogic User Configuration File; 2\n"
-          + "#Thu Oct 04 21:07:06 GMT 2018\n"
-          + "weblogic.management.username={AES}fq11xKVoE927O07IUKhQ00d4A8QY598Dvd+KSnHNTEA\\=\n"
-          + "weblogic.management.password={AES}LIxVY+aqI8KBkmlBTwkvAnQYQs4PS0FX3Ili4uLBggo\\=\n"
-          + "\n"
-          + ">>> EOF\n"
-          + "\n"
-          + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/userKeyNodeManager.secure\n"
-          + "\n"
-          + ">>>  /u01/introspect/domain1/userKeyNodeManager.secure\n"
-          + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==\n"
-          + "\n"
-          + ">>> EOF\n"
-          + "\n"
-          + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/topology.yaml\n"
-          + "\n"
-          + ">>>  /u01/introspect/domain1/topology.yaml\n"
-          + TOPOLOGY_YAML
-          + "\n"
-          + ">>> EOF";
 }
