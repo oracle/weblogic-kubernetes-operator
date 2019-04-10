@@ -7,7 +7,9 @@ package oracle.kubernetes.operator.rest;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.ServerSocket;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -41,7 +43,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-/** Tests the Weblogic Operator REST api */
+/** Tests the WebLogic Operator REST api */
 public class RestTest {
 
   private WebTarget externalHttpsTarget;
@@ -335,11 +337,32 @@ public class RestTest {
     return target.path(uri).request().header(HttpHeaders.AUTHORIZATION, "Bearer dummy token");
   }
 
+  private static int findFreePort() {
+    ServerSocket socket = null;
+    try {
+      socket = new ServerSocket(0);
+      socket.setReuseAddress(true);
+      int port = socket.getLocalPort();
+      return port;
+    } catch (IOException e) {
+    } finally {
+      if (socket != null) {
+        try {
+          socket.close();
+        } catch (IOException e) {
+        }
+      }
+    }
+    throw new IllegalStateException("Could not find a free TCP/IP port");
+  }
+
   public static class TestRestConfigImpl implements RestConfig {
-    private final int randomPort;
+    private final int externalPort;
+    private final int internalPort;
 
     public TestRestConfigImpl() {
-      randomPort = (int) (Math.random() * 8000) + 9000;
+      externalPort = findFreePort();
+      internalPort = findFreePort();
     }
 
     @Override
@@ -347,16 +370,14 @@ public class RestTest {
       return "localhost";
     }
 
-    // TBD - should we generate a random port #s?
-
     @Override
     public int getExternalHttpsPort() {
-      return randomPort;
+      return externalPort;
     }
 
     @Override
     public int getInternalHttpsPort() {
-      return randomPort + 1;
+      return internalPort;
     }
 
     @Override
