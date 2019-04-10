@@ -11,8 +11,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.ExecCommand;
-import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -101,8 +99,8 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Stop Operator. Start a managed server by applying a modified domain.yaml. Restart Operator and
-   * verify that it connects to this newly started managed server.
+   * Stop operator and apply the modified domain.yaml with replicas count increated. Restart
+   * operator and make sure the cluster is scaled up accordingly.
    *
    * @throws Exception
    */
@@ -117,25 +115,25 @@ public class ITServerDiscovery extends BaseTest {
 
     String cmd = "kubectl apply -f " + testDomainYamlFile;
     logger.info("Start a new managed server, managed-server3 using command:\n" + cmd);
-    ExecResult result = ExecCommand.exec(cmd);
+    TestUtils.exec(cmd);
 
     logger.info("Start the Operator");
     operator.startUsingReplicas();
 
     logger.info("Check the newly created managed-server3 is running");
     int replicas = 3;
-    varifyPodReady(replicas);
+    verifyPodReady(replicas);
 
     // restore the test env
     int msDecrNum = 1;
-    scaleDownAndVarify(msDecrNum);
+    scaleDownAndverify(msDecrNum);
 
     logger.info("SUCCESS - " + testMethodName);
   }
 
   /**
    * Stop and restart Operator and verify that it discovers running servers and a newly started
-   * server by scaling up cluster. Verify that the cluster scale up is noy impacted.
+   * server by scaling up cluster. Verify that the cluster scale up is not impacted.
    *
    * @throws Exception
    */
@@ -149,11 +147,11 @@ public class ITServerDiscovery extends BaseTest {
     operator.restartUsingReplicas();
 
     int msIncrNum = 1;
-    scaleUpAndVarify(msIncrNum);
+    scaleUpAndverify(msIncrNum);
 
     // restore the test env
     int msDecrNum = 1;
-    scaleDownAndVarify(msDecrNum);
+    scaleDownAndverify(msDecrNum);
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -181,7 +179,7 @@ public class ITServerDiscovery extends BaseTest {
 
     String cmd = "kubectl delete po/" + adminServerPodName + " -n " + domainNS;
     logger.info("Stop admin server <" + adminServerPodName + "> using command:\n" + cmd);
-    ExecResult result = ExecCommand.exec(cmd);
+    TestUtils.exec(cmd);
 
     logger.info("Checking if admin pod <" + adminServerPodName + "> is deleted");
     TestUtils.checkPodDeleted(adminServerPodName, domainNS);
@@ -193,11 +191,11 @@ public class ITServerDiscovery extends BaseTest {
     TestUtils.checkPodReady(adminServerPodName, domainNS);
 
     int msIncrNum = 1;
-    scaleUpAndVarify(msIncrNum);
+    scaleUpAndverify(msIncrNum);
 
     // restore the test env
     int msDecrNum = 1;
-    scaleDownAndVarify(msDecrNum);
+    scaleDownAndverify(msDecrNum);
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -228,7 +226,7 @@ public class ITServerDiscovery extends BaseTest {
       String msPodName = domainUid + "-" + managedServerNameBase + i;
       String cmd = "kubectl delete po/" + msPodName + " -n " + domainNS;
       logger.info("Stop managed server <" + msPodName + "> using command:\n" + cmd);
-      ExecResult result = ExecCommand.exec(cmd);
+      TestUtils.exec(cmd);
 
       logger.info("Checking if ms pod <" + msPodName + "> is deleted");
       TestUtils.checkPodDeleted(msPodName, domainNS);
@@ -267,7 +265,7 @@ public class ITServerDiscovery extends BaseTest {
     String msPodName = domainUid + "-" + managedServerNameBase + "1";
     String cmd = "kubectl delete po/" + msPodName + " -n " + domainNS;
     logger.info("Stop managed server <" + msPodName + "> using command:\n" + cmd);
-    ExecResult result = ExecCommand.exec(cmd);
+    TestUtils.exec(cmd);
 
     logger.info("Wait 10 seconds for ms to be restarted");
     Thread.sleep(10);
@@ -278,7 +276,7 @@ public class ITServerDiscovery extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
-  private void scaleDownAndVarify(int decrNum) throws Exception {
+  private void scaleDownAndverify(int decrNum) throws Exception {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -308,7 +306,7 @@ public class ITServerDiscovery extends BaseTest {
     }
   }
 
-  private void scaleUpAndVarify(int incrNum) throws Exception {
+  private void scaleUpAndverify(int incrNum) throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
     String domainNS = domainMap.get("namespace").toString();
@@ -322,10 +320,10 @@ public class ITServerDiscovery extends BaseTest {
     logger.info("Scale domain " + domainUid + " up to " + replicas + " managed servers");
     operator.scale(domainUid, clusterName, replicas);
 
-    varifyPodReady(replicas);
+    verifyPodReady(replicas);
   }
 
-  private void varifyPodReady(int replicas) throws Exception {
+  private void verifyPodReady(int replicas) throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
     String domainNS = domainMap.get("namespace").toString();
