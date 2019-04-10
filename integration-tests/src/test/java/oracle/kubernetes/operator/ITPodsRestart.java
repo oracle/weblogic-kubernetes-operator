@@ -88,7 +88,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -111,7 +111,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -133,7 +133,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -156,7 +156,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -179,7 +179,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -210,7 +210,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -247,7 +247,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -285,7 +285,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingResource() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -324,6 +324,7 @@ public class ITPodsRestart extends BaseTest {
             + domain.getDomainUid()
             + "/domain.yaml";
     try {
+      logger.info("Modifying the Domain CRD..");
       DomainCRD crd = new DomainCRD();
       String yaml =
           crd.addRestartVersionToAdminServer(
@@ -338,10 +339,14 @@ public class ITPodsRestart extends BaseTest {
       Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, yaml.getBytes(charset));
+      logger.info("Running kubectl apply -f " + path.toString());
       logger.info(TestUtils.exec("kubectl apply -f " + path.toString()).stdout());
+      logger.info("Verifying if the admin server is restarted");
       domain.verifyAdminServerRestarted();
     } finally {
+      logger.info("Running kubectl apply -f " + originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
+      logger.info("Verifying if the admin server is restarted");
       domain.verifyAdminServerRestarted();
     }
     logger.info("SUCCESS - " + testMethodName);
