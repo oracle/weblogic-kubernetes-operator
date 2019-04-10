@@ -324,9 +324,7 @@ public class ITPodsRestart extends BaseTest {
             + "/weblogic-domains/"
             + domain.getDomainUid()
             + "/domain.yaml";
-    try {
-      logger.info("Modifying the Domain CRD..");
-      DomainCRD crd = new DomainCRD();
+    try {      
       logger.log(
           Level.INFO,
           "Running kubectl get Domain {0} -n {1} --output json",
@@ -340,6 +338,8 @@ public class ITPodsRestart extends BaseTest {
                       + " --output json")
               .stdout();
       logger.info(jsonCrd);
+      logger.info("Modifying the Domain CRD..");
+      DomainCRD crd = new DomainCRD();
       String yaml = crd.addRestartVersionToAdminServer(jsonCrd, "v1.1");
       logger.info(yaml);
       Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
