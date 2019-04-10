@@ -1,3 +1,7 @@
+#!/usr/bin/env bash
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 usage(){
 cat <<EOF
 Usage: $0 [options] -a <subject alternative names> -n <namespace>
@@ -111,7 +115,6 @@ OP_ROOT_PEM="${TEMP_DIR}/${OP_PREFIX}.root.pem"
 OP_CA_PEM="${TEMP_DIR}/${OP_PREFIX}.ca.pem"
 OP_CERT_PEM="${TEMP_DIR}/${OP_PREFIX}.cert.pem"
 OP_KEY_PEM="${TEMP_DIR}/${OP_PREFIX}.key.pem"
-KEYTOOL=/usr/java/jdk1.8.0_141/bin/keytool
 
 # generate private keys (for operator-root and operator-ca)
 

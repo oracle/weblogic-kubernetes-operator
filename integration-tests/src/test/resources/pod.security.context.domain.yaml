@@ -1,0 +1,29 @@
+# Add podSecurityContext section at ServerPod Level
+# Make sure all pod(s) re-started 
+#serverPod:
+# podSecurityContext:
+#   runAsUser: 1000
+#   fsGroup: 2000
+# The generated server pods should look like:
+#spec:
+# securityContext:
+#   runAsUser: 1000
+#   fsGroup: 2000
+
+  serverPod:
+    podSecurityContext:
+      runAsUser: 1000
+      fsGroup: 2000
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
+    volumes:
+    - name: weblogic-domain-storage-volume
+      persistentVolumeClaim:
+        claimName: domainpodsrestart-weblogic-sample-pvc
+    volumeMounts:
+    - mountPath: /shared
+      name: weblogic-domain-storage-volume  
+          

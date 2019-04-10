@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.steps;
 
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -13,21 +12,19 @@ import oracle.kubernetes.operator.work.Step;
 
 public class ServerDownStep extends Step {
   private final String serverName;
-  private final ServerKubernetesObjects sko;
 
-  public ServerDownStep(String serverName, ServerKubernetesObjects sko, Step next) {
+  ServerDownStep(String serverName, Step next) {
     super(next);
     this.serverName = serverName;
-    this.sko = sko;
   }
 
   @Override
   public NextAction apply(Packet packet) {
     return doNext(
         PodHelper.deletePodStep(
-            sko,
+            serverName,
             ServiceHelper.deleteServicesStep(
-                sko, new ServerDownFinalizeStep(serverName, getNext()))),
+                serverName, new ServerDownFinalizeStep(serverName, getNext()))),
         packet);
   }
 }
