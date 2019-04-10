@@ -313,7 +313,7 @@ function deployCustomOverridesConfigMap() {
 function createTestRootPVDir() {
   trace "Info: PV_ROOT='$PV_ROOT'"
 
-  # TBD on Wercker/Jenkins PV_ROOT will differ and may already exist or be remote
+  # TBD on shared cluster/Jenkins PV_ROOT will differ and may already exist or be remote
   #     so we need to add logic/booleans to skip the following mkdir/chmod as needed
 
   mkdir -p ${PV_ROOT} || exit 1
