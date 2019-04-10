@@ -10,14 +10,12 @@ import static oracle.kubernetes.operator.LabelConstants.getCreatedbyOperatorSele
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
+import java.util.stream.Collectors;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -44,9 +42,10 @@ public class DeleteDomainStep extends Step {
             deletePersistentVolumeClaims(),
             ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUID, namespace, getNext()));
     if (info != null) {
-      Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
-      serversToStop.addAll(info.getServers().entrySet());
-      serverDownStep = new ServerDownIteratorStep(serversToStop, serverDownStep);
+      serverDownStep =
+          new ServerDownIteratorStep(
+              info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList()),
+              serverDownStep);
     }
 
     return doNext(serverDownStep, packet);

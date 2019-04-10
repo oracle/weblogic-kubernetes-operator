@@ -1,4 +1,4 @@
-> **WARNING** This documentation is for version 1.1 of the operator.  To view documenation for the current release, [please click here](/site).
+> **WARNING** This documentation is for version 1.1 of the operator.  To view documentation for the current release, [please click here](/site).
 
 # Elastic Stack integration
 
@@ -47,7 +47,7 @@ Get the `NodePort` from the Kibana services:
 
 Access the Kibana dashboard using the `NodePort` from the kubctl command output and the hostname, `http://hostname:NodePort` (for example, `http://slcac571:30211`).
 
-Select **Management** to configure an index pattern. You will see `logstash-*` prepopulated. 
+Select **Management** to configure an index pattern. You will see `logstash-*` prepopulated.
 
 Select the time filter, then click **Create**.
 
