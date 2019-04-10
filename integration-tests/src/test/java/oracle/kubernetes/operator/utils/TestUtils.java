@@ -1169,7 +1169,12 @@ public class TestUtils {
     while (i < BaseTest.getMaxIterationsPod()) {
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0) {
-        throw new RuntimeException("FAILURE: Command " + cmd + " failed " + result.stderr());
+        if (result.stderr().contains(matchStr)) {
+          logger.info("DEBUG: " + result.stderr());
+          break;
+        } else {
+          throw new RuntimeException("FAILURE: Command " + cmd + " failed " + result.stderr());
+        }
       }
       if (result.exitValue() == 0 && !result.stdout().trim().equals("0")) {
         logger.info("Command " + cmd + " returned " + result.stdout());

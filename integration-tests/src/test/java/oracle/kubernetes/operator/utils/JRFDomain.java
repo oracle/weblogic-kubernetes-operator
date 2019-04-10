@@ -60,6 +60,9 @@ public class JRFDomain extends Domain {
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
 
+    clusterType = (String) domainMap.getOrDefault("clusterType", "CONFIGURED");
+    domainMap.put("clusterType", clusterType);
+
     // copy samples to RESULT_DIR
     TestUtils.exec(
         "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
