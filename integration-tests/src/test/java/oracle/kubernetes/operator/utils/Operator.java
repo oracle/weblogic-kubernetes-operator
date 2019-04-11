@@ -378,7 +378,13 @@ public class Operator {
         sb.append(operatorNS);
         break;
     }
-    sb.append(" DNS:");
+    // here we are assuming that if the "host name" starts with a digit, then it is actually
+    // an IP address, and so we need to use the "IP" prefix in the SANS.
+    if (Character.isDigit(TestUtils.getHostName().charAt(0))) {
+      sb.append(" IP:");
+    } else {
+      sb.append(" DNS:");
+    }
     sb.append(TestUtils.getHostName());
     sb.append(" >> ");
     sb.append(generatedInputYamlFile);
