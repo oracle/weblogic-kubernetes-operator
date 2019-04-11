@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
@@ -36,6 +37,7 @@ public class ITPodsRestart extends BaseTest {
   private static Operator operator1;
   private static String domainUid = "";
   private static String restartTmpDir = "";
+  private static String originalYaml;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -59,6 +61,11 @@ public class ITPodsRestart extends BaseTest {
       Files.createDirectories(Paths.get(restartTmpDir));
 
       domain = createPodsRestartdomain();
+      originalYaml =
+          BaseTest.getUserProjectsDir()
+              + "/weblogic-domains/"
+              + domain.getDomainUid()
+              + "/domain.yaml";
       Assert.assertNotNull(domain);
     }
   }
@@ -319,20 +326,19 @@ public class ITPodsRestart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String originalYaml =
-        BaseTest.getUserProjectsDir()
-            + "/weblogic-domains/"
-            + domain.getDomainUid()
-            + "/domain.yaml";
+
     try {
       logger.info("Modifying the Domain CRD..");
       DomainCRD crd = new DomainCRD(originalYaml);
-      String yaml = crd.addObjectNodeToAdminServer("restartVersion", "v1.1");
-      logger.info(yaml);
+      Map<String, String> admin = new HashMap();
+      admin.put("restartVersion", "v1.1");
+      crd.addObjectNodeToAdminServer(admin);
+      String modYaml = crd.getYamlTree();
+      logger.info(modYaml);
       Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
       logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
-      Files.write(path, yaml.getBytes(charset));
+      Files.write(path, modYaml.getBytes(charset));
       logger.log(Level.INFO, "Running kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
@@ -343,104 +349,6 @@ public class ITPodsRestart extends BaseTest {
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the admin server is restarted");
       domain.verifyAdminServerRestarted();
-    }
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  // @Test
-  public void testClusterRestartVersions() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    ExecResult result;
-    String originalYaml =
-        BaseTest.getUserProjectsDir()
-            + "/weblogic-domains/"
-            + domain.getDomainUid()
-            + "/domain.yaml";
-    try {
-      result =
-          TestUtils.exec(
-              "kubectl get Domain "
-                  + domain.getDomainUid()
-                  + " -n "
-                  + domain.getDomainNS()
-                  + " --output json");
-      DomainCRD parser = new DomainCRD();
-      String yaml =
-          parser.addRestartVersionToCluster(
-              result.stdout(), domain.getDomainMap().get("clusterName").toString(), "v1.1");
-      Path path = Paths.get(restartTmpDir, "restart.cluster.yaml");
-      Charset charset = StandardCharsets.UTF_8;
-      Files.write(path, yaml.getBytes(charset));
-      result = TestUtils.exec("kubectl apply -f " + path.toString());
-      // TODO - verify that the pod is restarting
-    } finally {
-      result = TestUtils.exec("kubectl apply -f " + originalYaml);
-    }
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  // @Test
-  public void testMSRestartVersions() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    ExecResult result;
-    String originalYaml =
-        BaseTest.getUserProjectsDir()
-            + "/weblogic-domains/"
-            + domain.getDomainUid()
-            + "/domain.yaml";
-    try {
-      result =
-          TestUtils.exec(
-              "kubectl get Domain "
-                  + domain.getDomainUid()
-                  + " -n "
-                  + domain.getDomainNS()
-                  + " --output json");
-      DomainCRD parser = new DomainCRD();
-      String yaml = parser.addRestartVersionToMS(result.stdout(), "managed-server1", "v1.1");
-      Path path = Paths.get(restartTmpDir, "restart.ms.yaml");
-      Charset charset = StandardCharsets.UTF_8;
-      Files.write(path, yaml.getBytes(charset));
-      result = TestUtils.exec("kubectl apply -f " + path.toString());
-      // TODO - verify that the pod is restarting
-    } finally {
-      result = TestUtils.exec("kubectl apply -f " + originalYaml);
-    }
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  // @Test
-  public void testDomainRestartVersions() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    ExecResult result;
-    String originalYaml =
-        BaseTest.getUserProjectsDir()
-            + "/weblogic-domains/"
-            + domain.getDomainUid()
-            + "/domain.yaml";
-    try {
-      result =
-          TestUtils.exec(
-              "kubectl get Domain "
-                  + domain.getDomainUid()
-                  + " -n "
-                  + domain.getDomainNS()
-                  + " --output json");
-      DomainCRD parser = new DomainCRD();
-      String yaml = parser.addRestartVersionToDomain(result.stdout(), "v1.1");
-      Path path = Paths.get(restartTmpDir, "restart.ms.yaml");
-      Charset charset = StandardCharsets.UTF_8;
-      Files.write(path, yaml.getBytes(charset));
-      result = TestUtils.exec("kubectl apply -f " + path.toString());
-      // TODO - verify that the pod is restarting
-    } finally {
-      result = TestUtils.exec("kubectl apply -f " + originalYaml);
     }
     logger.info("SUCCESS - " + testMethodName);
   }
