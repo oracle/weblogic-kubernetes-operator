@@ -63,14 +63,32 @@ function setup_wercker {
 function pull_tag_images {
 
   export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
+
   set +x 
   if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
-	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
-		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
-	  	exit 1
+    # check the oracle db image exists if use jrf domain
+    if [ "$JRF_ENABLED" = true ] ; then
+	  if [ -z $(docker images -q $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB) ]; then
+      	echo "Image $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
+       	exit 1
+      fi
+	else
+	  if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
+    		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
+    	  	exit 1
+      fi
 	fi
   fi
-  
+
+  if [ "$JRF_ENABLED" = true ] ; then
+    if [ -z "$OCIR_REPO_USERNAME" ] || [ -z "$OCIR_REPO_PASSWORD" ] || [ -z "$OCIR_REPO_EMAIL" ]; then
+  	  if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
+        echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables OCIR_REPO_USERNAME, OCIR_REPO_PASSWORD and OCIR_REPO_EMAIL to pull the image."
+        exit 1
+      fi
+    fi
+  fi
+
   if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ] && [ -n "$DOCKER_EMAIL" ]; then  
 	  echo "Creating Docker Secret"
 	  
@@ -88,8 +106,37 @@ function pull_tag_images {
 	  fi
 	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
 	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-   	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+	  if [ "$JRF_ENABLED" = true ] ; then
+	    docker pull $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB
+	  else
+   	    docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+   	  fi
   fi
+
+  if [ "$JRF_ENABLED" = true ] ; then
+    export IMAGE_PULL_SECRET_FMWINFRA="${IMAGE_PULL_SECRET_FMWINFRA:-ocir-store}"
+
+    if [ -n "$OCIR_REPO_USERNAME" ] && [ -n "$OCIR_REPO_PASSWORD" ] && [ -n "$OCIR_REPO_EMAIL" ]; then
+  	  echo "Creating Docker Secret"
+
+  	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_FMWINFRA  \
+  	    --docker-server=phx.ocir.io \
+  	    --docker-username=$OCIR_REPO_USERNAME \
+  	    --docker-password=$OCIR_REPO_PASSWORD \
+  	    --docker-email=$OCIR_REPO_EMAIL
+
+  	  echo "Checking Secret"
+  	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_FMWINFRA | grep $IMAGE_PULL_SECRET_FMWINFRA | wc | awk ' { print $1; }'`"
+  	  if [ "$SECRET" != "1" ]; then
+  	    echo "secret $IMAGE_PULL_SECRET_FMWINFRA was not created successfully"
+  	    exit 1
+  	  fi
+  	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
+  	  docker login phx.ocir.io -u $OCIR_REPO_USERNAME -p $OCIR_REPO_PASSWORD
+      docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
+    fi
+  fi
+
   set -x
 
 }
@@ -100,15 +147,23 @@ function get_wlthint3client_from_image {
   docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
   docker rm -v $id
 }
+
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
 export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
-export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-store/oracle/weblogic}"
+
+if [ "$JRF_ENABLED" = true ] ; then
+  export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-phx.ocir.io/weblogick8s/oracle/fmw-infrastructure}"
+  export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-store/oracle/database-enterprise}"
+  export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1}"
+else
+   export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-store/oracle/weblogic}"
+fi
 export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
-    
+
 if [ -z "$BRANCH_NAME" ]; then
   export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
   if [ ! "$?" = "0" ] ; then
@@ -163,7 +218,25 @@ if [ "$WERCKER" = "true" ]; then
     echo "secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully"
     exit 1
   fi
-  
+
+  if [ "$JRF_ENABLED" = true ] ; then
+    export IMAGE_PULL_SECRET_FMWINFRA="${IMAGE_PULL_SECRET_FMWINFRA:-ocir-store}"
+
+    echo "Creating Docker Secret"
+    kubectl create secret docker-registry $IMAGE_PULL_SECRET_FMWINFRA  \
+      --docker-server=phx.ocir.io \
+      --docker-username=$OCIR_REPO_USERNAME \
+      --docker-password=$OCIR_REPO_PASSWORD \
+      --docker-email=$OCIR_REPO_EMAIL
+
+    echo "Checking Secret"
+    SECRET="`kubectl get secret $IMAGE_PULL_SECRET_FMWINFRA | grep $IMAGE_PULL_SECRET_FMWINFRA | wc | awk ' { print $1; }'`"
+    if [ "$SECRET" != "1" ]; then
+      echo "secret $IMAGE_PULL_SECRET_FMWINFRA was not created successfully"
+      exit 1
+    fi
+  fi
+
   setup_wercker
     
 elif [ "$JENKINS" = "true" ]; then
