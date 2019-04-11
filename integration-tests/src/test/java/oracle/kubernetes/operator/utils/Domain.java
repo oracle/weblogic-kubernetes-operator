@@ -1354,9 +1354,15 @@ public class Domain {
     }
 
     if (domainMap.containsKey("domainHomeImageBuildPath")) {
-      domainHomeImageBuildPath = ((String) domainMap.get("domainHomeImageBuildPath")).trim();
+      domainHomeImageBuildPath =
+          BaseTest.getResultDir()
+              + "/"
+              + ((String) domainMap.get("domainHomeImageBuildPath")).trim();
       domainMap.put(
-          "domainHomeImageBuildPath", BaseTest.getResultDir() + "/" + domainHomeImageBuildPath);
+          "domainHomeImageBuildPath",
+          BaseTest.getResultDir()
+              + "/"
+              + ((String) domainMap.get("domainHomeImageBuildPath")).trim());
     }
     if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
