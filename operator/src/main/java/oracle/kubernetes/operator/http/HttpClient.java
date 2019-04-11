@@ -196,11 +196,15 @@ public class HttpClient {
       if (secretData != null) {
         username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
         password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
-      }
-      packet.put(KEY, createAuthenticatedClient(username, password));
+        packet.put(KEY, createAuthenticatedClient(username, password));
 
-      Arrays.fill(username, (byte) 0);
-      Arrays.fill(password, (byte) 0);
+        if (username != null) {
+          Arrays.fill(username, (byte) 0);
+        }
+        if (password != null) {
+          Arrays.fill(password, (byte) 0);
+        }
+      }
       return doNext(packet);
     }
   }
