@@ -17,7 +17,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
-/** A Parser utility class to manipulate domain.yaml file */
+/** A Domain CRD utility class to manipulate domain yaml files */
 public class DomainCRD {
 
   private final ObjectMapper objectMapper;
@@ -37,24 +37,24 @@ public class DomainCRD {
     Map<String, String> cluster = new HashMap();
     cluster.put("restartVersion", "v1.1");
     crd.addObjectNodeToCluster("cluster-1", cluster);
-    cluster = new HashMap();
-    cluster.put("restartVersion2", "v1.2");
-    crd.addObjectNodeToCluster("cluster-1", cluster);
     System.out.println(crd.getYamlTree());
 
     Map<String, String> ms = new HashMap();
     ms.put("restartVersion", "v1.1");
-    crd.addObjectNodeToMS("managedserver-1", ms);
-    ms = new HashMap();
     ms.put("serverStartPolicy", "IF_NEEDED");
-    crd.addObjectNodeToMS("managedserver-1", ms);
-    ms = new HashMap();
     ms.put("serverStartState", "RUNNING");
     crd.addObjectNodeToMS("managedserver-1", ms);
 
     System.out.println(crd.getYamlTree());
   }
 
+  /**
+   * Constructor to read the yaml file and initialize the root JsonNode with yaml equivalent of JSON
+   * tree
+   *
+   * @param yamlFile - Name of the yaml file containing the Domain CRD
+   * @throws IOException
+   */
   public DomainCRD(String yamlFile) throws IOException {
     this.objectMapper = new ObjectMapper();
 
@@ -66,20 +66,23 @@ public class DomainCRD {
     this.root = objectMapper.readTree(writeValueAsString);
   }
 
+  /**
+   * To convert the JSON tree back into Yaml and return it as a String
+   *
+   * @return - Domain CRD in Yaml format
+   * @throws JsonProcessingException when JSON tree cannot be converted as a Yaml string
+   */
   public String getYamlTree() throws JsonProcessingException {
     String jsonAsYaml = new YAMLMapper().writerWithDefaultPrettyPrinter().writeValueAsString(root);
     return jsonAsYaml;
   }
 
   /**
-   * A utility method to add restartVersion attribute to domain in domain.yaml
+   * A utility method to add attributes to domain in domain.yaml
    *
-   * @param key Object key to add as a String
-   * @param value Version value for the restartVersion attribute
-   * @return Yaml String with added restartVersion attribute in domain
-   * @throws IOException
+   * @param attributes - A HashMap of key value pairs
    */
-  public void addObjectNodeToDomain(Map<String, String> attributes) throws IOException {
+  public void addObjectNodeToDomain(Map<String, String> attributes) {
     // modify admin server restartVersion
     JsonNode specNode = getSpecNode();
     for (Map.Entry<String, String> entry : attributes.entrySet()) {
@@ -88,33 +91,26 @@ public class DomainCRD {
   }
 
   /**
-   * A utility method to add restartVersion attribute to administration server in domain.yaml
+   * A utility method to add attributes to adminServer node in domain.yaml
    *
-   * @param key Object key to add as a String
-   * @param value Version value for the restartVersion attribute
-   * @return Yaml String with added restartVersion attribute in administration server
-   * @throws IOException
+   * @param attributes - A HashMap of key value pairs
    */
-  public void addObjectNodeToAdminServer(Map<String, String> attributes) throws IOException {
-    // modify admin server restartVersion
-    JsonNode adminServerNode = getAdminServerNode(root);
+  public void addObjectNodeToAdminServer(Map<String, String> attributes) {
+
+    JsonNode adminServerNode = getAdminServerNode();
     for (Map.Entry<String, String> entry : attributes.entrySet()) {
       ((ObjectNode) adminServerNode).put(entry.getKey(), entry.getValue());
     }
   }
 
   /**
-   * A utility method to add restartVersion attribute to cluster in domain.yaml
+   * A utility method to add attributes to cluster node in domain.yaml
    *
-   * @param domainCRD String representation of the domain.yaml as JSON tree
-   * @param ClusterName Name of the cluster in which to add the restartVersion attribute
-   * @param version Version value for the restartVersion attribute
-   * @return Yaml String with added restartVersion attribute in cluster
-   * @throws IOException when the JSON tree cannot be read
+   * @param ClusterName - Name of the cluster to which the attributes to be added
+   * @param attributes - A HashMap of key value pairs
    */
-  public void addObjectNodeToCluster(String ClusterName, Map<String, String> attributes)
-      throws IOException {
-    // modify cluster restartVersion
+  public void addObjectNodeToCluster(String ClusterName, Map<String, String> attributes) {
+
     JsonNode clusterNode = getClusterNode(ClusterName);
     for (Map.Entry<String, String> entry : attributes.entrySet()) {
       ((ObjectNode) clusterNode).put(entry.getKey(), entry.getValue());
@@ -122,29 +118,19 @@ public class DomainCRD {
   }
 
   /**
-   * A utility method to add restartVersion attribute to managed server in domain.yaml
+   * A utility method to add attributes to managed server node in domain.yaml
    *
-   * @param domainCRD domainCRD String representation of the domain.yaml as JSON tree
-   * @param managedServerName Name of the managed server in which to add the restartVersion
-   *     attribute
-   * @param version Version value for the restartVersion attribute
-   * @return Yaml String with added restartVersion attribute in managed server
-   * @throws IOException when the JSON tree cannot be read
+   * @param managedServerName - Name of the managed server to which the attributes to be added
+   * @param attributes - A HashMap of key value pairs
    */
-  public void addObjectNodeToMS(String managedServerName, Map<String, String> attributes)
-      throws IOException {
+  public void addObjectNodeToMS(String managedServerName, Map<String, String> attributes) {
     JsonNode managedServerNode = getManagedServerNode(managedServerName);
     for (Map.Entry<String, String> entry : attributes.entrySet()) {
       ((ObjectNode) managedServerNode).put(entry.getKey(), entry.getValue());
     }
   }
 
-  /**
-   * Gets the spec node entry from Domain CRD JSON tree
-   *
-   * @param root - Root JSON node of the Domain CRD JSON tree
-   * @return - spec node entry from Domain CRD JSON tree
-   */
+  /** Gets the spec node entry from Domain CRD JSON tree */
   private JsonNode getSpecNode() {
     return root.path("spec");
   }
@@ -152,10 +138,9 @@ public class DomainCRD {
   /**
    * Gets the administration server node entry from Domain CRD JSON tree
    *
-   * @param root - Root JSON node of the Domain CRD JSON tree
-   * @return - administration server node entry from Domain CRD JSON tree
+   * @return
    */
-  private JsonNode getAdminServerNode(JsonNode root) {
+  private JsonNode getAdminServerNode() {
     return root.path("spec").path("adminServer");
   }
 
@@ -165,6 +150,12 @@ public class DomainCRD {
    * @param root - Root JSON node of the Domain CRD JSON tree
    * @param clusterName - Name of the cluster
    * @return - cluster node entry from Domain CRD JSON tree
+   */
+  /**
+   * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name
+   *
+   * @param clusterName - Name of the cluster
+   * @return - JsonNode of named cluster
    */
   private JsonNode getClusterNode(String clusterName) {
     ArrayNode clusters = (ArrayNode) root.path("spec").path("clusters");
@@ -181,10 +172,8 @@ public class DomainCRD {
   /**
    * Gets the managed server node entry from Domain CRD JSON tree
    *
-   * @param objectMapper - Instance of the ObjectMapper to use for creating a missing node
-   * @param root - Root JSON node of the Domain CRD JSON tree
-   * @param managedServerName - Name of the managed server for which to get the JSON node
-   * @return administration server node entry from Domain CRD JSON tree
+   * @param managedServerName Name of the managed server for which to get the JSON node
+   * @return managed server node entry from Domain CRD JSON tree
    */
   private JsonNode getManagedServerNode(String managedServerName) {
     ArrayNode managedservers = null;
