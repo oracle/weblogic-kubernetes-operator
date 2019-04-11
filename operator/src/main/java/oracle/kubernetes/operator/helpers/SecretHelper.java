@@ -9,8 +9,10 @@ import io.kubernetes.client.models.V1Secret;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.NextAction;
@@ -72,7 +74,7 @@ public class SecretHelper {
         return null;
       }
 
-      return harvestAdminSecretData(secret);
+      return harvestAdminSecretData(secret, null);
     } catch (Throwable e) {
       LOGGER.severe(MessageKeys.EXCEPTION, e);
       return null;
@@ -116,6 +118,7 @@ public class SecretHelper {
       }
 
       LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
+      final LoggingFilter loggingFilter = packet.getValue(ProcessingConstants.LOGGING_FILTER);
       CallBuilderFactory factory =
           ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
       Step read =
@@ -132,7 +135,13 @@ public class SecretHelper {
                         int statusCode,
                         Map<String, List<String>> responseHeaders) {
                       if (statusCode == CallBuilder.NOT_FOUND) {
-                        LOGGER.warning(MessageKeys.SECRET_NOT_FOUND, secretName);
+                        if (LoggingFilter.canLog(loggingFilter)) {
+                          LOGGER.warning(
+                              MessageKeys.SECRET_NOT_FOUND,
+                              secretName
+                                  + ", LOGGING_FILTER: "
+                                  + packet.get(ProcessingConstants.LOGGING_FILTER));
+                        }
                         return doNext(packet);
                       }
                       return super.onFailure(packet, e, statusCode, responseHeaders);
@@ -144,7 +153,7 @@ public class SecretHelper {
                         V1Secret result,
                         int statusCode,
                         Map<String, List<String>> responseHeaders) {
-                      packet.put(SECRET_DATA_KEY, harvestAdminSecretData(result));
+                      packet.put(SECRET_DATA_KEY, harvestAdminSecretData(result, loggingFilter));
                       return doNext(packet);
                     }
                   });
@@ -153,7 +162,8 @@ public class SecretHelper {
     }
   }
 
-  private static Map<String, byte[]> harvestAdminSecretData(V1Secret secret) {
+  private static Map<String, byte[]> harvestAdminSecretData(
+      V1Secret secret, LoggingFilter loggingFilter) {
     Map<String, byte[]> secretData = new HashMap<>();
     byte[] usernameBytes = secret.getData().get(ADMIN_SERVER_CREDENTIALS_USERNAME);
     byte[] passwordBytes = secret.getData().get(ADMIN_SERVER_CREDENTIALS_PASSWORD);
@@ -161,13 +171,17 @@ public class SecretHelper {
     if (usernameBytes != null) {
       secretData.put(ADMIN_SERVER_CREDENTIALS_USERNAME, usernameBytes);
     } else {
-      LOGGER.warning(MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_USERNAME);
+      if (LoggingFilter.canLog(loggingFilter)) {
+        LOGGER.warning(MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_USERNAME);
+      }
     }
 
     if (passwordBytes != null) {
       secretData.put(ADMIN_SERVER_CREDENTIALS_PASSWORD, passwordBytes);
     } else {
-      LOGGER.warning(MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_PASSWORD);
+      if (LoggingFilter.canLog(loggingFilter)) {
+        LOGGER.warning(MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_PASSWORD);
+      }
     }
     return secretData;
   }
