@@ -26,6 +26,8 @@ import oracle.kubernetes.operator.utils.TestUtils;
 public class BaseTest {
   public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   public static final String TESTWEBAPP = "testwebapp";
+  public static final String TESTWSAPP = "testwsapp";
+  public static final String TESTWSSERVICE = "TestWSApp";
 
   // property file used to customize operator properties for operator inputs yaml
 
@@ -125,7 +127,7 @@ public class BaseTest {
     }
 
     // for manual/local run, do cleanup
-    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
+    if (System.getenv("SHARED_CLUSTER") == null && System.getenv("JENKINS") == null) {
 
       // delete k8s artifacts created if any, delete PV directories
       ExecResult clnResult = cleanup();
@@ -174,7 +176,7 @@ public class BaseTest {
     logger.info("Adding file handler, logging to file at " + resultDir + "/java_test_suite.out");
 
     // for manual/local run, create file handler, create PVROOT
-    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
+    if (System.getenv("SHARED_CLUSTER") == null && System.getenv("JENKINS") == null) {
       logger.info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
@@ -321,6 +323,23 @@ public class BaseTest {
   }
 
   /**
+   * Verify Load Balancing by deploying and invoking webservicebapp.
+   *
+   * @param domain - domain where the app will be tested
+   * @throws Exception exception reported as a failure to build, deploy or verify load balancing for
+   *     Web Service app
+   */
+  public void testWSLoadBalancing(Domain domain) throws Exception {
+    logger.info("Inside testWSLoadBalancing");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
+
+    // invoke webservice via servlet client
+    domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
+    logger.info("Done - testWSLoadBalancing");
+  }
+
+  /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
    * balancing and node port service
    *
@@ -339,6 +358,9 @@ public class BaseTest {
     } else {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     }
+
+    // intermittent failure, see OWLS-73416
+    // testWSLoadBalancing(domain);
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     domain.verifyHasClusterServiceChannelPort("TCP", 8011, TESTWEBAPP + "/");
     logger.info("Done - testDomainLifecyle");
@@ -496,7 +518,7 @@ public class BaseTest {
   protected void logTestBegin(String testName) throws Exception {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN " + testName);
-    // renew lease at the beginning for every test method, leaseId is set only for Wercker
+    // renew lease at the beginning for every test method, leaseId is set only for shared cluster
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
 
@@ -570,6 +592,15 @@ public class BaseTest {
         domainNS);
   }
 
+  private void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
+      throws Exception {
+    String scriptName = "buildDeployWSAndWSClientAppInPod.sh";
+    // Build WS and WS client WARs in the admin pod and deploy it from the admin pod to a weblogic
+    // target
+    TestUtils.buildDeployWebServiceAppInPod(
+        domain, testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), wsName);
+  }
+
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainNS = domainMap.get("namespace").toString();
@@ -597,7 +628,17 @@ public class BaseTest {
     }
   }
 
-  public static void tearDown() throws Exception {
+  /**
+   * Calls statedump.sh which places k8s logs, descriptions, etc in directory
+   * $RESULT_DIR/state-dump-logs and calls archive.sh on RESULT_DIR locally, and on PV_ROOT via a
+   * job or pod. Also calls cleanup.sh which does a best-effort delete of acceptance test k8s
+   * artifacts, the local test tmp directory, and the potentially remote domain pv directories.
+   *
+   * @param iTClassName - IT class name to be used in the archive file name
+   * @throws Exception when errors while running statedump.sh or cleanup.sh scripts or while
+   *     renewing the lease for shared cluster run
+   */
+  public static void tearDown(String iTClassName) throws Exception {
     logger.log(
         Level.INFO,
         "TEARDOWN: Starting Test Run TearDown (cleanup and state-dump)."
@@ -606,8 +647,14 @@ public class BaseTest {
             + "after the tearDown completes. Note that tearDown itself may report errors,"
             + " but this won't affect the outcome of the test results.");
     StringBuffer cmd =
-        new StringBuffer("export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && ");
-    cmd.append(BaseTest.getProjectRoot())
+        new StringBuffer(
+            "export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && export IT_CLASS=");
+    cmd.append(iTClassName);
+    if (JENKINS) {
+      cmd.append(" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} ");
+    }
+    cmd.append(" && ")
+        .append(BaseTest.getProjectRoot())
         .append("/integration-tests/src/test/resources/statedump.sh");
     logger.info("Running " + cmd);
 
