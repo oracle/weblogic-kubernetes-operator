@@ -92,6 +92,10 @@ public class ReadHealthStep extends Step {
       try {
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
 
+        if (httpClient == null) {
+          return doNext(packet);
+        }
+
         String serviceURL = HttpClient.getServiceURL(service);
         if (serviceURL != null) {
           String jsonResult =
@@ -149,6 +153,7 @@ public class ReadHealthStep extends Step {
               (ConcurrentMap<String, ServerHealth>)
                   packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
           serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
+          packet.put(ProcessingConstants.SERVER_HEALTH_READ, Boolean.TRUE);
         }
         return doNext(packet);
       } catch (Throwable t) {
