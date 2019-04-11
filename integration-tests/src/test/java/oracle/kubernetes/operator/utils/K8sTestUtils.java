@@ -26,7 +26,6 @@ import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
-import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.models.V1ReplicaSetList;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleList;
@@ -38,6 +37,8 @@ import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.ClientBuilder;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class K8sTestUtils {
   static {
@@ -55,6 +56,7 @@ public class K8sTestUtils {
   private ExtensionsV1beta1Api extensionsV1beta1Api = new ExtensionsV1beta1Api();
   private RbacAuthorizationV1Api rbacAuthorizationV1Api = new RbacAuthorizationV1Api();
   private ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
+  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   public void verifyDomainCrd() throws Exception {
     try {
@@ -344,33 +346,42 @@ public class K8sTestUtils {
     assertEquals("Number of cluster role bindings", v1ClusterRoleBindingList.getItems().size(), 0);
   }
 
-  public V1PodList getPods(String namespace, String labelSelectors) throws ApiException {
-    V1PodList v1PodList =
-        coreV1Api.listNamespacedPod(
-            namespace,
-            Boolean.FALSE,
-            Boolean.FALSE.toString(),
-            null,
-            null,
-            labelSelectors,
-            null,
-            null,
-            null,
-            Boolean.FALSE);
+  public V1PodList getPods(String namespace, String labelSelectors) {
+    V1PodList v1PodList = null;
+    try {
+      v1PodList =
+          coreV1Api.listNamespacedPod(
+              namespace,
+              Boolean.FALSE,
+              Boolean.FALSE.toString(),
+              null,
+              null,
+              labelSelectors,
+              null,
+              null,
+              null,
+              Boolean.FALSE);
+
+    } catch (ApiException ex) {
+      Logger.getLogger(K8sTestUtils.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    logger.log(
+        Level.INFO,
+        "Pods in namespace :{0} and label :{1} :{2}",
+        new Object[] {namespace, labelSelectors, v1PodList.getItems().size()});
     return v1PodList;
   }
 
-  public String getPodStatus(String namespace, String labelSelectors, String podName)
-      throws ApiException {
+  public String getPodStatus(String namespace, String labelSelectors, String podName) {
     String status = null;
     List<V1Pod> pods = getPods(namespace, labelSelectors).getItems();
     for (V1Pod pod : pods) {
-      V1PodStatus podStatus = pod.getStatus();
-      System.out.println(pod.toString() + ":" + podStatus.getMessage());
-      System.out.println(pod.toString() + ":" + podStatus.getPhase());
-      System.out.println(pod.toString() + ":" + podStatus.toString());
-      if (pod.toString().equals(podName)) {
-        status = pod.getStatus().toString();
+      logger.log(
+          Level.INFO,
+          "POD NAME:{0} POD STATUS :{1}",
+          new Object[] {pod.getMetadata().getName(), pod.getStatus().getPhase()});
+      if (pod.getMetadata().getName().equals(podName)) {
+        status = pod.getStatus().getPhase();
       }
     }
     return status;
