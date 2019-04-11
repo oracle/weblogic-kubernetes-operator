@@ -707,7 +707,9 @@ public class DomainV2Test extends DomainTestBase {
         serverSpec.getEnvironmentVariables(),
         containsInAnyOrder(
             envVar("JAVA_OPTIONS", "-server"),
-            envVar("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "),
+            envVar(
+                "USER_MEM_ARGS",
+                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "),
             envVar("var1", "value0")));
     assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(

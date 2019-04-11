@@ -1199,4 +1199,113 @@ public class TestUtils {
     logger.info("Copying file from  " + fromFile + " to " + toFile);
     Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
   }
+
+  /**
+   * retrieve IP address info for cluster service.
+   *
+   * @param domainUID - name of domain.
+   * @param clusterName - name Web Logic cluster
+   * @param domainNS - domain namespace
+   * @throws Exception - exception will be thrown if kubectl command will fail
+   */
+  public static String retrieveClusterIP(String domainUID, String clusterName, String domainNS)
+      throws Exception {
+    // kubectl get service domainonpvwlst-cluster-cluster-1 | grep ClusterIP | awk '{print $3}'
+    StringBuffer cmd = new StringBuffer("kubectl get service ");
+    cmd.append(domainUID);
+    cmd.append("-cluster-");
+    cmd.append(clusterName);
+    cmd.append(" -n ").append(domainNS);
+    cmd.append(" | grep ClusterIP | awk '{print $3}' ");
+    logger.info(
+        " Get ClusterIP for "
+            + clusterName
+            + " in namespace "
+            + domainNS
+            + " with command: '"
+            + cmd
+            + "'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String stdout = result.stdout();
+    logger.info(" ClusterIP for cluster: " + clusterName + " found: ");
+    logger.info(stdout);
+    return stdout;
+  }
+
+  /**
+   * Create dir to save Web Service App files. Copy the shell script file and all App files over to
+   * the admin pod Run the shell script to build WARs files and deploy the Web Service App and it's
+   * client Servlet App in the admin pod
+   *
+   * @param domain - Domain where to build and deploy app
+   * @param appName - WebService App name to be deployed
+   * @param scriptName - a shell script to build and deploy the App in the admin pod
+   * @param username - weblogic user name
+   * @param password - weblogc password
+   * @param args - by default it use TestWSApp name for webservices impl files, or add arg for
+   *     different name
+   * @throws Exception - exception reported as a failure to build or deploy ws
+   */
+  public static void buildDeployWebServiceAppInPod(
+      Domain domain,
+      String appName,
+      String scriptName,
+      String username,
+      String password,
+      String... args)
+      throws Exception {
+    String adminServerPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + appName;
+    String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + appName;
+    String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
+    String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
+
+    // Default values to build archive file
+    final String initInfoDirName = "WEB-INF";
+    String archiveExt = "war";
+    String infoDirName = initInfoDirName;
+    String domainNS = domain.getDomainNS();
+    int managedServerPort = ((Integer) (domain.getDomainMap()).get("managedServerPort")).intValue();
+    String wsServiceName = (args.length == 0) ? BaseTest.TESTWSSERVICE : args[0];
+    String clusterURL =
+        retrieveClusterIP(domain.getDomainUid(), domain.getClusterName(), domainNS)
+            + ":"
+            + managedServerPort;
+    logger.info(
+        "Build and deploy WebService App: "
+            + appName
+            + "."
+            + archiveExt
+            + " in the admin pod with web service name "
+            + wsServiceName);
+
+    // Create app dir in the admin pod
+    StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
+    mkdirCmd.append(appLocationInPod + "'");
+
+    // Create app dir in the admin pod
+    kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
+
+    // Create WEB-INF in the app dir
+    mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
+    mkdirCmd.append(appLocationInPod + "/WEB-INF'");
+    kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
+
+    // Copy shell script to the admin pod
+    copyFileViaCat(scriptPathOnHost, scriptPathInPod, adminServerPod, domainNS);
+
+    // Copy all App files to the admin pod
+    copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
+
+    // Copy all App files to the admin pod
+    copyAppFilesToPod(
+        appLocationOnHost + "/WEB-INF", appLocationInPod + "/WEB-INF", adminServerPod, domainNS);
+
+    logger.info("Creating WebService and WebService Servlet Client Applications");
+
+    // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
+    domain.callShellScriptToBuildDeployAppInPod(
+        appName, scriptName, username, password, clusterURL, wsServiceName);
+  }
 }

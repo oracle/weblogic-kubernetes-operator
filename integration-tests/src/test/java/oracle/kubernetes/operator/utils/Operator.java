@@ -378,7 +378,13 @@ public class Operator {
         sb.append(operatorNS);
         break;
     }
-    sb.append(" DNS:");
+    // here we are assuming that if the "host name" starts with a digit, then it is actually
+    // an IP address, and so we need to use the "IP" prefix in the SANS.
+    if (Character.isDigit(TestUtils.getHostName().charAt(0))) {
+      sb.append(" IP:");
+    } else {
+      sb.append(" DNS:");
+    }
     sb.append(TestUtils.getHostName());
     sb.append(" >> ");
     sb.append(generatedInputYamlFile);
@@ -476,7 +482,7 @@ public class Operator {
     }
 
     // customize the inputs yaml file to use our pre-built docker image
-    // IMAGE_NAME_OPERATOR & IMAGE_TAG_OPERATOR variables are used for wercker
+    // IMAGE_NAME_OPERATOR & IMAGE_TAG_OPERATOR variables are used for shared cluster
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorMap.put(
