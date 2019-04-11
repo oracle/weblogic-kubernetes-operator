@@ -37,8 +37,8 @@ function setup_jenkins {
   echo "Helm is configured."
 }
 
-function setup_wercker {
-  echo "Perform setup for running in wercker"
+function setup_shared_cluster {
+  echo "Perform setup for running on shared cluster"
   echo "Install tiller"
   kubectl create serviceaccount --namespace kube-system tiller
   kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
@@ -57,7 +57,7 @@ function setup_wercker {
   echo "After helm delete, list of installed helm charts is: "
   helm ls
 
-  echo "Completed setup_wercker"
+  echo "Completed setup_shared_cluster"
 }
 
 function pull_tag_images {
@@ -153,6 +153,7 @@ export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
+
 export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
 
 if [ "$JRF_ENABLED" = true ] ; then
@@ -184,9 +185,9 @@ export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "
 
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
 
-if [ "$WERCKER" = "true" ]; then 
+if [ "$SHARED_CLUSTER" = "true" ]; then
 
-  echo "Test Suite is running locally on Wercker and k8s is running on remote nodes."
+  echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
 
   export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
   export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
@@ -236,9 +237,9 @@ if [ "$WERCKER" = "true" ]; then
       exit 1
     fi
   fi
+  
+  setup_shared_cluster
 
-  setup_wercker
-    
 elif [ "$JENKINS" = "true" ]; then
 
   echo "Test Suite is running on Jenkins and k8s is running locally on the same node."
