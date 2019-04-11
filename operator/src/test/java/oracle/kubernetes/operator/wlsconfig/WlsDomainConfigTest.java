@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,19 +53,20 @@ public class WlsDomainConfigTest {
   };
 
   private List<LogRecord> logRecords = new ArrayList<>();
-  private TestUtils.ConsoleHandlerMemento consoleControl;
+  private List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setup() {
-    consoleControl =
+    mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, LOG_KEYS)
-            .withLogLevel(Level.WARNING);
+            .withLogLevel(Level.WARNING));
+    mementos.add(TestUtils.silenceJsonPathLogger());
   }
 
   @After
   public void tearDown() {
-    consoleControl.revert();
+    for (Memento memento : mementos) memento.revert();
   }
 
   @Test
