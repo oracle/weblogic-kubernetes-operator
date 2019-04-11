@@ -325,22 +325,9 @@ public class ITPodsRestart extends BaseTest {
             + domain.getDomainUid()
             + "/domain.yaml";
     try {
-      logger.log(
-          Level.INFO,
-          "Running kubectl get Domain {0} -n {1} --output json",
-          new Object[] {domain.getDomainUid(), domain.getDomainNS()});
-      String jsonCrd =
-          TestUtils.exec(
-                  "kubectl get Domain "
-                      + domain.getDomainUid()
-                      + " -n "
-                      + domain.getDomainNS()
-                      + " --output json")
-              .stdout();
-      logger.info(jsonCrd);
       logger.info("Modifying the Domain CRD..");
-      DomainCRD crd = new DomainCRD();
-      String yaml = crd.addRestartVersionToAdminServer(jsonCrd, "v1.1");
+      DomainCRD crd = new DomainCRD(originalYaml);
+      String yaml = crd.addObjectNodeToAdminServer("restartVersion", "v1.1");
       logger.info(yaml);
       Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
       logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
