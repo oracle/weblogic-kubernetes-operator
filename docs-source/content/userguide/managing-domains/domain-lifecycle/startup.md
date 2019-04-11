@@ -11,13 +11,16 @@ and which servers should be restarted. To start, stop, or restart servers, modif
 
 * [Starting and stopping servers](#starting-and-stopping-servers)
     * [Common starting and stopping scenarios](#common-starting-and-stopping-scenarios)
+* [Shutdown options](#shutdown-options)
 * [Restarting servers](#restarting-servers)
     * [Rolling restarts](#rolling-restarts)
     * [Common restarting scenarios](#common-restarting-scenarios)
 
 There are properties on the domain resource that specify which servers should be running
 and which servers should be restarted. To start, stop, or restart servers, modify these properties on the domain resource
-(for example, by using `kubectl` or the Kubernetes REST API).  The operator will notice the changes and apply them.
+(for example, by using `kubectl` or the Kubernetes REST API).  The operator will notice the changes and apply them.  Beginning,
+with operator version 2.2, there are now properties to control server shutdown handling, such as whether the shutdown
+will be graceful, the timeout, and if in-flight sessions are given the opportunity to complete.
 
 ### Starting and stopping servers
 
@@ -137,6 +140,20 @@ This is done by adding the server to the domain resource and setting its `server
 {{% notice note %}}
 The server will count toward the cluster's `replicas` count.  Also, if you configure more than the `replicas` servers count to `ALWAYS`, they will all be started, even though the `replicas` count will be exceeded.
 {{%/ notice %}}
+
+### Shutdown options
+
+The `shutdown` element on the domain resource controls how servers will be shutdown.  This element has three properties:
+`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` property can be set to the value of either `Graceful` 
+or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to 
+complete shutdown before the server is killed.  The `ignoreSessions` property when "false" allows the shutdown
+process to take longer to give time for any active sessions to complete un to the configured timeout.
+The operator runtime monitors this property and creates or deletes the corresponding server pods.
+
+#### `shutdown` rules
+
+You can specify the `serverStartPolicy` property at the domain, cluster, and server levels. Each level supports a different set of values.
+
 
 ### Restarting servers
 
