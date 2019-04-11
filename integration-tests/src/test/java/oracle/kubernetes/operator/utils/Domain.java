@@ -1285,7 +1285,7 @@ public class Domain {
    * @throws Exception if removing the results dir fails or if create-domain-inputs.yaml cannot be
    *     accessed to read or if creating config map or secret fails for configoverrides
    */
-  private void initialize(Map<String, Object> inputDomainMap) throws Exception {
+  protected void initialize(Map<String, Object> inputDomainMap) throws Exception {
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
