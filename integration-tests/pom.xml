@@ -221,14 +221,17 @@
 						</configuration>
 					</execution>
 					<execution>
-						<id>${setupenvid}</id>
+						<id>setupenv</id>
 						<phase>pre-integration-test</phase>
 						<goals>
 							<goal>exec</goal>
 						</goals>
 						<configuration>
+							<environmentVariables>
+								<JRF_ENABLED>${jrf_enabled}</JRF_ENABLED>
+							</environmentVariables>
 							<skip>${skipITs}</skip>
-							<executable>${resource-integration-test}/${setupenvid}.sh</executable>
+							<executable>${resource-integration-test}/setupenv.sh</executable>
 						</configuration>
 					</execution>
 				</executions>
@@ -320,16 +323,16 @@
 			<id>java-integration-tests</id>
 			<properties>
 				<skipITs>false</skipITs>
-				<setupenvid>setupenv</setupenvid>
 				<includes-failsafe>**/IT*</includes-failsafe>
+				<jrf_enabled>false</jrf_enabled>
 			</properties>
 		</profile>
 		<profile>
 			<id>jrf-integration-tests</id>
 			<properties>
 				<skipITs>false</skipITs>
-				<setupenvid>setupjrfenv</setupenvid>
 				<includes-failsafe>**/JrfInOperatorTest.java</includes-failsafe>
+				<jrf_enabled>true</jrf_enabled>
 			</properties>
 		</profile>
 		<profile>
@@ -341,6 +344,7 @@
 				<surefireArgLine></surefireArgLine>
 				<failsafeArgLine></failsafeArgLine>
 				<skipITs>true</skipITs>
+				<jrf_enabled>false</jrf_enabled>
 			</properties>
 		</profile>
 	</profiles>
