@@ -11,21 +11,21 @@
 #
 # This script accepts optional env var overrides:
 #
-#   RESULT_ROOT  The root directory of the test temporary files.
+#   RESULT_ROOT     The root directory of the test temporary files.
 #
-#   PV_ROOT      The root directory on the kubernetes cluster
-#                used for persistent volumes.
+#   PV_ROOT         The root directory on the kubernetes cluster
+#                   used for persistent volumes.
 #
-#   LEASE_ID     Set this if you want cleanup to release the 
-#                given lease on a failure.
+#   LEASE_ID        Set this if you want cleanup to release the
+#                   given lease on a failure.
 #
-#   WERCKER      Set this to true if you want cleanup to delete tiller
+#   SHARED_CLUSTER  Set this to true if you want cleanup to delete tiller
 #
-#   DELETE_FILES Delete local test files, and launch a job to delete PV 
-#                hosted test files (default true).
+#   DELETE_FILES    Delete local test files, and launch a job to delete PV
+#                   hosted test files (default true).
 #
-#   FAST_DELETE  Set to "--grace-period=1 --timeout=1" to speedup
-#                deletes and skip phase 2.
+#   FAST_DELETE     Set to "--grace-period=1 --timeout=1" to speedup
+#                   deletes and skip phase 2.
 #
 # --------------------
 # Detailed Description
@@ -34,7 +34,7 @@
 # The test runs in phases:
 #
 #   Phase 0:  If helm is installed, helm delete all helm charts.
-#             Possibly also delete tiller (see WERCKER env var above.)
+#             Possibly also delete tiller (see SHARED_CLUSTER env var above.)
 #
 #   Phase 1:  Delete test kubernetes artifacts with labels.
 #
@@ -323,7 +323,7 @@ if [ -x "$(command -v helm)" ]; then
   done
 
   # cleanup tiller artifacts
-  if [ "$WERCKER" = "true" ]; then
+  if [ "$SHARED_CLUSTER" = "true" ]; then
     cleanup_tiller
   fi
 fi
@@ -351,10 +351,10 @@ if [ "${DELETE_FILES:-true}" = "true" ]; then
 
   echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
-  if [ "$WERCKER" = "true" ]; then
+  if [ "$SHARED_CLUSTER" = "true" ]; then
 	$SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
   else 
-  	$SCRIPTPATH/krun.sh -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
+  	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
   fi
   [ "$?" = "0" ] || SUCCESS="1"
   echo @@ SUCCESS=$SUCCESS

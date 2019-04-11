@@ -57,14 +57,58 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin-version}</version>
+        <executions>
+          <execution>
+            <id>enforce-maven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>${maven.version.range}</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>${java.version.range}</version>
+                </requireJavaVersion>
+                <requirePluginVersions></requirePluginVersions>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.3</version>
+        <version>${maven-release-plugin-version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>${maven-clean-plugin-version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>${maven-install-plugin-version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>${maven-site-plugin-version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin-version}</version>
       </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>${maven-javadoc-plugin-version}</version>
         <configuration>
           <aggregate>true</aggregate>
           <show>public</show>
@@ -78,7 +122,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>${maven-checkstyle-plugin-version}</version>
         <executions>
           <execution>
             <id>checkstyle</id>
@@ -103,14 +147,14 @@
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>8.18</version>
+            <version>8.19</version>
           </dependency>
         </dependencies>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
-        <version>3.11.0</version>
+        <version>${maven-pmd-plugin-version}</version>
         <configuration>
           <sourceEncoding>utf-8</sourceEncoding>
           <rulesets>
@@ -143,7 +187,7 @@
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>3.1.11</version>
+        <version>${spotbugs-maven-plugin-version}</version>
         <configuration>
           <xmlOutput>true</xmlOutput>
           <failOnError>false</failOnError>
@@ -166,7 +210,7 @@
           <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs</artifactId>
-            <version>3.1.11</version>
+            <version>${spotbugs-maven-plugin-version}</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -238,8 +282,11 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
-            <version>2.22.1</version>
+            <version>${maven-failsafe-plugin-version}</version>
             <configuration> <!-- run tests in parallel -->
+              <argLine>
+                --illegal-access=permit
+              </argLine>
               <encoding>UTF-8</encoding>
               <argLine>${failsafeArgLine}</argLine>
               <failIfNoTests>false</failIfNoTests>
@@ -383,6 +430,102 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>${maven-clean-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <version>${maven-install-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven-jar-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven-resources-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>${maven-site-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${maven-checkstyle-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>${maven-pmd-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>${maven-release-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven-failsafe-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec-maven-plugin-version}</version>
+        <type>maven-plugin</type>
+      </dependency>
+      <dependency>
         <groupId>io.kubernetes</groupId>
         <artifactId>client-java</artifactId>
         <version>4.0.0</version>
@@ -420,9 +563,25 @@
   </dependencies>
 
   <properties>
-    <java.version>1.8</java.version>
-    <maven.compiler.source>${java.version}</maven.compiler.source>
-    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <java.version.range>11</java.version.range>
+    <maven.version.range>[3.5.2,)</maven.version.range>
+    <maven-enforcer-plugin-version>3.0.0-M2</maven-enforcer-plugin-version>
+    <maven-clean-plugin-version>3.1.0</maven-clean-plugin-version>
+    <maven-compiler-plugin-version>3.8.0</maven-compiler-plugin-version>
+    <maven-deploy-plugin-version>3.0.0-M1</maven-deploy-plugin-version>
+    <maven-install-plugin-version>3.0.0-M1</maven-install-plugin-version>
+    <maven-jar-plugin-version>3.1.1</maven-jar-plugin-version>
+    <maven-resources-plugin-version>3.1.0</maven-resources-plugin-version>
+    <maven-site-plugin-version>3.7.1</maven-site-plugin-version>
+    <maven-surefire-plugin-version>3.0.0-M3</maven-surefire-plugin-version>
+    <maven-checkstyle-plugin-version>3.0.0</maven-checkstyle-plugin-version>
+    <maven-pmd-plugin-version>3.11.0</maven-pmd-plugin-version>
+    <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
+    <maven-javadoc-plugin-version>3.1.0</maven-javadoc-plugin-version>
+    <maven-failsafe-plugin-version>3.0.0-M3</maven-failsafe-plugin-version>
+    <maven-dependency-plugin-version>3.1.1</maven-dependency-plugin-version>
+    <exec-maven-plugin-version>1.6.0</exec-maven-plugin-version>
+    <spotbugs-maven-plugin-version>3.1.11</spotbugs-maven-plugin-version>
     <swagger-core-version>1.5.22</swagger-core-version>
     <jodatime-version>2.10.1</jodatime-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
