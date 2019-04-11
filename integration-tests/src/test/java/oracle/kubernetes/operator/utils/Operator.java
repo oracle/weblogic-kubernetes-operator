@@ -482,7 +482,7 @@ public class Operator {
     }
 
     // customize the inputs yaml file to use our pre-built docker image
-    // IMAGE_NAME_OPERATOR & IMAGE_TAG_OPERATOR variables are used for wercker
+    // IMAGE_NAME_OPERATOR & IMAGE_TAG_OPERATOR variables are used for shared cluster
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorMap.put(
