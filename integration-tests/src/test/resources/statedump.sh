@@ -95,7 +95,7 @@ function state_dump {
   echo "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_job.out
 
-  if [ "$WERCKER" = "true" ]; then
+  if [ "$SHARED_CLUSTER" = "true" ]; then
 	$SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" 2>&1 | tee ${outfile}
 	if [ "$?" = "0" ]; then
      	echo Job complete.
