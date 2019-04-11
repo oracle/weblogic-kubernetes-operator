@@ -94,7 +94,4 @@ Configuration Overrides Usecases
 | Server Discovery | Use Case |
 | --- | --- |
 | Discover a newly started server | stop operator and apply the modified domain.yaml with replicas count increated, restart Operator and verify that the cluster is scaled up accordingly |
-| Discover running servers | restart Operator and verify that it discovers running servers and a newly started server by scaling up cluster |
-| Discover running servers | restart both Operator and admin server. Verify Operator connects to newly started server by scaling up cluster |
-| Liveness probe | restart Operator and verify the liveness probe by killing all managed servers in the cluster |
-| Liveness probe | Verify the liveness probe by killing a managed server |  
+| Liveness probe | restart Operator and verify the liveness probe by killing admin server and all managed servers in the cluster | 

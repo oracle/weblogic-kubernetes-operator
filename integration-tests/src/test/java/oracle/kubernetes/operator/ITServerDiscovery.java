@@ -117,10 +117,10 @@ public class ITServerDiscovery extends BaseTest {
     logger.info("Start a new managed server, managed-server3 using command:\n" + cmd);
     TestUtils.exec(cmd);
 
-    logger.info("Start the Operator");
+    logger.info("Restart the Operator");
     operator.startUsingReplicas();
 
-    logger.info("Check the newly created managed-server3 is running");
+    logger.info("Check if the newly created managed-server3 is running");
     int replicas = 3;
     verifyPodReady(replicas);
 
@@ -132,77 +132,8 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Stop and restart Operator and verify that it discovers running servers and a newly started
-   * server by scaling up cluster. Verify that the cluster scale up is not impacted.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testOPReconnToRunningMSAndScaleUp() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    logger.info("Restart the Operator");
-    operator.restartUsingReplicas();
-
-    int msIncrNum = 1;
-    scaleUpAndverify(msIncrNum);
-
-    // restore the test env
-    int msDecrNum = 1;
-    scaleDownAndverify(msDecrNum);
-
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Stop Operator and admin server. Restart Operator. Verify that it restarts admin server and
-   * discovers running servers. Verify that the cluster scale up is noy impacted.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testOPAdminReconnToDomain() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    Map<String, Object> domainMap = domain.getDomainMap();
-    String domainNS = domainMap.get("namespace").toString();
-    String domainUid = domain.getDomainUid();
-    String adminServerName = (String) domainMap.get("adminServerName");
-    String adminServerPodName = domainUid + "-" + adminServerName;
-
-    logger.info("Stop the Operator");
-    operator.stopUsingReplicas();
-
-    String cmd = "kubectl delete po/" + adminServerPodName + " -n " + domainNS;
-    logger.info("Stop admin server <" + adminServerPodName + "> using command:\n" + cmd);
-    TestUtils.exec(cmd);
-
-    logger.info("Checking if admin pod <" + adminServerPodName + "> is deleted");
-    TestUtils.checkPodDeleted(adminServerPodName, domainNS);
-
-    logger.info("Start the Operator and admin server");
-    operator.startUsingReplicas();
-
-    logger.info("Checking admin server <" + adminServerPodName + "> is running");
-    TestUtils.checkPodReady(adminServerPodName, domainNS);
-
-    int msIncrNum = 1;
-    scaleUpAndverify(msIncrNum);
-
-    // restore the test env
-    int msDecrNum = 1;
-    scaleDownAndverify(msDecrNum);
-
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Stop Operator. Kill all managed servers. Restart Operator. Verify that it restarts all managed
-   * servers.
+   * Stop Operator. Kill admin server and all managed servers in domain cluster. Restart Operator.
+   * Verify that it restarts admin server and all managed servers in domain cluster.
    *
    * @throws Exception
    */
@@ -214,17 +145,29 @@ public class ITServerDiscovery extends BaseTest {
 
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainNS = domainMap.get("namespace").toString();
-    String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
     String domainUid = domain.getDomainUid();
+    String adminServerName = (String) domainMap.get("adminServerName");
+    String adminServerPodName = domainUid + "-" + adminServerName;
+    String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
+    String clusterName = domainMap.get("clusterName").toString();
 
     logger.info("Stop the Operator");
     operator.stopUsingReplicas();
 
-    // Delte all managed servers in the cluster
-    int replicaCnt = getReplicaCnt();
+    // Stop admin server
+    String cmd = "kubectl delete po/" + adminServerPodName + " -n " + domainNS;
+    logger.info("Stop admin server <" + adminServerPodName + "> using command:\n" + cmd);
+    TestUtils.exec(cmd);
+
+    logger.info("Check if admin pod <" + adminServerPodName + "> is deleted");
+    TestUtils.checkPodDeleted(adminServerPodName, domainNS);
+
+    // Stop all managed servers in the cluster
+    int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
+
     for (int i = 1; i <= replicaCnt; i++) {
       String msPodName = domainUid + "-" + managedServerNameBase + i;
-      String cmd = "kubectl delete po/" + msPodName + " -n " + domainNS;
+      cmd = "kubectl delete po/" + msPodName + " -n " + domainNS;
       logger.info("Stop managed server <" + msPodName + "> using command:\n" + cmd);
       TestUtils.exec(cmd);
 
@@ -232,46 +175,17 @@ public class ITServerDiscovery extends BaseTest {
       TestUtils.checkPodDeleted(msPodName, domainNS);
     }
 
-    logger.info("Start the Operator");
+    logger.info("Restart the Operator");
     operator.startUsingReplicas();
+
+    logger.info("Check if admin pod <" + adminServerPodName + "> is running");
+    TestUtils.checkPodReady(adminServerPodName, domainNS);
 
     for (int i = 1; i <= replicaCnt; i++) {
       String msPodName = domainUid + "-" + managedServerNameBase + i;
       logger.info("Checking if ms pod <" + msPodName + "> is running");
       TestUtils.checkPodReady(msPodName, domainNS);
     }
-
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Stop Operator. Kill one managed server. Restart Operator. Verify that it restarts the killed
-   * managed server.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testOPRestartDeadMS() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    Map<String, Object> domainMap = domain.getDomainMap();
-    String domainNS = domainMap.get("namespace").toString();
-    String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
-    String domainUid = domain.getDomainUid();
-
-    // Delte a managed servers in the cluster
-    String msPodName = domainUid + "-" + managedServerNameBase + "1";
-    String cmd = "kubectl delete po/" + msPodName + " -n " + domainNS;
-    logger.info("Stop managed server <" + msPodName + "> using command:\n" + cmd);
-    TestUtils.exec(cmd);
-
-    logger.info("Wait 10 seconds for ms to be restarted");
-    Thread.sleep(10);
-
-    logger.info("Verify that <" + msPodName + "> is restarted by Operator");
-    TestUtils.checkPodReady(msPodName, domainNS);
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -306,23 +220,6 @@ public class ITServerDiscovery extends BaseTest {
     }
   }
 
-  private void scaleUpAndverify(int incrNum) throws Exception {
-    Map<String, Object> domainMap = domain.getDomainMap();
-    String domainUid = domain.getDomainUid();
-    String domainNS = domainMap.get("namespace").toString();
-    String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
-    String clusterName = domainMap.get("clusterName").toString();
-
-    int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-    int replicas = replicaCnt + incrNum;
-    String podName = domainUid + "-" + managedServerNameBase + replicas;
-
-    logger.info("Scale domain " + domainUid + " up to " + replicas + " managed servers");
-    operator.scale(domainUid, clusterName, replicas);
-
-    verifyPodReady(replicas);
-  }
-
   private void verifyPodReady(int replicas) throws Exception {
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
@@ -349,16 +246,5 @@ public class ITServerDiscovery extends BaseTest {
               + "/"
               + replicas);
     }
-  }
-
-  private int getReplicaCnt() throws Exception {
-    Map<String, Object> domainMap = domain.getDomainMap();
-    String domainUid = domain.getDomainUid();
-    String domainNS = domainMap.get("namespace").toString();
-    String clusterName = domainMap.get("clusterName").toString();
-
-    int replicaCnt = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
-
-    return replicaCnt;
   }
 }
