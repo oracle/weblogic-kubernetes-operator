@@ -1,7 +1,6 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
-
 package oracle.kubernetes.operator;
 
 import java.nio.charset.Charset;
@@ -322,35 +321,147 @@ public class ITPodsRestart extends BaseTest {
   }
 
   @Test
-  public void testAdminServerRestartVersions() throws Exception {
+  public void testAdminServerRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-
     try {
-      logger.info("Modifying the Domain CRD..");
+      // Modify the original domain yaml to include restartVersion in admin server node
       DomainCRD crd = new DomainCRD(originalYaml);
       Map<String, String> admin = new HashMap();
       admin.put("restartVersion", "v1.1");
       crd.addObjectNodeToAdminServer(admin);
       String modYaml = crd.getYamlTree();
       logger.info(modYaml);
+
+      // Write the modified yaml to a new file
       Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
       logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
-      logger.log(Level.INFO, "Running kubectl apply -f {0}", path.toString());
+
+      // Apply the new yaml to update the domain crd
+      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the admin server is restarted");
       domain.verifyAdminServerRestarted();
     } finally {
-      logger.log(Level.INFO, "Running kubectl apply -f {0}", originalYaml);
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the admin server is restarted");
       domain.verifyAdminServerRestarted();
     }
-    logger.info("SUCCESS - " + testMethodName);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  @Test
+  public void testClusterRestartVersion() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    try {
+      // Modify the original domain yaml to include restartVersion in admin server node
+      DomainCRD crd = new DomainCRD(originalYaml);
+      Map<String, String> cluster = new HashMap();
+      cluster.put("restartVersion", "v1.1");
+      crd.addObjectNodeToCluster("cluster-1", cluster);
+      String modYaml = crd.getYamlTree();
+      logger.info(modYaml);
+
+      // Write the modified yaml to a new file
+      Path path = Paths.get(restartTmpDir, "restart.cluster.yaml");
+      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain crd
+      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      logger.info(exec.stdout());
+      logger.info("Verifying if the cluster is restarted");
+      // Pending
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      TestUtils.exec("kubectl apply -f " + originalYaml);
+      logger.info("Verifying if the cluster is restarted");
+      // Pending
+    }
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  @Test
+  public void testMSRestartVersion() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    try {
+      // Modify the original domain yaml to include restartVersion in admin server node
+      DomainCRD crd = new DomainCRD(originalYaml);
+      Map<String, String> ms = new HashMap();
+      ms.put("restartVersion", "v1.1");
+      crd.addObjectNodeToMS("managed-server1", ms);
+      String modYaml = crd.getYamlTree();
+      logger.info(modYaml);
+
+      // Write the modified yaml to a new file
+      Path path = Paths.get(restartTmpDir, "restart.managed.yaml");
+      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain crd
+      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      logger.info(exec.stdout());
+      logger.info("Verifying if the managed server is restarted");
+      // Pending
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      TestUtils.exec("kubectl apply -f " + originalYaml);
+      logger.info("Verifying if the managed server is restarted");
+      // Pending
+    }
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  @Test
+  public void testDomainRestartVersion() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    try {
+      // Modify the original domain yaml to include restartVersion in admin server node
+      DomainCRD crd = new DomainCRD(originalYaml);
+      Map<String, String> domain = new HashMap();
+      domain.put("restartVersion", "v1.1");
+      crd.addObjectNodeToDomain(domain);
+      String modYaml = crd.getYamlTree();
+      logger.info(modYaml);
+
+      // Write the modified yaml to a new file
+      Path path = Paths.get(restartTmpDir, "restart.domain.yaml");
+      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain crd
+      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      logger.info(exec.stdout());
+      logger.info("Verifying if the domain is restarted");
+      // Pending
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      TestUtils.exec("kubectl apply -f " + originalYaml);
+      logger.info("Verifying if the domain is restarted");
+      // Pending
+    }
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   private static Domain createPodsRestartdomain() throws Exception {
