@@ -17,7 +17,6 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -75,7 +74,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @AfterClass
+  // @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
@@ -326,6 +325,11 @@ public class ITPodsRestart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
+    K8sTestUtils testUtil = new K8sTestUtils();
+    final String domainUid = domain.getDomainUid();
+    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    final String podName = domain.getDomainUid() + "-" + domain.getAdminServerName();
+
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
       DomainCRD crd = new DomainCRD(originalYaml);
@@ -346,19 +350,21 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the admin server is restarted");
-      K8sTestUtils testUtil = new K8sTestUtils();
-      for (int i = 0; i < 60000; i++) {
+      for (int i = 0; i < 120000; i = i + 10000) {
         String podStatus =
-            testUtil.getPodStatus(domain.getDomainNS(), domain.getDomainUid(), "mypod");
+            testUtil.getPodStatus(domain.getDomainNS(), domain1LabelSelector, podName);
         Thread.sleep(10000);
       }
-      // domain.verifyAdminServerRestarted();
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the admin server is restarted");
-      domain.verifyAdminServerRestarted();
+      for (int i = 0; i < 120000; i = i + 10000) {
+        String podStatus =
+            testUtil.getPodStatus(domain.getDomainNS(), domain1LabelSelector, podName);
+        Thread.sleep(10000);
+      }
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
