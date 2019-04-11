@@ -24,7 +24,9 @@ import io.kubernetes.client.models.V1DeploymentList;
 import io.kubernetes.client.models.V1JobList;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
+import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.models.V1ReplicaSetList;
 import io.kubernetes.client.models.V1RoleBindingList;
 import io.kubernetes.client.models.V1RoleList;
@@ -35,6 +37,7 @@ import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.ClientBuilder;
 import java.io.IOException;
+import java.util.List;
 
 public class K8sTestUtils {
   static {
@@ -339,5 +342,37 @@ public class K8sTestUtils {
             null,
             Boolean.FALSE);
     assertEquals("Number of cluster role bindings", v1ClusterRoleBindingList.getItems().size(), 0);
+  }
+
+  public V1PodList getPods(String namespace, String labelSelectors) throws ApiException {
+    V1PodList v1PodList =
+        coreV1Api.listNamespacedPod(
+            namespace,
+            Boolean.FALSE,
+            Boolean.FALSE.toString(),
+            null,
+            null,
+            labelSelectors,
+            null,
+            null,
+            null,
+            Boolean.FALSE);
+    return v1PodList;
+  }
+
+  public String getPodStatus(String namespace, String labelSelectors, String podName)
+      throws ApiException {
+    String status = null;
+    List<V1Pod> pods = getPods(namespace, labelSelectors).getItems();
+    for (V1Pod pod : pods) {
+      V1PodStatus podStatus = pod.getStatus();
+      System.out.println(pod.toString() + ":" + podStatus.getMessage());
+      System.out.println(pod.toString() + ":" + podStatus.getPhase());
+      System.out.println(pod.toString() + ":" + podStatus.toString());
+      if (pod.toString().equals(podName)) {
+        status = pod.getStatus().toString();
+      }
+    }
+    return status;
   }
 }
