@@ -621,8 +621,8 @@ public abstract class PodStepContext extends StepContextBase {
         List<V1EnvVar> env = c.getEnv();
         if (scan != null) {
           Integer localAdminPort = scan.getLocalAdminProtocolChannelPort();
-          addDefaultEnvVarIfMissing(env, "LOCAL_ADMIN_PORT", String.valueOf(localAdminPort));
-          addDefaultEnvVarIfMissing(
+          addOrReplaceEnvVar(env, "LOCAL_ADMIN_PORT", String.valueOf(localAdminPort));
+          addOrReplaceEnvVar(
               env,
               "LOCAL_ADMIN_PROTOCOL",
               localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
