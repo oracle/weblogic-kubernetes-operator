@@ -3,7 +3,7 @@ title: "Choose an approach"
 date: 2019-04-11T13:36:57-04:00
 draft: false
 weight: 3
-decsription: "How to choose an approach."
+description: "How to choose an approach."
 ---
 
 Let's review what we have discussed and talk about when we might want to use
