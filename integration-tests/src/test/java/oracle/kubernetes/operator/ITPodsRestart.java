@@ -402,6 +402,8 @@ public class ITPodsRestart extends BaseTest {
       DomainCRD crd = new DomainCRD(originalYaml);
       Map<String, String> ms = new HashMap();
       ms.put("restartVersion", "v1.1");
+      ms.put("serverStartPolicy", "IF_NEEDED");
+      ms.put("serverStartState", "RUNNING");
       crd.addObjectNodeToMS("managed-server1", ms);
       String modYaml = crd.getYamlTree();
       logger.info(modYaml);
