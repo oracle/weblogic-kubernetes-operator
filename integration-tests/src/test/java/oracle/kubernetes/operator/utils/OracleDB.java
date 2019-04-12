@@ -51,7 +51,7 @@ public class OracleDB {
     if (!namespace.equalsIgnoreCase("default")) {
       command = "kubectl create ns " + namespace;
       logger.info("Running " + command);
-      ExecCommand.exec(command);
+      TestUtils.exec(command);
     }
 
     // create db

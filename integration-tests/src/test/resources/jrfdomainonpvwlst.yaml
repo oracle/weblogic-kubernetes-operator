@@ -9,16 +9,10 @@ clusterName: infracluster
 configuredManagedServerCount: 1
 initialManagedServerReplicas: 1
 managedServerNameBase: infraserver
-#weblogicDomainStoragePath will be ignored, PV dir will be created at /<baseDir>/<USER>/acceptance_test_pv
-#weblogicDomainStoragePath: /scratch/external-domain-home/pv001/
 exposeAdminT3Channel: true
 t3ChannelPort: 30013
 exposeAdminNodePort: true
 namespace: jrfdomains
-#loadBalancer: TRAEFIK
-#ingressPerDomain: true
-#createDomainPyScript: integration-tests/src/test/resources/domain-home-on-pv/create-domain-custom-nap.py
-#voyagerWebPort: 30305
 image: phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3
 logHome: /shared/logs/jrfdomain1
 createDomainScriptsMountPath: /u01/weblogic
