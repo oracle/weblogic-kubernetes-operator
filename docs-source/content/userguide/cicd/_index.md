@@ -44,9 +44,10 @@ you need your domain, that is the configuration.
 
 There is also other information associated with a domain that needs to live
 somewhere, for example leasing tables, message and transaction stores, and so
-on.  We recommend that all of these be kept in a database so that they are
-separate from the Docker image and so that we get all of the management
-capabilities offered by a database server.
+on.  We recommend that these be kept in a database to take advantage of built-in 
+database server HA, and the fact that disaster recovery of sites across all 
+but the shortest distances almost always requires using a single database 
+server to consolidate and replicated data (DataGuard).
 
 There are two common approaches on how to structure these components.  The first,
 which we call "domain on persistent volume," places the JDK and WebLogic binaries
