@@ -99,7 +99,7 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   /**
-   * Stop operator and apply the modified domain.yaml with replicas count increated. Restart
+   * Stop operator and apply the modified domain.yaml with replicas count increased. Restart
    * operator and make sure the cluster is scaled up accordingly.
    *
    * @throws Exception
