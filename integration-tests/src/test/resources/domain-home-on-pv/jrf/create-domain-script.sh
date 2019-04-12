@@ -164,8 +164,6 @@ then
                 echo  "RCU Ignore error"
             else
                 echo "RCU Loading Failed.. Please check the RCU logs"
-                echo "sleeping for debugging ..."
-                sleep 2h
                 exit
             fi
         fi

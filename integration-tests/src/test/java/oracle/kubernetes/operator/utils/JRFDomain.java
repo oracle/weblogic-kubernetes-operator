@@ -10,9 +10,9 @@ import oracle.kubernetes.operator.BaseTest;
 /** JRF Domain class with all the utility methods */
 public class JRFDomain extends Domain {
 
-  private static final String FMWINFRA_DOCKER_IMAGENAME =
+  private static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
       "phx.ocir.io/weblogick8s/oracle/fmw-infrastructure";
-  private static final String FMWINFRA_DOCKER_IMAGETAG = "12.2.1.3";
+  private static final String DEFAULT_FMWINFRA_DOCKER_IMAGETAG = "12.2.1.3";
 
   /**
    * JRFDomain constructor
@@ -50,9 +50,9 @@ public class JRFDomain extends Domain {
    * @throws Exception - if any error occurs
    */
   private void updateDomainMapForJRF() throws Exception {
-
     // jrf specific input parameter
-    domainMap.put("image", FMWINFRA_DOCKER_IMAGENAME + ":" + FMWINFRA_DOCKER_IMAGETAG);
+    domainMap.put(
+        "image", DEFAULT_FMWINFRA_DOCKER_IMAGENAME + ":" + DEFAULT_FMWINFRA_DOCKER_IMAGETAG);
 
     if (!domainMap.containsKey("domainHomeImageBase")) {
       // update jrf/create-domain-script.sh with domain_name and rcuprefix
@@ -66,7 +66,7 @@ public class JRFDomain extends Domain {
     if (System.getenv("IMAGE_PULL_SECRET_FMWINFRA") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_FMWINFRA"));
     } else {
-      domainMap.put("imagePullSecretName", "ocir-store}");
+      domainMap.put("imagePullSecretName", "ocir-store");
     }
   }
 }
