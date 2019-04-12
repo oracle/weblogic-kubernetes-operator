@@ -325,10 +325,7 @@ public class ITPodsRestart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    K8sTestUtils testUtil = new K8sTestUtils();
-    final String domainUid = domain.getDomainUid();
-    final String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    final String podName = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String podName = domainUid + "-" + domain.getAdminServerName();
 
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
@@ -349,22 +346,18 @@ public class ITPodsRestart extends BaseTest {
       logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
-      logger.info("Verifying if the admin server is restarted");
-      for (int i = 0; i < 120000; i = i + 10000) {
-        String podStatus =
-            testUtil.getPodStatus(domain.getDomainNS(), domain1LabelSelector, podName);
-        Thread.sleep(10000);
-      }
+
+      logger.info("Verifying if the admin server is terminating");
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
+
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the admin server is restarted");
-      for (int i = 0; i < 120000; i = i + 10000) {
-        String podStatus =
-            testUtil.getPodStatus(domain.getDomainNS(), domain1LabelSelector, podName);
-        Thread.sleep(10000);
-      }
+      logger.info("Verifying if the admin server is terminating");
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -498,5 +491,28 @@ public class ITPodsRestart extends BaseTest {
     if (domain != null) {
       domain.destroy();
     }
+  }
+
+  private void verifyPodStatus(String podName, String podStatusExpected)
+      throws InterruptedException {
+    K8sTestUtils testUtil = new K8sTestUtils();
+    String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    String namespace = domain.getDomainNS();
+    boolean gotExpected = false;
+    for (int i = 0; i < 12; i++) {
+      if (podStatusExpected.equals("Terminating")) {
+        if (testUtil.isPodTerminating(namespace, domain1LabelSelector, podName)) {
+          gotExpected = true;
+          break;
+        }
+      } else if (podStatusExpected.equals("Running")) {
+        if (testUtil.isPodRunning(namespace, domain1LabelSelector, podName)) {
+          gotExpected = true;
+          break;
+        }
+      }
+      Thread.sleep(10000);
+    }
+    Assert.assertTrue("Didn't get the expected pod status", gotExpected);
   }
 }
