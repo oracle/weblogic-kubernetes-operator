@@ -37,8 +37,8 @@ function setup_jenkins {
   echo "Helm is configured."
 }
 
-function setup_wercker {
-  echo "Perform setup for running in wercker"
+function setup_shared_cluster {
+  echo "Perform setup for running on shared cluster"
   echo "Install tiller"
   kubectl create serviceaccount --namespace kube-system tiller
   kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
@@ -57,7 +57,7 @@ function setup_wercker {
   echo "After helm delete, list of installed helm charts is: "
   helm ls
 
-  echo "Completed setup_wercker"
+  echo "Completed setup_shared_cluster"
 }
 
 function pull_tag_images {
@@ -153,7 +153,6 @@ export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
-export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
 
 if [ "$JRF_ENABLED" = true ] ; then
   export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-phx.ocir.io/weblogick8s/oracle/fmw-infrastructure}"
@@ -162,6 +161,7 @@ if [ "$JRF_ENABLED" = true ] ; then
 else
    export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-store/oracle/weblogic}"
 fi
+export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
 export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
 
 if [ -z "$BRANCH_NAME" ]; then
@@ -184,9 +184,9 @@ export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "
 
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
 
-if [ "$WERCKER" = "true" ]; then 
+if [ "$SHARED_CLUSTER" = "true" ]; then
 
-  echo "Test Suite is running locally on Wercker and k8s is running on remote nodes."
+  echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
 
   export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
   export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
@@ -237,7 +237,8 @@ if [ "$WERCKER" = "true" ]; then
     fi
   fi
 
-  setup_wercker
+  
+  setup_shared_cluster
     
 elif [ "$JENKINS" = "true" ]; then
 
