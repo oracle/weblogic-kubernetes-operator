@@ -11,7 +11,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -19,6 +18,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.rest.resource.VersionsResource;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import org.apache.commons.codec.binary.Base64;
@@ -323,8 +323,21 @@ public class RestServer {
 
   private ResourceConfig createResourceConfig() {
     LOGGER.entering();
-    // create a resource config that scans for JAX-RS resources and providers
-    // in oracle.kubernetes.operator.rest package
+
+    ResourceConfig rc = createResourceConfig(config);
+
+    LOGGER.exiting();
+    return rc;
+  }
+
+  /**
+   * Defines a resource configuration that scans for JAX-RS resources and providers in the REST
+   * package.
+   *
+   * @param restConfig the operator REST configuration
+   * @return a resource configuration
+   */
+  static ResourceConfig createResourceConfig(RestConfig restConfig) {
     ResourceConfig rc =
         new ResourceConfig()
             .register(JacksonFeature.class)
@@ -334,15 +347,8 @@ public class RestServer {
             .register(RequestDebugLoggingFilter.class)
             .register(ResponseDebugLoggingFilter.class)
             .register(ExceptionMapper.class)
-            .packages("oracle.kubernetes.operator.rest.resource");
-    Map<String, Object> extraProps = new HashMap<>();
-
-    // attach the rest backend impl to the resource config
-    // so that the resource impls can find it
-    extraProps.put(RestConfig.REST_CONFIG_PROPERTY, config);
-    rc.addProperties(extraProps);
-
-    LOGGER.exiting();
+            .packages(VersionsResource.class.getPackageName());
+    rc.setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
     return rc;
   }
 
