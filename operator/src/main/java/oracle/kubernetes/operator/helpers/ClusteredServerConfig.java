@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -125,32 +125,6 @@ public class ClusteredServerConfig extends ServerConfig {
   @Override
   public ClusteredServerConfig withImagePullSecrets(List<V1LocalObjectReference> imagePullSecrets) {
     super.withImagePullSecrets(imagePullSecrets);
-    return this;
-  }
-
-  @Override
-  public ClusteredServerConfig withShutdownPolicy(String shutdownPolicy) {
-    super.withShutdownPolicy(shutdownPolicy);
-    return this;
-  }
-
-  @Override
-  public ClusteredServerConfig withGracefulShutdownTimeout(int gracefulShutdownTimeout) {
-    super.withGracefulShutdownTimeout(gracefulShutdownTimeout);
-    return this;
-  }
-
-  @Override
-  public ClusteredServerConfig withGracefulShutdownIgnoreSessions(
-      boolean gracefulShutdownIgnoreSessions) {
-    super.withGracefulShutdownIgnoreSessions(gracefulShutdownIgnoreSessions);
-    return this;
-  }
-
-  @Override
-  public ClusteredServerConfig withGracefulShutdownWaitForSessions(
-      boolean gracefulShutdownWaitForSessions) {
-    super.withGracefulShutdownWaitForSessions(gracefulShutdownWaitForSessions);
     return this;
   }
 
