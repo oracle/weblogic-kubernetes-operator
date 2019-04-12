@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
@@ -291,7 +292,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
     AtomicInteger unchangedCount = new AtomicInteger(0);
-    final LoggingFilter loggingFilter = new LoggingFilter();
+    final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     Runnable command =
         new Runnable() {
           public void run() {
@@ -303,7 +304,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .put(
                       ProcessingConstants.DOMAIN_COMPONENT_NAME,
                       Component.createFor(info, delegate.getVersion()));
-              packet.put(ProcessingConstants.LOGGING_FILTER, loggingFilter);
+              packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
               MainTuning main = TuningParameters.getInstance().getMainTuning();
               Step strategy =
                   DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -316,9 +317,9 @@ public class DomainProcessorImpl implements DomainProcessor {
                     @Override
                     public void onCompletion(Packet packet) {
                       if (Boolean.TRUE.equals(packet.get(ProcessingConstants.SERVER_HEALTH_READ))) {
-                        loggingFilter.setCanLog(true);
+                        loggingFilter.setFilteringOff(true);
                       } else {
-                        loggingFilter.setCanLog(false);
+                        loggingFilter.setFilteringOn();
                       }
                       Boolean isStatusUnchanged =
                           (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
@@ -352,7 +353,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                     @Override
                     public void onThrowable(Packet packet, Throwable throwable) {
                       LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                      loggingFilter.setCanLog(false);
+                      loggingFilter.setFilteringOn();
                       // retry to trying after shorter delay because of exception
                       unchangedCount.set(0);
                       registerStatusUpdater(
