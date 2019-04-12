@@ -293,6 +293,20 @@ public class LoggingFacade {
   }
 
   /**
+   * Logs a message which requires parameters at the INFO level with a logging filter applied
+   *
+   * @param loggingFilter LoggingFilter to be applied, can be null
+   * @param msg the message to log
+   * @param params varargs list of objects to include in the log message
+   */
+  public void info(LoggingFilter loggingFilter, String msg, Object... params) {
+    if (isInfoEnabled() && LoggingFilter.canLog(loggingFilter, msg)) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.INFO, details.clazz, details.method, msg, params);
+    }
+  }
+
+  /**
    * Logs a message which accompanies a Throwable at the INFO level.
    *
    * @param msg the message to log
@@ -450,6 +464,20 @@ public class LoggingFacade {
   }
 
   /**
+   * Logs a message which requires parameters at the SEVERE level with a logging filter applied
+   *
+   * @param loggingFilter LoggingFilter to be applied, can be null
+   * @param msg the message to log
+   * @param params varargs list of objects to include in the log message
+   */
+  public void severe(LoggingFilter loggingFilter, String msg, Object... params) {
+    if (isSevereEnabled() && LoggingFilter.canLog(loggingFilter, msg)) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.SEVERE, details.clazz, details.method, msg, params);
+    }
+  }
+
+  /**
    * Logs a message which accompanies a Throwable at the SEVERE level.
    *
    * @param msg the message to log
@@ -457,6 +485,20 @@ public class LoggingFacade {
    */
   public void severe(String msg, Throwable thrown) {
     if (isSevereEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.SEVERE, details.clazz, details.method, msg, thrown);
+    }
+  }
+
+  /**
+   * Logs a message which accompanies a Throwable at the SEVERE level with a logging filter applied
+   *
+   * @param loggingFilter LoggingFilter to be applied, can be null
+   * @param msg the message to log
+   * @param thrown an Exception to include in the logged message
+   */
+  public void severe(LoggingFilter loggingFilter, String msg, Throwable thrown) {
+    if (isSevereEnabled() && LoggingFilter.canLog(loggingFilter, msg)) {
       CallerDetails details = inferCaller();
       logger.logp(Level.SEVERE, details.clazz, details.method, msg, thrown);
     }
@@ -494,6 +536,20 @@ public class LoggingFacade {
    */
   public void warning(String msg, Object... params) {
     if (isWarningEnabled()) {
+      CallerDetails details = inferCaller();
+      logger.logp(Level.WARNING, details.clazz, details.method, msg, params);
+    }
+  }
+
+  /**
+   * Logs a message which requires parameters at the WARNING level with a logging filter applied
+   *
+   * @param loggingFilter LoggingFilter to be applied, can be null
+   * @param msg the message to log
+   * @param params varargs list of objects to include in the log message
+   */
+  public void warning(LoggingFilter loggingFilter, String msg, Object... params) {
+    if (isWarningEnabled() && LoggingFilter.canLog(loggingFilter, msg)) {
       CallerDetails details = inferCaller();
       logger.logp(Level.WARNING, details.clazz, details.method, msg, params);
     }
