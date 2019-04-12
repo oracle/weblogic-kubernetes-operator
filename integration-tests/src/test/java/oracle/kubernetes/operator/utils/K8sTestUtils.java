@@ -22,6 +22,7 @@ import io.kubernetes.client.models.V1ClusterRoleList;
 import io.kubernetes.client.models.V1ConfigMapList;
 import io.kubernetes.client.models.V1DeploymentList;
 import io.kubernetes.client.models.V1JobList;
+import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
@@ -372,18 +373,24 @@ public class K8sTestUtils {
     return v1PodList;
   }
 
-  public String getPodStatus(String namespace, String labelSelectors, String podName) {
-    String status = null;
+  public V1Pod getPod(String namespace, String labelSelectors, String podName) {
     List<V1Pod> pods = getPods(namespace, labelSelectors).getItems();
     for (V1Pod pod : pods) {
-      logger.log(
-          Level.INFO,
-          "POD NAME:{0} POD STATUS :{1}",
-          new Object[] {pod.getMetadata().getName(), pod.getStatus().getPhase()});
       if (pod.getMetadata().getName().equals(podName)) {
-        status = pod.getStatus().getPhase();
+        return pod;
       }
     }
-    return status;
+    logger.info("POD NOT FOUND");
+    return null;
+  }
+
+  public boolean isPodTerminating(String namespace, String labelSelectors, String podName) {
+    V1ObjectMeta metadata = getPod(namespace, labelSelectors, podName).getMetadata();
+    logger.info(metadata.toString());
+    return metadata.getDeletionTimestamp() != null;
+  }
+
+  public boolean isPodRunning(String namespace, String labelSelectors, String podName) {
+    return !isPodTerminating(namespace, labelSelectors, podName);
   }
 }
