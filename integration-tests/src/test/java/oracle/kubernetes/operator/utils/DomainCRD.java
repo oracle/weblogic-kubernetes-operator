@@ -1,3 +1,6 @@
+// Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Licensed under the Universal Permissive License v 1.0 as shown at
+// http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,7 +17,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 
 /** A Domain CRD utility class to manipulate domain yaml files */
@@ -22,31 +24,6 @@ public class DomainCRD {
 
   private final ObjectMapper objectMapper;
   private final JsonNode root;
-
-  public static void main(String args[]) throws IOException {
-    DomainCRD crd = new DomainCRD("c:\\Users\\Sankar\\Downloads\\res.yaml");
-
-    Map<String, String> admin = new HashMap();
-    admin.put("restartVersion", "v1.1");
-    crd.addObjectNodeToAdminServer(admin);
-
-    Map<String, String> domain = new HashMap();
-    domain.put("restartVersion", "v1.1");
-    crd.addObjectNodeToDomain(domain);
-
-    Map<String, String> cluster = new HashMap();
-    cluster.put("restartVersion", "v1.1");
-    crd.addObjectNodeToCluster("cluster-1", cluster);
-    System.out.println(crd.getYamlTree());
-
-    Map<String, String> ms = new HashMap();
-    ms.put("restartVersion", "v1.1");
-    ms.put("serverStartPolicy", "IF_NEEDED");
-    ms.put("serverStartState", "RUNNING");
-    crd.addObjectNodeToMS("managedserver-1", ms);
-
-    System.out.println(crd.getYamlTree());
-  }
 
   /**
    * Constructor to read the yaml file and initialize the root JsonNode with yaml equivalent of JSON
