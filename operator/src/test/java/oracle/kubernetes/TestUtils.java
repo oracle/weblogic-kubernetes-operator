@@ -6,6 +6,7 @@ package oracle.kubernetes;
 
 import static com.meterware.simplestub.Stub.createStub;
 
+import ch.qos.logback.classic.LoggerContext;
 import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.slf4j.LoggerFactory;
 
 public class TestUtils {
   /**
@@ -197,6 +199,38 @@ public class TestUtils {
     @Override
     public <T> T getOriginalValue() {
       throw new UnsupportedOperationException();
+    }
+  }
+
+  public static Memento silenceJsonPathLogger() {
+    return new JsonPathLoggerMemento();
+  }
+
+  static class JsonPathLoggerMemento implements Memento {
+
+    private final ch.qos.logback.classic.Logger log;
+    private final ch.qos.logback.classic.Level originalLogLevel;
+
+    static Memento silenceLogger() {
+      return new JsonPathLoggerMemento();
+    }
+
+    private JsonPathLoggerMemento() {
+      LoggerContext logContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+      log = logContext.getLogger("com.jayway.jsonpath.internal.path.CompiledPath");
+      originalLogLevel = log.getLevel();
+      log.setLevel(ch.qos.logback.classic.Level.INFO);
+    }
+
+    @Override
+    public void revert() {
+      log.setLevel(originalLogLevel);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getOriginalValue() {
+      return (T) originalLogLevel;
     }
   }
 }
