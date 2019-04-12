@@ -34,6 +34,6 @@ to that domain using tools like WDT or WLST (see below).
 > Always use external state.
 
 You should always keep state outside the Docker image.  This means that you should
-use JDBC stores for leasing tables, JMS and Transaction stores, HTTP sessions,
+use JDBC stores for leasing tables, JMS and Transaction stores,
 EJB timers, JMS queues, and so on.  This ensures that data will not be lost when
 a container is destroyed.
