@@ -127,7 +127,7 @@ public class BaseTest {
     }
 
     // for manual/local run, do cleanup
-    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
+    if (System.getenv("SHARED_CLUSTER") == null && System.getenv("JENKINS") == null) {
 
       // delete k8s artifacts created if any, delete PV directories
       ExecResult clnResult = cleanup();
@@ -176,7 +176,7 @@ public class BaseTest {
     logger.info("Adding file handler, logging to file at " + resultDir + "/java_test_suite.out");
 
     // for manual/local run, create file handler, create PVROOT
-    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
+    if (System.getenv("SHARED_CLUSTER") == null && System.getenv("JENKINS") == null) {
       logger.info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
@@ -518,7 +518,7 @@ public class BaseTest {
   protected void logTestBegin(String testName) throws Exception {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN " + testName);
-    // renew lease at the beginning for every test method, leaseId is set only for Wercker
+    // renew lease at the beginning for every test method, leaseId is set only for shared cluster
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
 
@@ -636,7 +636,7 @@ public class BaseTest {
    *
    * @param iTClassName - IT class name to be used in the archive file name
    * @throws Exception when errors while running statedump.sh or cleanup.sh scripts or while
-   *     renewing the lease for wercker run
+   *     renewing the lease for shared cluster run
    */
   public static void tearDown(String iTClassName) throws Exception {
     logger.log(
