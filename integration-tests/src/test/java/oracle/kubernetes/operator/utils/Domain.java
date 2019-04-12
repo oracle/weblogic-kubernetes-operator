@@ -38,40 +38,40 @@ public class Domain {
   protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   protected Map<String, Object> domainMap;
-  protected Map<String, Object> pvMap;
+  private Map<String, Object> pvMap;
 
   // attributes from domain properties
   protected String domainUid = "";
   // default values as in create-weblogic-domain-inputs.yaml, generated yaml file will have the
   // customized property values
-  protected String domainNS;
-  protected String adminServerName;
-  protected String managedServerNameBase;
-  protected int initialManagedServerReplicas;
-  protected int configuredManagedServerCount;
-  protected boolean exposeAdminT3Channel;
-  protected boolean exposeAdminNodePort;
-  protected int t3ChannelPort;
-  protected String clusterName;
-  protected String clusterType;
-  protected String serverStartPolicy;
-  protected String loadBalancer = "TRAEFIK";
-  protected int loadBalancerWebPort = 30305;
-  protected String domainHomeImageBuildPath = "";
+  private String domainNS;
+  private String adminServerName;
+  private String managedServerNameBase;
+  private int initialManagedServerReplicas;
+  private int configuredManagedServerCount;
+  private boolean exposeAdminT3Channel;
+  private boolean exposeAdminNodePort;
+  private int t3ChannelPort;
+  private String clusterName;
+  private String clusterType;
+  private String serverStartPolicy;
+  private String loadBalancer = "TRAEFIK";
+  private int loadBalancerWebPort = 30305;
+  private String domainHomeImageBuildPath = "";
   protected String userProjectsDir = "";
-  protected String projectRoot = "";
-  protected boolean ingressPerDomain = true;
+  private String projectRoot = "";
+  private boolean ingressPerDomain = true;
 
-  protected String generatedInputYamlFile;
+  private String generatedInputYamlFile;
 
-  protected static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
-  protected static int waitTime = BaseTest.getWaitTimePod();
+  private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
+  private static int waitTime = BaseTest.getWaitTimePod();
 
-  protected boolean voyager;
+  private boolean voyager;
   // LB_TYPE is an evn var. Set to "VOYAGER" to use it as loadBalancer
-  protected static String LB_TYPE;
+  private static String LB_TYPE;
   // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  protected static boolean INGRESSPERDOMAIN = true;
+  private static boolean INGRESSPERDOMAIN = true;
 
   public Domain() throws Exception {
     domainMap = new HashMap<>();
