@@ -1,4 +1,4 @@
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
@@ -44,7 +44,7 @@ file.close()
 try:
   nmConnect(userConfigFile='/weblogic-operator/introspector/userConfigNodeManager.secure',
             userKeyFile='/tmp/userKeyNodeManager.secure.bin',
-            host=service_name,port='5556',
+            host='127.0.0.1',port='5556',
             domainName=domain_name,
             domainDir=domain_path,nmType='plain')
   nmStart(server_name)
