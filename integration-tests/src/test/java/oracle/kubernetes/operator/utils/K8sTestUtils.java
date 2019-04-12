@@ -410,7 +410,11 @@ public class K8sTestUtils {
    * @return boolean true if the pod is in Terminating status
    */
   public boolean isPodTerminating(String namespace, String labelSelectors, String podName) {
-    V1ObjectMeta metadata = getPod(namespace, labelSelectors, podName).getMetadata();
+    V1ObjectMeta metadata;
+    metadata = getPod(namespace, labelSelectors, podName).getMetadata();
+    if (metadata == null) {
+      return false;
+    }
     if (metadata.getDeletionTimestamp() != null) {
       logger.info(metadata.getDeletionTimestamp().toString());
     } else {
