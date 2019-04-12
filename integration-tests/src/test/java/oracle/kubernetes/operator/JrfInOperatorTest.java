@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator;
 
+import oracle.kubernetes.operator.utils.DBUtils;
 import oracle.kubernetes.operator.utils.JRFDomain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.OracleDB;
@@ -24,18 +25,11 @@ import org.junit.runners.MethodSorters;
 public class JrfInOperatorTest extends BaseTest {
 
   // property file used to customize operator properties for operator inputs yaml
-
-  private static String operator1File = "jrfoperator1.yaml";
-
+  private static final String JRF_OPERATOR_FILE_1 = "jrfoperator1.yaml";
   // file used to customize domain properties for domain, PV and LB inputs yaml
-  private static String jrfdomainonpvwlstFile = "jrfdomainonpvwlst.yaml";
-
+  private static final String JRF_DOMAIN_ON_PV_WLST_FILE = "jrfdomainonpvwlst.yaml";
   // property file for oracle db information
-  private static String dbPropsFile = "oracledb.properties";
-
-  // property file used to configure constants for integration tests
-  private static String appPropsFile = "OperatorIT.properties";
-
+  private static final String DB_PROP_FILE = "oracledb.properties";
   private static Operator operator1;
 
   /**
@@ -49,10 +43,10 @@ public class JrfInOperatorTest extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    initialize(appPropsFile);
+    initialize(APP_PROPS_FILE);
 
     // create DB used for jrf domain
-    OracleDB db = TestUtils.createOracleDB(dbPropsFile);
+    OracleDB db = DBUtils.createOracleDB(DB_PROP_FILE);
 
     // populate the jrf/create-domain-script.sh
     // copy the integration-tests/src/test/resources/domain-home-on-pv/jrf to
@@ -110,7 +104,7 @@ public class JrfInOperatorTest extends BaseTest {
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
     if (operator1 == null) {
-      operator1 = TestUtils.createOperator(operator1File);
+      operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
     // TODO: reconsider the logic to check the db readiness
@@ -122,7 +116,7 @@ public class JrfInOperatorTest extends BaseTest {
     boolean testCompletedSuccessfully = false;
 
     try {
-      jrfdomain = new JRFDomain(jrfdomainonpvwlstFile);
+      jrfdomain = new JRFDomain(JRF_DOMAIN_ON_PV_WLST_FILE);
       jrfdomain.verifyDomainCreated();
 
       if (!SMOKETEST) {

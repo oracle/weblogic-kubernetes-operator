@@ -1058,34 +1058,6 @@ public class TestUtils {
   }
 
   /**
-   * create oracle db pod in the k8s cluster
-   *
-   * @param dbPropsFile - db properties file
-   * @return - OracleDB instance
-   * @throws Exception - if any error occurs when creating Oracle DB pod
-   */
-  public static OracleDB createOracleDB(String dbPropsFile) throws Exception {
-    OracleDB oracledb = new OracleDB(dbPropsFile);
-
-    // check the db is ready
-    String dbnamespace = oracledb.getNamespace();
-
-    String cmd = "kubectl get pod -n " + dbnamespace + " -o jsonpath=\"{.items[0].metadata.name}\"";
-    ExecResult result = ExecCommand.exec(cmd);
-    String podName = result.stdout();
-
-    logger.info("DEBUG: db namespace=" + dbnamespace);
-    logger.info("DEBUG: podname=" + podName);
-    TestUtils.checkPodReady("", dbnamespace);
-
-    // check the db is ready to use
-    cmd = "kubectl logs " + podName + " -n " + dbnamespace;
-    checkCmdInLoop(cmd, "The database is ready for use", podName);
-
-    return oracledb;
-  }
-
-  /**
    * Replaces the string matching the given search pattern with a new string.
    *
    * @param filename - filename in which the string will be replaced
@@ -1128,7 +1100,7 @@ public class TestUtils {
     return myKeyStore;
   }
 
-  private static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
+  public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
       throws Exception {
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
