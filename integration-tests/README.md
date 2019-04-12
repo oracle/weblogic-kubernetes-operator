@@ -4,13 +4,13 @@ This documentation describes the functional use cases that are covered in integr
 
 # Environments
 
-The tests currently run in three modes: "Wercker", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the `WERCKER` and `JENKINS` environment variables described below. The default is "standalone".
+The tests currently run in three modes: "shared cluster", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the `SHARED_CLUSTER` and `JENKINS` environment variables described below. The default is "standalone".
 
 * "Standalone" Oracle Linux, i.e, run the tests manually with the `mvn` command.
-* Wercker - https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs - `integration-test-java` is the pipeline name.
+* Shared cluster - http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-quicktest/
 * Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development process.
 
-Wercker runs only Quick test use cases, Jenkins runs both Quick and Full test use cases.
+Shared cluster runs only Quick test use cases, Jenkins runs both Quick and Full test use cases.
 
 # Use Cases
 
@@ -41,7 +41,7 @@ Defaults for `RESULT_ROOT` & `PV_ROOT`:
 | --- | --- | --- | --- |
 | stand-alone	| /scratch/$USER/wl_k8s_test_results |	/scratch/$USER/wl_k8s_test_results	| test defaults |
 | Jenkins	| /scratch/k8s_dir |	/scratch/k8s_dir	 | jenkins configuration |
-| Wercker	| /pipeline/output/k8s_dir	| /scratch	| wercker.yml |
+| Shared cluster	| /pipeline/output/k8s_dir	| /scratch	|  |
 
 
 'Physical' subdirectories created by test:
@@ -158,7 +158,7 @@ When the integration test class ITOperator is executed, staticPrepare() method i
 
 staticPrepare() - initializes the application properties from OperatorIT.properties and creates resultRoot, pvRoot, userprojectsDir directories by calling initialize() method from the base class BaseTest.
 
-staticUnPrepare() - releases the cluster lease on wercker env.
+staticUnPrepare() - releases the cluster lease.
 
 test methods -  testDomainOnPVUsingWLST, testDomainOnPVUsingWDT, testTwoDomainsManagedByTwoOperators, testCreateDomainWithStartPolicyAdminOnly, testCreateDomainPVReclaimPolicyRecycle, testCreateDomainWithDefaultValuesInSampleInputs, testAutoAndCustomSitConfigOverrides, testOperatorRESTIdentityBackwardCompatibility, testOperatorRESTUsingCertificateChain
 
@@ -211,14 +211,14 @@ The tests accepts optional env var overrides:
 | QUICKTEST  | When set to "true", limits testing to a subset of the tests. |
 | LB_TYPE    | The default value is "TRAEFIK". Set to "VOYAGER" if you want to use it as LB. |
 | INGRESSPERDOMAIN  | The defult value is true. If you want to test creating TRAEFIK LB by kubectl yaml for multiple domains, set it to false. |
-| WERCKER    | Set to true if invoking from Wercker, set to false or "" if running stand-alone or from Jenkins. Default is "". |
-| JENKINS    | Set to true if invoking from Jenkins, set to false or "" if running stand-alone or from Wercker. Default is "". |
+| SHARED_CLUSTER    | Set to true if invoking on shared cluster, set to false or "" if running stand-alone or from Jenkins. Default is "". |
+| JENKINS    | Set to true if invoking from Jenkins, set to false or "" if running stand-alone or on shared cluster. Default is "". |
 | K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
 | BRANCH_NAME  | Git branch name.   Default is determined by calling 'git branch'. |
 | LEASE_ID   |   Set to a unique value to (A) periodically renew a lease on the k8s cluster that indicates that no other test run should attempt to use the cluster, and (B) delete this lease when the test completes. |
 
 The following additional overrides are currently only used when
-WERCKER=true:
+SHARED_CLUSTER=true:
 
 | Variable | Description |
 | --- | --- |
@@ -304,8 +304,6 @@ At the end of the test run, all pods logs, describes are logged in individual fi
 $RESULT_ROOT/acceptance_test_tmp is archived under $RESULT_ROOT/acceptance_test_tmp_archive
 
 $PV_ROOT/acceptance_test_pv is archived under $PV_ROOT/acceptance_test_pv_archive
-
-On Wercker, these logs can be downloaded by clicking "Download artifact" on cleanup and store step.
 
 # How to add a new test
 
