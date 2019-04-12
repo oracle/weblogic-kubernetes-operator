@@ -74,7 +74,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @AfterClass
+  @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
@@ -95,7 +95,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -118,7 +118,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -140,7 +140,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -163,7 +163,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -186,7 +186,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -217,7 +217,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -254,7 +254,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -292,7 +292,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingResource() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -320,6 +320,13 @@ public class ITPodsRestart extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
+  /**
+   * Add restartVersion:v1.1 at adminServer level and verify the admin pod is Terminated and
+   * recreated
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the
+   *     restartVersion:v1.1
+   */
   @Test
   public void testAdminServerRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -362,6 +369,13 @@ public class ITPodsRestart extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
+  /**
+   * Add restartVersion:v1.1 at cluster level and verify the managed servers pods are Terminated and
+   * recreated
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the
+   *     restartVersion:v1.1
+   */
   @Test
   public void testClusterRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -402,6 +416,13 @@ public class ITPodsRestart extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
+  /**
+   * Add restartVersion:v1.1 at managed server level and verify the managed server pod are
+   * Terminated and recreated
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the
+   *     restartVersion:v1.1
+   */
   @Test
   public void testMSRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -444,6 +465,13 @@ public class ITPodsRestart extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
+  /**
+   * Add restartVersion:v1.1 at doamin level and verify all of the server pods are Terminated and
+   * recreated
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the
+   *     restartVersion:v1.1
+   */
   @Test
   public void testDomainRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -514,6 +542,13 @@ public class ITPodsRestart extends BaseTest {
     }
   }
 
+  /**
+   * Utility method to check if a pod is in Terminating or Running status
+   *
+   * @param podName - String name of the pod to check the status for
+   * @param podStatusExpected - String the expected status of Terminating || RUnning
+   * @throws InterruptedException when thread is interrupted
+   */
   private void verifyPodStatus(String podName, String podStatusExpected)
       throws InterruptedException {
     K8sTestUtils testUtil = new K8sTestUtils();
