@@ -386,7 +386,11 @@ public class K8sTestUtils {
 
   public boolean isPodTerminating(String namespace, String labelSelectors, String podName) {
     V1ObjectMeta metadata = getPod(namespace, labelSelectors, podName).getMetadata();
-    logger.info(metadata.toString());
+    if (metadata.getDeletionTimestamp() != null) {
+      logger.info(metadata.getDeletionTimestamp().toString());
+    } else {
+      logger.info("DeletionTimestamp is null, which means pod is Running");
+    }
     return metadata.getDeletionTimestamp() != null;
   }
 
