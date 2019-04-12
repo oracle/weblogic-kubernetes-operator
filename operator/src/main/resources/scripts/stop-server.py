@@ -46,7 +46,7 @@ file.close()
 def shutdownUsingNodeManager(domainName, domainDir):
   try:
     nmConnect(userConfigFile='/weblogic-operator/introspector/userConfigNodeManager.secure',
-              host=service_name,port='5556',
+              host='127.0.0.1',port='5556',
               domainName=domainName,
               domainDir=domainDir,
               nmType='plain')
