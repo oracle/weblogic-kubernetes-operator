@@ -342,7 +342,7 @@ public class ITPodsRestart extends BaseTest {
       Charset charset = StandardCharsets.UTF_8;
       Files.write(path, modYaml.getBytes(charset));
 
-      // Apply the new yaml to update the domain crd
+      // Apply the new yaml to update the domain
       logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
@@ -362,11 +362,13 @@ public class ITPodsRestart extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
-  // @Test
+  @Test
   public void testClusterRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
+    String podName = domainUid + "-managed-server1";
+
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
       DomainCRD crd = new DomainCRD(originalYaml);
@@ -387,22 +389,26 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the cluster is restarted");
-      // Pending
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the cluster is restarted");
-      // Pending
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
-  // @Test
+  @Test
   public void testMSRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
+    String podName = domainUid + "-managed-server1";
+
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
       DomainCRD crd = new DomainCRD(originalYaml);
@@ -425,22 +431,27 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the managed server is restarted");
-      // Pending
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the managed server is restarted");
-      // Pending
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
-  // @Test
+  @Test
   public void testDomainRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
+    String adminPod = domainUid + "-" + domain.getAdminServerName();
+    String msPod = domainUid + "-managed-server1";
+
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
       DomainCRD crd = new DomainCRD(originalYaml);
@@ -461,13 +472,23 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the domain is restarted");
-      // Pending
+      logger.info("Verifying if the admin server is restarted");
+      verifyPodStatus(adminPod, "Terminating");
+      verifyPodStatus(adminPod, "Running");
+      logger.info("Verifying if the managed server is restarted");
+      verifyPodStatus(msPod, "Terminating");
+      verifyPodStatus(msPod, "Running");
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the domain is restarted");
-      // Pending
+      logger.info("Verifying if the admin server is restarted");
+      verifyPodStatus(adminPod, "Terminating");
+      verifyPodStatus(adminPod, "Running");
+      logger.info("Verifying if the managed server is restarted");
+      verifyPodStatus(msPod, "Terminating");
+      verifyPodStatus(msPod, "Running");
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
