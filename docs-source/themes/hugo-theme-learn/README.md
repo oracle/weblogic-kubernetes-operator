@@ -4,7 +4,8 @@ This repository contains a theme for [Hugo](https://gohugo.io/), based on great 
 
 Visit the [theme documentation](https://learn.netlify.com/en/) to see what is going on. It is actually built with this theme.
 
-[![wercker status](https://app.wercker.com/status/233466a2be73fcea400e7dc02ef6adf9/s/master "wercker status")](https://app.wercker.com/project/byKey/233466a2be73fcea400e7dc02ef6adf9)
+
+[![Build Status](http://build.weblogick8s.org:8080/buildStatus/icon?job=weblogic-kubernetes-operator-quicktest)](http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-quicktest/)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fmatcornic%2Fhugo-theme-learn.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fmatcornic%2Fhugo-theme-learn?ref=badge_shield)
 
 ## Main features
