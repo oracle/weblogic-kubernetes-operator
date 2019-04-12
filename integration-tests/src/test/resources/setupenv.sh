@@ -17,7 +17,11 @@ function setup_jenkins {
 
   docker images
 
-  pull_tag_images
+  if [ "$JRF_ENABLED" = true ] ; then
+	pull_tag_images_jrf	
+  else
+  	pull_tag_images
+  fi
 
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   # create a docker image for the operator code being tested
@@ -65,7 +69,7 @@ function pull_tag_images {
   set +x 
   if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
 	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
-		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC does not exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
+		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
 	  	exit 1
 	fi
   fi
@@ -93,58 +97,13 @@ function pull_tag_images {
 
 }
 
-function get_wlthint3client_from_image {
-  # Get wlthint3client.jar from image
-  id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
-  docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
-  docker rm -v $id
-}
+function pull_tag_images_jrf {
 
-export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-export PROJECT_ROOT="$SCRIPTPATH/../../../.."
-export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
-export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
-echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
-export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
-export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
-
-if [ "$JRF_ENABLED" = true ] ; then
-  export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-phx.ocir.io/weblogick8s/oracle/fmw-infrastructure}"
-  export IMAGE_PULL_SECRET_WEBLOGIC="ocir-store"
-  export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-store/oracle/database-enterprise}"
-  export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1}"
-  export IMAGE_PULL_SECRET_ORACLEDB="${IMAGE_PULL_SECRET_ORACLEDB:-docker-store}"
-else
-  export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-store/oracle/weblogic}"
-  export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
-fi
-
-if [ -z "$BRANCH_NAME" ]; then
-  export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
-  if [ ! "$?" = "0" ] ; then
-    echo "Error: Could not determine branch.  Run script from within a git repo".
-    exit 1
-  fi
-fi
-export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
-export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-weblogic-kubernetes-operator}
-
-cd $PROJECT_ROOT
-if [ $? -ne 0 ]; then
-  echo "Could not change to $PROJECT_ROOT dir"
-  exit 1
-fi
-
-export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-
-echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
-
-if [ "$JRF_ENABLED" = true ] ; then
-  set +x 
+set +x 
   # Check if fwm infra image exists
   if [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ] || [ -z "$REPO_EMAIL" ]; then
 	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
-		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC does not exist. Provide Docker login details using env variables REPO_USERNAME, REPO_PASSWORD and REPO_EMAIL to pull the image."
+		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables REPO_USERNAME, REPO_PASSWORD and REPO_EMAIL to pull the image."
 	  	exit 1
 	fi
   fi
@@ -163,12 +122,15 @@ if [ "$JRF_ENABLED" = true ] ; then
 		   echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
 		   exit 1
 		fi
+
+		# pull fmw infra images
+		docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
 	
   # Check if OracleDB image exists
   if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
 	if [ -z $(docker images -q $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB) ]; then
-		echo "Image $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB does not exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
+		echo "Image $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
 	  	exit 1
 	fi
   fi
@@ -189,48 +151,99 @@ if [ "$JRF_ENABLED" = true ] ; then
 	    echo "secret $IMAGE_PULL_SECRET_ORACLEDB was not created successfully"
 	    exit 1
 	  fi
+	  
 	  # pull oracle db image
-      docker pull $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB
+	  docker pull $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB
   fi
   set -x
-	
+
+}
+
+function get_wlthint3client_from_image {
+  # Get wlthint3client.jar from image
+  id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
+  docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
+  docker rm -v $id
+}
+export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+export PROJECT_ROOT="$SCRIPTPATH/../../../.."
+export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
+export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
+echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
+export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
+export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
+
+if [ "$JRF_ENABLED" = true ] ; then
+  export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-phx.ocir.io/weblogick8s/oracle/fmw-infrastructure}"
+  export IMAGE_PULL_SECRET_WEBLOGIC="ocir-store"
+  export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-store/oracle/database-enterprise}"
+  export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1}"
+  export IMAGE_PULL_SECRET_ORACLEDB="${IMAGE_PULL_SECRET_ORACLEDB:-docker-store}"
+  
+fi
+export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-store/oracle/weblogic}"
+export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
+    
+if [ -z "$BRANCH_NAME" ]; then
+  export BRANCH_NAME="`git branch | grep \* | cut -d ' ' -f2-`"
+  if [ ! "$?" = "0" ] ; then
+    echo "Error: Could not determine branch.  Run script from within a git repo".
+    exit 1
+  fi
+fi
+export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
+export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-weblogic-kubernetes-operator}
+
+cd $PROJECT_ROOT
+if [ $? -ne 0 ]; then
+  echo "Couldn't change to $PROJECT_ROOT dir"
+  exit 1
 fi
 
+export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
+
+echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
+
+  
 if [ "$SHARED_CLUSTER" = "true" ]; then
 
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
-
-  export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
-  export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
-
-  echo "Creating Docker Secret"
-  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-    --docker-server=index.docker.io/v1/ \
-    --docker-username=$DOCKER_USERNAME \
-    --docker-password=$DOCKER_PASSWORD \
-    --docker-email=$DOCKER_EMAIL 
-
-  echo "Checking Secret"
-  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-  if [ "$SECRET" != "1" ]; then
-    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-    exit 1
-  fi
-
-  echo "Creating Registry Secret"
-  kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
-    --docker-server=$REPO_REGISTRY \
-    --docker-username=$REPO_USERNAME \
-    --docker-password=$REPO_PASSWORD \
-    --docker-email=$REPO_EMAIL 
-
-  echo "Checking Secret"
-  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
-  if [ "$SECRET" != "1" ]; then
-    echo "secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully"
-    exit 1
-  fi
   
+  if [ "$JRF_ENABLED" = true ] ; then
+	pull_tag_images_jrf	
+  else
+	
+	  export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
+	  export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
+	
+	  echo "Creating Docker Secret"
+	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
+	    --docker-server=index.docker.io/v1/ \
+	    --docker-username=$DOCKER_USERNAME \
+	    --docker-password=$DOCKER_PASSWORD \
+	    --docker-email=$DOCKER_EMAIL 
+	
+	  echo "Checking Secret"
+	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+	  if [ "$SECRET" != "1" ]; then
+	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
+	    exit 1
+	  fi
+	
+	  echo "Creating Registry Secret"
+	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
+	    --docker-server=$REPO_REGISTRY \
+	    --docker-username=$REPO_USERNAME \
+	    --docker-password=$REPO_PASSWORD \
+	    --docker-email=$REPO_EMAIL 
+	
+	  echo "Checking Secret"
+	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
+	  if [ "$SECRET" != "1" ]; then
+	    echo "secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully"
+	    exit 1
+	  fi
+  fi
   setup_shared_cluster
     
 elif [ "$JENKINS" = "true" ]; then
@@ -264,10 +277,15 @@ elif [ "$JENKINS" = "true" ]; then
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv_archive"
   /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv_archive"
   
-  get_wlthint3client_from_image
+  if [ -z "$JRF_ENABLED" ]; then
+  	get_wlthint3client_from_image
+  fi
 else
-
-  pull_tag_images
+  if [ "$JRF_ENABLED" = true ] ; then
+	pull_tag_images_jrf	
+  else
+  	pull_tag_images
+  fi
     
   #docker rmi -f $(docker images -q -f dangling=true)
   docker images --quiet --filter=dangling=true | xargs --no-run-if-empty docker rmi  -f
@@ -277,5 +295,7 @@ else
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
   
-  get_wlthint3client_from_image
+  if [ -z "$JRF_ENABLED" ]; then
+  	get_wlthint3client_from_image
+  fi
 fi
