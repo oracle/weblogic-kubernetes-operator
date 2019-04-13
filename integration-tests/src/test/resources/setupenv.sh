@@ -277,7 +277,7 @@ elif [ "$JENKINS" = "true" ]; then
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv_archive"
   /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv_archive"
   
-  if [ -z "$JRF_ENABLED" ]; then
+  if [ "$JRF_ENABLED" = false ]; then
   	get_wlthint3client_from_image
   fi
 else
@@ -295,7 +295,7 @@ else
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
   
-  if [ -z "$JRF_ENABLED" ]; then
+  if [ "$JRF_ENABLED" = false ]; then
   	get_wlthint3client_from_image
   fi
 fi
