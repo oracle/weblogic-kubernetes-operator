@@ -4,8 +4,9 @@
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
@@ -20,7 +21,6 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.steps.ReadHealthStep.ReadHealthWithHttpClientStep;
-import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -30,7 +30,9 @@ import org.junit.Test;
 
 public class ReadHealthStepTest {
   // The log messages to be checked during this test
-  private static final String[] LOG_KEYS = {WLS_HEALTH_READ_FAILED};
+  private static final String[] LOG_KEYS = {
+    WLS_HEALTH_READ_FAILED, WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT
+  };
 
   private List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
@@ -55,35 +57,54 @@ public class ReadHealthStepTest {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
     final String SERVER_NAME = "admin-server";
+    Packet packet =
+        Stub.createStub(PacketStub.class)
+            .withServerName(SERVER_NAME)
+            .withGetKeyThrowsException(true);
+
+    ReadHealthWithHttpClientStep withHttpClientStep =
+        new ReadHealthWithHttpClientStep(service, next);
+    withHttpClientStep.apply(packet);
+
+    assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED, SERVER_NAME));
+  }
+
+  @Test
+  public void withHttpClientStep_logIfMissingHTTPClient() {
+    V1Service service = Stub.createStub(V1ServiceStub.class);
+    Step next = new MockStep(null);
+    final String SERVER_NAME = "admin-server";
     Packet packet = Stub.createStub(PacketStub.class).withServerName(SERVER_NAME);
 
     ReadHealthWithHttpClientStep withHttpClientStep =
         new ReadHealthWithHttpClientStep(service, next);
     withHttpClientStep.apply(packet);
 
-    assertThat(logRecords, containsFine(WLS_HEALTH_READ_FAILED, SERVER_NAME));
+    assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT, SERVER_NAME));
   }
 
   abstract static class PacketStub extends Packet {
 
-    Integer retryCount;
     String serverName;
+    boolean getKeyThrowsException;
+
+    PacketStub withGetKeyThrowsException(boolean getKeyThrowsException) {
+      this.getKeyThrowsException = getKeyThrowsException;
+      return this;
+    }
 
     PacketStub withServerName(String serverName) {
       this.serverName = serverName;
       return this;
     }
 
-    PacketStub addSpi(Class clazz, Object spiObject) {
-      Component component = Component.createFor(spiObject);
-      this.getComponents().put(clazz.getName(), component);
-      return this;
-    }
-
     @Override
     public Object get(Object key) {
       if (HttpClient.KEY.equals(key)) {
-        throw CLASSCAST_EXCEPTION; // to go to catch clause in WithHttpClientStep.apply() method
+        if (getKeyThrowsException) {
+          throw CLASSCAST_EXCEPTION; // to go to catch clause in WithHttpClientStep.apply() method
+        }
+        return null;
       } else if (ProcessingConstants.SERVER_NAME.equals(key)) {
         return serverName;
       }
