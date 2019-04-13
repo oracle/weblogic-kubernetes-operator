@@ -17,6 +17,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -93,6 +94,10 @@ public class ReadHealthStep extends Step {
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
 
         if (httpClient == null) {
+          LOGGER.info(
+              (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
+              MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT,
+              packet.get(ProcessingConstants.SERVER_NAME));
           return doNext(packet);
         }
 
@@ -158,8 +163,11 @@ public class ReadHealthStep extends Step {
         return doNext(packet);
       } catch (Throwable t) {
         // do not retry for health check
-        LOGGER.fine(
-            MessageKeys.WLS_HEALTH_READ_FAILED, packet.get(ProcessingConstants.SERVER_NAME), t);
+        LOGGER.info(
+            (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
+            MessageKeys.WLS_HEALTH_READ_FAILED,
+            packet.get(ProcessingConstants.SERVER_NAME),
+            t);
         return doNext(packet);
       }
     }
