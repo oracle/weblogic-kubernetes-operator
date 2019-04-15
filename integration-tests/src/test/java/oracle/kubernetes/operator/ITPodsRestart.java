@@ -557,7 +557,7 @@ public class ITPodsRestart extends BaseTest {
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     String namespace = domain.getDomainNS();
     boolean gotExpected = false;
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < BaseTest.getMaxIterationsPod(); i++) {
       if (podStatusExpected.equals("Terminating")) {
         if (testUtil.isPodTerminating(namespace, domain1LabelSelector, podName)) {
           gotExpected = true;
@@ -569,7 +569,8 @@ public class ITPodsRestart extends BaseTest {
           break;
         }
       }
-      Thread.sleep(10000);
+
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
     }
     Assert.assertTrue("Didn't get the expected pod status", gotExpected);
   }
