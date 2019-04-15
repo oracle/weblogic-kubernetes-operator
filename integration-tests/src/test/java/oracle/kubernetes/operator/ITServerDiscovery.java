@@ -138,7 +138,7 @@ public class ITServerDiscovery extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testOPMSReconnToDomain() throws Exception {
+  public void testOPReconnToDomain() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);

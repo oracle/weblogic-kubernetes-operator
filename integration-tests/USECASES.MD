@@ -94,4 +94,4 @@ Configuration Overrides Usecases
 | Server Discovery | Use Case |
 | --- | --- |
 | Discover a newly started server | stop operator and apply the modified domain.yaml with replicas count increated, restart Operator and verify that the cluster is scaled up accordingly |
-| Liveness probe | restart Operator and verify the liveness probe by killing admin server and all managed servers in the cluster | 
+| Discover dead weblogic servers | stop Operator, kill admin server and all managed servers in the cluster, restart Operator and verify that it restarts all dead servers | 
