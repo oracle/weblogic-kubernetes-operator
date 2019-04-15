@@ -19,12 +19,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /** A Domain CRD utility class to manipulate domain yaml files */
 public class DomainCRD {
 
   private final ObjectMapper objectMapper;
   private final JsonNode root;
+  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   /**
    * Constructor to read the yaml file and initialize the root JsonNode with yaml equivalent of JSON
@@ -140,7 +142,7 @@ public class DomainCRD {
     JsonNode clusterNode = null;
     for (JsonNode cluster : clusters) {
       if (cluster.get("clusterName").asText().equals(clusterName)) {
-        System.out.println("Got the cluster");
+        logger.info("Got the cluster");
         clusterNode = cluster;
       }
     }
@@ -157,7 +159,7 @@ public class DomainCRD {
     ArrayNode managedservers = null;
     JsonNode managedserverNode = null;
     if (root.path("spec").path("managedServers").isMissingNode()) {
-      System.out.println("Missing MS Node");
+      logger.info("Missing MS Node");
       managedservers = objectMapper.createArrayNode();
       ObjectNode managedserver = objectMapper.createObjectNode();
       managedserver.put("serverName", managedServerName);
@@ -177,9 +179,6 @@ public class DomainCRD {
         managedserver.put("serverName", managedServerName);
         managedservers.add(managedserver);
       }
-    }
-    if (root.path("spec").path("managedServers").isMissingNode()) {
-      System.out.println("YES IT IS STILL MISSING");
     }
     return managedserverNode;
   }
