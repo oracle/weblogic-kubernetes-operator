@@ -531,7 +531,7 @@ public class Operator {
     String cmd = "kubectl scale --replicas=0 deployment/weblogic-operator" + " -n " + operatorNS;
     logger.info("Undeploy Operator using command:\n" + cmd);
 
-    ExecResult result = ExecCommand.exec(cmd);
+    ExecResult result = TestUtils.exec(cmd);
 
     logger.info("stdout : \n" + result.stdout());
 
@@ -548,7 +548,7 @@ public class Operator {
     String cmd = "kubectl scale --replicas=1 deployment/weblogic-operator" + " -n " + operatorNS;
     logger.info("Deploy Operator using command:\n" + cmd);
 
-    ExecResult result = ExecCommand.exec(cmd);
+    ExecResult result = TestUtils.exec(cmd);
 
     logger.info("Checking if operator pod is running");
     verifyPodCreated();
