@@ -158,7 +158,7 @@ function createDomainConfigmap {
   fi
  
   # create the configmap and label it properly
-  local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
+  local cmName=${domainUID}-create-fmw-infra-sample-domain-job-cm
   kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir
 
   echo Checking the configmap $cmName was created
