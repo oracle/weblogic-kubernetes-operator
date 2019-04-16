@@ -4,6 +4,18 @@
 
 export DOMAIN_HOME=${DOMAIN_HOME_DIR}
 
+echo 'Executing wlst.sh -skipWLSModuleScanning '
+echo '          /u01/oracle/container-scripts/createInfraDomain.py '
+echo '          -oh /u01/oracle '
+echo '          -jh /usr/java/latest '
+echo "          -parent ${CUSTOM_DOMAIN_ROOT_DIR} "
+echo "          -name ${CUSTOM_DOMAIN_NAME} "
+echo "          -user ${admin_username} "
+echo "          -password ${admin_password} "
+echo "          -rcuDb ${CUSTOM_CONNECTION_STRING} "
+echo "          -rcuPrefix ${CUSTOM_RCUPREFIX} "
+echo "          -rcuSchemaPwd ${rcu_password} "
+
 # Create the domain
 wlst.sh -skipWLSModuleScanning \
         /u01/oracle/container-scripts/createInfraDomain.py \
