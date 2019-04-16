@@ -8,7 +8,7 @@ echo 'Executing wlst.sh -skipWLSModuleScanning '
 echo '          /u01/weblogic/createFMWDomain.py '
 echo '          -oh /u01/oracle '
 echo '          -jh /usr/java/latest '
-echo "          -parent ${DOMAIN_ROOT_DIR} "
+echo "          -parent ${DOMAIN_HOME} "
 echo "          -name ${CUSTOM_DOMAIN_NAME} "
 echo "          -user " `cat /weblogic-operator/secrets/username`
 echo "          -password " `cat /weblogic-operator/secrets/password`
@@ -28,7 +28,7 @@ wlst.sh -skipWLSModuleScanning \
         /u01/weblogic/createFMWDomain.py \
         -oh /u01/oracle \
         -jh /usr/java/latest \
-        -parent ${DOMAIN_ROOT_DIR} \
+        -parent ${DOMAIN_HOME} \
         -name ${CUSTOM_DOMAIN_NAME} \
         -user `cat /weblogic-operator/secrets/username` \
         -password `cat /weblogic-operator/secrets/password` \
