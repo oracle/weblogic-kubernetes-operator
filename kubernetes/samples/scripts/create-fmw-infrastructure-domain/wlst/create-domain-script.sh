@@ -8,13 +8,13 @@ echo 'Executing wlst.sh -skipWLSModuleScanning '
 echo '          /u01/oracle/container-scripts/createInfraDomain.py '
 echo '          -oh /u01/oracle '
 echo '          -jh /usr/java/latest '
-echo "          -parent ${CUSTOM_DOMAIN_ROOT_DIR} "
+echo "          -parent ${DOMAIN_ROOT_DIR} "
 echo "          -name ${CUSTOM_DOMAIN_NAME} "
-echo "          -user ${admin_username} "
-echo "          -password ${admin_password} "
+echo "          -user " `cat /weblogic-operator/secrets/username`
+echo "          -password " `cat /weblogic-operator/secrets/password`
 echo "          -rcuDb ${CUSTOM_CONNECTION_STRING} "
 echo "          -rcuPrefix ${CUSTOM_RCUPREFIX} "
-echo "          -rcuSchemaPwd ${rcu_password} "
+echo "          -rcuSchemaPwd " `cat /weblogic-operator/rcu-secrets/password`
 
 # Create the domain
 wlst.sh -skipWLSModuleScanning \
@@ -23,9 +23,9 @@ wlst.sh -skipWLSModuleScanning \
         -jh /usr/java/latest \
         -parent ${CUSTOM_DOMAIN_ROOT_DIR} \
         -name ${CUSTOM_DOMAIN_NAME} \
-        -user ${admin_username} \
-        -password ${admin_password} \
+        -user `cat /weblogic-operator/secrets/username` \
+        -password `cat /weblogic-operator/secrets/password` \
         -rcuDb ${CUSTOM_CONNECTION_STRING} \
         -rcuPrefix ${CUSTOM_RCUPREFIX} \
-        -rcuSchemaPwd ${rcu_password}
+        -rcuSchemaPwd `cat /weblogic-operator/rcu-secrets/password`
 
