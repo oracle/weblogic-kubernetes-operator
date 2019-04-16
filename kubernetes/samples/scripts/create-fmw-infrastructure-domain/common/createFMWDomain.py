@@ -47,7 +47,10 @@ class Infra12213Provisioner:
         readTemplate(baseTemplate)
         setOption('DomainName', domainName)
         setOption('JavaHome', self.javaHome)
-        setOption('ServerStartMode', prodMode)
+        if (prodMode == 'true'):
+            setOption('ServerStartMode', 'prod')
+        else:
+            setOption('ServerStartMode', 'dev')
         set('Name', domainName)
 
         admin_port = int(adminListenPort)
