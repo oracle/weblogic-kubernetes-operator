@@ -1,0 +1,15 @@
+baseURL = "/weblogic-kubernetes-operator/"
+languageCode = "en-us"
+title = "WebLogic Kubernetes Operator"
+
+# Change the default theme to be use when building the site with Hugo
+theme = "hugo-theme-learn"
+
+publishDir = "docs"
+
+# analytics
+googleAnalytics = "UA-129126578-2"
+
+# For search functionality
+[outputs]
+home = [ "HTML", "RSS", "JSON"]

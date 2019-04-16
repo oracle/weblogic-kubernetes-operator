@@ -57,6 +57,14 @@ spec:
       channels:
       - channelName: default
         nodePort: 7001
+      - channelName: extra
+        nodePort: 7011
+      labels:
+        red: maroon
+        blue: azure
+      annotations:
+        sunday: dimanche
+        monday: lundi
     serverPod:
       env:
       - name: var1
@@ -78,7 +86,7 @@ spec:
       - name: JAVA_OPTIONS
         value: "-server"
       - name: USER_MEM_ARGS
-        value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
+        value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
       nodeSelector:
         os_arch: arm64
       resources:

@@ -88,6 +88,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withContainer(V1Container container) {
+    ((BaseConfiguration) getDomainSpec()).addContainer(container);
+    return this;
+  }
+
+  @Override
   /**
    * Sets the WebLogic configuration overrides config map name for the domain
    *
@@ -129,9 +135,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
     @Override
     public AdminService configureAdminService() {
-      if (adminServer.getAdminService() == null) {
-        adminServer.setAdminService(new AdminService());
-      }
       return adminServer.getAdminService();
     }
   }
@@ -287,6 +290,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withInitContainer(V1Container initContainer) {
       server.addInitContainer(initContainer);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withContainer(V1Container container) {
+      server.addContainer(container);
       return this;
     }
 
@@ -448,6 +457,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withInitContainer(V1Container initContainer) {
       cluster.addInitContainer(initContainer);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withContainer(V1Container container) {
+      cluster.addContainer(container);
       return this;
     }
 

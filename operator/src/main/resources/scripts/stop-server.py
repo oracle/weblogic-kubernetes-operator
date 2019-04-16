@@ -1,4 +1,4 @@
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
@@ -24,7 +24,6 @@ server_name = getEnvVar('SERVER_NAME')
 domain_name = getEnvVar('DOMAIN_NAME')
 domain_path = getEnvVar('DOMAIN_HOME')
 service_name = getEnvVar('SERVICE_NAME')
-server_port = getEnvVar('MANAGED_SERVER_PORT')
 
 # Convert b64 encoded user key into binary
 
@@ -37,29 +36,29 @@ file = open('/tmp/userKeyNodeManager.secure.bin', 'wb')
 file.write(decoded)
 file.close()
 
-# Connect to the server and request that it shuts down
+# Connect to nodemanager and stop server
 
 try:
-  connect(userConfigFile='/weblogic-operator/introspector/userConfigNodeManager.secure',
+  nmConnect(userConfigFile='/weblogic-operator/introspector/userConfigNodeManager.secure',
             userKeyFile='/tmp/userKeyNodeManager.secure.bin',
-            url='t3://'+service_name+':'+server_port,
+            host='127.0.0.1',port='5556',
             domainName=domain_name,
-            domainDir=domain_path,nmType='plain')
-
-  print('Connected to the server - attempting to issue shutdown command')
-except Exception, e:
-  print e
-  print('Failed to connect to the server')
+            domainDir=domain_path,
+            nmType='plain')
+except:
+  print('Failed to connect to the NodeManager')
   exit(exitcode=2)
 
-# shutdown the server
+# Kill the server
 
 try:
-  shutdown(server_name,'Server', ignoreSessions='true', block='true', force='true')
+  nmKill(server_name)
 except:
-  print('Connected to the server, but failed to stop it')
+  print('Connected to the NodeManager, but failed to stop the server')
   exit(exitcode=2)
 
 # Exit WLST
+
+nmDisconnect()
 exit()
 

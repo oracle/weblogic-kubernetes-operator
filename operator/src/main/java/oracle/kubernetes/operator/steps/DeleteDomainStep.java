@@ -1,23 +1,21 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.forDomainUid;
+import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
+import static oracle.kubernetes.operator.LabelConstants.getCreatedbyOperatorSelector;
 
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
+import java.util.stream.Collectors;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -44,9 +42,10 @@ public class DeleteDomainStep extends Step {
             deletePersistentVolumeClaims(),
             ConfigMapHelper.deleteDomainIntrospectorConfigMapStep(domainUID, namespace, getNext()));
     if (info != null) {
-      Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
-      serversToStop.addAll(info.getServers().entrySet());
-      serverDownStep = new ServerDownIteratorStep(serversToStop, serverDownStep);
+      serverDownStep =
+          new ServerDownIteratorStep(
+              info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList()),
+              serverDownStep);
     }
 
     return doNext(serverDownStep, packet);
@@ -54,7 +53,7 @@ public class DeleteDomainStep extends Step {
 
   private Step deleteServices() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .withLabelSelectors(forDomainUidSelector(domainUID), getCreatedbyOperatorSelector())
         .listServiceAsync(
             namespace,
             new ActionResponseStep<V1ServiceList>() {
@@ -66,13 +65,13 @@ public class DeleteDomainStep extends Step {
 
   private Step deletePods() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .withLabelSelectors(forDomainUidSelector(domainUID), getCreatedbyOperatorSelector())
         .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(null));
   }
 
   private Step deletePersistentVolumes() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .withLabelSelectors(forDomainUidSelector(domainUID), getCreatedbyOperatorSelector())
         .listPersistentVolumeAsync(
             new ActionResponseStep<V1PersistentVolumeList>() {
               @Override
@@ -84,7 +83,7 @@ public class DeleteDomainStep extends Step {
 
   private Step deletePersistentVolumeClaims() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUid(domainUID), CREATEDBYOPERATOR_LABEL)
+        .withLabelSelectors(forDomainUidSelector(domainUID), getCreatedbyOperatorSelector())
         .listPersistentVolumeClaimAsync(
             namespace,
             new ActionResponseStep<V1PersistentVolumeClaimList>() {

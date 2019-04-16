@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -11,7 +11,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -19,7 +18,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.resource.VersionsResource;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import org.apache.commons.codec.binary.Base64;
@@ -58,8 +57,8 @@ public class RestServer {
   private String baseExternalHttpsUri;
   private String baseInternalHttpsUri;
 
-  HttpServer externalHttpsServer;
-  HttpServer internalHttpsServer;
+  private HttpServer externalHttpsServer;
+  private HttpServer internalHttpsServer;
 
   private static final String SSL_PROTOCOL = "TLSv1.2";
   private static final String[] SSL_PROTOCOLS = {
@@ -133,7 +132,7 @@ public class RestServer {
    *
    * @return the uri
    */
-  public String getExternalHttpsUri() {
+  String getExternalHttpsUri() {
     return baseExternalHttpsUri;
   }
 
@@ -142,7 +141,7 @@ public class RestServer {
    *
    * @return the uri
    */
-  public String getInternalHttpsUri() {
+  String getInternalHttpsUri() {
     return baseInternalHttpsUri;
   }
 
@@ -216,29 +215,6 @@ public class RestServer {
       LOGGER.info("Stopped the internal ssl REST server"); // TBD .fine ?
     }
     LOGGER.exiting();
-  }
-
-  /**
-   * Gets the internal https port's certificate as a base64 encoded PEM.
-   *
-   * @return base64 encoded PEM containing the certificate, or null if unable to read the
-   *     certificate data.
-   */
-  public String getInternalCertificateAsBase64PEM() {
-    LOGGER.entering();
-    String internalCert = null;
-    try {
-      internalCert =
-          Base64.encodeBase64String(
-              readFromDataOrFile(
-                  this.config.getOperatorInternalCertificateData(),
-                  this.config.getOperatorInternalCertificateFile()));
-    } catch (IOException e) {
-      LOGGER.warning(MessageKeys.EXCEPTION, e);
-    }
-
-    LOGGER.exiting(internalCert);
-    return internalCert;
   }
 
   private HttpServer createExternalHttpsServer(Container container) throws Exception {
@@ -347,8 +323,21 @@ public class RestServer {
 
   private ResourceConfig createResourceConfig() {
     LOGGER.entering();
-    // create a resource config that scans for JAX-RS resources and providers
-    // in oracle.kubernetes.operator.rest package
+
+    ResourceConfig rc = createResourceConfig(config);
+
+    LOGGER.exiting();
+    return rc;
+  }
+
+  /**
+   * Defines a resource configuration that scans for JAX-RS resources and providers in the REST
+   * package.
+   *
+   * @param restConfig the operator REST configuration
+   * @return a resource configuration
+   */
+  static ResourceConfig createResourceConfig(RestConfig restConfig) {
     ResourceConfig rc =
         new ResourceConfig()
             .register(JacksonFeature.class)
@@ -358,15 +347,8 @@ public class RestServer {
             .register(RequestDebugLoggingFilter.class)
             .register(ResponseDebugLoggingFilter.class)
             .register(ExceptionMapper.class)
-            .packages("oracle.kubernetes.operator.rest.resource");
-    Map<String, Object> extraProps = new HashMap<>();
-
-    // attach the rest backend impl to the resource config
-    // so that the resource impls can find it
-    extraProps.put(RestConfig.REST_CONFIG_PROPERTY, config);
-    rc.addProperties(extraProps);
-
-    LOGGER.exiting();
+            .packages(VersionsResource.class.getPackageName());
+    rc.setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
     return rc;
   }
 

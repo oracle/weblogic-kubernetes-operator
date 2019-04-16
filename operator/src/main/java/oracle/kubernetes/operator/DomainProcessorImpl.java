@@ -16,13 +16,12 @@ import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -30,9 +29,9 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.JobHelper;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -46,7 +45,6 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.FiberGate;
-import oracle.kubernetes.operator.work.FiberGateFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -56,46 +54,43 @@ import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.joda.time.DateTime;
 
 public class DomainProcessorImpl implements DomainProcessor {
-  static final DomainProcessor INSTANCE = new DomainProcessorImpl();
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final FiberGateFactory FACTORY =
-      () -> {
-        return new FiberGate(Main.engine);
-      };
-  private static final ConcurrentMap<String, FiberGate> makeRightFiberGates =
-      new ConcurrentHashMap<>();
-  private static final ConcurrentMap<String, FiberGate> statusFiberGates =
-      new ConcurrentHashMap<>();
+  private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
+  private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
+  private DomainProcessorDelegate delegate;
 
-  private static FiberGate getMakeRightFiberGate(String ns) {
-    return makeRightFiberGates.computeIfAbsent(ns, k -> FACTORY.get());
+  public DomainProcessorImpl(DomainProcessorDelegate delegate) {
+    this.delegate = delegate;
   }
 
-  private static FiberGate getStatusFiberGate(String ns) {
-    return statusFiberGates.computeIfAbsent(ns, k -> FACTORY.get());
+  private FiberGate getMakeRightFiberGate(String ns) {
+    return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
+  }
+
+  private FiberGate getStatusFiberGate(String ns) {
+    return statusFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
   }
 
   // Map from namespace to map of domainUID to Domain
-  private static final ConcurrentMap<String, ConcurrentMap<String, DomainPresenceInfo>> domains =
+  private static final Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
       new ConcurrentHashMap<>();
 
   private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUID) {
-    return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUID);
+    return DOMAINS.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUID);
   }
 
   private static void registerDomainPresenceInfo(DomainPresenceInfo info) {
-    domains
+    DOMAINS
         .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
         .put(info.getDomainUID(), info);
   }
 
   private static void unregisterPresenceInfo(String ns, String domainUID) {
-    ConcurrentMap<String, DomainPresenceInfo> map = domains.get(ns);
+    Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
     if (map != null) {
       map.remove(domainUID);
     }
@@ -123,10 +118,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private DomainProcessorImpl() {}
-
   public void stopNamespace(String ns) {
-    ConcurrentMap<String, DomainPresenceInfo> map = domains.get(ns);
+    Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
     if (map != null) {
       for (DomainPresenceInfo dpi : map.values()) {
         Domain dom = dpi.getDomain();
@@ -142,250 +135,25 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   public void dispatchPodWatch(Watch.Response<V1Pod> item) {
-    V1Pod p = item.object;
-    if (p != null) {
-      V1ObjectMeta metadata = p.getMetadata();
+    V1Pod pod = item.object;
+    if (pod != null) {
+      V1ObjectMeta metadata = pod.getMetadata();
       String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
       String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
       if (domainUID != null && serverName != null) {
-        DomainPresenceInfo existing =
-            getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
-        if (existing != null) {
-          ServerKubernetesObjects sko =
-              existing.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-          if (sko != null) {
-            switch (item.type) {
-              case "ADDED":
-                sko.getPod()
-                    .accumulateAndGet(
-                        p,
-                        (current, ob) -> {
-                          if (current != null) {
-                            if (isOutdated(current.getMetadata(), metadata)) {
-                              return current;
-                            }
-                          }
-                          return ob;
-                        });
-                break;
-              case "MODIFIED":
-                if (PodWatcher.isReady(p)) {
-                  sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
-                } else {
-                  sko.getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
-                }
-                sko.getPod()
-                    .accumulateAndGet(
-                        p,
-                        (current, ob) -> {
-                          if (current != null) {
-                            if (!isOutdated(current.getMetadata(), metadata)) {
-                              return ob;
-                            }
-                          }
-                          // If the skoPod is null then the operator deleted this pod
-                          // and modifications are to the terminating pod
-                          return current;
-                        });
-                break;
-              case "DELETED":
-                V1Pod oldPod =
-                    sko.getPod()
-                        .getAndAccumulate(
-                            p,
-                            (current, ob) -> {
-                              if (current != null) {
-                                if (!isOutdated(current.getMetadata(), metadata)) {
-                                  sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
-                                  return null;
-                                }
-                              }
-                              return current;
-                            });
-                if (oldPod != null && !existing.isDeleting()) {
-                  // Pod was deleted, but sko still contained a non-null entry
-                  LOGGER.info(
-                      MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
-                  makeRightDomainPresence(existing, true, false, true);
-                }
-                break;
-
-              case "ERROR":
-              default:
-            }
-          }
-        }
-      }
-    }
-  }
-
-  public void dispatchServiceWatch(Watch.Response<V1Service> item) {
-    V1Service s = item.object;
-    if (s != null) {
-      V1ObjectMeta metadata = s.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
-      String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
-      String channelName = metadata.getLabels().get(LabelConstants.CHANNELNAME_LABEL);
-      String clusterName = metadata.getLabels().get(LabelConstants.CLUSTERNAME_LABEL);
-      if (domainUID != null) {
-        DomainPresenceInfo existing =
-            getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
-        if (existing != null) {
+        DomainPresenceInfo info = getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
+        if (info != null) {
           switch (item.type) {
             case "ADDED":
-              if (clusterName != null) {
-                existing
-                    .getClusters()
-                    .compute(
-                        clusterName,
-                        (key, current) -> {
-                          if (current != null) {
-                            if (isOutdated(current.getMetadata(), metadata)) {
-                              return current;
-                            }
-                          }
-                          return s;
-                        });
-              } else if (serverName != null) {
-                ServerKubernetesObjects sko =
-                    existing
-                        .getServers()
-                        .computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-                if (channelName != null) {
-                  sko.getChannels()
-                      .compute(
-                          channelName,
-                          (key, current) -> {
-                            if (current != null) {
-                              if (isOutdated(current.getMetadata(), metadata)) {
-                                return current;
-                              }
-                            }
-                            return s;
-                          });
-                } else {
-                  sko.getService()
-                      .accumulateAndGet(
-                          s,
-                          (current, ob) -> {
-                            if (current != null) {
-                              if (isOutdated(current.getMetadata(), metadata)) {
-                                return current;
-                              }
-                            }
-                            return ob;
-                          });
-                }
-              }
-              break;
             case "MODIFIED":
-              if (clusterName != null) {
-                existing
-                    .getClusters()
-                    .compute(
-                        clusterName,
-                        (key, current) -> {
-                          if (current != null) {
-                            if (!isOutdated(current.getMetadata(), metadata)) {
-                              return s;
-                            }
-                          }
-                          return current;
-                        });
-              } else if (serverName != null) {
-                ServerKubernetesObjects sko =
-                    existing
-                        .getServers()
-                        .computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-                if (channelName != null) {
-                  sko.getChannels()
-                      .compute(
-                          channelName,
-                          (key, current) -> {
-                            if (current != null) {
-                              if (!isOutdated(current.getMetadata(), metadata)) {
-                                return s;
-                              }
-                            }
-                            return current;
-                          });
-                } else {
-                  sko.getService()
-                      .accumulateAndGet(
-                          s,
-                          (current, ob) -> {
-                            if (current != null) {
-                              if (!isOutdated(current.getMetadata(), metadata)) {
-                                return ob;
-                              }
-                            }
-                            return current;
-                          });
-                }
-              }
+              info.setServerPodFromEvent(serverName, pod);
               break;
             case "DELETED":
-              if (clusterName != null) {
-                boolean removed =
-                    removeIfPresentAnd(
-                        existing.getClusters(),
-                        clusterName,
-                        (current) -> {
-                          return isOutdated(current.getMetadata(), metadata);
-                        });
-                if (removed && !existing.isDeleting()) {
-                  // Service was deleted, but clusters still contained a non-null entry
-                  LOGGER.info(
-                      MessageKeys.CLUSTER_SERVICE_DELETED,
-                      domainUID,
-                      metadata.getNamespace(),
-                      clusterName);
-                  makeRightDomainPresence(existing, true, false, true);
-                }
-              } else if (serverName != null) {
-                ServerKubernetesObjects sko = existing.getServers().get(serverName);
-                if (sko != null) {
-                  if (channelName != null) {
-                    boolean removed =
-                        removeIfPresentAnd(
-                            sko.getChannels(),
-                            channelName,
-                            (current) -> {
-                              return isOutdated(current.getMetadata(), metadata);
-                            });
-                    if (removed && !existing.isDeleting()) {
-                      // Service was deleted, but sko still contained a non-null entry
-                      LOGGER.info(
-                          MessageKeys.SERVER_SERVICE_DELETED,
-                          domainUID,
-                          metadata.getNamespace(),
-                          serverName);
-                      makeRightDomainPresence(existing, true, false, true);
-                    }
-                  } else {
-                    V1Service oldService =
-                        sko.getService()
-                            .getAndAccumulate(
-                                s,
-                                (current, ob) -> {
-                                  if (current != null) {
-                                    if (!isOutdated(current.getMetadata(), metadata)) {
-                                      return null;
-                                    }
-                                  }
-                                  return current;
-                                });
-                    if (oldService != null && !existing.isDeleting()) {
-                      // Service was deleted, but sko still contained a non-null entry
-                      LOGGER.info(
-                          MessageKeys.SERVER_SERVICE_DELETED,
-                          domainUID,
-                          metadata.getNamespace(),
-                          serverName);
-                      makeRightDomainPresence(existing, true, false, true);
-                    }
-                  }
-                }
+              boolean removed = info.deleteServerPodFromEvent(serverName, pod);
+              if (removed && info.isNotDeleting()) {
+                LOGGER.info(
+                    MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
+                makeRightDomainPresence(info, true, false, true);
               }
               break;
 
@@ -397,19 +165,34 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static <K, V> boolean removeIfPresentAnd(
-      ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
-    Objects.requireNonNull(predicateFunction);
-    for (V oldValue; (oldValue = map.get(key)) != null; ) {
-      if (predicateFunction.test(oldValue)) {
-        if (map.remove(key, oldValue)) {
-          return true;
-        }
-      } else {
-        return false;
-      }
+  private V1Pod getNewerPod(V1Pod first, V1Pod second) {
+    return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
+  }
+
+  private V1ObjectMeta getMetadata(V1Pod pod) {
+    return pod == null ? null : pod.getMetadata();
+  }
+
+  public void dispatchServiceWatch(Watch.Response<V1Service> item) {
+    V1Service service = item.object;
+    String domainUID = ServiceHelper.getServiceDomainUID(service);
+    if (domainUID == null) return;
+
+    DomainPresenceInfo info =
+        getExistingDomainPresenceInfo(service.getMetadata().getNamespace(), domainUID);
+    if (info == null) return;
+
+    switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
+        ServiceHelper.updatePresenceFromEvent(info, item.object);
+        break;
+      case "DELETED":
+        boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
+        if (removed && info.isNotDeleting()) makeRightDomainPresence(info, true, false, true);
+        break;
+      default:
     }
-    return false;
   }
 
   public void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
@@ -418,9 +201,9 @@ public class DomainProcessorImpl implements DomainProcessor {
       switch (item.type) {
         case "MODIFIED":
         case "DELETED":
-          Main.runSteps(
+          delegate.runSteps(
               ConfigMapHelper.createScriptConfigMapStep(
-                  Main.getOperatorNamespace(), c.getMetadata().getNamespace()));
+                  delegate.getOperatorNamespace(), c.getMetadata().getNamespace()));
           break;
 
         case "ERROR":
@@ -446,30 +229,24 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static void onEvent(V1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
-    if (ref != null) {
-      String name = ref.getName();
-      String message = event.getMessage();
-      if (message != null) {
-        if (message.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE)) {
-          String ns = event.getMetadata().getNamespace();
-          ConcurrentMap<String, DomainPresenceInfo> map = domains.get(ns);
-          if (map != null) {
-            for (DomainPresenceInfo d : map.values()) {
-              String domainUIDPlusDash = d.getDomainUID() + "-";
-              if (name.startsWith(domainUIDPlusDash)) {
-                String serverName = name.substring(domainUIDPlusDash.length());
-                ServerKubernetesObjects sko = d.getServers().get(serverName);
-                if (sko != null) {
-                  int idx = message.lastIndexOf(':');
-                  sko.getLastKnownStatus().set(message.substring(idx + 1).trim());
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    if (ref == null) return;
+
+    String[] domainAndServer = ref.getName().split("-");
+    String domainUid = domainAndServer[0];
+    String serverName = domainAndServer[1];
+    String status = getReadinessStatus(event);
+    if (status == null) return;
+
+    Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
+        .map(m -> m.get(domainUid))
+        .ifPresent(info -> info.setLastKnownServerStatus(serverName, status));
+  }
+
+  private static String getReadinessStatus(V1Event event) {
+    return Optional.ofNullable(event.getMessage())
+        .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
+        .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
+        .orElse(null);
   }
 
   /**
@@ -510,26 +287,8 @@ public class DomainProcessorImpl implements DomainProcessor {
    * event for a resource that was deleted, but has since been recreated, and 2)
    * a MODIFIED event for an object that has already had subsequent modifications.
    */
-  static boolean isOutdated(V1ObjectMeta current, V1ObjectMeta ob) {
-    if (ob == null) {
-      return true;
-    }
-    if (current == null) {
-      return false;
-    }
 
-    DateTime obTime = ob.getCreationTimestamp();
-    DateTime cuTime = current.getCreationTimestamp();
-
-    if (obTime.isAfter(cuTime)) {
-      return false;
-    }
-    return Integer.parseInt(ob.getResourceVersion())
-            < Integer.parseInt(current.getResourceVersion())
-        || obTime.isBefore(cuTime);
-  }
-
-  private static void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
+  private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
     AtomicInteger unchangedCount = new AtomicInteger(0);
     Runnable command =
         new Runnable() {
@@ -541,8 +300,8 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .getComponents()
                   .put(
                       ProcessingConstants.DOMAIN_COMPONENT_NAME,
-                      Component.createFor(info, Main.getVersion()));
-              MainTuning main = Main.tuningAndConfig.getMainTuning();
+                      Component.createFor(info, delegate.getVersion()));
+              MainTuning main = TuningParameters.getInstance().getMainTuning();
               Step strategy =
                   DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
               FiberGate gate = getStatusFiberGate(info.getNamespace());
@@ -562,13 +321,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                           registerStatusUpdater(
                               info.getNamespace(),
                               info.getDomainUID(),
-                              Main.engine
-                                  .getExecutor()
-                                  .scheduleWithFixedDelay(
-                                      r,
-                                      main.eventualLongDelay,
-                                      main.eventualLongDelay,
-                                      TimeUnit.SECONDS));
+                              delegate.scheduleWithFixedDelay(
+                                  r,
+                                  main.eventualLongDelay,
+                                  main.eventualLongDelay,
+                                  TimeUnit.SECONDS));
                         }
                       } else {
                         // reset to trying after shorter delay because of changed status
@@ -576,13 +333,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                         registerStatusUpdater(
                             info.getNamespace(),
                             info.getDomainUID(),
-                            Main.engine
-                                .getExecutor()
-                                .scheduleWithFixedDelay(
-                                    r,
-                                    main.initialShortDelay,
-                                    main.initialShortDelay,
-                                    TimeUnit.SECONDS));
+                            delegate.scheduleWithFixedDelay(
+                                r,
+                                main.initialShortDelay,
+                                main.initialShortDelay,
+                                TimeUnit.SECONDS));
                       }
                     }
 
@@ -594,13 +349,8 @@ public class DomainProcessorImpl implements DomainProcessor {
                       registerStatusUpdater(
                           info.getNamespace(),
                           info.getDomainUID(),
-                          Main.engine
-                              .getExecutor()
-                              .scheduleWithFixedDelay(
-                                  r,
-                                  main.initialShortDelay,
-                                  main.initialShortDelay,
-                                  TimeUnit.SECONDS));
+                          delegate.scheduleWithFixedDelay(
+                              r, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
                     }
                   });
             } catch (Throwable t) {
@@ -609,14 +359,12 @@ public class DomainProcessorImpl implements DomainProcessor {
           }
         };
 
-    MainTuning main = Main.tuningAndConfig.getMainTuning();
+    MainTuning main = TuningParameters.getInstance().getMainTuning();
     registerStatusUpdater(
         info.getNamespace(),
         info.getDomainUID(),
-        Main.engine
-            .getExecutor()
-            .scheduleWithFixedDelay(
-                command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+        delegate.scheduleWithFixedDelay(
+            command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
   }
 
   public void makeRightDomainPresence(
@@ -633,13 +381,14 @@ public class DomainProcessorImpl implements DomainProcessor {
     String ns = info.getNamespace();
     String domainUID = info.getDomainUID();
 
-    if (!Main.isNamespaceStopping(ns).get()) {
+    if (delegate.isNamespaceRunning(ns)) {
       DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
       if (existing != null) {
         Domain current = existing.getDomain();
         if (current != null) {
           // Is this an outdated watch event?
-          if (domain != null && isOutdated(current.getMetadata(), domain.getMetadata())) {
+          if (domain != null
+              && KubernetesUtils.isFirstNewer(current.getMetadata(), domain.getMetadata())) {
             LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
             return;
           }
@@ -657,14 +406,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static final Map<String, JobWatcher> jws = new ConcurrentHashMap<>();
-
   private void internalMakeRightDomainPresence(
       @Nullable DomainPresenceInfo info, boolean isDeleting, boolean isWillInterrupt) {
     String ns = info.getNamespace();
     String domainUID = info.getDomainUID();
     Domain dom = info.getDomain();
-    if (isDeleting || !Main.isNamespaceStopping(ns).get()) {
+    if (isDeleting || delegate.isNamespaceRunning(ns)) {
       LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
       Step strategy =
           new StartPlanStep(
@@ -680,10 +427,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static class StartPlanStep extends Step {
+  private class StartPlanStep extends Step {
     private final DomainPresenceInfo info;
 
-    public StartPlanStep(DomainPresenceInfo info, Step next) {
+    StartPlanStep(DomainPresenceInfo info, Step next) {
       super(next);
       this.info = info;
     }
@@ -692,7 +439,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     public NextAction apply(Packet packet) {
       registerDomainPresenceInfo(info);
       Step strategy = getNext();
-      if (!info.isPopulated() && !info.isDeleting()) {
+      if (!info.isPopulated() && info.isNotDeleting()) {
         strategy = Step.chain(readExistingPods(info), readExistingServices(info), strategy);
       }
       return doNext(strategy, packet);
@@ -702,11 +449,11 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static class UnregisterStep extends Step {
     private final DomainPresenceInfo info;
 
-    public UnregisterStep(DomainPresenceInfo info) {
+    UnregisterStep(DomainPresenceInfo info) {
       this(info, null);
     }
 
-    public UnregisterStep(DomainPresenceInfo info, Step next) {
+    UnregisterStep(DomainPresenceInfo info, Step next) {
       super(next);
       this.info = info;
     }
@@ -721,15 +468,15 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Step readExistingPods(DomainPresenceInfo info) {
     return new CallBuilder()
         .withLabelSelectors(
-            LabelConstants.forDomainUid(info.getDomainUID()),
+            LabelConstants.forDomainUidSelector(info.getDomainUID()),
             LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listPodAsync(info.getNamespace(), new PodListStep(info));
   }
 
-  private static Step readExistingServices(DomainPresenceInfo info) {
+  private Step readExistingServices(DomainPresenceInfo info) {
     return new CallBuilder()
         .withLabelSelectors(
-            LabelConstants.forDomainUid(info.getDomainUID()),
+            LabelConstants.forDomainUidSelector(info.getDomainUID()),
             LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listServiceAsync(info.getNamespace(), new ServiceListStep(info));
   }
@@ -753,11 +500,9 @@ public class DomainProcessorImpl implements DomainProcessor {
       V1PodList result = callResponse.getResult();
       if (result != null) {
         for (V1Pod pod : result.getItems()) {
-          String serverName = PodWatcher.getPodServerName(pod);
+          String serverName = PodHelper.getPodServerName(pod);
           if (serverName != null) {
-            ServerKubernetesObjects sko =
-                info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-            sko.getPod().set(pod);
+            info.setServerPod(serverName, pod);
           }
         }
       }
@@ -765,7 +510,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static class ServiceListStep extends ResponseStep<V1ServiceList> {
+  private class ServiceListStep extends ResponseStep<V1ServiceList> {
     private final DomainPresenceInfo info;
 
     ServiceListStep(DomainPresenceInfo info) {
@@ -785,20 +530,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       if (result != null) {
         for (V1Service service : result.getItems()) {
-          String serverName = ServiceWatcher.getServiceServerName(service);
-          String channelName = ServiceWatcher.getServiceChannelName(service);
-          String clusterName = ServiceWatcher.getServiceClusterName(service);
-          if (clusterName != null) {
-            info.getClusters().put(clusterName, service);
-          } else if (serverName != null) {
-            ServerKubernetesObjects sko =
-                info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-            if (channelName != null) {
-              sko.getChannels().put(channelName, service);
-            } else {
-              sko.getService().set(service);
-            }
-          }
+          ServiceHelper.addToPresence(info, service);
         }
       }
 
@@ -806,7 +538,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  void runDomainPlan(
+  private void runDomainPlan(
       Domain dom,
       String domainUID,
       String ns,
@@ -879,7 +611,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  static Step createDomainUpPlan(DomainPresenceInfo info) {
+  Step createDomainUpPlan(DomainPresenceInfo info) {
     Domain dom = info.getDomain();
     Step managedServerStrategy =
         bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(new TailStep()));
@@ -892,7 +624,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                     info,
                     bringAdminServerUp(
                         info,
-                        getPodAwaiterStepFactory(info.getNamespace()),
+                        delegate.getPodAwaiterStepFactory(info.getNamespace()),
                         managedServerStrategy))));
 
     strategy =
@@ -907,11 +639,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         strategy);
   }
 
-  private static PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
-    return Main.podWatchers.get(namespace);
-  }
-
-  static Step createDomainDownPlan(DomainPresenceInfo info) {
+  private Step createDomainDownPlan(DomainPresenceInfo info) {
     String ns = info.getNamespace();
     String domainUID = info.getDomainUID();
     return Step.chain(
@@ -920,36 +648,35 @@ public class DomainProcessorImpl implements DomainProcessor {
         new UnregisterStep(info));
   }
 
-  private static class UpHeadStep extends Step {
+  private class UpHeadStep extends Step {
     private final DomainPresenceInfo info;
 
-    public UpHeadStep(DomainPresenceInfo info) {
+    UpHeadStep(DomainPresenceInfo info) {
       this(info, null);
     }
 
-    public UpHeadStep(DomainPresenceInfo info, Step next) {
+    UpHeadStep(DomainPresenceInfo info, Step next) {
       super(next);
       this.info = info;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      PodWatcher pw = (PodWatcher) Main.podWatchers.get(info.getNamespace());
+      PodAwaiterStepFactory pw = delegate.getPodAwaiterStepFactory(info.getNamespace());
       info.setDeleting(false);
       packet
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(info, Main.getVersion(), PodAwaiterStepFactory.class, pw));
-      packet.put(ProcessingConstants.PRINCIPAL, Main.getPrincipal());
+              Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
       return doNext(packet);
     }
   }
 
-  private static class DomainStatusStep extends Step {
+  private class DomainStatusStep extends Step {
     private final DomainPresenceInfo info;
 
-    public DomainStatusStep(DomainPresenceInfo info, Step next) {
+    DomainStatusStep(DomainPresenceInfo info, Step next) {
       super(next);
       this.info = info;
     }
@@ -961,15 +688,15 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static class DownHeadStep extends Step {
+  private class DownHeadStep extends Step {
     private final DomainPresenceInfo info;
     private final String ns;
 
-    public DownHeadStep(DomainPresenceInfo info, String ns) {
+    DownHeadStep(DomainPresenceInfo info, String ns) {
       this(info, ns, null);
     }
 
-    public DownHeadStep(DomainPresenceInfo info, String ns, Step next) {
+    DownHeadStep(DomainPresenceInfo info, String ns, Step next) {
       super(next);
       this.info = info;
       this.ns = ns;
@@ -979,13 +706,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     public NextAction apply(Packet packet) {
       info.setDeleting(true);
       unregisterStatusUpdater(ns, info.getDomainUID());
-      PodWatcher pw = (PodWatcher) Main.podWatchers.get(ns);
+      PodAwaiterStepFactory pw = delegate.getPodAwaiterStepFactory(ns);
       packet
           .getComponents()
           .put(
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
-              Component.createFor(info, Main.getVersion(), PodAwaiterStepFactory.class, pw));
-      packet.put(ProcessingConstants.PRINCIPAL, Main.getPrincipal());
+              Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
       return doNext(packet);
     }
   }
@@ -1012,12 +738,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     resources.add(
         JobHelper.deleteDomainIntrospectorJobStep(
             dom.getDomainUID(), dom.getMetadata().getNamespace(), null));
-    resources.add(
-        JobHelper.createDomainIntrospectorJobStep(
-            Main.tuningAndConfig.getWatchTuning(),
-            next,
-            jws,
-            Main.isNamespaceStopping(dom.getMetadata().getNamespace())));
+    resources.add(JobHelper.createDomainIntrospectorJobStep(next));
     return resources.toArray(new Step[0]);
   }
 

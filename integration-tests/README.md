@@ -4,76 +4,27 @@ This documentation describes the functional use cases that are covered in integr
 
 # Environments
 
-The tests currently run in three modes: "Wercker", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the `WERCKER` and `JENKINS` environment variables described below. The default is "standalone".
+The tests currently run in three modes: "shared cluster", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the `SHARED_CLUSTER` and `JENKINS` environment variables described below. The default is "standalone".
 
 * "Standalone" Oracle Linux, i.e, run the tests manually with the `mvn` command.
-* Wercker - https://app.wercker.com/Oracle/weblogic-kubernetes-operator/runs - `integration-test-java` is the pipeline name.
+* Shared cluster - http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-quicktest/
 * Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development process.
 
-Wercker runs only Quick test use cases, Jenkins runs both Quick and Full test use cases.
+Shared cluster runs only Quick test use cases, Jenkins runs both Quick and Full test use cases.
 
 # Use Cases
 
-Java integration tests cover the below use cases:
-
-Quick test Configuration & Use Cases - 
-
-|  |  |
-| --- | --- |
-| Operator Configuration | operator1 deployed in `weblogic-operator1` namespace and manages domains in `default` and `test1` namespaces |
-| Domain Configuration | Domain on PV using WLST, Traefik load balancer |
-
-Basic Use Cases
-
-1. Create operator `operator1` which manages `default` and `test1` namespaces, verify it's deployed successfully, pods created, operator ready and verify external REST service, if configured.
-2. Create domain `domain1` in `default` namespace and verify the pods, services are created and servers are in ready state.
-3. Verify the admin external service by accessing the admin REST endpoint with `nodeport` in URL.
-4. Verify admin t3 channel port by exec into the admin pod and deploying webapp using the channel port for WLST.
-5. Verify web app load balancing by accessing the webapp using `loadBalancerWebPort`.
-
-Advanced Use Cases
-
-6. Verify domain life cycle (destroy and create) should not have any impact on operator managing the domain and web app load balancing and admin external service.
-7. Cluster scale up/down using operator REST endpoint, webapp load balancing should adjust accordingly.
-8. Operator life cycle (destroy and create) should not impact the running domain.
-
-Also the below use cases are covered for Quick test:
-
-9. Verify the liveness probe by killing managed server 1 process 3 times to kick pod auto-restart.
-10. Shutdown the domain by changing domain `serverStartPolicy` to `NEVER`.
-
-
-Full test Configuration & Use Cases - Runs Quick test Configuration & Use cases and the below
-
-|  |  |
-| --- | --- |
-| Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
-| Domain Configuration | Domain on PV using WDT <p> Domain home in image using WLST <p> Domain home in image using WDT <p> Domain with serverStartPolicy ADMIN_ONLY <p> Domain with auto and custom situational configuration <p> Two domains managed by two operators <p> Domain with Recycle weblogicDomainStorageReclaimPolicy <p> Domain with default sample values |
-
-
-Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
-
-| Domain | Use Case |
-| --- | --- |
-| Domain on PV using WDT | WLDF scaling |
-| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
-| Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage |	
-| Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
-| Domain with Recycle policy | create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted once the domain and PVC are deleted |
-| Domain with default sample values | create domain using mostly default values for inputs |	
-| Domain home in image using WLST | cluster scaling |
-| Domain home in image using WDT  | cluster scaling |
-						
+Use Cases covered in integration tests for the operator is available [here](USECASES.MD)
 
 # Directory Configuration and Structure
-
+ 
 Directory structure of source code:
 
 A new module "integration-tests" is added to the Maven project `weblogic-kubernetes-operator`.
 
 `weblogic-kubernetes-operator/integration-tests` - location of module pom.xml  
 `weblogic-kubernetes-operator/integration-tests/src/test/java` - integration test(JUnit) classes and utility classes  
-`weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files (see Configuration Files section) and other scripts.
+`weblogic-kubernetes-operator/integration-tests/src/test/resources` - properties, YAML files (see Configuration Files section) and other scripts
 
 Directory structure used for the test run:
 
@@ -90,7 +41,7 @@ Defaults for `RESULT_ROOT` & `PV_ROOT`:
 | --- | --- | --- | --- |
 | stand-alone	| /scratch/$USER/wl_k8s_test_results |	/scratch/$USER/wl_k8s_test_results	| test defaults |
 | Jenkins	| /scratch/k8s_dir |	/scratch/k8s_dir	 | jenkins configuration |
-| Wercker	| /pipeline/output/k8s_dir	| /scratch	| wercker.yml |
+| Shared cluster	| /pipeline/output/k8s_dir	| /scratch	|  |
 
 
 'Physical' subdirectories created by test:
@@ -147,7 +98,7 @@ externalRestEnabled: true
 javaLoggingLevel: FINE
 ```
 
-src/integration-tests/resources/domainonpvwlst.yaml - input/customized properties for PV/Load Balancer/WebLogic Domain. Any property can be provided here from kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml and kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml. For all the properties that are not defined here, the default values in the sample inputs are used while generating inputs yaml.
+src/integration-tests/resources/domainonpvwlst.yaml - See [Input Yaml to the test](#input-yaml-to-the-test). For all the properties that are not defined here, the default values in the sample inputs are used while generating inputs yaml.
 
 ```
 adminServerName: admin-server
@@ -166,7 +117,25 @@ namespace: default
 
 Certain properties like weblogicDomainStoragePath, image, externalOperatorCert are populated at run time.
 
+# Input Yaml to the test
 
+The input yaml file(for example, domainonpvwlst.yaml) to the java test is used to override any or all the attributes in
+- samples domain inputs - click [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml) to see samples create-domain-inputs file
+- PV/PVC inputs - click [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml) to see PV/PVC inputs file
+- load balancer attributes and
+- custom attributes that are used to provide more flexibility for creating the domain.
+
+Below are the load balancer attributes:
+- loadBalancer: value can be `TRAEFIK` or `VOYAGER`, default is `TRAEFIK`
+- loadBalancerWebPort: web port for the load balancer
+- ingressPerDomain: create ingress per domain or one ingress for all domains in multiple domain configuration, default is true. 
+
+**Note: System env variables LB_TYPE, INGRESSPERDOMAIN take precedence over the domain input attributes. These variables apply for the entire run, not just one domain.**
+
+Below are the custom attributes:
+- createDomainPyScript is used to provide a custom create-domain.py script for domain on pv using WLST or create-wls-domain.py for domain in image 
+- clusterType is used to create a CONFIGURED or DYNAMIC Cluster. Default is DYNAMIC. This is supported for domain on pv using WLST or domain in image using WDT configurations. 
+  
 # How does it work
 
 When the tests are run with mvn command, 
@@ -189,7 +158,7 @@ When the integration test class ITOperator is executed, staticPrepare() method i
 
 staticPrepare() - initializes the application properties from OperatorIT.properties and creates resultRoot, pvRoot, userprojectsDir directories by calling initialize() method from the base class BaseTest.
 
-staticUnPrepare() - releases the cluster lease on wercker env.
+staticUnPrepare() - releases the cluster lease.
 
 test methods -  testDomainOnPVUsingWLST, testDomainOnPVUsingWDT, testTwoDomainsManagedByTwoOperators, testCreateDomainWithStartPolicyAdminOnly, testCreateDomainPVReclaimPolicyRecycle, testCreateDomainWithDefaultValuesInSampleInputs, testAutoAndCustomSitConfigOverrides, testOperatorRESTIdentityBackwardCompatibility, testOperatorRESTUsingCertificateChain
 
@@ -242,19 +211,19 @@ The tests accepts optional env var overrides:
 | QUICKTEST  | When set to "true", limits testing to a subset of the tests. |
 | LB_TYPE    | The default value is "TRAEFIK". Set to "VOYAGER" if you want to use it as LB. |
 | INGRESSPERDOMAIN  | The defult value is true. If you want to test creating TRAEFIK LB by kubectl yaml for multiple domains, set it to false. |
-| WERCKER    | Set to true if invoking from Wercker, set to false or "" if running stand-alone or from Jenkins. Default is "". |
-| JENKINS    | Set to true if invoking from Jenkins, set to false or "" if running stand-alone or from Wercker. Default is "". |
+| SHARED_CLUSTER    | Set to true if invoking on shared cluster, set to false or "" if running stand-alone or from Jenkins. Default is "". |
+| JENKINS    | Set to true if invoking from Jenkins, set to false or "" if running stand-alone or on shared cluster. Default is "". |
 | K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. Default is the local host's hostname. |
 | BRANCH_NAME  | Git branch name.   Default is determined by calling 'git branch'. |
 | LEASE_ID   |   Set to a unique value to (A) periodically renew a lease on the k8s cluster that indicates that no other test run should attempt to use the cluster, and (B) delete this lease when the test completes. |
 
 The following additional overrides are currently only used when
-WERCKER=true:
+SHARED_CLUSTER=true:
 
 | Variable | Description |
 | --- | --- |
 | IMAGE_TAG_OPERATOR | Docker image tag for operator. Default generated based off the BRANCH_NAME. |
-| IMAGE_NAME_OPERATOR | Docker image name for operator. Default is wlsldi-v2.docker.oraclecorp.com/weblogic-operator |
+| IMAGE_NAME_OPERATOR | Docker image name for operator. Default is weblogic-kubernetes-operator |
 | IMAGE_PULL_POLICY_OPERATOR | Default 'Never'. |
 | IMAGE_PULL_SECRET_OPERATOR | Default ''. |
  | IMAGE_PULL_SECRET_WEBLOGIC | Default ''.
@@ -335,8 +304,6 @@ At the end of the test run, all pods logs, describes are logged in individual fi
 $RESULT_ROOT/acceptance_test_tmp is archived under $RESULT_ROOT/acceptance_test_tmp_archive
 
 $PV_ROOT/acceptance_test_pv is archived under $PV_ROOT/acceptance_test_pv_archive
-
-On Wercker, these logs can be downloaded by clicking "Download artifact" on cleanup and store step.
 
 # How to add a new test
 

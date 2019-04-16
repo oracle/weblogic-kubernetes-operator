@@ -15,7 +15,6 @@ function setup_jenkins {
   set -x
   id
 
-  docker login -u teamsldi_us@oracle.com -p $docker_pass  wlsldi-v2.docker.oraclecorp.com
   docker images
 
   pull_tag_images
@@ -23,7 +22,7 @@ function setup_jenkins {
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   # create a docker image for the operator code being tested
   docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
-  docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest
+  docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
   
   docker images
     
@@ -38,8 +37,8 @@ function setup_jenkins {
   echo "Helm is configured."
 }
 
-function setup_wercker {
-  echo "Perform setup for running in wercker"
+function setup_shared_cluster {
+  echo "Perform setup for running on shared cluster"
   echo "Install tiller"
   kubectl create serviceaccount --namespace kube-system tiller
   kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
@@ -58,7 +57,7 @@ function setup_wercker {
   echo "After helm delete, list of installed helm charts is: "
   helm ls
 
-  echo "Completed setup_wercker"
+  echo "Completed setup_shared_cluster"
 }
 
 function pull_tag_images {
@@ -92,29 +91,7 @@ function pull_tag_images {
    	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
-  echo "Pull and tag the images we need"
-  docker pull wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest
-  docker tag wlsldi-v2.docker.oraclecorp.com/store-serverjre-8:latest store/oracle/serverjre:8
 
-  docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest
-  docker tag wlsldi-v2.docker.oraclecorp.com/weblogic-webtier-apache-12.2.1.3.0:latest store/oracle/apache:12.2.1.3
-}
-
-
-function create_image_pull_secret_jenkins {
-  echo "Creating Secret"
-  kubectl create secret docker-registry wlsldi-secret  \
-    --docker-server=wlsldi-v2.docker.oraclecorp.com \
-    --docker-username=teamsldi_us@oracle.com \
-    --docker-password=$docker_pass \
-    --docker-email=teamsldi_us@oracle.com 
-
-  echo "Checking Secret"
-  local SECRET="`kubectl get secret wlsldi-secret | grep wlsldi | wc | awk ' { print $1; }'`"
-  if [ "$SECRET" != "1" ]; then
-    echo 'secret wlsldi-secret was not created successfully'
-    exit 1
-  fi
 }
 
 function get_wlthint3client_from_image {
@@ -128,7 +105,7 @@ export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
-export BRANCH_NAME="${BRANCH_NAME:-$WERCKER_GIT_BRANCH}"
+export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
 export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-store/oracle/weblogic}"
 export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
     
@@ -140,7 +117,7 @@ if [ -z "$BRANCH_NAME" ]; then
   fi
 fi
 export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
-export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-wlsldi-v2.docker.oraclecorp.com/weblogic-operator}
+export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-weblogic-kubernetes-operator}
 
 cd $PROJECT_ROOT
 if [ $? -ne 0 ]; then
@@ -152,9 +129,9 @@ export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "
 
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
 
-if [ "$WERCKER" = "true" ]; then 
+if [ "$SHARED_CLUSTER" = "true" ]; then
 
-  echo "Test Suite is running locally on Wercker and k8s is running on remote nodes."
+  echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
 
   export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
   export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
@@ -187,7 +164,7 @@ if [ "$WERCKER" = "true" ]; then
     exit 1
   fi
   
-  setup_wercker
+  setup_shared_cluster
     
 elif [ "$JENKINS" = "true" ]; then
 
@@ -202,8 +179,6 @@ elif [ "$JENKINS" = "true" ]; then
   clean_jenkins
 
   setup_jenkins
-
-  create_image_pull_secret_jenkins
 
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT"
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT"

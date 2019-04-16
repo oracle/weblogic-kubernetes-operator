@@ -366,8 +366,10 @@ public class CRDHelper {
         return "alpha".equals(base.getPrerelease());
       }
 
-      if (version.getPrereleaseVersion() == null && base.getPrereleaseVersion() != null) {
-        return false;
+      if (version.getPrereleaseVersion() == null) {
+        return base.getPrereleaseVersion() == null;
+      } else if (base.getPrereleaseVersion() == null) {
+        return true;
       }
       return version.getPrereleaseVersion() >= base.getPrereleaseVersion();
     }

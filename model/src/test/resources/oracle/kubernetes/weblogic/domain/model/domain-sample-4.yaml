@@ -28,6 +28,10 @@ spec:
     - name: pull-secret2
 
   serverPod:
+    containers:
+      - name: cont1
+        image: busybox
+        command: ['sh', '-c', 'cat cont && sleep 120']
     initContainers:
       - name: test1
         image: busybox
@@ -62,6 +66,10 @@ spec:
         - channelName: default
           nodePort: 7001
     serverPod:
+      containers:
+        - name: cont2
+          image: busybox
+          command: ['sh', '-c', 'cat date && sleep 120']
       initContainers:
         - name: test2
           image: busybox
@@ -82,6 +90,10 @@ spec:
     - serverName: server1
       # an (optional) list of environment variable to be set on the server
       serverPod:
+        containers:
+          - name: cont3
+            image: busybox
+            command: ['sh', '-c', 'cat ls && sleep 120']
         initContainers:
           - name: test3
             image: busybox
@@ -90,7 +102,7 @@ spec:
           - name: JAVA_OPTIONS
             value: "-server"
           - name: USER_MEM_ARGS
-            value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
+            value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
         nodeSelector:
           os_arch: arm64
         resources:
@@ -108,6 +120,10 @@ spec:
       desiredState: "RUNNING"
       replicas: 5
       serverPod:
+        containers:
+          - name: cont4
+            image: busybox
+            command: ['sh', '-c', 'cat tmp && sleep 120']
         initContainers:
           - name: test4
             image: busybox

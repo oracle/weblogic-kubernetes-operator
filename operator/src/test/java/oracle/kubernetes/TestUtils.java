@@ -6,6 +6,7 @@ package oracle.kubernetes;
 
 import static com.meterware.simplestub.Stub.createStub;
 
+import ch.qos.logback.classic.LoggerContext;
 import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import org.slf4j.LoggerFactory;
 
 public class TestUtils {
   /**
@@ -59,14 +61,19 @@ public class TestUtils {
   abstract static class TestLogHandler extends Handler {
     private Throwable throwable;
     private List<Throwable> ignoredExceptions = new ArrayList<>();
+    private List<Class<? extends Throwable>> ignoredClasses = new ArrayList<>();
     private Collection<LogRecord> logRecords = new ArrayList<>();
     private List<String> messagesToTrack = new ArrayList<>();
 
     @Override
     public void publish(LogRecord record) {
-      if (record.getThrown() != null && !ignoredExceptions.contains(record.getThrown()))
+      if (record.getThrown() != null && !shouldIgnore(record.getThrown()))
         throwable = record.getThrown();
       if (messagesToTrack.contains(record.getMessage())) logRecords.add(record);
+    }
+
+    boolean shouldIgnore(Throwable thrown) {
+      return ignoredExceptions.contains(thrown) || ignoredClasses.contains(thrown.getClass());
     }
 
     void throwLoggedThrowable() {
@@ -80,6 +87,10 @@ public class TestUtils {
 
     void ignoreLoggedException(Throwable t) {
       ignoredExceptions.add(t);
+    }
+
+    void ignoreLoggedException(Class<? extends Throwable> t) {
+      ignoredClasses.add(t);
     }
 
     void collectLogMessages(Collection<LogRecord> collection, String[] messages) {
@@ -147,6 +158,13 @@ public class TestUtils {
       return this;
     }
 
+    @SafeVarargs
+    public final ConsoleHandlerMemento ignoringLoggedExceptions(
+        Class<? extends Throwable>... classes) {
+      for (Class<? extends Throwable> klass : classes) testHandler.ignoreLoggedException(klass);
+      return this;
+    }
+
     public ConsoleHandlerMemento collectLogMessages(
         Collection<LogRecord> collection, String... messages) {
       testHandler.collectLogMessages(collection, messages);
@@ -181,6 +199,38 @@ public class TestUtils {
     @Override
     public <T> T getOriginalValue() {
       throw new UnsupportedOperationException();
+    }
+  }
+
+  public static Memento silenceJsonPathLogger() {
+    return new JsonPathLoggerMemento();
+  }
+
+  static class JsonPathLoggerMemento implements Memento {
+
+    private final ch.qos.logback.classic.Logger log;
+    private final ch.qos.logback.classic.Level originalLogLevel;
+
+    static Memento silenceLogger() {
+      return new JsonPathLoggerMemento();
+    }
+
+    private JsonPathLoggerMemento() {
+      LoggerContext logContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+      log = logContext.getLogger("com.jayway.jsonpath.internal.path.CompiledPath");
+      originalLogLevel = log.getLevel();
+      log.setLevel(ch.qos.logback.classic.Level.INFO);
+    }
+
+    @Override
+    public void revert() {
+      log.setLevel(originalLogLevel);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getOriginalValue() {
+      return (T) originalLogLevel;
     }
   }
 }

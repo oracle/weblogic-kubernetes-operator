@@ -1,7 +1,6 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
-
 package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
@@ -9,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import javax.jms.Connection;
@@ -26,6 +26,32 @@ import oracle.kubernetes.operator.utils.TestUtils;
 public class BaseTest {
   public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   public static final String TESTWEBAPP = "testwebapp";
+  public static final String TESTWSAPP = "testwsapp";
+  public static final String TESTWSSERVICE = "TestWSApp";
+
+  // property file used to customize operator properties for operator inputs yaml
+
+  public static final String OPERATOR1_YAML = "operator1.yaml";
+  public static final String OPERATOR2_YAML = "operator2.yaml";
+  public static final String OPERATORBC_YAML = "operator_bc.yaml";
+  public static final String OPERATOR_CHAIN_YAML = "operator_chain.yaml";
+
+  // file used to customize domain properties for domain, PV and LB inputs yaml
+  public static final String DOMAINONPV_WLST_YAML = "domainonpvwlst.yaml";
+  public static final String DOMAINONPV_WDT_YAML = "domainonpvwdt.yaml";
+  public static final String DOMAIN_ADMINONLY_YAML = "domainadminonly.yaml";
+  public static final String DOMAIN_RECYCLEPOLICY_YAML = "domainrecyclepolicy.yaml";
+  public static final String DOMAIN_SAMPLE_DEFAULTS_YAML = "domainsampledefaults.yaml";
+  public static final String DOMAININIMAGE_WLST_YAML = "domaininimagewlst.yaml";
+  public static final String DOMAININIMAGE_WDT_YAML = "domaininimagewdt.yaml";
+
+  // property file used to configure constants for integration tests
+  public static final String APP_PROPS_FILE = "OperatorIT.properties";
+
+  public static boolean QUICKTEST;
+  public static boolean SMOKETEST;
+  public static boolean JENKINS;
+  public static boolean INGRESSPERDOMAIN = true;
 
   private static String resultRoot = "";
   private static String pvRoot = "";
@@ -39,7 +65,27 @@ public class BaseTest {
   private static String leaseId = "";
   private static String branchName = "";
   private static String appLocationInPod = "/u01/oracle/apps";
+  private static String appLocationOnHost;
   private static Properties appProps;
+
+  // Set QUICKTEST env var to true to run a small subset of tests.
+  // Set SMOKETEST env var to true to run an even smaller subset of tests
+  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
+  static {
+    QUICKTEST =
+        System.getenv("QUICKTEST") != null && System.getenv("QUICKTEST").equalsIgnoreCase("true");
+    SMOKETEST =
+        System.getenv("SMOKETEST") != null && System.getenv("SMOKETEST").equalsIgnoreCase("true");
+    if (SMOKETEST) {
+      QUICKTEST = true;
+    }
+    if (System.getenv("JENKINS") != null) {
+      JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
+    }
+    if (System.getenv("INGRESSPERDOMAIN") != null) {
+      INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
+    }
+  }
 
   public static void initialize(String appPropsFile) throws Exception {
 
@@ -81,7 +127,7 @@ public class BaseTest {
     }
 
     // for manual/local run, do cleanup
-    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
+    if (System.getenv("SHARED_CLUSTER") == null && System.getenv("JENKINS") == null) {
 
       // delete k8s artifacts created if any, delete PV directories
       ExecResult clnResult = cleanup();
@@ -95,6 +141,28 @@ public class BaseTest {
               + "\n"
               + clnResult.stderr());
     }
+
+    if (System.getenv("JENKINS") != null) {
+      logger.info("Creating " + resultRoot + "/acceptance_test_tmp");
+      TestUtils.exec(
+          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
+              + resultRoot
+              + "/acceptance_test_tmp\"");
+      TestUtils.exec(
+          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
+              + resultRoot
+              + "/acceptance_test_tmp\"");
+      logger.info("Creating " + pvRoot + "/acceptance_test_pv");
+      TestUtils.exec(
+          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
+              + pvRoot
+              + "/acceptance_test_pv\"");
+      TestUtils.exec(
+          "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
+              + pvRoot
+              + "/acceptance_test_pv\"");
+    }
+
     // create resultRoot, PVRoot, etc
     Files.createDirectories(Paths.get(resultRoot));
     Files.createDirectories(Paths.get(resultDir));
@@ -108,7 +176,7 @@ public class BaseTest {
     logger.info("Adding file handler, logging to file at " + resultDir + "/java_test_suite.out");
 
     // for manual/local run, create file handler, create PVROOT
-    if (System.getenv("WERCKER") == null && System.getenv("JENKINS") == null) {
+    if (System.getenv("SHARED_CLUSTER") == null && System.getenv("JENKINS") == null) {
       logger.info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
@@ -117,6 +185,8 @@ public class BaseTest {
             "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
       }
     }
+
+    appLocationOnHost = getProjectRoot() + "/integration-tests/src/test/resources/apps";
 
     logger.info("appProps = " + appProps);
     logger.info("maxIterationPod = " + appProps.getProperty("maxIterationsPod"));
@@ -253,6 +323,23 @@ public class BaseTest {
   }
 
   /**
+   * Verify Load Balancing by deploying and invoking webservicebapp.
+   *
+   * @param domain - domain where the app will be tested
+   * @throws Exception exception reported as a failure to build, deploy or verify load balancing for
+   *     Web Service app
+   */
+  public void testWSLoadBalancing(Domain domain) throws Exception {
+    logger.info("Inside testWSLoadBalancing");
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
+
+    // invoke webservice via servlet client
+    domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
+    logger.info("Done - testWSLoadBalancing");
+  }
+
+  /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
    * balancing and node port service
    *
@@ -271,6 +358,9 @@ public class BaseTest {
     } else {
       domain.verifyWebAppLoadBalancing(TESTWEBAPP);
     }
+
+    // intermittent failure, see OWLS-73416
+    // testWSLoadBalancing(domain);
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
     domain.verifyHasClusterServiceChannelPort("TCP", 8011, TESTWEBAPP + "/");
     logger.info("Done - testDomainLifecyle");
@@ -428,7 +518,7 @@ public class BaseTest {
   protected void logTestBegin(String testName) throws Exception {
     logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
     logger.info("BEGIN " + testName);
-    // renew lease at the beginning for every test method, leaseId is set only for Wercker
+    // renew lease at the beginning for every test method, leaseId is set only for shared cluster
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
 
@@ -480,6 +570,14 @@ public class BaseTest {
     return branchName;
   }
 
+  public static String getAppLocationInPod() {
+    return appLocationInPod;
+  }
+
+  public static String getAppLocationOnHost() {
+    return appLocationOnHost;
+  }
+
   private void copyScalingScriptToPod(
       String dirPathToCreate, String domainUID, String podName, String domainNS) throws Exception {
 
@@ -492,6 +590,15 @@ public class BaseTest {
         "/shared/domains/" + domainUID + "/bin/scripts/scalingAction.sh",
         podName,
         domainNS);
+  }
+
+  private void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
+      throws Exception {
+    String scriptName = "buildDeployWSAndWSClientAppInPod.sh";
+    // Build WS and WS client WARs in the admin pod and deploy it from the admin pod to a weblogic
+    // target
+    TestUtils.buildDeployWebServiceAppInPod(
+        domain, testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword(), wsName);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
@@ -518,6 +625,61 @@ public class BaseTest {
 
       logger.info("Checking if managed service(" + podName + ") is created");
       TestUtils.checkServiceCreated(podName, domainNS);
+    }
+  }
+
+  /**
+   * Calls statedump.sh which places k8s logs, descriptions, etc in directory
+   * $RESULT_DIR/state-dump-logs and calls archive.sh on RESULT_DIR locally, and on PV_ROOT via a
+   * job or pod. Also calls cleanup.sh which does a best-effort delete of acceptance test k8s
+   * artifacts, the local test tmp directory, and the potentially remote domain pv directories.
+   *
+   * @param iTClassName - IT class name to be used in the archive file name
+   * @throws Exception when errors while running statedump.sh or cleanup.sh scripts or while
+   *     renewing the lease for shared cluster run
+   */
+  public static void tearDown(String iTClassName) throws Exception {
+    logger.log(
+        Level.INFO,
+        "TEARDOWN: Starting Test Run TearDown (cleanup and state-dump)."
+            + " Note that if the test failed previous to tearDown, "
+            + " the error that caused the test failure may be reported "
+            + "after the tearDown completes. Note that tearDown itself may report errors,"
+            + " but this won't affect the outcome of the test results.");
+    StringBuffer cmd =
+        new StringBuffer(
+            "export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && export IT_CLASS=");
+    cmd.append(iTClassName);
+    if (JENKINS) {
+      cmd.append(" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} ");
+    }
+    cmd.append(" && ")
+        .append(BaseTest.getProjectRoot())
+        .append("/integration-tests/src/test/resources/statedump.sh");
+    logger.info("Running " + cmd);
+
+    // renew lease before callin statedump.sh
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    if (result.exitValue() == 0) {
+      logger.info("Executed statedump.sh " + result.stdout());
+    } else {
+      logger.info("Execution of statedump.sh failed, " + result.stderr() + "\n" + result.stdout());
+    }
+
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+
+    if (JENKINS) {
+      result = cleanup();
+      if (result.exitValue() != 0) {
+        logger.info("cleanup result =" + result.stdout() + "\n " + result.stderr());
+      }
+    }
+
+    if (getLeaseId() != "") {
+      logger.info("Release the k8s cluster lease");
+      TestUtils.releaseLease(getProjectRoot(), getLeaseId());
     }
   }
 }

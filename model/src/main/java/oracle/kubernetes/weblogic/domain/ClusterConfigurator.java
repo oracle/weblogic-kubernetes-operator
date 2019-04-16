@@ -10,7 +10,7 @@ import io.kubernetes.client.models.V1SecurityContext;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
-public interface ClusterConfigurator {
+public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withReplicas(int replicas);
 
   ClusterConfigurator withMaxUnavailable(int maxUnavailable);
@@ -87,6 +87,8 @@ public interface ClusterConfigurator {
   ClusterConfigurator withAdditionalVolumeMount(String name, String path);
 
   ClusterConfigurator withInitContainer(V1Container initContainer);
+
+  ClusterConfigurator withContainer(V1Container container);
 
   ClusterConfigurator withPodLabel(String name, String value);
 

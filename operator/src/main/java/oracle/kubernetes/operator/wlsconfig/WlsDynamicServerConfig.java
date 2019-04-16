@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -72,7 +72,6 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
         listenPort,
         macroSubstitutor.substituteMacro(serverTemplate.getListenAddress()),
         sslListenPort,
-        serverTemplate.isSslPortEnabled(),
         macroSubstitutor.substituteMacro(serverTemplate.getMachineName()),
         networkAccessPoints);
   }
@@ -85,7 +84,6 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
    * @param listenPort list port of the dynamic server
    * @param listenAddress listen address of the dynamic server
    * @param sslListenPort SSL listen port of the dynamic server
-   * @param sslPortEnabled boolean indicating whether SSL listen port is enabled
    * @param machineName machine name of the dynamic server
    * @param networkAccessPoints network access points or channels configured for this dynamic server
    */
@@ -94,19 +92,9 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
       Integer listenPort,
       String listenAddress,
       Integer sslListenPort,
-      boolean sslPortEnabled,
       String machineName,
       List<NetworkAccessPoint> networkAccessPoints) {
-    super(
-        name,
-        listenPort,
-        listenAddress,
-        sslListenPort,
-        sslPortEnabled,
-        machineName,
-        networkAccessPoints,
-        null,
-        false);
+    super(name, listenAddress, machineName, listenPort, sslListenPort, null, networkAccessPoints);
   }
 
   /**

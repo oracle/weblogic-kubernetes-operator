@@ -78,8 +78,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.rest.RestServer;
-import oracle.kubernetes.operator.rest.RestTest;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -172,8 +171,7 @@ public abstract class PodHelperTestBase {
     mementos.add(testSupport.installRequestStepFactory());
     mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
-
-    RestServer.create(new RestTest.TestRestConfigImpl());
+    mementos.add(InMemoryCertificates.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
@@ -202,8 +200,6 @@ public abstract class PodHelperTestBase {
 
     testSupport.throwOnCompletionFailure();
     testSupport.verifyAllDefinedResponsesInvoked();
-
-    RestServer.destroy();
   }
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
@@ -254,6 +250,10 @@ public abstract class PodHelperTestBase {
 
   V1Container getCreatedPodSpecContainer() {
     return getCreatedPod().getSpec().getContainers().get(0);
+  }
+
+  List<V1Container> getCreatedPodSpecContainers() {
+    return getCreatedPod().getSpec().getContainers();
   }
 
   List<V1Container> getCreatedPodSpecInitContainers() {
@@ -430,7 +430,9 @@ public abstract class PodHelperTestBase {
             hasEnvVar("LOG_HOME", null),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
             hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)),
-            hasEnvVar("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom")));
+            hasEnvVar(
+                "USER_MEM_ARGS",
+                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom")));
   }
 
   @Test
@@ -830,24 +832,16 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenCompliantPodExists_recordIt() {
+  public void whenCompliantPodExists_logIt() {
     initializeExistingPod();
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsFine(getExistsMessageKey()));
-    ServerKubernetesObjects sko =
-        domainPresenceInfo
-            .getServers()
-            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
-    assertThat(sko.getPod().get(), equalTo(createPodModel()));
+    assertThat(domainPresenceInfo.getServerPod(serverName), equalTo(createPodModel()));
   }
 
   void initializeExistingPod(V1Pod pod) {
-    ServerKubernetesObjects sko =
-        domainPresenceInfo
-            .getServers()
-            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
-    sko.getPod().set(pod);
+    domainPresenceInfo.setServerPod(getServerName(), pod);
   }
 
   abstract String getExistsMessageKey();
@@ -926,7 +920,10 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("LOG_HOME", null))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
-        .addEnvItem(envItem("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"))
+        .addEnvItem(
+            envItem(
+                "USER_MEM_ARGS",
+                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom"))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
   }
