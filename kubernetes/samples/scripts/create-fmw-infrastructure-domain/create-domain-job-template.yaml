@@ -45,8 +45,6 @@ spec:
               value: "%T3_PUBLIC_ADDRESS%"
             - name: MANAGED_SERVER_NAME_BASE_SVC
               value: "%MANAGED_SERVER_NAME_BASE_SVC%"
-            - name: PRODUCTION_MODE_ENABLED
-              value: "%PRODUCTION_MODE_ENABLED%"
             - name: CREATE_DOMAIN_SCRIPT_DIR
               value: "%CREATE_DOMAIN_SCRIPT_DIR%"
             - name: DOMAIN_ROOT_DIR
@@ -67,8 +65,6 @@ spec:
               value: "%MANAGED_SERVER_PORT%"
             - name: CUSTOM_MANAGED_BASE_NAME
               value: "%MANAGED_SERVER_NAME_BASE%"
-            - name: CUSTOM_MANAGED_NAME
-              value: "%CUSTOM_MANAGED_NAME%"
             - name: CUSTOM_MANAGED_SERVER_COUNT
               value: "%CONFIGURED_MANAGED_SERVER_COUNT%"
             - name: CUSTOM_CLUSTER_NAME
@@ -76,7 +72,7 @@ spec:
             - name: CUSTOM_RCUPREFIX
               value: "%CUSTOM_RCUPREFIX%"
             - name: CUSTOM_PRODUCTION_MODE
-              value: "%CUSTOM_PRODUCTION_MODE%"
+              value: "%PRODUCTION_MODE_ENABLED%"
             - name: CUSTOM_CONNECTION_STRING
               value: "%CUSTOM_CONNECTION_STRING%"
       volumes:
