@@ -28,7 +28,7 @@ wlst.sh -skipWLSModuleScanning \
         /u01/weblogic/createFMWDomain.py \
         -oh /u01/oracle \
         -jh /usr/java/latest \
-        -parent ${CUSTOM_DOMAIN_ROOT_DIR} \
+        -parent ${DOMAIN_ROOT_DIR} \
         -name ${CUSTOM_DOMAIN_NAME} \
         -user `cat /weblogic-operator/secrets/username` \
         -password `cat /weblogic-operator/secrets/password` \
