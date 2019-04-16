@@ -208,7 +208,7 @@ def usage():
           '-rcuDb <rcu-database> -rcuPrefix <rcu-prefix> -rcuSchemaPwd <rcu-schema-password> ' \
           '-adminListenPort <adminListenPort> -adminName <adminName> ' \
           '-managedNameBase <managedNameBase> -managedServerPort <managedServerPort> -prodMode <prodMode> ' \
-          '-managedCount <managedCount> -clusterName <clusterName>'
+          '-managedServerCount <managedCount> -clusterName <clusterName>'
     sys.exit(0)
 
 # Uncomment for Debug only

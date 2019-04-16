@@ -20,7 +20,7 @@ echo "          -adminName ${CUSTOM_ADMIN_NAME} "
 echo "          -managedNameBase ${CUSTOM_MANAGED_BASE_NAME} "
 echo "          -managedServerPort ${CUSTOM_MANAGEDSERVER_PORT} "
 echo "          -prodMode ${CUSTOM_PRODUCTION_MODE} "
-echo "          -managedCount ${CUSTOM_MANAGED_SERVER_COUNT} "
+echo "          -managedServerCount ${CUSTOM_MANAGED_SERVER_COUNT} "
 echo "          -clusterName ${CUSTOM_CLUSTER_NAME} "
 
 # Create the domain
@@ -40,5 +40,5 @@ wlst.sh -skipWLSModuleScanning \
         -managedNameBase ${CUSTOM_MANAGED_BASE_NAME} \
         -managedServerPort ${CUSTOM_MANAGEDSERVER_PORT} \
         -prodMode ${CUSTOM_PRODUCTION_MODE} \
-        -managedCount ${CUSTOM_MANAGED_SERVER_COUNT} \
+        -managedServerCount ${CUSTOM_MANAGED_SERVER_COUNT} \
         -clusterName ${CUSTOM_CLUSTER_NAME}
