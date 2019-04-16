@@ -159,25 +159,25 @@ The domain resource includes the element `serverPod` that is available under `sp
 `clusters` and `managedServers`. The `serverPod` element controls many details of how pods are created for server instances.
 
 The `shutdown` element of `serverPod` controls how servers will be shutdown.  This element has three properties:
-`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` property can be set to either `Graceful` 
+`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` property can be set to either `Graceful`, the default, 
 or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to 
-complete shutdown before the server is killed.  The `ignoreSessions` property when "false" allows the shutdown
-process to take longer to give time for any active sessions to complete up to the configured timeout.
+complete shutdown before the server is killed.  The `ignoreSessions` property, which is only applicable for graceful shutdown, when `false`,
+the default, allows the shutdown process to take longer to give time for any active sessions to complete up to the configured timeout.
 The operator runtime monitors this property but will not restart any server pods solely to adjust the shutdown options.
 Instead, server pods created or restarted because of another property change will be configured to shutdown, at the appropriate
 time, using the shutdown options set when the server pod is created.
 
 #### Shutdown environment variables
 
-The operator runtime configures shutdown behavior with the use of the following environment variables. Customers may
+The operator runtime configures shutdown behavior with the use of the following environment variables. Users may
 instead simply configure these environment variables directly.  When a customer configured environment variable is present,
 the operator will not override the environment variable based on the shutdown configuration.
 
 | Environment Variables | Default Value | Supported Values |
 | --- | --- | --- |
-| `SHUTDOWN_FORCED` | true | true or false |
+| `SHUTDOWN_FORCED` | `true` | true or false |
 | `SHUTDOWN_TIMEOUT` | 30 | Whole number in seconds where 0 means no timeout |
-| `SHUTDOWN_IGNORE_SESSIONS` | false | true or false |
+| `SHUTDOWN_IGNORE_SESSIONS` | `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful |
 
 #### `shutdown` rules
 
@@ -210,7 +210,7 @@ For instance, given the following domain resource:
     ...
 ```
 
-Graceful shutdown is used for all servers in the domain since this is specified at the domain level and is not overridden at 
+Graceful shutdown is used for all servers in the domain because this is specified at the domain level and is not overridden at 
 any cluster or server level.  The "cluster1" cluster defaults to ignoring sessions; however, the "cluster1_server1" server
 instance will not ignore sessions and will have a longer timeout.
 
