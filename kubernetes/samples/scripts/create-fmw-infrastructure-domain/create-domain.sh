@@ -1,13 +1,21 @@
-#!/bin/bash
-# Copyright 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+#!/usr/bin/env bash
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script runs RCU to set up the database schemas for a Fusion Middleware domain. 
+#  This sample script creates a Fusion Middleware Infrastructure domain home on an existing PV/PVC,
+#  and generates the domain resource yaml file, which can be used to restart the Kubernetes artifacts
+#  of the corresponding domain.
+#
+#  The domain creation inputs can be customized by editing create-domain-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
 #    * The kubernetes namespace must already be created
-#    * The kubernetes secret with the RCU credentials must have been created in the namespace
+#    * The kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
+#    * The host directory that will be used as the persistent volume must already exist
+#      and have the appropriate file permissions set.
+#    * The kubernetes persistent volume must already be created
+#    * The kubernetes persistent volume claim must already be created
 #
 
 # Initialize
@@ -19,6 +27,9 @@ source ${scriptDir}/../common/validate.sh
 function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
+  echo "  -o Output directory for the generated yaml files, must be specified."
+  echo "  -e Also create the resources in the generated yaml files, optional."
+  echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
   exit $1
 }
@@ -28,9 +39,15 @@ function usage {
 #
 doValidation=false
 executeIt=false
-while getopts "hi:" opt; do
+while getopts "evhi:o:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
+    ;;
+    o) outputDir="${OPTARG}"
+    ;;
+    v) doValidation=true
+    ;;
+    e) executeIt=true
     ;;
     h) usage 0
     ;;
@@ -44,9 +61,30 @@ if [ -z ${valuesInputFile} ]; then
   missingRequiredOption="true"
 fi
 
+if [ -z ${outputDir} ]; then
+  echo "${script}: -o must be specified."
+  missingRequiredOption="true"
+fi
+
 if [ "${missingRequiredOption}" == "true" ]; then
   usage 1
 fi
+
+#
+# Function to initialize and validate the output directory
+# for the generated yaml files for this domain.
+#
+function initOutputDir {
+  domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
+  # Create a directory for this domain's output files
+  mkdir -p ${domainOutputDir}
+
+  removeFileIfExists ${domainOutputDir}/${valuesInputFile}
+  removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
+  removeFileIfExists ${domainOutputDir}/create-domain-job.yaml
+  removeFileIfExists ${domainOutputDir}/delete-domain-job.yaml
+  removeFileIfExists ${domainOutputDir}/domain.yaml
+}
 
 #
 # Function to setup the environment to run the create domain job
@@ -59,16 +97,30 @@ function initialize {
   validateKubectlAvailable
 
   if [ -z "${valuesInputFile}" ]; then
-    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-fmw-infrastructure-domain/create-domain-inputs.yaml)."
+    validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml)."
   else
     if [ ! -f ${valuesInputFile} ]; then
       validationError "Unable to locate the input parameters file ${valuesInputFile}"
     fi
   fi
 
+  if [ -z "${outputDir}" ]; then
+    validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
+  fi
+
   createJobInput="${scriptDir}/create-domain-job-template.yaml"
   if [ ! -f ${createJobInput} ]; then
     validationError "The template file ${createJobInput} for creating a WebLogic domain was not found"
+  fi
+
+  deleteJobInput="${scriptDir}/delete-domain-job-template.yaml"
+  if [ ! -f ${deleteJobInput} ]; then
+    validationError "The template file ${deleteJobInput} for deleting a WebLogic domain_home folder was not found"
+  fi
+
+  dcrInput="${scriptDir}/../../common/domain-template.yaml"
+  if [ ! -f ${dcrInput} ]; then
+    validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
 
   failIfValidationErrors
@@ -79,7 +131,7 @@ function initialize {
 }
 
 # create domain configmap using what is in the createDomainFilesDir
-function createRCUConfigmap {
+function createDomainConfigmap {
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
@@ -106,7 +158,7 @@ function createRCUConfigmap {
   fi
  
   # create the configmap and label it properly
-  local cmName=${domainUID}-create-rcu-sample-domain-job-cm
+  local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
   kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir
 
   echo Checking the configmap $cmName was created
@@ -123,13 +175,13 @@ function createRCUConfigmap {
 #
 # Function to run the job that creates the domain
 #
-function runRCU {
+function createDomainHome {
 
   # create the config map for the job
-  createRCUConfigmap
+  createDomainConfigmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
-  CONTAINER_NAME="run-rcu-sample-job"
+  CONTAINER_NAME="create-weblogic-sample-domain-job"
   JOB_NAME="${domainUID}-${CONTAINER_NAME}"
   deleteK8sObj job $JOB_NAME ${createJobOutput}
 
@@ -190,8 +242,14 @@ function printSummary {
   getKubernetesClusterIP
 
   echo ""
-  echo "RCU was run for domain ${domainName}"
+  echo "Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
   echo ""
+  if [ "${exposeAdminNodePort}" = true ]; then
+    echo "Administration console access is available at http://${K8S_IP}:${adminNodePort}/console"
+  fi
+  if [ "${exposeAdminT3Channel}" = true ]; then
+    echo "T3 access is available at t3://${K8S_IP}:${t3ChannelPort}"
+  fi
   echo "The following files were generated:"
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"
   echo "  ${createJobOutput}"
@@ -201,5 +259,5 @@ function printSummary {
 }
 
 # Perform the sequence of steps to create a domain
-runRCU false
+createDomain false
 
