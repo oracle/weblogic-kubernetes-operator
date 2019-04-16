@@ -82,6 +82,7 @@ function initOutputDir {
   removeFileIfExists ${domainOutputDir}/${valuesInputFile}
   removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
   removeFileIfExists ${domainOutputDir}/create-domain-job.yaml
+  removeFileIfExists ${domainOutputDir}/delete-domain-job.yaml
   removeFileIfExists ${domainOutputDir}/domain.yaml
 }
 
@@ -110,6 +111,11 @@ function initialize {
   createJobInput="${scriptDir}/create-domain-job-template.yaml"
   if [ ! -f ${createJobInput} ]; then
     validationError "The template file ${createJobInput} for creating a WebLogic domain was not found"
+  fi
+
+  deleteJobInput="${scriptDir}/delete-domain-job-template.yaml"
+  if [ ! -f ${deleteJobInput} ]; then
+    validationError "The template file ${deleteJobInput} for deleting a WebLogic domain was not found"
   fi
 
   dcrInput="${scriptDir}/../common/domain-template.yaml"
