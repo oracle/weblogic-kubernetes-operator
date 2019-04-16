@@ -181,7 +181,7 @@ function createDomainHome {
   createDomainConfigmap
 
   # There is no way to re-run a kubernetes job, so first delete any prior job
-  CONTAINER_NAME="create-weblogic-sample-domain-job"
+  CONTAINER_NAME="create-fmw-infra-sample-domain-job"
   JOB_NAME="${domainUID}-${CONTAINER_NAME}"
   deleteK8sObj job $JOB_NAME ${createJobOutput}
 
