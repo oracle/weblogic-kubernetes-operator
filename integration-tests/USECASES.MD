@@ -93,3 +93,8 @@ Configuration Overrides Usecases
 | --- | --- |
 | Primary Server Repick | A backup server becomes the primary server when a primary server fails|
 | HTTP Session Migration | Verify in-memory HTTP session State replication |
+
+| Server Discovery | Use Case |
+| --- | --- |
+| Discover a newly started server | stop operator and apply the modified domain.yaml with replicas count increated, restart Operator and verify that the cluster is scaled up accordingly |
+| Discover dead weblogic servers | stop Operator, kill admin server and all managed servers in the cluster, restart Operator and verify that it restarts all dead servers | 
