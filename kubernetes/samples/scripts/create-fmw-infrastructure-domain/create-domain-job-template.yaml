@@ -87,8 +87,8 @@ spec:
           persistentVolumeClaim:
             claimName: %DOMAIN_PVC_NAME%
         - name: fmw-infra-credentials-volume
-            secret:
-              secretName: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
+          secret:
+            secretName: %WEBLOGIC_CREDENTIALS_SECRET_NAME%
         - name: rcu-credentials-volume
           secret:
             secretName: %RCU_CREDENTIALS_SECRET_NAME%
