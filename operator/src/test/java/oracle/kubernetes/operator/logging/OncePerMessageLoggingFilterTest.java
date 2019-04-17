@@ -15,7 +15,7 @@ public class OncePerMessageLoggingFilterTest {
   public void verifyCanLogReturnsFalseForRepeatedMessage() {
     final String MESSAGE = "some log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-    loggingFilter.setFilteringOn();
+    loggingFilter.setFiltering(true);
 
     loggingFilter.canLog(MESSAGE);
     assertThat(loggingFilter.canLog(MESSAGE), is(false));
@@ -25,7 +25,7 @@ public class OncePerMessageLoggingFilterTest {
   public void verifyCanLogReturnsFalseForRepeatedNullMessage() {
     final String MESSAGE = null;
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-    loggingFilter.setFilteringOn();
+    loggingFilter.setFiltering(true);
 
     loggingFilter.canLog(MESSAGE);
     assertThat(loggingFilter.canLog(MESSAGE), is(false));
@@ -45,7 +45,7 @@ public class OncePerMessageLoggingFilterTest {
     final String MESSAGE = "some log message";
     final String MESSAGE2 = "another log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-    loggingFilter.setFilteringOn();
+    loggingFilter.setFiltering(true);
 
     loggingFilter.canLog(MESSAGE);
     assertThat(loggingFilter.canLog(MESSAGE2), is(true));
@@ -58,7 +58,7 @@ public class OncePerMessageLoggingFilterTest {
 
     loggingFilter.canLog(MESSAGE);
 
-    loggingFilter.setFilteringOn();
+    loggingFilter.setFiltering(true);
 
     assertThat(loggingFilter.canLog(MESSAGE), is(false));
   }
@@ -66,9 +66,7 @@ public class OncePerMessageLoggingFilterTest {
   @Test
   public void verifyResetHistoryClearsLogHistory() {
     final String MESSAGE = "some log message";
-
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-    loggingFilter.setFilteringOn();
 
     loggingFilter.canLog(MESSAGE);
 
@@ -78,45 +76,17 @@ public class OncePerMessageLoggingFilterTest {
   }
 
   @Test
-  public void verifyFilteringOffWithResetClearsLogHistory() {
+  public void verifyCanLogReturnsTrueOnceAfterReenablingFilteringAfterOffAndReset() {
     final String MESSAGE = "some log message";
 
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-    loggingFilter.setFilteringOn();
+    loggingFilter.setFiltering(true);
 
     loggingFilter.canLog(MESSAGE);
 
-    loggingFilter.setFilteringOff(true);
+    loggingFilter.setFiltering(false).resetLogHistory();
 
-    assertThat(loggingFilter.messagesLogged.contains(MESSAGE), is(false));
-  }
-
-  @Test
-  public void verifyFilteringOffWithoutResetRetainsLogHistory() {
-    final String MESSAGE = "some log message";
-
-    OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-    loggingFilter.setFilteringOn();
-
-    loggingFilter.canLog(MESSAGE);
-
-    loggingFilter.setFilteringOff(false);
-
-    assertThat(loggingFilter.messagesLogged.contains(MESSAGE), is(true));
-  }
-
-  @Test
-  public void verifyCanLogReturnsTrueOnceAfterReenablingFilteringAfterOffWithReset() {
-    final String MESSAGE = "some log message";
-
-    OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-    loggingFilter.setFilteringOn();
-
-    loggingFilter.canLog(MESSAGE);
-
-    loggingFilter.setFilteringOff(true);
-
-    loggingFilter.setFilteringOn();
+    loggingFilter.setFiltering(true);
     assertThat(loggingFilter.canLog(MESSAGE), is(true));
     assertThat(loggingFilter.canLog(MESSAGE), is(false));
   }
@@ -126,13 +96,13 @@ public class OncePerMessageLoggingFilterTest {
     final String MESSAGE = "some log message";
 
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-    loggingFilter.setFilteringOn();
+    loggingFilter.setFiltering(true);
 
     loggingFilter.canLog(MESSAGE);
 
-    loggingFilter.setFilteringOff(false);
+    loggingFilter.setFiltering(false);
 
-    loggingFilter.setFilteringOn();
+    loggingFilter.setFiltering(true);
     assertThat(loggingFilter.canLog(MESSAGE), is(false));
   }
 }

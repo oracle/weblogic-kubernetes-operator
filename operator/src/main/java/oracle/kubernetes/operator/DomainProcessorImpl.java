@@ -317,9 +317,9 @@ public class DomainProcessorImpl implements DomainProcessor {
                     @Override
                     public void onCompletion(Packet packet) {
                       if (Boolean.TRUE.equals(packet.get(ProcessingConstants.SERVER_HEALTH_READ))) {
-                        loggingFilter.setFilteringOff(true);
+                        loggingFilter.setFiltering(false).resetLogHistory();
                       } else {
-                        loggingFilter.setFilteringOn();
+                        loggingFilter.setFiltering(true);
                       }
                       Boolean isStatusUnchanged =
                           (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
@@ -353,7 +353,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                     @Override
                     public void onThrowable(Packet packet, Throwable throwable) {
                       LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                      loggingFilter.setFilteringOn();
+                      loggingFilter.setFiltering(true);
                       // retry to trying after shorter delay because of exception
                       unchangedCount.set(0);
                       registerStatusUpdater(

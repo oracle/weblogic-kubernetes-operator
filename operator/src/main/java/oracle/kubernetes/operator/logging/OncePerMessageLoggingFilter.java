@@ -4,8 +4,8 @@
 
 package oracle.kubernetes.operator.logging;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /** A LoggingFilter that logs each log message, which are typically message keys, at most once */
 public class OncePerMessageLoggingFilter implements LoggingFilter {
@@ -13,33 +13,25 @@ public class OncePerMessageLoggingFilter implements LoggingFilter {
   // allow all messages to be logged when filtering is off
   volatile boolean filtering = false;
 
-  List messagesLogged = new ArrayList();
+  Set messagesLogged = new HashSet();
 
   /**
-   * Turn on filtering of log messages and skip logging of messages that have already been logged
-   */
-  public void setFilteringOn() {
-    filtering = true;
-  }
-
-  /**
-   * Turn off filtering of log messages and allow all log messages to be logged
+   * Turn on or off the filtering of log messages and skip logging of messages that have already
+   * been logged
    *
-   * @param resetLogHistory Whether to also clear the history of messages logged so those messages
-   *     will be logged again next time filtering is turned on
+   * @param value true if filtering should be on, false if filtering should be off
    */
-  public void setFilteringOff(boolean resetLogHistory) {
-    filtering = false;
-    if (resetLogHistory) {
-      resetLogHistory();
-    }
+  public OncePerMessageLoggingFilter setFiltering(boolean value) {
+    filtering = value;
+    return this;
   }
 
   /** Clears the list of history of messages logged and turn off filtering */
-  public void resetLogHistory() {
+  public OncePerMessageLoggingFilter resetLogHistory() {
     synchronized (messagesLogged) {
       messagesLogged.clear();
     }
+    return this;
   }
 
   @Override
