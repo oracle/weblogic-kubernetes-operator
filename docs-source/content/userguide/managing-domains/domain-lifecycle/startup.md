@@ -170,7 +170,7 @@ time, using the shutdown options set when the server pod is created.
 #### Shutdown environment variables
 
 The operator runtime configures shutdown behavior with the use of the following environment variables. Users may
-instead simply configure these environment variables directly.  When a customer configured environment variable is present,
+instead simply configure these environment variables directly.  When a user-configured environment variable is present,
 the operator will not override the environment variable based on the shutdown configuration.
 
 | Environment Variables | Default Value | Supported Values |
