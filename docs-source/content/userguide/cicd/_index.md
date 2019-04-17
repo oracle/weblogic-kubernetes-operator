@@ -1,5 +1,5 @@
 ---
-title: "CI/CD"
+title: "CI/CD considerations"
 date: 2019-04-11T13:01:55-04:00
 weight: 5
 description: "Learn about managing domain images with CI/CD."

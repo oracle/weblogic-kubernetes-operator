@@ -13,9 +13,8 @@ the same location (Domain Home) in the (new) file system.  Using this
 approach will maintain the same domain encryption key.  
 
 The best practice/recommended approach is to create a "primordial domain"
-(as described previously) which does not contain any applications or resources,
+which does not contain any applications or resources,
 and to create a ZIP file of this domain before starting any servers.  
-
 
 > The domain ZIP must be created before starting servers.  
 
@@ -23,12 +22,16 @@ When servers are started the first time, they will encrypt various other data.
 Make sure you create the ZIP file before starting servers for the first time.
 The primordial domain ZIP file should be stored in a safe place where the CI/CD
 can get it when needed, for example in a secured Artifactory repository (or
-something similar).  Remember, anyone who gets access to this ZIP file can get access
+something similar).  
+
+{{% notice warning %}}
+Remember, anyone who gets access to this ZIP file can get access
 to the domain encryption key, so it needs to be protected appropriately.
+{{% /notice %}}
 
 Every time you run your CI/CD pipeline to create a new mutation of the domain,
 it should retrieve and unzip the primordial domain first, and then apply changes
-to that domain using tools like WDT or WLST (see below).
+to that domain using tools like WDT or WLST (see [here]({{< relref "/userguide/cicd/tools.md" >}})).
 
 
 > Always use external state.

@@ -33,11 +33,10 @@ small, then we will just end up with another small layer, and as we have seen,
 the small layers are no problem.
 
 But consider a more complicated scenario - let's take updating the JDK as an example
-to understand the impact of layers.  Say we want to update from JDK 11.0.2 to 11.0.4
-as shown in the example above - this is just an example, WebLogic 12.2.1.3 does not
-support JDK 11!  If we took the "your first domain" image and updated
-the JDK, then we would end up with a new layer on top containing JDK 11.0.4.  That
-other layer with JDK 11.0.2 is still there; even if we "delete" the directory, we
+to understand the impact of layers.  Say we want to update from JDK 8u201 to 8u202
+as shown in the example above.  If we took the "your first domain" image and updated
+the JDK, then we would end up with a new layer on top containing JDK 8u202.  That
+other layer with JDK 8u201 is still there; even if we "delete" the directory, we
 don't get that space back.  So now our 1.5GB "image" has grown to 1.75GB.  This is
 not ideal, and the more often we try to change lower layers, the worse it gets.  
 
