@@ -11,7 +11,7 @@ import java.util.Set;
 public class OncePerMessageLoggingFilter implements LoggingFilter {
 
   // allow all messages to be logged when filtering is off
-  volatile boolean filtering = false;
+  boolean filtering = false;
 
   Set messagesLogged = new HashSet();
 
@@ -21,28 +21,24 @@ public class OncePerMessageLoggingFilter implements LoggingFilter {
    *
    * @param value true if filtering should be on, false if filtering should be off
    */
-  public OncePerMessageLoggingFilter setFiltering(boolean value) {
+  public synchronized OncePerMessageLoggingFilter setFiltering(boolean value) {
     filtering = value;
     return this;
   }
 
   /** Clears the list of history of messages logged and turn off filtering */
-  public OncePerMessageLoggingFilter resetLogHistory() {
-    synchronized (messagesLogged) {
-      messagesLogged.clear();
-    }
+  public synchronized OncePerMessageLoggingFilter resetLogHistory() {
+    messagesLogged.clear();
     return this;
   }
 
   @Override
-  public boolean canLog(String msg) {
-    synchronized (messagesLogged) {
-      // Do not log if filtering is on and message has already been logged
-      if (filtering && messagesLogged.contains(msg)) {
-        return false;
-      }
-      messagesLogged.add(msg);
-      return true;
+  public synchronized boolean canLog(String msg) {
+    // Do not log if filtering is on and message has already been logged
+    if (filtering && messagesLogged.contains(msg)) {
+      return false;
     }
+    messagesLogged.add(msg);
+    return true;
   }
 }
