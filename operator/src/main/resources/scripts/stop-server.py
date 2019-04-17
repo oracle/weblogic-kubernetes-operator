@@ -24,11 +24,13 @@ server_name = getEnvVar('SERVER_NAME')
 domain_name = getEnvVar('DOMAIN_NAME')
 domain_path = getEnvVar('DOMAIN_HOME')
 service_name = getEnvVar('SERVICE_NAME')
-local_admin_port = sys.argv[1]
-local_admin_protocol = sys.argv[2]
-timeout = sys.argv[3]
-ignore_sessions = sys.argv[4]
-force = sys.argv[5]
+local_admin_port = getEnvVar('SHUTDOWN_PORT')
+local_admin_protocol = getEnvVar('SHUTDOWN_PROTOCOL')
+timeout = getEnvVar('SHUTDOWN_TIMEOUT')
+ignore_sessions = getEnvVar('SHUTDOWN_IGNORE_SESSIONS')
+shutdown_type = getEnvVar('SHUTDOWN_TYPE')
+
+force = (shutdown_type.lower() == 'forced')
 
 connect_url = local_admin_protocol + '://' + service_name + ':' + local_admin_port
 
