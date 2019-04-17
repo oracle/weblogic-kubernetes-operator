@@ -4,10 +4,18 @@
 
 package oracle.kubernetes.operator;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.DomainCRD;
+import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -29,6 +37,8 @@ public class ITPodsRestart extends BaseTest {
   private static Domain domain = null;
   private static Operator operator1;
   private static String domainUid = "";
+  private static String restartTmpDir = "";
+  private static String originalYaml;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -48,8 +58,15 @@ public class ITPodsRestart extends BaseTest {
       if (operator1 == null) {
         operator1 = TestUtils.createOperator(OPERATOR1_YAML);
       }
+      restartTmpDir = BaseTest.getResultDir() + "/restarttemp";
+      Files.createDirectories(Paths.get(restartTmpDir));
 
       domain = createPodsRestartdomain();
+      originalYaml =
+          BaseTest.getUserProjectsDir()
+              + "/weblogic-domains/"
+              + domain.getDomainUid()
+              + "/domain.yaml";
       Assert.assertNotNull(domain);
     }
   }
@@ -305,6 +322,209 @@ public class ITPodsRestart extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
+  /**
+   * Add restartVersion:v1.1 at adminServer level and verify the admin pod is Terminated and
+   * recreated
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the
+   *     restartVersion:v1.1
+   */
+  @Test
+  public void testAdminServerRestartVersion() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String podName = domainUid + "-" + domain.getAdminServerName();
+
+    try {
+      // Modify the original domain yaml to include restartVersion in admin server node
+      DomainCRD crd = new DomainCRD(originalYaml);
+      Map<String, String> admin = new HashMap();
+      admin.put("restartVersion", "v1.1");
+      crd.addObjectNodeToAdminServer(admin);
+      String modYaml = crd.getYamlTree();
+      logger.info(modYaml);
+
+      // Write the modified yaml to a new file
+      Path path = Paths.get(restartTmpDir, "restart.admin.yaml");
+      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain
+      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      logger.info(exec.stdout());
+
+      logger.info("Verifying if the admin server is terminating");
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
+
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      TestUtils.exec("kubectl apply -f " + originalYaml);
+      logger.info("Verifying if the admin server is terminating");
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
+    }
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  /**
+   * Add restartVersion:v1.1 at cluster level and verify the managed servers pods are Terminated and
+   * recreated
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the
+   *     restartVersion:v1.1
+   */
+  @Test
+  public void testClusterRestartVersion() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String podName = domainUid + "-managed-server1";
+
+    try {
+      // Modify the original domain yaml to include restartVersion in admin server node
+      DomainCRD crd = new DomainCRD(originalYaml);
+      Map<String, String> cluster = new HashMap();
+      cluster.put("restartVersion", "v1.1");
+      crd.addObjectNodeToCluster("cluster-1", cluster);
+      String modYaml = crd.getYamlTree();
+      logger.info(modYaml);
+
+      // Write the modified yaml to a new file
+      Path path = Paths.get(restartTmpDir, "restart.cluster.yaml");
+      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain crd
+      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      logger.info(exec.stdout());
+      logger.info("Verifying if the cluster is restarted");
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      TestUtils.exec("kubectl apply -f " + originalYaml);
+      logger.info("Verifying if the cluster is restarted");
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
+    }
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  /**
+   * Add restartVersion:v1.1 at managed server level and verify the managed server pod are
+   * Terminated and recreated
+   *
+   * <p>Currently failing and tracked by bug in BugDB - 29489387
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the
+   *     restartVersion:v1.1
+   */
+  // @Test
+  public void testMSRestartVersion() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String podName = domainUid + "-managed-server1";
+
+    try {
+      // Modify the original domain yaml to include restartVersion in admin server node
+      DomainCRD crd = new DomainCRD(originalYaml);
+      Map<String, String> ms = new HashMap();
+      ms.put("restartVersion", "v1.1");
+      ms.put("serverStartPolicy", "IF_NEEDED");
+      ms.put("serverStartState", "RUNNING");
+      crd.addObjectNodeToMS("managed-server1", ms);
+      String modYaml = crd.getYamlTree();
+      logger.info(modYaml);
+
+      // Write the modified yaml to a new file
+      Path path = Paths.get(restartTmpDir, "restart.managed.yaml");
+      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain crd
+      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      logger.info(exec.stdout());
+      logger.info("Verifying if the managed server is restarted");
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      TestUtils.exec("kubectl apply -f " + originalYaml);
+      logger.info("Verifying if the managed server is restarted");
+      verifyPodStatus(podName, "Terminating");
+      verifyPodStatus(podName, "Running");
+    }
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  /**
+   * Add restartVersion:v1.1 at doamin level and verify all of the server pods are Terminated and
+   * recreated
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the
+   *     restartVersion:v1.1
+   */
+  @Test
+  public void testDomainRestartVersion() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String adminPod = domainUid + "-" + domain.getAdminServerName();
+    String msPod = domainUid + "-managed-server1";
+
+    try {
+      // Modify the original domain yaml to include restartVersion in admin server node
+      DomainCRD crd = new DomainCRD(originalYaml);
+      Map<String, String> domain = new HashMap();
+      domain.put("restartVersion", "v1.1");
+      crd.addObjectNodeToDomain(domain);
+      String modYaml = crd.getYamlTree();
+      logger.info(modYaml);
+
+      // Write the modified yaml to a new file
+      Path path = Paths.get(restartTmpDir, "restart.domain.yaml");
+      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain crd
+      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      logger.info(exec.stdout());
+      logger.info("Verifying if the domain is restarted");
+      logger.info("Verifying if the admin server is restarted");
+      verifyPodStatus(adminPod, "Terminating");
+      verifyPodStatus(adminPod, "Running");
+      logger.info("Verifying if the managed server is restarted");
+      verifyPodStatus(msPod, "Terminating");
+      verifyPodStatus(msPod, "Running");
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      TestUtils.exec("kubectl apply -f " + originalYaml);
+      logger.info("Verifying if the domain is restarted");
+      logger.info("Verifying if the admin server is restarted");
+      verifyPodStatus(adminPod, "Terminating");
+      verifyPodStatus(adminPod, "Running");
+      logger.info("Verifying if the managed server is restarted");
+      verifyPodStatus(msPod, "Terminating");
+      verifyPodStatus(msPod, "Running");
+    }
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
   private static Domain createPodsRestartdomain() throws Exception {
 
     Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
@@ -324,5 +544,36 @@ public class ITPodsRestart extends BaseTest {
     if (domain != null) {
       domain.destroy();
     }
+  }
+
+  /**
+   * Utility method to check if a pod is in Terminating or Running status
+   *
+   * @param podName - String name of the pod to check the status for
+   * @param podStatusExpected - String the expected status of Terminating || RUnning
+   * @throws InterruptedException when thread is interrupted
+   */
+  private void verifyPodStatus(String podName, String podStatusExpected)
+      throws InterruptedException {
+    K8sTestUtils testUtil = new K8sTestUtils();
+    String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    String namespace = domain.getDomainNS();
+    boolean gotExpected = false;
+    for (int i = 0; i < BaseTest.getMaxIterationsPod(); i++) {
+      if (podStatusExpected.equals("Terminating")) {
+        if (testUtil.isPodTerminating(namespace, domain1LabelSelector, podName)) {
+          gotExpected = true;
+          break;
+        }
+      } else if (podStatusExpected.equals("Running")) {
+        if (testUtil.isPodRunning(namespace, domain1LabelSelector, podName)) {
+          gotExpected = true;
+          break;
+        }
+      }
+
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+    }
+    Assert.assertTrue("Didn't get the expected pod status", gotExpected);
   }
 }
