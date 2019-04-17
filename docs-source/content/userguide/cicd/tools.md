@@ -13,8 +13,8 @@ in a CI/CD pipeline. For example, the
 `createDomain` tool creates a new domain based on a simple model, and
 `updateDomain` (and `deployApps`) uses the same model concept to update
 an existing domain (preserving the same domain encryption key). The `deployApps`
-tool is very similar to the updateDomain tool, but limits what can be updated
-to application related configuration attributes such as data sources and
+tool is very similar to the `updateDomain` tool, but limits what can be updated
+to application-related configuration attributes such as data sources and
 application archives.  The model used by these tools is a sparse set of
 attributes needed to create or update the domain. A model can be as sparse
 as providing only the WebLogic Server administrative password, although not very
@@ -24,8 +24,8 @@ interesting.  A good way to get a jumpstart on a model is to use the
 Other than the tools themselves, there are three components to the WDT tools:  
 
 - *The Domain Model* - Metadata model describing the desired domain.  
-  The metadata domain model can be YAML or JSON and is documented [here](https://github.com/oracle/weblogic-deploy-tooling#the-metadata-model).
-- *The Archive Zip* - Binaries to supplement the model.  
+  The metadata domain model can be written in YAML or JSON and is documented [here](https://github.com/oracle/weblogic-deploy-tooling#the-metadata-model).
+- *The Archive ZIP* - Binaries to supplement the model.  
   All binaries needed to supplement the model must be specified in an archive
   file, which is just a ZIP file with a specific directory structure. Optionally,
   the model can be stored inside the ZIP file, if desired. Any binaries not
