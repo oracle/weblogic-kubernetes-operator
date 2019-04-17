@@ -27,9 +27,6 @@ public interface LoggingFilter {
    *     true if loggingFilter is null
    */
   static boolean canLog(LoggingFilter loggingFilter, String msg) {
-    if (loggingFilter == null) {
-      return true;
-    }
-    return loggingFilter.canLog(msg);
+    return loggingFilter == null || loggingFilter.canLog(msg);
   }
 }
