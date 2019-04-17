@@ -9,15 +9,22 @@ import static org.junit.Assert.*;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.junit.Before;
 import org.junit.Test;
 
 public class LoggingFacadeTest {
 
+  MockLogger mockLogger;
+  LoggingFacade loggingFacade;
+
+  @Before
+  public void setup() {
+    mockLogger = new MockLogger();
+    loggingFacade = new LoggingFacade(mockLogger);
+  }
+
   @Test
   public void verifyInfoMessageLoggedIfLoggingFilterIsNull() {
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.info((LoggingFilter) null, "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(true));
@@ -26,9 +33,6 @@ public class LoggingFacadeTest {
   @Test
   public void verifyInfoMessageLoggedIfLoggingFilterAllows() {
     final String MESSAGE = "info message";
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.info(MockLoggingFilter.createWithReturnValue(true), MESSAGE);
 
     assertThat(mockLogger.isLogpCalled(), is(true));
@@ -38,9 +42,6 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifyInfoMessageNotLoggedIfLoggingFilterDenies() {
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.info(MockLoggingFilter.createWithReturnValue(false), "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(false));
@@ -48,9 +49,6 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifyWarningMessageLoggedIfLoggingFilterIsNull() {
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.warning((LoggingFilter) null, "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(true));
@@ -59,9 +57,6 @@ public class LoggingFacadeTest {
   @Test
   public void verifyWarningMessageLoggedIfLoggingFilterAllows() {
     final String MESSAGE = "warning message";
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.warning(MockLoggingFilter.createWithReturnValue(true), MESSAGE);
 
     assertThat(mockLogger.isLogpCalled(), is(true));
@@ -71,9 +66,6 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifyWarningMessageNotLoggedIfLoggingFilterDenies() {
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.warning(MockLoggingFilter.createWithReturnValue(false), "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(false));
@@ -81,9 +73,6 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifySevereMessageLoggedIfLoggingFilterIsNull() {
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.severe((LoggingFilter) null, "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(true));
@@ -92,9 +81,6 @@ public class LoggingFacadeTest {
   @Test
   public void verifySevereMessageLoggedIfLoggingFilterAllows() {
     final String MESSAGE = "severe message";
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.severe(MockLoggingFilter.createWithReturnValue(true), MESSAGE);
 
     assertThat(mockLogger.isLogpCalled(), is(true));
@@ -104,9 +90,6 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifySevereMessageNotLoggedIfLoggingFilterDenies() {
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.severe(MockLoggingFilter.createWithReturnValue(false), "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(false));
@@ -114,9 +97,6 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifySevereMessageWithThrowableLoggedIfLoggingFilterIsNull() {
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.severe((LoggingFilter) null, "msg", new Throwable());
 
     assertThat(mockLogger.isLogpCalled(), is(true));
@@ -126,9 +106,6 @@ public class LoggingFacadeTest {
   public void verifySevereMessageWithThrowableLoggedIfLoggingFilterAllows() {
     final String MESSAGE = "severe message";
     final Throwable THROWABLE = new Throwable("throwable");
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.severe(MockLoggingFilter.createWithReturnValue(true), MESSAGE, THROWABLE);
 
     assertThat(mockLogger.isLogpCalled(), is(true));
@@ -139,9 +116,6 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifySevereMessageWithThrowableNotLoggedIfLoggingFilterDenies() {
-    MockLogger mockLogger = new MockLogger();
-    LoggingFacade loggingFacade = new LoggingFacade(mockLogger);
-
     loggingFacade.severe(MockLoggingFilter.createWithReturnValue(false), "msg", new Throwable());
 
     assertThat(mockLogger.isLogpCalled(), is(false));
