@@ -118,7 +118,11 @@ public class ReadHealthStep extends Step {
         }
 
         String serviceURL =
-            HttpClient.getServiceURL(service, pod, serverConfig.getAdminProtocolChannelName());
+            HttpClient.getServiceURL(
+                service,
+                pod,
+                serverConfig.getAdminProtocolChannelName(),
+                serverConfig.getListenPort());
         if (serviceURL != null) {
           String jsonResult =
               httpClient

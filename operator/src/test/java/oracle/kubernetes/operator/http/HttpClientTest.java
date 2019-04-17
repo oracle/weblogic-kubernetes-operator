@@ -36,6 +36,8 @@ public class HttpClientTest {
   private TestUtils.ConsoleHandlerMemento consoleControl;
   static final String FAKE_URL = "fake/url";
 
+  private static final String CHANNEL_NAME = "default";
+
   @Before
   public void setup() {
     consoleControl =
@@ -82,10 +84,10 @@ public class HttpClientTest {
     final int PORT = 7101;
 
     List<V1ServicePort> ports = new ArrayList<>();
-    ports.add(new V1ServicePort().port(PORT));
+    ports.add(new V1ServicePort().port(PORT).name(CHANNEL_NAME));
     V1Service service =
         new V1Service().spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports));
-    String url = HttpClient.getServiceURL(service);
+    String url = HttpClient.getServiceURL(service, null, CHANNEL_NAME, PORT);
     assertEquals("http://" + CLUSTER_IP + ":" + PORT, url);
   }
 
@@ -97,14 +99,14 @@ public class HttpClientTest {
     final String SERVICE_NAME = "admin-server";
 
     List<V1ServicePort> ports = new ArrayList<>();
-    ports.add(new V1ServicePort().port(PORT));
+    ports.add(new V1ServicePort().port(PORT).name(CHANNEL_NAME));
 
     V1Service service =
         new V1Service()
             .spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports))
             .metadata(new V1ObjectMeta().namespace(NAMESPACE).name(SERVICE_NAME));
 
-    String url = HttpClient.getServiceURL(service);
+    String url = HttpClient.getServiceURL(service, null, CHANNEL_NAME, PORT);
     assertEquals("http://" + SERVICE_NAME + "." + NAMESPACE + ".pod.cluster.local:" + PORT, url);
   }
 

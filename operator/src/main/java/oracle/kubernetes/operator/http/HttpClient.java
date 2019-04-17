@@ -34,6 +34,7 @@ public class HttpClient {
   private String encodedCredentials;
 
   private static final String HTTP_PROTOCOL = "http://";
+  private static final String HTTPS_PROTOCOL = "https://";
 
   // for debugging
   private static final String SERVICE_URL =
@@ -248,25 +249,17 @@ public class HttpClient {
   }
 
   /**
-   * Returns the URL to access the Service; using the Service clusterIP and port.
-   *
-   * @param service The name of the Service that you want the URL for.
-   * @return The URL of the Service or null if the URL cannot be found.
-   */
-  public static String getServiceURL(V1Service service) {
-    return getServiceURL(service, null, null);
-  }
-
-  /**
    * Returns the URL to access the Service; using the Service clusterIP and port. If the service is
    * headless, then the pod's IP is returned, if available.
    *
    * @param service The name of the Service that you want the URL for.
    * @param pod The pod for headless services
-   * @param adminPort administration port name
+   * @param adminChannel administration channel name
+   * @param defaultPort default port, if enabled. Other ports will use SSL.
    * @return The URL of the Service or null if the URL cannot be found.
    */
-  public static String getServiceURL(V1Service service, V1Pod pod, String adminPort) {
+  public static String getServiceURL(
+      V1Service service, V1Pod pod, String adminChannel, Integer defaultPort) {
     if (service != null) {
       V1ServiceSpec spec = service.getSpec();
       if (spec != null) {
@@ -282,10 +275,10 @@ public class HttpClient {
                     + ".pod.cluster.local";
           }
         }
-        int port = -1; // uninitialized
-        if (adminPort != null) {
+        Integer port = -1; // uninitialized
+        if (adminChannel != null) {
           for (V1ServicePort sp : spec.getPorts()) {
-            if (adminPort.equals(sp.getName())) {
+            if (adminChannel.equals(sp.getName())) {
               port = sp.getPort();
               break;
             }
@@ -297,7 +290,7 @@ public class HttpClient {
           port = spec.getPorts().iterator().next().getPort();
         }
         portalIP += ":" + port;
-        String serviceURL = HTTP_PROTOCOL + portalIP;
+        String serviceURL = (port.equals(defaultPort) ? HTTP_PROTOCOL : HTTPS_PROTOCOL) + portalIP;
         LOGGER.fine(MessageKeys.SERVICE_URL, serviceURL);
         return serviceURL;
       }
