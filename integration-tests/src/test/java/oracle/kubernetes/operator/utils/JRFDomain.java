@@ -55,11 +55,6 @@ public class JRFDomain extends Domain {
         "image", DEFAULT_FMWINFRA_DOCKER_IMAGENAME + ":" + DEFAULT_FMWINFRA_DOCKER_IMAGETAG);
 
     if (!domainMap.containsKey("domainHomeImageBase")) {
-      // update jrf/create-domain-script.sh with domain_name and rcuprefix
-      TestUtils.replaceStringInFile(
-          BaseTest.getResultDir() + "/jrf/create-domain-script.sh", "%RCUPREFIX%", domainUid);
-      TestUtils.replaceStringInFile(
-          BaseTest.getResultDir() + "/jrf/create-domain-script.sh", "%DOMAIN_NAME%", domainUid);
       domainMap.put("createDomainFilesDir", BaseTest.getResultDir() + "/jrf");
     }
 

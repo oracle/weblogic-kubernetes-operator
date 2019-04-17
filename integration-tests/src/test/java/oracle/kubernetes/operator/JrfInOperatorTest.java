@@ -48,7 +48,6 @@ public class JrfInOperatorTest extends BaseTest {
     // create DB used for jrf domain
     OracleDB db = DBUtils.createOracleDB(DB_PROP_FILE);
 
-    // populate the jrf/create-domain-script.sh
     // copy the integration-tests/src/test/resources/domain-home-on-pv/jrf to
     // BaseTest.getResultDir()
     TestUtils.exec(
@@ -56,21 +55,6 @@ public class JrfInOperatorTest extends BaseTest {
             + BaseTest.getProjectRoot()
             + "/integration-tests/src/test/resources/domain-home-on-pv/jrf "
             + BaseTest.getResultDir());
-    // replace the db connection string with true value
-    String dbConnectString =
-        db.getName()
-            + "."
-            + db.getNamespace()
-            + ".svc.cluster.local:"
-            + db.getPort()
-            + "/"
-            + db.getDBPdb()
-            + "."
-            + db.getDBDomain();
-    TestUtils.replaceStringInFile(
-        BaseTest.getResultDir() + "/jrf/create-domain-script.sh",
-        "%CONNECTION_STRING%",
-        dbConnectString);
   }
 
   /**
