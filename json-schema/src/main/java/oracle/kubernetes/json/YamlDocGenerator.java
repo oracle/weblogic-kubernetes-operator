@@ -104,7 +104,7 @@ public class YamlDocGenerator {
 
   String generateForProperty(String fieldName, Map<String, Object> subSchema) {
     return "| "
-        + fieldName
+        + "`" + fieldName + "`"
         + " | "
         + emptyIfNull(getType(fieldName, subSchema))
         + " | "
@@ -116,7 +116,11 @@ public class YamlDocGenerator {
     if (subSchema == null) return "";
     Map<String, Object> fieldMap = subMap(subSchema, fieldName);
     Type type = new Type(fieldMap);
-    return type.getString();
+    String val = type.getString();
+    if ("boolean".equals(val)) {
+      val = "Boolean";
+    }
+    return val;
   }
 
   /**

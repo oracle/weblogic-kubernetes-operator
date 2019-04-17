@@ -27,7 +27,7 @@ public class YamlDocGeneratorTest {
   public void generateMarkdownForProperty() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("annotatedDouble"));
     assertThat(
-        markdown, containsString(tableEntry("annotatedDouble", "number", "An annotated field")));
+        markdown, containsString(tableEntry("`annotatedDouble`", "number", "An annotated field")));
   }
 
   private String tableEntry(String... columns) {
@@ -56,13 +56,13 @@ public class YamlDocGeneratorTest {
 
     String markdown = new YamlDocGenerator(schema).generateForProperty("anInt", schema);
 
-    assertThat(markdown, containsString(tableEntry("anInt", "integer", "")));
+    assertThat(markdown, containsString(tableEntry("`anInt`", "integer", "")));
   }
 
   @Test
   public void whenPropertyTypeIsDateTime_doNotGenerateReference() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("dateTime"));
-    assertThat(markdown, containsString(tableEntry("dateTime", "DateTime", "")));
+    assertThat(markdown, containsString(tableEntry("`dateTime`", "DateTime", "")));
   }
 
   @SuppressWarnings("unused")
@@ -71,7 +71,7 @@ public class YamlDocGeneratorTest {
   @Test
   public void whenPropertyTypeIsMap_doNotGenerateReference() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("notes"));
-    assertThat(markdown, containsString(tableEntry("notes", "Map", "")));
+    assertThat(markdown, containsString(tableEntry("`notes`", "Map", "")));
   }
 
   @SuppressWarnings("unused")
@@ -80,7 +80,7 @@ public class YamlDocGeneratorTest {
   @Test
   public void whenPropertyTypeIsArrayOfStrings_generateType() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("myList"));
-    assertThat(markdown, containsString(tableEntry("myList", "array of string", "")));
+    assertThat(markdown, containsString(tableEntry("`myList`", "array of string", "")));
   }
 
   @SuppressWarnings("unused")
@@ -92,7 +92,7 @@ public class YamlDocGeneratorTest {
     assertThat(
         markdown,
         containsString(
-            tableEntry("simpleUsage", linkTo("Simple Object", "#simple-object"), "An example")));
+            tableEntry("`simpleUsage`", linkTo("Simple Object", "#simple-object"), "An example")));
   }
 
   private String linkTo(String section, String anchor) {
@@ -111,7 +111,7 @@ public class YamlDocGeneratorTest {
         markdown,
         containsString(
             tableEntry(
-                "simpleArray",
+                "`simpleArray`",
                 "array of " + linkTo("Simple Object", "#simple-object"),
                 "An array")));
   }
@@ -130,9 +130,9 @@ public class YamlDocGeneratorTest {
             String.join(
                 "\n",
                 tableHeader(),
-                tableEntry("aBoolean", "boolean", "A flag"),
-                tableEntry("aString", "string", "A string"),
-                tableEntry("depth", "number", ""))));
+                tableEntry("`aBoolean`", "Boolean", "A flag"),
+                tableEntry("`aString`", "string", "A string"),
+                tableEntry("`depth`", "number", ""))));
   }
 
   private Map<String, Object> generateSchema(Class<?> aClass) {
@@ -152,9 +152,9 @@ public class YamlDocGeneratorTest {
                 "### Simple Object",
                 "",
                 tableHeader(),
-                tableEntry("aBoolean", "boolean", "A flag"),
-                tableEntry("aString", "string", "A string"),
-                tableEntry("depth", "number", ""))));
+                tableEntry("`aBoolean`", "Boolean", "A flag"),
+                tableEntry("`aString`", "string", "A string"),
+                tableEntry("`depth`", "number", ""))));
   }
 
   @Test
@@ -170,8 +170,8 @@ public class YamlDocGeneratorTest {
                 "### Start",
                 "",
                 tableHeader(),
-                tableEntry("derived", linkTo("Derived Object", "#derived-object"), ""),
-                tableEntry("simple", linkTo("Simple Object", "#simple-object"), ""))));
+                tableEntry("`derived`", linkTo("Derived Object", "#derived-object"), ""),
+                tableEntry("`simple`", linkTo("Simple Object", "#simple-object"), ""))));
   }
 
   @Test
@@ -195,16 +195,16 @@ public class YamlDocGeneratorTest {
                 "### Start",
                 "",
                 tableHeader(),
-                tableEntry("derived", linkTo("Derived Object", "#derived-object"), ""),
-                tableEntry("simple", linkTo("Simple Object", "#simple-object"), ""),
+                tableEntry("`derived`", linkTo("Derived Object", "#derived-object"), ""),
+                tableEntry("`simple`", linkTo("Simple Object", "#simple-object"), ""),
                 "",
                 "### Derived Object",
                 "",
                 "A simple object used for testing",
                 "",
                 tableHeader(),
-                tableEntry("aBoolean", "boolean", "A flag"),
-                tableEntry("anInt", "number", "An int<br/>value"))));
+                tableEntry("`aBoolean`", "Boolean", "A flag"),
+                tableEntry("`anInt`", "number", "An int<br/>value"))));
   }
 
   private String tableHeader() {
@@ -252,7 +252,7 @@ public class YamlDocGeneratorTest {
                 "",
                 tableHeader(),
                 tableEntry(
-                    "env", linkTo("Env Var", reference.getK8sMarkdownLink() + "#env-var"), ""))));
+                    "`env`", linkTo("Env Var", reference.getK8sMarkdownLink() + "#env-var"), ""))));
   }
 
   @Test
@@ -274,7 +274,7 @@ public class YamlDocGeneratorTest {
                 "",
                 tableHeader(),
                 tableEntry(
-                    "name",
+                    "`name`",
                     "string",
                     "Name of the environment variable. Must be a C_IDENTIFIER."))));
   }
@@ -289,7 +289,7 @@ public class YamlDocGeneratorTest {
     generator.generate("start");
     assertThat(
         generator.getKubernetesSchemaMarkdown(),
-        containsString("| valueFrom | " + linkTo("Env Var Source", "#env-var-source")));
+        containsString("| `valueFrom` | " + linkTo("Env Var Source", "#env-var-source")));
   }
 
   @Test
