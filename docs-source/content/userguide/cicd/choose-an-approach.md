@@ -13,7 +13,8 @@ various approaches.  We can start by asking ourselves questions like these:
 - *Can you make the desired change with a configuration override?*  
   The WebLogic Kubernetes Operator allows you to inject a number of [configuration
   overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}})
-  into your pods at startup time.  This allows you to use the same image for multiple
+  into your pods before starting any servers in the domain.  This allows you to use 
+  the same image for multiple
   different configurations.  A good example would be changing the settings for a data
   source, for example. You may wish to have a larger connection pool in your production
   environment than you do in your development/test environments.  You probably also
@@ -29,7 +30,7 @@ various approaches.  We can start by asking ourselves questions like these:
   If your changes fit into this category, and you have used the "domain-in-image"
   approach and the Docker layering model, then you only need to update the top layer
   of your image.  This is relatively easy compared to making changes in lower layers.
-  You could create a new layer with the changes, or your could rebuild/replace the
+  You could create a new layer with the changes, or you could rebuild/replace the
   existing top layer with a new one.  Which approach you choose depends mainly on
   whether you need to maintain the same domain encryption keys or not.
 - *Do you need to be able to do a rolling restart?*
