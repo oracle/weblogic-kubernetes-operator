@@ -5,7 +5,7 @@
 
 adminServerName: adminserver
 domainUID: jrfdomain1
-clusterName: infracluster
+clusterName: infra_cluster
 configuredManagedServerCount: 1
 initialManagedServerReplicas: 1
 managedServerNameBase: infraserver
