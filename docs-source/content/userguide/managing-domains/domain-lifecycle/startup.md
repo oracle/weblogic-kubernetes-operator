@@ -175,7 +175,7 @@ the operator will not override the environment variable based on the shutdown co
 
 | Environment Variables | Default Value | Supported Values |
 | --- | --- | --- |
-| `SHUTDOWN_FORCED` | `true` | true or false |
+| `SHUTDOWN_TYPE` | `Graceful` | `Graceful` or `Forced` |
 | `SHUTDOWN_TIMEOUT` | 30 | Whole number in seconds where 0 means no timeout |
 | `SHUTDOWN_IGNORE_SESSIONS` | `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful |
 

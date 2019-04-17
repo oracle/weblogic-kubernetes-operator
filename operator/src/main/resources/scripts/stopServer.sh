@@ -54,14 +54,14 @@ check_for_shutdown
 [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace "Error: missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
 
 # Arguments for shutdown
-localAdminPort=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
-localAdminProtocol=${LOCAL_ADMIN_PROTOCOL:-t3}
-timeout=${SHUTDOWN_TIMEOUT:-30}
-ignoreSessions=${SHUTDOWN_IGNORE_SESSIONS:-false}
-force=${SHUTDOWN_FORCED:-true}
+SHUTDOWN_PORT=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
+SHUTDOWN_PROTOCOL=${LOCAL_ADMIN_PROTOCOL:-t3}
+SHUTDOWN_TIMEOUT=${SHUTDOWN_TIMEOUT:-30}
+SHUTDOWN_IGNORE_SESSIONS=${SHUTDOWN_IGNORE_SESSIONS:-false}
+SHUTDOWN_TYPE=${SHUTDOWN_TYPE:-Graceful}
 
 trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> /u01/oracle/stopserver.out
-${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py $localAdminPort $localAdminProtocol $timeout $ignoreSessions $force &>> /u01/oracle/stopserver.out
+${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py &>> /u01/oracle/stopserver.out
 trace "After stop-server.py" &>> /u01/oracle/stopserver.out
 
 # at this point node manager should have terminated the server
@@ -81,7 +81,7 @@ pid=$(jps | grep "NodeManager" | awk '{print $1}')
 trace "PID=[${pid}]" &>> /u01/oracle/stopserver.out
 if [ ! -z $pid ]; then
   echo "Killing NodeManager process $pid" &>> /u01/oracle/stopserver.out
-  kill -15 $pid
+  kill -9 $pid
 fi
 
 trace "Exit script"  &>> /u01/oracle/stopserver.out
