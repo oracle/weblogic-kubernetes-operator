@@ -198,15 +198,19 @@ public class HttpClient {
         password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
         packet.put(KEY, createAuthenticatedClient(username, password));
 
-        if (username != null) {
-          Arrays.fill(username, (byte) 0);
-        }
-        if (password != null) {
-          Arrays.fill(password, (byte) 0);
-        }
+        clearCredential(username);
+        clearCredential(password);
       }
       return doNext(packet);
     }
+  }
+
+  /**
+   * Erase authentication credential so that it is not sitting in memory where a rogue program can
+   * find it.
+   */
+  private static void clearCredential(byte[] credential) {
+    if (credential != null) Arrays.fill(credential, (byte) 0);
   }
 
   /**
