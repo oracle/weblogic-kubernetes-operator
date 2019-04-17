@@ -627,8 +627,7 @@ public abstract class PodStepContext extends StepContextBase {
               "LOCAL_ADMIN_PROTOCOL",
               localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
         }
-        addDefaultEnvVarIfMissing(
-            env, "SHUTDOWN_FORCED", String.valueOf(!GRACEFUL_SHUTDOWNTYPE.equals(shutdownType)));
+        addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdownType);
         addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(timeout));
         addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(ignoreSessions));
         break;
