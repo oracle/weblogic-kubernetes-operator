@@ -31,6 +31,7 @@ import java.util.function.Function;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.utils.KubernetesExec;
 import oracle.kubernetes.operator.utils.KubernetesExecFactory;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -63,6 +64,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StaticStubSupport.install(ServerStatusReader.class, "EXEC_FACTORY", execFactory));
     mementos.add(StaticStubSupport.install(ServerStatusReader.class, "STEP_FACTORY", stepFactory));
+    mementos.add(TuningParametersStub.install());
 
     testSupport.addDomainPresenceInfo(info);
   }
@@ -125,19 +127,23 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   @Test
   public void whenPodNotReadyAndHasLastKnownState_recordInStateMap() {
     info.setServerPod("server1", createPod("server1"));
-    info.setLastKnownServerStatus("server1", "not ready yet");
+    info.updateLastKnownServerStatus("server1", "not ready yet");
+
+    execFactory.defineResponse("server1", "still not ready yet");
 
     Packet packet =
         testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
 
     Map<String, String> serverStates = getServerStates(packet);
-    assertThat(serverStates, hasEntry("server1", "not ready yet"));
+    assertThat(serverStates, hasEntry("server1", "still not ready yet"));
   }
 
   @Test
   public void whenPodIsReady_recordInStateMap() {
     info.setServerPod("server1", createPod("server1"));
     setReadyStatus(info.getServerPod("server1"));
+
+    execFactory.defineResponse("server1", "RUNNING");
 
     Packet packet =
         testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
@@ -157,6 +163,9 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   public void whenPodIsReady_startHealthStepForIt() {
     info.setServerPod("server1", createPod("server1"));
     setReadyStatus(info.getServerPod("server1"));
+
+    // TEST
+    execFactory.defineResponse("server1", "RUNNING");
 
     testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
 

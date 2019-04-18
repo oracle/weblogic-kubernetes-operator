@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -239,7 +238,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
         .map(m -> m.get(domainUid))
-        .ifPresent(info -> info.setLastKnownServerStatus(serverName, status));
+        .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
 
   private static String getReadinessStatus(V1Event event) {
@@ -289,7 +288,6 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
 
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
-    AtomicInteger unchangedCount = new AtomicInteger(0);
     Runnable command =
         new Runnable() {
           public void run() {
@@ -311,46 +309,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                   packet,
                   new CompletionCallback() {
                     @Override
-                    public void onCompletion(Packet packet) {
-                      Boolean isStatusUnchanged =
-                          (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
-                      if (Boolean.TRUE.equals(isStatusUnchanged)) {
-                        if (unchangedCount.incrementAndGet()
-                            == main.unchangedCountToDelayStatusRecheck) {
-                          // slow down retries because of sufficient unchanged statuses
-                          registerStatusUpdater(
-                              info.getNamespace(),
-                              info.getDomainUID(),
-                              delegate.scheduleWithFixedDelay(
-                                  r,
-                                  main.eventualLongDelay,
-                                  main.eventualLongDelay,
-                                  TimeUnit.SECONDS));
-                        }
-                      } else {
-                        // reset to trying after shorter delay because of changed status
-                        unchangedCount.set(0);
-                        registerStatusUpdater(
-                            info.getNamespace(),
-                            info.getDomainUID(),
-                            delegate.scheduleWithFixedDelay(
-                                r,
-                                main.initialShortDelay,
-                                main.initialShortDelay,
-                                TimeUnit.SECONDS));
-                      }
-                    }
+                    public void onCompletion(Packet packet) {}
 
                     @Override
                     public void onThrowable(Packet packet, Throwable throwable) {
                       LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                      // retry to trying after shorter delay because of exception
-                      unchangedCount.set(0);
-                      registerStatusUpdater(
-                          info.getNamespace(),
-                          info.getDomainUID(),
-                          delegate.scheduleWithFixedDelay(
-                              r, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
                     }
                   });
             } catch (Throwable t) {
