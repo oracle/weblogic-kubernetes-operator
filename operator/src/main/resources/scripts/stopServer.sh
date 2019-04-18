@@ -68,7 +68,7 @@ trace "After stop-server.py" &>> /u01/oracle/stopserver.out
 # but let's try looking for the server process and
 # kill the server if the process still exists,
 # just in case we failed to stop it via wlst
-pid=$(jps -v | grep "[D]weblogic.Name=${SERVER_NAME}" | awk '{print $1}')
+pid=$(jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{print $1}')
 if [ ! -z $pid ]; then
   echo "Killing the server process $pid" &>> /u01/oracle/stopserver.out
   kill -15 $pid
@@ -77,7 +77,7 @@ fi
 # stop node manager process
 #
 trace "Stopping NodeManager" &>> /u01/oracle/stopserver.out
-pid=$(jps | grep "NodeManager" | awk '{print $1}')
+pid=$(jps | grep "weblogic.NodeManager" | awk '{print $1}')
 trace "PID=[${pid}]" &>> /u01/oracle/stopserver.out
 if [ ! -z $pid ]; then
   echo "Killing NodeManager process $pid" &>> /u01/oracle/stopserver.out

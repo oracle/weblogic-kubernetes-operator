@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -37,6 +38,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
+import org.joda.time.DateTime;
 
 /** Creates an asynchronous step to read the WebLogic server state from a particular pod. */
 public class ServerStatusReader {
@@ -121,16 +123,23 @@ public class ServerStatusReader {
       ConcurrentMap<String, String> serverStateMap =
           (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
 
-      if (PodHelper.getReadyStatus(pod)) {
-        info.setLastKnownServerStatus(serverName, WebLogicConstants.RUNNING_STATE);
-        serverStateMap.put(serverName, WebLogicConstants.RUNNING_STATE);
-        return doNext(packet);
-      } else {
-        String lastKnownState = info.getLastKnownServerStatus(serverName);
-        if (lastKnownState != null) {
-          serverStateMap.put(serverName, lastKnownState);
+      TuningParameters.MainTuning main = TuningParameters.getInstance().getMainTuning();
+      LastKnownStatus lastKnownStatus = info.getLastKnownServerStatus(serverName);
+      if (lastKnownStatus != null
+          && lastKnownStatus.getUnchangedCount() >= main.unchangedCountToDelayStatusRecheck) {
+        if (DateTime.now()
+            .isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
+          String state = lastKnownStatus.getStatus();
+          info.updateLastKnownServerStatus(serverName, state);
+          serverStateMap.put(serverName, state);
           return doNext(packet);
         }
+      }
+
+      if (PodHelper.getReadyStatus(pod)) {
+        info.updateLastKnownServerStatus(serverName, WebLogicConstants.RUNNING_STATE);
+        serverStateMap.put(serverName, WebLogicConstants.RUNNING_STATE);
+        return doNext(packet);
       }
 
       // Even though we don't need input data for this call, the API server is
@@ -153,8 +162,12 @@ public class ServerStatusReader {
 
               InputStream in = proc.getInputStream();
               if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-                try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
-                  state = CharStreams.toString(reader);
+                if (proc.exitValue() == 0) {
+                  try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
+                    state = CharStreams.toString(reader);
+                  }
+                } else {
+                  state = WebLogicConstants.UNKNOWN_STATE;
                 }
               }
             } catch (InterruptedException ignore) {
@@ -168,10 +181,24 @@ public class ServerStatusReader {
               }
             }
 
-            serverStateMap.put(
-                serverName, state != null ? state.trim() : WebLogicConstants.UNKNOWN_STATE);
+            state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
+            serverStateMap.put(serverName, state);
+            info.updateLastKnownServerStatus(serverName, state);
             fiber.resume(packet);
           });
+    }
+
+    private String chooseStateOrLastKnownServerStatus(
+        LastKnownStatus lastKnownStatus, String state) {
+      if (state != null) {
+        state = state.trim();
+        if (!state.isEmpty()) {
+          return state;
+        }
+      }
+      return (lastKnownStatus != null)
+          ? lastKnownStatus.getStatus()
+          : WebLogicConstants.UNKNOWN_STATE;
     }
   }
 
