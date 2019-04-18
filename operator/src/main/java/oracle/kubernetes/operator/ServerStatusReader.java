@@ -126,6 +126,7 @@ public class ServerStatusReader {
       TuningParameters.MainTuning main = TuningParameters.getInstance().getMainTuning();
       LastKnownStatus lastKnownStatus = info.getLastKnownServerStatus(serverName);
       if (lastKnownStatus != null
+          && !WebLogicConstants.UNKNOWN_STATE.equals(lastKnownStatus.getStatus())
           && lastKnownStatus.getUnchangedCount() >= main.unchangedCountToDelayStatusRecheck) {
         if (DateTime.now()
             .isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
@@ -162,10 +163,13 @@ public class ServerStatusReader {
 
               InputStream in = proc.getInputStream();
               if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-                if (proc.exitValue() == 0) {
+                int exitValue = proc.exitValue();
+                if (exitValue == 0) {
                   try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
                     state = CharStreams.toString(reader);
                   }
+                } else if (exitValue == 1) {
+                  state = WebLogicConstants.SHUTDOWN_STATE;
                 } else {
                   state = WebLogicConstants.UNKNOWN_STATE;
                 }
