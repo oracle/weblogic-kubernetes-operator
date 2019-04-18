@@ -128,7 +128,7 @@ class Infra12213Provisioner:
         print 'Extension Templates added'
 
         print 'Configuring the Service Table DataSource...'
-        fmwDb = 'jdbc:oracle:thin:@//' + db
+        fmwDb = 'jdbc:oracle:thin:@' + db
         print 'fmwDatabase  ' + fmwDb
         cd('/JDBCSystemResource/LocalSvcTblDataSource/JdbcResource/LocalSvcTblDataSource')
         cd('JDBCDriverParams/NO_NAME_0')
