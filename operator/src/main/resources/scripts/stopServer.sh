@@ -54,11 +54,11 @@ check_for_shutdown
 [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace "Error: missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
 
 # Arguments for shutdown
-export SHUTDOWN_PORT=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
-export SHUTDOWN_PROTOCOL=${LOCAL_ADMIN_PROTOCOL:-t3}
-export SHUTDOWN_TIMEOUT=${SHUTDOWN_TIMEOUT:-30}
-export SHUTDOWN_IGNORE_SESSIONS=${SHUTDOWN_IGNORE_SESSIONS:-false}
-export SHUTDOWN_TYPE=${SHUTDOWN_TYPE:-Graceful}
+export SHUTDOWN_PORT_ARG=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
+export SHUTDOWN_PROTOCOL_ARG=${LOCAL_ADMIN_PROTOCOL:-t3}
+export SHUTDOWN_TIMEOUT_ARG=${SHUTDOWN_TIMEOUT:-30}
+export SHUTDOWN_IGNORE_SESSIONS_ARG=${SHUTDOWN_IGNORE_SESSIONS:-false}
+export SHUTDOWN_TYPE_ARG=${SHUTDOWN_TYPE:-Graceful}
 
 trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> /u01/oracle/stopserver.out
 ${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py &>> /u01/oracle/stopserver.out
