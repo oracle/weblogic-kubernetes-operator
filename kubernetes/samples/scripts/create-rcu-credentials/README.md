@@ -1,7 +1,7 @@
 # Creating RCU credentials for a Fusion Middleware domain
 
 This sample demonstrates how to create a Kubernetes secret containing the
-RCU credentials for a Fusion Middleweare domain.  The operator expects this secret to be
+RCU credentials for a Fusion Middleware domain.  The operator expects this secret to be
 named following the pattern `domainUID-rcu-credentials`, where `domainUID`
 is the unique identifier of the domain.  It must be in the same namespace
 that the domain will run in.
