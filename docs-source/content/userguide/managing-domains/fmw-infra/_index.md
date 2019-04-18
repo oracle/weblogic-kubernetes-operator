@@ -64,7 +64,7 @@ to use this image with the operator.  A [sample](https://github.com/oracle/docke
 is provided that demonstrates how to create a Docker image with the necessary patch installed.
 
 After downloading the patch from My Oracle Support, you can create the patched image
-buy running the provided script:
+by running the provided script:
 
 TODO TODO TODO check with monica's sample to ensure this is correct TODO TODO TODO
 
@@ -76,7 +76,7 @@ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
 This will produce an image named `TODO TODO TODO monica what is it called TODO TODO TODO`.
 
 These sample will allow you to create a Docker image containing the FMW Infrastructure
-binaries and the necessary patch.  You can use this image to run Repository Creation Utility
+binaries and the necessary patch.  You can use this image to run the Repository Creation Utility
 and to run your domain using the "domain on a persistent volume" model. If you want to use 
 the "domain in a Docker image" model, you will need to go one step further and add another
 layer with your domain in it.  You can use WLST or WDT to create your domain.
@@ -257,7 +257,7 @@ kubectl run rcu -ti --image oracle/fmw-infrastructure:12.2.1.3 -- sleep 100000
 
 This will create a Kubernetes deployment called `rcu` containing a pod running a container
 created from the `oracle/fmw-infrastructure:12.2.1.3` image which will just run
-`sleep 100000`, which essentially creates us a pod that we can "exec" into and use to run whatever
+`sleep 100000`, which essentially creates a pod that we can "exec" into and use to run whatever
 commands we need to run. 
 
 To get inside this container and run commands, use this command: 
@@ -279,7 +279,7 @@ like WLST.
 
 ##### Creating schemas
 
-Inside this pod, you can use the following command to run RCU in command line (no GUI) mode
+Inside this pod, you can use the following command to run RCU in command-line (no GUI) mode
 to create your FMW schemas.  You will need to provide the right prefix and connect string.
 You will be prompted to enter the password for the `sys` user, and then the password to use
 for the regular schema users:
