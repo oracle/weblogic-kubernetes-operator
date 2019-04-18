@@ -8,6 +8,8 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Yaml;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -63,10 +65,20 @@ public class AnnotationHelper {
   }
 
   static String getHash(V1Pod pod) {
-    return pod.getMetadata().getAnnotations().get(SHA256_ANNOTATION);
+    return Optional.ofNullable(pod.getMetadata())
+        .map(V1ObjectMeta::getAnnotations)
+        .map(AnnotationHelper::getSha256Annotation)
+        .orElse("");
   }
 
   static String getHash(V1Service service) {
-    return service.getMetadata().getAnnotations().get(SHA256_ANNOTATION);
+    return Optional.ofNullable(service.getMetadata())
+        .map(V1ObjectMeta::getAnnotations)
+        .map(AnnotationHelper::getSha256Annotation)
+        .orElse("");
+  }
+
+  private static String getSha256Annotation(Map<String, String> annotations) {
+    return annotations.get(SHA256_ANNOTATION);
   }
 }
