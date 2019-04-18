@@ -231,14 +231,12 @@ domainParentDir = None
 #domainUser is hard-coded to weblogic. You can change to other name of your choice. Command line paramter -user.
 domainUser = 'weblogic'
 #domainPassword will be passed by Command line parameter -password.
-#domainPassword = 'welcome1'
 domainPassword = None
 #rcuDb will be passed by command line parameter -rcuDb.
 rcuDb = None
 #change rcuSchemaPrefix to your infra schema prefix. Command line parameter -rcuPrefix.
 rcuSchemaPrefix = 'DEV12'
 #change rcuSchemaPassword to your infra schema password. Command line parameter -rcuSchemaPwd.
-#rcuSchemaPassword = 'welcome1'
 rcuSchemaPassword = None
 
 i = 1
