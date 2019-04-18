@@ -33,28 +33,23 @@ The parameters are as follows:
 
 This creates a `generic` secret containing the user name and password as literal values.
 
-You can check the secret with the `kubectl get secret` command.  An example is shown below,
+You can check the secret with the `kubectl describe secret` command.  An example is shown below,
 including the output:
 
 ```
-$ kubectl -n domain-namespace-1 get secret domain1-rcu-credentials -o yaml
-apiVersion: v1
-data:
-  password: d2VsY29tZTE=
-  username: d2VibG9naWM=
-  sys_username: c3lz
-  username: c29hMQ==
-kind: Secret
-metadata:
-  creationTimestamp: 2018-12-12T20:25:20Z
-  labels:
-    weblogic.domainName: domain1
-    weblogic.domainUID: domain1
-  name: domain1-rcu-credentials
-  namespace: domain-namespace-1
-  resourceVersion: "5680"
-  selfLink: /api/v1/namespaces/domain-namespace-1/secrets/domain1-weblogic-credentials
-  uid: 0c2b3510-fe4c-11e8-994d-00001700101d
-type: Opaque
+$ kubectl -n domain-namespace-1 describe secret domain1-rcu-credentials -o yaml
+Name:         domain1-rcu-credentials
+Namespace:    default
+Labels:       weblogic.domainName=domain1
+              weblogic.domainUID=domain1
+Annotations:  <none>
 
+Type:  Opaque
+
+Data
+====
+password:      12 bytes
+sys_password:  12 bytes
+sys_username:  3 bytes
+username:      4 bytes
 ```
