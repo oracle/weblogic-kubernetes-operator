@@ -335,6 +335,16 @@ If you want to drop the schema, you can use a command like this:
 Again, you will need to set the right prefix and connection string, and you will be prompted
 to enter the `sys` user password.
 
+#### Create a Kubernetes secret with the RCU credentials
+
+You also need to create a Kubernetes secret containing the credentials for the database schemas.
+When you create your domain using the sample provided below, it will obtain the RCU credentials
+from this secret. 
+
+A [sample](/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-rcu-credentials/README.md)
+is provided that demonstrates how to create the secret. 
+
+
 #### Creating a FMW Infrastructure domain
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
