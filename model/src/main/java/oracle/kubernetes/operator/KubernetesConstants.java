@@ -1,4 +1,4 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -22,8 +22,8 @@ public interface KubernetesConstants {
   String DOMAIN_PLURAL = "domains";
   String DOMAIN_SINGULAR = "domain";
   String DOMAIN_SHORT = "dom";
-  String DOMAIN_VERSION = "v3";
-  String[] DOMAIN_ALTERNATE_VERSIONS = {"v2"};
+  String DOMAIN_VERSION = "v4";
+  String[] DOMAIN_ALTERNATE_VERSIONS = {"v2", "v3"};
 
   boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
