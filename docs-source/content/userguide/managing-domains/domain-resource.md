@@ -42,21 +42,6 @@ To confirm that the domain resource was created, use this command:
 $ kubectl describe domain [domain name] -n [namespace]
 ```
 
-### Additional Kubernetes features you can use in a domain resource
-
-write me
-
-#### Init Containers
-
-write me
-
-#### Sidecar support
-
-write me
-
-#### Security Contexts
-
-write me
 
 
 
