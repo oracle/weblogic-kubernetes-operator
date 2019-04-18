@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a Kubernetes secret for WebLogic domain admin credentials.
+#  This sample script creates a Kubernetes secret for RCU credentials.
 #
 #  The following pre-requisites must be handled prior to running this script:
 #    * The kubernetes namespace must already be created
