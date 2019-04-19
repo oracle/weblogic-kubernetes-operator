@@ -434,6 +434,8 @@ public class PodHelper {
           // ~6 seconds to start, so along with any other delay in connecting and issuing
           // the shutdown, the actual server instance has the full configured timeout to
           // gracefully shutdown before the container is destroyed by this timeout.
+          // We will remove this fudge factor when the operator connects via REST to shutdown
+          // the server instance.
           gracePeriodSeconds =
               serverSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
         }
