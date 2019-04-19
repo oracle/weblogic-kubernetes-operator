@@ -6,8 +6,8 @@
 adminServerName: adminserver
 domainUID: jrfdomain1
 clusterName: infra_cluster
-configuredManagedServerCount: 1
-initialManagedServerReplicas: 1
+configuredManagedServerCount: 4
+initialManagedServerReplicas: 2
 managedServerNameBase: infraserver
 exposeAdminT3Channel: true
 t3ChannelPort: 30013
@@ -19,3 +19,6 @@ createDomainScriptsMountPath: /u01/weblogic
 createDomainScriptName: create-domain-job.sh
 createDomainFilesDir: integration-tests/src/test/resources/domain-home-on-pv/jrf
 domainPVMountPath: /shared
+rcuSchemaPrefix: jrfdomain1
+rcuDatabaseURL: infradb.db.svc.cluster.local:1521/InfraPDB1.us.oracle.com
+rcuCredentialsSecret: jrfdomain1-rcu-credentials

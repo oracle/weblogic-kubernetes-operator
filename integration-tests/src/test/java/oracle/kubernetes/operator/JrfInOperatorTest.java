@@ -100,7 +100,15 @@ public class JrfInOperatorTest extends BaseTest {
     boolean testCompletedSuccessfully = false;
 
     try {
+      // run RCU first
+      DBUtils.deleteNamespace(DBUtils.RCU_NAMESPACE);
+      DBUtils.createNamespace(DBUtils.RCU_NAMESPACE);
+      DBUtils.runRCU(JRF_DOMAIN_ON_PV_WLST_FILE);
+
+      // create JRF domain
       jrfdomain = new JRFDomain(JRF_DOMAIN_ON_PV_WLST_FILE);
+
+      // verify JRF domain created, servers up and running
       jrfdomain.verifyDomainCreated();
 
       if (!SMOKETEST) {
