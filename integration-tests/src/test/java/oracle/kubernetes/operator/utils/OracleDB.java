@@ -13,7 +13,6 @@ public class OracleDB {
   public static final String DEFAULT_DB_NAME = "infradb";
   public static final String DEFAULT_DB_NAMESPACE = "db";
   public static final String DEFAULT_DB_IMAGE = "store/oracle/database-enterprise:12.2.0.1";
-  //    "container-registry.oracle.com/database/enterprise:12.2.0.1";
   public static final String DEFAULT_DB_PORT = "1521";
   public static final String DEFAULT_DB_SID = "InfraDB";
   public static final String DEFAULT_DB_PDB = "InfraPDB1";
@@ -48,11 +47,7 @@ public class OracleDB {
 
     String command;
     // create the namespace
-    if (!namespace.equalsIgnoreCase("default")) {
-      command = "kubectl create ns " + namespace;
-      logger.info("Running " + command);
-      TestUtils.exec(command);
-    }
+    DBUtils.createNamespace(namespace);
 
     // create db
     command =
@@ -113,12 +108,7 @@ public class OracleDB {
     // delete the namespace if the db namespace is not default
     String command;
     if (!namespace.equalsIgnoreCase("default")) {
-      command = "kubectl delete ns " + namespace;
-      logger.info("Running " + command);
-      ExecCommand.exec(command);
-
-      // verify the namespace is deleted
-      TestUtils.checkNamespaceDeleted(namespace);
+      DBUtils.deleteNamespace(namespace);
     } else {
       // delete the deployment and service
       command = "kubectl delete deployment " + name + " -n " + namespace;
