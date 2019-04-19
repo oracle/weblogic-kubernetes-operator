@@ -31,4 +31,6 @@ public interface ProcessingConstants {
   public static final String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
   public static final String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
   public static final String SIT_CONFIG_MAP = "sitConfigMap";
+
+  public static final String SERVER_HEALTH_READ = "serverHealthRead";
 }
