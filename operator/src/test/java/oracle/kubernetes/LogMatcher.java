@@ -32,6 +32,10 @@ public class LogMatcher
     return new LogMatcher(Level.INFO, expectedMessage);
   }
 
+  public static LogMatcher containsInfo(String expectedMessage, Object expectedParameter) {
+    return new LogMatcher(Level.INFO, expectedMessage, expectedParameter);
+  }
+
   public static LogMatcher containsWarning(String expectedMessage) {
     return new LogMatcher(Level.WARNING, expectedMessage);
   }
