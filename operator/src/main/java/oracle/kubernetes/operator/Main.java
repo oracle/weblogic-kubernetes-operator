@@ -495,7 +495,10 @@ public class Main {
   }
 
   private static Collection<String> getTargetNamespaces() {
-    return getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), operatorNamespace);
+    return getTargetNamespaces(
+        Optional.ofNullable(System.getenv("OPERATOR_TARGET_NAMESPACES"))
+            .orElse(tuningAndConfig.get("targetNamespaces")),
+        operatorNamespace);
   }
 
   private static class DomainListStep extends ResponseStep<DomainList> {
