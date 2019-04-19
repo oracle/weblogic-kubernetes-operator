@@ -3,7 +3,6 @@
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: "weblogic.oracle/v4"
 kind: Domain
 metadata:
   name: %DOMAIN_UID%
