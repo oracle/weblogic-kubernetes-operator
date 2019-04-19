@@ -47,14 +47,6 @@ public class JrfInOperatorTest extends BaseTest {
 
     // create DB used for jrf domain
     OracleDB db = DBUtils.createOracleDB(DB_PROP_FILE);
-
-    // copy the integration-tests/src/test/resources/domain-home-on-pv/jrf to
-    // BaseTest.getResultDir()
-    TestUtils.exec(
-        "cp -rf "
-            + BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/domain-home-on-pv/jrf "
-            + BaseTest.getResultDir());
   }
 
   /**
