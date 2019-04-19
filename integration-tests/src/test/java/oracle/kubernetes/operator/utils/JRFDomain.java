@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.Map;
-import oracle.kubernetes.operator.BaseTest;
 
 /** JRF Domain class with all the utility methods */
 public class JRFDomain extends Domain {
@@ -51,10 +50,6 @@ public class JRFDomain extends Domain {
     domainMap.put(
         "image",
         DBUtils.DEFAULT_FMWINFRA_DOCKER_IMAGENAME + ":" + DBUtils.DEFAULT_FMWINFRA_DOCKER_IMAGETAG);
-
-    if (!domainMap.containsKey("domainHomeImageBase")) {
-      domainMap.put("createDomainFilesDir", BaseTest.getResultDir() + "/jrf");
-    }
 
     if (System.getenv("IMAGE_PULL_SECRET_FMWINFRA") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_FMWINFRA"));
