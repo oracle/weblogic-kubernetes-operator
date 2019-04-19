@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -35,7 +34,9 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
@@ -239,7 +240,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
         .map(m -> m.get(domainUid))
-        .ifPresent(info -> info.setLastKnownServerStatus(serverName, status));
+        .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
 
   private static String getReadinessStatus(V1Event event) {
@@ -289,7 +290,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
 
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
-    AtomicInteger unchangedCount = new AtomicInteger(0);
+    final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     Runnable command =
         new Runnable() {
           public void run() {
@@ -301,6 +302,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .put(
                       ProcessingConstants.DOMAIN_COMPONENT_NAME,
                       Component.createFor(info, delegate.getVersion()));
+              packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
               MainTuning main = TuningParameters.getInstance().getMainTuning();
               Step strategy =
                   DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -312,45 +314,17 @@ public class DomainProcessorImpl implements DomainProcessor {
                   new CompletionCallback() {
                     @Override
                     public void onCompletion(Packet packet) {
-                      Boolean isStatusUnchanged =
-                          (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
-                      if (Boolean.TRUE.equals(isStatusUnchanged)) {
-                        if (unchangedCount.incrementAndGet()
-                            == main.unchangedCountToDelayStatusRecheck) {
-                          // slow down retries because of sufficient unchanged statuses
-                          registerStatusUpdater(
-                              info.getNamespace(),
-                              info.getDomainUID(),
-                              delegate.scheduleWithFixedDelay(
-                                  r,
-                                  main.eventualLongDelay,
-                                  main.eventualLongDelay,
-                                  TimeUnit.SECONDS));
-                        }
+                      if (Boolean.TRUE.equals(packet.get(ProcessingConstants.SERVER_HEALTH_READ))) {
+                        loggingFilter.setFiltering(false).resetLogHistory();
                       } else {
-                        // reset to trying after shorter delay because of changed status
-                        unchangedCount.set(0);
-                        registerStatusUpdater(
-                            info.getNamespace(),
-                            info.getDomainUID(),
-                            delegate.scheduleWithFixedDelay(
-                                r,
-                                main.initialShortDelay,
-                                main.initialShortDelay,
-                                TimeUnit.SECONDS));
+                        loggingFilter.setFiltering(true);
                       }
                     }
 
                     @Override
                     public void onThrowable(Packet packet, Throwable throwable) {
                       LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                      // retry to trying after shorter delay because of exception
-                      unchangedCount.set(0);
-                      registerStatusUpdater(
-                          info.getNamespace(),
-                          info.getDomainUID(),
-                          delegate.scheduleWithFixedDelay(
-                              r, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+                      loggingFilter.setFiltering(true);
                     }
                   });
             } catch (Throwable t) {
