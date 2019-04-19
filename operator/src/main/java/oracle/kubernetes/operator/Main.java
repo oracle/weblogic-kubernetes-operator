@@ -174,9 +174,6 @@ public class Main {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
 
-    // start liveness thread
-    startLivenessThread();
-
     try {
       engine.getExecutor().execute(Main::begin);
 
@@ -225,6 +222,11 @@ public class Main {
           .getExecutor()
           .scheduleWithFixedDelay(
               recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+
+      // Wait until all other initialization is done before starting liveness thread
+
+      // start liveness thread
+      startLivenessThread();
 
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
