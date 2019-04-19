@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
@@ -42,7 +42,7 @@ wlst_loc2="${MW_HOME}/oracle_common/common/bin/wlst.sh"
 [ -f "$wlst_loc1" ]   && wlst_sh="$wlst_loc1"
 [ -z "$wlst_sh" ] && trace "Error: '${wlst_loc1}' or '${wlst_loc2}' not found, make sure WL_HOME or MW_HOME is set correctly." && exit 1
 
-${wlst_sh} -skipWLSModuleScanning ${wlst_script}
+${wlst_sh} -skipWLSModuleScanning ${wlst_script} "${@:2}"
 res="$?"
 
 if [ $res -eq 0 ]; then
