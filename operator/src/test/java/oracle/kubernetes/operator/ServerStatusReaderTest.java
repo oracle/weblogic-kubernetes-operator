@@ -164,7 +164,6 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
     info.setServerPod("server1", createPod("server1"));
     setReadyStatus(info.getServerPod("server1"));
 
-    // TEST
     execFactory.defineResponse("server1", "RUNNING");
 
     testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
