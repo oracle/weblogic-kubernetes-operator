@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -146,7 +146,7 @@ public class CRDHelperTest {
 
   @Test
   public void whenExistingCRDHasFutureVersion_dontReplaceIt() {
-    V1beta1CustomResourceDefinition existing = defineCRD("v4", "operator-v4");
+    V1beta1CustomResourceDefinition existing = defineCRD("v500", "operator-v500");
     existing
         .getSpec()
         .addVersionsItem(
@@ -160,9 +160,9 @@ public class CRDHelperTest {
 
   @Test
   public void whenExistingCRDHasFutureVersionButNotCurrentStorage_updateIt() {
-    expectReadCRD().returning(defineCRD("v4", "operator-v4"));
+    expectReadCRD().returning(defineCRD("v500", "operator-v500"));
 
-    V1beta1CustomResourceDefinition replacement = defineCRD("v4", "operator-v4");
+    V1beta1CustomResourceDefinition replacement = defineCRD("v500", "operator-v500");
     replacement
         .getSpec()
         .addVersionsItem(
