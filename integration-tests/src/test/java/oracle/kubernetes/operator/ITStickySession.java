@@ -29,8 +29,6 @@ import org.junit.runners.MethodSorters;
 public class ITStickySession extends BaseTest {
   private static final String testAppName = "stickysessionapp";
   private static final String testAppPath = testAppName + "/StickySessionCounterServlet";
-  // private static final String testAppName = "httpsessionreptestapp";
-  // private static final String testAppPath = testAppName + "/CounterServlet";
   private static final String scriptName = "buildDeployAppInPod.sh";
 
   private static Map<String, String> httpAttrMap;
@@ -185,7 +183,9 @@ public class ITStickySession extends BaseTest {
   }
 
   /**
-   * Use a web application deployed on Weblogic cluster to track HTTP sessions. This test sends two
+   * Use a web application deployed on Weblogic cluster to track HTTP session. In-memory replication
+   * persistence method is configured to implement session persistence. server-affinity is achieved
+   * by Voyager load balancer based on HTTP session information. This test sends two
    * HTTP requests from two different clients to Weblogic and verify that HTTP sessions are
    * isolated.
    *
@@ -239,10 +239,10 @@ public class ITStickySession extends BaseTest {
             + count
             + ">");
 
-    // Verify that each client session has a different session ID
+    // Verify that each client session has its own session ID
     Assume.assumeFalse("HTTP session should NOT be same!", serverIDClient1.equals(serverIDClient2));
 
-    // Verify that HTTP session state is not shared between two clients
+    // Verify that count number retrieved from session state is not shared between two clients
     Assume.assumeTrue(
         "Count number <" + counterNum + "> set by client1 should be invisible to client2",
         count.equals("0"));
