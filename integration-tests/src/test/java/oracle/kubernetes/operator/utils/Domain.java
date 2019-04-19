@@ -44,7 +44,7 @@ public class Domain {
   protected String domainUid = "";
   // default values as in create-weblogic-domain-inputs.yaml, generated yaml file will have the
   // customized property values
-  private String domainNS;
+  protected String domainNS;
   private String adminServerName;
   private String managedServerNameBase;
   private int initialManagedServerReplicas;
@@ -62,7 +62,7 @@ public class Domain {
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
 
-  private String generatedInputYamlFile;
+  protected String generatedInputYamlFile;
 
   private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTime = BaseTest.getWaitTimePod();
@@ -1555,6 +1555,9 @@ public class Domain {
           .append(" -p ")
           .append(BaseTest.getPassword())
           .append(" -k -i ");
+    } else if (domainMap.containsKey("rcuCredentialsSecret")) {
+      createDomainScriptCmd.append(
+          "/samples/scripts/create-fmw-infrastructure-domain/create-domain.sh -v -i ");
     } else {
       createDomainScriptCmd.append(
           "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");

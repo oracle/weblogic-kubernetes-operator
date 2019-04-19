@@ -10,10 +10,6 @@ import oracle.kubernetes.operator.BaseTest;
 /** JRF Domain class with all the utility methods */
 public class JRFDomain extends Domain {
 
-  private static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
-      "phx.ocir.io/weblogick8s/oracle/fmw-infrastructure";
-  private static final String DEFAULT_FMWINFRA_DOCKER_IMAGETAG = "12.2.1.3";
-
   /**
    * JRFDomain constructor
    *
@@ -38,6 +34,7 @@ public class JRFDomain extends Domain {
     updateDomainMapForJRF();
     createPV();
     createSecret();
+    createRcuSecret();
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
     // TODO: add load balancer later
@@ -52,7 +49,8 @@ public class JRFDomain extends Domain {
   private void updateDomainMapForJRF() throws Exception {
     // jrf specific input parameter
     domainMap.put(
-        "image", DEFAULT_FMWINFRA_DOCKER_IMAGENAME + ":" + DEFAULT_FMWINFRA_DOCKER_IMAGETAG);
+        "image",
+        DBUtils.DEFAULT_FMWINFRA_DOCKER_IMAGENAME + ":" + DBUtils.DEFAULT_FMWINFRA_DOCKER_IMAGETAG);
 
     if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("createDomainFilesDir", BaseTest.getResultDir() + "/jrf");
@@ -63,5 +61,28 @@ public class JRFDomain extends Domain {
     } else {
       domainMap.put("imagePullSecretName", "ocir-store");
     }
+  }
+
+  /**
+   * create rcu secret
+   *
+   * @throws Exception - if any error occurs
+   */
+  private void createRcuSecret() throws Exception {
+    RcuSecret rucSecret =
+        new RcuSecret(
+            domainNS,
+            domainMap.getOrDefault("secretName", domainUid + "-rcu-credentials").toString(),
+            DBUtils.DEFAULT_RCU_SCHEMA_USERNAME,
+            DBUtils.DEFAULT_RCU_SCHEMA_PASSWORD,
+            DBUtils.DEFAULT_RCU_SYS_USERNAME,
+            DBUtils.DEFAULT_RCU_SYS_PASSWORD);
+    domainMap.put("rcuCredentialsSecret", rucSecret.getSecretName());
+    final String labelCmd =
+        String.format(
+            "kubectl label secret %s -n %s weblogic.domainUID=%s weblogic.domainName=%s",
+            rucSecret.getSecretName(), domainNS, domainUid, domainUid);
+    logger.info("running command " + labelCmd);
+    TestUtils.exec(labelCmd);
   }
 }
