@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.http.HttpClientStub;
 import oracle.kubernetes.operator.steps.ReadHealthStep.ReadHealthWithHttpClientStep;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -40,9 +41,17 @@ public class ReadHealthStepTest {
     WLS_HEALTH_READ_FAILED, WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT
   };
 
+  private static final String DOMAIN_NAME = "domain";
+  private static final String ADMIN_NAME = "admin-server";
+  private static final int ADMIN_PORT_NUM = 3456;
+
   private List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
+  private static final WlsDomainConfigSupport configSupport =
+      new WlsDomainConfigSupport(DOMAIN_NAME)
+          .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
+          .withAdminServerName(ADMIN_NAME);
 
   @Before
   public void setup() {
@@ -62,14 +71,14 @@ public class ReadHealthStepTest {
   public void withHttpClientStep_Health_logIfFailed() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
-    final String SERVER_NAME = "admin-server";
+    final String SERVER_NAME = ADMIN_NAME;
     Packet packet =
         Stub.createStub(PacketStub.class)
             .withServerName(SERVER_NAME)
             .withGetKeyThrowsException(true);
 
     ReadHealthWithHttpClientStep withHttpClientStep =
-        new ReadHealthWithHttpClientStep(service, next);
+        new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
     assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED, SERVER_NAME));
@@ -79,12 +88,12 @@ public class ReadHealthStepTest {
   public void withHttpClientStep_logIfMissingHTTPClient() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
-    final String SERVER_NAME = "admin-server";
+    final String SERVER_NAME = ADMIN_NAME;
     Packet packet =
         Stub.createStub(PacketStub.class).withServerName(SERVER_NAME).withGetKeyReturnValue(null);
 
     ReadHealthWithHttpClientStep withHttpClientStep =
-        new ReadHealthWithHttpClientStep(service, next);
+        new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
     assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT, SERVER_NAME));
@@ -95,7 +104,7 @@ public class ReadHealthStepTest {
   public void withHttpClientStep_putServerHealthReadToPacketIfSucceeded() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
-    final String SERVER_NAME = "admin-server";
+    final String SERVER_NAME = ADMIN_NAME;
 
     HttpClientStub httpClientStub = Stub.createStub(HttpClientStub.class);
 
@@ -107,7 +116,7 @@ public class ReadHealthStepTest {
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
 
     ReadHealthWithHttpClientStep withHttpClientStep =
-        new ReadHealthWithHttpClientStep(service, next);
+        new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
     assertThat(packet.get(ProcessingConstants.SERVER_HEALTH_READ), is(Boolean.TRUE));
@@ -143,6 +152,8 @@ public class ReadHealthStepTest {
         return getKeyReturnValue;
       } else if (ProcessingConstants.SERVER_NAME.equals(key)) {
         return serverName;
+      } else if (ProcessingConstants.DOMAIN_TOPOLOGY.equals(key)) {
+        return configSupport.createDomainConfig();
       }
       return super.get(key);
     }
@@ -153,7 +164,7 @@ public class ReadHealthStepTest {
     @Override
     public V1ServiceSpec getSpec() {
       List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(7001));
+      ports.add(new V1ServicePort().port(7001).name("default"));
       V1ServiceSpec v1ServiceSpec = new V1ServiceSpec().clusterIP("127.0.0.1").ports(ports);
       return v1ServiceSpec;
     }

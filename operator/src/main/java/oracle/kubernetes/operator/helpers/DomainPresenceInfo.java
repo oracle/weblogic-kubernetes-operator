@@ -144,11 +144,24 @@ public class DomainPresenceInfo {
   }
 
   private void updateStatus(String serverName, V1Pod event) {
-    if (PodHelper.isReady(event)) {
-      getSko(serverName).getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
-    } else {
-      getSko(serverName).getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
-    }
+    getSko(serverName)
+        .getLastKnownStatus()
+        .getAndUpdate(
+            lastKnownStatus -> {
+              LastKnownStatus updatedStatus = lastKnownStatus;
+              if (PodHelper.isReady(event)) {
+                if (lastKnownStatus == null
+                    || !WebLogicConstants.RUNNING_STATE.equals(lastKnownStatus.getStatus())) {
+                  updatedStatus = new LastKnownStatus(WebLogicConstants.RUNNING_STATE);
+                }
+              } else {
+                if (lastKnownStatus != null
+                    && WebLogicConstants.RUNNING_STATE.equals(lastKnownStatus.getStatus())) {
+                  updatedStatus = null;
+                }
+              }
+              return updatedStatus;
+            });
   }
 
   private V1Pod getNewerPod(V1Pod first, V1Pod second) {
@@ -171,7 +184,8 @@ public class DomainPresenceInfo {
     if (serverName == null) return false;
     ServerKubernetesObjects sko = getSko(serverName);
     V1Pod deletedPod = sko.getPod().getAndAccumulate(event, this::getNewerCurrentOrNull);
-    if (deletedPod != null) sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
+    if (deletedPod != null)
+      sko.getLastKnownStatus().set(new LastKnownStatus(WebLogicConstants.SHUTDOWN_STATE));
     return deletedPod != null;
   }
 
@@ -195,18 +209,30 @@ public class DomainPresenceInfo {
    * @param serverName the name of the server
    * @return the corresponding reported status
    */
-  public String getLastKnownServerStatus(String serverName) {
+  public LastKnownStatus getLastKnownServerStatus(String serverName) {
     return getSko(serverName).getLastKnownStatus().get();
   }
 
   /**
-   * Setss the last status reported for the specified server.
+   * Updates the last status reported for the specified server.
    *
    * @param serverName the name of the server
    * @param status the new status
    */
-  public void setLastKnownServerStatus(String serverName, String status) {
-    getSko(serverName).getLastKnownStatus().set(status);
+  public void updateLastKnownServerStatus(String serverName, String status) {
+    getSko(serverName)
+        .getLastKnownStatus()
+        .getAndUpdate(
+            lastKnownStatus -> {
+              LastKnownStatus updatedStatus = null;
+              if (status != null) {
+                updatedStatus =
+                    (lastKnownStatus != null && status.equals(lastKnownStatus.getStatus()))
+                        ? new LastKnownStatus(status, lastKnownStatus.getUnchangedCount() + 1)
+                        : new LastKnownStatus(status);
+              }
+              return updatedStatus;
+            });
   }
 
   /**

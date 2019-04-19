@@ -20,8 +20,8 @@ DH=${DOMAIN_HOME?}
 
 STATEFILE=/${DH}/servers/${SN}/data/nodemanager/${SN}.state
 
-if [ `jps -l | grep -c " weblogic.NodeManager"` -eq 0 ]; then
-  trace "Error: WebLogic NodeManager process not found."
+if [ `jps -v | grep -c " -Dweblogic.Name=${SERVER_NAME} "` -eq 0 ]; then
+  trace "WebLogic server process not found"
   exit 1
 fi
 

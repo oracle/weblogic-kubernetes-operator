@@ -49,4 +49,9 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   public List<V1Container> getContainers() {
     return cluster.getContainers();
   }
+
+  @Override
+  public Shutdown getShutdown() {
+    return cluster.getShutdown();
+  }
 }
