@@ -290,7 +290,7 @@ public class DomainPresenceInfo {
     return service == null ? null : service.getMetadata();
   }
 
-  V1Service getExternalService(String serverName) {
+  public V1Service getExternalService(String serverName) {
     return getSko(serverName).getExternalService().get();
   }
 
