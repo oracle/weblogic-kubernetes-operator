@@ -4,9 +4,12 @@
 
 package oracle.kubernetes.operator.steps;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,6 +23,11 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.Scan;
+import oracle.kubernetes.operator.rest.ScanCache;
+import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -63,12 +71,15 @@ public class ReadHealthStep extends Step {
             ? null
             : spec.getWebLogicCredentialsSecret().getName();
 
-    Step getClient =
-        HttpClient.createAuthenticatedClientForServer(
-            namespace,
-            secretName,
-            new ReadHealthWithHttpClientStep(info.getServerService(serverName), getNext()));
-    return doNext(getClient, packet);
+    V1Service service = info.getServerService(serverName);
+    V1Pod pod = info.getServerPod(serverName);
+    if (service != null) {
+      Step getClient =
+          HttpClient.createAuthenticatedClientForServer(
+              namespace, secretName, new ReadHealthWithHttpClientStep(service, pod, getNext()));
+      return doNext(getClient, packet);
+    }
+    return doNext(packet);
   }
 
   private static String getRetrieveHealthSearchUrl() {
@@ -83,16 +94,34 @@ public class ReadHealthStep extends Step {
 
   static final class ReadHealthWithHttpClientStep extends Step {
     private final V1Service service;
+    private final V1Pod pod;
 
-    ReadHealthWithHttpClientStep(V1Service service, Step next) {
+    ReadHealthWithHttpClientStep(V1Service service, V1Pod pod, Step next) {
       super(next);
       this.service = service;
+      this.pod = pod;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       try {
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
+        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+        WlsDomainConfig domainConfig =
+            (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+        if (domainConfig == null) {
+          Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
+          domainConfig = scan.getWlsDomainConfig();
+        }
+        String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
+        WlsServerConfig serverConfig = domainConfig.getServerConfig(serverName);
+
+        if (serverConfig == null) {
+          // dynamic server
+          String clusterName = service.getMetadata().getLabels().get(CLUSTERNAME_LABEL);
+          WlsClusterConfig cluster = domainConfig.getClusterConfig(clusterName);
+          serverConfig = cluster.getDynamicServersConfig().getServerConfig(serverName);
+        }
 
         if (httpClient == null) {
           LOGGER.info(
@@ -101,7 +130,12 @@ public class ReadHealthStep extends Step {
               packet.get(ProcessingConstants.SERVER_NAME));
         } else {
 
-          String serviceURL = HttpClient.getServiceURL(service);
+          String serviceURL =
+              HttpClient.getServiceURL(
+                  service,
+                  pod,
+                  serverConfig.getAdminProtocolChannelName(),
+                  serverConfig.getListenPort());
           if (serviceURL != null) {
             String jsonResult =
                 httpClient
