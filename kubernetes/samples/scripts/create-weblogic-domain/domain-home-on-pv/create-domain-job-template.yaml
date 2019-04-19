@@ -7,9 +7,9 @@ metadata:
   namespace: %NAMESPACE%
 spec:
   template:
-    annotations:
-      sidecar.istio.io/inject: "false"
     metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
       labels:
         weblogic.resourceVersion: domain-v2
         weblogic.domainUID: %DOMAIN_UID%
