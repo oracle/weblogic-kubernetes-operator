@@ -2,7 +2,7 @@
 title: "CI/CD considerations"
 date: 2019-04-11T13:01:55-04:00
 weight: 5
-description: "Learn about managing domain images with CI/CD."
+description: "Learn about managing domain images with continuous integration and continuous delivery (CI/CD)."
 draft: false
 ---
 
@@ -44,9 +44,9 @@ you need your domain, that is the configuration.
 
 There is also other information associated with a domain that needs to live
 somewhere, for example leasing tables, message and transaction stores, and so
-on.  We recommend that these be kept in a database to take advantage of built-in 
-database server HA, and the fact that disaster recovery of sites across all 
-but the shortest distances almost always requires using a single database 
+on.  We recommend that these be kept in a database to take advantage of built-in
+database server HA, and the fact that disaster recovery of sites across all
+but the shortest distances almost always requires using a single database
 server to consolidate and replicated data (DataGuard).
 
 There are two common approaches on how to structure these components.  The first,
