@@ -1,5 +1,5 @@
 ---
-title: "How to copy domains"
+title: "Copy domains"
 date: 2019-04-11T13:48:15-04:00
 draft: false
 weight: 5
@@ -19,7 +19,7 @@ and to create a ZIP file of this domain before starting any servers.
 > The domain ZIP must be created before starting servers.  
 
 When servers are started the first time, they will encrypt various other data.
-Make sure you create the ZIP file before starting servers for the first time.
+Make sure that you create the ZIP file before starting servers for the first time.
 The primordial domain ZIP file should be stored in a safe place where the CI/CD
 can get it when needed, for example in a secured Artifactory repository (or
 something similar).  
