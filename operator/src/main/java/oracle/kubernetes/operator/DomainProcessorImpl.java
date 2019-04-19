@@ -34,7 +34,9 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
@@ -288,6 +290,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
 
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
+    final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     Runnable command =
         new Runnable() {
           public void run() {
@@ -299,6 +302,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .put(
                       ProcessingConstants.DOMAIN_COMPONENT_NAME,
                       Component.createFor(info, delegate.getVersion()));
+              packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
               MainTuning main = TuningParameters.getInstance().getMainTuning();
               Step strategy =
                   DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -309,11 +313,18 @@ public class DomainProcessorImpl implements DomainProcessor {
                   packet,
                   new CompletionCallback() {
                     @Override
-                    public void onCompletion(Packet packet) {}
+                    public void onCompletion(Packet packet) {
+                      if (Boolean.TRUE.equals(packet.get(ProcessingConstants.SERVER_HEALTH_READ))) {
+                        loggingFilter.setFiltering(false).resetLogHistory();
+                      } else {
+                        loggingFilter.setFiltering(true);
+                      }
+                    }
 
                     @Override
                     public void onThrowable(Packet packet, Throwable throwable) {
                       LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+                      loggingFilter.setFiltering(true);
                     }
                   });
             } catch (Throwable t) {
