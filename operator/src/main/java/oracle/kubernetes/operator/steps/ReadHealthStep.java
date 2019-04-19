@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -17,6 +18,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -92,71 +94,91 @@ public class ReadHealthStep extends Step {
       try {
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
 
-        String serviceURL = HttpClient.getServiceURL(service);
-        if (serviceURL != null) {
-          String jsonResult =
-              httpClient
-                  .executePostUrlOnServiceClusterIP(
-                      getRetrieveHealthSearchUrl(),
-                      serviceURL,
-                      getRetrieveHealthSearchPayload(),
-                      true)
-                  .getResponse();
+        if (httpClient == null) {
+          LOGGER.info(
+              (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
+              MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT,
+              packet.get(ProcessingConstants.SERVER_NAME));
+        } else {
 
-          ObjectMapper mapper = new ObjectMapper();
-          JsonNode root = mapper.readTree(jsonResult);
+          String serviceURL = HttpClient.getServiceURL(service);
+          if (serviceURL != null) {
+            String jsonResult =
+                httpClient
+                    .executePostUrlOnServiceClusterIP(
+                        getRetrieveHealthSearchUrl(),
+                        serviceURL,
+                        getRetrieveHealthSearchPayload(),
+                        true)
+                    .getResponse();
 
-          JsonNode state = null;
-          JsonNode subsystemName = null;
-          JsonNode symptoms = null;
-          JsonNode overallHealthState = root.path("overallHealthState");
-          if (overallHealthState != null) {
-            state = overallHealthState.path("state");
-            subsystemName = overallHealthState.path("subsystemName");
-            symptoms = overallHealthState.path("symptoms");
+            ServerHealth health = parseServerHealthJson(jsonResult);
+
+            @SuppressWarnings("unchecked")
+            ConcurrentMap<String, ServerHealth> serverHealthMap =
+                (ConcurrentMap<String, ServerHealth>)
+                    packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
+            serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
+            packet.put(ProcessingConstants.SERVER_HEALTH_READ, Boolean.TRUE);
           }
-          JsonNode activationTime = root.path("activationTime");
-
-          List<String> sym = new ArrayList<>();
-          if (symptoms != null) {
-            Iterator<JsonNode> it = symptoms.elements();
-            while (it.hasNext()) {
-              sym.add(it.next().asText());
-            }
-          }
-
-          String subName = null;
-          if (subsystemName != null) {
-            String s = subsystemName.asText();
-            if (s != null && !"null".equals(s)) {
-              subName = s;
-            }
-          }
-
-          ServerHealth health =
-              new ServerHealth()
-                  .withOverallHealth(state != null ? state.asText() : null)
-                  .withActivationTime(
-                      activationTime != null ? new DateTime(activationTime.asLong()) : null);
-          if (subName != null) {
-            health
-                .getSubsystems()
-                .add(new SubsystemHealth().withSubsystemName(subName).withSymptoms(sym));
-          }
-
-          @SuppressWarnings("unchecked")
-          ConcurrentMap<String, ServerHealth> serverHealthMap =
-              (ConcurrentMap<String, ServerHealth>)
-                  packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
-          serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
         }
         return doNext(packet);
       } catch (Throwable t) {
         // do not retry for health check
-        LOGGER.fine(
-            MessageKeys.WLS_HEALTH_READ_FAILED, packet.get(ProcessingConstants.SERVER_NAME), t);
+        LOGGER.info(
+            (LoggingFilter) packet.get(LoggingFilter.LOGGING_FILTER_PACKET_KEY),
+            MessageKeys.WLS_HEALTH_READ_FAILED,
+            packet.get(ProcessingConstants.SERVER_NAME),
+            t);
         return doNext(packet);
       }
+    }
+
+    private ServerHealth parseServerHealthJson(String jsonResult) throws IOException {
+      if (jsonResult == null) return null;
+
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode root = mapper.readTree(jsonResult);
+
+      JsonNode state = null;
+      JsonNode subsystemName = null;
+      JsonNode symptoms = null;
+      JsonNode overallHealthState = root.path("overallHealthState");
+      if (overallHealthState != null) {
+        state = overallHealthState.path("state");
+        subsystemName = overallHealthState.path("subsystemName");
+        symptoms = overallHealthState.path("symptoms");
+      }
+      JsonNode activationTime = root.path("activationTime");
+
+      List<String> sym = new ArrayList<>();
+      if (symptoms != null) {
+        Iterator<JsonNode> it = symptoms.elements();
+        while (it.hasNext()) {
+          sym.add(it.next().asText());
+        }
+      }
+
+      String subName = null;
+      if (subsystemName != null) {
+        String s = subsystemName.asText();
+        if (s != null && !"null".equals(s)) {
+          subName = s;
+        }
+      }
+
+      ServerHealth health =
+          new ServerHealth()
+              .withOverallHealth(state != null ? state.asText() : null)
+              .withActivationTime(
+                  activationTime != null ? new DateTime(activationTime.asLong()) : null);
+      if (subName != null) {
+        health
+            .getSubsystems()
+            .add(new SubsystemHealth().withSubsystemName(subName).withSymptoms(sym));
+      }
+
+      return health;
     }
   }
 }
