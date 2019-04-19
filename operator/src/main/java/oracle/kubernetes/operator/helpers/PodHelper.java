@@ -430,6 +430,10 @@ public class PodHelper {
 
         ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
         if (serverSpec != null) {
+          // We add a 10 second fudge factor here to account for the fact that WLST takes
+          // ~6 seconds to start, so along with any other delay in connecting and issuing
+          // the shutdown, the actual server instance has the full configured timeout to
+          // gracefully shutdown before the container is destroyed by this timeout.
           gracePeriodSeconds =
               serverSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
         }
