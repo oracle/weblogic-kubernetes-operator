@@ -382,7 +382,7 @@ $ helm install stable/traefik \ --name traefik-operator \ --namespace traefik \ 
     </item>
     
     <item>
-      <title>How to copy domains</title>
+      <title>Copy domains</title>
       <link>/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/</link>
       <pubDate>Thu, 11 Apr 2019 13:48:15 -0400</pubDate>
       
@@ -428,7 +428,7 @@ $ helm upgrade \ --reuse-values \ --set &amp;quot;kubernetes.namespaces={traefik
       <pubDate>Thu, 11 Apr 2019 13:50:15 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/cicd/tools/</guid>
-      <description>WebLogic Deploy Tooling (WDT) You can use several of the WDT tools in a CI/CD pipeline. For example, the createDomain tool creates a new domain based on a simple model, and updateDomain (and deployApps) uses the same model concept to update an existing domain (preserving the same domain encryption key). The deployApps tool is very similar to the updateDomain tool, but limits what can be updated to application related configuration attributes such as data sources and application archives.</description>
+      <description>WebLogic Deploy Tooling (WDT) You can use several of the WDT tools in a CI/CD pipeline. For example, the createDomain tool creates a new domain based on a simple model, and updateDomain (and deployApps) uses the same model concept to update an existing domain (preserving the same domain encryption key). The deployApps tool is very similar to the updateDomain tool, but limits what can be updated to application-related configuration attributes such as data sources and application archives.</description>
     </item>
     
     <item>

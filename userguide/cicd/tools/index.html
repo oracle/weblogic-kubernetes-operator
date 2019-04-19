@@ -12,17 +12,17 @@
     <title>Tools :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1555527073" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1555527073" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1555527073" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1555527073" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1555527073" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1555527073" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1555527073" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1555527073" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1555680373" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1555680373" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1555680373" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1555680373" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1555680373" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1555680373" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1555680373" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1555680373" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1555527073"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1555680373"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1555527073"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1555527073"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1555680373"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1555680373"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1555527073"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1555680373"></script>
 
     
   </div>
@@ -1075,9 +1075,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/" title="How to copy domains" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/" title="Copy domains" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/">
-        How to copy domains
+        Copy domains
         
         </a>
     </li>
@@ -2121,8 +2121,8 @@ in a CI/CD pipeline. For example, the
 <code>createDomain</code> tool creates a new domain based on a simple model, and
 <code>updateDomain</code> (and <code>deployApps</code>) uses the same model concept to update
 an existing domain (preserving the same domain encryption key). The <code>deployApps</code>
-tool is very similar to the updateDomain tool, but limits what can be updated
-to application related configuration attributes such as data sources and
+tool is very similar to the <code>updateDomain</code> tool, but limits what can be updated
+to application-related configuration attributes such as data sources and
 application archives.  The model used by these tools is a sparse set of
 attributes needed to create or update the domain. A model can be as sparse
 as providing only the WebLogic Server administrative password, although not very
@@ -2133,8 +2133,8 @@ interesting.  A good way to get a jumpstart on a model is to use the
 
 <ul>
 <li><em>The Domain Model</em> - Metadata model describing the desired domain.<br />
-The metadata domain model can be YAML or JSON and is documented <a href="https://github.com/oracle/weblogic-deploy-tooling#the-metadata-model">here</a>.</li>
-<li><em>The Archive Zip</em> - Binaries to supplement the model.<br />
+The metadata domain model can be written in YAML or JSON and is documented <a href="https://github.com/oracle/weblogic-deploy-tooling#the-metadata-model">here</a>.</li>
+<li><em>The Archive ZIP</em> - Binaries to supplement the model.<br />
 All binaries needed to supplement the model must be specified in an archive
 file, which is just a ZIP file with a specific directory structure. Optionally,
 the model can be stored inside the ZIP file, if desired. Any binaries not
@@ -3586,7 +3586,7 @@ if (!doNotTrack) {
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/" title="How to copy domains"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/" title="Copy domains"> <i class="fa fa-chevron-left"></i></a>
 		
 		
 			<a class="nav nav-next" href="/weblogic-kubernetes-operator/samples/" title="Samples" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
@@ -3599,20 +3599,20 @@ if (!doNotTrack) {
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1555527073"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1555527073"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1555527073"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1555527073"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1555527073"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1555527073"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1555527073"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1555680373"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1555527073"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1555527073"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1555527073"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1555680373"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1555527073" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1555527073"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1555680373" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1555680373"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
