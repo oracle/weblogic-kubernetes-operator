@@ -102,4 +102,4 @@ Configuration Overrides Usecases
 | Sticky Session | Use Case |
 | --- | --- |
 | Server affinity | Use a web application deployed on Weblogic cluster to track HTTP session. Test server-affinity by sending two HTTP requests to Weblogic and verify that all requests are directed to same Weblogic server |
-| Session state isolation | Verify that values saved in a clients session state are not visible to another client |
+| Session state isolation | Verify that values saved in a client session state are not visible to another client |
