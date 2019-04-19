@@ -62,4 +62,12 @@ public abstract class ClusterSpec {
   public List<V1Container> getContainers() {
     return Collections.emptyList();
   }
+
+  /**
+   * Returns the shutdown configuration.
+   *
+   * @return shutdown configuration
+   */
+  @Nonnull
+  public abstract Shutdown getShutdown();
 }

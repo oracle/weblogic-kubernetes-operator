@@ -114,6 +114,12 @@ public abstract class ServerSpecBase implements ServerSpec {
 
   @Override
   @Nonnull
+  public Shutdown getShutdown() {
+    return new Shutdown();
+  }
+
+  @Override
+  @Nonnull
   public Map<String, String> getNodeSelectors() {
     return Collections.emptyMap();
   }

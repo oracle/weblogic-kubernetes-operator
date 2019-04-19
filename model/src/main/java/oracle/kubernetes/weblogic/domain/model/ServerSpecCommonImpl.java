@@ -144,6 +144,12 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
 
   @Nonnull
   @Override
+  public Shutdown getShutdown() {
+    return server.getShutdown();
+  }
+
+  @Nonnull
+  @Override
   public Map<String, String> getNodeSelectors() {
     return server.getNodeSelector();
   }
