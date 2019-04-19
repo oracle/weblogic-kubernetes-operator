@@ -60,22 +60,28 @@ public class AnnotationHelper {
     return service;
   }
 
-  static String getDebugString(V1Pod pod) {
-    return pod.getMetadata().getAnnotations().get(HASHED_STRING);
-  }
-
   static String getHash(V1Pod pod) {
-    return Optional.ofNullable(pod.getMetadata())
-        .map(V1ObjectMeta::getAnnotations)
-        .map(AnnotationHelper::getSha256Annotation)
-        .orElse("");
+    return getAnnotation(pod.getMetadata(), AnnotationHelper::getSha256Annotation);
   }
 
   static String getHash(V1Service service) {
-    return Optional.ofNullable(service.getMetadata())
+    return getAnnotation(service.getMetadata(), AnnotationHelper::getSha256Annotation);
+  }
+
+  static String getDebugString(V1Pod pod) {
+    return getAnnotation(pod.getMetadata(), AnnotationHelper::getDebugHashAnnotation);
+  }
+
+  private static String getAnnotation(
+      V1ObjectMeta metadata, Function<Map<String, String>, String> annotationGetter) {
+    return Optional.ofNullable(metadata)
         .map(V1ObjectMeta::getAnnotations)
-        .map(AnnotationHelper::getSha256Annotation)
+        .map(annotationGetter)
         .orElse("");
+  }
+
+  private static String getDebugHashAnnotation(Map<String, String> annotations) {
+    return annotations.get(HASHED_STRING);
   }
 
   private static String getSha256Annotation(Map<String, String> annotations) {
