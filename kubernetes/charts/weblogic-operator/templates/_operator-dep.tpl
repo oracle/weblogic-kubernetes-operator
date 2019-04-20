@@ -66,8 +66,15 @@ spec:
             command:
               - "bash"
               - "/operator/livenessProbe.sh"
-          initialDelaySeconds: 120
+          initialDelaySeconds: 20
           periodSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+              - "bash"
+              - "/operator/readinessProbe.sh"
+          initialDelaySeconds: 2
+          periodSeconds: 10
       {{- if .elkIntegrationEnabled }}
       - name: "logstash"
         image: {{ .logStashImage | quote }}
