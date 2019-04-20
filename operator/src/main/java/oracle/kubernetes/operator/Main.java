@@ -174,9 +174,6 @@ public class Main {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
 
-    // start liveness thread
-    startLivenessThread();
-
     try {
       engine.getExecutor().execute(Main::begin);
 
@@ -225,6 +222,12 @@ public class Main {
           .getExecutor()
           .scheduleWithFixedDelay(
               recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+
+      // Wait until all other initialization is done before marking ready and
+      // starting liveness thread
+
+      // mark ready and start liveness thread
+      markReadyAndStartLivenessThread();
 
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -429,10 +432,16 @@ public class Main {
     RestServer.destroy();
   }
 
-  private static void startLivenessThread() {
-    LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
-    // every five seconds we need to update the last modified time on the liveness file
-    wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(), 5, 5, TimeUnit.SECONDS);
+  private static void markReadyAndStartLivenessThread() {
+    try {
+      OperatorReady.create();
+
+      LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
+      // every five seconds we need to update the last modified time on the liveness file
+      wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(), 5, 5, TimeUnit.SECONDS);
+    } catch (IOException io) {
+      LOGGER.severe(MessageKeys.EXCEPTION, io);
+    }
   }
 
   private static final Semaphore shutdownSignal = new Semaphore(0);
