@@ -35,16 +35,16 @@ public class Domain {
   public static final String CREATE_DOMAIN_JOB_MESSAGE =
       "Domain base_domain was created and will be started by the WebLogic Kubernetes Operator";
 
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
-  private Map<String, Object> domainMap;
+  protected Map<String, Object> domainMap;
   private Map<String, Object> pvMap;
 
   // attributes from domain properties
-  private String domainUid = "";
+  protected String domainUid = "";
   // default values as in create-weblogic-domain-inputs.yaml, generated yaml file will have the
   // customized property values
-  private String domainNS;
+  protected String domainNS;
   private String adminServerName;
   private String managedServerNameBase;
   private int initialManagedServerReplicas;
@@ -58,11 +58,11 @@ public class Domain {
   private String loadBalancer = "TRAEFIK";
   private int loadBalancerWebPort = 30305;
   private String domainHomeImageBuildPath = "";
-  private String userProjectsDir = "";
+  protected String userProjectsDir = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
 
-  private String generatedInputYamlFile;
+  protected String generatedInputYamlFile;
 
   private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTime = BaseTest.getWaitTimePod();
@@ -72,6 +72,10 @@ public class Domain {
   private static String LB_TYPE;
   // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
   private static boolean INGRESSPERDOMAIN = true;
+
+  public Domain() throws Exception {
+    domainMap = new HashMap<>();
+  }
 
   public Domain(String inputYaml) throws Exception {
     // read input domain yaml to test
@@ -780,7 +784,7 @@ public class Domain {
    *     error occurs or any errors while creating PV dir or generating PV/PVC input file or any
    *     errors while executing sample create-pv-pvc.sh script
    */
-  private void createPV() throws Exception {
+  protected void createPV() throws Exception {
 
     Yaml yaml = new Yaml();
     InputStream pv_is =
@@ -1013,7 +1017,7 @@ public class Domain {
    *
    * @throws Exception when the kubectl create secret command fails or label secret fails
    */
-  private void createSecret() throws Exception {
+  protected void createSecret() throws Exception {
     Secret secret =
         new Secret(
             domainNS,
@@ -1034,7 +1038,7 @@ public class Domain {
    *
    * @throws Exception if the dir/file can not be created
    */
-  private void generateInputYaml() throws Exception {
+  protected void generateInputYaml() throws Exception {
     Path parentDir =
         Files.createDirectories(Paths.get(userProjectsDir + "/weblogic-domains/" + domainUid));
     generatedInputYamlFile = parentDir + "/weblogic-domain-values.yaml";
@@ -1051,7 +1055,7 @@ public class Domain {
    * @throws Exception if git clone fails or if createDomainPyScript can not be copied or if the
    *     cluster topology file can not be copied or if create-domain.sh fails
    */
-  private void callCreateDomainScript(String outputDir) throws Exception {
+  protected void callCreateDomainScript(String outputDir) throws Exception {
 
     // call different create domain script based on the domain type
     String createDomainScriptCmd = prepareCmdToCallCreateDomainScript(outputDir);
@@ -1281,7 +1285,7 @@ public class Domain {
    * @throws Exception if removing the results dir fails or if create-domain-inputs.yaml cannot be
    *     accessed to read or if creating config map or secret fails for configoverrides
    */
-  private void initialize(Map<String, Object> inputDomainMap) throws Exception {
+  protected void initialize(Map<String, Object> inputDomainMap) throws Exception {
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
@@ -1551,6 +1555,9 @@ public class Domain {
           .append(" -p ")
           .append(BaseTest.getPassword())
           .append(" -k -i ");
+    } else if (domainMap.containsKey("rcuCredentialsSecret")) {
+      createDomainScriptCmd.append(
+          "/samples/scripts/create-fmw-infrastructure-domain/create-domain.sh -v -i ");
     } else {
       createDomainScriptCmd.append(
           "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
