@@ -95,15 +95,7 @@ function state_dump {
   echo "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_job.out
 
-  if [ "$SHARED_CLUSTER" = "true" ]; then
-	$SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" 2>&1 | tee ${outfile}
-	if [ "$?" = "0" ]; then
-     	echo Job complete.
-  	else
-    	echo Job failed.  See ${outfile}.
-  	fi
-  else
-  
+  if [ "$JENKINS" = "true" ] || [ "$SHARED_CLUSTER" = "true" ]; then
   	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
   	if [ "$?" = "0" ]; then
     	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
@@ -114,15 +106,13 @@ function state_dump {
    			else 
    				echo Run failed. 
    			fi
-   			if [ "$JENKINS" = "true" ]; then
-	   			# Jenkins can only publish logs under the workspace
-				mkdir -p ${JENKINS_RESULTS_DIR}
-				cp $ARCHIVE ${JENKINS_RESULTS_DIR}
-				if [ "$?" = "0" ]; then
-	   				echo Copy complete. Archive $ARCHIVE copied to ${JENKINS_RESULTS_DIR}
-	   			else 
-	   				echo Failed to copy archive $ARCHIVE to ${JENKINS_RESULTS_DIR}
-	   			fi
+   			# Jenkins can only publish logs under the workspace
+			mkdir -p ${JENKINS_RESULTS_DIR}
+			cp $ARCHIVE ${JENKINS_RESULTS_DIR}
+			if [ "$?" = "0" ]; then
+   				echo Copy complete. Archive $ARCHIVE copied to ${JENKINS_RESULTS_DIR}
+   			else 
+   				echo Failed to copy archive $ARCHIVE to ${JENKINS_RESULTS_DIR}
 	   		fi
 	 	else
      		# command failed
