@@ -7,11 +7,15 @@ package oracle.kubernetes.operator.utils;
 import java.util.logging.Logger;
 
 public class Secret {
-  private String secretName;
-  private String namespace;
-  private String username;
-  private String password;
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  protected String secretName;
+  protected String namespace;
+  protected String username;
+  protected String password;
+  protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+
+  public Secret() throws Exception {
+    secretName = "";
+  }
 
   public Secret(String namespace, String secretName, String username, String password)
       throws Exception {
