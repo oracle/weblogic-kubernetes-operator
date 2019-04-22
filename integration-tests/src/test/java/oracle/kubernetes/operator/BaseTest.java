@@ -649,11 +649,8 @@ public class BaseTest {
     StringBuffer cmd =
         new StringBuffer(
             "export RESULT_ROOT=$RESULT_ROOT && export PV_ROOT=$PV_ROOT && export IT_CLASS=");
-    cmd.append(iTClassName);
-    if (JENKINS) {
-      cmd.append(" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} ");
-    }
-    cmd.append(" && ")
+    cmd.append(iTClassName)
+        .append(" && export JENKINS_RESULTS_DIR=${WORKSPACE}/logdir/${BUILD_TAG} && ")
         .append(BaseTest.getProjectRoot())
         .append("/integration-tests/src/test/resources/statedump.sh");
     logger.info("Running " + cmd);
