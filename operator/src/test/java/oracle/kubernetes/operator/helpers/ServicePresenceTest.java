@@ -23,6 +23,7 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceSpec;
 import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -499,6 +500,22 @@ public class ServicePresenceTest {
     processor.dispatchServiceWatch(event);
 
     assertThat(info.getExternalService(SERVER), nullValue());
+  }
+
+  @Test
+  public void whenEventContainsServiceWithNodePortAndNoTypeLabel_addAsExternalService() {
+    V1Service service =
+        new V1Service()
+            .metadata(
+                createMetadata()
+                    .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
+                    .putLabelsItem(SERVERNAME_LABEL, SERVER))
+            .spec(new V1ServiceSpec().type(ServiceHelper.NODE_PORT_TYPE));
+    Watch.Response<V1Service> event = WatchEvent.createAddedEvent(service).toWatchResponse();
+
+    processor.dispatchServiceWatch(event);
+
+    assertThat(info.getExternalService(SERVER), sameInstance(service));
   }
 
   private V1Service createClusterService() {

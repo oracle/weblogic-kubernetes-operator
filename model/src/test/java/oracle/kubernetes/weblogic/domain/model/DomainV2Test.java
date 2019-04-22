@@ -1104,6 +1104,35 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain2ReadFromYaml_ShutdownIsReadFromSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    Shutdown shutdown = domain.getSpec().getShutdown();
+    assertThat(shutdown.getShutdownType(), is("Graceful"));
+    assertThat(shutdown.getTimeoutSeconds(), is(45));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_ShutdownIsReadFromClusterSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    Shutdown shutdown = domain.getCluster("cluster2").getShutdown();
+    assertThat(shutdown.getShutdownType(), is("Graceful"));
+    assertThat(shutdown.getTimeoutSeconds(), is(45));
+    assertThat(shutdown.getIgnoreSessions(), is(true));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_ShutdownIsReadFromServerSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    Shutdown shutdown = domain.getServer("server2", "cluster2").getShutdown();
+    assertThat(shutdown.getShutdownType(), is("Graceful"));
+    assertThat(shutdown.getTimeoutSeconds(), is(60));
+    assertThat(shutdown.getIgnoreSessions(), is(false));
+  }
+
+  @Test
   public void whenDomain2ReadFromYaml_serviceAnnotationsFound() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer("server2", "cluster1");
