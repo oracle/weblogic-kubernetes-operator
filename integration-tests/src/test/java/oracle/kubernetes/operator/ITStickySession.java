@@ -185,9 +185,8 @@ public class ITStickySession extends BaseTest {
   /**
    * Use a web application deployed on Weblogic cluster to track HTTP session. In-memory replication
    * persistence method is configured to implement session persistence. server-affinity is achieved
-   * by Voyager load balancer based on HTTP session information. This test sends two
-   * HTTP requests from two different clients to Weblogic and verify that HTTP sessions are
-   * isolated.
+   * by Voyager load balancer based on HTTP session information. This test sends two HTTP requests
+   * from two different clients to Weblogic and verify that HTTP sessions are isolated.
    *
    * @throws Exception
    */
