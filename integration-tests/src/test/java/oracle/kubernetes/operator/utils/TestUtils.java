@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
@@ -193,6 +194,12 @@ public class TestUtils {
         .append(" | wc -l");
 
     checkCmdInLoopForDelete(cmd.toString(), "\"" + domainUid + "\" not found", domainUid);
+  }
+
+  public static void checkNamespaceDeleted(String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get ns ").append(namespace);
+    checkCmdInLoopForDelete(cmd.toString(), "\"" + namespace + "\" not found", namespace);
   }
 
   public static void deletePVC(String pvcName, String namespace, String domainUid)
@@ -1050,6 +1057,23 @@ public class TestUtils {
     k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
   }
 
+  /**
+   * Replaces the string matching the given search pattern with a new string.
+   *
+   * @param filename - filename in which the string will be replaced
+   * @param originalString - the string which needs to be replaced
+   * @param newString - the new string to replace
+   * @throws Exception - if any error occurs
+   */
+  public static void replaceStringInFile(String filename, String originalString, String newString)
+      throws Exception {
+    Path path = Paths.get(filename);
+
+    String content = new String(Files.readAllBytes(path));
+    content = content.replaceAll(originalString, newString);
+    Files.write(path, content.getBytes());
+  }
+
   private static KeyStore createKeyStore(Operator operator) throws Exception {
     // get operator external certificate from weblogic-operator.yaml
     String opExtCertFile = getExternalOperatorCertificate(operator);
@@ -1076,7 +1100,7 @@ public class TestUtils {
     return myKeyStore;
   }
 
-  private static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
+  public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
       throws Exception {
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
@@ -1094,7 +1118,7 @@ public class TestUtils {
         logger.info(
             "Pod "
                 + k8sObjName
-                + " is not Running Ite ["
+                + " is not Running/Ready Ite ["
                 + i
                 + "/"
                 + BaseTest.getMaxIterationsPod()
@@ -1117,7 +1141,12 @@ public class TestUtils {
     while (i < BaseTest.getMaxIterationsPod()) {
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0) {
-        throw new RuntimeException("FAILURE: Command " + cmd + " failed " + result.stderr());
+        if (result.stderr().contains(matchStr)) {
+          logger.info("DEBUG: " + result.stderr());
+          break;
+        } else {
+          throw new RuntimeException("FAILURE: Command " + cmd + " failed " + result.stderr());
+        }
       }
       if (result.exitValue() == 0 && !result.stdout().trim().equals("0")) {
         logger.info("Command " + cmd + " returned " + result.stdout());
