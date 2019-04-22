@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -85,10 +85,10 @@ public class VersionCheckTest {
           {LOG_MSG_TEST, "0", "", "", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
           {LOG_MSG_TEST, "1", "6+", "", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
           {LOG_MSG_TEST, "1", "10", "1+cor.0", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
-          {LOG_MSG_TEST, "1", "10", "11", containsInfo(K8S_VERSION_CHECK), noIgnores()},
-          {LOG_MSG_TEST, "1", "11", "4", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
+          {LOG_MSG_TEST, "1", "10", "11", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
+          {LOG_MSG_TEST, "1", "11", "0", containsInfo(K8S_VERSION_CHECK), noIgnores()},
           {LOG_MSG_TEST, "1", "11", "6", containsInfo(K8S_VERSION_CHECK), noIgnores()},
-          {LOG_MSG_TEST, "1", "12", "2", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()},
+          {LOG_MSG_TEST, "1", "12", "0", containsInfo(K8S_VERSION_CHECK), noIgnores()},
           {LOG_MSG_TEST, "1", "12", "3", containsInfo(K8S_VERSION_CHECK), noIgnores()},
           {VERSION_TEST, "1", "13", "3", returnsVersion(1, 13), ignoring(K8S_VERSION_CHECK)},
           {LOG_MSG_TEST, "1", "13", "3", containsInfo(K8S_VERSION_CHECK), noIgnores()},
