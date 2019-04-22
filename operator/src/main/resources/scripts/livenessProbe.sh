@@ -34,8 +34,4 @@ if [ -f ${STATEFILE} ] && [ `grep -c "FAILED_NOT_RESTARTABLE" ${STATEFILE}` -eq 
   trace "Error: WebLogic Server state is FAILED_NOT_RESTARTABLE."
   exit $RETVAL
 fi
-if [ -f ${STATEFILE} ] && [ `grep -c "SHUTDOWN" ${STATEFILE}` -eq 1 ]; then
-  trace "Error: WebLogic Server state is SHUTDOWN."
-  exit $RETVAL
-fi
 exit 0

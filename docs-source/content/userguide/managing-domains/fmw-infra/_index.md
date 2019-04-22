@@ -66,14 +66,12 @@ is provided that demonstrates how to create a Docker image with the necessary pa
 After downloading the patch from My Oracle Support, you can create the patched image
 by running the provided script:
 
-TODO TODO TODO check with monica's sample to ensure this is correct TODO TODO TODO
-
 ```bash
 cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
 ./buildDockerImage.sh 
 ```
 
-This will produce an image named `TODO TODO TODO monica what is it called TODO TODO TODO`.
+This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
 
 These sample will allow you to create a Docker image containing the FMW Infrastructure
 binaries and the necessary patch.  You can use this image to run the Repository Creation Utility

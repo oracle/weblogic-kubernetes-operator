@@ -41,7 +41,3 @@ To confirm that the domain resource was created, use this command:
 ```
 $ kubectl describe domain [domain name] -n [namespace]
 ```
-
-
-
-
