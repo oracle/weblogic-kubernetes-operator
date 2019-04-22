@@ -493,6 +493,10 @@
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
+        },
+        "shutdown": {
+          "description": "Configures how the operator should shutdown the server instance.",
+          "$ref": "#/definitions/Shutdown"
         }
       }
     },
@@ -518,6 +522,28 @@
         "state": {
           "description": "Current state of this WebLogic server. Required",
           "type": "string"
+        }
+      }
+    },
+    "Shutdown": {
+      "description": "Shutdown describes the configuration for shutting down a server instance.",
+      "type": "object",
+      "properties": {
+        "ignoreSessions": {
+          "description": "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling. Not required. Defaults to false.",
+          "type": "boolean"
+        },
+        "shutdownType": {
+          "description": "Tells the operator how to shutdown server instances. Not required. Defaults to graceful shutdown.",
+          "type": "string",
+          "enum": [
+            "Graceful",
+            "Forced"
+          ]
+        },
+        "timeoutSeconds": {
+          "description": "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Not required. Defaults to 30 seconds.",
+          "type": "number"
         }
       }
     },

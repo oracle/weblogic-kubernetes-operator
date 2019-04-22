@@ -53,6 +53,8 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 public class ServiceHelper {
+  public static final String CLUSTER_IP_TYPE = "ClusterIP";
+  public static final String NODE_PORT_TYPE = "NodePort";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private ServiceHelper() {}
@@ -72,23 +74,23 @@ public class ServiceHelper {
   }
 
   public static void addToPresence(DomainPresenceInfo info, V1Service service) {
-    KubernetesServiceType.getType(service).addToPresence(info, service);
+    OperatorServiceType.getType(service).addToPresence(info, service);
   }
 
   public static void updatePresenceFromEvent(DomainPresenceInfo info, V1Service service) {
-    KubernetesServiceType.getType(service).updateFromEvent(info, service);
+    OperatorServiceType.getType(service).updateFromEvent(info, service);
   }
 
   public static V1Service[] getServerServices(DomainPresenceInfo info) {
-    return KubernetesServiceType.SERVER.getServices(info);
+    return OperatorServiceType.SERVER.getServices(info);
   }
 
   public static boolean isServerService(V1Service service) {
-    return KubernetesServiceType.getType(service) == KubernetesServiceType.SERVER;
+    return OperatorServiceType.getType(service) == OperatorServiceType.SERVER;
   }
 
   public static boolean deleteFromEvent(DomainPresenceInfo info, V1Service service) {
-    return KubernetesServiceType.getType(service).deleteFromEvent(info, service);
+    return OperatorServiceType.getType(service).deleteFromEvent(info, service);
   }
 
   public static String getServiceDomainUID(V1Service service) {
@@ -112,6 +114,14 @@ public class ServiceHelper {
 
   public static String getClusterName(V1Service service) {
     return getLabelValue(service, LabelConstants.CLUSTERNAME_LABEL);
+  }
+
+  static boolean isNodePortType(V1Service service) {
+    return NODE_PORT_TYPE.equals(getSpecType(service));
+  }
+
+  private static String getSpecType(V1Service service) {
+    return Optional.ofNullable(service.getSpec()).map(V1ServiceSpec::getType).orElse("");
   }
 
   private static class ForServerStep extends ServiceHelperStep {
@@ -149,7 +159,7 @@ public class ServiceHelper {
     final WlsServerConfig scan;
 
     ServerServiceStepContext(Step conflictStep, Packet packet) {
-      super(conflictStep, packet, KubernetesServiceType.SERVER);
+      super(conflictStep, packet, OperatorServiceType.SERVER);
       serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
       scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
@@ -252,7 +262,7 @@ public class ServiceHelper {
 
     @Override
     protected String getSpecType() {
-      return "ClusterIP";
+      return CLUSTER_IP_TYPE;
     }
 
     @Override
@@ -281,9 +291,9 @@ public class ServiceHelper {
     protected List<V1ServicePort> ports;
     DomainPresenceInfo info;
     WlsDomainConfig domainTopology;
-    private KubernetesServiceType serviceType;
+    private OperatorServiceType serviceType;
 
-    ServiceStepContext(Step conflictStep, Packet packet, KubernetesServiceType serviceType) {
+    ServiceStepContext(Step conflictStep, Packet packet, OperatorServiceType serviceType) {
       this.conflictStep = conflictStep;
       info = packet.getSPI(DomainPresenceInfo.class);
       domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
@@ -591,7 +601,7 @@ public class ServiceHelper {
     private final WlsDomainConfig config;
 
     ClusterStepContext(Step conflictStep, Packet packet) {
-      super(conflictStep, packet, KubernetesServiceType.CLUSTER);
+      super(conflictStep, packet, OperatorServiceType.CLUSTER);
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
       config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     }
@@ -624,7 +634,7 @@ public class ServiceHelper {
 
     @Override
     protected String getSpecType() {
-      return "ClusterIP";
+      return CLUSTER_IP_TYPE;
     }
 
     protected V1ObjectMeta createMetadata() {
@@ -719,7 +729,7 @@ public class ServiceHelper {
     private final String adminServerName;
 
     ExternalServiceStepContext(Step conflictStep, Packet packet) {
-      super(conflictStep, packet, KubernetesServiceType.EXTERNAL);
+      super(conflictStep, packet, OperatorServiceType.EXTERNAL);
       adminServerName = (String) packet.get(ProcessingConstants.SERVER_NAME);
     }
 
@@ -741,7 +751,7 @@ public class ServiceHelper {
 
     @Override
     protected String getSpecType() {
-      return "NodePort";
+      return NODE_PORT_TYPE;
     }
 
     @Override

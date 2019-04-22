@@ -146,9 +146,6 @@ public class DomainStatusUpdater {
         }
       }
 
-      // This will control if we need to re-check states soon or if we can slow down checks
-      packet.put(ProcessingConstants.STATUS_UNCHANGED, !status.isModified());
-
       if (status.isModified()) {
         LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUID(), status);
       }
