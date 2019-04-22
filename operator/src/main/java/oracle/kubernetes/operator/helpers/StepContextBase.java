@@ -82,6 +82,24 @@ public abstract class StepContextBase implements StepContextConstants {
     }
   }
 
+  protected V1EnvVar findEnvVar(List<V1EnvVar> vars, String name) {
+    for (V1EnvVar var : vars) {
+      if (name.equals(var.getName())) {
+        return var;
+      }
+    }
+    return null;
+  }
+
+  protected void addOrReplaceEnvVar(List<V1EnvVar> vars, String name, String value) {
+    V1EnvVar var = findEnvVar(vars, name);
+    if (var != null) {
+      var.value(value);
+    } else {
+      addEnvVar(vars, name, value);
+    }
+  }
+
   // Hide the admin account's user name and password.
   // Note: need to use null v.s. "" since if you upload a "" to kubectl then download it,
   // it comes back as a null and V1EnvVar.equals returns false even though it's supposed to

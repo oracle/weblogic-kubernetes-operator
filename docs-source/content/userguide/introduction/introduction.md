@@ -16,7 +16,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Prerequisites
 
-* Kubernetes 1.10.11+, 1.11.5+, 1.12.3+, and 1.13.0+  (check with `kubectl version`).
+* Kubernetes 1.11.5+, 1.12.3+, and 1.13.0+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
 * Docker 18.03.1.ce (check with `docker version`).
 * Helm 2.8.2+ (check with `helm version`).
