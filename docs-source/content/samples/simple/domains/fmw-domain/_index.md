@@ -165,7 +165,7 @@ The content of the generated `domain.yaml`:
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: "weblogic.oracle/v3"
+apiVersion: "weblogic.oracle/v4"
 kind: Domain
 metadata:
   name: fmw-domain
@@ -256,14 +256,14 @@ Namespace:    default
 Labels:       weblogic.domainUID=fmw-domain
               weblogic.resourceVersion=domain-v2
 Annotations:  kubectl.kubernetes.io/last-applied-configuration:
-                {"apiVersion":"weblogic.oracle/v3","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"fmw-domain","weblogic.reso...
-API Version:  weblogic.oracle/v3
+                {"apiVersion":"weblogic.oracle/v4","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"fmw-domain","weblogic.reso...
+API Version:  weblogic.oracle/v4
 Kind:         Domain
 Metadata:
   Creation Timestamp:  2019-04-18T00:11:15Z
   Generation:          23
   Resource Version:    5904947
-  Self Link:           /apis/weblogic.oracle/v3/namespaces/default/domains/fmw-domain
+  Self Link:           /apis/weblogic.oracle/v4/namespaces/default/domains/fmw-domain
   UID:                 7b3477e2-616e-11e9-ab7b-000017024fa2
 Spec:
   Admin Server:
