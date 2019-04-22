@@ -16,7 +16,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Prerequisites
 
-* Kubernetes 1.11.5+, 1.12.3+, and 1.13.0+  (check with `kubectl version`).
+* Kubernetes 1.11.0+, 1.12.3+, and 1.13.0+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 (check with `docker images | grep flannel`).
 * Docker 18.03.1.ce (check with `docker version`).
 * Helm 2.8.2+ (check with `helm version`).
@@ -29,7 +29,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### OpenShift
 
-Operator 2.0.1+ is certified for use on OpenShift 3.11.43+, with Kubernetes 1.11.5+
+Operator 2.0.1+ is certified for use on OpenShift 3.11, with Kubernetes 1.11.0+.
 
 When using the operator in OpenShift, the anyuid security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
 
