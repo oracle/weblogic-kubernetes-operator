@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /** Kubernetes pods and services associated with a single WebLogic server. */
 class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
-  private final AtomicReference<String> lastKnownStatus = new AtomicReference<>(null);
+  private final AtomicReference<LastKnownStatus> lastKnownStatus = new AtomicReference<>(null);
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
   private final AtomicReference<V1Service> externalService = new AtomicReference<>();
 
@@ -31,7 +31,7 @@ class ServerKubernetesObjects {
    *
    * @return Status
    */
-  AtomicReference<String> getLastKnownStatus() {
+  AtomicReference<LastKnownStatus> getLastKnownStatus() {
     return lastKnownStatus;
   }
 

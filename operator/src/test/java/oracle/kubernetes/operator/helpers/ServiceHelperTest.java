@@ -206,7 +206,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   public void whenCreated_modelKubernetesTypeIsCorrect() {
     V1Service model = testFacade.createServiceModel(testSupport.getPacket());
 
-    assertThat(KubernetesServiceType.getType(model), equalTo(testFacade.getType()));
+    assertThat(OperatorServiceType.getType(model), equalTo(testFacade.getType()));
   }
 
   @Test
@@ -458,7 +458,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     private Map<String, Integer> expectedNapPorts = new HashMap<>();
     private Map<String, Integer> expectedNodePorts = new HashMap<>();
 
-    abstract KubernetesServiceType getType();
+    abstract OperatorServiceType getType();
 
     abstract String getServiceCreateLogMessage();
 
@@ -515,8 +515,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     }
 
     @Override
-    KubernetesServiceType getType() {
-      return KubernetesServiceType.CLUSTER;
+    OperatorServiceType getType() {
+      return OperatorServiceType.CLUSTER;
     }
 
     @Override
@@ -593,8 +593,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   abstract static class ServerTestFacade extends TestFacade {
 
     @Override
-    KubernetesServiceType getType() {
-      return KubernetesServiceType.SERVER;
+    OperatorServiceType getType() {
+      return OperatorServiceType.SERVER;
     }
 
     @Override
@@ -700,8 +700,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
     }
 
     @Override
-    KubernetesServiceType getType() {
-      return KubernetesServiceType.EXTERNAL;
+    OperatorServiceType getType() {
+      return OperatorServiceType.EXTERNAL;
     }
 
     @Override

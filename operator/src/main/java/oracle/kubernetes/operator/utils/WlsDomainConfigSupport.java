@@ -26,6 +26,11 @@ public class WlsDomainConfigSupport {
     this.domain = domain;
   }
 
+  public WlsDomainConfigSupport withWlsServer(String serverName, Integer listenPort) {
+    addWlsServer(serverName, listenPort);
+    return this;
+  }
+
   public WlsDomainConfigSupport withAdminServerName(String adminServerName) {
     setAdminServerName(adminServerName);
     return this;

@@ -1,10 +1,9 @@
 # Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
-
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
 #
-apiVersion: "weblogic.oracle/v3"
+apiVersion: "weblogic.oracle/v4"
 kind: Domain
 metadata:
   name: %DOMAIN_UID%
