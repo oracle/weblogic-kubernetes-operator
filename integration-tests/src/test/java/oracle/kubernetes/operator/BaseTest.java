@@ -127,7 +127,7 @@ public class BaseTest {
     }
 
     // for manual/local run, do cleanup
-    if (System.getenv("SHARED_CLUSTER") == null && System.getenv("JENKINS") == null) {
+    if (System.getenv("JENKINS") == null) {
 
       // delete k8s artifacts created if any, delete PV directories
       ExecResult clnResult = cleanup();

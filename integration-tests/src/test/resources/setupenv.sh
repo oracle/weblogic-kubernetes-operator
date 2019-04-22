@@ -10,6 +10,10 @@ function clean_jenkins {
 function setup_jenkins {
   echo "Setting up."
   /usr/local/packages/aime/ias/run_as_root "sh ${PROJECT_ROOT}/src/integration-tests/bash/install_docker_k8s.sh -y -u wls -v ${K8S_VERSION}"
+  if [ $? -ne 0 ]; then
+	  echo "k8s installation is not successful"
+	  exit 1
+  fi
   set +x
   . ~/.dockerk8senv
   set -x
