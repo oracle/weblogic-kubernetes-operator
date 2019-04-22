@@ -25,12 +25,12 @@ update to the documentation, follow this process:
 3. Make your documentation updates by editing the source files in
 `docs-source/content`.
 {{% notice note %}}
-Make sure you _only_ check in the changes from the `docs-source/content` area;
+Make sure you check in the changes from the `docs-source/content` area _only_;
 do not build the site and check in the static files.
 {{% /notice %}}
 
 4. If you wish to view your changes, you can run the site locally using
-these commands; the site will be available on the URL shown here:
+these commands. The site will be available on the URL shown here:
 
     ```
     cd docs-source
