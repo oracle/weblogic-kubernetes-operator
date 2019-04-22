@@ -145,7 +145,7 @@ function state_dump {
   rm -rf ${RESULT_DIR}/samples
   
   # now archive all the local test files
-  if [ "$JENKINS" = "true" ]; then
+  if [ "$JENKINS" = "true" ] || [ "$SHARED_CLUSTER" = "true" ]; then
   	$SCRIPTPATH/archive.sh "${RESULT_DIR}" "${JENKINS_RESULTS_DIR}"
   else 
   	$SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
