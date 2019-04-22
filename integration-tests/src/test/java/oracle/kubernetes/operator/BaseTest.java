@@ -669,9 +669,9 @@ public class BaseTest {
 
     if (JENKINS) {
       result = cleanup();
-      if (result.exitValue() != 0) {
-        logger.info("cleanup result =" + result.stdout() + "\n " + result.stderr());
-      }
+      // if (result.exitValue() != 0) {
+      logger.info("cleanup result =" + result.stdout() + "\n " + result.stderr());
+      // }
     }
 
     if (getLeaseId() != "") {
