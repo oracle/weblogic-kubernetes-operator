@@ -146,7 +146,7 @@ class ServerPod extends KubernetesResource {
     return this.shutdown;
   }
 
-  void setShutdown(String shutdownType, Integer timeoutSeconds, Boolean ignoreSessions) {
+  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions) {
     this.shutdown
         .shutdownType(shutdownType)
         .timeoutSeconds(timeoutSeconds)

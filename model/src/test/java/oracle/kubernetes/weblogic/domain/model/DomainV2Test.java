@@ -1109,7 +1109,7 @@ public class DomainV2Test extends DomainTestBase {
 
     Shutdown shutdown = domain.getSpec().getShutdown();
     assertThat(shutdown.getShutdownType(), is("Graceful"));
-    assertThat(shutdown.getTimeoutSeconds(), is(45));
+    assertThat(shutdown.getTimeoutSeconds(), is(45l));
   }
 
   @Test
@@ -1118,7 +1118,7 @@ public class DomainV2Test extends DomainTestBase {
 
     Shutdown shutdown = domain.getCluster("cluster2").getShutdown();
     assertThat(shutdown.getShutdownType(), is("Graceful"));
-    assertThat(shutdown.getTimeoutSeconds(), is(45));
+    assertThat(shutdown.getTimeoutSeconds(), is(45l));
     assertThat(shutdown.getIgnoreSessions(), is(true));
   }
 
@@ -1128,7 +1128,7 @@ public class DomainV2Test extends DomainTestBase {
 
     Shutdown shutdown = domain.getServer("server2", "cluster2").getShutdown();
     assertThat(shutdown.getShutdownType(), is("Graceful"));
-    assertThat(shutdown.getTimeoutSeconds(), is(60));
+    assertThat(shutdown.getTimeoutSeconds(), is(60l));
     assertThat(shutdown.getIgnoreSessions(), is(false));
   }
 
