@@ -12,17 +12,17 @@
     <title>Configuration overrides :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1555680373" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1555680373" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1555680373" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1555680373" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1555680373" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1555680373" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1555680373" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1555680373" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1556044575" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1556044575" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1556044575" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1556044575" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1556044575" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1556044575" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1556044575" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1556044575" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1556044575"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1555680373"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1555680373"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1556044575"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1556044575"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1555680373"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1556044575"></script>
 
     
   </div>
@@ -2508,37 +2508,43 @@
 <li>Templates must be formatted and named as per <a href="#override-template-names-and-syntax">Override template names and syntax</a>.</li>
 <li>Templates can embed macros that reference environment variables or Kubernetes secrets.  See <a href="#override-template-macros">Override template macros</a>.</li>
 </ul></li>
-<li>Create a Kubernetes configuration map from the directory of templates.
+
+<li><p>Create a Kubernetes configuration map from the directory of templates.</p>
 
 <ul>
 <li>The configuration map must be in the same Kubernetes namespace as the domain.</li>
 <li>If the configuration map is going to be used by a single <code>DOMAIN_UID</code>, then we recommend adding the <code>weblogic.domainUID=&lt;mydomainuid&gt;</code> label to help track the resource.</li>
-<li>For example, assuming <code>./mydir</code> contains your <code>version.txt</code> and situation configuration template files:
-<code>
-kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
+<li>For example, assuming <code>./mydir</code> contains your <code>version.txt</code> and situation configuration template files:</li>
+</ul>
+
+<pre><code>kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
 kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
-</code></li>
-</ul></li>
-<li>Create any Kubernetes secrets referenced by a template &lsquo;secret macro&rsquo;.
+</code></pre></li>
+
+<li><p>Create any Kubernetes secrets referenced by a template &lsquo;secret macro&rsquo;.</p>
 
 <ul>
 <li>Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords via <code>Opaque</code> type secrets in their <code>data</code> field, so that they can&rsquo;t be easily read at a casual glance. For more information, see <a href="https://kubernetes.io/docs/concepts/configuration/secret/">https://kubernetes.io/docs/concepts/configuration/secret/</a>.</li>
 <li>Secrets must be in the same Kubernetes namespace as the domain.</li>
 <li>If a secret is going to be used by a single <code>DOMAIN_UID</code>, then we recommend adding the <code>weblogic.domainUID=&lt;mydomainuid&gt;</code> label to help track the resource.</li>
 <li>For example:
-<code>
-kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
+<br /></li>
+</ul>
+
+<pre><code>kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
 kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
-</code></li>
-</ul></li>
-<li>Configure the name of the configuration map in the domain CR <code>configOverrides</code> field.</li>
-<li>Configure the names of each secret in domain CR.
+</code></pre></li>
+
+<li><p>Configure the name of the configuration map in the domain CR <code>configOverrides</code> field.</p></li>
+
+<li><p>Configure the names of each secret in domain CR.</p>
 
 <ul>
 <li>If the secret contains the WebLogic admin <code>username</code> and <code>password</code> keys, then set the domain CR <code>webLogicCredentialsSecret</code> field.</li>
 <li>For all other secrets, add them to the domain CR <code>configOverrideSecrets</code> field. Note: This must be in an array format even if you only add one secret (see the sample domain resource YAML below).</li>
 </ul></li>
-<li>Any override changes require stopping all WebLogic pods, applying your domain resource (if it changed), and restarting the WebLogic pods before they can take effect.
+
+<li><p>Any override changes require stopping all WebLogic pods, applying your domain resource (if it changed), and restarting the WebLogic pods before they can take effect.</p>
 
 <ul>
 <li>Custom override changes on an existing running domain, such as updating an override configuration map, a secret, or a domain resource, will not take effect until all running WebLogic Server pods in your domain are shutdown (so no servers are left running), and the domain is subsequently restarted with your new domain resource (if it changed), or with your existing domain resource (if you haven&rsquo;t changed it).</li>
@@ -2549,7 +2555,8 @@ kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
 <li>Or delete your domain resource, wait, and apply your (potentially changed) domain resource.</li>
 </ul></li>
 </ul></li>
-<li>See <a href="#debugging">Debugging</a> for ways to check if the situational configuration is taking effect or if there are errors.</li>
+
+<li><p>See <a href="#debugging">Debugging</a> for ways to check if the situational configuration is taking effect or if there are errors.</p></li>
 </ul>
 
 <p>Example domain resource YAML:</p>
@@ -4120,20 +4127,20 @@ at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(Doma
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1555680373"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1555680373"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1555680373"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1555680373"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1555680373"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1555680373"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1556044575"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1555680373"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1555680373"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1555680373"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1556044575"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1555680373" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1555680373"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1556044575" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1556044575"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
