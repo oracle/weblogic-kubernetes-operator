@@ -37,7 +37,7 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 public class PodHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final int DEFAULT_ADDITIONAL_DELETE_TIME = 10;
+  static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
 
   private PodHelper() {}
 
