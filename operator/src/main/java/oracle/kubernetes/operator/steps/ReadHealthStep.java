@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.HttpClient;
@@ -153,7 +154,9 @@ public class ReadHealthStep extends Step {
                 (ConcurrentMap<String, ServerHealth>)
                     packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
             serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
-            packet.put(ProcessingConstants.SERVER_HEALTH_READ, Boolean.TRUE);
+            AtomicInteger serverHealthRead =
+                packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ);
+            serverHealthRead.getAndDecrement();
           }
         }
         return doNext(packet);
