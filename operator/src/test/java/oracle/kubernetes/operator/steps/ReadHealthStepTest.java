@@ -45,12 +45,16 @@ public class ReadHealthStepTest {
   private static final String ADMIN_NAME = "admin-server";
   private static final int ADMIN_PORT_NUM = 3456;
 
+  private static final String MANAGED_SERVER1 = "managed-server1";
+  private static final int MANAGED_SERVER1_PORT_NUM = 8001;
+
   private List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
   private static final WlsDomainConfigSupport configSupport =
       new WlsDomainConfigSupport(DOMAIN_NAME)
           .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
+          .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
           .withAdminServerName(ADMIN_NAME);
 
   @Before
@@ -104,7 +108,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void withHttpClientStep_decrmentServerHealthReadInPacketIfSucceeded() {
+  public void withHttpClientStep_decrementRemainingServerHealthReadInPacketIfSucceeded() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
     final String SERVER_NAME = ADMIN_NAME;
@@ -122,6 +126,38 @@ public class ReadHealthStepTest {
     ReadHealthWithHttpClientStep withHttpClientStep =
         new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
+
+    assertThat(
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ)).get(),
+        is(0));
+  }
+
+  @Test
+  public void withHttpClientStep_decrementRemainingServerHealthReadInMultipleClonedPackets() {
+    V1Service service = Stub.createStub(V1ServiceStub.class);
+    Step next = new MockStep(null);
+
+    HttpClientStub httpClientStub = Stub.createStub(HttpClientStub.class);
+
+    Packet packet = new Packet();
+    packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+    packet.put(HttpClient.KEY, httpClientStub);
+    packet.put(
+        ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ, new AtomicInteger(2));
+
+    ReadHealthWithHttpClientStep withHttpClientStep1 =
+        new ReadHealthWithHttpClientStep(service, null, next);
+    ReadHealthWithHttpClientStep withHttpClientStep2 =
+        new ReadHealthWithHttpClientStep(service, null, next);
+
+    Packet packet1 = packet.clone();
+    packet1.put(ProcessingConstants.SERVER_NAME, ADMIN_NAME);
+    withHttpClientStep1.apply(packet1);
+
+    Packet packet2 = packet.clone();
+    packet2.put(ProcessingConstants.SERVER_NAME, MANAGED_SERVER1);
+    withHttpClientStep2.apply(packet2);
 
     assertThat(
         ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ)).get(),
