@@ -587,18 +587,19 @@ public abstract class PodStepContext extends StepContextBase {
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
 
-    insertShutdownEnvironmentVariables(pod);
+    updateForShutdown(pod);
     return pod;
   }
 
   /**
-   * Inserts into the pod the environment variables related to shutdown behavior.
+   * Inserts into the pod the environment variables and other configuration related to shutdown
+   * behavior.
    *
    * @param pod The pod
    */
-  final void insertShutdownEnvironmentVariables(V1Pod pod) {
+  final void updateForShutdown(V1Pod pod) {
     String shutdownType = GRACEFUL_SHUTDOWNTYPE;
-    int timeout = Shutdown.DEFAULT_TIMEOUT;
+    Long timeout = Shutdown.DEFAULT_TIMEOUT;
     boolean ignoreSessions = Shutdown.DEFAULT_IGNORESESSIONS;
     String serverName = null;
     String clusterName = null;
@@ -633,6 +634,8 @@ public abstract class PodStepContext extends StepContextBase {
         break;
       }
     }
+
+    pod.getSpec().terminationGracePeriodSeconds(timeout + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME);
   }
 
   private static boolean isCustomerItem(Map.Entry<String, String> entry) {

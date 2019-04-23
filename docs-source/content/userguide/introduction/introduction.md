@@ -29,7 +29,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### OpenShift
 
-Operator 2.0.1+ is certified for use on OpenShift 3.11.43+, with Kubernetes 1.11.5+
+Operator 2.0.1+ is certified for use on OpenShift 3.11.43+, with Kubernetes 1.11.5+.
 
 When using the operator in OpenShift, the anyuid security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain filesystem.
 
