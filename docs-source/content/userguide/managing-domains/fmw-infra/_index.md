@@ -353,19 +353,24 @@ is provided that demonstrates how to create a FMW Infrastructure domain.
 
 There are two kind of patches that can be applied to the FMW Infrastructure binaries:
 
-* ZDT compliant, meaning that the patch can be applied in a rolling fashion.
-* non-ZDT compliant, meaning that the domain must be shutdown and restarted.
+* Patches which are eligible for Zero Downtime Patching (ZDP), meaning that
+  they can be applied in a rolling fashion.
+* non ZDP eligible compliant patches, meaning that the domain must be shutdown 
+  and restarted. 
+  
+You can find out whether or not a patch is eligible for Zero Downtime Patching 
+by consulting the README file that accompanies the patch.
 
-If you wish to apply a ZDT compliant patch which can be applied in a rolling
+If you wish to apply a ZDP compliant patch which can be applied in a rolling
 fashion, after you have patched the domain image as shown in this 
 [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch),
 you can edit the domain custom resource with the name of the new image and
 the operator will initiate a rolling restart of the domain.
 
-If you wish to apply a non-ZDT compliant patch to the FMW Infrastructure binary image,
+If you wish to apply a non-ZDP compliant patch to the FMW Infrastructure binary image,
 you must shutdown the entire domain before applying the patch. Please see the documentation on 
 [domain life cycle operations]({{< relref "/userguide/managing-domains/domain-lifecycle/" >}})
 for more information.
 
-An example of a non-ZDT compliant patch is one that includes a schema change
+An example of a non-ZDP compliant patch is one that includes a schema change
 that can not be applied dynamically. 
