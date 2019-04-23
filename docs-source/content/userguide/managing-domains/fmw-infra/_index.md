@@ -349,3 +349,23 @@ Now that you have your Docker images and you have created your RCU schemas, you 
 to create your domain.  A [sample]({{< relref "/samples/simple/domains/fmw-domain/_index.md" >}})
 is provided that demonstrates how to create a FMW Infrastructure domain. 
 
+#### Patching the FMW Infrastructure Image
+
+There are two kind of patches that can be applied to the FMW Infrastructure binaries:
+
+* ZDT compliant, meaning that the patch can be applied in a rolling fashion.
+* non-ZDT compliant, meaning that the domain must be shutdown and restarted.
+
+If you wish to apply a ZDT compliant patch which can be applied in a rolling
+fashion, after you have patched the domain image as shown in this 
+[sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch),
+you can edit the domain custom resource with the name of the new image and
+the operator will initiate a rolling restart of the domain.
+
+If you wish to apply a non-ZDT compliant patch to the FMW Infrastructure binary image,
+you must shutdown the entire domain before applying the patch. Please see the documentation on 
+[domain life cycle operations]({{< relref "/userguide/managing-domains/domain-lifecycle/" >}})
+for more information.
+
+An example of a non-ZDT compliant patch is one that includes a schema change
+that can not be applied dynamically. 
