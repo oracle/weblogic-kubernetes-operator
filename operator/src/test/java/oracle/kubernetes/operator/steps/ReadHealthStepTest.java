@@ -95,7 +95,7 @@ public class ReadHealthStepTest {
     final String SERVER_NAME = ADMIN_NAME;
     Packet packet =
         Stub.createStub(PacketStub.class).withServerName(SERVER_NAME).withGetKeyReturnValue(null);
-    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ, new AtomicInteger(1));
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
 
     ReadHealthWithHttpClientStep withHttpClientStep =
         new ReadHealthWithHttpClientStep(service, null, next);
@@ -103,7 +103,7 @@ public class ReadHealthStepTest {
 
     assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT, SERVER_NAME));
     assertThat(
-        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ)).get(),
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
         is(1));
   }
 
@@ -121,14 +121,14 @@ public class ReadHealthStepTest {
             .withGetKeyReturnValue(httpClientStub);
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
-    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ, new AtomicInteger(1));
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
 
     ReadHealthWithHttpClientStep withHttpClientStep =
         new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
     assertThat(
-        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ)).get(),
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
         is(0));
   }
 
@@ -144,7 +144,7 @@ public class ReadHealthStepTest {
     packet.put(HttpClient.KEY, httpClientStub);
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
-    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ, new AtomicInteger(2));
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(2));
 
     ReadHealthWithHttpClientStep withHttpClientStep1 =
         new ReadHealthWithHttpClientStep(service, null, next);
@@ -160,7 +160,7 @@ public class ReadHealthStepTest {
     withHttpClientStep2.apply(packet2);
 
     assertThat(
-        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ)).get(),
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
         is(0));
   }
 

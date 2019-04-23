@@ -154,9 +154,9 @@ public class ReadHealthStep extends Step {
                 (ConcurrentMap<String, ServerHealth>)
                     packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
             serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
-            AtomicInteger serverHealthRead =
-                packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ);
-            serverHealthRead.getAndDecrement();
+            AtomicInteger remainingServersHealthToRead =
+                packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
+            remainingServersHealthToRead.getAndDecrement();
           }
         }
         return doNext(packet);
