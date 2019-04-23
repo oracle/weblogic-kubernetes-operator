@@ -69,8 +69,8 @@ public class ServerStatusReader {
       packet.put(SERVER_STATE_MAP, new ConcurrentHashMap<String, String>());
       packet.put(SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
 
-      AtomicInteger serverHealthRead = new AtomicInteger();
-      packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ, serverHealthRead);
+      AtomicInteger remainingServerHealthToRead = new AtomicInteger();
+      packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, remainingServerHealthToRead);
 
       Collection<StepAndPacket> startDetails =
           info.getServerPods()
@@ -80,7 +80,7 @@ public class ServerStatusReader {
       if (startDetails.isEmpty()) {
         return doNext(packet);
       } else {
-        serverHealthRead.set(startDetails.size());
+        remainingServerHealthToRead.set(startDetails.size());
         return doForkJoin(getNext(), packet, startDetails);
       }
     }
