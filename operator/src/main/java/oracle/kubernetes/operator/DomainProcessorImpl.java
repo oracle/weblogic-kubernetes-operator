@@ -316,7 +316,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                     @Override
                     public void onCompletion(Packet packet) {
                       AtomicInteger serverHealthRead =
-                          packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ);
+                          packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
                       if (serverHealthRead == null || serverHealthRead.get() == 0) {
                         loggingFilter.setFiltering(false).resetLogHistory();
                       } else {
