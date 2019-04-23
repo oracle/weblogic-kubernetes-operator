@@ -306,7 +306,8 @@ public class Operator {
         .append(generatedInputYamlFile)
         .append(" --namespace ")
         .append(operatorNS)
-        .append(" --wait --timeout 600");
+        .append(
+            " --set \"image=phx.ocir.io/weblogick8s/weblogic-kubernetes-operator:develop\" --set \"imagePullPolicy=Always\" --wait --timeout 600");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
