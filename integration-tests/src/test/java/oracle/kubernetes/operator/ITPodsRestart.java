@@ -355,18 +355,12 @@ public class ITPodsRestart extends BaseTest {
       logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
-
-      logger.info("Verifying if the admin server is terminating");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
-
+      checkPodRestartStatus(podName);
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the admin server is terminating");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      checkPodRestartStatus(podName);
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -404,16 +398,12 @@ public class ITPodsRestart extends BaseTest {
       logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
-      logger.info("Verifying if the cluster is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      checkPodRestartStatus(podName);
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the cluster is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      checkPodRestartStatus(podName);
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -455,16 +445,12 @@ public class ITPodsRestart extends BaseTest {
       logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
-      logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      checkPodRestartStatus(podName);
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      checkPodRestartStatus(podName);
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -504,23 +490,15 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the domain is restarted");
-      logger.info("Verifying if the admin server is restarted");
-      verifyPodStatus(adminPod, "Terminating");
-      verifyPodStatus(adminPod, "Running");
-      logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(msPod, "Terminating");
-      verifyPodStatus(msPod, "Running");
+      checkPodRestartStatus(adminPod);
+      checkPodRestartStatus(msPod);
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the domain is restarted");
-      logger.info("Verifying if the admin server is restarted");
-      verifyPodStatus(adminPod, "Terminating");
-      verifyPodStatus(adminPod, "Running");
-      logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(msPod, "Terminating");
-      verifyPodStatus(msPod, "Running");
+      checkPodRestartStatus(adminPod);
+      checkPodRestartStatus(msPod);
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -544,6 +522,20 @@ public class ITPodsRestart extends BaseTest {
     if (domain != null) {
       domain.destroy();
     }
+  }
+
+  /**
+   * Check whether is pod is terminated and recreated.
+   *
+   * @param podName String name of the pod to check the restart status
+   * @throws InterruptedException throws when Thread is interrupted
+   */
+  private void checkPodRestartStatus(String podName) throws InterruptedException {
+    logger.info("Verifying if the " + podName + " is terminating");
+    verifyPodStatus(podName, "Terminating");
+    Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+    logger.info("Verifying if the " + podName + " is running");
+    verifyPodStatus(podName, "Running");
   }
 
   /**
