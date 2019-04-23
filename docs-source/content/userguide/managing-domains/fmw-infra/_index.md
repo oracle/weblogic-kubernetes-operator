@@ -354,15 +354,15 @@ is provided that demonstrates how to create a FMW Infrastructure domain.
 There are two kind of patches that can be applied to the FMW Infrastructure binaries:
 
 * Patches which are eligible for Zero Downtime Patching (ZDP), meaning that
-  they can be applied in a rolling fashion.
-* non ZDP eligible compliant patches, meaning that the domain must be shutdown 
+  they can be applied with a rolling restart.
+* Non-ZDP eligible compliant patches, meaning that the domain must be shut down 
   and restarted. 
   
 You can find out whether or not a patch is eligible for Zero Downtime Patching 
 by consulting the README file that accompanies the patch.
 
-If you wish to apply a ZDP compliant patch which can be applied in a rolling
-fashion, after you have patched the domain image as shown in this 
+If you wish to apply a ZDP compliant patch which can be applied with a rolling
+restart, after you have patched the domain image as shown in this 
 [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch),
 you can edit the domain custom resource with the name of the new image and
 the operator will initiate a rolling restart of the domain.
