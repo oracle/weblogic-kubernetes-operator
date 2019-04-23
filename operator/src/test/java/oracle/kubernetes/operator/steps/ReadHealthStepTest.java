@@ -9,7 +9,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAI
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.core.IsNull.nullValue;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
@@ -19,6 +18,7 @@ import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
@@ -91,17 +91,20 @@ public class ReadHealthStepTest {
     final String SERVER_NAME = ADMIN_NAME;
     Packet packet =
         Stub.createStub(PacketStub.class).withServerName(SERVER_NAME).withGetKeyReturnValue(null);
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ, new AtomicInteger(1));
 
     ReadHealthWithHttpClientStep withHttpClientStep =
         new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
     assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT, SERVER_NAME));
-    assertThat(packet.get(ProcessingConstants.SERVER_HEALTH_READ), nullValue());
+    assertThat(
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ)).get(),
+        is(1));
   }
 
   @Test
-  public void withHttpClientStep_putServerHealthReadToPacketIfSucceeded() {
+  public void withHttpClientStep_decrmentServerHealthReadInPacketIfSucceeded() {
     V1Service service = Stub.createStub(V1ServiceStub.class);
     Step next = new MockStep(null);
     final String SERVER_NAME = ADMIN_NAME;
@@ -114,12 +117,15 @@ public class ReadHealthStepTest {
             .withGetKeyReturnValue(httpClientStub);
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ, new AtomicInteger(1));
 
     ReadHealthWithHttpClientStep withHttpClientStep =
         new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
-    assertThat(packet.get(ProcessingConstants.SERVER_HEALTH_READ), is(Boolean.TRUE));
+    assertThat(
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_READ)).get(),
+        is(0));
   }
 
   abstract static class PacketStub extends Packet {
