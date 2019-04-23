@@ -362,7 +362,7 @@ You can find out whether or not a patch is eligible for Zero Downtime Patching
 by consulting the README file that accompanies the patch.
 
 If you wish to apply a ZDP compliant patch which can be applied with a rolling
-restart, after you have patched the domain image as shown in this 
+restart, after you have patched the FMW Infrastructure image as shown in this 
 [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch),
 you can edit the domain custom resource with the name of the new image and
 the operator will initiate a rolling restart of the domain.
