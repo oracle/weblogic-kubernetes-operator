@@ -143,18 +143,24 @@ public class BaseTest {
     }
 
     if (System.getenv("JENKINS") != null) {
-      logger.info("Creating " + resultRoot + "/acceptance_test_tmp");
+      logger.info("Deleting and creating " + resultRoot + "/acceptance_test_tmp");
       TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
+          "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
+              + resultRoot
+              + "/acceptance_test_tmp\" && "
+              + "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
               + resultRoot
               + "/acceptance_test_tmp\"");
       TestUtils.exec(
           "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
               + resultRoot
               + "/acceptance_test_tmp\"");
-      logger.info("Creating " + pvRoot + "/acceptance_test_pv");
+      logger.info("Deleting and Creating " + pvRoot + "/acceptance_test_pv");
       TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
+          "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
+              + pvRoot
+              + "/acceptance_test_pv\" && "
+              + "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
               + pvRoot
               + "/acceptance_test_pv\"");
       TestUtils.exec(
