@@ -108,27 +108,23 @@ function state_dump {
   	if [ "$?" = "0" ]; then
     	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
 	 	if [ "$?" = "0" ]; then
+	 		if [ "$JENKINS" = "true" ]; then
+	 			mkdir -p ${JENKINS_RESULTS_DIR}
+	 			ARCHIVE="${JENKINS_RESULTS_DIR}/$ARCHIVE_FILE"
+	 		fi
+	 			
    			base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE
    			if [ "$?" = "0" ]; then
    				echo Run complete. Archived to $ARCHIVE
    			else 
    				echo Run failed. 
    			fi
-   			if [ "$JENKINS" = "true" ]; then
-	   			# Jenkins can only publish logs under the workspace
-				mkdir -p ${JENKINS_RESULTS_DIR}
-				cp $ARCHIVE ${JENKINS_RESULTS_DIR}
-				if [ "$?" = "0" ]; then
-	   				echo Copy complete. Archive $ARCHIVE copied to ${JENKINS_RESULTS_DIR}
-	   			else 
-	   				echo Failed to copy archive $ARCHIVE to ${JENKINS_RESULTS_DIR}
-	   			fi
-	   		fi
+
 	 	else
      		# command failed
   			cat $RESULT_DIR/pvarchive.b64 | head -100
 	 	fi
-	 	# rm $RESULT_DIR/pvarchive.b64
+	 	rm $RESULT_DIR/pvarchive.b64
   	else
     	 echo Job failed.  See ${outfile}.
   	fi	
