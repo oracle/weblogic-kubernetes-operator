@@ -90,13 +90,15 @@ public class ITStickySession extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
+    if (!QUICKTEST) {
+      logger.info("++++++++++++++++++++++++++++++++++");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
 
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-    logger.info("SUCCESS");
+      logger.info("SUCCESS");
+    }
   }
 
   /**
@@ -251,13 +253,11 @@ public class ITStickySession extends BaseTest {
 
   private String getHttpResponseAttribute(String httpResponseString, String attribute)
       throws Exception {
-
     String attrPatn = httpAttrMap.get(attribute);
 
     Assume.assumeNotNull(attrPatn);
 
     String httpAttribute = null;
-
     Pattern pattern = Pattern.compile(attrPatn);
     Matcher matcher = pattern.matcher(httpResponseString);
 
@@ -274,7 +274,6 @@ public class ITStickySession extends BaseTest {
     // Send a HTTP request
     String curlCmd = buildWebServiceUrl(webServiceURL, headerOption);
     logger.info("Send a HTTP request: " + curlCmd);
-
     ExecResult result = TestUtils.exec(curlCmd);
 
     return result;
