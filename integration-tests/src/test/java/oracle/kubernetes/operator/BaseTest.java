@@ -143,18 +143,24 @@ public class BaseTest {
     }
 
     if (System.getenv("JENKINS") != null) {
-      logger.info("Creating " + resultRoot + "/acceptance_test_tmp");
+      logger.info("Deleting and creating " + resultRoot + "/acceptance_test_tmp");
       TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
+          "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
+              + resultRoot
+              + "/acceptance_test_tmp\" && "
+              + "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
               + resultRoot
               + "/acceptance_test_tmp\"");
       TestUtils.exec(
           "/usr/local/packages/aime/ias/run_as_root \"chmod 777 "
               + resultRoot
               + "/acceptance_test_tmp\"");
-      logger.info("Creating " + pvRoot + "/acceptance_test_pv");
+      logger.info("Deleting and Creating " + pvRoot + "/acceptance_test_pv");
       TestUtils.exec(
-          "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
+          "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
+              + pvRoot
+              + "/acceptance_test_pv\" && "
+              + "/usr/local/packages/aime/ias/run_as_root \"mkdir -p "
               + pvRoot
               + "/acceptance_test_pv\"");
       TestUtils.exec(
@@ -176,7 +182,7 @@ public class BaseTest {
     logger.info("Adding file handler, logging to file at " + resultDir + "/java_test_suite.out");
 
     // for manual/local run, create file handler, create PVROOT
-    if (System.getenv("SHARED_CLUSTER") == null && System.getenv("JENKINS") == null) {
+    if (System.getenv("JENKINS") == null) {
       logger.info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
