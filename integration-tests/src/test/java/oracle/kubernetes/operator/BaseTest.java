@@ -51,6 +51,7 @@ public class BaseTest {
   public static boolean QUICKTEST;
   public static boolean SMOKETEST;
   public static boolean JENKINS;
+  public static boolean SHARED_CLUSTER;
   public static boolean INGRESSPERDOMAIN = true;
 
   private static String resultRoot = "";
@@ -81,6 +82,9 @@ public class BaseTest {
     }
     if (System.getenv("JENKINS") != null) {
       JENKINS = new Boolean(System.getenv("JENKINS")).booleanValue();
+    }
+    if (System.getenv("SHARED_CLUSTER") != null) {
+      SHARED_CLUSTER = new Boolean(System.getenv("SHARED_CLUSTER")).booleanValue();
     }
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
@@ -127,7 +131,7 @@ public class BaseTest {
     }
 
     // for manual/local run, do cleanup
-    if (System.getenv("SHARED_CLUSTER") == null && System.getenv("JENKINS") == null) {
+    if (System.getenv("JENKINS") == null) {
 
       // delete k8s artifacts created if any, delete PV directories
       ExecResult clnResult = cleanup();
@@ -673,7 +677,7 @@ public class BaseTest {
 
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
 
-    if (JENKINS) {
+    if (JENKINS || SHARED_CLUSTER) {
       result = cleanup();
       // if (result.exitValue() != 0) {
       logger.info("cleanup result =" + result.stdout() + "\n " + result.stderr());
