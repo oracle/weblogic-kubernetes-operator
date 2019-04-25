@@ -22,6 +22,7 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -161,7 +162,40 @@ public class DomainProcessorTest {
                 .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
-        .spec(new V1ServiceSpec().type("ClusterIP"));
+        .spec(new V1ServiceSpec().type(ServiceHelper.CLUSTER_IP_TYPE));
+  }
+
+  @Test
+  public void onUpgradeFromV20_updateExternalService() {
+    domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
+    testSupport.defineResources(createV20ExternalService());
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MAX_SERVERS);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.makeRightDomainPresence(info, true, false, false);
+
+    assertThat(info.getExternalService(ADMIN_NAME), notNullValue());
+  }
+
+  // todo after external service created, if adminService deleted, delete service
+
+  // problem - ServiceType doesn't know what this is, so does not
+  // add it to DomainPresenceInfo, so does not delete it!
+  private V1Service createV20ExternalService() {
+    return new V1Service()
+        .metadata(
+            new V1ObjectMeta()
+                .name(LegalNames.toExternalServiceName(DomainProcessorTestSetup.UID, ADMIN_NAME))
+                .namespace(DomainProcessorTestSetup.NS)
+                .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
+                .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
+                .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
+                .putLabelsItem(RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
+                .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
+        .spec(
+            new V1ServiceSpec()
+                .type(ServiceHelper.NODE_PORT_TYPE)
+                .addPortsItem(new V1ServicePort().nodePort(30701)));
   }
 
   private Stream<V1Service> getServerServices() {
