@@ -16,7 +16,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @Description("Shutdown describes the configuration for shutting down a server instance.")
 public class Shutdown {
-  public static final Integer DEFAULT_TIMEOUT = 30;
+  // Default timeout must stay 30 seconds to match Kubernetes default
+  public static final Long DEFAULT_TIMEOUT = 30l;
   public static final Boolean DEFAULT_IGNORESESSIONS = Boolean.FALSE;
 
   @Description(
@@ -27,7 +28,7 @@ public class Shutdown {
 
   @Description(
       "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Not required. Defaults to 30 seconds.")
-  private Integer timeoutSeconds;
+  private Long timeoutSeconds;
 
   @Description(
       "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling. Not required. Defaults to false.")
@@ -56,11 +57,11 @@ public class Shutdown {
     return this;
   }
 
-  public Integer getTimeoutSeconds() {
+  public Long getTimeoutSeconds() {
     return Optional.ofNullable(timeoutSeconds).orElse(DEFAULT_TIMEOUT);
   }
 
-  public Shutdown timeoutSeconds(Integer timeoutSeconds) {
+  public Shutdown timeoutSeconds(Long timeoutSeconds) {
     this.timeoutSeconds = timeoutSeconds;
     return this;
   }
