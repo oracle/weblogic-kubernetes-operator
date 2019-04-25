@@ -149,6 +149,10 @@ public abstract class BaseConfiguration {
     return serverPod.getReadinessProbeTuning();
   }
 
+  Shutdown getShutdown() {
+    return serverPod.getShutdown();
+  }
+
   void addNodeSelector(String labelKey, String labelValue) {
     serverPod.addNodeSelector(labelKey, labelValue);
   }

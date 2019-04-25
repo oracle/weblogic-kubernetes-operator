@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -20,9 +20,6 @@ public class ServerConfig {
   public static final String STARTED_SERVER_STATE_RUNNING = "RUNNING";
   public static final String STARTED_SERVER_STATE_ADMIN = "ADMIN";
 
-  public static final String SHUTDOWN_POLICY_FORCED_SHUTDOWN = "FORCED_SHUTDOWN";
-  public static final String SHUTDOWN_POLICY_GRACEFUL_SHUTDOWN = "GRACEFUL_SHUTDOWN";
-
   private String serverName;
   private String startedServerState;
   private String restartedLabel;
@@ -31,10 +28,6 @@ public class ServerConfig {
   private String image;
   private String imagePullPolicy;
   private List<V1LocalObjectReference> imagePullSecrets = null;
-  private String shutdownPolicy;
-  private int gracefulShutdownTimeout;
-  private boolean gracefulShutdownIgnoreSessions;
-  private boolean gracefulShutdownWaitForSessions;
 
   /**
    * Gets server's name.
@@ -275,132 +268,6 @@ public class ServerConfig {
     return this;
   }
 
-  /**
-   * Gets the shutdown policy used to stop this server. Legal values are GRACEFUL_SHUTDOWN and
-   * FORCED_SHUTDOWN.
-   *
-   * @return shutdown policy
-   */
-  public String getShutdownPolicy() {
-    return shutdownPolicy;
-  }
-
-  /**
-   * Sets the shutdown policy used to stop this server.
-   *
-   * @param shutdownPolicy shutdown policy
-   */
-  public void setShutdownPolicy(String shutdownPolicy) {
-    this.shutdownPolicy = shutdownPolicy;
-  }
-
-  /**
-   * Sets the shutdown policy used to stop this server.
-   *
-   * @param shutdownPolicy shutdown policy
-   * @return this
-   */
-  public ServerConfig withShutdownPolicy(String shutdownPolicy) {
-    this.shutdownPolicy = shutdownPolicy;
-    return this;
-  }
-
-  /**
-   * Gets the number of seconds to wait before aborting inflight work and force shutting down the
-   * server. Only used when shutdownPolicy is GRACEFUL_SHUTDOWN.
-   *
-   * @return graceful shutdown timeout
-   */
-  public int getGracefulShutdownTimeout() {
-    return gracefulShutdownTimeout;
-  }
-
-  /**
-   * Sets the number of seconds to wait before aborting inflight work and force shutting down the
-   * server.
-   *
-   * @param gracefulShutdownTimeout graceful timeout timeout
-   */
-  public void setGracefulShutdownTimeout(int gracefulShutdownTimeout) {
-    this.gracefulShutdownTimeout = gracefulShutdownTimeout;
-  }
-
-  /**
-   * Sets the number of seconds to wait before aborting inflight work and force shutting down the
-   * server.
-   *
-   * @param gracefulShutdownTimeout graceful timeout timeout
-   * @return this
-   */
-  public ServerConfig withGracefulShutdownTimeout(int gracefulShutdownTimeout) {
-    this.gracefulShutdownTimeout = gracefulShutdownTimeout;
-    return this;
-  }
-
-  /**
-   * Gets whether to ignore pending HTTP sessions during inflight work handling when gracefully
-   * shutting down this server.
-   *
-   * @return graceful shutdown ignore sessions
-   */
-  public boolean getGracefulShutdownIgnoreSessions() {
-    return gracefulShutdownIgnoreSessions;
-  }
-
-  /**
-   * Sets whether to ignore pending HTTP sessions during inflight work handling when gracefully
-   * shutting down this server.
-   *
-   * @param gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
-   */
-  public void setGracefulShutdownIgnoreSessions(boolean gracefulShutdownIgnoreSessions) {
-    this.gracefulShutdownIgnoreSessions = gracefulShutdownIgnoreSessions;
-  }
-
-  /**
-   * Sets whether to ignore pending HTTP sessions during inflight work handling when gracefully
-   * shutting down this server.
-   *
-   * @param gracefulShutdownIgnoreSessions graceful shutdown ignore sessions
-   * @return this
-   */
-  public ServerConfig withGracefulShutdownIgnoreSessions(boolean gracefulShutdownIgnoreSessions) {
-    this.gracefulShutdownIgnoreSessions = gracefulShutdownIgnoreSessions;
-    return this;
-  }
-
-  /**
-   * Gets whether to wait for all HTTP sessions during inflight work handling when gracefully
-   * shutting down this server.
-   *
-   * @return graceful shutdown wait for sessions
-   */
-  public boolean getGracefulShutdownWaitForSessions() {
-    return gracefulShutdownWaitForSessions;
-  }
-
-  /**
-   * Sets whether to wait for all HTTP sessions during inflight work handling when gracefully
-   * shutting down this server.
-   *
-   * @param gracefulShutdownWaitForSessions graceful shutdown wait for sessions
-   */
-  public void setGracefulShutdownWaitForSessions(boolean gracefulShutdownWaitForSessions) {
-    this.gracefulShutdownWaitForSessions = gracefulShutdownWaitForSessions;
-  }
-
-  /**
-   * Sets whether to wait for all HTTP sessions during inflight work handling when gracefully
-   * shutting down this server.
-   *
-   * @param gracefulShutdownWaitForSessions graceful shutdown wait for sessions
-   * @return this
-   */
-  public ServerConfig withGracefulShutdownWaitForSessions(boolean gracefulShutdownWaitForSessions) {
-    this.gracefulShutdownWaitForSessions = gracefulShutdownWaitForSessions;
-    return this;
-  }
-
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -412,10 +279,6 @@ public class ServerConfig {
         .append("image", image)
         .append("imagePullPolicy", imagePullPolicy)
         .append("imagePullSecrets", imagePullSecrets)
-        .append("shutdownPolicy", shutdownPolicy)
-        .append("gracefulShutdownTimeout", gracefulShutdownTimeout)
-        .append("gracefulShutdownIgnoreSessions", gracefulShutdownIgnoreSessions)
-        .append("gracefulShutdownWaitForSessions", gracefulShutdownWaitForSessions)
         .toString();
   }
 
@@ -423,17 +286,13 @@ public class ServerConfig {
   public int hashCode() {
     return new HashCodeBuilder()
         .append(serverName)
-        .append(gracefulShutdownTimeout)
         .append(image)
         .append(imagePullPolicy)
         .append(startedServerState)
         .append(imagePullSecrets)
         .append(restartedLabel)
-        .append(gracefulShutdownIgnoreSessions)
         .append(env)
-        .append(gracefulShutdownWaitForSessions)
         .append(nodePort)
-        .append(shutdownPolicy)
         .toHashCode();
   }
 
@@ -448,17 +307,13 @@ public class ServerConfig {
     ServerConfig rhs = ((ServerConfig) other);
     return new EqualsBuilder()
         .append(serverName, rhs.serverName)
-        .append(gracefulShutdownTimeout, rhs.gracefulShutdownTimeout)
         .append(image, rhs.image)
         .append(imagePullPolicy, rhs.imagePullPolicy)
         .append(startedServerState, rhs.startedServerState)
         .append(imagePullSecrets, rhs.imagePullSecrets)
         .append(restartedLabel, rhs.restartedLabel)
-        .append(gracefulShutdownIgnoreSessions, rhs.gracefulShutdownIgnoreSessions)
         .append(env, rhs.env)
-        .append(gracefulShutdownWaitForSessions, rhs.gracefulShutdownWaitForSessions)
         .append(nodePort, rhs.nodePort)
-        .append(shutdownPolicy, rhs.shutdownPolicy)
         .isEquals();
   }
 }

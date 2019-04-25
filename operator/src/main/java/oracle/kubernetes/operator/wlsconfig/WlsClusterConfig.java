@@ -11,6 +11,9 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Step;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains configuration of a WLS cluster. */
 public class WlsClusterConfig {
@@ -19,6 +22,8 @@ public class WlsClusterConfig {
   private String name;
   private List<WlsServerConfig> servers = new ArrayList<>();
   private WlsDynamicServersConfig dynamicServersConfig;
+
+  // owner -- don't include in toString, hashCode, equals
   private WlsDomainConfig wlsDomainConfig;
 
   public WlsClusterConfig() {}
@@ -376,15 +381,36 @@ public class WlsClusterConfig {
 
   @Override
   public String toString() {
-    return "WlsClusterConfig{"
-        + "name='"
-        + name
-        + '\''
-        + ", servers="
-        + servers
-        + ", dynamicServersConfig="
-        + dynamicServersConfig
-        + '}';
+    return new ToStringBuilder(this)
+        .append("name", name)
+        .append("servers", servers)
+        .append("dynamicServersConfig", dynamicServersConfig)
+        .toString();
+  }
+
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder =
+        new HashCodeBuilder().append(name).append(servers).append(dynamicServersConfig);
+    return builder.toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof WlsClusterConfig)) {
+      return false;
+    }
+
+    WlsClusterConfig rhs = ((WlsClusterConfig) other);
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .append(name, rhs.name)
+            .append(servers, rhs.servers)
+            .append(dynamicServersConfig, rhs.dynamicServersConfig);
+    return builder.isEquals();
   }
 
   /**
