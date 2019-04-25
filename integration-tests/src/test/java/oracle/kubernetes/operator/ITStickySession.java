@@ -61,6 +61,7 @@ public class ITStickySession extends BaseTest {
       // create domain
       if (domain == null) {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
+        // Treafik doesn't work due to the bug 28050300. Use Voyager instead
         System.setProperty("LB_TYPE", "VOYAGER");
         domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
         domain.verifyDomainCreated();
