@@ -68,6 +68,11 @@ function setup_shared_cluster {
   echo "Completed setup_shared_cluster"
 }
 
+function clean_shared_cluster {
+	echo "Clean shared cluster"
+	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
+}
+
 function pull_tag_images {
 
   set +x 
@@ -210,8 +215,10 @@ echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPER
 
   
 if [ "$SHARED_CLUSTER" = "true" ]; then
-
+  
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
+  
+  clean_shared_cluster
   
   if [ "$JRF_ENABLED" = true ] ; then
 	pull_tag_images_jrf	

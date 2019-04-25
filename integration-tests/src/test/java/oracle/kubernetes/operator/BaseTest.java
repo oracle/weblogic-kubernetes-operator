@@ -131,7 +131,7 @@ public class BaseTest {
     }
 
     // for manual/local run, do cleanup
-    if (System.getenv("JENKINS") == null) {
+    if (!JENKINS || !SHARED_CLUSTER) {
 
       // delete k8s artifacts created if any, delete PV directories
       ExecResult clnResult = cleanup();
@@ -518,7 +518,7 @@ public class BaseTest {
             + getResultRoot()
             + " export PV_ROOT="
             + getPvRoot()
-            + " && "
+            + " export SHARED_CLUSTER=false && "
             + getProjectRoot()
             + "/src/integration-tests/bash/cleanup.sh";
     logger.info("Command to call cleanup script " + cmd);
