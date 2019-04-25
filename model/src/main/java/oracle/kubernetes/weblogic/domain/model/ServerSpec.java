@@ -84,6 +84,9 @@ public interface ServerSpec {
   @Nonnull
   ProbeTuning getReadinessProbe();
 
+  @Nonnull
+  Shutdown getShutdown();
+
   /**
    * Returns the labels applied to the pod.
    *

@@ -232,13 +232,22 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                                                 .readOnly(true))
                                         .livenessProbe(
                                             newProbe()
-                                                .initialDelaySeconds(120)
+                                                .initialDelaySeconds(20)
                                                 .periodSeconds(5)
                                                 .exec(
                                                     newExecAction()
                                                         .addCommandItem("bash")
                                                         .addCommandItem(
-                                                            "/operator/livenessProbe.sh"))))
+                                                            "/operator/livenessProbe.sh")))
+                                        .readinessProbe(
+                                            newProbe()
+                                                .initialDelaySeconds(2)
+                                                .periodSeconds(10)
+                                                .exec(
+                                                    newExecAction()
+                                                        .addCommandItem("bash")
+                                                        .addCommandItem(
+                                                            "/operator/readinessProbe.sh"))))
                                 .addVolumesItem(
                                     newVolume()
                                         .name("weblogic-operator-cm-volume")
