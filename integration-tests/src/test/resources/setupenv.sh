@@ -73,6 +73,21 @@ function clean_shared_cluster {
 	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
 }
 
+function push_operator_image {
+	echo "Build and push Operator image to $REPO_REGISTRY"
+	export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
+  	# create a docker image for the operator code being tested
+  	docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+  	
+	docker login $REPO_REGISTRY -u $REPO_USERNAME -p $REPO_PASSWORD	
+	docker push ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}
+	if [ ! "$?" = "0" ] ; then
+	    echo "Error: Could not push the image to $REPO_REGISTRY".
+	    #exit 1
+  	fi
+	
+  
+}
 function pull_tag_images {
 
   set +x 
@@ -219,6 +234,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
   
   clean_shared_cluster
+  push_operator_image
   
   if [ "$JRF_ENABLED" = true ] ; then
 	pull_tag_images_jrf	
