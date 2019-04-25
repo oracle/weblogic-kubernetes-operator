@@ -154,6 +154,7 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `httpGetPath` | string | Path for httpGet |
 | `initialDelaySeconds` | number | The number of seconds before the first check is performed |
 | `periodSeconds` | number | The number of seconds between checks |
 | `timeoutSeconds` | number | The number of seconds with no response that indicates a failure |

@@ -777,7 +777,7 @@ public abstract class PodStepContext extends StepContextBase {
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD)
-        .httpGet(httpGetAction(READINESS_PATH, getDefaultPort()));
+        .httpGet(httpGetAction(getReadinessProbeHttpGetPath(), getDefaultPort()));
     return readinessProbe;
   }
 
@@ -801,6 +801,11 @@ public abstract class PodStepContext extends StepContextBase {
   private int getReadinessProbeInitialDelaySeconds(TuningParameters.PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getReadinessProbe().getInitialDelaySeconds())
         .orElse(tuning.readinessProbeInitialDelaySeconds);
+  }
+
+  private String getReadinessProbeHttpGetPath() {
+    return Optional.ofNullable(getServerSpec().getReadinessProbe().getHttpGetPath())
+        .orElse(READINESS_PATH);
   }
 
   private V1Probe createLivenessProbe(TuningParameters.PodTuning tuning) {

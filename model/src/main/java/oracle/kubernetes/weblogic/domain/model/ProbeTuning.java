@@ -22,6 +22,10 @@ public class ProbeTuning {
   @SerializedName("timeoutSeconds")
   private Integer timeoutSeconds = null;
 
+  @Description("Path for httpGet")
+  @SerializedName("httpGetPath")
+  private String httpGetPath;
+
   public ProbeTuning() {}
 
   void copyValues(ProbeTuning fromProbe) {
@@ -33,6 +37,9 @@ public class ProbeTuning {
     }
     if (periodSeconds == null) {
       periodSeconds(fromProbe.periodSeconds);
+    }
+    if (httpGetPath == null) {
+      httpGetPath(fromProbe.httpGetPath);
     }
   }
 
@@ -63,12 +70,22 @@ public class ProbeTuning {
     return this;
   }
 
+  public String getHttpGetPath() {
+    return httpGetPath;
+  }
+
+  public ProbeTuning httpGetPath(String httpGetPath) {
+    this.httpGetPath = httpGetPath;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("initialDelaySeconds", initialDelaySeconds)
         .append("periodSeconds", periodSeconds)
         .append("timeoutSeconds", timeoutSeconds)
+        .append("httpGetPath", httpGetPath)
         .toString();
   }
 
