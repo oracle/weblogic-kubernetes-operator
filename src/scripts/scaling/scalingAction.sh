@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -14,7 +14,7 @@ operator_namespace="weblogic-operator"
 operator_service_account="weblogic-operator"
 scaling_size=1
 access_token=""
-kubernetes_master="https://kubernetes"
+kubernetes_master="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
 
 # Parse arguments/parameters
 for arg in "$@"
@@ -69,12 +69,12 @@ done
 # Verify required parameters
 if [ -z "$scaling_action" ] || [ -z "$wls_domain_uid" ] || [ -z "$wls_cluster_name" ]
 then
-    echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://kubernetes] [--access_token=<access_token>] [--wls_domain_namespace=default] [--operator_namespace=weblogic-operator] [--operator_service_name=weblogic-operator] [--scaling_size=1]"
+    echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}] [--access_token=<access_token>] [--wls_domain_namespace=default] [--operator_namespace=weblogic-operator] [--operator_service_name=weblogic-operator] [--scaling_size=1]"
     echo "  where"
     echo "    action - scaleUp or scaleDown"
     echo "    domain_uid - WebLogic Domain Unique Identifier"
     echo "    cluster_name - WebLogic Cluster Name"
-    echo "    kubernetes_master - Kubernetes master URL, default=https://kubernetes"
+    echo "    kubernetes_master - Kubernetes master URL, default=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
     echo "    access_token - Service Account Bearer token for authentication and authorization for access to REST Resources"
     echo "    wls_domain_namespace - Kubernetes name space WebLogic Domain is defined in, default=default"
     echo "    operator_service_name - WebLogic Operator Service name, default=internal-weblogic-operator-svc"
