@@ -288,6 +288,7 @@ Best practices for data source modules and their overrides:
   * The configuration map must be in the same Kubernetes namespace as the domain.
   * If the configuration map is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example, assuming `./mydir` contains your `version.txt` and situation configuration template files:
+
     ```
     kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
     kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
@@ -297,6 +298,7 @@ Best practices for data source modules and their overrides:
   * Secrets must be in the same Kubernetes namespace as the domain.
   * If a secret is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example:
+  
     ```
     kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
     kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID

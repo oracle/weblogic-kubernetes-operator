@@ -283,7 +283,7 @@ public class PodPresenceTest {
   public void onModifyEventWithPodNotReadyAndOldStatusRunning_setLastKnownStatusNull() {
     V1Pod eventPod = createServerPod();
     V1Pod currentPod = createServerPod();
-    info.setLastKnownServerStatus(SERVER, RUNNING_STATE);
+    info.updateLastKnownServerStatus(SERVER, RUNNING_STATE);
     info.setServerPod(SERVER, currentPod);
     Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(eventPod).toWatchResponse();
 
@@ -296,13 +296,13 @@ public class PodPresenceTest {
   public void onModifyEventWithPodNotReadyAndOldStatusNotRunning_dontChangeIt() {
     V1Pod eventPod = createServerPod();
     V1Pod currentPod = createServerPod();
-    info.setLastKnownServerStatus(SERVER, SUSPENDING_STATE);
+    info.updateLastKnownServerStatus(SERVER, SUSPENDING_STATE);
     info.setServerPod(SERVER, currentPod);
     Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(eventPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
-    assertThat(info.getLastKnownServerStatus(SERVER), equalTo(SUSPENDING_STATE));
+    assertThat(info.getLastKnownServerStatus(SERVER).getStatus(), equalTo(SUSPENDING_STATE));
   }
 
   @Test
@@ -315,7 +315,7 @@ public class PodPresenceTest {
 
     processor.dispatchPodWatch(event);
 
-    assertThat(info.getLastKnownServerStatus(SERVER), equalTo(RUNNING_STATE));
+    assertThat(info.getLastKnownServerStatus(SERVER).getStatus(), equalTo(RUNNING_STATE));
   }
 
   @Test
@@ -372,7 +372,7 @@ public class PodPresenceTest {
 
     processor.dispatchPodWatch(event);
 
-    assertThat(info.getLastKnownServerStatus(SERVER), equalTo(SHUTDOWN_STATE));
+    assertThat(info.getLastKnownServerStatus(SERVER).getStatus(), equalTo(SHUTDOWN_STATE));
   }
 
   @Test

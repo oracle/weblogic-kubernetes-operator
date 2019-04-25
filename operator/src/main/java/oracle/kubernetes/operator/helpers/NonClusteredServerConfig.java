@@ -99,32 +99,6 @@ public class NonClusteredServerConfig extends ServerConfig {
   }
 
   @Override
-  public NonClusteredServerConfig withShutdownPolicy(String shutdownPolicy) {
-    super.withShutdownPolicy(shutdownPolicy);
-    return this;
-  }
-
-  @Override
-  public NonClusteredServerConfig withGracefulShutdownTimeout(int gracefulShutdownTimeout) {
-    super.withGracefulShutdownTimeout(gracefulShutdownTimeout);
-    return this;
-  }
-
-  @Override
-  public NonClusteredServerConfig withGracefulShutdownIgnoreSessions(
-      boolean gracefulShutdownIgnoreSessions) {
-    super.withGracefulShutdownIgnoreSessions(gracefulShutdownIgnoreSessions);
-    return this;
-  }
-
-  @Override
-  public NonClusteredServerConfig withGracefulShutdownWaitForSessions(
-      boolean gracefulShutdownWaitForSessions) {
-    super.withGracefulShutdownWaitForSessions(gracefulShutdownWaitForSessions);
-    return this;
-  }
-
-  @Override
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
