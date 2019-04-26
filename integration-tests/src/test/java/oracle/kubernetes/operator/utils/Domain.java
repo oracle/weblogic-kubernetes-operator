@@ -639,6 +639,9 @@ public class Domain {
     String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
     String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
     logger.info("making sure the domain directory exists");
+    ExecResult result =
+        TestUtils.exec("ls -ltr " + domainDir + " && ls -ltr " + domainStoragePath + "/domains/");
+    logger.info("ls -ltr " + result.stdout());
     if (domainDir != null && !(new File(domainDir).exists())) {
       throw new RuntimeException(
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
