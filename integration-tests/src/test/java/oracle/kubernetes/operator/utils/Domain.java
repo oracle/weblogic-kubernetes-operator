@@ -640,7 +640,11 @@ public class Domain {
     String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
     String cmd =
         BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/krun.sh -c \"ls -ltr "
+            + "/src/integration-tests/bash/krun.sh -m "
+            + domainMap.get("persistentVolumeClaimName")
+            + ":/pvc-"
+            + domainMap.get("domainUID")
+            + " -c \"ls -ltr "
             + domainDir
             + "\"";
     logger.info("making sure the domain directory exists by running " + cmd);
