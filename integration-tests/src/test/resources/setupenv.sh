@@ -172,7 +172,12 @@ function get_wlthint3client_from_image {
   # Get wlthint3client.jar from image
   id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
   docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
+  if [ ! "$?" = "0" ] ; then
+  	echo "Docker Copy failed for wlthint3client.jar"
+  	exit 1
+  fi
   docker rm -v $id
+  
 }
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
@@ -256,6 +261,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	  fi
   fi
   setup_shared_cluster
+  get_wlthint3client_from_image
     
 elif [ "$JENKINS" = "true" ]; then
 
