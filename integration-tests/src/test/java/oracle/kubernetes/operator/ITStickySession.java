@@ -98,6 +98,11 @@ public class ITStickySession extends BaseTest {
 
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
+      // Unset System property for using Voyager
+      System.clearProperty("LB_TYPE");
+      logger.info(
+          "System Property LB_TYPE is cleaned. LB_TYPE" + " = " + System.getProperty("LB_TYPE"));
+
       logger.info("SUCCESS");
     }
   }
