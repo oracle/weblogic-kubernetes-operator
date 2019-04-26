@@ -641,7 +641,7 @@ public class Domain {
     logger.info("making sure the domain directory exists");
     ExecResult result =
         TestUtils.exec("ls -ltr " + domainDir + " && ls -ltr " + domainStoragePath + "/domains/");
-    logger.info("ls -ltr " + result.stdout());
+    logger.info("ls -ltr " + result.stdout() + " err " + result.stderr());
     if (domainDir != null && !(new File(domainDir).exists())) {
       throw new RuntimeException(
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");

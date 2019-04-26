@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import java.util.Map;
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RESTCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -253,10 +254,20 @@ public class ITOperator extends BaseTest {
       domain = TestUtils.createDomain(DOMAIN_ADMINONLY_YAML);
       domain.verifyDomainCreated();
     } finally {
+      Map<String, Object> domainMap = domain.getDomainMap();
+      String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
+      String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
+      ExecResult result =
+          TestUtils.exec("ls -ltr " + domainDir + " && ls -ltr " + domainStoragePath + "/domains/");
+      logger.info("ls -ltr " + result.stdout() + " err " + result.stderr());
+
       if (domain != null) {
         // create domain on existing dir
         domain.destroy();
       }
+      result =
+          TestUtils.exec("ls -ltr " + domainDir + " && ls -ltr " + domainStoragePath + "/domains/");
+      logger.info("ls -ltr " + result.stdout() + " err " + result.stderr());
     }
 
     domain.createDomainOnExistingDirectory();
