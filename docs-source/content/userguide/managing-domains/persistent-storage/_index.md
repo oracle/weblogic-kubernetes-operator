@@ -30,12 +30,12 @@ $ mkdir -m 777 -p /path/to/domain1PersistentVolume
 
 Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on OCI Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and `domain_home`), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.
 
-#### Persistent Volume GID Annotation
+#### Persistent volume GID annotation
 
 The `HOST_PATH` directory permissions can be made more secure by using a Kubernetes annotation on the
 persistent volume that provides the group identifier (GID) which will be added to pods using the persistent volume.
 
-For example, if the GID of the directory is `6789` then the directory can be updated to remove permissions
+For example, if the GID of the directory is `6789`, then the directory can be updated to remove permissions
 other than for the user and group along with the persistent volume being annotated with the specified GID:
 
 ```bash
@@ -43,10 +43,10 @@ $ chmod 770 /path/to/domain1PersistentVolume
 $ kubectl annotate pv domain1-weblogic-sample-pv pv.beta.kubernetes.io/gid=6789
 ```
 
-After the domain is created and servers are running, the group ownership of the persistent volume files
-can be update to the specified GID which will provide read access to the group members. Normally
+Typically, after the domain is created and servers are running, the group ownership of the persistent volume files
+can be updated to the specified GID which will provide read access to the group members. Normally
 files created from a pod onto the persistent volume will have UID `1000` and GID `1000` which is the
-`oracle` user from the WebLogic docker image.
+`oracle` user from the WebLogic Docker image.
 
 An example of updating the group ownership on the persistent volume would be as follows:
 
