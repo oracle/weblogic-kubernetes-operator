@@ -644,7 +644,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       }
       if (operator != null) {
         operator.destroy();
-      } 
+      }
       number++;
     }
     logger.info("SUCCESS - " + testMethodName);
