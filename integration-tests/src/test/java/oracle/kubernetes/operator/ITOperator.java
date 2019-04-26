@@ -239,7 +239,7 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    // Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
@@ -343,7 +343,7 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void testAutoAndCustomSitConfigOverrides() throws Exception {
-    // Assume.assumeFalse(QUICKTEST);
+    Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
 
