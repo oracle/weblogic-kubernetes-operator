@@ -638,14 +638,18 @@ public class Domain {
   public void createDomainOnExistingDirectory() throws Exception {
     String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
     String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
-    logger.info("making sure the domain directory exists");
-    ExecResult result =
-        TestUtils.exec("ls -ltr " + domainDir + " && ls -ltr " + domainStoragePath + "/domains/");
-    logger.info("ls -ltr " + result.stdout() + " err " + result.stderr());
-    if (domainDir != null && !(new File(domainDir).exists())) {
+    String cmd =
+        BaseTest.getProjectRoot()
+            + "/src/integration-tests/bash/krun.sh -c \"ls -ltr "
+            + domainDir
+            + "\"";
+    logger.info("making sure the domain directory exists by running " + cmd);
+    ExecResult result = TestUtils.exec(cmd);
+    logger.info("Command result " + result.stdout() + " err =" + result.stderr());
+    /* if (domainDir != null && !(new File(domainDir).exists())) {
       throw new RuntimeException(
           "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
-    }
+    } */
     logger.info("Run the script to create domain");
 
     // create domain using different output dir but pv is same, it fails as the domain was already
