@@ -92,18 +92,13 @@ public class ITStickySession extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
-      logger.info("++++++++++++++++++++++++++++++++++");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
+    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+    logger.info("BEGIN");
+    logger.info("Run once, release cluster lease");
 
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-      logger.info(
-          "System Property LB_TYPE is cleaned. LB_TYPE" + " = " + System.getProperty("LB_TYPE"));
-
-      logger.info("SUCCESS");
-    }
+    logger.info("SUCCESS");
   }
 
   /**
