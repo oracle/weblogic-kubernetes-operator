@@ -116,8 +116,8 @@ for index in range(0, number_of_ms):
   set('RetryIntervalBeforeMSIMode', 1)
   set('Cluster', cluster_name)
 
-print('Configuring Dynamic Cluster %s' % cluster_name2)
-templateName = cluster_name2 + "-template"
+print('Configuring Dynamic Cluster %s' % cluster_name_2)
+templateName = cluster_name_2 + "-template"
 print('Creating Server Template: %s' % templateName)
 st1=create(templateName, 'ServerTemplate')
 print('Done creating Server Template: %s' % templateName)
@@ -130,9 +130,9 @@ cd('Log/%s' % templateName)
 set('FileName', '%s/%s${id}.log' % (domain_logs, managed_server_name_base_2))
 print('Done setting attributes for Server Template: %s' % templateName);
 
-cd('/Clusters/%s' % cluster_name2)
+cd('/Clusters/%s' % cluster_name_2)
 create(cluster_name, 'DynamicServers')
-cd('DynamicServers/%s' % cluster_name2)
+cd('DynamicServers/%s' % cluster_name_2)
 set('ServerTemplate', st1)
 set('ServerNamePrefix', managed_server_name_base_2)
 set('DynamicClusterSize', number_of_ms)
@@ -140,7 +140,7 @@ set('MaxDynamicClusterSize', number_of_ms)
 set('CalculatedListenPorts', false)
 set('Id', 1)
 
-print('Done setting attributes for Dynamic Cluster: %s' % cluster_name2);
+print('Done setting attributes for Dynamic Cluster: %s' % cluster_name_2);
 
 # Write Domain
 # ============
