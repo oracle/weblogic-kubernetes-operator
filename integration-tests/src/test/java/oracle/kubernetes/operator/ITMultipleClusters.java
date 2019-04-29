@@ -4,12 +4,15 @@
 
 package oracle.kubernetes.operator;
 
+import static org.junit.Assert.assertTrue;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RESTCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -33,8 +36,9 @@ public class ITMultipleClusters extends BaseTest {
 
   private static Operator operatorForBackwardCompatibility;
   private static Operator operatorForRESTCertChain;
-  
+
   private static String TWO_CONFIGURED_CLUSTER_SCRIPT = "create-domain-two-configured-cluster.py";
+  private static String domainUid = "";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -82,7 +86,8 @@ public class ITMultipleClusters extends BaseTest {
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String template = getResultDir() +"/samples/scripts/common/domain-template.yaml";
+    String template =
+        BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
     if (operator1 == null) {
@@ -91,35 +96,51 @@ public class ITMultipleClusters extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-        Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put(
           "createDomainPyScript",
-          "integration-tests/src/test/resources/domain-home-on-pv/"+TWO_CONFIGURED_CLUSTER_SCRIPT);
-      
-      String add = "  - clusterName: %CLUSTER_NAME%-2\n" +
-"    serverStartState: \"RUNNING\"\n" +
-"    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n" +
-"~";
-      Files.copy(Paths.get(template), Paths.get(template+".org"),
-        StandardCopyOption.REPLACE_EXISTING);
-      
-      Files.write(
-      Paths.get(template), 
-      add.getBytes(), 
-      StandardOpenOption.APPEND);
-     
-      domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+          "integration-tests/src/test/resources/domain-home-on-pv/"
+              + TWO_CONFIGURED_CLUSTER_SCRIPT);
+
+      String add =
+          "  - clusterName: %CLUSTER_NAME%-2\n"
+              + "    serverStartState: \"RUNNING\"\n"
+              + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
+      logger.info("Making a backup of the domain template file:" + template);
+      if (!Files.exists(Paths.get(template + ".org"))) {
+        Files.copy(Paths.get(template), Paths.get(template + ".org"));
+      }
+      logger.info("Appended the domain template file");
+      Files.write(Paths.get(template), add.getBytes(), StandardOpenOption.APPEND);
+      logger.info("Appended the domain template file");
+      domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
+      K8sTestUtils testUtil = new K8sTestUtils();
+      String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+      String namespace = domain.getDomainNS();
+      String pods[] = {
+        domainUid + "-" + domain.getAdminServerName(),
+        domainUid + "-managed-server1",
+        domainUid + "-managed-server2",
+        domainUid + "new-managed-server1",
+        domainUid + "new-managed-server2",
+      };
+      for (String pod : pods) {
+        assertTrue(
+            pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
+      }
+
       testBasicUseCases(domain);
       if (!SMOKETEST) domain.testWlsLivenessProbe();
       testCompletedSuccessfully = true;
     } finally {
-      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
-          Files.copy(Paths.get(template+".org"),Paths.get(template), 
-        StandardCopyOption.REPLACE_EXISTING);
-        domain.shutdownUsingServerStartPolicy();
-      
+      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+        Files.copy(
+            Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
+        Files.delete(Paths.get(template + ".org"));
+      }
+      domain.shutdownUsingServerStartPolicy();
     }
     logger.info("SUCCESS - " + testMethodName);
   }
