@@ -61,8 +61,9 @@ public class ITStickySession extends BaseTest {
       // create domain
       if (domain == null) {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
-        System.setProperty("LB_TYPE", "VOYAGER");
-        domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+        Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+        domainMap.put("LB_TYPE", "VOYAGER");
+        domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
       }
 
