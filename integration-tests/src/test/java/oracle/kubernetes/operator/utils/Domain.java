@@ -644,8 +644,10 @@ public class Domain {
             + domainMap.get("persistentVolumeClaimName")
             + ":/pvc-"
             + domainMap.get("domainUID")
-            + " -c \"ls -ltr "
-            + domainDir
+            + " -c \"ls -ltr /pvc-"
+            + domainMap.get("domainUID")
+            + "/domains/"
+            + domainMap.get("domainUID")
             + "\"";
     logger.info("making sure the domain directory exists by running " + cmd);
     ExecResult result = TestUtils.exec(cmd);
