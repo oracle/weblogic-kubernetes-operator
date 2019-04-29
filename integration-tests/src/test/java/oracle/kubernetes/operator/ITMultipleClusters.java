@@ -128,7 +128,9 @@ public class ITMultipleClusters extends BaseTest {
             Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
         Files.delete(Paths.get(template + ".org"));
       }
-      domain.shutdownUsingServerStartPolicy();
+      if (domain != null) {
+        domain.destroy();
+      }
     }
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -194,7 +196,9 @@ public class ITMultipleClusters extends BaseTest {
             Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
         Files.delete(Paths.get(template + ".org"));
       }
-      domain.shutdownUsingServerStartPolicy();
+      if (domain != null) {
+        domain.destroy();
+      }
     }
     logger.info("SUCCESS - " + testMethodName);
   }
