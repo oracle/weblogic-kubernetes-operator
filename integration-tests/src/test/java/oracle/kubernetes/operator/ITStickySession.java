@@ -62,6 +62,7 @@ public class ITStickySession extends BaseTest {
       if (domain == null) {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+        // Treafik doesn't work due to the bug 28050300. Use Voyager instead
         domainMap.put("LB_TYPE", "VOYAGER");
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
@@ -97,6 +98,11 @@ public class ITStickySession extends BaseTest {
       logger.info("Run once, release cluster lease");
 
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+
+      // Unset System property for using Voyager
+      System.clearProperty("LB_TYPE");
+      logger.info(
+          "System Property LB_TYPE is cleaned. LB_TYPE" + " = " + System.getProperty("LB_TYPE"));
 
       logger.info("SUCCESS");
     }
