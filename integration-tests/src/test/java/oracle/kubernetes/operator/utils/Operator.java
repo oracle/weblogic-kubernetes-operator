@@ -297,6 +297,7 @@ public class Operator {
   }
 
   public void callHelmInstall() throws Exception {
+    String imagePullPolicy = System.getenv("IMAGE_PULL_POLICY_OPERATOR");
     StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(BaseTest.getProjectRoot())
         .append(" && helm install kubernetes/charts/weblogic-operator ");
@@ -306,7 +307,9 @@ public class Operator {
         .append(generatedInputYamlFile)
         .append(" --namespace ")
         .append(operatorNS)
-        .append(" --set \"imagePullPolicy=Always\" --wait --timeout 60");
+        .append(" --set \"imagePullPolicy=")
+        .append(imagePullPolicy)
+        .append("\" --wait --timeout 60");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
