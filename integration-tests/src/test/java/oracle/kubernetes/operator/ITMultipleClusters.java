@@ -98,7 +98,6 @@ public class ITMultipleClusters extends BaseTest {
     try {
       Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
       domainMap.put("domainUID", DOMAINUID);
-      domainMap.put("domainUID", "customsitdomain");
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/"
