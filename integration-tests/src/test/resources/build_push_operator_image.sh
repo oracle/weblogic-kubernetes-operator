@@ -5,7 +5,7 @@
 
 function build_push_operator_image {
 	if [ -z "$REPO_REGISTRY" ] || [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ]; then
-		echo "Provide Docker login details using REPO_REGISTRY, REPO_USERNAME & REPO_PASSWORD env variables to push the Operator image to the repository.
+		echo "Provide Docker login details using REPO_REGISTRY, REPO_USERNAME & REPO_PASSWORD env variables to push the Operator image to the repository."
 		exit 1
 	fi
 	
