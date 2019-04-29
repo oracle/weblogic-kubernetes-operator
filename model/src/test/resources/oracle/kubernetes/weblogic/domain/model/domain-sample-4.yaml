@@ -49,6 +49,9 @@ spec:
       limits:
         memory: "128Mi"
         cpu: "500m"
+    shutdown:
+      shutdownType: Graceful
+      timeoutSeconds: 45
 
   # configured wls configuration overrides configmap name
   configOverrides: overrides-config-map
@@ -113,6 +116,10 @@ spec:
     - serverName: server2
       serverStartState: ADMIN
       restartVersion: "3"
+      serverPod:
+        shutdown:
+          timeoutSeconds: 60
+          ignoreSessions: false
 
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
@@ -133,4 +140,6 @@ spec:
             value: "-verbose"
           - name: USER_MEM_ARGS
             value: "-Xms64m -Xmx256m "
+        shutdown:
+          ignoreSessions: true
       restartVersion: "2"

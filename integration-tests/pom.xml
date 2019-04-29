@@ -1,4 +1,4 @@
-<!-- Copyright 2018, Oracle Corporation and/or its affiliates. All rights 
+<!-- Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights
 	reserved. -->
 <!-- Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -25,6 +25,12 @@
 			<url>https://github.com/oracle/weblogic-kubernetes-operator/blob/master/LICENSE</url>
 		</license>
 	</licenses>
+
+	<properties>
+		<src-integration-test>${project.basedir}/src/test/java</src-integration-test>
+		<resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
+	</properties>
+
 	<dependencies>
 		<!-- test dependencies -->
 		<dependency>
@@ -61,7 +67,7 @@
 			<artifactId>guava</artifactId>
 			<version>${guava-version}</version>
 		</dependency>
-                        <!-- JSON processing: jackson -->
+		<!-- JSON processing: jackson -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -173,6 +179,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${maven-surefire-plugin-version}</version>
+				<configuration>
+					<skipTests>true</skipTests>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -224,122 +233,145 @@
 			  <artifactId>jacoco-maven-plugin</artifactId>
 			  <version>${jacoco.version}</version>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.6.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<skip>${skipITs}</skip>
+						</configuration>
+					</execution>
+					<execution>
+						<id>setupenv</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<environmentVariables>
+								<JRF_ENABLED>${jrf_enabled}</JRF_ENABLED>
+							</environmentVariables>
+							<skip>${skipITs}</skip>
+							<executable>${resource-integration-test}/setupenv.sh</executable>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>add-test-source</id>
+						<phase>generate-test-resources</phase>
+						<goals>
+							<goal>add-test-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${src-integration-test}</source>
+							</sources>
+						</configuration>
+					</execution>
+					<execution>
+						<id>add-test-resource</id>
+						<phase>generate-test-resources</phase>
+						<goals>
+							<goal>add-test-resource</goal>
+						</goals>
+						<configuration>
+							<resources>
+								<resource>
+									<directory>${resource-integration-test}</directory>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>${maven-failsafe-plugin-version}</version>
+				<configuration>
+					<argLine>
+						--illegal-access=permit
+					</argLine>
+					<encoding>UTF-8</encoding>
+					<argLine>
+						--illegal-access=permit
+					</argLine>
+					<argLine>${failsafeArgLine}</argLine>
+					<failIfNoTests>false</failIfNoTests>
+					<systemPropertyVariables>
+						<maxThreads>3</maxThreads>
+					</systemPropertyVariables>
+					<additionalClasspathElements>
+						<additionalClasspathElement>${project.basedir}/src/test/resources/wlthint3client.jar</additionalClasspathElement>
+					</additionalClasspathElements>
+					<includes>
+						<include>
+							${includes-failsafe}
+						</include>
+					</includes>
+				</configuration>
+
+				<executions>
+					<execution>
+						<id>integration-tests</id>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+						<phase>integration-test</phase>
+						<configuration>
+							<skipTests>${skipITs}</skipTests>
+							<systemPropertyVariables>
+								<java.util.logging.SimpleFormatter.format>%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS %4$-6s %2$s %5$s%6$s%n</java.util.logging.SimpleFormatter.format>
+							</systemPropertyVariables>
+							<trimStackTrace>false</trimStackTrace>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
 	<profiles>
-
 		<profile>
 			<id>java-integration-tests</id>
 			<properties>
-				<src-integration-test>${project.basedir}/src/test/java</src-integration-test>
-				<resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
 				<skipITs>false</skipITs>
+				<includes-failsafe>**/IT*</includes-failsafe>
+				<jrf_enabled>false</jrf_enabled>
 			</properties>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>exec-maven-plugin</artifactId>
-						<version>${exec-maven-plugin-version}</version>
-						<executions>
-							<execution>
-								<goals>
-									<goal>java</goal>
-								</goals>
-							</execution>
-							<execution><!-- pull or build images, create secrets, etc -->
-								<id>setupenv</id>
-								<phase>pre-integration-test</phase>
-								<goals>
-									<goal>exec</goal>
-								</goals>
-								<configuration>
-									<executable>${resource-integration-test}/setupenv.sh</executable>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>build-helper-maven-plugin</artifactId>
-						<version>3.0.0</version>
-						<executions>
-							<execution>
-								<id>add-test-source</id>
-								<phase>generate-test-resources</phase>
-								<goals>
-									<goal>add-test-source</goal>
-								</goals>
-								<configuration>
-									<sources>
-										<source>${src-integration-test}</source>
-									</sources>
-								</configuration>
-							</execution>
-							<execution>
-								<id>add-test-resource</id>
-								<phase>generate-test-resources</phase>
-								<goals>
-									<goal>add-test-resource</goal>
-								</goals>
-								<configuration>
-									<resources>
-										<resource>
-											<directory>${resource-integration-test}</directory>
-										</resource>
-									</resources>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-failsafe-plugin</artifactId>
-						<version>${maven-failsafe-plugin-version}</version>
-						<configuration> <!-- run tests in parallel -->
-							<argLine>
-								--illegal-access=permit
-							</argLine>
-							<encoding>UTF-8</encoding>
-							<argLine>
-								--illegal-access=permit
-							</argLine>
-							<failIfNoTests>false</failIfNoTests>
-							<systemPropertyVariables>
-								<!-- Add any system properties here -->
-								<!--<project.build.directory>${project.build.directory}</project.build.directory> -->
-								<!--<weblogic.operator.root.directory>${basedir}/..</weblogic.operator.root.directory> -->
-								<!--<TAGS>${env.TAGS}</TAGS> -->
-								<maxThreads>3</maxThreads>
-							</systemPropertyVariables>
-							<additionalClasspathElements>
-								<additionalClasspathElement>${project.basedir}/src/test/resources/wlthint3client.jar</additionalClasspathElement>
-							</additionalClasspathElements>
-    					</configuration>
-
-						<executions>
-							<execution>
-								<id>integration-tests</id>
-								<goals>
-									<goal>integration-test</goal>
-									<goal>verify</goal>
-								</goals>
-								<phase>integration-test</phase>
-								<configuration>
-									<skipTests>${skipITs}</skipTests>
-							        <systemPropertyVariables>
-					                    <!-- Set JUL Formatting -->
-					                    <java.util.logging.SimpleFormatter.format>%1$tm-%1$td-%1$tY %1$tH:%1$tM:%1$tS %4$-6s %2$s %5$s%6$s%n</java.util.logging.SimpleFormatter.format>
-				                	</systemPropertyVariables>
-				                	<trimStackTrace>false</trimStackTrace>
-            					</configuration>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
+		</profile>
+		<profile>
+			<id>jrf-integration-tests</id>
+			<properties>
+				<skipITs>false</skipITs>
+				<includes-failsafe>**/JrfInOperatorTest.java</includes-failsafe>
+				<jrf_enabled>true</jrf_enabled>
+			</properties>
+		</profile>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<surefireArgLine></surefireArgLine>
+				<failsafeArgLine></failsafeArgLine>
+				<skipITs>true</skipITs>
+				<jrf_enabled>false</jrf_enabled>
+			</properties>
 		</profile>
 	</profiles>
 </project>

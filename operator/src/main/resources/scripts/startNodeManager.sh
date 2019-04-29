@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+
 # Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -290,7 +291,7 @@ ${stm_script} > ${nodemgr_out_file} 2>&1 &
 
 wait_count=0
 start_secs=$SECONDS
-max_wait_secs=15
+max_wait_secs=${NODE_MANAGER_MAX_WAIT:-60}
 while [ 1 -eq 1 ]; do
   sleep 1
   if [ -e ${nodemgr_log_file} ] && [ `grep -c "Plain socket listener started" ${nodemgr_log_file}` -gt 0 ]; then
