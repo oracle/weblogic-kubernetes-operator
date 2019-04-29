@@ -38,7 +38,7 @@ public class ITMultipleClusters extends BaseTest {
   private static Operator operatorForRESTCertChain;
 
   private static String TWO_CONFIGURED_CLUSTER_SCRIPT = "create-domain-two-configured-cluster.py";
-  private static String domainUid = "";
+  private static final String DOMAINUID = "mixedclusterdomain";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -97,6 +97,7 @@ public class ITMultipleClusters extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+      domainMap.put("domainUID", DOMAINUID);
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put(
           "createDomainPyScript",
@@ -117,15 +118,15 @@ public class ITMultipleClusters extends BaseTest {
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       K8sTestUtils testUtil = new K8sTestUtils();
-      String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+      String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", DOMAINUID);
       String namespace = domain.getDomainNS();
       String pods[] = {
-        domainUid + "-" + domain.getAdminServerName(),
-        domainUid + "-managed-server",
-        domainUid + "-managed-server1",
-        domainUid + "-managed-server2",
-        domainUid + "-new-managed-server1",
-        domainUid + "-new-managed-server2",
+        DOMAINUID + "-" + domain.getAdminServerName(),
+        DOMAINUID + "-managed-server",
+        DOMAINUID + "-managed-server1",
+        DOMAINUID + "-managed-server2",
+        DOMAINUID + "-new-managed-server1",
+        DOMAINUID + "-new-managed-server2",
       };
       for (String pod : pods) {
         assertTrue(
