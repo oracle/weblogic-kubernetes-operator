@@ -38,7 +38,7 @@ public class ITMultipleClusters extends BaseTest {
   private static Operator operatorForRESTCertChain;
 
   private static String TWO_CONFIGURED_CLUSTER_SCRIPT = "create-domain-two-configured-cluster.py";
-  private static final String DOMAINUID = "mixedclusterdomain";
+  private static String TWO_MIXED_CLUSTER_SCRIPT = "create-domain-two-mixed-cluster.py";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -84,6 +84,7 @@ public class ITMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
+    String DOMAINUID = "twoconfiguredclusterdomain";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String template =
@@ -111,9 +112,69 @@ public class ITMultipleClusters extends BaseTest {
       if (!Files.exists(Paths.get(template + ".org"))) {
         Files.copy(Paths.get(template), Paths.get(template + ".org"));
       }
-      logger.info("Appended the domain template file");
       Files.write(Paths.get(template), add.getBytes(), StandardOpenOption.APPEND);
-      logger.info("Appended the domain template file");
+      domain = TestUtils.createDomain(domainMap);
+      domain.verifyDomainCreated();
+      K8sTestUtils testUtil = new K8sTestUtils();
+      String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", DOMAINUID);
+      String namespace = domain.getDomainNS();
+      String pods[] = {
+        DOMAINUID + "-" + domain.getAdminServerName(),
+        DOMAINUID + "-managed-server",
+        DOMAINUID + "-managed-server1",
+        DOMAINUID + "-managed-server2",
+        DOMAINUID + "-new-managed-server1",
+        DOMAINUID + "-new-managed-server2",
+      };
+      for (String pod : pods) {
+        assertTrue(
+            pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
+      }
+
+      testBasicUseCases(domain);
+      if (!SMOKETEST) domain.testWlsLivenessProbe();
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+        Files.copy(
+            Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
+        Files.delete(Paths.get(template + ".org"));
+      }
+      domain.shutdownUsingServerStartPolicy();
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  @Test
+  public void testCreateDomainTwoMixedCluster() throws Exception {
+    String DOMAINUID = "twomixedclusterdomain";
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String template =
+        BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
+    logger.info("Creating Operator & waiting for the script to complete execution");
+    // create operator1
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+    }
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+      domainMap.put("domainUID", DOMAINUID);
+      domainMap.put(
+          "createDomainPyScript",
+          "integration-tests/src/test/resources/domain-home-on-pv/" + TWO_MIXED_CLUSTER_SCRIPT);
+
+      String add =
+          "  - clusterName: %CLUSTER_NAME%-2\n"
+              + "    serverStartState: \"RUNNING\"\n"
+              + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
+      logger.info("Making a backup of the domain template file:" + template);
+      if (!Files.exists(Paths.get(template + ".org"))) {
+        Files.copy(Paths.get(template), Paths.get(template + ".org"));
+      }
+      Files.write(Paths.get(template), add.getBytes(), StandardOpenOption.APPEND);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       K8sTestUtils testUtil = new K8sTestUtils();
