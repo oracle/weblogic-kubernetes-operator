@@ -121,10 +121,11 @@ public class ITMultipleClusters extends BaseTest {
       String namespace = domain.getDomainNS();
       String pods[] = {
         domainUid + "-" + domain.getAdminServerName(),
+        domainUid + "-managed-server",
         domainUid + "-managed-server1",
         domainUid + "-managed-server2",
-        domainUid + "new-managed-server1",
-        domainUid + "new-managed-server2",
+        domainUid + "-new-managed-server1",
+        domainUid + "-new-managed-server2",
       };
       for (String pod : pods) {
         assertTrue(
