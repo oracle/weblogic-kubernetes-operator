@@ -131,7 +131,7 @@ set('FileName', '%s/%s${id}.log' % (domain_logs, managed_server_name_base_2))
 print('Done setting attributes for Server Template: %s' % templateName);
 
 cd('/Clusters/%s' % cluster_name_2)
-create(cluster_name, 'DynamicServers')
+create(cluster_name_2, 'DynamicServers')
 cd('DynamicServers/%s' % cluster_name_2)
 set('ServerTemplate', st1)
 set('ServerNamePrefix', managed_server_name_base_2)

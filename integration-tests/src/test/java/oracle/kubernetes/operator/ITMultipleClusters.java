@@ -37,7 +37,8 @@ public class ITMultipleClusters extends BaseTest {
   private static Operator operatorForBackwardCompatibility;
   private static Operator operatorForRESTCertChain;
 
-  private static final String TWO_CONFIGURED_CLUSTER_SCRIPT = "create-domain-two-configured-cluster.py";
+  private static final String TWO_CONFIGURED_CLUSTER_SCRIPT =
+      "create-domain-two-configured-cluster.py";
   private static final String TWO_MIXED_CLUSTER_SCRIPT = "create-domain-two-mixed-cluster.py";
 
   /**
