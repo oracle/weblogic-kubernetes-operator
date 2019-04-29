@@ -122,7 +122,9 @@ public class EventProcessingTest {
 
     dispatchEventWatch();
 
-    assertThat(info.getLastKnownServerStatus(ADMIN_NAME), equalTo(WebLogicConstants.UNKNOWN_STATE));
+    assertThat(
+        info.getLastKnownServerStatus(ADMIN_NAME).getStatus(),
+        equalTo(WebLogicConstants.UNKNOWN_STATE));
   }
 
   @SuppressWarnings("SameParameterValue")

@@ -411,7 +411,8 @@ public class K8sTestUtils {
    */
   public boolean isPodTerminating(String namespace, String labelSelectors, String podName) {
     V1ObjectMeta metadata;
-    metadata = getPod(namespace, labelSelectors, podName).getMetadata();
+    V1Pod pod = getPod(namespace, labelSelectors, podName);
+    metadata = pod != null ? pod.getMetadata() : null;
     if (metadata == null) {
       return false;
     }

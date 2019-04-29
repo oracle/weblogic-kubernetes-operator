@@ -163,7 +163,7 @@ The scalingAction.sh script accepts a number of customizable parameters:
 * `kubernetes_master` - Kubernetes master URL, default=https://kubernetes  
 
 {{% notice note %}}
-Set this to https://kubernetes.default.svc when invoking `scalingAction.sh` from the Administration Server pod.
+Set this to https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT} when invoking `scalingAction.sh` from the Administration Server pod.
 {{% /notice %}}
 
 * `access_token` - Service Account Bearer token for authentication and authorization for access to REST Resources

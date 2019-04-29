@@ -9,7 +9,7 @@
 # for its nmConnect credentials.
 #
 
-import sys;
+import sys
 import base64
 
 def getEnvVar(var):
@@ -24,6 +24,17 @@ server_name = getEnvVar('SERVER_NAME')
 domain_name = getEnvVar('DOMAIN_NAME')
 domain_path = getEnvVar('DOMAIN_HOME')
 service_name = getEnvVar('SERVICE_NAME')
+local_admin_port = getEnvVar('SHUTDOWN_PORT_ARG')
+local_admin_protocol = getEnvVar('SHUTDOWN_PROTOCOL_ARG')
+timeout = getEnvVar('SHUTDOWN_TIMEOUT_ARG')
+ignore_sessions = getEnvVar('SHUTDOWN_IGNORE_SESSIONS_ARG')
+shutdown_type = getEnvVar('SHUTDOWN_TYPE_ARG')
+
+force = 'false'
+if shutdown_type.lower() == 'forced':
+  force = 'true'
+
+connect_url = local_admin_protocol + '://' + service_name + ':' + local_admin_port
 
 # Convert b64 encoded user key into binary
 
@@ -36,29 +47,42 @@ file = open('/tmp/userKeyNodeManager.secure.bin', 'wb')
 file.write(decoded)
 file.close()
 
-# Connect to nodemanager and stop server
+def shutdownUsingNodeManager(domainName, domainDir):
+  try:
+    nmConnect(userConfigFile='/weblogic-operator/introspector/userConfigNodeManager.secure',
+              host='127.0.0.1',port='5556',
+              domainName=domainName,
+              domainDir=domainDir,
+              nmType='plain')
+  except Exception, e:
+    print e
+    print('Failed to connect to the node manager')
+    exit(exitcode=2)
+
+# Connect to the server and request that it shuts down
 
 try:
-  nmConnect(userConfigFile='/weblogic-operator/introspector/userConfigNodeManager.secure',
+  connect(userConfigFile='/weblogic-operator/introspector/userConfigNodeManager.secure',
             userKeyFile='/tmp/userKeyNodeManager.secure.bin',
-            host='127.0.0.1',port='5556',
+            url=connect_url,
             domainName=domain_name,
             domainDir=domain_path,
             nmType='plain')
-except:
-  print('Failed to connect to the NodeManager')
-  exit(exitcode=2)
 
-# Kill the server
+  print('Connected to the server - attempting to issue shutdown command')
+except Exception, e:
+  print e
+  print('Failed to connect to the server; trying node manager')
+  shutdownUsingNodeManager(domain_name, domain_path)
+
+# shutdown the server
 
 try:
-  nmKill(server_name)
-except:
-  print('Connected to the NodeManager, but failed to stop the server')
-  exit(exitcode=2)
+  shutdown(server_name, 'Server', ignoreSessions=ignore_sessions, timeOut=int(timeout), block='true', force=force)
+except Exception, e:
+  print e
+  print('Connected to the server, but failed to stop it; trying node manager')
+  shutdownUsingNodeManager(domain_name, domain_path)
 
 # Exit WLST
-
-nmDisconnect()
 exit()
-

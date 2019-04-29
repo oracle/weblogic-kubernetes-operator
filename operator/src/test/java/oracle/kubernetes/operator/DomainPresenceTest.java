@@ -33,9 +33,9 @@ import java.util.logging.Level;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.KubernetesServiceType;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.OperatorServiceType;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -142,7 +142,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         createNamespacedMetadata(uid, namespace)
             .name(LegalNames.toServerServiceName(uid, serverName))
             .putLabelsItem(SERVERNAME_LABEL, serverName);
-    return KubernetesServiceType.SERVER.withTypeLabel(new V1Service().metadata(metadata));
+    return OperatorServiceType.SERVER.withTypeLabel(new V1Service().metadata(metadata));
   }
 
   private V1ObjectMeta createServerMetadata(String uid, String namespace, String serverName) {

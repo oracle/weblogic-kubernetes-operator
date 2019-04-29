@@ -7,7 +7,8 @@ package oracle.kubernetes.operator.helpers;
 import io.kubernetes.client.models.V1Service;
 import java.util.Optional;
 
-public enum KubernetesServiceType {
+/** Describes the service types supported by the operator. */
+public enum OperatorServiceType {
   SERVER {
     @Override
     void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
@@ -21,7 +22,7 @@ public enum KubernetesServiceType {
 
     @Override
     boolean matches(V1Service service) {
-      return ServiceHelper.getServerName(service) != null;
+      return ServiceHelper.getServerName(service) != null && !ServiceHelper.isNodePortType(service);
     }
 
     @Override
@@ -35,6 +36,11 @@ public enum KubernetesServiceType {
     }
   },
   EXTERNAL {
+    @Override
+    boolean matches(V1Service service) {
+      return ServiceHelper.getServerName(service) != null && ServiceHelper.isNodePortType(service);
+    }
+
     @Override
     void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
       presenceInfo.setExternalService(ServiceHelper.getServerName(service), service);
@@ -80,12 +86,12 @@ public enum KubernetesServiceType {
 
   private static final String SERVICE_TYPE = "serviceType";
 
-  static KubernetesServiceType getType(V1Service service) {
-    if (!KubernetesUtils.isOperatorCreated(service.getMetadata())) return EXTERNAL;
+  static OperatorServiceType getType(V1Service service) {
+    if (!KubernetesUtils.isOperatorCreated(service.getMetadata())) return UNKNOWN;
     String type = ServiceHelper.getLabelValue(service, SERVICE_TYPE);
-    if (type != null) return KubernetesServiceType.valueOf(type);
+    if (type != null) return OperatorServiceType.valueOf(type);
 
-    for (KubernetesServiceType serviceType : KubernetesServiceType.values())
+    for (OperatorServiceType serviceType : OperatorServiceType.values())
       if (serviceType.matches(service)) return serviceType;
 
     return UNKNOWN;

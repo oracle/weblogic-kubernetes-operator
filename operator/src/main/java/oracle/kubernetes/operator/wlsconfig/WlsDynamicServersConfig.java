@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -10,6 +10,9 @@ import java.util.Map;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * Contains values from a WLS dynamic servers configuration, which configures a WLS dynamic cluster.
@@ -210,6 +213,26 @@ public class WlsDynamicServersConfig {
     return serverConfigs;
   }
 
+  /**
+   * Returns the configuration for the dynamic WLS server with the given name.
+   *
+   * @param serverName name of the WLS server
+   * @return The WlsServerConfig object containing configuration of the WLS server with the given
+   *     name. This methods return null if no WLS configuration is found for the given server name.
+   */
+  public synchronized WlsServerConfig getServerConfig(String serverName) {
+    WlsServerConfig result = null;
+    if (serverName != null && serverConfigs != null) {
+      for (WlsServerConfig serverConfig : serverConfigs) {
+        if (serverConfig.getName().equals(serverName)) {
+          result = serverConfig;
+          break;
+        }
+      }
+    }
+    return result;
+  }
+
   public void setServerConfigs(List<WlsServerConfig> serverConfigs) {
     this.serverConfigs = serverConfigs;
   }
@@ -310,22 +333,56 @@ public class WlsDynamicServersConfig {
 
   @Override
   public String toString() {
-    return "WlsDynamicServersConfig{"
-        + "dynamicClusterSize="
-        + dynamicClusterSize
-        + ", maxDynamicClusterSize="
-        + maxDynamicClusterSize
-        + ", serverNamePrefix='"
-        + serverNamePrefix
-        + '\''
-        + ", calculatedListenPorts="
-        + calculatedListenPorts
-        + ", machineNameMatchExpression="
-        + machineNameMatchExpression
-        + ", serverTemplate="
-        + serverTemplate
-        + ", serverConfigs="
-        + serverConfigs
-        + '}';
+    return new ToStringBuilder(this)
+        .append("name", name)
+        .append("serverTemplateName", serverTemplateName)
+        .append("dynamicClusterSize", dynamicClusterSize)
+        .append("maxDynamicClusterSize", maxDynamicClusterSize)
+        .append("serverNamePrefix", serverNamePrefix)
+        .append("calculatedListenPorts", calculatedListenPorts)
+        .append("serverTemplate", serverTemplate)
+        .append("machineNameMatchExpression", machineNameMatchExpression)
+        .append("serverConfigs", serverConfigs)
+        .toString();
+  }
+
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder =
+        new HashCodeBuilder()
+            .append(name)
+            .append(serverTemplateName)
+            .append(dynamicClusterSize)
+            .append(maxDynamicClusterSize)
+            .append(serverNamePrefix)
+            .append(calculatedListenPorts)
+            .append(serverTemplate)
+            .append(machineNameMatchExpression)
+            .append(serverConfigs);
+    return builder.toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof WlsDynamicServersConfig)) {
+      return false;
+    }
+
+    WlsDynamicServersConfig rhs = ((WlsDynamicServersConfig) other);
+    EqualsBuilder builder =
+        new EqualsBuilder()
+            .append(name, rhs.name)
+            .append(serverTemplateName, rhs.serverTemplateName)
+            .append(dynamicClusterSize, rhs.dynamicClusterSize)
+            .append(maxDynamicClusterSize, rhs.maxDynamicClusterSize)
+            .append(serverNamePrefix, rhs.serverNamePrefix)
+            .append(calculatedListenPorts, rhs.calculatedListenPorts)
+            .append(serverTemplate, rhs.serverTemplate)
+            .append(machineNameMatchExpression, rhs.machineNameMatchExpression)
+            .append(serverConfigs, rhs.serverConfigs);
+    return builder.isEquals();
   }
 }
