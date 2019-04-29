@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -94,7 +94,7 @@ function generateInternalIdentity {
 function recordInternalIdentity {
   CACERT='/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
   TOKEN=`cat /var/run/secrets/kubernetes.io/serviceaccount/token`
-  KUBERNETES_MASTER="https://kubernetes.default.svc"
+  KUBERNETES_MASTER="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
 
   # the request body prints out the atz token
   # don't specify -v so that the token is not printed to the operator log
