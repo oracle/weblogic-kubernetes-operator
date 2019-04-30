@@ -1,11 +1,11 @@
 // Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
-
 package oracle.kubernetes.operator;
 
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -30,14 +30,12 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITMultipleClusters extends BaseTest {
 
-  private static Operator operator1, operator2;
-
-  private static Operator operatorForBackwardCompatibility;
-  private static Operator operatorForRESTCertChain;
-
+  private static Operator operator1;
   private static final String TWO_CONFIGURED_CLUSTER_SCRIPT =
       "create-domain-two-configured-cluster.py";
   private static final String TWO_MIXED_CLUSTER_SCRIPT = "create-domain-two-mixed-cluster.py";
+  private static String template;
+  private static final String DOMAINUID = "twoconfigclustdomain";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -50,6 +48,8 @@ public class ITMultipleClusters extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     initialize(APP_PROPS_FILE);
+    template =
+        BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
   }
 
   /**
@@ -74,11 +74,10 @@ public class ITMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
-    String DOMAINUID = "twoconfigclustdomain";
+
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String template =
-        BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
+
     logger.info("Creating Operator & waiting for the script to complete execution");
     // create operator1
     if (operator1 == null) {
@@ -94,45 +93,20 @@ public class ITMultipleClusters extends BaseTest {
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/"
               + TWO_CONFIGURED_CLUSTER_SCRIPT);
-
-      String add =
-          "  - clusterName: %CLUSTER_NAME%-2\n"
-              + "    serverStartState: \"RUNNING\"\n"
-              + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-      logger.info("Making a backup of the domain template file:" + template);
-      if (!Files.exists(Paths.get(template + ".org"))) {
-        Files.copy(Paths.get(template), Paths.get(template + ".org"));
-      }
-      Files.write(Paths.get(template), add.getBytes(), StandardOpenOption.APPEND);
-      byte[] readAllBytes = Files.readAllBytes(Paths.get(template));
-      logger.info(new String(readAllBytes, StandardCharsets.UTF_8));
+      addCluster2ToDomainTemplate();
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      K8sTestUtils testUtil = new K8sTestUtils();
-      String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", DOMAINUID);
-      String namespace = domain.getDomainNS();
-      String pods[] = {
-        DOMAINUID + "-" + domain.getAdminServerName(),
-        DOMAINUID + "-managed-server",
-        DOMAINUID + "-managed-server1",
-        DOMAINUID + "-managed-server2",
-        DOMAINUID + "-new-managed-server1",
-        DOMAINUID + "-new-managed-server2",
-      };
-      for (String pod : pods) {
-        assertTrue(
-            pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
-      }
+      verifyServersStatus(domain);
       testBasicUseCases(domain);
-      if (!SMOKETEST) domain.testWlsLivenessProbe();
+      if (!SMOKETEST) {
+        domain.testWlsLivenessProbe();
+      }
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
-      Files.copy(
-          Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
-      Files.delete(Paths.get(template + ".org"));
+      restoreDomainTemplate();
     }
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -162,51 +136,85 @@ public class ITMultipleClusters extends BaseTest {
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/" + TWO_MIXED_CLUSTER_SCRIPT);
-
-      String add =
-          "  - clusterName: %CLUSTER_NAME%-2\n"
-              + "    serverStartState: \"RUNNING\"\n"
-              + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-      logger.info("Making a backup of the domain template file:" + template);
-      if (!Files.exists(Paths.get(template + ".org"))) {
-        Files.copy(Paths.get(template), Paths.get(template + ".org"));
-      }
-      Files.write(Paths.get(template), add.getBytes(), StandardOpenOption.APPEND);
-      byte[] readAllBytes = Files.readAllBytes(Paths.get(template));
-      logger.info(new String(readAllBytes, StandardCharsets.UTF_8));
+      addCluster2ToDomainTemplate();
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      K8sTestUtils testUtil = new K8sTestUtils();
-      String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", DOMAINUID);
-      String namespace = domain.getDomainNS();
-      String pods[] = {
-        DOMAINUID + "-" + domain.getAdminServerName(),
-        DOMAINUID + "-managed-server",
-        DOMAINUID + "-managed-server1",
-        DOMAINUID + "-managed-server2",
-        DOMAINUID + "-new-managed-server1",
-        DOMAINUID + "-new-managed-server2",
-      };
-      for (String pod : pods) {
-        assertTrue(
-            pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
-      }
+      verifyServersStatus(domain);
       testBasicUseCases(domain);
-      if (!SMOKETEST) domain.testWlsLivenessProbe();
+      if (!SMOKETEST) {
+        domain.testWlsLivenessProbe();
+      }
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
-      Files.copy(
-          Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
-      Files.delete(Paths.get(template + ".org"));
+      restoreDomainTemplate();
     }
     logger.info("SUCCESS - " + testMethodName);
   }
 
+  /**
+   * Call the basic usecases tests
+   *
+   * @param Domain
+   * @throws Exception
+   */
   private void testBasicUseCases(Domain domain) throws Exception {
     testAdminT3Channel(domain);
     testAdminServerExternalService(domain);
+  }
+
+  /**
+   * Append a second cluster to the domain template
+   *
+   * @throws IOException when append fails
+   */
+  private void addCluster2ToDomainTemplate() throws IOException {
+    String add =
+        "  - clusterName: %CLUSTER_NAME%-2\n"
+            + "    serverStartState: \"RUNNING\"\n"
+            + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
+    logger.info("Making a backup of the domain template file:" + template);
+    if (!Files.exists(Paths.get(template + ".org"))) {
+      Files.copy(Paths.get(template), Paths.get(template + ".org"));
+    }
+    Files.write(Paths.get(template), add.getBytes(), StandardOpenOption.APPEND);
+    byte[] readAllBytes = Files.readAllBytes(Paths.get(template));
+    logger.info(new String(readAllBytes, StandardCharsets.UTF_8));
+  }
+
+  /**
+   * Restore the domain template to original state when test is finished
+   *
+   * @throws IOException
+   */
+  private void restoreDomainTemplate() throws IOException {
+    Files.copy(
+        Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
+    Files.delete(Paths.get(template + ".org"));
+  }
+
+  /**
+   * Verifies all of the servers in the cluster are in Running status
+   *
+   * @param Domain
+   */
+  private void verifyServersStatus(Domain domain) {
+    K8sTestUtils testUtil = new K8sTestUtils();
+    String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", DOMAINUID);
+    String namespace = domain.getDomainNS();
+    String pods[] = {
+      DOMAINUID + "-" + domain.getAdminServerName(),
+      DOMAINUID + "-managed-server",
+      DOMAINUID + "-managed-server1",
+      DOMAINUID + "-managed-server2",
+      DOMAINUID + "-new-managed-server1",
+      DOMAINUID + "-new-managed-server2",
+    };
+    for (String pod : pods) {
+      assertTrue(
+          pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
+    }
   }
 }
