@@ -1101,7 +1101,10 @@ public class Domain {
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
     if (voyager) {
       lbMap.put("loadBalancer", "VOYAGER");
-      lbMap.put("loadBalancerWebPort", domainMap.get("voyagerWebPort"));
+      //lbMap.put("loadBalancerWebPort", domainMap.get("voyagerWebPort"));
+      lbMap.put(
+              "loadBalancerWebPort",
+              domainMap.getOrDefault("voyagerWebPort", new Integer(loadBalancerWebPort)));
     } else {
       lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
       lbMap.put(
