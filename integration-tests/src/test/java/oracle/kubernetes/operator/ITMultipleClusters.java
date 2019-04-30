@@ -74,7 +74,7 @@ public class ITMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
-    String DOMAINUID = "twoconfiguredclusterdomain";
+    String DOMAINUID = "twoconfigclustdomain";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     String template =
