@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import static org.junit.Assert.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -88,6 +89,7 @@ public class ITMultipleClusters extends BaseTest {
     try {
       Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
       domainMap.put("domainUID", DOMAINUID);
+      domainMap.put("clusterType", "CONFIGURED");
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/"
@@ -102,6 +104,8 @@ public class ITMultipleClusters extends BaseTest {
         Files.copy(Paths.get(template), Paths.get(template + ".org"));
       }
       Files.write(Paths.get(template), add.getBytes(), StandardOpenOption.APPEND);
+      byte[] readAllBytes = Files.readAllBytes(Paths.get(template));
+      logger.info(new String(readAllBytes, StandardCharsets.UTF_8));
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       K8sTestUtils testUtil = new K8sTestUtils();
@@ -124,13 +128,11 @@ public class ITMultipleClusters extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
-        Files.copy(
-            Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
-        Files.delete(Paths.get(template + ".org"));
-      }
-      if (domain != null) {
         domain.destroy();
       }
+      Files.copy(
+          Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
+      Files.delete(Paths.get(template + ".org"));
     }
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -170,6 +172,8 @@ public class ITMultipleClusters extends BaseTest {
         Files.copy(Paths.get(template), Paths.get(template + ".org"));
       }
       Files.write(Paths.get(template), add.getBytes(), StandardOpenOption.APPEND);
+      byte[] readAllBytes = Files.readAllBytes(Paths.get(template));
+      logger.info(new String(readAllBytes, StandardCharsets.UTF_8));
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       K8sTestUtils testUtil = new K8sTestUtils();
@@ -192,13 +196,11 @@ public class ITMultipleClusters extends BaseTest {
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
-        Files.copy(
-            Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
-        Files.delete(Paths.get(template + ".org"));
-      }
-      if (domain != null) {
         domain.destroy();
       }
+      Files.copy(
+          Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
+      Files.delete(Paths.get(template + ".org"));
     }
     logger.info("SUCCESS - " + testMethodName);
   }
