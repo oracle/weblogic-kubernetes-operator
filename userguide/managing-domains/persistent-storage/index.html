@@ -12,17 +12,17 @@
     <title>Persistent storage :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1556044575" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1556044575" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1556044575" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1556044575" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1556044575" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1556044575" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1556044575" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1556044575" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1556641272" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1556641272" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1556641272" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1556641272" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1556641272" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1556641272" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1556641272" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1556641272" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1556641272"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1556044575"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1556044575"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1556641272"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1556641272"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1556044575"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1556641272"></script>
 
     
   </div>
@@ -2091,7 +2091,10 @@
 <ul>
 <li><a href="#prerequisites">Prerequisites</a></li>
 </ul></li>
-<li><a href="#storage-locations">Storage locations</a></li>
+<li><a href="#storage-locations">Storage locations</a>
+<ul>
+<li><a href="#persistent-volume-gid-annotation">Persistent volume GID annotation</a></li>
+</ul></li>
 <li><a href="#yaml-files">YAML files</a></li>
 <li><a href="#kubernetes-resources">Kubernetes resources</a>
 <ul>
@@ -2145,12 +2148,37 @@
 
 <p>The persistent volume for the domain must be created using the appropriate tools before running the script to create the domain.  In the simplest case, namely the <code>HOST_PATH</code> provider, this means creating a directory on the Kubernetes master and ensuring that it has the correct permissions:</p>
 
-<pre><code>$ mkdir -m 777 -p /path/to/domain1PersistentVolume
+<pre><code class="language-bash">$ mkdir -m 777 -p /path/to/domain1PersistentVolume
 </code></pre>
 
 <p><strong>Note regarding NFS</strong>: In the current GA version, the OCI Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only). At this time, the WebLogic on Kubernetes domain created by the WebLogic Server Kubernetes Operator, requires a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes. As a workaround, you need to install an NFS server on one node and share the file system across all the nodes.</p>
 
 <p>Currently, we recommend that you use NFS version 3.0 for running WebLogic Server on OCI Container Engine for Kubernetes. During certification, we found that when using NFS 4.0, the servers in the WebLogic domain went into a failed state intermittently. Because multiple threads use NFS (default store, diagnostics store, Node Manager, logging, and <code>domain_home</code>), there are issues when accessing the file store. These issues are removed by changing the NFS to version 3.0.</p>
+
+<h4 id="persistent-volume-gid-annotation">Persistent volume GID annotation</h4>
+
+<p>The <code>HOST_PATH</code> directory permissions can be made more secure by using a Kubernetes annotation on the
+persistent volume that provides the group identifier (GID) which will be added to pods using the persistent volume.</p>
+
+<p>For example, if the GID of the directory is <code>6789</code>, then the directory can be updated to remove permissions
+other than for the user and group along with the persistent volume being annotated with the specified GID:</p>
+
+<pre><code class="language-bash">$ chmod 770 /path/to/domain1PersistentVolume
+$ kubectl annotate pv domain1-weblogic-sample-pv pv.beta.kubernetes.io/gid=6789
+</code></pre>
+
+<p>Typically, after the domain is created and servers are running, the group ownership of the persistent volume files
+can be updated to the specified GID which will provide read access to the group members. Normally
+files created from a pod onto the persistent volume will have UID <code>1000</code> and GID <code>1000</code> which is the
+<code>oracle</code> user from the WebLogic Docker image.</p>
+
+<p>An example of updating the group ownership on the persistent volume would be as follows:</p>
+
+<pre><code class="language-bash">$ cd /path/to/domain1PersistentVolume
+$ sudo chgrp 6789 applications domains logs stores
+$ sudo chgrp -R 6789 domains/
+$ sudo chgrp -R 6789 logs/
+</code></pre>
 
 <h3 id="yaml-files">YAML files</h3>
 
@@ -3603,20 +3631,20 @@ $ kubectl describe pvc -n NAMESPACE [persistent volume claim name]
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1556044575"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1556044575"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1556044575"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1556044575"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1556044575"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1556044575"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1556641272"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1556044575"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1556044575"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1556044575"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1556641272"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1556044575" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1556044575"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1556641272" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1556641272"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
