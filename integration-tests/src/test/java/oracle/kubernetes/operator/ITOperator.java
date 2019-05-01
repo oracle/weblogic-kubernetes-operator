@@ -451,7 +451,14 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(DOMAININIMAGE_WLST_YAML);
+
+      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
+      if (SHARED_CLUSTER) {
+        domainMap.put(
+            "image", System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:12.2.1.3");
+        domainMap.put("imagePullSecretName", "ocir-domain");
+      }
+      domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
 
       testBasicUseCases(domain);
@@ -483,7 +490,13 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(DOMAININIMAGE_WDT_YAML);
+      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
+      if (SHARED_CLUSTER) {
+        domainMap.put(
+            "image", System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:12.2.1.3");
+        domainMap.put("imagePullSecretName", "ocir-domain");
+      }
+      domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
 
       testBasicUseCases(domain);
