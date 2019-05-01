@@ -636,8 +636,6 @@ public class Domain {
    * @throws Exception
    */
   public void createDomainOnExistingDirectory() throws Exception {
-    String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
-    String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
     String cmd =
         BaseTest.getProjectRoot()
             + "/src/integration-tests/bash/krun.sh -m "
@@ -651,11 +649,7 @@ public class Domain {
             + "\"";
     logger.info("making sure the domain directory exists by running " + cmd);
     ExecResult result = TestUtils.exec(cmd);
-    logger.info("Command result " + result.stdout() + " err =" + result.stderr());
-    /* if (domainDir != null && !(new File(domainDir).exists())) {
-      throw new RuntimeException(
-          "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
-    } */
+    // logger.info("Command result " + result.stdout() + " err =" + result.stderr());
     logger.info("Run the script to create domain");
 
     // create domain using different output dir but pv is same, it fails as the domain was already
@@ -1100,8 +1094,42 @@ public class Domain {
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
 
+    if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
+      String dockerLoginAndPushCmd =
+          "docker login "
+              + System.getenv("REPO_REGISTRY")
+              + " -u "
+              + System.getenv("REPO_USERNAME")
+              + " -p \""
+              + System.getenv("REPO_PASSWORD")
+              + "\" && docker push "
+              + System.getenv("REPO_REGISTRY")
+              + "/weblogick8s/domain-home-in-image:"
+              + (System.getenv("IMAGE_TAG_WEBLOGIC") != null
+                  ? System.getenv("IMAGE_TAG_WEBLOGIC")
+                  : "12.2.1.3");
+      result = TestUtils.exec(dockerLoginAndPushCmd);
+      logger.info(
+          "cmd "
+              + dockerLoginAndPushCmd
+              + "\n result "
+              + result.stdout()
+              + "\n err "
+              + result.stderr());
+
+      // create ocir registry secret in the same ns as domain which is used while pulling the domain
+      // image
+      TestUtils.createDockerRegistrySecret(
+          "ocir-domain",
+          System.getenv("REPO_REGISTRY"),
+          System.getenv("REPO_USERNAME"),
+          System.getenv("REPO_PASSWORD"),
+          System.getenv("REPO_EMAIL"),
+          domainNS);
+    }
+
     // write configOverride and configOverrideSecrets to domain.yaml
-    if (domainMap.containsKey("configOverrides")) {
+    if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")) {
       appendToDomainYamlAndCreate();
     }
   }
@@ -1368,6 +1396,11 @@ public class Domain {
     if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
       domainMap.put("image", imageName + ":" + imageTag);
+      if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
+        domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
+      } else {
+        domainMap.put("imagePullSecretName", "docker-store");
+      }
     }
 
     if (domainMap.containsKey("domainHomeImageBuildPath")) {
@@ -1381,11 +1414,7 @@ public class Domain {
               + "/"
               + ((String) domainMap.get("domainHomeImageBuildPath")).trim());
     }
-    if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
-      domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
-    } else {
-      domainMap.put("imagePullSecretName", "docker-store");
-    }
+
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
@@ -1474,20 +1503,24 @@ public class Domain {
    *     command
    */
   private void appendToDomainYamlAndCreate() throws Exception {
-    String contentToAppend =
-        "  configOverrides: "
-            + domainUid
-            + "-"
-            + domainMap.get("configOverrides")
-            + "\n"
-            + "  configOverrideSecrets: [ \""
-            + domainUid
-            + "-test-secrets\" ]"
-            + "\n";
 
     String domainYaml =
         BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
-    Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+
+    if (domainMap.containsKey("configOverrides")) {
+      String contentToAppend =
+          "  configOverrides: "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + "\n"
+              + "  configOverrideSecrets: [ \""
+              + domainUid
+              + "-test-secrets\" ]"
+              + "\n";
+
+      Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+    }
 
     String command = "kubectl create -f " + domainYaml;
     ExecResult result = TestUtils.exec(command);
@@ -1578,7 +1611,8 @@ public class Domain {
     createDomainScriptCmd.append(generatedInputYamlFile);
 
     // skip executing yaml if configOverrides
-    if (!domainMap.containsKey("configOverrides")) {
+    if (!domainMap.containsKey("configOverrides")
+        && !domainMap.containsKey("domainHomeImageBase")) {
       createDomainScriptCmd.append(" -e ");
     }
 
