@@ -50,8 +50,6 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Domain with default sample values | create domain using mostly default values for inputs |	
 | Domain home in image using WLST | cluster scaling |
 | Domain home in image using WDT  | Configured cluster and cluster scaling |
-| Domain with 2 configured cluster created using WLST | Multi Configured cluster |
-| Domain with 2 mixed cluster created using WLST | 1 configured and 1 dynamic cluster in domain |
 
 | Operator Usability | Use Case |
 | --- | --- |
