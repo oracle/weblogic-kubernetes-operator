@@ -155,17 +155,6 @@ public class ITMultipleClusters extends BaseTest {
   }
 
   /**
-   * Call the basic usecases tests
-   *
-   * @param Domain
-   * @throws Exception
-   */
-  private void testBasicUseCases(Domain domain) throws Exception {
-    testAdminT3Channel(domain);
-    testAdminServerExternalService(domain);
-  }
-
-  /**
    * Append a second cluster to the domain template
    *
    * @throws IOException when append fails
