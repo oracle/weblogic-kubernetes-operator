@@ -214,6 +214,17 @@ public class BaseTest {
   }
 
   /**
+   * Call the basic usecases tests
+   *
+   * @param domain
+   * @throws Exception
+   */
+  protected void testBasicUseCases(Domain domain) throws Exception {
+    testAdminT3Channel(domain);
+    testAdminServerExternalService(domain);
+  }
+
+  /**
    * Access Admin REST endpoint using admin node host and node port
    *
    * @throws Exception
