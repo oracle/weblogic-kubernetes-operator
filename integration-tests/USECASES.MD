@@ -34,9 +34,7 @@ Also the below use cases are covered for Quick test:
 |  |  |
 | --- | --- |
 | Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
-| Domain Configuration | Domain on PV using WDT <p> Domain home in image using WLST <p> Domain home in image using WDT <p> Domain with serverStartPolicy ADMIN_ONLY <p> Domain with auto and custom situational configuration <p> Two domains managed by two operators <p> Domain with Recycle weblogicDomainStorageReclaimPolicy <p> Domain with default sample values |
-| Domain on PV with two configured clusters |Domain with 2 configured clusters created using WLST |
-| Domain on PV with one configured cluster and one dynamic cluster | Domain with 2  clusters configured and dynamic created using WLST |
+| Domain Configuration | Domain on PV using WDT <p> Domain home in image using WLST <p> Domain home in image using WDT <p> Domain with serverStartPolicy ADMIN_ONLY <p> Domain with auto and custom situational configuration <p> Two domains managed by two operators <p> Domain with Recycle weblogicDomainStorageReclaimPolicy <p> Domain with default sample values <p> Domain on PV with two configured clusters <p> Domain on PV with one configured cluster and one dynamic cluster | 
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
 
