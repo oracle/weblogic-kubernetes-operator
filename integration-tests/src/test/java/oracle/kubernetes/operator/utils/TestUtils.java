@@ -884,7 +884,10 @@ public class TestUtils {
     domainMap.put("exposeAdminNodePort", true);
     domainMap.put("adminNodePort", 30700 + number);
     domainMap.put("t3ChannelPort", 30000 + number);
-    domainMap.put("voyagerWebPort", 30344 + number);
+    if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
+      domainMap.put("voyagerWebPort", 30344 + number);
+      logger.info("For this domain voyagerWebPort is set to: 30344 + " + number);
+    }
     return domainMap;
   }
 
