@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -29,7 +29,7 @@ LEGACY_KEY_PEM=${OPERATOR_SECRETS_DIR}/${EXTERNAL_KEY}
 
 CACERT='/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
 TOKEN=`cat /var/run/secrets/kubernetes.io/serviceaccount/token`
-KUBERNETES_MASTER="https://kubernetes.default.svc"
+KUBERNETES_MASTER="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
 
 function cleanup {
   if [[ $SUCCEEDED != "true" ]]; then
