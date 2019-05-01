@@ -74,7 +74,7 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void testDomainOnPVUsingWLST() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
@@ -239,7 +239,7 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
-    // Assume.assumeFalse(QUICKTEST);
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operator1 is running, if not creating");
