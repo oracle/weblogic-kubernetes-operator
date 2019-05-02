@@ -114,6 +114,7 @@ public class ReadHealthStepTest {
             .withGetKeyReturnValue(httpClientStub);
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
+    packet.put(ProcessingConstants.SERVER_STATE_MAP, new ConcurrentHashMap<String, ServerHealth>());
 
     ReadHealthWithHttpClientStep withHttpClientStep =
         new ReadHealthWithHttpClientStep(service, null, next);

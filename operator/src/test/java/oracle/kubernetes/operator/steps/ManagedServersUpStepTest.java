@@ -5,7 +5,6 @@
 package oracle.kubernetes.operator.steps;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
@@ -284,32 +283,6 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenDesiredStateIsAdmin_serverStartupCreatesJavaOptionsEnvironment() {
-    configureServerToStart("wls1").withDesiredState(ADMIN_STATE);
-    addWlsServer("wls1");
-
-    invokeStep();
-
-    assertThat(
-        getServerStartupInfo("wls1").getEnvironment(),
-        hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN")));
-  }
-
-  @Test
-  public void whenDesiredStateIsAdmin_serverStartupAddsToJavaOptionsEnvironment() {
-    configureServerToStart("wls1")
-        .withDesiredState(ADMIN_STATE)
-        .withEnvironmentVariable("JAVA_OPTIONS", "value1");
-    addWlsServer("wls1");
-
-    invokeStep();
-
-    assertThat(
-        getServerStartupInfo("wls1").getEnvironment(),
-        hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN value1")));
-  }
-
-  @Test
   public void whenWlsServerNotInCluster_serverStartupInfoHasNoClusterConfig() {
     configureServerToStart("wls1");
     addWlsServer("wls1");
@@ -352,22 +325,6 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getServerStartupInfo("ms1").getEnvironment(), contains(envVar("item1", "value1")));
-  }
-
-  @Test
-  public void whenClusterStartupDefinedWithAdminState_addAdminEnv() {
-    configureCluster("cluster1")
-        .withDesiredState(ADMIN_STATE)
-        .withEnvironmentVariable("item1", "value1");
-    addWlsCluster("cluster1", "ms1");
-
-    configureCluster("cluster1").withServerStartPolicy(START_IF_NEEDED);
-
-    invokeStep();
-
-    assertThat(
-        getServerStartupInfo("ms1").getEnvironment(),
-        hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN")));
   }
 
   @Test
