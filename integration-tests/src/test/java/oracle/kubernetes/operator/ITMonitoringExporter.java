@@ -10,11 +10,11 @@ import static org.junit.Assert.assertTrue;
 
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import com.gargoylesoftware.htmlunit.html.HtmlFileInput;
+import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
+import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,12 +27,12 @@ import javax.xml.bind.DatatypeConverter;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.runners.MethodSorters;
 
 /** This test is used for testing Monitoring Exporter with Operator(s) */
@@ -235,16 +235,16 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
-/*
-    exporterUrl = "http://slc13kef.us.oracle.com:" + "30305" + "/wls-exporter/";
-    metricsUrl = exporterUrl + "metrics";
-    configPath =
-        "/scratch/mkogan/weblogic-kubernetes-operator/integration-tests/src/test/resources/exporter";
-    String testWSAppTotalServletInvokesSearchKey1 =
-        "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server1_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
-    String testWSAppTotalServletInvokesSearchKey2 =
-        "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server2_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
-*/
+    /*
+        exporterUrl = "http://slc13kef.us.oracle.com:" + "30305" + "/wls-exporter/";
+        metricsUrl = exporterUrl + "metrics";
+        configPath =
+            "/scratch/mkogan/weblogic-kubernetes-operator/integration-tests/src/test/resources/exporter";
+        String testWSAppTotalServletInvokesSearchKey1 =
+            "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server1_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
+        String testWSAppTotalServletInvokesSearchKey2 =
+            "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server2_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
+    */
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_jvm.yml");
 
     // check for updated metrics
