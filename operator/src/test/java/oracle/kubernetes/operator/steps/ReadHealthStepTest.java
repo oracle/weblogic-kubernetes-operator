@@ -17,6 +17,7 @@ import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -57,6 +58,11 @@ public class ReadHealthStepTest {
           .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
           .withAdminServerName(ADMIN_NAME);
 
+  V1Service service;
+  Step next;
+  HttpClientStub httpClientStub;
+  ReadHealthWithHttpClientStep withHttpClientStep;
+
   @Before
   public void setup() {
     consoleControl =
@@ -64,6 +70,10 @@ public class ReadHealthStepTest {
             .collectLogMessages(logRecords, LOG_KEYS)
             .ignoringLoggedExceptions(CLASSCAST_EXCEPTION)
             .withLogLevel(Level.FINE);
+    service = Stub.createStub(V1ServiceStub.class);
+    next = new MockStep(null);
+    httpClientStub = Stub.createStub(HttpClientStub.class);
+    withHttpClientStep = new ReadHealthWithHttpClientStep(service, null, next);
   }
 
   @After
@@ -73,35 +83,25 @@ public class ReadHealthStepTest {
 
   @Test
   public void withHttpClientStep_Health_logIfFailed() {
-    V1Service service = Stub.createStub(V1ServiceStub.class);
-    Step next = new MockStep(null);
-    final String SERVER_NAME = ADMIN_NAME;
     Packet packet =
         Stub.createStub(PacketStub.class)
-            .withServerName(SERVER_NAME)
+            .withServerName(ADMIN_NAME)
             .withGetKeyThrowsException(true);
 
-    ReadHealthWithHttpClientStep withHttpClientStep =
-        new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
-    assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED, SERVER_NAME));
+    assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED, ADMIN_NAME));
   }
 
   @Test
   public void withHttpClientStep_logIfMissingHTTPClient() {
-    V1Service service = Stub.createStub(V1ServiceStub.class);
-    Step next = new MockStep(null);
-    final String SERVER_NAME = ADMIN_NAME;
     Packet packet =
-        Stub.createStub(PacketStub.class).withServerName(SERVER_NAME).withGetKeyReturnValue(null);
+        Stub.createStub(PacketStub.class).withServerName(ADMIN_NAME).withGetKeyReturnValue(null);
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
 
-    ReadHealthWithHttpClientStep withHttpClientStep =
-        new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
-    assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT, SERVER_NAME));
+    assertThat(logRecords, containsInfo(WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT, ADMIN_NAME));
     assertThat(
         ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
         is(1));
@@ -109,22 +109,14 @@ public class ReadHealthStepTest {
 
   @Test
   public void withHttpClientStep_decrementRemainingServerHealthReadInPacketIfSucceeded() {
-    V1Service service = Stub.createStub(V1ServiceStub.class);
-    Step next = new MockStep(null);
-    final String SERVER_NAME = ADMIN_NAME;
-
-    HttpClientStub httpClientStub = Stub.createStub(HttpClientStub.class);
-
     Packet packet =
         Stub.createStub(PacketStub.class)
-            .withServerName(SERVER_NAME)
+            .withServerName(ADMIN_NAME)
             .withGetKeyReturnValue(httpClientStub);
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
 
-    ReadHealthWithHttpClientStep withHttpClientStep =
-        new ReadHealthWithHttpClientStep(service, null, next);
     withHttpClientStep.apply(packet);
 
     assertThat(
@@ -134,11 +126,6 @@ public class ReadHealthStepTest {
 
   @Test
   public void withHttpClientStep_decrementRemainingServerHealthReadInMultipleClonedPackets() {
-    V1Service service = Stub.createStub(V1ServiceStub.class);
-    Step next = new MockStep(null);
-
-    HttpClientStub httpClientStub = Stub.createStub(HttpClientStub.class);
-
     Packet packet = new Packet();
     packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     packet.put(HttpClient.KEY, httpClientStub);
@@ -163,6 +150,78 @@ public class ReadHealthStepTest {
         ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
         is(0));
   }
+
+  @Test
+  public void withHttpClientStep_verifyOkServerHealthAddedToPacket() {
+    httpClientStub.withResponse(OK_RESPONSE);
+
+    Packet packet =
+        Stub.createStub(PacketStub.class)
+            .withServerName(MANAGED_SERVER1)
+            .withGetKeyReturnValue(httpClientStub);
+    packet.put(
+        ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
+
+    withHttpClientStep.apply(packet);
+
+    Map<String, ServerHealth> serverHealthMap =
+        packet.getValue(ProcessingConstants.SERVER_HEALTH_MAP);
+    ServerHealth serverHealth = serverHealthMap.get(MANAGED_SERVER1);
+    assertThat(serverHealth.getOverallHealth(), is("ok"));
+  }
+
+  @Test
+  public void withHttpClientStep_verifyServerHealthForServerOverloadedAddedToPacket() {
+    httpClientStub.withStatus(500).withSuccessful(false);
+
+    Packet packet =
+        Stub.createStub(PacketStub.class)
+            .withServerName(MANAGED_SERVER1)
+            .withGetKeyReturnValue(httpClientStub);
+    packet.put(
+        ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
+
+    withHttpClientStep.apply(packet);
+
+    Map<String, ServerHealth> serverHealthMap =
+        packet.getValue(ProcessingConstants.SERVER_HEALTH_MAP);
+    ServerHealth serverHealth = serverHealthMap.get(MANAGED_SERVER1);
+    assertThat(
+        serverHealth.getOverallHealth(), is(ReadHealthStep.OVERALL_HEALTH_FOR_SERVER_OVERLOADED));
+  }
+
+  @Test
+  public void withHttpClientStep_verifyServerHealthForOtherErrorAddedToPacket() {
+    httpClientStub.withStatus(404).withSuccessful(false);
+
+    Packet packet =
+        Stub.createStub(PacketStub.class)
+            .withServerName(MANAGED_SERVER1)
+            .withGetKeyReturnValue(httpClientStub);
+    packet.put(
+        ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
+    packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
+
+    withHttpClientStep.apply(packet);
+
+    Map<String, ServerHealth> serverHealthMap =
+        packet.getValue(ProcessingConstants.SERVER_HEALTH_MAP);
+    ServerHealth serverHealth = serverHealthMap.get(MANAGED_SERVER1);
+    assertThat(serverHealth.getOverallHealth(), is(ReadHealthStep.OVERALL_HEALTH_NOT_AVAILABLE));
+  }
+
+  static final String OK_RESPONSE =
+      "{\n"
+          + "    \"overallHealthState\": {\n"
+          + "        \"state\": \"ok\",\n"
+          + "        \"subsystemName\": null,\n"
+          + "        \"partitionName\": null,\n"
+          + "        \"symptoms\": []\n"
+          + "    },\n"
+          + "    \"activationTime\": 1556759105378\n"
+          + "}";
 
   abstract static class PacketStub extends Packet {
 
