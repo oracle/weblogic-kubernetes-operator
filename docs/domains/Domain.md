@@ -173,7 +173,7 @@ Shutdown describes the configuration for shutting down a server instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | `activationTime` | DateTime | RFC 3339 date and time at which the server started. |
-| `overallHealth` | string | Server health of this WebLogic server. |
+| `overallHealth` | string | Server health of this WebLogic server. If the value is "Not available", the operator has failed to read the health. If the value is "Not available (possibly overloaded)", the operator has failed to read the health of the server possibly due to the server is in overloaded state |
 | `subsystems` | array of [Subsystem Health](#subsystem-health) | Status of unhealthy subsystems, if any. |
 
 ### Channel
