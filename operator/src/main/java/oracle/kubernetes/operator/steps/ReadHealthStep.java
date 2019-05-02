@@ -19,7 +19,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.http.HTTPException;
 import oracle.kubernetes.operator.http.HttpClient;
+import oracle.kubernetes.operator.http.Result;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
@@ -96,6 +98,7 @@ public class ReadHealthStep extends Step {
   static final class ReadHealthWithHttpClientStep extends Step {
     private final V1Service service;
     private final V1Pod pod;
+    static final String OVERALL_HEALTH_FOR_SERVER_ERROR = "Not available";
 
     ReadHealthWithHttpClientStep(V1Service service, V1Pod pod, Step next) {
       super(next);
@@ -138,16 +141,14 @@ public class ReadHealthStep extends Step {
                   serverConfig.getAdminProtocolChannelName(),
                   serverConfig.getListenPort());
           if (serviceURL != null) {
-            String jsonResult =
-                httpClient
-                    .executePostUrlOnServiceClusterIP(
-                        getRetrieveHealthSearchUrl(),
-                        serviceURL,
-                        getRetrieveHealthSearchPayload(),
-                        true)
-                    .getResponse();
+            Result result =
+                httpClient.executePostUrlOnServiceClusterIP(
+                    getRetrieveHealthSearchUrl(),
+                    serviceURL,
+                    getRetrieveHealthSearchPayload(),
+                    false);
 
-            ServerHealth health = parseServerHealthJson(jsonResult);
+            ServerHealth health = createServerHealthFromResult(result);
 
             @SuppressWarnings("unchecked")
             ConcurrentMap<String, ServerHealth> serverHealthMap =
@@ -169,6 +170,17 @@ public class ReadHealthStep extends Step {
             t);
         return doNext(packet);
       }
+    }
+
+    private ServerHealth createServerHealthFromResult(Result restResult)
+        throws IOException, HTTPException {
+      if (restResult.isSuccessful()) {
+        return parseServerHealthJson(restResult.getResponse());
+      }
+      if (restResult.isServerError()) {
+        return new ServerHealth().withOverallHealth(OVERALL_HEALTH_FOR_SERVER_ERROR);
+      }
+      throw new HTTPException(restResult.getStatus());
     }
 
     private ServerHealth parseServerHealthJson(String jsonResult) throws IOException {
