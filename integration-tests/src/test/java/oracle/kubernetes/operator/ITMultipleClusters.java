@@ -93,6 +93,10 @@ public class ITMultipleClusters extends BaseTest {
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/"
               + TWO_CONFIGURED_CLUSTER_SCRIPT);
+      if (System.getenv("LB_TYPE") != null
+          && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
+        domainMap.put("voyagerWebPort", new Integer("30366"));
+      }
       addCluster2ToDomainTemplate();
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
@@ -136,6 +140,10 @@ public class ITMultipleClusters extends BaseTest {
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/" + TWO_MIXED_CLUSTER_SCRIPT);
+      if (System.getenv("LB_TYPE") != null
+          && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
+        domainMap.put("voyagerWebPort", new Integer("30377"));
+      }
       addCluster2ToDomainTemplate();
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
