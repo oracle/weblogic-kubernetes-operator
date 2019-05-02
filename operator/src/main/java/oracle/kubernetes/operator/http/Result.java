@@ -37,6 +37,14 @@ public class Result {
     return successful;
   }
 
+  /**
+   * @return true if the HTTP status code from the REST request indicates a server error, ie in the
+   *     5xx range
+   */
+  public boolean isServerError() {
+    return status >= 500 && status <= 599;
+  }
+
   @Override
   public String toString() {
     return "Result{"
