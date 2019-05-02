@@ -457,6 +457,7 @@ public class ITOperator extends BaseTest {
         domainMap.put(
             "image", System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:12.2.1.3");
         domainMap.put("imagePullSecretName", "ocir-domain");
+        domainMap.put("imagePullPolicy", "Always");
       }
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
@@ -495,6 +496,7 @@ public class ITOperator extends BaseTest {
         domainMap.put(
             "image", System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:12.2.1.3");
         domainMap.put("imagePullSecretName", "ocir-domain");
+        domainMap.put("imagePullPolicy", "Always");
       }
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
