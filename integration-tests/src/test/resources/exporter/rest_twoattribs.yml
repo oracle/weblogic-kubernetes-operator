@@ -1,0 +1,13 @@
+query_sync:
+  url: http://coordinator:8999/
+  refreshInterval: 5
+metricsNameSnakeCase: true
+queries:
+- applicationRuntimes:
+    key: name
+    keyName: app
+    componentRuntimes:
+      servlets:
+        prefix: weblogic_servlet_
+        key: servletName
+        values: [invocationTotalCount, executionTimeAverage]
