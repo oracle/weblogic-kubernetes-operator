@@ -43,6 +43,13 @@ if [ ! "$?" = "0" ] ; then
   exit 1
 fi
 
+mvn install
+if [ ! "$?" = "0" ] ; then
+  echo "mvn install failed"
+  exit 1
+fi
+
+
 export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
 
