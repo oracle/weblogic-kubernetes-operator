@@ -15,7 +15,7 @@ public class DBUtils {
   public static final String DEFAULT_RCU_SCHEMA_PASSWORD = "Oradoc_db1";
   public static final String DEFAULT_RCU_SYS_USERNAME = "sys";
   public static final String DEFAULT_RCU_SYS_PASSWORD = "Oradoc_db1";
-  public static final String RCU_NAMESPACE = "rcu";
+  public static final String DEFAULT_RCU_NAMESPACE = "rcu";
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   /**
@@ -49,14 +49,26 @@ public class DBUtils {
   /**
    * run RCU script to load database schema
    *
+   * @param rcuPodName - rcu pod name
    * @param inputYaml - create domain input file
    * @throws Exception - if any error occurs
    */
-  public static void runRCU(String inputYaml) throws Exception {
+  public static void runRCU(String rcuPodName, String inputYaml) throws Exception {
     Map<String, Object> inputMap = TestUtils.loadYaml(inputYaml);
+    runRCU(rcuPodName, inputMap);
+  }
+
+  /**
+   * run RCU script to load database schema
+   *
+   * @param rcuPodName - rcu pod name
+   * @param inputMap - domain input map
+   * @throws Exception - if any error occurs
+   */
+  public static void runRCU(String rcuPodName, Map<String, Object> inputMap) throws Exception {
     String dbConnectString = (String) inputMap.get("rcuDatabaseURL");
     String rcuPrefix = (String) inputMap.get("rcuSchemaPrefix");
-    runRCU(RCU_NAMESPACE, dbConnectString, rcuPrefix);
+    runRCU(rcuPodName, DEFAULT_RCU_NAMESPACE, dbConnectString, rcuPrefix);
   }
 
   /**
@@ -67,10 +79,9 @@ public class DBUtils {
    * @param rcuPrefix - rcu prefix for the db schema name
    * @throws Exception - if any error occurs
    */
-  public static void runRCU(String rcuNamespace, String dbConnectString, String rcuPrefix)
+  private static void runRCU(
+      String rcuPodName, String rcuNamespace, String dbConnectString, String rcuPrefix)
       throws Exception {
-    String rcuPodName = createRCUPod(rcuNamespace);
-    logger.info("DEBUG: rcuPodName=" + rcuPodName);
 
     // create password file used for rcu script
     String rcuPwdCmd = "echo " + DEFAULT_RCU_SYS_PASSWORD + "> /u01/oracle/pwd.txt";
@@ -99,7 +110,7 @@ public class DBUtils {
    * @return - rcu pod name
    * @throws Exception - if any error occurs
    */
-  private static String createRCUPod(String rcuNamespace) throws Exception {
+  public static String createRCUPod(String rcuNamespace) throws Exception {
     // create a rcu deployment
     String cmd =
         "kubectl run rcu -n "
@@ -108,7 +119,8 @@ public class DBUtils {
             + DEFAULT_FMWINFRA_DOCKER_IMAGENAME
             + ":"
             + DEFAULT_FMWINFRA_DOCKER_IMAGETAG
-            + " -- sleep 300";
+            + " -- sleep 100000";
+    logger.info("running command " + cmd);
     TestUtils.exec(cmd);
 
     // get rcu pod name
@@ -116,6 +128,7 @@ public class DBUtils {
     logger.info("running command " + cmd);
     ExecResult result = TestUtils.exec(cmd);
     String podName = result.stdout();
+    logger.info("DEBUG: rcuPodName=" + podName);
 
     // check the pod is ready
     TestUtils.checkPodReady(podName, rcuNamespace);
