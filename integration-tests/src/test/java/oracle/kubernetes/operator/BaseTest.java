@@ -592,7 +592,7 @@ public class BaseTest {
         domainNS);
   }
 
-  private void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
+  public static void buildDeployWebServiceApp(Domain domain, String testAppName, String wsName)
       throws Exception {
     String scriptName = "buildDeployWSAndWSClientAppInPod.sh";
     // Build WS and WS client WARs in the admin pod and deploy it from the admin pod to a weblogic

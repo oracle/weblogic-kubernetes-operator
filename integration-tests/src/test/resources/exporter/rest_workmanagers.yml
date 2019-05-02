@@ -1,0 +1,11 @@
+query_sync:
+  url: http://coordinator:8999/
+  refreshInterval: 5
+metricsNameSnakeCase: true
+queries:
+- applicationRuntimes:
+    key: name
+    workManagerRuntimes:
+      prefix: workmanager_
+      key: applicationName
+      values: [pendingRequests, completedRequests, stuckThreadCount]

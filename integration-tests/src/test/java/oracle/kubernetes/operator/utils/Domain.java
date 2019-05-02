@@ -466,7 +466,7 @@ public class Domain {
       }
       testAppUrl.append(webappName).append("/");
       // curl cmd to call webapp
-      StringBuffer curlCmd = new StringBuffer("curl --silent ");
+      StringBuffer curlCmd = new StringBuffer("curl --silent --noproxy '*'");
       curlCmd
           .append(" -H 'host: ")
           .append(domainUid)
