@@ -85,7 +85,7 @@ public class ITMonitoringExporter extends BaseTest {
       metricsUrl = exporterUrl + "metrics";
       configPath = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter/";
 
-      DeployRunMonitoringExporter();
+      deployRunMonitoringExporter(domain, operator);
       upgradeTraefikHostName();
       buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
     }
@@ -116,18 +116,21 @@ public class ITMonitoringExporter extends BaseTest {
   }
 
   /**
-   * clone, build , deploy monitoring exporter
+   * clone, build , deploy monitoring exporter on specified domain, operator
    *
    * @throws Exception
    */
-  private static void DeployRunMonitoringExporter() throws Exception {
+  private static void deployRunMonitoringExporter(Domain domain, Operator operator)
+      throws Exception {
 
     TestUtils.gitCloneBuildMonitoringExporter();
     logger.info("Creating Operator & waiting for the script to complete execution");
     boolean testCompletedSuccessfully = false;
     startExporterPrometheusGrafana(domain, operator);
+    // check if exporter is up
+    domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
     testCompletedSuccessfully = true;
-    logger.info("SUCCESS - DeployRunMonitoringExporter");
+    logger.info("SUCCESS - deployRunMonitoringExporter");
   }
 
   /**
@@ -255,7 +258,6 @@ public class ITMonitoringExporter extends BaseTest {
     boolean isFoundOldKey1 = true;
     boolean isFoundOldKey2 = true;
 
-    logger.info("Checking configuration for " + searchKey1);
     isFoundNewKey1 = checkMetrics(searchKey1);
     isFoundNewKey2 = checkMetrics(searchKey2);
     isFoundOldKey1 = checkMetrics(testWSAppTotalServletInvokesSearchKey1);
