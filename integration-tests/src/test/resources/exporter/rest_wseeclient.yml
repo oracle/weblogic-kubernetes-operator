@@ -1,0 +1,21 @@
+query_sync:
+  url: http://coordinator:8999/
+  refreshInterval: 5
+metricsNameSnakeCase: true
+queries:
+- applicationRuntimes:
+    key: name
+    keyName: app
+    componentRuntimes:
+      key: name
+      keyName: componentRuntime
+      wseeClientRuntimes:
+        key: name
+        port:
+          key: name
+          keyName: wseeClientPort
+          operations:
+            prefix: weblogic_wsee_client_
+            key: name
+            keyName: operations
+            values: [lastInvocationTime, responseErrorCount, responseTimeHigh, responseTimeTotal, responseCount, responseTimeAverage]
