@@ -202,10 +202,10 @@ public class TestUtils {
     checkCmdInLoopForDelete(cmd.toString(), "\"" + namespace + "\" not found", namespace);
   }
 
-  public static void deletePVC(String pvcName, String namespace, String domainUid)
+  public static void deletePVC(String pvcName, String namespace, String domainUid, String jobName)
       throws Exception {
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
-    cmdDelJob.append(domainUid).append("-create-weblogic-sample-domain-job -n ").append(namespace);
+    cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
     logger.info("Deleting job " + cmdDelJob);
     exec(cmdDelJob.toString());
 
