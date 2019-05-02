@@ -27,7 +27,7 @@ $ mvn fmt:format
 To build the Javadoc for the operator, issue the following command:
 
 ```
-$ mvn javadoc:javadoc
+$ mvn javadoc:aggregate
 ```
 
 The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
