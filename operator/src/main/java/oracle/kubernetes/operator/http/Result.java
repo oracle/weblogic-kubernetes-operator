@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -38,11 +38,11 @@ public class Result {
   }
 
   /**
-   * @return true if the HTTP status code from the REST request indicates a server error, ie in the
-   *     5xx range
+   * @return true if the HTTP status code from the REST request indicates that the server may be
+   *     overloaded
    */
-  public boolean isServerError() {
-    return status >= 500 && status <= 599;
+  public boolean isServerOverloaded() {
+    return status == 500 || status == 503;
   }
 
   @Override
