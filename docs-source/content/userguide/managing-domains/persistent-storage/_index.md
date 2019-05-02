@@ -43,8 +43,8 @@ $ chmod 770 /path/to/domain1PersistentVolume
 $ kubectl annotate pv domain1-weblogic-sample-pv pv.beta.kubernetes.io/gid=6789
 ```
 
-Typically, after the domain is created and servers are running, the group ownership of the persistent volume files
-can be updated to the specified GID which will provide read access to the group members. Normally
+After the domain is created and servers are running, the group ownership of the persistent volume files
+can be updated to the specified GID which will provide read access to the group members. Typically,
 files created from a pod onto the persistent volume will have UID `1000` and GID `1000` which is the
 `oracle` user from the WebLogic Docker image.
 
