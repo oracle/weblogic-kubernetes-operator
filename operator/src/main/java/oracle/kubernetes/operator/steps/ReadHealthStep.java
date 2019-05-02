@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.http.HTTPException;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.http.Result;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -43,6 +42,10 @@ import org.joda.time.DateTime;
 public class ReadHealthStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  public static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
+  public static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
+      OVERALL_HEALTH_NOT_AVAILABLE + " (possibly overloaded)";
 
   private ReadHealthStep(Step next) {
     super(next);
@@ -98,7 +101,6 @@ public class ReadHealthStep extends Step {
   static final class ReadHealthWithHttpClientStep extends Step {
     private final V1Service service;
     private final V1Pod pod;
-    static final String OVERALL_HEALTH_FOR_SERVER_ERROR = "Not available";
 
     ReadHealthWithHttpClientStep(V1Service service, V1Pod pod, Step next) {
       super(next);
@@ -172,15 +174,15 @@ public class ReadHealthStep extends Step {
       }
     }
 
-    private ServerHealth createServerHealthFromResult(Result restResult)
-        throws IOException, HTTPException {
+    private ServerHealth createServerHealthFromResult(Result restResult) throws IOException {
       if (restResult.isSuccessful()) {
         return parseServerHealthJson(restResult.getResponse());
       }
-      if (restResult.isServerError()) {
-        return new ServerHealth().withOverallHealth(OVERALL_HEALTH_FOR_SERVER_ERROR);
-      }
-      throw new HTTPException(restResult.getStatus());
+      return new ServerHealth()
+          .withOverallHealth(
+              restResult.isServerOverloaded()
+                  ? OVERALL_HEALTH_FOR_SERVER_OVERLOADED
+                  : OVERALL_HEALTH_NOT_AVAILABLE);
     }
 
     private ServerHealth parseServerHealthJson(String jsonResult) throws IOException {
