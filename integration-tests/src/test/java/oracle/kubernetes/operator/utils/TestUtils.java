@@ -935,7 +935,7 @@ public class TestUtils {
 
   /**
    * A utility method to copy Cross Namespaces RBAC yaml template file replacing the DOMAIN_NS,
-   * OPERATOR_NS and DOMAINUID.
+   * OPERATOR_NS
    *
    * @throws IOException when copying files from source location to staging area fails
    */
@@ -947,11 +947,6 @@ public class TestUtils {
       logger.log(Level.INFO, "Copying {0}", src.toString());
       Charset charset = StandardCharsets.UTF_8;
       String content = new String(Files.readAllBytes(src), charset);
-      /*
-      content = content.replaceAll("@DOMAIN_NS@", domainNS);
-      content = content.replaceAll("@DOMAIN_UID@", domainUID);
-      content = content.replaceAll("@OPERATOR_NS@", operatorNS);
-      */
       content = content.replaceAll("weblogic-domain", domainNS);
       content = content.replaceAll("weblogic-operator", operatorNS);
       logger.log(Level.INFO, "to {0}", dst.toString());
@@ -963,8 +958,7 @@ public class TestUtils {
    * Remove monitoring exporter directory if exists and clone latest from github for monitoring
    * exporter code
    *
-   * @throws Exception if could not run the command successfully to clone of docker-images sample
-   *     from github
+   * @throws Exception if could not run the command successfully to clone from github
    */
   public static void gitCloneBuildMonitoringExporter() throws Exception {
     monitoringDir = BaseTest.getResultDir() + "/monitoring";
@@ -989,7 +983,7 @@ public class TestUtils {
           removeAndClone.append("rm -rf ").append(monitoringExporterSrcDir).append(" && ");
         }
         logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
-        // git clone docker-images project
+        // git clone exporter project
         removeAndClone
             .append(" git clone  https://github.com/oracle/weblogic-monitoring-exporter.git ")
             .append(monitoringExporterSrcDir);
