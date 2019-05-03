@@ -84,7 +84,11 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+      //domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+    	Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+    	wlstDomainMap.put("loadBalancerCreation", new Boolean("true"));
+    	domain = TestUtils.createDomain(wlstDomainMap);
+
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
@@ -125,7 +129,11 @@ public class ITOperator extends BaseTest {
     boolean testCompletedSuccessfully = false;
     try {
       // create domain
-      domain = TestUtils.createDomain(DOMAINONPV_WDT_YAML);
+      //domain = TestUtils.createDomain(DOMAINONPV_WDT_YAML);
+    	Map<String, Object> wdtDomainMap = TestUtils.loadYaml(DOMAINONPV_WDT_YAML);
+    	wdtDomainMap.put("loadBalancerCreation", new Boolean("true"));
+    	domain = TestUtils.createDomain(wlstDomainMap);
+
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
       testWLDFScaling(operator2, domain);
@@ -175,7 +183,10 @@ public class ITOperator extends BaseTest {
       wlstDomainMap.put("domainUID", "domain1onpvwlst");
       wlstDomainMap.put("adminNodePort", new Integer("30702"));
       wlstDomainMap.put("t3ChannelPort", new Integer("30031"));
-      wlstDomainMap.put("voyagerWebPort", new Integer("30307"));
+      wlstDomainMap.put("loadBalancerCreation", new Boolean("true"));
+      if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
+        wlstDomainMap.put("voyagerWebPort", new Integer("30307"));
+      }
       domain1 = TestUtils.createDomain(wlstDomainMap);
       domain1.verifyDomainCreated();
       testBasicUseCases(domain1);
@@ -191,7 +202,10 @@ public class ITOperator extends BaseTest {
       wdtDomainMap.put("adminNodePort", new Integer("30703"));
       wdtDomainMap.put("t3ChannelPort", new Integer("30041"));
       // wdtDomainMap.put("clusterType", "Configured");
-      wdtDomainMap.put("voyagerWebPort", new Integer("30308"));
+      wdtDomainMap.put("loadBalancerCreation", new Boolean("true"));
+      if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
+        wdtDomainMap.put("voyagerWebPort", new Integer("30308"));
+      }
       domain2 = TestUtils.createDomain(wdtDomainMap);
       domain2.verifyDomainCreated();
       testBasicUseCases(domain2);
@@ -365,8 +379,10 @@ public class ITOperator extends BaseTest {
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-domain-auto-custom-sit-config.py");
-      domainMap.put("voyagerWebPort", new Integer("30312"));
-
+      domainMap.put("loadBalancerCreation", new Boolean("true"));
+      if (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
+        domainMap.put("voyagerWebPort", new Integer("30312"));
+      }  
       // use NFS for this domain on Jenkins, defaultis HOST_PATH
       if (System.getenv("JENKINS") != null && System.getenv("JENKINS").equalsIgnoreCase("true")) {
         domainMap.put("weblogicDomainStorageType", "NFS");
@@ -450,7 +466,11 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(DOMAININIMAGE_WLST_YAML);
+      //domain = TestUtils.createDomain(DOMAININIMAGE_WLST_YAML);
+    	Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAM);
+    	wlstDomainMap.put("loadBalancerCreation", new Boolean("true"));
+    	domain = TestUtils.createDomain(wlstDomainMap);
+
       domain.verifyDomainCreated();
 
       testBasicUseCases(domain);
@@ -482,7 +502,10 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(DOMAININIMAGE_WDT_YAML);
+      //domain = TestUtils.createDomain(DOMAININIMAGE_WDT_YAML);
+    	Map<String, Object> wdtDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
+    	wdtDomainMap.put("loadBalancerCreation", new Boolean("true"));
+    	domain = TestUtils.createDomain(wlstDomainMap);
       domain.verifyDomainCreated();
 
       testBasicUseCases(domain);

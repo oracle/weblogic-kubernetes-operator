@@ -61,6 +61,7 @@ public class Domain {
   protected String userProjectsDir = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
+  private boolean loadBalancerCreation = false;
 
   protected String generatedInputYamlFile;
 
@@ -88,7 +89,11 @@ public class Domain {
     createSecret();
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
-    createLoadBalancer();
+    if (((Boolean)inputDomainMap.getOrDefault("loadBalancerCreation", new
+    		Boolean(loadBalancerCreation))).booleanValue() == true) {
+    	createLoadBalancer();
+    	logger.info("LoadBalancer will be created for the domain " + inputDomainMap.get("domainUID") );
+    }   
   }
 
   /**
@@ -1101,7 +1106,10 @@ public class Domain {
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
     if (voyager) {
       lbMap.put("loadBalancer", "VOYAGER");
-      lbMap.put("loadBalancerWebPort", domainMap.get("voyagerWebPort"));
+      lbMap.put(
+      		"loadBalancerWebPort",
+      		domainMap.getOrDefault("voyagerWebPort", new Integer(loadBalancerWebPort)));
+
     } else {
       lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
       lbMap.put(
