@@ -234,24 +234,6 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-domain-operator-rolebinding
-  namespace: weblogic-operator2
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: weblogic-domain
-  apiGroup: ""
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: "rbac.authorization.k8s.io"
----
-#
-# creating role-bindings
-#
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
-metadata:
-  name: weblogic-domain-operator-rolebinding
   namespace: weblogic-operator
 subjects:
 - kind: ServiceAccount
