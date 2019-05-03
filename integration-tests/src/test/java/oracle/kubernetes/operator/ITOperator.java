@@ -54,7 +54,7 @@ public class ITOperator extends BaseTest {
     logger.info("BEGIN");
     logger.info("Run once, release cluster lease");
 
-    // tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
     logger.info("SUCCESS");
   }
@@ -95,8 +95,8 @@ public class ITOperator extends BaseTest {
 
       testCompletedSuccessfully = true;
     } finally {
-      /* if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
-      domain.shutdownUsingServerStartPolicy(); */
+      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully))
+        domain.shutdownUsingServerStartPolicy();
     }
 
     logger.info("SUCCESS - " + testMethodName);
