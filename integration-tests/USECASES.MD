@@ -102,3 +102,9 @@ Configuration Overrides Usecases
 | --- | --- |
 | Server affinity | Use a web application deployed on Weblogic cluster to track HTTP session. Test server-affinity by sending two HTTP requests to Weblogic and verify that all requests are directed to same Weblogic server |
 | Session state isolation | Verify that values saved in a client session state are not visible to another client |
+
+| Logging with Elastic Stack | Use Case |
+| --- | --- |
+| Search log level | Use Elasticsearch Count API to query logs of level=INFO and verify that total number of logs for level=INFO is not zero and failed count is zero |
+| Search Operator log | Use Elasticsearch Search APIs to query Operator log info and verify that log hits for type=weblogic-operator are not empty |
+| Search Weblogic log | Use Elasticsearch Search APIs to query Weblogic log info and verify that log hits for Weblogic servers are not empty |
