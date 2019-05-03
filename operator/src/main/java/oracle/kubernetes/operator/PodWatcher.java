@@ -131,7 +131,7 @@ public class PodWatcher extends Watcher<V1Pod>
 
     @Override
     public NextAction apply(Packet packet) {
-      if (PodHelper.isReady(pod)) {
+      if (PodHelper.getReadyStatus(pod)) {
         return doNext(packet);
       }
 
@@ -180,7 +180,7 @@ public class PodWatcher extends Watcher<V1Pod>
                                   V1Pod result,
                                   int statusCode,
                                   Map<String, List<String>> responseHeaders) {
-                                if (result != null && PodHelper.isReady(result)) {
+                                if (result != null && PodHelper.getReadyStatus(result)) {
                                   if (didResume.compareAndSet(false, true)) {
                                     readyCallbackRegistrations.remove(metadata.getName(), ready);
                                     fiber.resume(packet);
