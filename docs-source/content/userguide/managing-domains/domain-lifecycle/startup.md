@@ -71,11 +71,11 @@ If more servers are configured as `ALWAYS` than the cluster's `replicas` count, 
 
 ### Server start state
 
-For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic
-only as far as the administrative state.  This can be achieved using the `serverStartState` property, which is available at domain,
-cluster, and server levels.  When `serverStartState` is set to `ADMIN` then servers will progress only to the administrative
-state.  You could then use the WebLogic console, REST API, or a WLST script to make any necessary updates before advancing the 
-server to the running state.
+For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server
+so that at the end of its startup process, the server is in an administrative state.  This can be achieved using the `serverStartState`
+property, which is available at domain, cluster, and server levels.  When `serverStartState` is set to `ADMIN`, then servers will
+progress only to the administrative state.  You could then use the WebLogic console, REST API, or a WLST script to make any necessary
+updates before advancing the server to the running state.
 
 Changes to the `serverStartState` property do not affect already started servers.
 
