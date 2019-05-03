@@ -64,6 +64,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withServerStartState(String startState) {
+    ((BaseConfiguration) getDomainSpec()).setServerStartState(startState);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withEnvironmentVariable(String name, String value) {
     ((BaseConfiguration) getDomainSpec()).addEnvironmentVariable(name, value);
     return this;
