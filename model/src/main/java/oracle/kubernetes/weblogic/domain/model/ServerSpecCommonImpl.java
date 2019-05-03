@@ -50,7 +50,7 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
 
   @Override
   public List<V1EnvVar> getEnvironmentVariables() {
-    return withStateAdjustments(server.getEnv());
+    return server.getEnv();
   }
 
   @Override

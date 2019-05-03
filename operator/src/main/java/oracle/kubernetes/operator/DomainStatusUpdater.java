@@ -183,7 +183,7 @@ public class DomainStatusUpdater {
       }
 
       private boolean shouldBeRunning(ServerStartupInfo startupInfo) {
-        return "RUNNING".equals(startupInfo.getDesiredState());
+        return RUNNING_STATE.equals(startupInfo.getDesiredState());
       }
 
       private boolean isNotRunning(@Nonnull String serverName) {
