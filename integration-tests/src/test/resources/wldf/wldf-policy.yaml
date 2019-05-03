@@ -4,7 +4,7 @@ metadata:
   name: weblogic-domain-cluster-role
 rules:
 - apiGroups: ["apiextensions.k8s.io"]
-  resources: ["customresourcedefinitions"]
+  resources: ["customresourcedefinitions", "domains"]
   verbs: ["get", "list", "update"]
 ---
 #
