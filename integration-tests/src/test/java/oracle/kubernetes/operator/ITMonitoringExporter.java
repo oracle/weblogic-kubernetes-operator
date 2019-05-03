@@ -24,9 +24,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import javax.xml.bind.DatatypeConverter;
-import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.Operator;
-import oracle.kubernetes.operator.utils.TestUtils;
+import oracle.kubernetes.operator.utils.*;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -56,6 +54,7 @@ public class ITMonitoringExporter extends BaseTest {
   String oprelease = "op" + number;
   private int waitTime = 5;
   private int maxIterations = 30;
+  private static String loadBalancer = "TRAEFIK";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -80,13 +79,13 @@ public class ITMonitoringExporter extends BaseTest {
         domain = createVerifyDomain(number, operator);
         Assert.assertNotNull(domain);
       }
+
       myhost = domain.getHostNameForCurl();
       exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
       metricsUrl = exporterUrl + "metrics";
       configPath = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter/";
-
-      deployRunMonitoringExporter(domain, operator);
       upgradeTraefikHostName();
+      deployRunMonitoringExporter(domain, operator);
       buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
     }
   }
@@ -146,6 +145,43 @@ public class ITMonitoringExporter extends BaseTest {
     logger.info("verify that domain is managed by operator");
     operator.verifyDomainExists(domain.getDomainUid());
     return domain;
+  }
+
+  /**
+   * call webapp and verify load balancing by checking server name in the response
+   *
+   * @param searchKey - metric query expression
+   * @throws Exception
+   */
+  public String checkMetricsViaPrometheus(String searchKey) throws Exception {
+
+    // url
+    StringBuffer testAppUrl = new StringBuffer("http://");
+    testAppUrl
+        .append(domain.getHostNameForCurl())
+        .append(":")
+        .append("32000")
+        .append("/api/v1/query?query=");
+    if (loadBalancer.equals("APACHE")) {
+      testAppUrl.append("weblogic/");
+    }
+    testAppUrl.append(searchKey);
+    // curl cmd to call webapp
+    StringBuffer curlCmd = new StringBuffer("curl --silent --noproxy '*'");
+    curlCmd
+        .append(" -H 'host: ")
+        .append(domain.getDomainUid())
+        .append(".org' ")
+        .append(testAppUrl.toString());
+    // curl cmd to get response code
+    StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
+    curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
+
+    logger.info("Curl cmd with response code " + curlCmdResCode);
+    logger.info("Curl cmd " + curlCmd);
+    ExecResult result = ExecCommand.exec(curlCmd.toString());
+    logger.info("webapp invoked successfully for curlCmd:" + curlCmd);
+    return result.stdout().trim();
   }
 
   private static void startExporterPrometheusGrafana(Domain domain, Operator operator)
@@ -238,6 +274,25 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    String checkPrometheus = checkMetricsViaPrometheus("webapp_config_open_sessions_current_count");
+    assertTrue(checkPrometheus.contains("testwsapp"));
+
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Replace monitoring exporter configuration and verify it was applied to both managed servers
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test02_ReplaceConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    logger.info(checkMetricsViaPrometheus("heap_size_current"));
     /*
         exporterUrl = "http://slc13kef.us.oracle.com:" + "30305" + "/wls-exporter/";
         metricsUrl = exporterUrl + "metrics";
