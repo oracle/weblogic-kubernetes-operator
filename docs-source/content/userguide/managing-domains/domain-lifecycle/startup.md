@@ -16,8 +16,8 @@ and which servers should be restarted. To start, stop, or restart servers, modif
     * [Rolling restarts](#rolling-restarts)
     * [Common restarting scenarios](#common-restarting-scenarios)
 
-There are properties on the domain resource that specify which servers should be running
-and which servers should be restarted. To start, stop, or restart servers, modify these properties on the domain resource
+There are properties on the domain resource that specify which servers should be running,
+which servers should be restarted and the desired initial state. To start, stop, or restart servers, modify these properties on the domain resource
 (for example, by using `kubectl` or the Kubernetes REST API).  The operator will notice the changes and apply them.  Beginning,
 with operator version 2.2, there are now properties to control server shutdown handling, such as whether the shutdown
 will be graceful, the timeout, and if in-flight sessions are given the opportunity to complete.
@@ -68,6 +68,16 @@ Servers configured as `ALWAYS` count toward the cluster's `replicas` count.
 {{% notice note %}}
 If more servers are configured as `ALWAYS` than the cluster's `replicas` count, they will all be started and the `replicas` count will be ignored.
 {{% /notice %}}
+
+### Server start state
+
+For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server
+so that at the end of its startup process, the server is in an administrative state.  This can be achieved using the `serverStartState`
+property, which is available at domain, cluster, and server levels.  When `serverStartState` is set to `ADMIN`, then servers will
+progress only to the administrative state.  You could then use the WebLogic console, REST API, or a WLST script to make any necessary
+updates before advancing the server to the running state.
+
+Changes to the `serverStartState` property do not affect already started servers.
 
 ### Common starting and stopping scenarios
 
@@ -240,7 +250,6 @@ The operator will restart servers when any of the follow properties on the domai
 * `readinessProbe`
 * `resources`
 * `restartVersion`
-* `serverStartState`
 * `volumes`
 * `volumeMounts`
 
@@ -249,6 +258,11 @@ If the only change detected is the addition or modification of a domain-specifie
 the operator will *patch* the server's pod rather than restarting it. Removing a label or annotation from
 the domain resource will cause neither a restart nor a patch. It is possible to force a restart to remove
 such a label or annotation by modifying the `restartVersion`.
+{{% /notice %}}
+
+{{% notice note %}}
+Prior to version 2.2, the operator incorrectly restarted servers when the `serverStartState` property was changed.  Now, 
+this property has no affect on already running servers.
 {{% /notice %}}
 
 ### Rolling restarts

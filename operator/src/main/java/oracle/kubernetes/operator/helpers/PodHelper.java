@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1ObjectMeta;
@@ -15,9 +14,7 @@ import io.kubernetes.client.models.V1PodStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -84,6 +81,14 @@ public class PodHelper {
           }
         }
       }
+    }
+    return false;
+  }
+
+  public static boolean isDeleting(V1Pod pod) {
+    V1ObjectMeta meta = pod.getMetadata();
+    if (meta != null) {
+      return meta.getDeletionTimestamp() != null;
     }
     return false;
   }
@@ -181,14 +186,6 @@ public class PodHelper {
 
     private V1EnvVar internalCertEnvValue() {
       return new V1EnvVar().name(INTERNAL_OPERATOR_CERT_ENV).value(getInternalOperatorCertFile());
-    }
-
-    private Optional<V1Container> getContainer(V1Pod v1Pod) {
-      return v1Pod.getSpec().getContainers().stream().filter(this::isK8sContainer).findFirst();
-    }
-
-    private boolean isK8sContainer(V1Container c) {
-      return KubernetesConstants.CONTAINER_NAME.equals(c.getName());
     }
 
     @Override
