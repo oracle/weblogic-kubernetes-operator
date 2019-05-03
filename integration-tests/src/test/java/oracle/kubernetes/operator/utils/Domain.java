@@ -89,11 +89,14 @@ public class Domain {
     createSecret();
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
-    if (((Boolean)inputDomainMap.getOrDefault("loadBalancerCreation", new
-    		Boolean(loadBalancerCreation))).booleanValue() == true) {
-    	createLoadBalancer();
-    	logger.info("LoadBalancer will be created for the domain " + inputDomainMap.get("domainUID") );
-    }   
+    if (((Boolean)
+                inputDomainMap.getOrDefault(
+                    "loadBalancerCreation", new Boolean(loadBalancerCreation)))
+            .booleanValue()
+        == true) {
+      createLoadBalancer();
+      logger.info("LoadBalancer will be created for the domain " + inputDomainMap.get("domainUID"));
+    }
   }
 
   /**
@@ -1142,8 +1145,8 @@ public class Domain {
     if (voyager) {
       lbMap.put("loadBalancer", "VOYAGER");
       lbMap.put(
-      		"loadBalancerWebPort",
-      		domainMap.getOrDefault("voyagerWebPort", new Integer(loadBalancerWebPort)));
+          "loadBalancerWebPort",
+          domainMap.getOrDefault("voyagerWebPort", new Integer(loadBalancerWebPort)));
 
     } else {
       lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
