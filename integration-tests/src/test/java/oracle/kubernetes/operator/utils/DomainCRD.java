@@ -89,11 +89,16 @@ public class DomainCRD {
    * @param ClusterName - Name of the cluster to which the attributes to be added
    * @param attributes - A HashMap of key value pairs
    */
-  public void addObjectNodeToCluster(String ClusterName, Map<String, String> attributes) {
+  public void addObjectNodeToCluster(String ClusterName, Map<String, Object> attributes) {
 
     JsonNode clusterNode = getClusterNode(ClusterName);
-    for (Map.Entry<String, String> entry : attributes.entrySet()) {
-      ((ObjectNode) clusterNode).put(entry.getKey(), entry.getValue());
+    for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+      Object entryValue = entry.getValue();
+      if (entryValue instanceof String) {
+        ((ObjectNode) clusterNode).put(entry.getKey(), (String) entryValue);
+      } else if (entryValue instanceof Integer) {
+        ((ObjectNode) clusterNode).put(entry.getKey(), ((Integer) entryValue).intValue());
+      }
     }
   }
 

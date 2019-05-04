@@ -4,8 +4,17 @@
 
 package oracle.kubernetes.operator;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.DBUtils;
+import oracle.kubernetes.operator.utils.DomainCRD;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.JRFDomain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -368,7 +377,7 @@ public class JrfInOperatorTest extends BaseTest {
       domainMap.put("configOverrides", "sitconfigcm");
       domainMap.put(
           "configOverridesFile",
-          BaseTest.getProjectRoot()
+          getProjectRoot()
               + "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig");
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put("adminNodePort", 30704);
@@ -398,6 +407,263 @@ public class JrfInOperatorTest extends BaseTest {
     } finally {
       if (domain11 != null && (JENKINS || testCompletedSuccessfully)) {
         domain11.destroy();
+      }
+    }
+    logger.info("SUCCESS - " + testMethod);
+  }
+
+  /**
+   * test the Rolling restart behavior in the jrf domain cluster level currently there are two bugs
+   * 29678557, 29720185, the test will fail
+   *
+   * @throws Exception - if any error occurs
+   */
+  @Test
+  public void testJRFDomainClusterRestartVersion() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
+    }
+
+    JRFDomain domain1 = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
+      domain1Map.put("domainUID", "jrfrestart");
+      domain1Map.put("adminNodePort", 30705);
+      domain1Map.put("t3ChannelPort", 30025);
+      domain1Map.put("voyagerWebPort", 30309);
+      domain1Map.put("rcuSchemaPrefix", "jrfrestart");
+      domain1Map.put("initialManagedServerReplicas", 4);
+
+      // run RCU script to load db schema
+      DBUtils.runRCU(rcuPodName, domain1Map);
+
+      // create domain
+      logger.info("Creating Domain & verifying the domain creation");
+      domain1 = new JRFDomain(domain1Map);
+      domain1.verifyDomainCreated();
+
+      String originalYaml =
+          getUserProjectsDir() + "/weblogic-domains/" + domain1.getDomainUid() + "/domain.yaml";
+
+      // Rolling restart the cluster by setting restartVersion at the cluster level
+      // Modify the original domain yaml to include restartVersion in cluster level
+      DomainCRD crd = new DomainCRD(originalYaml);
+      Map<String, Object> clusterRestartVersion = new HashMap();
+      clusterRestartVersion.put("restartVersion", "clusterV1");
+      clusterRestartVersion.put("maxUnavailable", new Integer(2));
+      crd.addObjectNodeToCluster(domain1.getClusterName(), clusterRestartVersion);
+      String modYaml = crd.getYamlTree();
+      logger.info(modYaml);
+
+      // Write the modified yaml to a new file
+      String restartTmpDir = getResultDir() + "/restarttemp";
+      Files.createDirectories(Paths.get(restartTmpDir));
+      Path path = Paths.get(restartTmpDir, "restart.cluster.yaml");
+      logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      Files.write(path, modYaml.getBytes(charset));
+
+      // Apply the new yaml to update the domain crd
+      logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
+      ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
+      logger.info(exec.stdout());
+
+      int expectedMsPodsCount =
+          (Integer) domain1.getDomainMap().get("initialManagedServerReplicas");
+      // TODO: this verification will fail due to bug 29678557
+      logger.info("Verifying the number of not ready MS pods can not exceed maxUnavailable value");
+      verifyMSPodsNotReadyCountNotExceedMaxUnAvailable(domain1, expectedMsPodsCount, 2);
+
+      // TODO: this verification will fail due to bug 29720185
+      logger.info("Verifying the number of MS pods");
+      if (getMSPodsCount(domain1) != expectedMsPodsCount) {
+        throw new Exception(
+            "The number of MS pods is not right, expect: "
+                + expectedMsPodsCount
+                + ", got: "
+                + getMSPodsCount(domain1));
+      }
+    } finally {
+      if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
+        domain1.destroy();
+      }
+    }
+    logger.info("SUCCESS - " + testMethod);
+  }
+
+  /**
+   * This is the test case to cover bug 29684570.
+   *
+   * @throws Exception - if any error occurs
+   */
+  @Test
+  public void testJRFDomainMSPodCreated() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
+    }
+
+    JRFDomain domain1 = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
+      domain1Map.put("domainUID", "jrfmspod");
+      domain1Map.put("adminNodePort", 30706);
+      domain1Map.put("t3ChannelPort", 30026);
+      domain1Map.put("voyagerWebPort", 30310);
+      domain1Map.put("rcuSchemaPrefix", "jrfmspod");
+      domain1Map.put("initialManagedServerReplicas", 4);
+      domain1Map.put("exposeAdminNodePort", false);
+
+      // run RCU script to load db schema
+      DBUtils.runRCU(rcuPodName, domain1Map);
+
+      // create domain
+      logger.info("Creating Domain & verifying the domain creation");
+      domain1 = new JRFDomain(domain1Map);
+      domain1.verifyDomainCreated();
+
+    } finally {
+      if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
+        domain1.destroy();
+      }
+    }
+    logger.info("SUCCESS - " + testMethod);
+  }
+
+  /**
+   * This is the test case to cover bug 29683926
+   *
+   * @throws Exception - if any error occurs
+   */
+  @Test
+  public void testJRFDomainCreateDomainScriptsMountPath() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
+    }
+
+    JRFDomain domain1 = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
+      domain1Map.put("domainUID", "jrfcdsmp");
+      domain1Map.put("adminNodePort", 30707);
+      domain1Map.put("t3ChannelPort", 30027);
+      domain1Map.put("voyagerWebPort", 30311);
+      domain1Map.put("rcuSchemaPrefix", "jrfcdsmp");
+      // set the createDomainScriptsMountPath to non-default value
+      domain1Map.put("createDomainScriptsMountPath", "/u01/weblogic1");
+
+      // run RCU script to load db schema
+      DBUtils.runRCU(rcuPodName, domain1Map);
+
+      // create domain
+      logger.info("Creating Domain & verifying the domain creation");
+      domain1 = new JRFDomain(domain1Map);
+      domain1.verifyDomainCreated();
+
+    } finally {
+      if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
+        domain1.destroy();
+      }
+    }
+    logger.info("SUCCESS - " + testMethod);
+  }
+
+  /**
+   * This test case is to cover bug 29657663
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testJRFDomainAdminPortEnabled() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
+    }
+
+    JRFDomain domain1 = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
+      domain1Map.put("domainUID", "jrfape");
+      domain1Map.put("adminNodePort", 30708);
+      domain1Map.put("t3ChannelPort", 30028);
+      domain1Map.put("voyagerWebPort", 30312);
+      domain1Map.put("rcuSchemaPrefix", "jrfape");
+      domain1Map.put(
+          "createDomainPyScript",
+          "integration-tests/src/test/resources/domain-home-on-pv/create-jrfdomain-admin-port-enabled.py");
+
+      // run RCU script to load db schema
+      DBUtils.runRCU(rcuPodName, domain1Map);
+
+      // create domain
+      logger.info("Creating Domain & verifying the domain creation");
+      domain1 = new JRFDomain(domain1Map, true);
+      domain1.verifyDomainCreated();
+
+    } finally {
+      if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
+        domain1.destroy();
+      }
+    }
+    logger.info("SUCCESS - " + testMethod);
+  }
+
+  /**
+   * This test case is to cover 29591809
+   *
+   * @throws Exception - if any error occurs
+   */
+  @Test
+  public void testJRFDomainAdminT3Channel() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
+    }
+
+    JRFDomain domain1 = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
+      domain1Map.put("domainUID", "jrft3");
+      domain1Map.put("adminNodePort", 30709);
+      domain1Map.put("t3ChannelPort", 30029);
+      domain1Map.put("voyagerWebPort", 30313);
+      domain1Map.put("rcuSchemaPrefix", "jrft3");
+
+      // run RCU script to load db schema
+      DBUtils.runRCU(rcuPodName, domain1Map);
+
+      // create domain
+      logger.info("Creating Domain & verifying the domain creation");
+      domain1 = new JRFDomain(domain1Map);
+      domain1.verifyDomainCreated();
+
+      // verify the Admin T3Channel is exposed
+      testAdminT3Channel(domain1);
+    } finally {
+      if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
+        domain1.destroy();
       }
     }
     logger.info("SUCCESS - " + testMethod);
@@ -444,5 +710,81 @@ public class JrfInOperatorTest extends BaseTest {
       testDomainLifecyle(operator, domain, port);
       testOperatorLifecycle(operator, domain);
     }
+  }
+
+  private void verifyMSPodsNotReadyCountNotExceedMaxUnAvailable(
+      JRFDomain domain, int expectedMSPodsCount, int maxUnavailable) throws Exception {
+    int i = 0;
+    // first wait for the ms pods to be in terminating state
+    while (i < getMaxIterationsPod() && getMSPodsNotReadyCount(domain) < 1) {
+      Thread.sleep(2000);
+      i++;
+    }
+    if (getMSPodsNotReadyCount(domain) == 0) {
+      throw new Exception("hit timeout while waiting for the first MS pod to be restarted");
+    }
+
+    // check the not ready MS pod count should not exceed maxUnavailable value
+    i = 0;
+    int msPodRunningAndReadyCount = getMSPodsRunningAndReadyCount(domain);
+    while (i < getMaxIterationsPod() * 4 && msPodRunningAndReadyCount != expectedMSPodsCount) {
+      int msPodsNotReadyCount = getMSPodsNotReadyCount(domain);
+      logger.info(
+          "Iter ["
+              + i
+              + "/"
+              + getMaxIterationsPod() * 4
+              + "]: MS Pod Not Ready Count: "
+              + msPodsNotReadyCount
+              + "; MS Pod Running and Ready Count: "
+              + msPodRunningAndReadyCount);
+      if (msPodsNotReadyCount > maxUnavailable) {
+        throw new Exception("number of not ready managed server pods exceeds " + maxUnavailable);
+      }
+      Thread.sleep(2000);
+      i++;
+      msPodRunningAndReadyCount = getMSPodsRunningAndReadyCount(domain);
+    }
+  }
+
+  private int getMSPodsNotReadyCount(JRFDomain domain) throws Exception {
+
+    String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pods -n ")
+        .append(domain.getDomainNS())
+        .append(" | grep ")
+        .append(managedServerNameBase)
+        .append(" | grep 0/1 | wc -l");
+    ExecResult result = TestUtils.exec(cmd.toString());
+
+    return Integer.parseInt(result.stdout());
+  }
+
+  private int getMSPodsRunningAndReadyCount(JRFDomain domain) throws Exception {
+
+    String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pods -n ")
+        .append(domain.getDomainNS())
+        .append(" | grep ")
+        .append(managedServerNameBase)
+        .append(" | grep 1/1 | grep Running | wc -l");
+    ExecResult result = TestUtils.exec(cmd.toString());
+
+    return Integer.parseInt(result.stdout());
+  }
+
+  private int getMSPodsCount(JRFDomain domain) throws Exception {
+    String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pods -n ")
+        .append(domain.getDomainNS())
+        .append(" | grep ")
+        .append(managedServerNameBase)
+        .append(" | wc -l");
+    ExecResult result = TestUtils.exec(cmd.toString());
+
+    return Integer.parseInt(result.stdout());
   }
 }
