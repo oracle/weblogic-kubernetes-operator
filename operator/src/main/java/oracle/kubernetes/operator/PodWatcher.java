@@ -87,11 +87,13 @@ public class PodWatcher extends Watcher<V1Pod>
   public void receivedResponse(Watch.Response<V1Pod> item) {
     LOGGER.entering();
 
+    listener.receivedResponse(item);
+
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
         V1Pod pod = item.object;
-        Boolean isReady = PodHelper.isReady(pod);
+        Boolean isReady = !PodHelper.isDeleting(pod) && PodHelper.isReady(pod);
         String podName = pod.getMetadata().getName();
         if (isReady) {
           OnReady ready = readyCallbackRegistrations.remove(podName);
@@ -104,8 +106,6 @@ public class PodWatcher extends Watcher<V1Pod>
       case "ERROR":
       default:
     }
-
-    listener.receivedResponse(item);
 
     LOGGER.exiting();
   }
@@ -131,7 +131,7 @@ public class PodWatcher extends Watcher<V1Pod>
 
     @Override
     public NextAction apply(Packet packet) {
-      if (PodHelper.getReadyStatus(pod)) {
+      if (!PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
         return doNext(packet);
       }
 
@@ -180,7 +180,9 @@ public class PodWatcher extends Watcher<V1Pod>
                                   V1Pod result,
                                   int statusCode,
                                   Map<String, List<String>> responseHeaders) {
-                                if (result != null && PodHelper.getReadyStatus(result)) {
+                                if (result != null
+                                    && !PodHelper.isDeleting(result)
+                                    && PodHelper.getReadyStatus(result)) {
                                   if (didResume.compareAndSet(false, true)) {
                                     readyCallbackRegistrations.remove(metadata.getName(), ready);
                                     fiber.resume(packet);
