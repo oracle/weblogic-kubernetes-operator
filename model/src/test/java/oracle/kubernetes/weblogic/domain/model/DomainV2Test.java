@@ -726,7 +726,7 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(
         serverSpec.getEnvironmentVariables(),
         containsInAnyOrder(
-            envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN -verbose"),
+            envVar("JAVA_OPTIONS", "-verbose"),
             envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "),
             envVar("var1", "value0")));
     assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));

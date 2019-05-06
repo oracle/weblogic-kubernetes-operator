@@ -185,6 +185,14 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withDefaultServerStartPolicy(String startPolicy);
 
   /**
+   * Sets the server start state ("RUNNING" or "ADMIN") for the domain.
+   *
+   * @param startState the server start state
+   * @return this object
+   */
+  public abstract DomainConfigurator withServerStartState(String startState);
+
+  /**
    * Add an environment variable to the domain.
    *
    * @param name variable name
