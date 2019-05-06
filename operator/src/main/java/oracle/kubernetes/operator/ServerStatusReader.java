@@ -104,7 +104,7 @@ public class ServerStatusReader {
   private static Step createServerStatusReaderStep(
       DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
     return new ServerStatusReaderStep(
-        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, null));
+        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
   }
 
   private static class ServerStatusReaderStep extends Step {
@@ -136,15 +136,14 @@ public class ServerStatusReader {
         if (DateTime.now()
             .isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
           String state = lastKnownStatus.getStatus();
-          info.updateLastKnownServerStatus(serverName, state);
           serverStateMap.put(serverName, state);
           return doNext(packet);
         }
       }
 
       if (PodHelper.getReadyStatus(pod)) {
-        info.updateLastKnownServerStatus(serverName, WebLogicConstants.RUNNING_STATE);
-        serverStateMap.put(serverName, WebLogicConstants.RUNNING_STATE);
+        // set default to UNKNOWN; will be corrected in ReadHealthStep
+        serverStateMap.put(serverName, WebLogicConstants.UNKNOWN_STATE);
         return doNext(packet);
       }
 
@@ -173,8 +172,11 @@ public class ServerStatusReader {
                   try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
                     state = CharStreams.toString(reader);
                   }
-                } else if (exitValue == 1) {
-                  state = WebLogicConstants.SHUTDOWN_STATE;
+                } else if (exitValue == 1 || exitValue == 2) {
+                  state =
+                      PodHelper.isDeleting(pod)
+                          ? WebLogicConstants.SHUTDOWN_STATE
+                          : WebLogicConstants.STARTING_STATE;
                 } else {
                   state = WebLogicConstants.UNKNOWN_STATE;
                 }
@@ -192,7 +194,6 @@ public class ServerStatusReader {
 
             state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
             serverStateMap.put(serverName, state);
-            info.updateLastKnownServerStatus(serverName, state);
             fiber.resume(packet);
           });
     }
@@ -202,21 +203,31 @@ public class ServerStatusReader {
       if (state != null) {
         state = state.trim();
         if (!state.isEmpty()) {
+          info.updateLastKnownServerStatus(serverName, state);
           return state;
         }
       }
-      return (lastKnownStatus != null)
-          ? lastKnownStatus.getStatus()
-          : WebLogicConstants.UNKNOWN_STATE;
+
+      if (lastKnownStatus != null) {
+        return lastKnownStatus.getStatus();
+      }
+      state =
+          (PodHelper.isDeleting(pod)
+              ? WebLogicConstants.SHUTTING_DOWN_STATE
+              : WebLogicConstants.STARTING_STATE);
+      info.updateLastKnownServerStatus(serverName, state);
+      return state;
     }
   }
 
   private static class ServerHealthStep extends Step {
     private final String serverName;
+    private final V1Pod pod;
 
-    ServerHealthStep(String serverName, Step next) {
+    ServerHealthStep(String serverName, V1Pod pod, Step next) {
       super(next);
       this.serverName = serverName;
+      this.pod = pod;
     }
 
     @Override
@@ -226,7 +237,8 @@ public class ServerStatusReader {
           (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
       String state = serverStateMap.get(serverName);
 
-      if (WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
+      if (PodHelper.getReadyStatus(pod)
+          || WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
         return doNext(STEP_FACTORY.apply(getNext()), packet);
       }
