@@ -36,8 +36,6 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.work.Fiber;
-import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -265,47 +263,15 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
-    return new ProgressingHookStep(reason, isPreserveAvailable, next);
-  }
-
-  private static class ProgressingHookStep extends Step {
-    private final String reason;
-    private final boolean isPreserveAvailable;
-
-    private ProgressingHookStep(String reason, boolean isPreserveAvailable, Step next) {
-      super(next);
-      this.reason = reason;
-      this.isPreserveAvailable = isPreserveAvailable;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Fiber f = Fiber.current().createChildFiber();
-      Packet p = new Packet();
-      p.getComponents().putAll(packet.getComponents());
-      f.start(
-          new ProgressingStep(reason, isPreserveAvailable),
-          p,
-          new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {}
-
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-            }
-          });
-
-      return doNext(packet);
-    }
+    return new ProgressingStep(reason, isPreserveAvailable, next);
   }
 
   private static class ProgressingStep extends Step {
     private final String reason;
     private final boolean isPreserveAvailable;
 
-    private ProgressingStep(String reason, boolean isPreserveAvailable) {
-      super(null);
+    private ProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
+      super(next);
       this.reason = reason;
       this.isPreserveAvailable = isPreserveAvailable;
     }
@@ -376,44 +342,14 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createAvailableStep(String reason, Step next) {
-    return new AvailableHookStep(reason, next);
-  }
-
-  private static class AvailableHookStep extends Step {
-    private final String reason;
-
-    private AvailableHookStep(String reason, Step next) {
-      super(next);
-      this.reason = reason;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Fiber f = Fiber.current().createChildFiber();
-      Packet p = new Packet();
-      p.getComponents().putAll(packet.getComponents());
-      f.start(
-          new AvailableStep(reason),
-          p,
-          new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {}
-
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-            }
-          });
-
-      return doNext(packet);
-    }
+    return new AvailableStep(reason, next);
   }
 
   private static class AvailableStep extends Step {
     private final String reason;
 
-    private AvailableStep(String reason) {
-      super(null);
+    private AvailableStep(String reason, Step next) {
+      super(next);
       this.reason = reason;
     }
 
@@ -499,44 +435,14 @@ public class DomainStatusUpdater {
    * @return Step
    */
   static Step createFailedStep(Throwable throwable, Step next) {
-    return new FailedHookStep(throwable, next);
-  }
-
-  private static class FailedHookStep extends Step {
-    private final Throwable throwable;
-
-    private FailedHookStep(Throwable throwable, Step next) {
-      super(next);
-      this.throwable = throwable;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Fiber f = Fiber.current().createChildFiber();
-      Packet p = new Packet();
-      p.getComponents().putAll(packet.getComponents());
-      f.start(
-          new FailedStep(throwable),
-          p,
-          new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {}
-
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-            }
-          });
-
-      return doNext(packet);
-    }
+    return new FailedStep(throwable, next);
   }
 
   private static class FailedStep extends Step {
     private final Throwable throwable;
 
-    private FailedStep(Throwable throwable) {
-      super(null);
+    private FailedStep(Throwable throwable, Step next) {
+      super(next);
       this.throwable = throwable;
     }
 
