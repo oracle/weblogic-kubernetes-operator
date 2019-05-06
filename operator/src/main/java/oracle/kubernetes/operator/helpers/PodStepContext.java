@@ -473,8 +473,7 @@ public abstract class PodStepContext extends StepContextBase {
         setRecordedPod(newPod);
       }
 
-      PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
-      return doNext(pw.waitForReady(newPod, next), packet);
+      return doNext(next, packet);
     }
   }
 
@@ -504,8 +503,7 @@ public abstract class PodStepContext extends StepContextBase {
         setRecordedPod(newPod);
       }
 
-      PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
-      return doNext(pw.waitForReady(newPod, next), packet);
+      return doNext(next, packet);
     }
   }
 
