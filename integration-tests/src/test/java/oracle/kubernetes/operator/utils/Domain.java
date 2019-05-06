@@ -1095,27 +1095,13 @@ public class Domain {
     logger.info("Command returned " + outputStr);
 
     if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
-      String dockerLoginAndPushCmd =
-          "docker login "
-              + System.getenv("REPO_REGISTRY")
-              + " -u "
-              + System.getenv("REPO_USERNAME")
-              + " -p \""
-              + System.getenv("REPO_PASSWORD")
-              + "\" && docker push "
-              + System.getenv("REPO_REGISTRY")
+      String image =
+          System.getenv("REPO_REGISTRY")
               + "/weblogick8s/domain-home-in-image:"
               + (System.getenv("IMAGE_TAG_WEBLOGIC") != null
                   ? System.getenv("IMAGE_TAG_WEBLOGIC")
                   : "12.2.1.3");
-      result = TestUtils.exec(dockerLoginAndPushCmd);
-      logger.info(
-          "cmd "
-              + dockerLoginAndPushCmd
-              + "\n result "
-              + result.stdout()
-              + "\n err "
-              + result.stderr());
+      TestUtils.loginAndPushImageToOCIR(image);
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
