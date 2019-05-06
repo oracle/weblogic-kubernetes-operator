@@ -93,8 +93,9 @@ public class ITMultipleClusters extends BaseTest {
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/"
               + TWO_CONFIGURED_CLUSTER_SCRIPT);
-      if (System.getenv("LB_TYPE") != null
-          && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER")) {
+      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
+          || (domainMap.containsKey("LB_TYPE")
+              && ((String) domainMap.get("LB_TYPE")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30366"));
       }
       addCluster2ToDomainTemplate();
