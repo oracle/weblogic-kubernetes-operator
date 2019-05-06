@@ -421,14 +421,14 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenShuttingDown_insertCreateAvailableHookStep() {
+  public void whenShuttingDown_insertCreateAvailableStep() {
     configurator.setShuttingDown(true);
 
-    assertThat(createNextStep().getClass().getSimpleName(), equalTo("AvailableHookStep"));
+    assertThat(createNextStep().getClass().getSimpleName(), equalTo("AvailableStep"));
   }
 
   @Test
-  public void whenNotShuttingDown_dontInsertCreateAvailableHookStep() {
+  public void whenNotShuttingDown_dontInsertCreateAvailableStep() {
     configurator.setShuttingDown(false);
 
     assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
