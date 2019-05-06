@@ -413,8 +413,9 @@ public class JrfInOperatorTest extends BaseTest {
   }
 
   /**
-   * test the Rolling restart behavior in the jrf domain cluster level currently there are two bugs
-   * 29678557, 29720185, the test will fail
+   * test the Rolling restart behavior in the jrf domain cluster level currently during the rolling
+   * restart, all managed servers may be in the not ready state. Bugs 29678557, 29720185, the test
+   * will fail before the bugs are fixed
    *
    * @throws Exception - if any error occurs
    */
@@ -497,7 +498,9 @@ public class JrfInOperatorTest extends BaseTest {
   }
 
   /**
-   * This is the test case to cover bug 29684570.
+   * In create domain input yaml file, set exposeAdminNodePort to false and exposeAdminT3Channel to
+   * true, make sure the managed server pods are created. Bug 29684570, the test will fail before
+   * the bug is fixed
    *
    * @throws Exception - if any error occurs
    */
@@ -540,7 +543,9 @@ public class JrfInOperatorTest extends BaseTest {
   }
 
   /**
-   * This is the test case to cover bug 29683926
+   * In create domain input yaml file, set createDomainScriptsMountPath to non-default value, make
+   * sure the create domain sample script works. Bug 29683926, the test will fail before the bug is
+   * fixed
    *
    * @throws Exception - if any error occurs
    */
@@ -583,7 +588,9 @@ public class JrfInOperatorTest extends BaseTest {
   }
 
   /**
-   * This test case is to cover bug 29657663
+   * In createFMWDomain.py file, set administration_port_enabled to true. Make sure the admin server
+   * pod is running and ready. All the managed server pods are created. Bug 29657663, the test will
+   * fail before the bug is fixed
    *
    * @throws Exception
    */
@@ -627,7 +634,8 @@ public class JrfInOperatorTest extends BaseTest {
   }
 
   /**
-   * This test case is to cover 29591809
+   * In create domain input file, set exposeAdminT3Channel to true. Make sure the admin t3 channel
+   * is exposed. Bug 29591809, the test will fail before the bug is fixed
    *
    * @throws Exception - if any error occurs
    */
@@ -694,6 +702,12 @@ public class JrfInOperatorTest extends BaseTest {
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
   }
 
+  /**
+   * basic test cases
+   *
+   * @param domain - jrfdomain
+   * @throws Exception - if any error occurs
+   */
   private void testBasicUseCases(JRFDomain domain) throws Exception {
     // Bug 29591809
     // TODO: re-enable the test once the bug is fixed
@@ -702,6 +716,13 @@ public class JrfInOperatorTest extends BaseTest {
     testAdminServerExternalService(domain);
   }
 
+  /**
+   * advanced test cases
+   *
+   * @param operator - weblogic operator
+   * @param domain - jrfdomain
+   * @throws Exception - if any error occurs
+   */
   private void testAdvancedUseCasesForADomain(Operator operator, JRFDomain domain)
       throws Exception {
     if (!SMOKETEST) {
@@ -712,6 +733,15 @@ public class JrfInOperatorTest extends BaseTest {
     }
   }
 
+  /**
+   * verify that during the rolling restart, the number of managed server pods which are not ready
+   * can not exceed the maxUnAvailable value
+   *
+   * @param domain - jrfdomain
+   * @param expectedMSPodsCount - total number of managed server pods expected
+   * @param maxUnavailable - maxUnAvailable value of the managed server pods
+   * @throws Exception - if any error occurs
+   */
   private void verifyMSPodsNotReadyCountNotExceedMaxUnAvailable(
       JRFDomain domain, int expectedMSPodsCount, int maxUnavailable) throws Exception {
     int i = 0;
@@ -747,6 +777,13 @@ public class JrfInOperatorTest extends BaseTest {
     }
   }
 
+  /**
+   * get the number of managed server pods which are not ready
+   *
+   * @param domain - jrfdomain
+   * @return - returns the number of managed server pods which are not ready
+   * @throws Exception - if any error occurs
+   */
   private int getMSPodsNotReadyCount(JRFDomain domain) throws Exception {
 
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
@@ -761,6 +798,13 @@ public class JrfInOperatorTest extends BaseTest {
     return Integer.parseInt(result.stdout());
   }
 
+  /**
+   * get the number of managed server pods which are running and ready
+   *
+   * @param domain - jrfdomain
+   * @return - returns the number of managed server pods which are running and ready
+   * @throws Exception - if any error occurs
+   */
   private int getMSPodsRunningAndReadyCount(JRFDomain domain) throws Exception {
 
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
@@ -775,6 +819,13 @@ public class JrfInOperatorTest extends BaseTest {
     return Integer.parseInt(result.stdout());
   }
 
+  /**
+   * get the number of managed server pods created
+   *
+   * @param domain - jrfdomain
+   * @return - returns the number of managed server pods created
+   * @throws Exception - if any error occurs
+   */
   private int getMSPodsCount(JRFDomain domain) throws Exception {
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
