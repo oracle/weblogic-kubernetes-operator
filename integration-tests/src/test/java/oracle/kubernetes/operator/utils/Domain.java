@@ -38,7 +38,7 @@ public class Domain {
   protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   protected Map<String, Object> domainMap;
-  private Map<String, Object> pvMap;
+  protected Map<String, Object> pvMap;
 
   // attributes from domain properties
   protected String domainUid = "";
@@ -304,7 +304,13 @@ public class Domain {
      */
     StringBuffer curlCmd =
         new StringBuffer(
-            "kubectl exec " + this.getDomainUid() + "-" + this.adminServerName + " /usr/bin/curl ");
+            "kubectl exec -n "
+                + this.domainNS
+                + " "
+                + this.getDomainUid()
+                + "-"
+                + this.adminServerName
+                + " /usr/bin/curl ");
 
     /*
      * Make sure we can reach the port,
@@ -377,6 +383,7 @@ public class Domain {
       throw new RuntimeException("FAILURE: Webapp deployment failed with response code " + output);
     }
   }
+
   /**
    * deploy webapp using t3 channel port for wlst
    *
@@ -392,6 +399,28 @@ public class Domain {
       String appLocationInPod,
       String username,
       String password)
+      throws Exception {
+    deployWebAppViaWLST(webappName, webappLocation, appLocationInPod, username, password, false);
+  }
+
+  /**
+   * deploy webapp using adminPort or t3 channel port
+   *
+   * @param webappName
+   * @param webappLocation
+   * @param appLocationInPod
+   * @param username
+   * @param password
+   * @param useAdminPortToDeploy
+   * @throws Exception
+   */
+  public void deployWebAppViaWLST(
+      String webappName,
+      String webappLocation,
+      String appLocationInPod,
+      String username,
+      String password,
+      boolean useAdminPortToDeploy)
       throws Exception {
     String adminPod = domainUid + "-" + adminServerName;
 
@@ -410,7 +439,8 @@ public class Domain {
         adminPod,
         domainNS);
 
-    callShellScriptByExecToPod(username, password, webappName, appLocationInPod);
+    callShellScriptByExecToPod(
+        username, password, webappName, appLocationInPod, useAdminPortToDeploy);
   }
 
   /**
@@ -611,6 +641,10 @@ public class Domain {
    * @throws Exception
    */
   public void deletePVCAndCheckPVReleased() throws Exception {
+    deletePVCAndCheckPVReleased("create-weblogic-sample-domain-job");
+  }
+
+  public void deletePVCAndCheckPVReleased(String jobName) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     String pvBaseName = (String) pvMap.get("baseName");
     if (domainUid != null) pvBaseName = domainUid + "-" + pvBaseName;
@@ -620,7 +654,7 @@ public class Domain {
     if (result.exitValue() == 0) {
       logger.info("Status of PV before deleting PVC " + result.stdout());
     }
-    TestUtils.deletePVC(pvBaseName + "-pvc", domainNS, domainUid);
+    TestUtils.deletePVC(pvBaseName + "-pvc", domainNS, domainUid, jobName);
     String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
     boolean pvReleased = TestUtils.checkPVReleased(pvBaseName, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
@@ -630,6 +664,7 @@ public class Domain {
       logger.info("PV is released when PVC is deleted");
     }
   }
+
   /**
    * create domain on existing directory
    *
@@ -1093,7 +1128,7 @@ public class Domain {
     }
   }
 
-  private void createLoadBalancer() throws Exception {
+  protected void createLoadBalancer() throws Exception {
     Map<String, Object> lbMap = new HashMap<String, Object>();
     lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);
@@ -1152,6 +1187,16 @@ public class Domain {
   private void callShellScriptByExecToPod(
       String username, String password, String webappName, String appLocationInPod)
       throws Exception {
+    callShellScriptByExecToPod(username, password, webappName, appLocationInPod, false);
+  }
+
+  private void callShellScriptByExecToPod(
+      String username,
+      String password,
+      String webappName,
+      String appLocationInPod,
+      boolean usingAdminPortToDeploy)
+      throws Exception {
 
     StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
     cmdKubectlSh
@@ -1175,8 +1220,16 @@ public class Domain {
         .append(domainUid)
         .append("-")
         .append(adminServerName)
-        .append(":")
-        .append(t3ChannelPort)
+        .append(":");
+
+    if (usingAdminPortToDeploy) {
+      String adminPort = (domainMap.getOrDefault("adminPort", 7001)).toString();
+      cmdKubectlSh.append(adminPort);
+    } else {
+      cmdKubectlSh.append(t3ChannelPort);
+    }
+
+    cmdKubectlSh
         .append(" ")
         .append(webappName)
         .append(" ")
@@ -1295,7 +1348,10 @@ public class Domain {
         "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
 
     this.voyager =
-        System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER");
+        (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
+            || (inputDomainMap.containsKey("LB_TYPE")
+                && ((String) inputDomainMap.get("LB_TYPE")).equalsIgnoreCase("VOYAGER"));
+
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
@@ -1521,6 +1577,15 @@ public class Domain {
                   .toPath(),
               StandardCopyOption.REPLACE_EXISTING);
         }
+      } else if (domainMap.containsKey("rcuDatabaseURL")) {
+        Files.copy(
+            new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                .toPath(),
+            new File(
+                    BaseTest.getResultDir()
+                        + "/samples/scripts/create-fmw-infrastructure-domain/common/createFMWDomain.py")
+                .toPath(),
+            StandardCopyOption.REPLACE_EXISTING);
       } else {
         // domain on pv case
         Files.copy(
@@ -1555,7 +1620,7 @@ public class Domain {
           .append(" -p ")
           .append(BaseTest.getPassword())
           .append(" -k -i ");
-    } else if (domainMap.containsKey("rcuCredentialsSecret")) {
+    } else if (domainMap.containsKey("rcuDatabaseURL")) {
       createDomainScriptCmd.append(
           "/samples/scripts/create-fmw-infrastructure-domain/create-domain.sh -v -i ");
     } else {

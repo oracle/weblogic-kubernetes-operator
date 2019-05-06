@@ -203,6 +203,7 @@ public class ReadHealthStepTest {
     packet.put(
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
+    packet.put(ProcessingConstants.SERVER_STATE_MAP, new ConcurrentHashMap<String, ServerHealth>());
 
     withHttpClientStep.apply(packet);
 
