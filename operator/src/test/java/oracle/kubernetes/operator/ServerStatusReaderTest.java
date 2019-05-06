@@ -153,20 +153,6 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
     assertThat(serverStates, hasEntry("server1", "still not ready yet"));
   }
 
-  @Test
-  public void whenPodIsReady_recordInStateMap() {
-    info.setServerPod("server1", createPod("server1"));
-    setReadyStatus(info.getServerPod("server1"));
-
-    execFactory.defineResponse("server1", "RUNNING");
-
-    Packet packet =
-        testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
-
-    Map<String, String> serverStates = getServerStates(packet);
-    assertThat(serverStates, hasEntry("server1", WebLogicConstants.RUNNING_STATE));
-  }
-
   private void setReadyStatus(V1Pod pod) {
     pod.setStatus(
         new V1PodStatus()

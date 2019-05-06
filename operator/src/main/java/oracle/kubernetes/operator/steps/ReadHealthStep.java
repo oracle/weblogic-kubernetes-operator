@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.steps;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.HttpClient;
@@ -95,7 +97,7 @@ public class ReadHealthStep extends Step {
   // overallHealthState, healthState
 
   private static String getRetrieveHealthSearchPayload() {
-    return "{ fields: [ 'overallHealthState', 'activationTime' ], links: [] }";
+    return "{ fields: [ 'state', 'overallHealthState', 'activationTime' ], links: [] }";
   }
 
   static final class ReadHealthWithHttpClientStep extends Step {
@@ -150,13 +152,23 @@ public class ReadHealthStep extends Step {
                     getRetrieveHealthSearchPayload(),
                     false);
 
-            ServerHealth health = createServerHealthFromResult(result);
+            Pair<String, ServerHealth> pair = createServerHealthFromResult(result);
+
+            String state = pair.getLeft();
+            if (state != null && !state.isEmpty()) {
+              ConcurrentMap<String, String> serverStateMap =
+                  (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
+              info.updateLastKnownServerStatus(serverName, state);
+              serverStateMap.put(serverName, state);
+            }
 
             @SuppressWarnings("unchecked")
             ConcurrentMap<String, ServerHealth> serverHealthMap =
                 (ConcurrentMap<String, ServerHealth>)
                     packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
-            serverHealthMap.put((String) packet.get(ProcessingConstants.SERVER_NAME), health);
+
+            serverHealthMap.put(
+                (String) packet.get(ProcessingConstants.SERVER_NAME), pair.getRight());
             AtomicInteger remainingServersHealthToRead =
                 packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
             remainingServersHealthToRead.getAndDecrement();
@@ -174,29 +186,32 @@ public class ReadHealthStep extends Step {
       }
     }
 
-    private ServerHealth createServerHealthFromResult(Result restResult) throws IOException {
+    private Pair<String, ServerHealth> createServerHealthFromResult(Result restResult)
+        throws IOException {
       if (restResult.isSuccessful()) {
         return parseServerHealthJson(restResult.getResponse());
       }
-      return new ServerHealth()
-          .withOverallHealth(
-              restResult.isServerOverloaded()
-                  ? OVERALL_HEALTH_FOR_SERVER_OVERLOADED
-                  : OVERALL_HEALTH_NOT_AVAILABLE);
+      return new Pair<>(
+          "",
+          new ServerHealth()
+              .withOverallHealth(
+                  restResult.isServerOverloaded()
+                      ? OVERALL_HEALTH_FOR_SERVER_OVERLOADED
+                      : OVERALL_HEALTH_NOT_AVAILABLE));
     }
 
-    private ServerHealth parseServerHealthJson(String jsonResult) throws IOException {
+    private Pair<String, ServerHealth> parseServerHealthJson(String jsonResult) throws IOException {
       if (jsonResult == null) return null;
 
       ObjectMapper mapper = new ObjectMapper();
       JsonNode root = mapper.readTree(jsonResult);
 
-      JsonNode state = null;
+      JsonNode healthState = null;
       JsonNode subsystemName = null;
       JsonNode symptoms = null;
       JsonNode overallHealthState = root.path("overallHealthState");
       if (overallHealthState != null) {
-        state = overallHealthState.path("state");
+        healthState = overallHealthState.path("state");
         subsystemName = overallHealthState.path("subsystemName");
         symptoms = overallHealthState.path("symptoms");
       }
@@ -220,7 +235,7 @@ public class ReadHealthStep extends Step {
 
       ServerHealth health =
           new ServerHealth()
-              .withOverallHealth(state != null ? state.asText() : null)
+              .withOverallHealth(healthState != null ? healthState.asText() : null)
               .withActivationTime(
                   activationTime != null ? new DateTime(activationTime.asLong()) : null);
       if (subName != null) {
@@ -229,7 +244,17 @@ public class ReadHealthStep extends Step {
             .add(new SubsystemHealth().withSubsystemName(subName).withSymptoms(sym));
       }
 
-      return health;
+      JsonNode state = root.path("state");
+
+      String stateVal = null;
+      if (state != null) {
+        String s = state.asText();
+        if (s != null && !"null".equals(s)) {
+          stateVal = s;
+        }
+      }
+
+      return new Pair<>(stateVal, health);
     }
   }
 }

@@ -34,8 +34,7 @@ Also the below use cases are covered for Quick test:
 |  |  |
 | --- | --- |
 | Operator Configuration | operator2 deployed in weblogic-operator2 namespace and manages domains test2 namespace |
-| Domain Configuration | Domain on PV using WDT <p> Domain home in image using WLST <p> Domain home in image using WDT <p> Domain with serverStartPolicy ADMIN_ONLY <p> Domain with auto and custom situational configuration <p> Two domains managed by two operators <p> Domain with Recycle weblogicDomainStorageReclaimPolicy <p> Domain with default sample values |
-
+| Domain Configuration | Domain on PV using WDT <p> Domain home in image using WLST <p> Domain home in image using WDT <p> Domain with serverStartPolicy ADMIN_ONLY <p> Domain with auto and custom situational configuration <p> Two domains managed by two operators <p> Domain with Recycle weblogicDomainStorageReclaimPolicy <p> Domain with default sample values <p> Domain on PV with two configured clusters <p> Domain on PV with one configured cluster and one dynamic cluster | 
 
 Basic Use Cases described above are verified in all the domain configurations. Also the below use cases are covered:
 
@@ -96,5 +95,10 @@ Configuration Overrides Usecases
 
 | Server Discovery | Use Case |
 | --- | --- |
-| Discover a newly started server | stop operator and apply the modified domain.yaml with replicas count increated, restart Operator and verify that the cluster is scaled up accordingly |
-| Discover dead weblogic servers | stop Operator, kill admin server and all managed servers in the cluster, restart Operator and verify that it restarts all dead servers | 
+| Discover a newly started server | Stop operator and apply the modified domain.yaml with replicas count increased, restart Operator and verify that the cluster is scaled up accordingly |
+| Discover dead weblogic servers | Stop Operator, kill admin server and all managed servers in the cluster, restart Operator and verify that it restarts all dead servers | 
+
+| Sticky Session | Use Case |
+| --- | --- |
+| Server affinity | Use a web application deployed on Weblogic cluster to track HTTP session. Test server-affinity by sending two HTTP requests to Weblogic and verify that all requests are directed to same Weblogic server |
+| Session state isolation | Verify that values saved in a client session state are not visible to another client |
