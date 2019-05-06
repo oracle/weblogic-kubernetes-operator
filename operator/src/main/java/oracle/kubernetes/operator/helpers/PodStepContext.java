@@ -35,11 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
-import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -421,6 +417,7 @@ public abstract class PodStepContext extends StepContextBase {
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
       logPodCreated();
       if (callResponse.getResult() != null) {
+        info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
         setRecordedPod(callResponse.getResult());
       }
       return doNext(packet);
@@ -577,6 +574,14 @@ public abstract class PodStepContext extends StepContextBase {
     return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
   }
 
+  protected Optional<V1Container> getContainer(V1Pod v1Pod) {
+    return v1Pod.getSpec().getContainers().stream().filter(this::isK8sContainer).findFirst();
+  }
+
+  protected boolean isK8sContainer(V1Container c) {
+    return KubernetesConstants.CONTAINER_NAME.equals(c.getName());
+  }
+
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
     // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
@@ -587,8 +592,24 @@ public abstract class PodStepContext extends StepContextBase {
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
 
+    updateForStarupMode(pod);
     updateForShutdown(pod);
     return pod;
+  }
+
+  final void updateForStarupMode(V1Pod pod) {
+    ServerSpec serverSpec = getServerSpec();
+    if (serverSpec != null) {
+      String desiredState = serverSpec.getDesiredState();
+      if (!WebLogicConstants.RUNNING_STATE.equals(desiredState)) {
+        getContainer(pod)
+            .ifPresent(
+                c -> {
+                  List<V1EnvVar> env = c.getEnv();
+                  addDefaultEnvVarIfMissing(env, "STARTUP_MODE", desiredState);
+                });
+      }
+    }
   }
 
   /**
@@ -598,42 +619,39 @@ public abstract class PodStepContext extends StepContextBase {
    * @param pod The pod
    */
   final void updateForShutdown(V1Pod pod) {
-    String shutdownType = GRACEFUL_SHUTDOWNTYPE;
-    Long timeout = Shutdown.DEFAULT_TIMEOUT;
-    boolean ignoreSessions = Shutdown.DEFAULT_IGNORESESSIONS;
-    String serverName = null;
-    String clusterName = null;
-    Map<String, String> labels = pod.getMetadata().getLabels();
-    if (labels != null) {
-      serverName = labels.get(LabelConstants.SERVERNAME_LABEL);
-      clusterName = labels.get(LabelConstants.CLUSTERNAME_LABEL);
-    }
+    String shutdownType;
+    Long timeout;
+    boolean ignoreSessions;
 
-    ServerSpec serverSpec = info.getDomain().getServer(serverName, clusterName);
+    ServerSpec serverSpec = getServerSpec();
     if (serverSpec != null) {
       Shutdown shutdown = serverSpec.getShutdown();
       shutdownType = shutdown.getShutdownType();
       timeout = shutdown.getTimeoutSeconds();
       ignoreSessions = shutdown.getIgnoreSessions();
+    } else {
+      shutdownType = GRACEFUL_SHUTDOWNTYPE;
+      timeout = Shutdown.DEFAULT_TIMEOUT;
+      ignoreSessions = Shutdown.DEFAULT_IGNORESESSIONS;
     }
 
-    for (V1Container c : pod.getSpec().getContainers()) {
-      if (KubernetesConstants.CONTAINER_NAME.equals(c.getName())) {
-        List<V1EnvVar> env = c.getEnv();
-        if (scan != null) {
-          Integer localAdminPort = scan.getLocalAdminProtocolChannelPort();
-          addOrReplaceEnvVar(env, "LOCAL_ADMIN_PORT", String.valueOf(localAdminPort));
-          addOrReplaceEnvVar(
-              env,
-              "LOCAL_ADMIN_PROTOCOL",
-              localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
-        }
-        addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdownType);
-        addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(timeout));
-        addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(ignoreSessions));
-        break;
-      }
-    }
+    getContainer(pod)
+        .ifPresent(
+            c -> {
+              List<V1EnvVar> env = c.getEnv();
+              if (scan != null) {
+                Integer localAdminPort = scan.getLocalAdminProtocolChannelPort();
+                addOrReplaceEnvVar(env, "LOCAL_ADMIN_PORT", String.valueOf(localAdminPort));
+                addOrReplaceEnvVar(
+                    env,
+                    "LOCAL_ADMIN_PROTOCOL",
+                    localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
+              }
+              addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdownType);
+              addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(timeout));
+              addDefaultEnvVarIfMissing(
+                  env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(ignoreSessions));
+            });
 
     pod.getSpec().terminationGracePeriodSeconds(timeout + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME);
   }
