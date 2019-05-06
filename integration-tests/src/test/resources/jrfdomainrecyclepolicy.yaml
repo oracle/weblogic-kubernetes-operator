@@ -1,0 +1,24 @@
+# Copyright 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# This domain inputs file is used to create domain on pv using wlst option and with recyle reclaim policy.
+
+adminServerName: admin-server
+domainUID: jrfrecycle
+clusterName: cluster-1
+configuredManagedServerCount: 4
+initialManagedServerReplicas: 2
+managedServerNameBase: managed-server
+exposeAdminT3Channel: true
+t3ChannelPort: 30071
+exposeAdminNodePort: true
+adminNodePort: 30706
+namespace: default
+weblogicDomainStorageReclaimPolicy: Recycle
+loadBalancer: TRAEFIK
+ingressPerDomain: true
+voyagerWebPort: 30311
+clusterType: CONFIGURED
+image: phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3
+rcuSchemaPrefix: jrfrecycle
+rcuDatabaseURL: infradb.db.svc.cluster.local:1521/InfraPDB1.us.oracle.com

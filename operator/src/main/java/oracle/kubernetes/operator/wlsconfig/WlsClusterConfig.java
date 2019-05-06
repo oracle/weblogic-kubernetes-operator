@@ -97,6 +97,7 @@ public class WlsClusterConfig {
    *
    * @param wlsServerConfig A WlsServerConfig object containing the configuration of the statically
    *     configured WLS server that belongs to this cluster
+   * @return Cluster configuration
    */
   public synchronized WlsClusterConfig addServerConfig(WlsServerConfig wlsServerConfig) {
     servers.add(wlsServerConfig);
