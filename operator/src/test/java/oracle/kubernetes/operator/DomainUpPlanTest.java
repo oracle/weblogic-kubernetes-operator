@@ -136,7 +136,6 @@ public class DomainUpPlanTest {
     assertThat(
         plan,
         hasChainWithStepsInOrder(
-            "ProgressingHookStep",
             "DomainPresenceStep",
             // "DeleteIntrospectorJobStep",
             "DomainIntrospectorJobStep",
