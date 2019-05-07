@@ -6,17 +6,13 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.anEmptyMap;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import io.kubernetes.client.models.V1EnvVar;
@@ -294,6 +290,77 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
             hasVolumeMount("volume1", "/domain-path1"),
             hasVolumeMount("volume2", "/cluster-path"),
             hasVolumeMount("volume3", "/server-path")));
+  }
+
+  @Test
+  public void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+    getConfigurator().withServerStartState(ADMIN_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+  }
+
+  @Test
+  public void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+    getConfigurator().configureServer(SERVER_NAME).withServerStartState(ADMIN_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+  }
+
+  @Test
+  public void whenDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
+    getConfigurator()
+        .withServerStartState(RUNNING_STATE)
+        .configureServer(SERVER_NAME)
+        .withServerStartState(ADMIN_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+  }
+
+  @Test
+  public void whenDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
+    getConfigurator()
+        .withServerStartState(ADMIN_STATE)
+        .configureServer(SERVER_NAME)
+        .withServerStartState(RUNNING_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), not(allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE))));
+  }
+
+  @Test
+  public void whenClusterDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+    getConfigurator().configureServer(SERVER_NAME);
+
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().configureCluster(CLUSTER_NAME).withServerStartState(ADMIN_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+  }
+
+  @Test
+  public void whenClusterDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
+    getConfigurator().configureServer(SERVER_NAME).withServerStartState(ADMIN_STATE);
+
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().configureCluster(CLUSTER_NAME).withServerStartState(RUNNING_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+  }
+
+  @Test
+  public void whenClusterDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
+    getConfigurator().configureServer(SERVER_NAME).withServerStartState(RUNNING_STATE);
+
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator().configureCluster(CLUSTER_NAME).withServerStartState(ADMIN_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), not(allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE))));
   }
 
   @Test

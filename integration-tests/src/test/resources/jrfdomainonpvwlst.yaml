@@ -4,8 +4,8 @@
 # This domain inputs file is used to create domain on pv using wlst option and traefik load balancer.
 
 adminServerName: adminserver
-domainUID: jrfdomain1
-clusterName: infra_cluster
+domainUID: jrfdomain
+clusterName: infra-cluster
 configuredManagedServerCount: 4
 initialManagedServerReplicas: 2
 managedServerNameBase: infraserver
@@ -14,10 +14,6 @@ t3ChannelPort: 30013
 exposeAdminNodePort: true
 namespace: jrfdomains
 image: phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3
-logHome: /shared/logs/jrfdomain1
-createDomainScriptsMountPath: /u01/weblogic
-createDomainScriptName: create-domain-job.sh
-domainPVMountPath: /shared
-rcuSchemaPrefix: jrfdomain1
+ingressPerDomain: true
+rcuSchemaPrefix: jrfdomain
 rcuDatabaseURL: infradb.db.svc.cluster.local:1521/InfraPDB1.us.oracle.com
-rcuCredentialsSecret: jrfdomain1-rcu-credentials

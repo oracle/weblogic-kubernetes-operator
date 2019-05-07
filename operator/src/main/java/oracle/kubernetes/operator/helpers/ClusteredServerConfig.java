@@ -87,12 +87,6 @@ public class ClusteredServerConfig extends ServerConfig {
   }
 
   @Override
-  public ClusteredServerConfig withStartedServerState(String startedServerState) {
-    super.withStartedServerState(startedServerState);
-    return this;
-  }
-
-  @Override
   public ClusteredServerConfig withRestartedLabel(String restartedLabel) {
     super.withRestartedLabel(restartedLabel);
     return this;
