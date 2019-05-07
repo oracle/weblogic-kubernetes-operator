@@ -19,45 +19,9 @@ public class NonClusteredServerConfig extends ServerConfig {
 
   private String nonClusteredServerStartPolicy;
 
-  /**
-   * Whether this non-clustered server should be started.
-   *
-   * @return non-clustered server start policy
-   */
-  public String getNonClusteredServerStartPolicy() {
-    return nonClusteredServerStartPolicy;
-  }
-
-  /**
-   * Whether this non-clustered server should be started.
-   *
-   * @param nonClusteredServerStartPolicy non-clustered server start policy
-   */
-  public void setNonClusteredServerStartPolicy(String nonClusteredServerStartPolicy) {
-    this.nonClusteredServerStartPolicy = nonClusteredServerStartPolicy;
-  }
-
-  /**
-   * Whether this non-clustered server should be started.
-   *
-   * @param nonClusteredServerStartPolicy non-clustered server start policy
-   * @return this
-   */
-  public NonClusteredServerConfig withNonClusteredServerStartPolicy(
-      String nonClusteredServerStartPolicy) {
-    this.nonClusteredServerStartPolicy = nonClusteredServerStartPolicy;
-    return this;
-  }
-
   @Override
   public NonClusteredServerConfig withServerName(String serverName) {
     super.withServerName(serverName);
-    return this;
-  }
-
-  @Override
-  public NonClusteredServerConfig withStartedServerState(String startedServerState) {
-    super.withStartedServerState(startedServerState);
     return this;
   }
 

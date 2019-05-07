@@ -13,7 +13,8 @@ public interface LoggingFilter {
   /**
    * Checks if the message should be logged
    *
-   * @param msg the message to be loggged
+   * @param msg the message to be logged
+   * @return true, if can log
    */
   boolean canLog(String msg);
 
