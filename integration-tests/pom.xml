@@ -352,7 +352,7 @@
 			<id>jrf-integration-tests</id>
 			<properties>
 				<skipITs>false</skipITs>
-				<includes-failsafe>**/JrfInOperatorTest.java</includes-failsafe>
+				<includes-failsafe>**/JrfInOperator*Test.java</includes-failsafe>
 				<jrf_enabled>true</jrf_enabled>
 			</properties>
 		</profile>
