@@ -21,10 +21,15 @@ import java.io.InputStreamReader;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.xml.bind.DatatypeConverter;
-import oracle.kubernetes.operator.utils.*;
+import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
+import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.Operator;
+import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -51,10 +56,22 @@ public class ITMonitoringExporter extends BaseTest {
       "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server1_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
   private static String testWSAppTotalServletInvokesSearchKey2 =
       "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server2_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
+  private static String[] testWSAppTotalServletInvokesSearchKey = {
+    "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server",
+    "_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}"
+  };
   String oprelease = "op" + number;
   private int waitTime = 5;
   private int maxIterations = 30;
   private static String loadBalancer = "TRAEFIK";
+  // private static String prometheusSearchKey1 = "curl --noproxy '*' -X GET
+  // http://slc13kef.us.oracle.com:32000/api/v1/query?query=heap_free_current%7Bname%3D%22managed-server2%22%7D";
+  private static String prometheusSearchKey1 =
+      "heap_free_current%7Bname%3D%22managed-server1%22%7D";
+  private static String prometheusSearchKey2 =
+      "heap_free_current%7Bname%3D%22managed-server2%22%7D";
+  private static String testwsappPrometheusSearchKey =
+      "weblogic_servlet_invocation_total_count%7Bapp%3D%22testwsapp%22%7D";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -151,37 +168,28 @@ public class ITMonitoringExporter extends BaseTest {
    * call webapp and verify load balancing by checking server name in the response
    *
    * @param searchKey - metric query expression
+   * @param expectedVal - expected metrics to search
    * @throws Exception
    */
-  public String checkMetricsViaPrometheus(String searchKey) throws Exception {
+  public boolean checkMetricsViaPrometheus(String searchKey, String expectedVal) throws Exception {
 
+    // sleep 15 secs to scrap metrics
+    Thread.sleep(15 * 1000);
     // url
     StringBuffer testAppUrl = new StringBuffer("http://");
-    testAppUrl
-        .append(domain.getHostNameForCurl())
-        .append(":")
-        .append("32000")
-        .append("/api/v1/query?query=");
-    if (loadBalancer.equals("APACHE")) {
-      testAppUrl.append("weblogic/");
-    }
+    testAppUrl.append(myhost).append(":").append("32000").append("/api/v1/query?query=");
+
     testAppUrl.append(searchKey);
     // curl cmd to call webapp
-    StringBuffer curlCmd = new StringBuffer("curl --silent --noproxy '*'");
-    curlCmd
-        .append(" -H 'host: ")
-        .append(domain.getDomainUid())
-        .append(".org' ")
-        .append(testAppUrl.toString());
-    // curl cmd to get response code
-    StringBuffer curlCmdResCode = new StringBuffer(curlCmd.toString());
-    curlCmdResCode.append(" --write-out %{http_code} -o /dev/null");
-
-    logger.info("Curl cmd with response code " + curlCmdResCode);
+    StringBuffer curlCmd = new StringBuffer("curl  --noproxy '*' ");
+    curlCmd.append(testAppUrl.toString());
     logger.info("Curl cmd " + curlCmd);
     ExecResult result = ExecCommand.exec(curlCmd.toString());
-    logger.info("webapp invoked successfully for curlCmd:" + curlCmd);
-    return result.stdout().trim();
+    logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
+
+    String checkPrometheus = result.stdout().trim();
+    logger.info("Result :" + checkPrometheus);
+    return checkPrometheus.contains(expectedVal);
   }
 
   private static void startExporterPrometheusGrafana(Domain domain, Operator operator)
@@ -225,7 +233,7 @@ public class ITMonitoringExporter extends BaseTest {
     String result = null;
     while ((line = contents.readLine()) != null) {
       if (containsWordsIndexOf(line, metricExp)) {
-        logger.info("found metric value for " + line + " :" + result.toString());
+        logger.info("found metric value for " + line + " :");
         result = line.substring(line.lastIndexOf(" ") + 1);
       }
     }
@@ -269,14 +277,12 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void test01_ReplaceConfiguration() throws Exception {
+  public void test01_CheckMetricsViaPrometheus() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
-    String checkPrometheus = checkMetricsViaPrometheus("webapp_config_open_sessions_current_count");
-    assertTrue(checkPrometheus.contains("testwsapp"));
-
+    assertTrue(checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "testwsapp"));
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -286,13 +292,14 @@ public class ITMonitoringExporter extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // commenting out due bug OWLS-74163
+  // @Test
   public void test02_ReplaceConfiguration() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
-    logger.info(checkMetricsViaPrometheus("heap_size_current"));
+
     /*
         exporterUrl = "http://slc13kef.us.oracle.com:" + "30305" + "/wls-exporter/";
         metricsUrl = exporterUrl + "metrics";
@@ -343,6 +350,459 @@ public class ITMonitoringExporter extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
+  /**
+   * Add additional monitoring exporter configuration and verify it was applied
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test03_AppendConfiguration() throws Exception {
+
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    // make sure some config is there
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_jvm.yml");
+    assertTrue(page.asText().contains("JVMRuntime"));
+    assertFalse(page.asText().contains("WebAppComponentRuntime"));
+    // run append more
+    page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_webapp.yml");
+    assertTrue(page.asText().contains("WebAppComponentRuntime"));
+    // check previous config is there
+    assertTrue(page.asText().contains("JVMRuntime"));
+    // due coordinator bug just checking one of servers
+    assertTrue(
+        checkMetricsViaPrometheus(
+                prometheusSearchKey1, "\"weblogic_serverName\":\"managed-server1\"")
+            || checkMetricsViaPrometheus(
+                prometheusSearchKey2, "\"weblogic_serverName\":\"managed-server2\""));
+    assertTrue(checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "testwsapp"));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Replace monitoring exporter configuration with only one attribute and verify it was applied
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
+
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+
+    HtmlPage page =
+        submitConfigureForm(exporterUrl, "replace", configPath + "/rest_oneattribval.yml");
+    assertTrue(page.asText().contains("values: invocationTotalCount"));
+    assertFalse(page.asText().contains("reloadTotal"));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Append monitoring exporter configuration with one more attribute and verify it was applied
+   * append to [a] new config [a,b]
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
+      throws Exception {
+
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    HtmlPage page =
+        submitConfigureForm(exporterUrl, "replace", configPath + "/rest_oneattribval.yml");
+    assertTrue(page.asText().contains("values: invocationTotalCount"));
+    page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_twoattribs.yml");
+    assertTrue(page.asText().contains("values: [invocationTotalCount, executionTimeAverage]"));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Replace monitoring exporter configuration with empty configuration
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test06_ReplaceWithEmptyConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_empty.yml");
+    assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Replace monitoring exporter configuration with not existed config file
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test06_1ReplaceWithNotExistedFileConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", "/scratch/m/test.yml");
+    assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Replace monitoring exporter configuration with no file name for configuration
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test06_2ReplaceWithNoFileNameConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", "");
+    assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with empty configuration
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test07_AppendWithEmptyConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    final WebClient webClient = new WebClient();
+    HtmlPage originalPage = webClient.getPage(exporterUrl);
+    assertNotNull(originalPage);
+    HtmlPage page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_empty.yml");
+    assertTrue(originalPage.asText().equals(page.asText()));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with not existed configuration file
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test07_1AppendWithNotExistedFileConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    final WebClient webClient = new WebClient();
+    HtmlPage originalPage = webClient.getPage(exporterUrl);
+    assertNotNull(originalPage);
+    HtmlPage page = submitConfigureForm(exporterUrl, "append", "/scratch/m/test.yml");
+    assertTrue(originalPage.asText().equals(page.asText()));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with null name for configuration file
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test07_2AppendWithNoFileNameConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    final WebClient webClient = new WebClient();
+    HtmlPage originalPage = webClient.getPage(exporterUrl);
+    assertNotNull(originalPage);
+    HtmlPage page = submitConfigureForm(exporterUrl, "append", "");
+    assertTrue(originalPage.asText().equals(page.asText()));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with configuration file not in the yaml format
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test08_1AppendWithNotYmlConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegative(
+        "append", configPath + "/rest_notymlformat.yml", "Configuration is not in YAML format");
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file not in the yaml format
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegative(
+        "replace", configPath + "/rest_notymlformat.yml", "Configuration is not in YAML format");
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with configuration file in the corrupted yaml
+   * format
+   *
+   * @throws Exception
+   */
+  public void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegative(
+        "append",
+        configPath + "/rest_notyml.yml",
+        "Configuration YAML format has errors while scanning a simple key");
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file in the corrupted yaml
+   * format
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegative(
+        "replace",
+        configPath + "/rest_notyml.yml",
+        "Configuration YAML format has errors while scanning a simple key");
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file with dublicated values
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegative(
+        "replace",
+        configPath + "/rest_dublicatedval.yml",
+        "Duplicate values for [deploymentState] at applicationRuntimes.componentRuntimes");
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with configuration file with dublicated values
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test12_AppendWithDublicatedValuesConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegative(
+        "append",
+        configPath + "/rest_dublicatedval.yml",
+        "Duplicate values for [deploymentState] at applicationRuntimes.componentRuntimes");
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to replace monitoring exporter configuration with configuration file with
+   * NameSnakeCase=false
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    final WebClient webClient = new WebClient();
+    HtmlPage originalPage = webClient.getPage(exporterUrl);
+    assertNotNull(originalPage);
+    HtmlPage page =
+        submitConfigureForm(exporterUrl, "replace", configPath + "/rest_snakecasefalse.yml");
+    assertNotNull(page);
+    assertFalse(page.asText().contains("metricsNameSnakeCase"));
+    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22testwsapp%22%7D";
+    assertTrue(checkMetricsViaPrometheus(searchKey, "testwsapp"));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to append monitoring exporter configuration with NameSnakeCase=true to the original
+   * configuration where NameSnakeCase=false will change NameSnakeCase=true
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test14_AppendMetricsNameSnakeCaseTrueToSnakeCaseFalseConfiguration()
+      throws Exception {
+
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    HtmlPage page =
+        submitConfigureForm(exporterUrl, "append", configPath + "/rest_snakecasetrue.yml");
+    assertNotNull(page);
+    assertTrue(page.asText().contains("metricsNameSnakeCase"));
+    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22testwsapp%22%7D";
+    assertFalse(checkMetricsViaPrometheus(searchKey, "testwsapp"));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to change monitoring exporter configuration without authentication
+   *
+   * @throws Exception
+   */
+  // verify that change configuration fails without authentication
+  @Test
+  public void test15_ChangeConfigNoCredentials() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    WebClient webClient = new WebClient();
+    String expectedErrorMsg = "401 Unauthorized for " + exporterUrl;
+    try {
+      HtmlPage page =
+          submitConfigureForm(
+              exporterUrl, "append", configPath + "/rest_snakecasetrue.yml", webClient);
+      throw new RuntimeException("Form was submitted successfully with no credentials");
+    } catch (FailingHttpStatusCodeException ex) {
+      assertTrue((ex.getMessage()).contains(expectedErrorMsg));
+    }
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to change monitoring exporter configuration with invalid username
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test16_ChangeConfigInvalidUser() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegativeAuth(
+        "replace",
+        configPath + "/rest_snakecasetrue.yml",
+        "401 Unauthorized for " + exporterUrl,
+        "invaliduser",
+        "welcome1");
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to change monitoring exporter configuration with invalid password
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test17_ChangeConfigInvalidPass() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegativeAuth(
+        "replace",
+        configPath + "/rest_snakecasetrue.yml",
+        "401 Unauthorized for " + exporterUrl,
+        "weblogic",
+        "invalidpass");
+  }
+
+  /**
+   * Try to change monitoring exporter configuration with empty username
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test18_ChangeConfigEmptyUser() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegativeAuth(
+        "replace",
+        configPath + "/rest_snakecasetrue.yml",
+        "401 Unauthorized for " + exporterUrl,
+        "",
+        "welcome1");
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Try to change monitoring exporter configuration with empty pass
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test19_ChangeConfigEmptyPass() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    changeConfigNegativeAuth(
+        "replace",
+        configPath + "/rest_snakecasetrue.yml",
+        "401 Unauthorized for " + exporterUrl,
+        "weblogic",
+        "");
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
       throws Exception {
     final WebClient webClient = new WebClient();
@@ -358,6 +818,7 @@ public class ITMonitoringExporter extends BaseTest {
       throws Exception {
     try {
       HtmlPage page = submitConfigureForm(exporterUrl, effect, configFile, username, password);
+      throw new RuntimeException("Expected exception was not thrown ");
     } catch (FailingHttpStatusCodeException ex) {
       assertTrue((ex.getMessage()).contains(expectedErrorMsg));
     }
@@ -446,6 +907,26 @@ public class ITMonitoringExporter extends BaseTest {
         i++;
       } else {
         logger.info("Found value for metric " + searchKey + " : " + searchResult);
+        result = true;
+        break;
+      }
+    }
+    return result;
+  }
+
+  private boolean checkMetrics(String... searchKeys) throws Exception {
+    boolean result = false;
+    int i = 0;
+    while (i < maxIterations) {
+      Object searchResult = getMetricsFromPage(metricsUrl, searchKeys);
+      if (searchResult == null) {
+        // check for last iteration
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+          return false;
+        }
+        i++;
+      } else {
+        logger.info("Found value for metric " + Arrays.toString(searchKeys) + " : " + searchResult);
         result = true;
         break;
       }
