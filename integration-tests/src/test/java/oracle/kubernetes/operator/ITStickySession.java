@@ -63,7 +63,7 @@ public class ITStickySession extends BaseTest {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
         Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
         // Treafik doesn't work due to the bug 28050300. Use Voyager instead
-        domainMap.put("LB_TYPE", "VOYAGER");
+        domainMap.put("loadBalancer", "VOYAGER");
         domainMap.put("voyagerWebPort", new Integer("30355"));
         domain = TestUtils.createDomain(domainMap);
         domain.verifyDomainCreated();
