@@ -65,7 +65,7 @@ public class BaseTest {
   private static int waitTimePod = 5;
   private static String leaseId = "";
   private static String branchName = "";
-  private static String appLocationInPod = "/u01/oracle/apps";
+  protected static String appLocationInPod = "/u01/oracle/apps";
   private static String appLocationOnHost;
   private static Properties appProps;
 
@@ -227,6 +227,17 @@ public class BaseTest {
   }
 
   /**
+   * Call the basic usecases tests
+   *
+   * @param domain
+   * @throws Exception
+   */
+  protected void testBasicUseCases(Domain domain) throws Exception {
+    testAdminT3Channel(domain);
+    testAdminServerExternalService(domain);
+  }
+
+  /**
    * Access Admin REST endpoint using admin node host and node port
    *
    * @throws Exception
@@ -353,12 +364,23 @@ public class BaseTest {
   }
 
   /**
+   * use default cluster service port 8011
+   *
+   * @param operator
+   * @param domain
+   * @throws Exception
+   */
+  public void testDomainLifecyle(Operator operator, Domain domain) throws Exception {
+    testDomainLifecyle(operator, domain, 8011);
+  }
+
+  /**
    * Restarting the domain should not have any impact on Operator managing the domain, web app load
    * balancing and node port service
    *
    * @throws Exception
    */
-  public void testDomainLifecyle(Operator operator, Domain domain) throws Exception {
+  public void testDomainLifecyle(Operator operator, Domain domain, int port) throws Exception {
     logger.info("Inside testDomainLifecyle");
     domain.destroy();
     domain.create();
@@ -375,7 +397,7 @@ public class BaseTest {
     // intermittent failure, see OWLS-73416
     // testWSLoadBalancing(domain);
     domain.verifyAdminServerExternalService(getUsername(), getPassword());
-    domain.verifyHasClusterServiceChannelPort("TCP", 8011, TESTWEBAPP + "/");
+    domain.verifyHasClusterServiceChannelPort("TCP", port, TESTWEBAPP + "/");
     logger.info("Done - testDomainLifecyle");
   }
 

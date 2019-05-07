@@ -17,11 +17,7 @@ public class ServerConfig {
   protected static final String SERVER_START_POLICY_ALWAYS = "ALWAYS";
   protected static final String SERVER_START_POLICY_NEVER = "NEVER";
 
-  public static final String STARTED_SERVER_STATE_RUNNING = "RUNNING";
-  public static final String STARTED_SERVER_STATE_ADMIN = "ADMIN";
-
   private String serverName;
-  private String startedServerState;
   private String restartedLabel;
   private int nodePort;
   private List<V1EnvVar> env = null;
@@ -55,35 +51,6 @@ public class ServerConfig {
    */
   public ServerConfig withServerName(String serverName) {
     this.serverName = serverName;
-    return this;
-  }
-
-  /**
-   * Gets the desired startup state. Legal values are RUNNING and ADMIN.
-   *
-   * @return started server state
-   */
-  public String getStartedServerState() {
-    return startedServerState;
-  }
-
-  /**
-   * Sets the desired startup state.
-   *
-   * @param startedServerState started server state
-   */
-  public void setStartedServerState(String startedServerState) {
-    this.startedServerState = startedServerState;
-  }
-
-  /**
-   * Sets the desired startup state.
-   *
-   * @param startedServerState started server state
-   * @return this
-   */
-  public ServerConfig withStartedServerState(String startedServerState) {
-    this.startedServerState = startedServerState;
     return this;
   }
 
@@ -272,7 +239,6 @@ public class ServerConfig {
   public String toString() {
     return new ToStringBuilder(this)
         .append("serverName", serverName)
-        .append("startedServerState", startedServerState)
         .append("restartedLabel", restartedLabel)
         .append("nodePort", nodePort)
         .append("env", env)
@@ -288,7 +254,6 @@ public class ServerConfig {
         .append(serverName)
         .append(image)
         .append(imagePullPolicy)
-        .append(startedServerState)
         .append(imagePullSecrets)
         .append(restartedLabel)
         .append(env)
@@ -309,7 +274,6 @@ public class ServerConfig {
         .append(serverName, rhs.serverName)
         .append(image, rhs.image)
         .append(imagePullPolicy, rhs.imagePullPolicy)
-        .append(startedServerState, rhs.startedServerState)
         .append(imagePullSecrets, rhs.imagePullSecrets)
         .append(restartedLabel, rhs.restartedLabel)
         .append(env, rhs.env)
