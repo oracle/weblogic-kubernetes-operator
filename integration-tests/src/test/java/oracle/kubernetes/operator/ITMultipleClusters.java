@@ -94,8 +94,8 @@ public class ITMultipleClusters extends BaseTest {
           "integration-tests/src/test/resources/domain-home-on-pv/"
               + TWO_CONFIGURED_CLUSTER_SCRIPT);
       if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-          || (domainMap.containsKey("LB_TYPE")
-              && ((String) domainMap.get("LB_TYPE")).equalsIgnoreCase("VOYAGER"))) {
+          || (domainMap.containsKey("loadBalancer")
+              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30366"));
       }
       addCluster2ToDomainTemplate();
@@ -143,7 +143,7 @@ public class ITMultipleClusters extends BaseTest {
           "integration-tests/src/test/resources/domain-home-on-pv/" + TWO_MIXED_CLUSTER_SCRIPT);
       if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
           || (domainMap.containsKey("LB_TYPE")
-              && ((String) domainMap.get("LB_TYPE")).equalsIgnoreCase("VOYAGER"))) {
+              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("loadBalancer"))) {
         domainMap.put("voyagerWebPort", new Integer("30377"));
       }
       addCluster2ToDomainTemplate();
