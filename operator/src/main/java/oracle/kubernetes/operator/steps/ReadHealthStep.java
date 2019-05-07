@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.HttpClient;
 import oracle.kubernetes.operator.http.Result;
@@ -192,7 +193,7 @@ public class ReadHealthStep extends Step {
         return parseServerHealthJson(restResult.getResponse());
       }
       return new Pair<>(
-          "",
+          WebLogicConstants.UNKNOWN_STATE,
           new ServerHealth()
               .withOverallHealth(
                   restResult.isServerOverloaded()
