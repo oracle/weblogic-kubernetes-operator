@@ -1351,8 +1351,8 @@ public class Domain {
 
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-            || (inputDomainMap.containsKey("LB_TYPE")
-                && ((String) inputDomainMap.get("LB_TYPE")).equalsIgnoreCase("VOYAGER"));
+            || (inputDomainMap.containsKey("loadBalancer")
+                && ((String) inputDomainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"));
 
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
