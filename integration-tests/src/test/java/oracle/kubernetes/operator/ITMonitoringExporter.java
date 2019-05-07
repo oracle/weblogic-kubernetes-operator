@@ -21,7 +21,6 @@ import java.io.InputStreamReader;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.xml.bind.DatatypeConverter;
@@ -56,22 +55,16 @@ public class ITMonitoringExporter extends BaseTest {
       "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server1_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
   private static String testWSAppTotalServletInvokesSearchKey2 =
       "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server2_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
-  private static String[] testWSAppTotalServletInvokesSearchKey = {
-    "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server",
-    "_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}"
-  };
-  String oprelease = "op" + number;
-  private int waitTime = 5;
-  private int maxIterations = 30;
   private static String loadBalancer = "TRAEFIK";
-  // private static String prometheusSearchKey1 = "curl --noproxy '*' -X GET
-  // http://slc13kef.us.oracle.com:32000/api/v1/query?query=heap_free_current%7Bname%3D%22managed-server2%22%7D";
   private static String prometheusSearchKey1 =
       "heap_free_current%7Bname%3D%22managed-server1%22%7D";
   private static String prometheusSearchKey2 =
       "heap_free_current%7Bname%3D%22managed-server2%22%7D";
   private static String testwsappPrometheusSearchKey =
       "weblogic_servlet_invocation_total_count%7Bapp%3D%22testwsapp%22%7D";
+  String oprelease = "op" + number;
+  private int waitTime = 5;
+  private int maxIterations = 30;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -84,7 +77,6 @@ public class ITMonitoringExporter extends BaseTest {
   public static void staticPrepare() throws Exception {
     if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
-
       logger.info("Checking if operator and domain are running, if not creating");
       if (operator == null) {
         Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
@@ -96,7 +88,6 @@ public class ITMonitoringExporter extends BaseTest {
         domain = createVerifyDomain(number, operator);
         Assert.assertNotNull(domain);
       }
-
       myhost = domain.getHostNameForCurl();
       exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
       metricsUrl = exporterUrl + "metrics";
@@ -138,7 +129,6 @@ public class ITMonitoringExporter extends BaseTest {
    */
   private static void deployRunMonitoringExporter(Domain domain, Operator operator)
       throws Exception {
-
     TestUtils.gitCloneBuildMonitoringExporter();
     logger.info("Creating Operator & waiting for the script to complete execution");
     boolean testCompletedSuccessfully = false;
@@ -164,37 +154,8 @@ public class ITMonitoringExporter extends BaseTest {
     return domain;
   }
 
-  /**
-   * call webapp and verify load balancing by checking server name in the response
-   *
-   * @param searchKey - metric query expression
-   * @param expectedVal - expected metrics to search
-   * @throws Exception
-   */
-  public boolean checkMetricsViaPrometheus(String searchKey, String expectedVal) throws Exception {
-
-    // sleep 15 secs to scrap metrics
-    Thread.sleep(15 * 1000);
-    // url
-    StringBuffer testAppUrl = new StringBuffer("http://");
-    testAppUrl.append(myhost).append(":").append("32000").append("/api/v1/query?query=");
-
-    testAppUrl.append(searchKey);
-    // curl cmd to call webapp
-    StringBuffer curlCmd = new StringBuffer("curl  --noproxy '*' ");
-    curlCmd.append(testAppUrl.toString());
-    logger.info("Curl cmd " + curlCmd);
-    ExecResult result = ExecCommand.exec(curlCmd.toString());
-    logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
-
-    String checkPrometheus = result.stdout().trim();
-    logger.info("Result :" + checkPrometheus);
-    return checkPrometheus.contains(expectedVal);
-  }
-
   private static void startExporterPrometheusGrafana(Domain domain, Operator operator)
       throws Exception {
-
     logger.info("deploy exporter, prometheus, grafana ");
     TestUtils.deployMonitoringExporterPrometethusGrafana(
         TestUtils.monitoringDir + "/apps/monitoringexporter/wls-exporter.war", domain, operator);
@@ -214,7 +175,7 @@ public class ITMonitoringExporter extends BaseTest {
     return result;
   }
 
-  public static boolean containsWordsIndexOf(String inputString, String[] words) {
+  private static boolean containsWordsIndexOf(String inputString, String[] words) {
     boolean found = true;
     for (String word : words) {
       logger.info(" Checking inputString" + inputString + " word " + word);
@@ -272,7 +233,34 @@ public class ITMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Replace monitoring exporter configuration and verify it was applied to both managed servers
+   * call webapp and verify load balancing by checking server name in the response
+   *
+   * @param searchKey - metric query expression
+   * @param expectedVal - expected metrics to search
+   * @throws Exception
+   */
+  private boolean checkMetricsViaPrometheus(String searchKey, String expectedVal) throws Exception {
+    // sleep 15 secs to scrap metrics
+    Thread.sleep(15 * 1000);
+    // url
+    StringBuffer testAppUrl = new StringBuffer("http://");
+    testAppUrl.append(myhost).append(":").append("32000").append("/api/v1/query?query=");
+
+    testAppUrl.append(searchKey);
+    // curl cmd to call webapp
+    StringBuffer curlCmd = new StringBuffer("curl  --noproxy '*' ");
+    curlCmd.append(testAppUrl.toString());
+    logger.info("Curl cmd " + curlCmd);
+    ExecResult result = ExecCommand.exec(curlCmd.toString());
+    logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
+
+    String checkPrometheus = result.stdout().trim();
+    logger.info("Result :" + checkPrometheus);
+    return checkPrometheus.contains(expectedVal);
+  }
+
+  /**
+   * Check that configuration can be reviewed via Prometheus
    *
    * @throws Exception
    */
@@ -300,16 +288,6 @@ public class ITMonitoringExporter extends BaseTest {
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
 
-    /*
-        exporterUrl = "http://slc13kef.us.oracle.com:" + "30305" + "/wls-exporter/";
-        metricsUrl = exporterUrl + "metrics";
-        configPath =
-            "/scratch/mkogan/weblogic-kubernetes-operator/integration-tests/src/test/resources/exporter";
-        String testWSAppTotalServletInvokesSearchKey1 =
-            "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server1_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
-        String testWSAppTotalServletInvokesSearchKey2 =
-            "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server2_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
-    */
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_jvm.yml");
 
     // check for updated metrics
@@ -357,7 +335,6 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test03_AppendConfiguration() throws Exception {
-
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -366,7 +343,7 @@ public class ITMonitoringExporter extends BaseTest {
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_jvm.yml");
     assertTrue(page.asText().contains("JVMRuntime"));
     assertFalse(page.asText().contains("WebAppComponentRuntime"));
-    // run append more
+    // run append
     page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_webapp.yml");
     assertTrue(page.asText().contains("WebAppComponentRuntime"));
     // check previous config is there
@@ -389,7 +366,6 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
-
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -412,7 +388,6 @@ public class ITMonitoringExporter extends BaseTest {
   @Test
   public void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
       throws Exception {
-
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -680,7 +655,6 @@ public class ITMonitoringExporter extends BaseTest {
   @Test
   public void test14_AppendMetricsNameSnakeCaseTrueToSnakeCaseFalseConfiguration()
       throws Exception {
-
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -824,14 +798,6 @@ public class ITMonitoringExporter extends BaseTest {
     }
   }
 
-  private Object getMetricsFromPage(String testUrl, String... args) throws Exception {
-    Authenticator.setDefault(new MyTestAuthenticator());
-    InputStream stream = new URL(testUrl).openStream();
-    BufferedReader contents = new BufferedReader(new InputStreamReader(stream));
-    assertNotNull(contents);
-    return getMetricsValue(contents, args);
-  }
-
   private Object getMetricsFromPage(String testUrl, String searchKey) throws Exception {
     Authenticator.setDefault(new MyTestAuthenticator());
     InputStream stream = new URL(testUrl).openStream();
@@ -858,7 +824,6 @@ public class ITMonitoringExporter extends BaseTest {
 
   private HtmlPage submitConfigureForm(
       String exporterUrl, String effect, String configFile, WebClient webClient) throws Exception {
-
     // Get the first page
     final HtmlPage page1 = webClient.getPage(exporterUrl);
     assertNotNull(page1);
@@ -907,26 +872,6 @@ public class ITMonitoringExporter extends BaseTest {
         i++;
       } else {
         logger.info("Found value for metric " + searchKey + " : " + searchResult);
-        result = true;
-        break;
-      }
-    }
-    return result;
-  }
-
-  private boolean checkMetrics(String... searchKeys) throws Exception {
-    boolean result = false;
-    int i = 0;
-    while (i < maxIterations) {
-      Object searchResult = getMetricsFromPage(metricsUrl, searchKeys);
-      if (searchResult == null) {
-        // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          return false;
-        }
-        i++;
-      } else {
-        logger.info("Found value for metric " + Arrays.toString(searchKeys) + " : " + searchResult);
         result = true;
         break;
       }
