@@ -36,8 +36,7 @@ public class JRFDomain extends Domain {
     createRcuSecret();
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
-    // TODO: add load balancer later
-    // createLoadBalancer();
+    createLoadBalancer();
   }
 
   /**
