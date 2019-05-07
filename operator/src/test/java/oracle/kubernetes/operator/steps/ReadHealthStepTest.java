@@ -10,7 +10,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAI
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
@@ -189,7 +188,7 @@ public class ReadHealthStepTest {
     assertThat(
         serverHealth.getOverallHealth(), is(ReadHealthStep.OVERALL_HEALTH_FOR_SERVER_OVERLOADED));
     Map<String, String> serverStateMap = packet.getValue(SERVER_STATE_MAP);
-    assertThat(serverStateMap.get(MANAGED_SERVER1), nullValue());
+    assertThat(serverStateMap.get(MANAGED_SERVER1), is("UNKNOWN"));
   }
 
   @Test
@@ -205,7 +204,7 @@ public class ReadHealthStepTest {
     ServerHealth serverHealth = serverHealthMap.get(MANAGED_SERVER1);
     assertThat(serverHealth.getOverallHealth(), is(ReadHealthStep.OVERALL_HEALTH_NOT_AVAILABLE));
     Map<String, String> serverStateMap = packet.getValue(SERVER_STATE_MAP);
-    assertThat(serverStateMap.get(MANAGED_SERVER1), nullValue());
+    assertThat(serverStateMap.get(MANAGED_SERVER1), is("UNKNOWN"));
   }
 
   static final String OK_RESPONSE =
