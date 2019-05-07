@@ -56,7 +56,7 @@ public class ITServerDiscovery extends BaseTest {
       // create domain
       if (domain == null) {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
-        //domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+        // domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
         Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
         wlstDomainMap.put("loadBalancerCreation", new Boolean("true"));
         domain = TestUtils.createDomain(wlstDomainMap);
