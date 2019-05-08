@@ -56,6 +56,7 @@ public class WlsDomainConfigSupport {
    *
    * @param serverName the name of the server.
    * @param listenPort the listen port
+   * @return Server configuration
    */
   public WlsServerConfig addWlsServer(String serverName, Integer listenPort) {
     WlsServerConfig serverConfig = createServerConfig(serverName, listenPort);
