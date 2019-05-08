@@ -189,7 +189,7 @@ public class BaseTest {
     if (System.getenv("JENKINS") == null) {
       logger.info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
-      ExecResult result = ExecCommand.exec("chmod 777 " + pvRoot);
+      ExecResult result = ExecCommand.exec("chmod -R 777 " + pvRoot);
       if (result.exitValue() != 0) {
         throw new RuntimeException(
             "FAILURE: Couldn't change permissions for PVROOT " + result.stderr());
