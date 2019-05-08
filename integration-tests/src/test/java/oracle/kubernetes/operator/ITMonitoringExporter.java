@@ -15,10 +15,18 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
+import java.io.File;
+import java.io.IOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import javax.xml.bind.DatatypeConverter;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
@@ -37,10 +45,12 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITMonitoringExporter extends BaseTest {
 
-  private static int number = 3;
+  private static int number = 5;
   private static Operator operator = null;
   private static Domain domain = null;
   private static String myhost = "";
+  private static String monitoringExporterDir = "";
+  private static String resourceExporterDir = "";
   private static String exporterUrl = "";
   private static String configPath = "";
   private static String metricsUrl = "";
@@ -79,7 +89,10 @@ public class ITMonitoringExporter extends BaseTest {
       myhost = domain.getHostNameForCurl();
       exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
       metricsUrl = exporterUrl + "metrics";
-      configPath = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
+      monitoringExporterDir = BaseTest.getResultDir() + "/monitoring";
+      resourceExporterDir =
+          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
+      configPath = resourceExporterDir;
       upgradeTraefikHostName();
       deployRunMonitoringExporter(domain, operator);
       buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
@@ -108,105 +121,6 @@ public class ITMonitoringExporter extends BaseTest {
 
       logger.info("SUCCESS");
     }
-  }
-
-  /**
-   * clone, build , deploy monitoring exporter on specified domain, operator
-   *
-   * @throws Exception
-   */
-  private static void deployRunMonitoringExporter(Domain domain, Operator operator)
-      throws Exception {
-    TestUtils.gitCloneBuildMonitoringExporter();
-    logger.info("Creating Operator & waiting for the script to complete execution");
-    boolean testCompletedSuccessfully = false;
-    startExporterPrometheusGrafana(domain, operator);
-    // check if exporter is up
-    domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
-    testCompletedSuccessfully = true;
-    logger.info("SUCCESS - deployRunMonitoringExporter");
-  }
-
-  /**
-   * create operator, domain, run some verification tests to check domain runtime
-   *
-   * @throws Exception
-   */
-  private static Domain createVerifyDomain(int number, Operator operator) throws Exception {
-    logger.info("create domain with UID : test" + number);
-    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
-    domain.verifyDomainCreated();
-    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-    logger.info("verify that domain is managed by operator");
-    operator.verifyDomainExists(domain.getDomainUid());
-    return domain;
-  }
-
-  private static void startExporterPrometheusGrafana(Domain domain, Operator operator)
-      throws Exception {
-    logger.info("deploy exporter, prometheus, grafana ");
-    TestUtils.deployMonitoringExporterPrometethusGrafana(
-        TestUtils.monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war",
-        domain,
-        operator);
-  }
-
-  private static void setCredentials(WebClient webClient) {
-    String base64encodedUsernameAndPassword =
-        base64Encode(BaseTest.getUsername() + ":" + BaseTest.getPassword());
-    webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
-  }
-
-  private static void setCredentials(WebClient webClient, String username, String password) {
-    String base64encodedUsernameAndPassword = base64Encode(username + ":" + password);
-    webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
-  }
-
-  private static String base64Encode(String stringToEncode) {
-    return DatatypeConverter.printBase64Binary(stringToEncode.getBytes());
-  }
-
-  private static void upgradeTraefikHostName() throws Exception {
-    String chartDir =
-        BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/charts/ingress-per-domain";
-    StringBuffer cmd = new StringBuffer("helm upgrade ");
-    cmd.append("--reuse-values ")
-        .append("--set ")
-        .append("\"")
-        .append("traefik.hostname=")
-        .append("\"")
-        .append(" traefik-ingress-test" + number + " " + chartDir);
-
-    logger.info(" upgradeTraefikNamespace() Running " + cmd.toString());
-    TestUtils.executeCmd(cmd.toString());
-  }
-
-  /**
-   * call webapp and verify load balancing by checking server name in the response
-   *
-   * @param searchKey - metric query expression
-   * @param expectedVal - expected metrics to search
-   * @throws Exception
-   */
-  private boolean checkMetricsViaPrometheus(String searchKey, String expectedVal) throws Exception {
-    // sleep 15 secs to scrap metrics
-    Thread.sleep(15 * 1000);
-    // url
-    StringBuffer testAppUrl = new StringBuffer("http://");
-    testAppUrl.append(myhost).append(":").append("32000").append("/api/v1/query?query=");
-
-    testAppUrl.append(searchKey);
-    // curl cmd to call webapp
-    StringBuffer curlCmd = new StringBuffer("curl  --noproxy '*' ");
-    curlCmd.append(testAppUrl.toString());
-    logger.info("Curl cmd " + curlCmd);
-    ExecResult result = ExecCommand.exec(curlCmd.toString());
-    logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
-
-    String checkPrometheus = result.stdout().trim();
-    logger.info("Result :" + checkPrometheus);
-    return checkPrometheus.contains(expectedVal);
   }
 
   /**
@@ -585,8 +499,8 @@ public class ITMonitoringExporter extends BaseTest {
         submitConfigureForm(exporterUrl, "replace", configPath + "/rest_snakecasefalse.yml");
     assertNotNull(page);
     assertFalse(page.asText().contains("metricsNameSnakeCase"));
-    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22testwsapp%22%7D";
-    assertTrue(checkMetricsViaPrometheus(searchKey, "testwsapp"));
+    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22testwsapp%22%7D%5B15s%5D";
+    assertTrue(checkMetricsViaPrometheus(searchKey, "testwsap"));
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -608,8 +522,9 @@ public class ITMonitoringExporter extends BaseTest {
     HtmlPage page =
         submitConfigureForm(exporterUrl, "append", configPath + "/rest_snakecasetrue.yml");
     assertNotNull(page);
-    String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22testwsapp%22%7D";
-    assertFalse(checkMetricsViaPrometheus(searchKey, "testwsapp"));
+    String searchKey =
+        "weblogic_servlet_execution_time_average%7Bapp%3D%22testwsapp%22%7D%5B15s%5D";
+    assertTrue(checkMetricsViaPrometheus(searchKey, "testwsapp"));
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -794,27 +709,246 @@ public class ITMonitoringExporter extends BaseTest {
     assertNotNull(page2);
     return page2;
   }
-  /*
-  private boolean checkMetrics(String searchKey) throws Exception {
-    boolean result = false;
-    int i = 0;
-    while (i < maxIterations) {
-      Object searchResult = getMetricsFromPage(metricsUrl, searchKey);
-      if (searchResult == null) {
-        // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          return false;
-        }
-        i++;
-      } else {
-        logger.info("Found value for metric " + searchKey + " : " + searchResult);
-        result = true;
-        break;
+
+  /**
+   * Remove monitoring exporter directory if exists and clone latest from github for monitoring
+   * exporter code
+   *
+   * @throws Exception if could not run the command successfully to clone from github
+   */
+  private static void gitCloneBuildMonitoringExporter() throws Exception {
+    String monitoringExporterSrcDir = monitoringExporterDir + "/src";
+    String monitoringExporterWar =
+        monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
+    if (new File(monitoringExporterWar).exists()) {
+      logger.info(" Weblogic Server Monitoring Exporter application is ready to use");
+    } else {
+      if (!new File(monitoringExporterDir).exists()) {
+        Files.createDirectories(Paths.get(monitoringExporterDir));
       }
+      if (!monitoringExporterSrcDir.isEmpty()) {
+        StringBuffer removeAndClone = new StringBuffer();
+        logger.info(
+            "Checking if directory "
+                + monitoringExporterSrcDir
+                + " exists "
+                + new File(monitoringExporterSrcDir).exists());
+        if (new File(monitoringExporterSrcDir).exists()) {
+          removeAndClone.append("rm -rf ").append(monitoringExporterSrcDir).append(" && ");
+        }
+        logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
+        // git clone exporter project
+        removeAndClone
+            .append(" git clone  https://github.com/oracle/weblogic-monitoring-exporter.git ")
+            .append(monitoringExporterSrcDir);
+        TestUtils.exec(removeAndClone.toString());
+      }
+      StringBuffer buildExporter = new StringBuffer();
+      buildExporter
+          .append("cd " + monitoringExporterSrcDir)
+          .append(" && ")
+          .append(" mvn clean install --log-file output.txt");
+      TestUtils.exec(buildExporter.toString());
+
+      StringBuffer buildExporterWAR = new StringBuffer();
+      buildExporterWAR
+          .append("cd " + monitoringExporterSrcDir + "/webapp")
+          .append(" && ")
+          .append("mvn package -Dconfiguration=")
+          .append(resourceExporterDir + "/rest_webapp.yml")
+          .append(" --log-file output1.txt");
+      TestUtils.exec(buildExporterWAR.toString());
+
+      StringBuffer buildCoordinatorImage = new StringBuffer();
+      buildCoordinatorImage
+          .append("cd " + monitoringExporterSrcDir + "/config_coordinator")
+          .append(" && ")
+          .append(" docker build -t config_coordinator . ");
+      TestUtils.exec(buildCoordinatorImage.toString());
+
+      buildExporterWAR = new StringBuffer();
+      buildExporterWAR
+          .append(" mkdir " + monitoringExporterDir + "/apps")
+          .append(" && mkdir " + monitoringExporterDir + "/apps/monitoringexporter")
+          .append(" && ")
+          .append(" cp " + monitoringExporterSrcDir)
+          .append("/webapp/target/wls-exporter.war ")
+          .append(monitoringExporterWar);
+      TestUtils.exec(buildExporterWAR.toString());
     }
-    return result;
   }
-  */
+
+  private static void deployMonitoringExporterPrometethusGrafana(
+      String exporterAppPath, Domain domain, Operator operator) throws Exception {
+
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+
+    String crdCmd = " kubectl apply -f " + samplesDir + "monitoring-namespace.yaml";
+    ExecResult result = ExecCommand.exec(crdCmd);
+    crdCmd = " kubectl apply -f " + samplesDir + "prometheus-deployment.yaml";
+    TestUtils.exec(crdCmd);
+
+    String domainNS = domain.getDomainNS();
+    String domainUID = domain.getDomainUid();
+    String operatorNS = operator.getOperatorNamespace();
+    createCrossNSRBACFile(domainNS, operatorNS);
+    crdCmd =
+        " kubectl apply -f " + samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml";
+    result = ExecCommand.exec(crdCmd);
+    logger.info("command result " + result.stdout().trim());
+
+    // create and start coordinator
+    createCoordinatorFile(domainNS);
+    StringBuffer deployCoordinatorImage = new StringBuffer();
+    deployCoordinatorImage
+        .append(" kubectl create -f ")
+        .append(resourceExporterDir + "/coordinator_" + domainNS + ".yaml ");
+    TestUtils.exec(deployCoordinatorImage.toString());
+
+    crdCmd = " kubectl apply -f " + samplesDir + "grafana-deployment.yaml";
+    result = ExecCommand.exec(crdCmd);
+    logger.info("command result " + result.stdout().trim());
+    domain.deployWebAppViaREST(
+        "wlsexporter", exporterAppPath, BaseTest.getUsername(), BaseTest.getPassword());
+  }
+
+  /**
+   * A utility method to add desired domain namespace to coordinator yaml template file replacing
+   * the DOMAIN_NS,
+   *
+   * @throws IOException when copying files from source location to staging area fails
+   */
+  private static void createCoordinatorFile(String domainNS) throws IOException {
+    // String coordinatorDir = BaseTest.getProjectRoot() +
+    // "/integration-tests/src/test/resources/exporter/";
+    Path src = Paths.get(resourceExporterDir + "/coordinator.yml");
+    Path dst = Paths.get(resourceExporterDir + "/coordinator_" + domainNS + ".yaml");
+    if (!dst.toFile().exists()) {
+      logger.log(Level.INFO, "Copying {0}", src.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      String content = new String(Files.readAllBytes(src), charset);
+      content = content.replaceAll("default", domainNS);
+      logger.log(Level.INFO, "to {0}", dst.toString());
+      Files.write(dst, content.getBytes(charset));
+    }
+  }
+
+  /**
+   * A utility method to copy Cross Namespaces RBAC yaml template file replacing the DOMAIN_NS,
+   * OPERATOR_NS
+   *
+   * @throws IOException when copying files from source location to staging area fails
+   */
+  private static void createCrossNSRBACFile(String domainNS, String operatorNS) throws IOException {
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+    Path src = Paths.get(samplesDir + "/crossnsrbac.yaml");
+    Path dst = Paths.get(samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml");
+    if (!dst.toFile().exists()) {
+      logger.log(Level.INFO, "Copying {0}", src.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      String content = new String(Files.readAllBytes(src), charset);
+      content = content.replaceAll("weblogic-domain", domainNS);
+      content = content.replaceAll("weblogic-operator", operatorNS);
+      logger.log(Level.INFO, "to {0}", dst.toString());
+      Files.write(dst, content.getBytes(charset));
+    }
+  }
+  /**
+   * clone, build , deploy monitoring exporter on specified domain, operator
+   *
+   * @throws Exception
+   */
+  private static void deployRunMonitoringExporter(Domain domain, Operator operator)
+      throws Exception {
+    gitCloneBuildMonitoringExporter();
+    logger.info("Creating Operator & waiting for the script to complete execution");
+    boolean testCompletedSuccessfully = false;
+    startExporterPrometheusGrafana(domain, operator);
+    // check if exporter is up
+    domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - deployRunMonitoringExporter");
+  }
+
+  /**
+   * create operator, domain, run some verification tests to check domain runtime
+   *
+   * @throws Exception
+   */
+  private static Domain createVerifyDomain(int number, Operator operator) throws Exception {
+    logger.info("create domain with UID : test" + number);
+    Domain domain = TestUtils.createDomain(TestUtils.createDomainMap(number));
+    domain.verifyDomainCreated();
+    TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+    logger.info("verify that domain is managed by operator");
+    operator.verifyDomainExists(domain.getDomainUid());
+    return domain;
+  }
+
+  private static void startExporterPrometheusGrafana(Domain domain, Operator operator)
+      throws Exception {
+    logger.info("deploy exporter, prometheus, grafana ");
+    deployMonitoringExporterPrometethusGrafana(
+        monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war", domain, operator);
+  }
+
+  private static void setCredentials(WebClient webClient) {
+    String base64encodedUsernameAndPassword =
+        base64Encode(BaseTest.getUsername() + ":" + BaseTest.getPassword());
+    webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
+  }
+
+  private static void setCredentials(WebClient webClient, String username, String password) {
+    String base64encodedUsernameAndPassword = base64Encode(username + ":" + password);
+    webClient.addRequestHeader("Authorization", "Basic " + base64encodedUsernameAndPassword);
+  }
+
+  private static String base64Encode(String stringToEncode) {
+    return DatatypeConverter.printBase64Binary(stringToEncode.getBytes());
+  }
+
+  private static void upgradeTraefikHostName() throws Exception {
+    String chartDir =
+        BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/charts/ingress-per-domain";
+    StringBuffer cmd = new StringBuffer("helm upgrade ");
+    cmd.append("--reuse-values ")
+        .append("--set ")
+        .append("\"")
+        .append("traefik.hostname=")
+        .append("\"")
+        .append(" traefik-ingress-test" + number + " " + chartDir);
+
+    logger.info(" upgradeTraefikNamespace() Running " + cmd.toString());
+    TestUtils.exec(cmd.toString());
+  }
+
+  /**
+   * call webapp and verify load balancing by checking server name in the response
+   *
+   * @param searchKey - metric query expression
+   * @param expectedVal - expected metrics to search
+   * @throws Exception
+   */
+  private boolean checkMetricsViaPrometheus(String searchKey, String expectedVal) throws Exception {
+    // sleep 20 secs to allow to scrap new metrics
+    Thread.sleep(20 * 1000);
+    // url
+    StringBuffer testAppUrl = new StringBuffer("http://");
+    testAppUrl.append(myhost).append(":").append("32000").append("/api/v1/query?query=");
+
+    testAppUrl.append(searchKey);
+    // curl cmd to call webapp
+    StringBuffer curlCmd = new StringBuffer("curl  --noproxy '*' ");
+    curlCmd.append(testAppUrl.toString());
+    logger.info("Curl cmd " + curlCmd);
+    ExecResult result = ExecCommand.exec(curlCmd.toString());
+    logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
+
+    String checkPrometheus = result.stdout().trim();
+    logger.info("Result :" + checkPrometheus);
+    return checkPrometheus.contains(expectedVal);
+  }
 }
 
 class MyTestAuthenticator extends Authenticator {
