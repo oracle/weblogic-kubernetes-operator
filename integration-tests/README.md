@@ -209,7 +209,7 @@ The tests accepts optional env var overrides:
 | RESULT_ROOT | The root directory to use for the tests temporary files. See "Directory Configuration and Structure" for                  defaults and a detailed description of test directories. |
 | PV_ROOT    |  The root directory on the kubernetes cluster used for persistent volumes. See "Directory Configuration and Structure" for defaults and a detailed description of test directories. |
 | QUICKTEST  | When set to "true", limits testing to a subset of the tests. |
-| LB_TYPE    | The default value is "TRAEFIK". Set to "VOYAGER" if you want to use it as LB. |
+| LB_TYPE    | The default value is "TRAEFIK". Set to "VOYAGER" if you want to use it as LB. Using "VOYAGER" requires unique "voyagerWebPort"|
 | INGRESSPERDOMAIN  | The defult value is true. If you want to test creating TRAEFIK LB by kubectl yaml for multiple domains, set it to false. |
 | SHARED_CLUSTER    | Set to true if invoking on shared cluster, set to false or "" if running stand-alone or from Jenkins. Default is "". |
 | JENKINS    | Set to true if invoking from Jenkins, set to false or "" if running stand-alone or on shared cluster. Default is "". |
