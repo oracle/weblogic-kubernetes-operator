@@ -61,6 +61,8 @@ public class Domain {
   protected String userProjectsDir = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
+  private String imageTag = "12.2.1.3";
+  private String imageName = "store/oracle/weblogic";
 
   protected String generatedInputYamlFile;
 
@@ -671,6 +673,8 @@ public class Domain {
    * @throws Exception
    */
   public void createDomainOnExistingDirectory() throws Exception {
+
+    // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
     String cmd =
         BaseTest.getProjectRoot()
             + "/src/integration-tests/bash/krun.sh -m "
@@ -1129,13 +1133,10 @@ public class Domain {
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
 
+    // for remote k8s cluster and domain in image case, push the domain image to OCIR
     if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
       String image =
-          System.getenv("REPO_REGISTRY")
-              + "/weblogick8s/domain-home-in-image:"
-              + (System.getenv("IMAGE_TAG_WEBLOGIC") != null
-                  ? System.getenv("IMAGE_TAG_WEBLOGIC")
-                  : "12.2.1.3");
+          System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:" + imageTag;
       TestUtils.loginAndPushImageToOCIR(image);
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
@@ -1149,7 +1150,7 @@ public class Domain {
           domainNS);
     }
 
-    // write configOverride and configOverrideSecrets to domain.yaml
+    // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
     if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")) {
       appendToDomainYamlAndCreate();
     }
@@ -1423,13 +1424,11 @@ public class Domain {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
 
-    String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
       logger.info("IMAGE_NAME_WEBLOGIC " + imageName);
     }
 
-    String imageTag = "12.2.1.3";
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
       logger.info("IMAGE_TAG_WEBLOGIC " + imageTag);
@@ -1442,6 +1441,16 @@ public class Domain {
         domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
       } else {
         domainMap.put("imagePullSecretName", "docker-store");
+      }
+    } else {
+      // use default image attibute value for JENKINS and standalone runs and for SHARED_CLUSTER use
+      // below
+      if (BaseTest.SHARED_CLUSTER) {
+        domainMap.put(
+            "image",
+            System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:" + imageTag);
+        domainMap.put("imagePullSecretName", "ocir-domain");
+        domainMap.put("imagePullPolicy", "Always");
       }
     }
 
@@ -1661,7 +1670,7 @@ public class Domain {
     }
     createDomainScriptCmd.append(generatedInputYamlFile);
 
-    // skip executing yaml if configOverrides
+    // skip executing yaml if configOverrides or domain in image
     if (!domainMap.containsKey("configOverrides")
         && !domainMap.containsKey("domainHomeImageBase")) {
       createDomainScriptCmd.append(" -e ");

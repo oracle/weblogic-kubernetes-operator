@@ -146,7 +146,7 @@ public class BaseTest {
               + clnResult.stderr());
     }
 
-    if (System.getenv("JENKINS") != null) {
+    if (JENKINS) {
       logger.info("Deleting and creating " + resultRoot + "/acceptance_test_tmp");
       TestUtils.exec(
           "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
@@ -186,7 +186,7 @@ public class BaseTest {
     logger.info("Adding file handler, logging to file at " + resultDir + "/java_test_suite.out");
 
     // for manual/local run, create file handler, create PVROOT
-    if (System.getenv("JENKINS") == null) {
+    if (!JENKINS) {
       logger.info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       ExecResult result = ExecCommand.exec("chmod -R 777 " + pvRoot);
@@ -704,9 +704,9 @@ public class BaseTest {
 
     if (JENKINS || SHARED_CLUSTER) {
       result = cleanup();
-      // if (result.exitValue() != 0) {
-      logger.info("cleanup result =" + result.stdout() + "\n " + result.stderr());
-      // }
+      if (result.exitValue() != 0) {
+        logger.info("cleanup result =" + result.stdout() + "\n " + result.stderr());
+      }
     }
 
     if (getLeaseId() != "") {
