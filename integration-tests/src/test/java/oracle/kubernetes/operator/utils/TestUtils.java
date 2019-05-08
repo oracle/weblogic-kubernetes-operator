@@ -42,7 +42,8 @@ public class TestUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   private static K8sTestUtils k8sTestUtils = new K8sTestUtils();
-  public static String monitoringDir = "";
+  public static String monitoringExporterDir = "";
+  public static String resourceExporterDir = "";
 
   /**
    * @param cmd - kubectl get pod <podname> -n namespace
@@ -940,7 +941,7 @@ public class TestUtils {
    * @throws IOException when copying files from source location to staging area fails
    */
   private static void createCrossNSRBACFile(String domainNS, String operatorNS) throws IOException {
-    String samplesDir = monitoringDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
     Path src = Paths.get(samplesDir + "/crossnsrbac.yaml");
     Path dst = Paths.get(samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml");
     if (!dst.toFile().exists()) {
@@ -955,22 +956,46 @@ public class TestUtils {
   }
 
   /**
+   * A utility method to add desired domain namespace to coordinator yaml template file replacing
+   * the DOMAIN_NS,
+   *
+   * @throws IOException when copying files from source location to staging area fails
+   */
+  private static void createCoordinatorFile(String domainNS) throws IOException {
+    // String coordinatorDir = BaseTest.getProjectRoot() +
+    // "/integration-tests/src/test/resources/exporter/";
+    Path src = Paths.get(resourceExporterDir + "/coordinator.yml");
+    Path dst = Paths.get(resourceExporterDir + "/coordinator_" + domainNS + ".yaml");
+    if (!dst.toFile().exists()) {
+      logger.log(Level.INFO, "Copying {0}", src.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      String content = new String(Files.readAllBytes(src), charset);
+      content = content.replaceAll("default", domainNS);
+      logger.log(Level.INFO, "to {0}", dst.toString());
+      Files.write(dst, content.getBytes(charset));
+    }
+  }
+
+  /**
    * Remove monitoring exporter directory if exists and clone latest from github for monitoring
    * exporter code
    *
    * @throws Exception if could not run the command successfully to clone from github
    */
   public static void gitCloneBuildMonitoringExporter() throws Exception {
-    monitoringDir = BaseTest.getResultDir() + "/monitoring";
-    String monitoringExporterSrcDir = monitoringDir + "/src";
+    monitoringExporterDir = BaseTest.getResultDir() + "/monitoring";
+    resourceExporterDir =
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
+    String monitoringExporterSrcDir = monitoringExporterDir + "/src";
     String resourceDir =
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
-    String monitoringExporterWar = monitoringDir + "/apps/monitoringexporter/wls-exporter.war";
+    String monitoringExporterWar =
+        monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
     if (new File(monitoringExporterWar).exists()) {
       logger.info(" Weblogic Server Monitoring Exporter application is ready to use");
     } else {
-      if (!new File(monitoringDir).exists()) {
-        Files.createDirectories(Paths.get(monitoringDir));
+      if (!new File(monitoringExporterDir).exists()) {
+        Files.createDirectories(Paths.get(monitoringExporterDir));
       }
       if (!monitoringExporterSrcDir.isEmpty()) {
         StringBuffer removeAndClone = new StringBuffer();
@@ -1012,15 +1037,10 @@ public class TestUtils {
           .append(" docker build -t config_coordinator . ");
       executeCmd(buildCoordinatorImage.toString());
 
-      StringBuffer deployCoordinatorImage = new StringBuffer();
-
-      deployCoordinatorImage.append(" kubectl apply -f ").append(resourceDir + "/coordinator.yml ");
-      executeCmd(deployCoordinatorImage.toString());
-
       buildExporterWAR = new StringBuffer();
       buildExporterWAR
-          .append(" mkdir " + monitoringDir + "/apps")
-          .append(" && mkdir " + monitoringDir + "/apps/monitoringexporter")
+          .append(" mkdir " + monitoringExporterDir + "/apps")
+          .append(" && mkdir " + monitoringExporterDir + "/apps/monitoringexporter")
           .append(" && ")
           .append(" cp " + monitoringExporterSrcDir)
           .append("/webapp/target/wls-exporter.war ")
@@ -1032,7 +1052,7 @@ public class TestUtils {
   public static void deployMonitoringExporterPrometethusGrafana(
       String exporterAppPath, Domain domain, Operator operator) throws Exception {
 
-    String samplesDir = monitoringDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
 
     String crdCmd = " kubectl apply -f " + samplesDir + "monitoring-namespace.yaml";
     ExecResult result = ExecCommand.exec(crdCmd);
@@ -1047,6 +1067,14 @@ public class TestUtils {
         " kubectl apply -f " + samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml";
     result = ExecCommand.exec(crdCmd);
     logger.info("command result " + result.stdout().trim());
+
+    // create and start coordinator
+    createCoordinatorFile(domainNS);
+    StringBuffer deployCoordinatorImage = new StringBuffer();
+    deployCoordinatorImage
+        .append(" kubectl create -f ")
+        .append(resourceExporterDir + "/coordinator_" + domainNS + ".yaml ");
+    executeCmd(deployCoordinatorImage.toString());
 
     crdCmd = " kubectl apply -f " + samplesDir + "grafana-deployment.yaml";
     result = ExecCommand.exec(crdCmd);
