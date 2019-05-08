@@ -15,12 +15,8 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
-import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import javax.xml.bind.DatatypeConverter;
@@ -45,26 +41,18 @@ public class ITMonitoringExporter extends BaseTest {
   private static Operator operator = null;
   private static Domain domain = null;
   private static String myhost = "";
-  private static String metricsUrl = "";
   private static String exporterUrl = "";
-  private static String serverName = "managed-server";
   private static String configPath = "";
-  private static String appName = TESTWSAPP;
-  private static String appNameUC = "TestWSApp";
-  private static String testWSAppTotalServletInvokesSearchKey1 =
-      "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server1_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
-  private static String testWSAppTotalServletInvokesSearchKey2 =
-      "weblogic_servlet_invocation_total_count{app=\"testwsapp\",name=\"managed-server2_/TestWSApp\",servletName=\"TestWSAppServlethttp\"}";
-  private static String loadBalancer = "TRAEFIK";
+  private static String metricsUrl = "";
+  // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
   private static String prometheusSearchKey1 =
-      "heap_free_current%7Bname%3D%22managed-server1%22%7D";
+      "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
   private static String prometheusSearchKey2 =
-      "heap_free_current%7Bname%3D%22managed-server2%22%7D";
+      "heap_free_current%7Bname%3D%22managed-server2%22%7D%5B15s%5D";
   private static String testwsappPrometheusSearchKey =
-      "weblogic_servlet_invocation_total_count%7Bapp%3D%22testwsapp%22%7D";
+      "weblogic_servlet_invocation_total_count%7Bapp%3D%22testwsapp%22%7D%5B15s%5D";
   String oprelease = "op" + number;
   private int waitTime = 5;
-  private int maxIterations = 30;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -91,7 +79,7 @@ public class ITMonitoringExporter extends BaseTest {
       myhost = domain.getHostNameForCurl();
       exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
       metricsUrl = exporterUrl + "metrics";
-      configPath = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter/";
+      configPath = BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
       upgradeTraefikHostName();
       deployRunMonitoringExporter(domain, operator);
       buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
@@ -158,47 +146,9 @@ public class ITMonitoringExporter extends BaseTest {
       throws Exception {
     logger.info("deploy exporter, prometheus, grafana ");
     TestUtils.deployMonitoringExporterPrometethusGrafana(
-        TestUtils.monitoringDir + "/apps/monitoringexporter/wls-exporter.war", domain, operator);
-  }
-
-  private static Object getMetricsValue(BufferedReader contents, String metricKey)
-      throws Exception {
-    boolean found = false;
-    String line;
-    String result = null;
-    while ((line = contents.readLine()) != null) {
-      if (line.contains(metricKey)) {
-        found = true;
-        result = line.substring(line.lastIndexOf(" ") + 1);
-      }
-    }
-    return result;
-  }
-
-  private static boolean containsWordsIndexOf(String inputString, String[] words) {
-    boolean found = true;
-    for (String word : words) {
-      logger.info(" Checking inputString" + inputString + " word " + word);
-      if (inputString.indexOf(word) == -1) {
-        found = false;
-        break;
-      }
-    }
-    return found;
-  }
-
-  private static Object getMetricsValue(BufferedReader contents, String... metricExp)
-      throws Exception {
-    boolean found = false;
-    String line;
-    String result = null;
-    while ((line = contents.readLine()) != null) {
-      if (containsWordsIndexOf(line, metricExp)) {
-        logger.info("found metric value for " + line + " :");
-        result = line.substring(line.lastIndexOf(" ") + 1);
-      }
-    }
-    return result;
+        TestUtils.monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war",
+        domain,
+        operator);
   }
 
   private static void setCredentials(WebClient webClient) {
@@ -280,28 +230,23 @@ public class ITMonitoringExporter extends BaseTest {
    *
    * @throws Exception
    */
-  // commenting out due bug OWLS-74163
-  // @Test
+  @Test
   public void test02_ReplaceConfiguration() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
-
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_jvm.yml");
 
-    // check for updated metrics
-    String searchKey1 = "heap_free_current{name=\"managed-server1\"}";
-    String searchKey2 = "heap_free_current{name=\"managed-server2\"}";
     boolean isFoundNewKey1 = false;
     boolean isFoundNewKey2 = false;
     boolean isFoundOldKey1 = true;
     boolean isFoundOldKey2 = true;
 
-    isFoundNewKey1 = checkMetrics(searchKey1);
-    isFoundNewKey2 = checkMetrics(searchKey2);
-    isFoundOldKey1 = checkMetrics(testWSAppTotalServletInvokesSearchKey1);
-    isFoundOldKey2 = checkMetrics(testWSAppTotalServletInvokesSearchKey2);
+    isFoundNewKey1 = checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
+    isFoundNewKey2 = checkMetricsViaPrometheus(prometheusSearchKey2, "managed-server2");
+    isFoundOldKey1 = checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "managed-server1");
+    isFoundOldKey2 = checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "managed-server2");
     String foundResults =
         " server1: ( newMetrics:"
             + isFoundNewKey1
@@ -659,10 +604,10 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+
     HtmlPage page =
         submitConfigureForm(exporterUrl, "append", configPath + "/rest_snakecasetrue.yml");
     assertNotNull(page);
-    assertTrue(page.asText().contains("metricsNameSnakeCase"));
     String searchKey = "weblogic_servlet_executionTimeAverage%7Bapp%3D%22testwsapp%22%7D";
     assertFalse(checkMetricsViaPrometheus(searchKey, "testwsapp"));
     testCompletedSuccessfully = true;
@@ -798,15 +743,6 @@ public class ITMonitoringExporter extends BaseTest {
     }
   }
 
-  private Object getMetricsFromPage(String testUrl, String searchKey) throws Exception {
-    Authenticator.setDefault(new MyTestAuthenticator());
-    InputStream stream = new URL(testUrl).openStream();
-    BufferedReader contents = new BufferedReader(new InputStreamReader(stream));
-    assertNotNull(contents);
-
-    return getMetricsValue(contents, searchKey);
-  }
-
   private HtmlPage submitConfigureForm(
       String exporterUrl, String effect, String configFile, String username, String password)
       throws Exception {
@@ -858,7 +794,7 @@ public class ITMonitoringExporter extends BaseTest {
     assertNotNull(page2);
     return page2;
   }
-
+  /*
   private boolean checkMetrics(String searchKey) throws Exception {
     boolean result = false;
     int i = 0;
@@ -878,6 +814,7 @@ public class ITMonitoringExporter extends BaseTest {
     }
     return result;
   }
+  */
 }
 
 class MyTestAuthenticator extends Authenticator {
