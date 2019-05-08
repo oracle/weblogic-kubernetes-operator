@@ -2,6 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: coordinator
+  namespace: default
   labels:
     app: coordinator
 spec:
@@ -27,6 +28,7 @@ metadata:
   labels:
     app: coordinator
   name: coordinator
+  namespace: default
 spec:
   type: NodePort
   ports:
