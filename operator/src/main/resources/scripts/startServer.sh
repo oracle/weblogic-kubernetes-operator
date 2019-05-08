@@ -154,6 +154,14 @@ function copySitCfg() {
 }
 
 #
+# Configure startup mode
+#
+
+if [ ! -z "$STARTUP_MODE" ] && [[ $JAVA_OPTIONS != *"-Dweblogic.management.startupMode="* ]]; then
+  export JAVA_OPTIONS="$JAVA_OPTIONS -Dweblogic.management.startupMode=$STARTUP_MODE"
+fi
+
+#
 # Check and display input env vars
 #
 
