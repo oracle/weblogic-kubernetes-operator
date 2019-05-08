@@ -64,7 +64,7 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
-    // check for admin pod
+    // check for the pod passed from parameter podName
     checkCmdInLoop(cmd.toString(), containerNum, podName);
   }
 

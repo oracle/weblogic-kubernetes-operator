@@ -30,6 +30,8 @@ public class ITElasticLogging extends BaseTest {
   private static String k8sExecCmdPrefix;
   private static String elasticSearchURL;
   private static Map<String, Object> testVarMap;
+  private static final String elasticStackYamlLoc =
+      "kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -46,12 +48,13 @@ public class ITElasticLogging extends BaseTest {
       initialize(APP_PROPS_FILE);
 
       // Install Elastic Stack
-      String cmd =
-          "kubectl apply -f "
-              + getProjectRoot()
-              + "/kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml";
-      logger.info("Command to install Elastic search and Kibana: " + cmd);
-      TestUtils.exec(cmd);
+      StringBuffer cmd =
+          new StringBuffer("kubectl apply -f ")
+              .append(getProjectRoot())
+              .append("/")
+              .append(elasticStackYamlLoc);
+      logger.info("Command to Install Elastic Stack: " + cmd.toString());
+      TestUtils.exec(cmd.toString());
 
       // Create operator-elk
       if (operator == null) {
@@ -69,11 +72,12 @@ public class ITElasticLogging extends BaseTest {
       // Get Elasticsearch host and port from yaml file and build Elasticsearch URL
       testVarMap = TestUtils.loadYaml(OPERATOR1_ELK_YAML);
       String operatorPodName = operator.getOperatorPodName();
-      elasticSearchURL =
-          "http://"
-              + testVarMap.get("elasticSearchHost")
-              + ":"
-              + testVarMap.get("elasticSearchPort");
+      StringBuffer elasticSearchURLBuff =
+          new StringBuffer("http://")
+              .append(testVarMap.get("elasticSearchHost"))
+              .append(":")
+              .append(testVarMap.get("elasticSearchPort"));
+      elasticSearchURL = elasticSearchURLBuff.toString();
       Assume.assumeFalse(
           "Got null when building Elasticsearch URL", elasticSearchURL.contains("null"));
 
@@ -108,12 +112,13 @@ public class ITElasticLogging extends BaseTest {
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
       // Uninstall Elastic Stack
-      String cmd =
-          "kubectl delete -f "
-              + getProjectRoot()
-              + "/kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml";
-      logger.info("Command to uninstall Elastic Stack: " + cmd);
-      TestUtils.exec(cmd);
+      StringBuffer cmd =
+          new StringBuffer("kubectl delete -f ")
+              .append(getProjectRoot())
+              .append("/")
+              .append(elasticStackYamlLoc);
+      logger.info("Command to uninstall Elastic Stack: " + cmd.toString());
+      TestUtils.exec(cmd.toString());
 
       logger.info("SUCCESS");
     }
@@ -214,7 +219,7 @@ public class ITElasticLogging extends BaseTest {
       Assume.assumeTrue("Total failed count should be 0!", failedCount == 0);
       logger.info("Total failed count: " + failedCount);
     } else {
-      Assume.assumeFalse("Total failed count should be 0!", hits.isEmpty());
+      Assume.assumeFalse("Total hits of search is empty!", hits.isEmpty());
     }
   }
 
@@ -281,6 +286,7 @@ public class ITElasticLogging extends BaseTest {
             .toString();
     logger.info("Command to exec Elastic Stack status check: " + cmd);
     ExecResult result = TestUtils.exec(cmd);
+    logger.info(result.stdout());
 
     return result.stdout();
   }
