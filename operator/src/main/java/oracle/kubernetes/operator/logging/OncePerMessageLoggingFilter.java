@@ -20,13 +20,18 @@ public class OncePerMessageLoggingFilter implements LoggingFilter {
    * been logged
    *
    * @param value true if filtering should be on, false if filtering should be off
+   * @return logging filter
    */
   public synchronized OncePerMessageLoggingFilter setFiltering(boolean value) {
     filtering = value;
     return this;
   }
 
-  /** Clears the list of history of messages logged and turn off filtering */
+  /**
+   * Clears the list of history of messages logged and turn off filtering
+   *
+   * @return logging filter
+   */
   public synchronized OncePerMessageLoggingFilter resetLogHistory() {
     messagesLogged.clear();
     return this;

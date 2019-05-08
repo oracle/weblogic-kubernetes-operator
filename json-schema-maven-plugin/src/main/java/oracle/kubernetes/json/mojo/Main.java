@@ -16,6 +16,7 @@ public interface Main {
    * Specifies the Kubernetes version to be used for object definitions.
    *
    * @param kubernetesVersion the desired version
+   * @throws IOException on IO exception
    */
   void setKubernetesVersion(String kubernetesVersion) throws IOException;
 
@@ -74,6 +75,7 @@ public interface Main {
    *
    * @param className the root class for the schema
    * @param outputFile the file to generate
+   * @return Map of schema items
    * @throws MojoExecutionException if an exception occurred during the schema generation
    */
   Map<String, Object> generateSchema(String className, File outputFile)
