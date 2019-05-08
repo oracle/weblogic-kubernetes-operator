@@ -368,7 +368,7 @@ public class JrfInOperatorTest extends BaseTest {
       domainMap.put("configOverrides", "sitconfigcm");
       domainMap.put(
           "configOverridesFile",
-          BaseTest.getProjectRoot()
+          getProjectRoot()
               + "/integration-tests/src/test/resources/domain-home-on-pv/customsitconfig");
       domainMap.put("domainUID", "customsitdomain");
       domainMap.put("adminNodePort", 30704);
@@ -428,6 +428,12 @@ public class JrfInOperatorTest extends BaseTest {
     domain.verifyWebAppLoadBalancing(TESTWEBAPP);
   }
 
+  /**
+   * basic test cases
+   *
+   * @param domain - jrfdomain
+   * @throws Exception - if any error occurs
+   */
   private void testBasicUseCases(JRFDomain domain) throws Exception {
     // Bug 29591809
     // TODO: re-enable the test once the bug is fixed
@@ -436,6 +442,13 @@ public class JrfInOperatorTest extends BaseTest {
     testAdminServerExternalService(domain);
   }
 
+  /**
+   * advanced test cases
+   *
+   * @param operator - weblogic operator
+   * @param domain - jrfdomain
+   * @throws Exception - if any error occurs
+   */
   private void testAdvancedUseCasesForADomain(Operator operator, JRFDomain domain)
       throws Exception {
     if (!SMOKETEST) {

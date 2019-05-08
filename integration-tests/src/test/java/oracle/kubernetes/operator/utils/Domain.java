@@ -1136,7 +1136,9 @@ public class Domain {
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
     if (voyager) {
       lbMap.put("loadBalancer", "VOYAGER");
-      lbMap.put("loadBalancerWebPort", domainMap.get("voyagerWebPort"));
+      lbMap.put(
+          "loadBalancerWebPort",
+          domainMap.getOrDefault("voyagerWebPort", new Integer(loadBalancerWebPort)));
     } else {
       lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
       lbMap.put(
@@ -1349,8 +1351,8 @@ public class Domain {
 
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
-            || (inputDomainMap.containsKey("LB_TYPE")
-                && ((String) inputDomainMap.get("LB_TYPE")).equalsIgnoreCase("VOYAGER"));
+            || (inputDomainMap.containsKey("loadBalancer")
+                && ((String) inputDomainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"));
 
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
