@@ -286,7 +286,7 @@ public class ITElasticLogging extends BaseTest {
             .toString();
     logger.info("Command to exec Elastic Stack status check: " + cmd);
     ExecResult result = TestUtils.exec(cmd);
-    logger.info(result.stdout());
+    logger.info("Results: " + result.stdout());
 
     return result.stdout();
   }
