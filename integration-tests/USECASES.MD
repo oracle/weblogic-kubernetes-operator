@@ -2,7 +2,7 @@
 
 Java integration tests cover the below use cases:
 
-## Quick test Configuration & Use Cases - 
+## Quick test Configuration & Use Cases -
 
 |  |  |
 | --- | --- |
@@ -97,7 +97,7 @@ Configuration Overrides Usecases
 | --- | --- |
 | Discover a newly started server | Stop operator and apply the modified domain.yaml with replicas count increased, restart Operator and verify that the cluster is scaled up accordingly |
 | Discover dead weblogic servers | Stop Operator, kill admin server and all managed servers in the cluster, restart Operator and verify that it restarts all dead servers | 
-c
+
 | Sticky Session | Use Case |
 | --- | --- |
 | Server affinity | Use a web application deployed on Weblogic cluster to track HTTP session. Test server-affinity by sending two HTTP requests to Weblogic and verify that all requests are directed to same Weblogic server |
