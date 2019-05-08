@@ -388,7 +388,7 @@ public class ITPodsRestart extends BaseTest {
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
       DomainCRD crd = new DomainCRD(originalYaml);
-      Map<String, String> cluster = new HashMap();
+      Map<String, Object> cluster = new HashMap();
       cluster.put("restartVersion", "v1.1");
       crd.addObjectNodeToCluster("cluster-1", cluster);
       String modYaml = crd.getYamlTree();
