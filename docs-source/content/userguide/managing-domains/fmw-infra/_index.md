@@ -7,16 +7,16 @@ pre = "<b> </b>"
 
 Starting with release 2.2, the operator supports FMW Infrastructure domains.
 This means domains that are created with the FMW Infrastructure installer rather than the WebLogic
-installer.  These domains contain the Java Required Files (JRF) feature and are
+Server installer.  These domains contain the Java Required Files (JRF) feature and are
 the pre-requisite for "upper stack" products like Oracle SOA Suite, for example.
 These domains also require a database and the use of the Repository
 Creation Utility (RCU).
 
 This section provides details about the special considerations for running
 FMW Infrastructure domains with the operator.  Other than those considerations
-listed here, FMW Infrastructure domains work in the same way as WebLogic domains.
+listed here, FMW Infrastructure domains work in the same way as WebLogic Server domains.
 That is, the remainder of the documentation in this site applies equally to FMW
-Infrastructure domains and WebLogic domains.
+Infrastructure domains and WebLogic Server domains.
 
 FMW Infrastructure domains are supported using both the "domain on a persistent volume"
 and the "domain in a Docker image" [models]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
@@ -49,12 +49,16 @@ A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastr
 is provided in the Oracle GitHub account that demonstrates how to create a Docker image
 to run FMW Infrastructure.  
 
+Please consult the [README](https://github.com/oracle/docker-images/blob/master/OracleFMWInfrastructure/dockerfiles/12.2.1.3/README.md) file associated with this sample for important prerequisite steps,
+such as building or pulling the Server JRE Docker image and downloading the Fusion Middleware
+Infrastructure installer binary.
+
 After cloning the repository and downloading the installer from Oracle Technology Network
 or e-delivery, you create your image by running the provided script:
 
 ```bash
 cd docker-images/OracleFMWInfrastructure/dockerfiles
-./buildDockerImage.sh -v 12.2.1.3 -g
+./buildDockerImage.sh -v 12.2.1.3 -s
 ```
 
 The image produced will be named `oracle/fmw-infrastructure:12.2.1.3`.
@@ -68,7 +72,7 @@ by running the provided script:
 
 ```bash
 cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
-./buildDockerImage.sh
+./build.sh
 ```
 
 This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
@@ -160,8 +164,10 @@ spec:
 ```
 
 Notice that you can pass in environment variables to set the SID, the name of the PDB, and
-so on.  The documentation describes the other variables that are available.  You should
-also create a service to make the database available within the Kubernetes cluster with
+so on.  The documentation describes the other variables that are available.  The `sys` password
+defaults to `Oradoc_db1`.  Follow the instructions in the documentation to reset this password.
+
+You should also create a service to make the database available within the Kubernetes cluster with
 a well known name.  Here is an example:
 
 ```yaml
@@ -171,7 +177,6 @@ metadata:
   name: oracle-db
   namespace: default
 spec:
-  clusterIP: 10.97.236.215
   ports:
   - name: tns
     port: 1521
@@ -185,7 +190,7 @@ spec:
 ```
 
 In the example above, the database would be visible in the cluster using the address
-`oracle-db.default.svc.cluster.local:1521/devpdc.k8s`.
+`oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
 When you run the database in the Kubernetes cluster, you will probably want to also
 run RCU from a pod inside your network, though this
@@ -249,13 +254,13 @@ image that you built earlier as a "service" pod to run RCU.  To do this, start u
 pod using that image as follows:
 
 ```bash
-kubectl run rcu -ti --image oracle/fmw-infrastructure:12.2.1.3 -- sleep 100000
+kubectl run rcu --generator=run-pod/v1 --image oracle/fmw-infrastructure:12213-update-k8s -- sleep infinity
 
 ```
 
 This will create a Kubernetes deployment called `rcu` containing a pod running a container
-created from the `oracle/fmw-infrastructure:12.2.1.3` image which will just run
-`sleep 100000`, which essentially creates a pod that we can "exec" into and use to run whatever
+created from the `oracle/fmw-infrastructure:12213-update-k8s` image which will just run
+`sleep infinity`, which essentially creates a pod that we can "exec" into and use to run whatever
 commands we need to run.
 
 To get inside this container and run commands, use this command:
@@ -267,11 +272,11 @@ kubectl exec -ti rcu /bin/bash
 When you are finished with this pod, you can remove it with this command:
 
 ```bash
-kubectl delete deploy rcu
+kubectl delete pod rcu
 ```
 
 {{% notice note %}}
-You can use the same approach to get a temporary "service" pod to run other utilities
+You can use the same approach to get a temporary pod to run other utilities
 like WLST.
 {{% /notice %}}
 
@@ -287,7 +292,7 @@ for the regular schema users:
   -silent \
   -createRepository \
   -databaseType ORACLE \
-  -connectString oracle-db:1521/devpdb.k8s \
+  -connectString oracle-db.default:1521/devpdb.k8s \
   -dbUser sys \
   -dbRole sysdba \
   -useSamePasswordForAllSchemaUsers true \
@@ -305,7 +310,7 @@ for the regular schema users:
 You need to make sure that you maintain the association between the database schemas and the
 matching domain just like you did in a non-Kubernetes environment.  There is no specific
 functionality provided to help with this.  We recommend that you consider making the RCU
-prefix the same as your `domainUID` to help maintain this association.
+prefix (value of `schemaPrefix` argument) the same as your `domainUID` to help maintain this association.
 
 ##### Dropping schemas
 
@@ -316,7 +321,7 @@ If you want to drop the schema, you can use a command like this:
   -silent \
   -dropRepository \
   -databaseType ORACLE \
-  -connectString oracle-db:1521/devpdb.k8s \
+  -connectString oracle-db.default:1521/devpdb.k8s \
   -dbUser sys \
   -dbRole sysdba \
   -selectDependentsForComponents true \
@@ -340,8 +345,9 @@ When you create your domain using the sample provided below, it will obtain the 
 from this secret.
 
 A [sample](/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-rcu-credentials/README.md)
-is provided that demonstrates how to create the secret.
-
+is provided that demonstrates how to create the secret.  The schema owner username required will be the
+`schemaPrefix` value followed by an underscore and a component name, such as `FMW1_STB`.  The schema owner
+owner password will be password you provided for regular schema users during RCU creation.
 
 #### Creating a FMW Infrastructure domain
 
