@@ -506,37 +506,13 @@ public class ITMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Try to append monitoring exporter configuration with NameSnakeCase=true to the original
-   * configuration where NameSnakeCase=false will change NameSnakeCase=true
-   *
-   * @throws Exception
-   */
-  @Test
-  public void test14_AppendMetricsNameSnakeCaseTrueToSnakeCaseFalseConfiguration()
-      throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    boolean testCompletedSuccessfully = false;
-
-    HtmlPage page =
-        submitConfigureForm(exporterUrl, "append", configPath + "/rest_snakecasetrue.yml");
-    assertNotNull(page);
-    String searchKey =
-        "weblogic_servlet_execution_time_average%7Bapp%3D%22testwsapp%22%7D%5B15s%5D";
-    assertTrue(checkMetricsViaPrometheus(searchKey, "testwsapp"));
-    testCompletedSuccessfully = true;
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
    * Try to change monitoring exporter configuration without authentication
    *
    * @throws Exception
    */
   // verify that change configuration fails without authentication
   @Test
-  public void test15_ChangeConfigNoCredentials() throws Exception {
+  public void test14_ChangeConfigNoCredentials() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -561,7 +537,7 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void test16_ChangeConfigInvalidUser() throws Exception {
+  public void test15_ChangeConfigInvalidUser() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -582,7 +558,7 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void test17_ChangeConfigInvalidPass() throws Exception {
+  public void test16_ChangeConfigInvalidPass() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -601,7 +577,7 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void test18_ChangeConfigEmptyUser() throws Exception {
+  public void test17_ChangeConfigEmptyUser() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -622,7 +598,7 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void test19_ChangeConfigEmptyPass() throws Exception {
+  public void test18_ChangeConfigEmptyPass() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
