@@ -109,8 +109,6 @@ public class ITElasticLogging extends BaseTest {
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
 
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
       // Uninstall Elastic Stack
       StringBuffer cmd =
           new StringBuffer("kubectl delete -f ")
@@ -119,6 +117,8 @@ public class ITElasticLogging extends BaseTest {
               .append(elasticStackYamlLoc);
       logger.info("Command to uninstall Elastic Stack: " + cmd.toString());
       TestUtils.exec(cmd.toString());
+
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
       logger.info("SUCCESS");
     }
