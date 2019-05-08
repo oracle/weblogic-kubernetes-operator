@@ -9,10 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,7 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -42,8 +38,6 @@ public class TestUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   private static K8sTestUtils k8sTestUtils = new K8sTestUtils();
-  public static String monitoringExporterDir = "";
-  public static String resourceExporterDir = "";
 
   /**
    * @param cmd - kubectl get pod <podname> -n namespace
@@ -934,155 +928,6 @@ public class TestUtils {
     logger.info("command result " + result.stdout().trim());
   }
 
-  /**
-   * A utility method to copy Cross Namespaces RBAC yaml template file replacing the DOMAIN_NS,
-   * OPERATOR_NS
-   *
-   * @throws IOException when copying files from source location to staging area fails
-   */
-  private static void createCrossNSRBACFile(String domainNS, String operatorNS) throws IOException {
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
-    Path src = Paths.get(samplesDir + "/crossnsrbac.yaml");
-    Path dst = Paths.get(samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml");
-    if (!dst.toFile().exists()) {
-      logger.log(Level.INFO, "Copying {0}", src.toString());
-      Charset charset = StandardCharsets.UTF_8;
-      String content = new String(Files.readAllBytes(src), charset);
-      content = content.replaceAll("weblogic-domain", domainNS);
-      content = content.replaceAll("weblogic-operator", operatorNS);
-      logger.log(Level.INFO, "to {0}", dst.toString());
-      Files.write(dst, content.getBytes(charset));
-    }
-  }
-
-  /**
-   * A utility method to add desired domain namespace to coordinator yaml template file replacing
-   * the DOMAIN_NS,
-   *
-   * @throws IOException when copying files from source location to staging area fails
-   */
-  private static void createCoordinatorFile(String domainNS) throws IOException {
-    // String coordinatorDir = BaseTest.getProjectRoot() +
-    // "/integration-tests/src/test/resources/exporter/";
-    Path src = Paths.get(resourceExporterDir + "/coordinator.yml");
-    Path dst = Paths.get(resourceExporterDir + "/coordinator_" + domainNS + ".yaml");
-    if (!dst.toFile().exists()) {
-      logger.log(Level.INFO, "Copying {0}", src.toString());
-      Charset charset = StandardCharsets.UTF_8;
-      String content = new String(Files.readAllBytes(src), charset);
-      content = content.replaceAll("default", domainNS);
-      logger.log(Level.INFO, "to {0}", dst.toString());
-      Files.write(dst, content.getBytes(charset));
-    }
-  }
-
-  /**
-   * Remove monitoring exporter directory if exists and clone latest from github for monitoring
-   * exporter code
-   *
-   * @throws Exception if could not run the command successfully to clone from github
-   */
-  public static void gitCloneBuildMonitoringExporter() throws Exception {
-    monitoringExporterDir = BaseTest.getResultDir() + "/monitoring";
-    resourceExporterDir =
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
-    String monitoringExporterSrcDir = monitoringExporterDir + "/src";
-    String resourceDir =
-        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
-    String monitoringExporterWar =
-        monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
-    if (new File(monitoringExporterWar).exists()) {
-      logger.info(" Weblogic Server Monitoring Exporter application is ready to use");
-    } else {
-      if (!new File(monitoringExporterDir).exists()) {
-        Files.createDirectories(Paths.get(monitoringExporterDir));
-      }
-      if (!monitoringExporterSrcDir.isEmpty()) {
-        StringBuffer removeAndClone = new StringBuffer();
-        logger.info(
-            "Checking if directory "
-                + monitoringExporterSrcDir
-                + " exists "
-                + new File(monitoringExporterSrcDir).exists());
-        if (new File(monitoringExporterSrcDir).exists()) {
-          removeAndClone.append("rm -rf ").append(monitoringExporterSrcDir).append(" && ");
-        }
-        logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
-        // git clone exporter project
-        removeAndClone
-            .append(" git clone  https://github.com/oracle/weblogic-monitoring-exporter.git ")
-            .append(monitoringExporterSrcDir);
-        executeCmd(removeAndClone.toString());
-      }
-      StringBuffer buildExporter = new StringBuffer();
-      buildExporter
-          .append("cd " + monitoringExporterSrcDir)
-          .append(" && ")
-          .append(" mvn clean install --log-file output.txt");
-      executeCmd(buildExporter.toString());
-
-      StringBuffer buildExporterWAR = new StringBuffer();
-      buildExporterWAR
-          .append("cd " + monitoringExporterSrcDir + "/webapp")
-          .append(" && ")
-          .append("mvn package -Dconfiguration=")
-          .append(resourceDir + "/rest_webapp.yml")
-          .append(" --log-file output1.txt");
-      executeCmd(buildExporterWAR.toString());
-
-      StringBuffer buildCoordinatorImage = new StringBuffer();
-      buildCoordinatorImage
-          .append("cd " + monitoringExporterSrcDir + "/config_coordinator")
-          .append(" && ")
-          .append(" docker build -t config_coordinator . ");
-      executeCmd(buildCoordinatorImage.toString());
-
-      buildExporterWAR = new StringBuffer();
-      buildExporterWAR
-          .append(" mkdir " + monitoringExporterDir + "/apps")
-          .append(" && mkdir " + monitoringExporterDir + "/apps/monitoringexporter")
-          .append(" && ")
-          .append(" cp " + monitoringExporterSrcDir)
-          .append("/webapp/target/wls-exporter.war ")
-          .append(monitoringExporterWar);
-      executeCmd(buildExporterWAR.toString());
-    }
-  }
-
-  public static void deployMonitoringExporterPrometethusGrafana(
-      String exporterAppPath, Domain domain, Operator operator) throws Exception {
-
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
-
-    String crdCmd = " kubectl apply -f " + samplesDir + "monitoring-namespace.yaml";
-    ExecResult result = ExecCommand.exec(crdCmd);
-    crdCmd = " kubectl apply -f " + samplesDir + "prometheus-deployment.yaml";
-    executeCmd(crdCmd);
-
-    String domainNS = domain.getDomainNS();
-    String domainUID = domain.getDomainUid();
-    String operatorNS = operator.getOperatorNamespace();
-    createCrossNSRBACFile(domainNS, operatorNS);
-    crdCmd =
-        " kubectl apply -f " + samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml";
-    result = ExecCommand.exec(crdCmd);
-    logger.info("command result " + result.stdout().trim());
-
-    // create and start coordinator
-    createCoordinatorFile(domainNS);
-    StringBuffer deployCoordinatorImage = new StringBuffer();
-    deployCoordinatorImage
-        .append(" kubectl create -f ")
-        .append(resourceExporterDir + "/coordinator_" + domainNS + ".yaml ");
-    executeCmd(deployCoordinatorImage.toString());
-
-    crdCmd = " kubectl apply -f " + samplesDir + "grafana-deployment.yaml";
-    result = ExecCommand.exec(crdCmd);
-    logger.info("command result " + result.stdout().trim());
-    domain.deployWebAppViaREST(
-        "wlsexporter", exporterAppPath, BaseTest.getUsername(), BaseTest.getPassword());
-  }
-
   public static void createWLDFModule(String adminPodName, String domainNS, int t3ChannelPort)
       throws Exception {
 
@@ -1491,20 +1336,5 @@ public class TestUtils {
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(
         appName, scriptName, username, password, clusterURL, wsServiceName);
-  }
-
-  public static void executeCmd(String cmd) throws Exception {
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command "
-              + cmd
-              + " failed, returned "
-              + result.stdout()
-              + "\n"
-              + result.stderr());
-    }
-    String outputStr = result.stdout().trim();
-    logger.info("Command returned " + outputStr);
   }
 }
