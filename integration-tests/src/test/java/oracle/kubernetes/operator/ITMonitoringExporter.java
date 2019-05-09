@@ -207,7 +207,6 @@ public class ITMonitoringExporter extends BaseTest {
     assertTrue(page.asText().contains("WebAppComponentRuntime"));
     // check previous config is there
     assertTrue(page.asText().contains("JVMRuntime"));
-    // due coordinator bug just checking one of servers
     assertTrue(
         checkMetricsViaPrometheus(
                 prometheusSearchKey1, "\"weblogic_serverName\":\"managed-server1\"")
@@ -778,7 +777,7 @@ public class ITMonitoringExporter extends BaseTest {
     StringBuffer deployCoordinatorImage = new StringBuffer();
     deployCoordinatorImage
         .append(" kubectl create -f ")
-        .append(resourceExporterDir + "/coordinator_" + domainNS + ".yaml ");
+        .append(samplesDir + "/coordinator_" + domainNS + ".yaml ");
     TestUtils.exec(deployCoordinatorImage.toString());
 
     crdCmd = " kubectl apply -f " + samplesDir + "grafana-deployment.yaml";
@@ -795,10 +794,9 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws IOException when copying files from source location to staging area fails
    */
   private static void createCoordinatorFile(String domainNS) throws IOException {
-    // String coordinatorDir = BaseTest.getProjectRoot() +
-    // "/integration-tests/src/test/resources/exporter/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
     Path src = Paths.get(resourceExporterDir + "/coordinator.yml");
-    Path dst = Paths.get(resourceExporterDir + "/coordinator_" + domainNS + ".yaml");
+    Path dst = Paths.get(samplesDir + "/coordinator_" + domainNS + ".yaml");
     if (!dst.toFile().exists()) {
       logger.log(Level.INFO, "Copying {0}", src.toString());
       Charset charset = StandardCharsets.UTF_8;
