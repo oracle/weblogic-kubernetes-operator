@@ -361,6 +361,16 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenPodCreatedWithAdminPortEnabled_readinessProbeHasReadinessCommand() {
+    final Integer ADMIN_PORT = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(ADMIN_PORT);
+    V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
+    assertThat(getAction.getPath(), equalTo("/weblogic/ready"));
+    assertThat(getAction.getPort().getIntValue(), equalTo(ADMIN_PORT));
+    assertThat(getAction.getScheme(), equalTo("HTTPS"));
+  }
+
+  @Test
   public void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
     configureServer()
         .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);

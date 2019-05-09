@@ -210,7 +210,7 @@ public class WlsServerConfig {
       for (NetworkAccessPoint nap : networkAccessPoints) {
         if (nap.isAdminProtocol()) {
           adminProtocolPortFound = true;
-          adminProtocolPortSecure = false;
+          adminProtocolPortSecure = true;
           break;
         }
       }
