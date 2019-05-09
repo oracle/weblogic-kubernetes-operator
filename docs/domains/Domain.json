@@ -407,7 +407,7 @@
       "type": "object",
       "properties": {
         "overallHealth": {
-          "description": "Server health of this WebLogic server.",
+          "description": "Server health of this WebLogic server. If the value is \"Not available\", the operator has failed to read the health. If the value is \"Not available (possibly overloaded)\", the operator has failed to read the health of the server possibly due to the server is in overloaded state",
           "type": "string"
         },
         "activationTime": {
