@@ -96,7 +96,7 @@ function state_dump {
   local outfile=${DUMP_DIR}/archive_pv_job.out
 
   if [ "$JENKINS" = "true" ] || [ "$SHARED_CLUSTER" = "true" ]; then
-    echo "Running $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m ${PV_ROOT}:/sharedparent -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}"
+    # echo "Running $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m ${PV_ROOT}:/sharedparent -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}"
   	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
   	if [ "$?" = "0" ]; then
   		#echo "Running $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m  ${PV_ROOT}:/sharedparent -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1"
@@ -119,6 +119,7 @@ function state_dump {
 	   		fi
 	 	else
      		# command failed
+     		echo Run failed
   			cat $RESULT_DIR/pvarchive.b64 | head -100
 	 	fi
 	 	# rm $RESULT_DIR/pvarchive.b64
