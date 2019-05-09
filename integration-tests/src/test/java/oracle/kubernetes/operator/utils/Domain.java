@@ -868,6 +868,15 @@ public class Domain {
         BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
 
     pvMap.values().removeIf(Objects::isNull);
+
+    String cmd =
+        BaseTest.getProjectRoot()
+            + "/src/integration-tests/bash/krun.sh -m "
+            + BaseTest.getPvRoot()
+            + ":/scratch -c \"ls -ltr /scratch\"";
+    logger.info("Check PVROOT by running " + cmd);
+    ExecResult result = TestUtils.exec(cmd);
+
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
   }
