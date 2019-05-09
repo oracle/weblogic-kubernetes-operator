@@ -116,9 +116,8 @@ public class ITMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
+      deletePrometheusGrafana();
       logger.info("SUCCESS");
     }
   }
@@ -277,40 +276,6 @@ public class ITMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Replace monitoring exporter configuration with not existed config file
-   *
-   * @throws Exception
-   */
-  @Test
-  public void test06_1ReplaceWithNotExistedFileConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    boolean testCompletedSuccessfully = false;
-    HtmlPage page = submitConfigureForm(exporterUrl, "replace", "/scratch/m/test.yml");
-    assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
-    testCompletedSuccessfully = true;
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Replace monitoring exporter configuration with no file name for configuration
-   *
-   * @throws Exception
-   */
-  @Test
-  public void test06_2ReplaceWithNoFileNameConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    boolean testCompletedSuccessfully = false;
-    HtmlPage page = submitConfigureForm(exporterUrl, "replace", "");
-    assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
-    testCompletedSuccessfully = true;
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
    * Try to append monitoring exporter configuration with empty configuration
    *
    * @throws Exception
@@ -325,46 +290,6 @@ public class ITMonitoringExporter extends BaseTest {
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
     HtmlPage page = submitConfigureForm(exporterUrl, "append", configPath + "/rest_empty.yml");
-    assertTrue(originalPage.asText().equals(page.asText()));
-    testCompletedSuccessfully = true;
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Try to append monitoring exporter configuration with not existed configuration file
-   *
-   * @throws Exception
-   */
-  @Test
-  public void test07_1AppendWithNotExistedFileConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    boolean testCompletedSuccessfully = false;
-    final WebClient webClient = new WebClient();
-    HtmlPage originalPage = webClient.getPage(exporterUrl);
-    assertNotNull(originalPage);
-    HtmlPage page = submitConfigureForm(exporterUrl, "append", "/scratch/m/test.yml");
-    assertTrue(originalPage.asText().equals(page.asText()));
-    testCompletedSuccessfully = true;
-    logger.info("SUCCESS - " + testMethodName);
-  }
-
-  /**
-   * Try to append monitoring exporter configuration with null name for configuration file
-   *
-   * @throws Exception
-   */
-  @Test
-  public void test07_2AppendWithNoFileNameConfiguration() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-    boolean testCompletedSuccessfully = false;
-    final WebClient webClient = new WebClient();
-    HtmlPage originalPage = webClient.getPage(exporterUrl);
-    assertNotNull(originalPage);
-    HtmlPage page = submitConfigureForm(exporterUrl, "append", "");
     assertTrue(originalPage.asText().equals(page.asText()));
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
@@ -682,6 +607,7 @@ public class ITMonitoringExporter extends BaseTest {
     // Now submit the form by clicking the button and get back the second page.
     HtmlPage page2 = button.click();
     assertNotNull(page2);
+    assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
     return page2;
   }
 
@@ -793,6 +719,21 @@ public class ITMonitoringExporter extends BaseTest {
     logger.info("command result " + result.stdout().trim());
     domain.deployWebAppViaREST(
         "wlsexporter", exporterAppPath, BaseTest.getUsername(), BaseTest.getPassword());
+  }
+
+  private static void deletePrometheusGrafana() throws Exception {
+
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+
+    String crdCmd = " kubectl delete -f " + samplesDir + "prometheus-deployment.yaml";
+    TestUtils.exec(crdCmd);
+
+    crdCmd = " kubectl delete -f " + samplesDir + "grafana-deployment.yaml";
+    TestUtils.exec(crdCmd);
+
+    crdCmd = " kubectl delete -f " + samplesDir + "monitoring-namespace.yaml";
+    TestUtils.exec(crdCmd);
+    logger.info("Deleted Prometheus and Grafana");
   }
 
   /**
