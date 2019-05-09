@@ -9,6 +9,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 import com.meterware.pseudoserver.HttpUserAgentTest;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -117,6 +119,19 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
     Map<String, String> serverStates = getServerStates(packet);
     assertThat(serverStates, hasEntry("server1", "server1 status"));
     assertThat(serverStates, hasEntry("server2", "server2 status"));
+  }
+
+  @Test
+  public void createDomainStatusReaderStep_initializesRemainingServersHealthRead_withNumServers() {
+    info.setServerPod("server1", createPod("server1"));
+    info.setServerPod("server2", createPod("server2"));
+
+    Packet packet =
+        testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
+
+    assertThat(
+        ((AtomicInteger) packet.get(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ)).get(),
+        is(2));
   }
 
   @SuppressWarnings("unchecked")
