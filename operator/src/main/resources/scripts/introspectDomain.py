@@ -583,6 +583,9 @@ class TopologyGenerator(Generator):
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
     if server.isAdministrationPortEnabled():
       self.writeln("  adminPort: " + str(server.getAdministrationPort()))
+    else:
+      if self.env.getDomain().isAdministrationPortEnabled():
+        self.writeln("  adminPort: " + str(self.env.getDomain().getAdministrationPort()))
     self.addSSL(server)
     self.addNetworkAccessPoints(server)
 

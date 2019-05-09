@@ -161,6 +161,18 @@ public abstract class PodStepContext extends StepContextBase {
     return domainTopology.getServerConfig(domainTopology.getAdminServerName()).getListenPort();
   }
 
+  boolean isLocalAdminProtocolChannelSecure() {
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .isLocalAdminProtocolChannelSecure();
+  }
+
+  Integer getLocalAdminProtocolChannelPort() {
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .getLocalAdminProtocolChannelPort();
+  }
+
   private String getLogHome() {
     return getDomain().getLogHome();
   }
@@ -793,14 +805,21 @@ public abstract class PodStepContext extends StepContextBase {
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD)
-        .httpGet(httpGetAction(READINESS_PATH, getDefaultPort()));
+        .httpGet(
+            httpGetAction(
+                READINESS_PATH,
+                getLocalAdminProtocolChannelPort(),
+                isLocalAdminProtocolChannelSecure()));
     return readinessProbe;
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1HTTPGetAction httpGetAction(String path, int port) {
+  private V1HTTPGetAction httpGetAction(String path, int port, boolean useHTTPS) {
     V1HTTPGetAction getAction = new V1HTTPGetAction();
     getAction.path(path).port(new IntOrString(port));
+    if (useHTTPS) {
+      getAction.scheme("HTTPS");
+    }
     return getAction;
   }
 
