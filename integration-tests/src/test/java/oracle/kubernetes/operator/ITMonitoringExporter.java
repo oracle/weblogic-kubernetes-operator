@@ -693,6 +693,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   private static void gitCloneBuildMonitoringExporter() throws Exception {
     String monitoringExporterSrcDir = monitoringExporterDir + "/src";
+    // target dir for monitoring exporter webapp
     String monitoringExporterWar =
         monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
     if (new File(monitoringExporterWar).exists()) {
@@ -701,6 +702,8 @@ public class ITMonitoringExporter extends BaseTest {
       if (!new File(monitoringExporterDir).exists()) {
         Files.createDirectories(Paths.get(monitoringExporterDir));
       }
+      // make sure to always refresh the code from github, if destination dir is not empty, clean it
+      // first, clone after
       if (!monitoringExporterSrcDir.isEmpty()) {
         StringBuffer removeAndClone = new StringBuffer();
         logger.info(
@@ -718,6 +721,8 @@ public class ITMonitoringExporter extends BaseTest {
             .append(monitoringExporterSrcDir);
         TestUtils.exec(removeAndClone.toString());
       }
+
+      // build monitoring exporter project
       StringBuffer buildExporter = new StringBuffer();
       buildExporter
           .append("cd " + monitoringExporterSrcDir)
@@ -725,6 +730,7 @@ public class ITMonitoringExporter extends BaseTest {
           .append(" mvn clean install --log-file output.txt");
       TestUtils.exec(buildExporter.toString());
 
+      // build monitoring monitoring exporter webapp
       StringBuffer buildExporterWAR = new StringBuffer();
       buildExporterWAR
           .append("cd " + monitoringExporterSrcDir + "/webapp")
@@ -734,6 +740,7 @@ public class ITMonitoringExporter extends BaseTest {
           .append(" --log-file output1.txt");
       TestUtils.exec(buildExporterWAR.toString());
 
+      // build coordinator image
       StringBuffer buildCoordinatorImage = new StringBuffer();
       buildCoordinatorImage
           .append("cd " + monitoringExporterSrcDir + "/config_coordinator")
@@ -741,6 +748,7 @@ public class ITMonitoringExporter extends BaseTest {
           .append(" docker build -t config_coordinator . ");
       TestUtils.exec(buildCoordinatorImage.toString());
 
+      // copy created war file to desired destination
       buildExporterWAR = new StringBuffer();
       buildExporterWAR
           .append(" mkdir " + monitoringExporterDir + "/apps")
