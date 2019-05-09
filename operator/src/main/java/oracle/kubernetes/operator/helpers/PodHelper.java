@@ -290,6 +290,16 @@ public class PodHelper {
     }
 
     @Override
+    boolean isLocalAdminProtocolChannelSecure() {
+      return scan.isLocalAdminProtocolChannelSecure();
+    }
+
+    @Override
+    Integer getLocalAdminProtocolChannelPort() {
+      return scan.getLocalAdminProtocolChannelPort();
+    }
+
+    @Override
     Integer getDefaultPort() {
       return scan.getListenPort();
     }
