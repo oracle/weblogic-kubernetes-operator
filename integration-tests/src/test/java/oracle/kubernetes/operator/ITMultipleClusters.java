@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
+import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
@@ -162,6 +163,61 @@ public class ITMultipleClusters extends BaseTest {
       restoreDomainTemplate();
     }
     logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Create 2 dynamic clusters in a domain each having 2 managed servers. Verify the managed servers
+   * are running and verify the basic use cases.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testCreateDomainTwoDynamicCluster() throws Exception {
+    String DOMAINUID = "twodynamicclusterdomain";
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String template =
+        BaseTest.getProjectRoot()
+            + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/wdt/wdt_model_dynamic.yaml";
+    logger.info("Creating Operator & waiting for the script to complete execution");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+    }
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
+      domainMap.put("domainUID", DOMAINUID);
+      if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
+          || (domainMap.containsKey("loadBalancer")
+              && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
+        domainMap.put("voyagerWebPort", new Integer("30377"));
+      }
+      logger.log(Level.INFO, "Making a backup of the wdt domain template file:{0}", template);
+      if (!Files.exists(Paths.get(template + ".org"))) {
+        Files.copy(Paths.get(template), Paths.get(template + ".org"));
+      }
+      Files.copy(
+          Paths.get(
+              BaseTest.getProjectRoot()
+                  + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml"),
+          Paths.get(template),
+          StandardCopyOption.REPLACE_EXISTING);
+      domain = TestUtils.createDomain(domainMap);
+      domain.verifyDomainCreated();
+      verifyServersStatus(domain);
+      testBasicUseCases(domain);
+      if (!SMOKETEST) {
+        domain.testWlsLivenessProbe();
+      }
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
+        domain.destroy();
+      }
+      restoreDomainTemplate();
+    }
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
