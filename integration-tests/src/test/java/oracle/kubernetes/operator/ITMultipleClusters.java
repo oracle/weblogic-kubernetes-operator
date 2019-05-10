@@ -172,13 +172,13 @@ public class ITMultipleClusters extends BaseTest {
    * @throws Exception
    */
   @Test
-  public void testCreateDomainTwoDynamicCluster() throws Exception {
-    String DOMAINUID = "twodynamicclusterdomain";
+  public void testCreateDomainTwoClusterWDTInImage() throws Exception {
+    String DOMAINUID = "twoclusterdomainwdt";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String template =
+    String wdttemplate =
         BaseTest.getProjectRoot()
-            + "/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/wdt/wdt_model_dynamic.yaml";
+            + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml";
     logger.info("Creating Operator & waiting for the script to complete execution");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
@@ -193,15 +193,16 @@ public class ITMultipleClusters extends BaseTest {
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30377"));
       }
-      logger.log(Level.INFO, "Making a backup of the wdt domain template file:{0}", template);
-      if (!Files.exists(Paths.get(template + ".org"))) {
-        Files.copy(Paths.get(template), Paths.get(template + ".org"));
+      addCluster2ToDomainTemplate();
+      logger.log(Level.INFO, "Making a backup of the wdt template file:{0}", wdttemplate);
+      if (!Files.exists(Paths.get(wdttemplate + ".org"))) {
+        Files.copy(Paths.get(wdttemplate), Paths.get(wdttemplate + ".org"));
       }
       Files.copy(
           Paths.get(
               BaseTest.getProjectRoot()
                   + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml"),
-          Paths.get(template),
+          Paths.get(wdttemplate),
           StandardCopyOption.REPLACE_EXISTING);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
