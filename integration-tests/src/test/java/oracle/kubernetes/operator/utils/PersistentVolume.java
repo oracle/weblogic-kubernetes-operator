@@ -23,8 +23,15 @@ public class PersistentVolume {
     this.pvMap = pvMap;
 
     String cmd =
+        /* BaseTest.getProjectRoot()
+        + "/src/integration-tests/bash/job.sh \"mkdir -p "
+        + dirPath
+        + "\""; */
+
         BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/job.sh \"mkdir -p "
+            + "/src/integration-tests/bash/krun.sh -m "
+            + BaseTest.getPvRoot()
+            + ":/scratch -c \"mkdir -p "
             + dirPath
             + "\"";
     ExecResult result = ExecCommand.exec(cmd);
