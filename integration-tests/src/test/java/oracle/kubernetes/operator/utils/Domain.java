@@ -878,8 +878,9 @@ public class Domain {
             // + BaseTest.getPvRoot()
             + "/scratch:/scratch -c \"ls -ltr /scratch "
             + BaseTest.getPvRoot()
-            + "/acceptance_test_pv/persistentVolume-"
-            + domainUid
+            + " "
+            + BaseTest.getPvRoot()
+            + "/acceptance_test_pv"
             + "\"";
     logger.info("Check PVROOT by running " + cmd);
     ExecResult result = TestUtils.exec(cmd);
