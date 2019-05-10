@@ -186,7 +186,7 @@ public class BaseTest {
     logger.info("Adding file handler, logging to file at " + resultDir + "/java_test_suite.out");
 
     // for manual/local run, create file handler, create PVROOT
-    if (!JENKINS) {
+    if (!JENKINS && !SHARED_CLUSTER) {
       logger.info("Creating PVROOT " + pvRoot);
       Files.createDirectories(Paths.get(pvRoot));
       ExecResult result = ExecCommand.exec("chmod -R 777 " + pvRoot);
