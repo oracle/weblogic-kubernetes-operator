@@ -883,8 +883,8 @@ public class Domain {
             + "/acceptance_test_pv"
             + "\"";
     logger.info("Check PVROOT by running " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
-    logger.info("ls -ltr output " + result.stdout());
+    ExecResult result = ExecCommand.exec(cmd);
+    logger.info("ls -ltr output " + result.stdout() + " err " + result.stderr());
   }
 
   /**
