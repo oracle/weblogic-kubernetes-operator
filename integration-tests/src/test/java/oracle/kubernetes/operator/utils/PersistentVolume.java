@@ -31,7 +31,7 @@ public class PersistentVolume {
         BaseTest.getProjectRoot()
             + "/src/integration-tests/bash/krun.sh -m "
             + BaseTest.getPvRoot()
-            + ":/scratch -c \"mkdir -p "
+            + ":/scratch -t 60 -c \"mkdir -p "
             + dirPath
             + "\"";
     ExecResult result = ExecCommand.exec(cmd);
