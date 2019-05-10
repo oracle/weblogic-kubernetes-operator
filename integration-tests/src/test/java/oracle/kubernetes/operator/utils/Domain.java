@@ -872,8 +872,10 @@ public class Domain {
     String cmd =
         BaseTest.getProjectRoot()
             + "/src/integration-tests/bash/krun.sh -m "
+            // + BaseTest.getPvRoot()
+            + "/scratch:/scratch -c \"ls -ltr /scratch "
             + BaseTest.getPvRoot()
-            + ":/scratch -c \"ls -ltr /scratch\"";
+            + "\"";
     logger.info("Check PVROOT by running " + cmd);
     ExecResult result = TestUtils.exec(cmd);
     logger.info("ls -ltr output " + result.stdout());
