@@ -876,7 +876,7 @@ public class Domain {
             + ":/scratch -c \"ls -ltr /scratch\"";
     logger.info("Check PVROOT by running " + cmd);
     ExecResult result = TestUtils.exec(cmd);
-
+    logger.info("ls -ltr output " + result.stdout());
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
   }
