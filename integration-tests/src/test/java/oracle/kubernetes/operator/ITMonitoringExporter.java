@@ -116,8 +116,8 @@ public class ITMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       deletePrometheusGrafana();
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
     }
   }
