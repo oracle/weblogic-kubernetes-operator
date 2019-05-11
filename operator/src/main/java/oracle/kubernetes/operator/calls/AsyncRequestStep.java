@@ -190,7 +190,7 @@ public class AsyncRequestStep<T> extends Step {
                         try {
                           cc.cancel();
                         } finally {
-                          LOGGER.info(
+                          LOGGER.fine(
                               MessageKeys.ASYNC_TIMEOUT,
                               requestParams.call,
                               requestParams.namespace,

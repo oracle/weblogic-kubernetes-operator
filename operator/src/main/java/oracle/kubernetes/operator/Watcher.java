@@ -143,7 +143,7 @@ abstract class Watcher<T> {
             new WatchBuilder()
                 .withResourceVersion(resourceVersion.toString())
                 .withTimeoutSeconds(tuning.watchLifetime))) {
-      while (watch.hasNext()) {
+      while (hasNext(watch)) {
         Watch.Response<T> item = watch.next();
 
         if (isStopping()) {
@@ -162,6 +162,15 @@ abstract class Watcher<T> {
     } catch (Throwable ex) {
       LOGGER.warning(MessageKeys.EXCEPTION, ex);
     }
+  }
+
+  private boolean hasNext(WatchI<T> watch) {
+    try {
+      return watch.hasNext();
+    } catch (Throwable ex) {
+      // no-op on exception during hasNext
+    }
+    return false;
   }
 
   /**
