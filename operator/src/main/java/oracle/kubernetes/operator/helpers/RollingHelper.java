@@ -176,84 +176,87 @@ public class RollingHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (it.hasNext()) {
-        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-        WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+      synchronized (it) {
+        if (it.hasNext()) {
+          DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+          WlsDomainConfig config =
+              (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
-        // Refresh as this is constantly changing
-        Domain dom = info.getDomain();
-        // These are presently Ready servers
-        List<String> availableServers = getReadyServers(info);
+          // Refresh as this is constantly changing
+          Domain dom = info.getDomain();
+          // These are presently Ready servers
+          List<String> availableServers = getReadyServers(info);
 
-        List<String> servers = new ArrayList<>();
-        List<String> readyServers = new ArrayList<>();
-        List<V1Pod> notReadyServers = new ArrayList<>();
+          List<String> servers = new ArrayList<>();
+          List<String> readyServers = new ArrayList<>();
+          List<V1Pod> notReadyServers = new ArrayList<>();
 
-        Collection<StepAndPacket> serversThatCanRestartNow = new ArrayList<>();
+          Collection<StepAndPacket> serversThatCanRestartNow = new ArrayList<>();
 
-        int countReady = 0;
-        WlsClusterConfig cluster = config != null ? config.getClusterConfig(clusterName) : null;
-        if (cluster != null) {
-          List<WlsServerConfig> serversConfigs = cluster.getServerConfigs();
-          if (serversConfigs != null) {
-            for (WlsServerConfig s : serversConfigs) {
-              // figure out how many servers are currently ready
-              String name = s.getName();
-              if (availableServers.contains(name)) {
-                readyServers.add(s.getName());
-                countReady++;
-              } else {
-                V1Pod pod = info.getServerPod(name);
-                if (pod != null) {
-                  notReadyServers.add(pod);
+          int countReady = 0;
+          WlsClusterConfig cluster = config != null ? config.getClusterConfig(clusterName) : null;
+          if (cluster != null) {
+            List<WlsServerConfig> serversConfigs = cluster.getServerConfigs();
+            if (serversConfigs != null) {
+              for (WlsServerConfig s : serversConfigs) {
+                // figure out how many servers are currently ready
+                String name = s.getName();
+                if (availableServers.contains(name)) {
+                  readyServers.add(s.getName());
+                  countReady++;
+                } else {
+                  V1Pod pod = info.getServerPod(name);
+                  if (pod != null) {
+                    notReadyServers.add(pod);
+                  }
                 }
               }
             }
           }
-        }
 
-        // then add as many as possible next() entries leaving at least minimum cluster
-        // availability
-        while (countReady-- > dom.getMinAvailable(clusterName)) {
-          StepAndPacket current = it.next();
-          WlsServerConfig serverConfig =
-              (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
-          String serverName = null;
-          if (serverConfig != null) {
-            serverName = serverConfig.getName();
-          } else if (config != null) {
-            serverName = config.getAdminServerName();
-          }
-          if (serverName != null) {
-            servers.add(serverName);
-          }
-          serversThatCanRestartNow.add(current);
-          if (!it.hasNext()) {
-            break;
-          }
-        }
-
-        if (serversThatCanRestartNow.isEmpty()) {
-          // Not enough servers are ready to let us restart a server now
-          if (!notReadyServers.isEmpty()) {
-            PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
-            Collection<StepAndPacket> waitForUnreadyServers = new ArrayList<>();
-            for (V1Pod pod : notReadyServers) {
-              waitForUnreadyServers.add(
-                  new StepAndPacket(pw.waitForReady(pod, null), packet.clone()));
+          // then add as many as possible next() entries leaving at least minimum cluster
+          // availability
+          while (countReady-- > dom.getMinAvailable(clusterName)) {
+            StepAndPacket current = it.next();
+            WlsServerConfig serverConfig =
+                (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
+            String serverName = null;
+            if (serverConfig != null) {
+              serverName = serverConfig.getName();
+            } else if (config != null) {
+              serverName = config.getAdminServerName();
             }
-
-            // Wait for at least one of the not-yet-ready servers to become ready
-            return doForkAtLeastOne(this, packet, waitForUnreadyServers);
-          } else {
-            throw new IllegalStateException();
+            if (serverName != null) {
+              servers.add(serverName);
+            }
+            serversThatCanRestartNow.add(current);
+            if (!it.hasNext()) {
+              break;
+            }
           }
+
+          if (serversThatCanRestartNow.isEmpty()) {
+            // Not enough servers are ready to let us restart a server now
+            if (!notReadyServers.isEmpty()) {
+              PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
+              Collection<StepAndPacket> waitForUnreadyServers = new ArrayList<>();
+              for (V1Pod pod : notReadyServers) {
+                waitForUnreadyServers.add(
+                    new StepAndPacket(pw.waitForReady(pod, null), packet.clone()));
+              }
+
+              // Wait for at least one of the not-yet-ready servers to become ready
+              return doForkAtLeastOne(this, packet, waitForUnreadyServers);
+            } else {
+              throw new IllegalStateException();
+            }
+          }
+
+          readyServers.removeAll(servers);
+          LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
+
+          return doNext(new ServersThatCanRestartNowStep(serversThatCanRestartNow, this), packet);
         }
-
-        readyServers.removeAll(servers);
-        LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
-
-        return doNext(new ServersThatCanRestartNowStep(serversThatCanRestartNow, this), packet);
       }
 
       return doNext(packet);
