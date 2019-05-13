@@ -19,7 +19,7 @@ topology:
                 DynamicClusterSize: '@@PROP:CONFIGURED_MANAGED_SERVER_COUNT@@'
                 MaxDynamicClusterSize: '@@PROP:CONFIGURED_MANAGED_SERVER_COUNT@@'
                 ServerNamePrefix: '@@PROP:MANAGED_SERVER_NAME_BASE@@'
-                ServerTemplate: '@@PROP:CLUSTER_NAME@@-template'
+                ServerTemplate: '@@PROP:CLUSTER_NAME@@-template2'
     Server:
         '@@PROP:ADMIN_NAME@@':
             ListenPort: '@@PROP:ADMIN_PORT@@'
@@ -34,3 +34,8 @@ topology:
             ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
             JTAMigratableTarget:
                 Cluster: '@@PROP:CLUSTER_NAME@@'
+        '@@PROP:CLUSTER_NAME@@-template2':
+            Cluster: '@@PROP:CLUSTER_NAME@@-2'
+            ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
+            JTAMigratableTarget:
+                Cluster: '@@PROP:CLUSTER_NAME@@-2'
