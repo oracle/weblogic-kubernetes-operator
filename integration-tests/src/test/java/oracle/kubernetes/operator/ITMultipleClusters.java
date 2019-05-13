@@ -188,6 +188,7 @@ public class ITMultipleClusters extends BaseTest {
     try {
       Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
       domainMap.put("domainUID", DOMAINUID);
+      // domainMap.put("initialManagedServerReplicas", 4);
       if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
           || (domainMap.containsKey("loadBalancer")
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
