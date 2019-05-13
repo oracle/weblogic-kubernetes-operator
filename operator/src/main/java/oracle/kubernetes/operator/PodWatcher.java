@@ -8,10 +8,11 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.util.Watch;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
@@ -39,8 +40,24 @@ public class PodWatcher extends Watcher<V1Pod>
   private final WatchListener<V1Pod> listener;
 
   // Map of Pod name to OnReady
-  private final ConcurrentMap<String, OnReady> readyCallbackRegistrations =
-      new ConcurrentHashMap<>();
+  private final Map<String, Collection<OnReady>> readyCallbackRegistrations = new HashMap<>();
+
+  private void registerOnReady(String podName, OnReady onReady) {
+    synchronized (readyCallbackRegistrations) {
+      Collection<OnReady> col = readyCallbackRegistrations.get(podName);
+      if (col == null) {
+        col = new ArrayList<>();
+        readyCallbackRegistrations.put(podName, col);
+      }
+      col.add(onReady);
+    }
+  }
+
+  private Collection<OnReady> retrieveOnReady(String podName) {
+    synchronized (readyCallbackRegistrations) {
+      return readyCallbackRegistrations.remove(podName);
+    }
+  }
 
   /**
    * Factory for PodWatcher.
@@ -96,9 +113,11 @@ public class PodWatcher extends Watcher<V1Pod>
         Boolean isReady = !PodHelper.isDeleting(pod) && PodHelper.isReady(pod);
         String podName = pod.getMetadata().getName();
         if (isReady) {
-          OnReady ready = readyCallbackRegistrations.remove(podName);
-          if (ready != null) {
-            ready.onReady();
+          Collection<OnReady> col = retrieveOnReady(podName);
+          if (col != null) {
+            for (OnReady ready : col) {
+              ready.onReady();
+            }
           }
         }
         break;
@@ -148,7 +167,7 @@ public class PodWatcher extends Watcher<V1Pod>
                     fiber.resume(packet);
                   }
                 };
-            readyCallbackRegistrations.put(metadata.getName(), ready);
+            registerOnReady(metadata.getName(), ready);
 
             // Timing window -- pod may have come ready before registration for callback
             CallBuilderFactory factory =
