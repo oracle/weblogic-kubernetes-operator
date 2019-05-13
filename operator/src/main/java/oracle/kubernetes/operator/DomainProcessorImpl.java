@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -314,7 +315,9 @@ public class DomainProcessorImpl implements DomainProcessor {
                   new CompletionCallback() {
                     @Override
                     public void onCompletion(Packet packet) {
-                      if (Boolean.TRUE.equals(packet.get(ProcessingConstants.SERVER_HEALTH_READ))) {
+                      AtomicInteger serverHealthRead =
+                          packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
+                      if (serverHealthRead == null || serverHealthRead.get() == 0) {
                         loggingFilter.setFiltering(false).resetLogHistory();
                       } else {
                         loggingFilter.setFiltering(true);
