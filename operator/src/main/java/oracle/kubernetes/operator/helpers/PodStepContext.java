@@ -158,7 +158,9 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   Integer getAsPort() {
-    return domainTopology.getServerConfig(domainTopology.getAdminServerName()).getListenPort();
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .getLocalAdminProtocolChannelPort();
   }
 
   boolean isLocalAdminProtocolChannelSecure() {
@@ -769,6 +771,7 @@ public abstract class PodStepContext extends StepContextBase {
     addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
     addEnvVar(vars, "ADMIN_NAME", getAsName());
     addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
+    addEnvVar(vars, "ADMIN_PORT_SECURE", Boolean.toString(isLocalAdminProtocolChannelSecure()));
     addEnvVar(vars, "SERVER_NAME", getServerName());
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);

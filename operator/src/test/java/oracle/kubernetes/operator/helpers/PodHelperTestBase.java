@@ -431,6 +431,7 @@ public abstract class PodHelperTestBase {
             hasEnvVar("DOMAIN_HOME", "/u01/oracle/user_projects/domains"),
             hasEnvVar("ADMIN_NAME", ADMIN_SERVER),
             hasEnvVar("ADMIN_PORT", Integer.toString(ADMIN_PORT)),
+            hasEnvVar("ADMIN_PORT_SECURE", "false"),
             hasEnvVar("SERVER_NAME", getServerName()),
             hasEnvVar("ADMIN_USERNAME", null),
             hasEnvVar("ADMIN_PASSWORD", null),
@@ -920,6 +921,7 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("DOMAIN_HOME", "/u01/oracle/user_projects/domains"))
         .addEnvItem(envItem("ADMIN_NAME", ADMIN_SERVER))
         .addEnvItem(envItem("ADMIN_PORT", Integer.toString(ADMIN_PORT)))
+        .addEnvItem(envItem("ADMIN_PORT_SECURE", "false"))
         .addEnvItem(envItem("SERVER_NAME", getServerName()))
         .addEnvItem(envItem("ADMIN_USERNAME", null))
         .addEnvItem(envItem("ADMIN_PASSWORD", null))
