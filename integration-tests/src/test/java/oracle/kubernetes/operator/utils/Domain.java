@@ -1661,6 +1661,11 @@ public class Domain {
                 + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml",
             BaseTest.getResultDir()
                 + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
+        logger.info("WDT DOMAIN MODEL");
+        TestUtils.exec(
+            "cat "
+                + BaseTest.getResultDir()
+                + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
       } else {
         // domain on pv
         StringBuffer createDomainJobTemplateFile = new StringBuffer(BaseTest.getResultDir());
