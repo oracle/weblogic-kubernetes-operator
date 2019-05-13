@@ -1,40 +1,36 @@
-# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
-# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
-
-# This domain inputs file is used to create multiple dynamic clusters in in image home
 domainInfo:
-    AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
-    AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
-    ServerStartMode: prod
+    AdminUserName: '@@FILE:/u01/oracle/properties/adminuser.properties@@'
+    AdminPassword: '@@FILE:/u01/oracle/properties/adminpass.properties@@'
 topology:
-    Name: '@@PROP:domainName@@'
-    AdminServerName: '@@PROP:adminServerName@@'
-    ProductionModeEnabled: '@@PROP:productionModeEnabled@@'
+    Name: '@@PROP:DOMAIN_NAME@@'
+    AdminServerName: '@@PROP:ADMIN_NAME@@'
+    ProductionModeEnabled: '@@PROP:PRODUCTION_MODE_ENABLED@@'
     Cluster:
-        '@@PROP:clusterName@@':
+        '@@PROP:CLUSTER_NAME@@':
             DynamicServers:
                 CalculatedListenPorts: false
-                DynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
-                MaxDynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
-                ServerNamePrefix: '@@PROP:managedServerNameBase@@'
-                ServerTemplate: '@@PROP:clusterName@@-template'
-        '@@PROP:clusterName@@-2':
+                DynamicClusterSize: '@@PROP:CONFIGURED_MANAGED_SERVER_COUNT@@'
+                MaxDynamicClusterSize: '@@PROP:CONFIGURED_MANAGED_SERVER_COUNT@@'
+                ServerNamePrefix: '@@PROP:MANAGED_SERVER_NAME_BASE@@'
+                ServerTemplate: '@@PROP:CLUSTER_NAME@@-template'
+        '@@PROP:CLUSTER_NAME@@-2':
             DynamicServers:
                 CalculatedListenPorts: false
-                DynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
-                MaxDynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
-                ServerNamePrefix: '@@PROP:managedServerNameBase@@'
-                ServerTemplate: '@@PROP:clusterName@@-template'
+                DynamicClusterSize: '@@PROP:CONFIGURED_MANAGED_SERVER_COUNT@@'
+                MaxDynamicClusterSize: '@@PROP:CONFIGURED_MANAGED_SERVER_COUNT@@'
+                ServerNamePrefix: '@@PROP:MANAGED_SERVER_NAME_BASE@@'
+                ServerTemplate: '@@PROP:CLUSTER_NAME@@-template'
     Server:
-        '@@PROP:adminServerName@@':
+        '@@PROP:ADMIN_NAME@@':
+            ListenPort: '@@PROP:ADMIN_PORT@@'
             NetworkAccessPoint:
                 T3Channel:
-                    ListenPort: '@@PROP:t3ChannelPort@@'
-                    PublicAddress: '@@PROP:t3PublicAddress@@'
-                    PublicPort: '@@PROP:t3ChannelPort@@'
+                    ListenPort: '@@PROP:T3_CHANNEL_PORT@@'
+                    PublicAddress: '@@PROP:T3_PUBLIC_ADDRESS@@'
+                    PublicPort: '@@PROP:T3_CHANNEL_PORT@@'
     ServerTemplate:
-        '@@PROP:clusterName@@-template':
-            Cluster: '@@PROP:clusterName@@'
-            ListenPort: '@@PROP:managedServerPort@@'
+        '@@PROP:CLUSTER_NAME@@-template':
+            Cluster: '@@PROP:CLUSTER_NAME@@'
+            ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
             JTAMigratableTarget:
-                Cluster: '@@PROP:clusterName@@'
+                Cluster: '@@PROP:CLUSTER_NAME@@'
