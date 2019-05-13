@@ -6,7 +6,9 @@ package oracle.kubernetes.operator.http;
 
 public abstract class HttpClientStub extends HttpClient {
 
-  final String RESPONSE = "{}";
+  String response = "{}";
+  int status = 200;
+  boolean successful = true;
 
   public HttpClientStub() {
     super(null, null);
@@ -16,6 +18,21 @@ public abstract class HttpClientStub extends HttpClient {
   public Result executePostUrlOnServiceClusterIP(
       String requestUrl, String serviceURL, String payload, boolean throwOnFailure)
       throws HTTPException {
-    return new Result(RESPONSE, 200, true);
+    return new Result(response, status, successful);
+  }
+
+  public HttpClientStub withResponse(String response) {
+    this.response = response;
+    return this;
+  }
+
+  public HttpClientStub withStatus(int status) {
+    this.status = status;
+    return this;
+  }
+
+  public HttpClientStub withSuccessful(boolean successful) {
+    this.successful = successful;
+    return this;
   }
 }
