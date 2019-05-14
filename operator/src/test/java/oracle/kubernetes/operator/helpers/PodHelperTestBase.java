@@ -371,6 +371,13 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenPodCreatedWithAdminPortEnabled_adminPortSecureEnvVarIsTrue() {
+    final Integer ADMIN_PORT = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(ADMIN_PORT);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_PORT_SECURE", "true"));
+  }
+
+  @Test
   public void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
     configureServer()
         .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
