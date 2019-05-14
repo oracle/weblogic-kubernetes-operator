@@ -286,6 +286,12 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1Map.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-jrfdomain-admin-port-enabled.py");
+      // Disables host name verification, which enables you to use the demonstration digital
+      // certificates that are shipped with WebLogic Server.
+      // https://docs.oracle.com/middleware/12213/wls/ADMRF/weblogicserver.htm#ADMRF202
+      domain1Map.put(
+          "javaOptions",
+          "-Dweblogic.StdoutDebugEnabled=false -Dweblogic.security.SSL.ignoreHostnameVerification=true");
 
       // run RCU script to load db schema
       DBUtils.runRCU(rcuPodName, domain1Map);
