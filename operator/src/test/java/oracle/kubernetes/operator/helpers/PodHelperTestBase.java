@@ -183,6 +183,11 @@ public abstract class PodHelperTestBase {
         .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainTopology)
         .addToPacket(SERVER_SCAN, domainTopology.getServerConfig(serverName))
         .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addComponent(
+        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+        PodAwaiterStepFactory.class,
+        (pod, next) -> next);
+
     onAdminExpectListPersistentVolume();
   }
 
