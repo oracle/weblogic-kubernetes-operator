@@ -6,11 +6,13 @@ package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** Kubernetes pods and services associated with a single WebLogic server. */
 class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
+  private final AtomicBoolean isPodBeingDeleted = new AtomicBoolean(false);
   private final AtomicReference<LastKnownStatus> lastKnownStatus = new AtomicReference<>(null);
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
   private final AtomicReference<V1Service> externalService = new AtomicReference<>();
@@ -24,6 +26,15 @@ class ServerKubernetesObjects {
    */
   AtomicReference<V1Pod> getPod() {
     return pod;
+  }
+
+  /**
+   * Flag indicating if the operator is deleting this pod.
+   *
+   * @return true, if operator is deleting this pod
+   */
+  AtomicBoolean isPodBeingDeleted() {
+    return isPodBeingDeleted;
   }
 
   /**

@@ -122,6 +122,18 @@ public class DomainPresenceInfo {
     return sko.getPod().get();
   }
 
+  private Boolean getPodIsBeingDeleted(ServerKubernetesObjects sko) {
+    return sko.isPodBeingDeleted().get();
+  }
+
+  public Boolean isServerPodBeingDeleted(String serverName) {
+    return getPodIsBeingDeleted(getSko(serverName));
+  }
+
+  public void setServerPodBeingDeleted(String serverName, Boolean isBeingDeleted) {
+    getSko(serverName).isPodBeingDeleted().set(isBeingDeleted);
+  }
+
   /**
    * Returns a collection of all servers defined.
    *
