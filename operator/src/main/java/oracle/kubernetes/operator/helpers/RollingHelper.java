@@ -5,13 +5,8 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1Pod;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -74,7 +69,7 @@ public class RollingHelper {
       List<String> availableServers = getReadyServers(info);
 
       Collection<StepAndPacket> serversThatCanRestartNow = new ArrayList<>();
-      Map<String, Collection<StepAndPacket>> clusteredRestarts = new HashMap<>();
+      Map<String, Queue<StepAndPacket>> clusteredRestarts = new HashMap<>();
 
       List<String> servers = new ArrayList<>();
       for (Map.Entry<String, StepAndPacket> entry : rolling.entrySet()) {
@@ -96,9 +91,9 @@ public class RollingHelper {
         }
 
         // clustered server
-        Collection<StepAndPacket> cr = clusteredRestarts.get(clusterName);
+        Queue<StepAndPacket> cr = clusteredRestarts.get(clusterName);
         if (cr == null) {
-          cr = new ArrayList<>();
+          cr = new ConcurrentLinkedQueue<>();
           clusteredRestarts.put(clusterName, cr);
         }
         cr.add(entry.getValue());
@@ -116,7 +111,7 @@ public class RollingHelper {
       }
 
       if (!clusteredRestarts.isEmpty()) {
-        for (Map.Entry<String, Collection<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
+        for (Map.Entry<String, Queue<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
           work.add(
               new StepAndPacket(
                   new RollSpecificClusterStep(entry.getKey(), entry.getValue(), null), packet));
@@ -160,13 +155,13 @@ public class RollingHelper {
 
   private static class RollSpecificClusterStep extends Step {
     private final String clusterName;
-    private final Iterator<StepAndPacket> it;
+    private final Queue<StepAndPacket> servers;
 
     public RollSpecificClusterStep(
-        String clusterName, Collection<StepAndPacket> clusteredServerRestarts, Step next) {
+        String clusterName, Queue<StepAndPacket> clusteredServerRestarts, Step next) {
       super(next);
       this.clusterName = clusterName;
-      it = clusteredServerRestarts.iterator();
+      servers = clusteredServerRestarts;
     }
 
     @Override
@@ -176,89 +171,58 @@ public class RollingHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      synchronized (it) {
-        if (it.hasNext()) {
-          DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-          WlsDomainConfig config =
-              (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
-          // Refresh as this is constantly changing
-          Domain dom = info.getDomain();
-          // These are presently Ready servers
-          List<String> availableServers = getReadyServers(info);
+      // Refresh as this is constantly changing
+      Domain dom = info.getDomain();
+      // These are presently Ready servers
+      List<String> availableServers = getReadyServers(info);
 
-          List<String> servers = new ArrayList<>();
-          List<String> readyServers = new ArrayList<>();
-          List<V1Pod> notReadyServers = new ArrayList<>();
+      List<String> readyServers = new ArrayList<>();
 
-          Collection<StepAndPacket> serversThatCanRestartNow = new ArrayList<>();
-
-          int countReady = 0;
-          WlsClusterConfig cluster = config != null ? config.getClusterConfig(clusterName) : null;
-          if (cluster != null) {
-            List<WlsServerConfig> serversConfigs = cluster.getServerConfigs();
-            if (serversConfigs != null) {
-              for (WlsServerConfig s : serversConfigs) {
-                // figure out how many servers are currently ready
-                String name = s.getName();
-                if (availableServers.contains(name)) {
-                  readyServers.add(s.getName());
-                  countReady++;
-                } else {
-                  V1Pod pod = info.getServerPod(name);
-                  if (pod != null) {
-                    notReadyServers.add(pod);
-                  }
-                }
-              }
+      int countReady = 0;
+      WlsClusterConfig cluster = config != null ? config.getClusterConfig(clusterName) : null;
+      if (cluster != null) {
+        List<WlsServerConfig> serversConfigs = cluster.getServerConfigs();
+        if (serversConfigs != null) {
+          for (WlsServerConfig s : serversConfigs) {
+            // figure out how many servers are currently ready
+            String name = s.getName();
+            if (availableServers.contains(name)) {
+              readyServers.add(s.getName());
+              countReady++;
             }
           }
-
-          // then add as many as possible next() entries leaving at least minimum cluster
-          // availability
-          while (countReady-- > dom.getMinAvailable(clusterName)) {
-            StepAndPacket current = it.next();
-            WlsServerConfig serverConfig =
-                (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
-            String serverName = null;
-            if (serverConfig != null) {
-              serverName = serverConfig.getName();
-            } else if (config != null) {
-              serverName = config.getAdminServerName();
-            }
-            if (serverName != null) {
-              servers.add(serverName);
-            }
-            serversThatCanRestartNow.add(current);
-            if (!it.hasNext()) {
-              break;
-            }
-          }
-
-          if (serversThatCanRestartNow.isEmpty()) {
-            // Not enough servers are ready to let us restart a server now
-            if (!notReadyServers.isEmpty()) {
-              PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
-              Collection<StepAndPacket> waitForUnreadyServers = new ArrayList<>();
-              for (V1Pod pod : notReadyServers) {
-                waitForUnreadyServers.add(
-                    new StepAndPacket(pw.waitForReady(pod, null), packet.clone()));
-              }
-
-              // Wait for at least one of the not-yet-ready servers to become ready
-              return doForkAtLeastOne(this, packet, waitForUnreadyServers);
-            } else {
-              throw new IllegalStateException();
-            }
-          }
-
-          readyServers.removeAll(servers);
-          LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
-
-          return doNext(new ServersThatCanRestartNowStep(serversThatCanRestartNow, this), packet);
         }
       }
 
+      LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
+
+      int countToRestartNow = Math.max(1, countReady - dom.getMinAvailable(clusterName));
+      Collection<StepAndPacket> restarts = new ArrayList<>();
+      for (int i = 0; i < countToRestartNow; i++) {
+        restarts.add(new StepAndPacket(new RestartOneClusteredServerStep(servers, null), packet));
+      }
+      return doForkJoin(getNext(), packet, restarts);
+    }
+  }
+
+  private static class RestartOneClusteredServerStep extends Step {
+    private final Queue<StepAndPacket> servers;
+
+    public RestartOneClusteredServerStep(Queue<StepAndPacket> servers, Step next) {
+      super(next);
+      this.servers = servers;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      StepAndPacket serverToRestart = servers.poll();
+      if (serverToRestart != null) {
+        Collection<StepAndPacket> col = Collections.singleton(serverToRestart);
+        return doForkJoin(this, packet, col);
+      }
       return doNext(packet);
     }
   }
