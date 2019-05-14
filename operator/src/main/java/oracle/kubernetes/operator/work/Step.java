@@ -89,7 +89,7 @@ public abstract class Step {
     if (next == null) {
       return getName();
     }
-    return getName() + "[" + next.getName() + "]";
+    return getName() + "[" + next.toString() + "]";
   }
 
   /**
