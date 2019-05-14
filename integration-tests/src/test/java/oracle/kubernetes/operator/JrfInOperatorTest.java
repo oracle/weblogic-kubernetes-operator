@@ -160,7 +160,7 @@ public class JrfInOperatorTest extends BaseTest {
       Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
       domain1Map.put("domainUID", "jrfdomain1");
       domain1Map.put("adminNodePort", 30702);
-      domain1Map.put("t3ChannelPort", 30025);
+      domain1Map.put("t3ChannelPort", 30023);
       domain1Map.put("voyagerWebPort", 30307);
       domain1Map.put("rcuSchemaPrefix", "jrfdomain1");
       domain1Map.put("namespace", "default");
@@ -171,7 +171,7 @@ public class JrfInOperatorTest extends BaseTest {
       Map<String, Object> domain2Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE_2);
       domain2Map.put("domainUID", "jrfdomain2");
       domain2Map.put("adminNodePort", 30703);
-      domain2Map.put("t3ChannelPort", 30026);
+      domain2Map.put("t3ChannelPort", 30024);
       domain2Map.put("voyagerWebPort", 30308);
 
       // run RCU script to load db schema
@@ -256,7 +256,7 @@ public class JrfInOperatorTest extends BaseTest {
       Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
       domain1Map.put("domainUID", "jrfd1");
       domain1Map.put("adminNodePort", 30705);
-      domain1Map.put("t3ChannelPort", 30023);
+      domain1Map.put("t3ChannelPort", 30025);
       domain1Map.put("voyagerWebPort", 30309);
       domain1Map.put("rcuSchemaPrefix", "jrfd1");
 
@@ -266,7 +266,7 @@ public class JrfInOperatorTest extends BaseTest {
       Map<String, Object> domain2Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
       domain2Map.put("domainUID", "jrfd2");
       domain2Map.put("adminNodePort", 30706);
-      domain2Map.put("t3ChannelPort", 30024);
+      domain2Map.put("t3ChannelPort", 30026);
       domain2Map.put("voyagerWebPort", 30310);
       domain2Map.put("rcuSchemaPrefix", "jrfd2");
 
@@ -347,7 +347,7 @@ public class JrfInOperatorTest extends BaseTest {
       Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
       domain1Map.put("domainUID", "jrfd11");
       domain1Map.put("adminNodePort", 30707);
-      domain1Map.put("t3ChannelPort", 30025);
+      domain1Map.put("t3ChannelPort", 30027);
       domain1Map.put("voyagerWebPort", 30311);
       domain1Map.put("rcuSchemaPrefix", "jrfd11");
       domain1Map.put("namespace", "default");
@@ -359,7 +359,7 @@ public class JrfInOperatorTest extends BaseTest {
       Map<String, Object> domain2Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
       domain2Map.put("domainUID", "jrfd21");
       domain2Map.put("adminNodePort", 30708);
-      domain2Map.put("t3ChannelPort", 30026);
+      domain2Map.put("t3ChannelPort", 30028);
       domain2Map.put("voyagerWebPort", 30312);
       domain2Map.put("rcuSchemaPrefix", "jrfd21");
 
