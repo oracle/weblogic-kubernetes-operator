@@ -244,7 +244,10 @@ public class ITMultipleClusters extends BaseTest {
       }
       restoreDomainTemplate();
       if (Files.exists(Paths.get(wdttemplate + ".org"))) {
-        Files.copy(Paths.get(wdttemplate + ".org"), Paths.get(wdttemplate));
+        Files.copy(
+            Paths.get(wdttemplate + ".org"),
+            Paths.get(wdttemplate),
+            StandardCopyOption.REPLACE_EXISTING);
       }
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
