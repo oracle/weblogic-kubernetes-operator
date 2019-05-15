@@ -25,7 +25,7 @@ trace "Starting WebLogic Server '${SERVER_NAME}'."
 function exitOrLoop {
   if [ -f /weblogic-operator/debug/livenessProbeSuccessOverride ]
   then
-    while true ; do sleep 60 ; done
+    waitForShutdownMarker
   else
     exit 1
   fi
@@ -100,23 +100,21 @@ function waitUntilShutdown() {
   #
   if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
     trace "Showing the server out file from ${SERVER_OUT_FILE}"
-    tail -F -n +0 ${SERVER_OUT_FILE} || exitOrLoop
-  else
-    trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
-    while true; do sleep 60; done
+    ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} &
   fi
+  waitForShutdownMarker
 }
 
-function mockWaitUntilShutdown() {
+function waitForShutdownMarker() {
   #
   # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
   #
   trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
   while true; do
-    if [ -e /u01/doShutdown ] ; then
+    if [ -e /weblogic-operator/doShutdown ] ; then
       exit 0
     fi
-    sleep 5
+    sleep 3
   done
 }
 
@@ -219,7 +217,7 @@ copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 
 
 if [ "${MOCK_WLS}" == 'true' ]; then
   mockWLS
-  mockWaitUntilShutdown
+  waitForShutdownMarker
 else
   startWLS
   waitUntilShutdown
