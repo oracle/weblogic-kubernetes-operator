@@ -248,6 +248,7 @@ public class ITMultipleClusters extends BaseTest {
             Paths.get(wdttemplate + ".org"),
             Paths.get(wdttemplate),
             StandardCopyOption.REPLACE_EXISTING);
+        Files.deleteIfExists(Paths.get(wdttemplate + ".org"));
       }
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
