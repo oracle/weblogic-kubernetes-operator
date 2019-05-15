@@ -102,7 +102,16 @@ public class ITMultipleClusters extends BaseTest {
       addCluster2ToDomainTemplate();
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      verifyServersStatus(domain);
+      String pods[] = {
+        DOMAINUID + "-" + domain.getAdminServerName(),
+        DOMAINUID + "-managed-server",
+        DOMAINUID + "-managed-server1",
+        DOMAINUID + "-managed-server2",
+        DOMAINUID + "-new-managed-server1",
+        DOMAINUID + "-new-managed-server2",
+      };
+      verifyServersStatus(domain, pods);
+
       testBasicUseCases(domain);
       if (!SMOKETEST) {
         domain.testWlsLivenessProbe();
@@ -150,7 +159,16 @@ public class ITMultipleClusters extends BaseTest {
       addCluster2ToDomainTemplate();
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      verifyServersStatus(domain);
+      String pods[] = {
+        DOMAINUID + "-" + domain.getAdminServerName(),
+        DOMAINUID + "-managed-server",
+        DOMAINUID + "-managed-server1",
+        DOMAINUID + "-managed-server2",
+        DOMAINUID + "-new-managed-server1",
+        DOMAINUID + "-new-managed-server2",
+      };
+      verifyServersStatus(domain, pods);
+
       testBasicUseCases(domain);
       if (!SMOKETEST) {
         domain.testWlsLivenessProbe();
@@ -207,7 +225,14 @@ public class ITMultipleClusters extends BaseTest {
           StandardCopyOption.REPLACE_EXISTING);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
-      verifyServersStatus(domain);
+      String pods[] = {
+        DOMAINUID + "-" + domain.getAdminServerName(),
+        DOMAINUID + "-managed-server1",
+        DOMAINUID + "-managed-server2",
+        DOMAINUID + "-managed-server-21",
+        DOMAINUID + "-managed-server-22",
+      };
+      verifyServersStatus(domain, pods);
       testBasicUseCases(domain);
       if (!SMOKETEST) {
         domain.testWlsLivenessProbe();
@@ -257,18 +282,10 @@ public class ITMultipleClusters extends BaseTest {
    *
    * @param Domain
    */
-  private void verifyServersStatus(Domain domain) {
+  private void verifyServersStatus(Domain domain, String[] pods) {
     K8sTestUtils testUtil = new K8sTestUtils();
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", DOMAINUID);
     String namespace = domain.getDomainNS();
-    String pods[] = {
-      DOMAINUID + "-" + domain.getAdminServerName(),
-      DOMAINUID + "-managed-server",
-      DOMAINUID + "-managed-server1",
-      DOMAINUID + "-managed-server2",
-      DOMAINUID + "-new-managed-server1",
-      DOMAINUID + "-new-managed-server2",
-    };
     for (String pod : pods) {
       assertTrue(
           pod + " Pod not running", testUtil.isPodRunning(namespace, domain1LabelSelector, pod));
