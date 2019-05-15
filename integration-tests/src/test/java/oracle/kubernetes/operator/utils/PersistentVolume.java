@@ -28,12 +28,6 @@ public class PersistentVolume {
             + dirPath
             + "\"";
 
-    /* BaseTest.getProjectRoot()
-    + "/src/integration-tests/bash/krun.sh -m "
-    + BaseTest.getPvRoot()
-    + ":/scratch -t 60 -c \"mkdir -p "
-    + dirPath
-    + "\""; */
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
