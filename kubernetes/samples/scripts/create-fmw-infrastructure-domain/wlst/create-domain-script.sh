@@ -22,5 +22,5 @@ wlst.sh -skipWLSModuleScanning \
         -managedServerPort ${CUSTOM_MANAGEDSERVER_PORT} \
         -prodMode ${CUSTOM_PRODUCTION_MODE} \
         -managedServerCount ${CUSTOM_MANAGED_SERVER_COUNT} \
-        -clusterName ${CUSTOM_CLUSTER_NAME}
+        -clusterName ${CUSTOM_CLUSTER_NAME} 
 
