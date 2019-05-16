@@ -356,17 +356,14 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
 
-      logger.info("Verifying if the admin server is terminating");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
-
+      logger.info("Verifying if the admin server pod is recreated");
+      domain.verifyAdminServerRestarted();
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the admin server is terminating");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      logger.info("Verifying if the admin server pod is recreated");
+      domain.verifyAdminServerRestarted();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -405,15 +402,13 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the cluster is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      domain.verifyManagedServersRestarted();
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the cluster is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      domain.verifyManagedServersRestarted();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -456,15 +451,13 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      domain.verifyManagedServersRestarted();
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      domain.verifyManagedServersRestarted();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -504,23 +497,15 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the domain is restarted");
-      logger.info("Verifying if the admin server is restarted");
-      verifyPodStatus(adminPod, "Terminating");
-      verifyPodStatus(adminPod, "Running");
-      logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(msPod, "Terminating");
-      verifyPodStatus(msPod, "Running");
+      this.domain.verifyAdminServerRestarted();
+      this.domain.verifyManagedServersRestarted();
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the domain is restarted");
-      logger.info("Verifying if the admin server is restarted");
-      verifyPodStatus(adminPod, "Terminating");
-      verifyPodStatus(adminPod, "Running");
-      logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(msPod, "Terminating");
-      verifyPodStatus(msPod, "Running");
+      this.domain.verifyAdminServerRestarted();
+      this.domain.verifyManagedServersRestarted();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
