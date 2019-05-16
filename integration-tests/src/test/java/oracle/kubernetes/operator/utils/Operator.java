@@ -143,6 +143,18 @@ public class Operator {
   }
 
   /**
+   * verifies operator pod is ready
+   *
+   * @param containerNum - container number in a pod
+   * @throws Exception
+   */
+  public void verifyOperatorReady(String containerNum) throws Exception {
+    logger.info("Checking if Operator pod is Ready");
+    // empty string for pod name as there is only one pod
+    TestUtils.checkPodReady("", operatorNS, containerNum);
+  }
+
+  /**
    * Start operator and makes sure it is deployed and ready
    *
    * @throws Exception
@@ -565,5 +577,22 @@ public class Operator {
 
   public RESTCertType getRestCertType() {
     return restCertType;
+  }
+
+  /**
+   * Retrieve Operator pod name
+   *
+   * @return Operator pod name
+   * @throws Exception
+   */
+  public String getOperatorPodName() throws Exception {
+    String cmd =
+        "kubectl get pod -n "
+            + getOperatorNamespace()
+            + " -o jsonpath=\"{.items[0].metadata.name}\"";
+    logger.info("Command to query Operator pod name: " + cmd);
+    ExecResult result = TestUtils.exec(cmd);
+
+    return result.stdout();
   }
 }
