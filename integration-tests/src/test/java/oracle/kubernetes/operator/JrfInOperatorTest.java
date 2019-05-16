@@ -231,6 +231,190 @@ public class JrfInOperatorTest extends BaseTest {
   }
 
   /**
+   * create two JRF domains in the same namespace and managed by one operator. Verify scaling up and
+   * down for domain1 cluster will have no impact on domain2. Cycle domain2 down and back up, verify
+   * there is no impact on domain1. shutdown by the domains using the delete resource script from
+   * samples.
+   *
+   * @throws Exception - if any error occurs
+   */
+  @Test
+  public void testTwoJRFDomainsManagedByOneOperatorInSameNS() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    logger.info("Checking if operator1 and domain1 are running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
+    }
+
+    JRFDomain domain1 = null, domain2 = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      // load input yaml to map and add configOverrides
+      Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
+      domain1Map.put("domainUID", "jrfd1");
+      domain1Map.put("adminNodePort", 30705);
+      domain1Map.put("t3ChannelPort", 30025);
+      domain1Map.put("voyagerWebPort", 30309);
+      domain1Map.put("rcuSchemaPrefix", "jrfd1");
+
+      // run RCU script to load db schema
+      DBUtils.runRCU(rcuPodName, domain1Map);
+
+      Map<String, Object> domain2Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
+      domain2Map.put("domainUID", "jrfd2");
+      domain2Map.put("adminNodePort", 30706);
+      domain2Map.put("t3ChannelPort", 30026);
+      domain2Map.put("voyagerWebPort", 30310);
+      domain2Map.put("rcuSchemaPrefix", "jrfd2");
+
+      // run RCU script to load db schema
+      DBUtils.runRCU(rcuPodName, domain2Map);
+
+      // create domain1
+      logger.info("Creating Domain domain1 & verifying the domain creation");
+      domain1 = new JRFDomain(domain1Map);
+      domain1.verifyDomainCreated();
+
+      testBasicUseCases(domain1);
+
+      // create domain2
+      domain2 = new JRFDomain(domain2Map);
+      domain2.verifyDomainCreated();
+
+      testBasicUseCases(domain2);
+
+      logger.info("Verify the running domain domain1 is unaffected");
+      domain1.verifyDomainCreated();
+
+      testClusterScaling(operator1, domain1);
+
+      logger.info("Verify the running domain domain2 is unaffected");
+      domain2.verifyDomainCreated();
+
+      logger.info("Destroy and create domain2 and verify no impact on domain1");
+      domain2.destroy();
+      domain2.create();
+
+      logger.info("Verify no impact on domain1");
+      domain1.verifyDomainCreated();
+      testCompletedSuccessfully = true;
+
+    } finally {
+      String domainUidsToBeDeleted = "";
+
+      if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
+        domainUidsToBeDeleted = domain1.getDomainUid();
+      }
+      if (domain2 != null && (JENKINS || testCompletedSuccessfully)) {
+        domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
+      }
+      if (!domainUidsToBeDeleted.equals("")) {
+        logger.info("About to delete domains: " + domainUidsToBeDeleted);
+        TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
+        TestUtils.verifyAfterDeletion(domain1);
+        TestUtils.verifyAfterDeletion(domain2);
+      }
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * create two JRF domains in the different namespaces and managed by one operator. Domain1 uses
+   * Voyager load balancer, Domain2 uses Traefik load balancer. Verify scaling up and down for
+   * domain1 cluster will have no impact on domain2. Cycle domain2 down and back up, verify there is
+   * no impact on domain1. shutdown by the domains using the delete resource script from samples.
+   *
+   * @throws Exception - if any error occurs
+   */
+  @Test
+  public void testTwoJRFDomainsManagedByOneOperatorInDifferentNS() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+
+    logger.info("Checking if operator1 and domain1 are running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
+    }
+
+    JRFDomain domain1 = null, domain2 = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      // load input yaml to map and add configOverrides
+      Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
+      domain1Map.put("domainUID", "jrfd11");
+      domain1Map.put("adminNodePort", 30707);
+      domain1Map.put("t3ChannelPort", 30027);
+      domain1Map.put("voyagerWebPort", 30311);
+      domain1Map.put("rcuSchemaPrefix", "jrfd11");
+      domain1Map.put("namespace", "default");
+      domain1Map.put("loadBalancer", "VOYAGER");
+
+      // run RCU script to load db schema
+      DBUtils.runRCU(rcuPodName, domain1Map);
+
+      Map<String, Object> domain2Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
+      domain2Map.put("domainUID", "jrfd21");
+      domain2Map.put("adminNodePort", 30708);
+      domain2Map.put("t3ChannelPort", 30028);
+      domain2Map.put("voyagerWebPort", 30312);
+      domain2Map.put("rcuSchemaPrefix", "jrfd21");
+
+      // run RCU script to load db schema
+      DBUtils.runRCU(rcuPodName, domain2Map);
+
+      // create domain1
+      logger.info("Creating Domain domain1 & verifying the domain creation");
+      domain1 = new JRFDomain(domain1Map);
+      domain1.verifyDomainCreated();
+
+      testBasicUseCases(domain1);
+
+      // create domain2
+      domain2 = new JRFDomain(domain2Map);
+      domain2.verifyDomainCreated();
+
+      testBasicUseCases(domain2);
+
+      logger.info("Verify the running domain domain1 is unaffected");
+      domain1.verifyDomainCreated();
+
+      testClusterScaling(operator1, domain1);
+
+      logger.info("Verify the running domain domain2 is unaffected");
+      domain2.verifyDomainCreated();
+
+      logger.info("Destroy and create domain2 and verify no impact on domain1");
+      domain2.destroy();
+      domain2.create();
+
+      logger.info("Verify no impact on domain1");
+      domain1.verifyDomainCreated();
+      testCompletedSuccessfully = true;
+
+    } finally {
+      String domainUidsToBeDeleted = "";
+
+      if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
+        domainUidsToBeDeleted = domain1.getDomainUid();
+      }
+      if (domain2 != null && (JENKINS || testCompletedSuccessfully)) {
+        domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
+      }
+      if (!domainUidsToBeDeleted.equals("")) {
+        logger.info("About to delete domains: " + domainUidsToBeDeleted);
+        TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
+        TestUtils.verifyAfterDeletion(domain1);
+        TestUtils.verifyAfterDeletion(domain2);
+      }
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
    * Create operator if its not running and create domain with serverStartPolicy="ADMIN_ONLY".
    * Verify only admin server is created. shutdown by deleting domain CRD. Create domain on existing
    * PV dir, pv is already populated by a shutdown domain.
