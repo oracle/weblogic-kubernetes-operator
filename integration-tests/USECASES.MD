@@ -2,7 +2,7 @@
 
 Java integration tests cover the below use cases:
 
-## Quick test Configuration & Use Cases - 
+## Quick test Configuration & Use Cases -
 
 |  |  |
 | --- | --- |
@@ -102,3 +102,22 @@ Configuration Overrides Usecases
 | --- | --- |
 | Server affinity | Use a web application deployed on Weblogic cluster to track HTTP session. Test server-affinity by sending two HTTP requests to Weblogic and verify that all requests are directed to same Weblogic server |
 | Session state isolation | Verify that values saved in a client session state are not visible to another client |
+
+| Monitoring Exporter | Use Case |
+| --- | --- |
+| Check Metrics via Prometheus | build, deploy webapp for Monitoring Exporter, start Prometheus and verify the metrics was produced by using Prometheus APIs |
+| Replace Configuration via exporter console| Verify that configuration for monitoring exporter can be replaced during runtime, check applied metrics via Prometheus APIs|
+| Append Configuration via exporter console| Verify that configuration for monitoring exporter can be appended during runtime, check applied metrics via Prometheus APIs|
+| Append Configuration with varios combinations of attributes via exporter console| Append monitoring exporter configuration [a] to new config [a,b] and verify it was applied |
+| Replace Configuration with only one attribute as array via exporter console| Replace monitoring exporter configuration [a,b,c] attributes with new config [a] and verify it was applied |
+| Replace Configuration with empty config file via exporter console| Replace monitoring exporter configuration with empty config file, verify it was applied |
+| Replace/Append Configuration with  config file written in non yml format via exporter console| Try to replace/append monitoring exporter configuration with config file written in non yml format, verify configuration has not changed |
+| Replace/Append Configuration with corrupted yml file via exporter console| Try to replace/append monitoring exporter configuration with config file written in corrupted yml format, verify configuration has not changed |
+| Replace/Append Configuration with dublicated values in the config file via exporter console| Try to replace/append monitoring exporter configuration with dublicated values in the config file, verify configuration has not changed |
+| Replace/Append Configuration with invalid credentials via exporter console| Try to replace/append monitoring exporter configuration with varios combos for invalid credentials, verify configuration has not changed and `401 Unauthorized` exception was thrown |
+
+| Logging with Elastic Stack | Use Case |
+| --- | --- |
+| Search log level | Use Elasticsearch Count API to query logs of level=INFO and verify that total number of logs for level=INFO is not zero and failed count is zero |
+| Search Operator log | Use Elasticsearch Search APIs to query Operator log info and verify that log hits for type=weblogic-operator are not empty |
+| Search Weblogic log | Use Elasticsearch Search APIs to query Weblogic log info and verify that log hits for Weblogic servers are not empty |
