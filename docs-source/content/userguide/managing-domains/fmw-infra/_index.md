@@ -345,9 +345,9 @@ When you create your domain using the sample provided below, it will obtain the 
 from this secret.
 
 A [sample](/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-rcu-credentials/README.md)
-is provided that demonstrates how to create the secret.  The schema owner username required will be the
+is provided that demonstrates how to create the secret.  The schema owner user name required will be the
 `schemaPrefix` value followed by an underscore and a component name, such as `FMW1_STB`.  The schema owner
-owner password will be password you provided for regular schema users during RCU creation.
+password will be the password you provided for regular schema users during RCU creation.
 
 #### Creating a FMW Infrastructure domain
 
