@@ -803,7 +803,9 @@ public abstract class PodStepContext extends StepContextBase {
     addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
     addEnvVar(vars, "ADMIN_NAME", getAsName());
     addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
-    addEnvVar(vars, "ADMIN_PORT_SECURE", Boolean.toString(isLocalAdminProtocolChannelSecure()));
+    if (isLocalAdminProtocolChannelSecure()) {
+      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+    }
     addEnvVar(vars, "SERVER_NAME", getServerName());
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
