@@ -311,7 +311,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$(dirname "${script}")" > /dev/null 2>&1 ; pwd -P)"
 source $PROJECT_ROOT/kubernetes/internal/utility.sh
 
-echo "@@ RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT"
+echo "@@ RESULT_ROOT=$RESULT_ROOT TMP_DIR=$TMP_DIR RESULT_DIR=$RESULT_DIR PROJECT_ROOT=$PROJECT_ROOT PV_ROOT=$PV_ROOT"
 
 mkdir -p $TMP_DIR || fail No permision to create directory $TMP_DIR
 
@@ -351,11 +351,7 @@ if [ "${DELETE_FILES:-true}" = "true" ]; then
 
   echo @@ Launching run to delete all pv contents.  This runs in the k8s cluster, /sharedparent mounts PV_ROOT.
   # $SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
-  if [ "$SHARED_CLUSTER" = "true" ]; then
-	$SCRIPTPATH/job.sh "rm -fr /scratch/acceptance_test_pv"
-  else 
-  	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
-  fi
+  $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -m "${PV_ROOT}:/sharedparent" -c 'rm -fr /sharedparent/acceptance_test_pv'
   [ "$?" = "0" ] || SUCCESS="1"
   echo @@ SUCCESS=$SUCCESS
 
