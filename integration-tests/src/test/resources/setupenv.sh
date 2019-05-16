@@ -10,6 +10,10 @@ function clean_jenkins {
 function setup_jenkins {
   echo "Setting up."
   /usr/local/packages/aime/ias/run_as_root "sh ${PROJECT_ROOT}/src/integration-tests/bash/install_docker_k8s.sh -y -u wls -v ${K8S_VERSION}"
+  if [ $? -ne 0 ]; then
+	  echo "k8s installation is not successful"
+	  exit 1
+  fi
   set +x
   . ~/.dockerk8senv
   set -x
@@ -62,6 +66,11 @@ function setup_shared_cluster {
   helm ls
 
   echo "Completed setup_shared_cluster"
+}
+
+function clean_shared_cluster {
+	echo "Clean shared cluster"
+	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
 }
 
 function pull_tag_images {
@@ -163,7 +172,12 @@ function get_wlthint3client_from_image {
   # Get wlthint3client.jar from image
   id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
   docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
+  if [ ! "$?" = "0" ] ; then
+  	echo "Docker Copy failed for wlthint3client.jar"
+  	exit 1
+  fi
   docker rm -v $id
+  
 }
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
@@ -193,6 +207,8 @@ if [ -z "$BRANCH_NAME" ]; then
 fi
 export IMAGE_TAG_OPERATOR=${IMAGE_TAG_OPERATOR:-`echo "test_${BRANCH_NAME}" | sed "s#/#_#g"`}
 export IMAGE_NAME_OPERATOR=${IMAGE_NAME_OPERATOR:-weblogic-kubernetes-operator}
+export IMAGE_PULL_POLICY_OPERATOR=${IMAGE_PULL_POLICY_OPERATOR:-Always}
+export IMAGE_PULL_SECRET_OPERATOR=${IMAGE_PULL_SECRET_OPERATOR:-ocir-operator}
 
 cd $PROJECT_ROOT
 if [ $? -ne 0 ]; then
@@ -203,48 +219,69 @@ fi
 export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
 
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
-
   
 if [ "$SHARED_CLUSTER" = "true" ]; then
-
+  
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
   
+  clean_shared_cluster
+    
   if [ "$JRF_ENABLED" = true ] ; then
 	pull_tag_images_jrf	
   else
+  	export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
+	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
+  
+  
+  	if [ "$IMAGE_PULL_POLICY_OPERATOR" = "Always" ]; then 
+		if [ -z "$REPO_REGISTRY" ] || [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ] || [ -z "$REPO_EMAIL" ]; then
+			echo "Provide Docker login details using REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD & REPO_EMAIL env variables to push the Operator image to the repository."
+			exit 1
+	  	fi
+	  	
+	  	echo "Creating Registry Secret"
+	  	kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
+		    --docker-server=$REPO_REGISTRY \
+		    --docker-username=$REPO_USERNAME \
+		    --docker-password=$REPO_PASSWORD \
+		    --docker-email=$REPO_EMAIL 
 	
-	  export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
-	  export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
+		echo "Checking Secret"
+		SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
+		if [ "$SECRET" != "1" ]; then
+		    echo "secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully"
+		    exit 1
+		fi
+  	fi 
+  	
+  	if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
+		echo "Provide Docker login details using DOCKER_USERNAME, DOCKER_PASSWORD & DOCKER_EMAIL env variables to push the Operator image to the repository."
+		exit 1
+	fi
 	
-	  echo "Creating Docker Secret"
+	echo "Creating Docker Secret"
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
 	    --docker-server=index.docker.io/v1/ \
 	    --docker-username=$DOCKER_USERNAME \
 	    --docker-password=$DOCKER_PASSWORD \
 	    --docker-email=$DOCKER_EMAIL 
 	
-	  echo "Checking Secret"
-	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-	  if [ "$SECRET" != "1" ]; then
-	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
+	echo "Checking Secret"
+	SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+	if [ "$SECRET" != "1" ]; then
+		echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
 	    exit 1
-	  fi
+	fi
+	  
+	if [ -z "$K8S_NODEPORT_HOST" ]; then
+	  	echo "When running in shared cluster option, provide DNS name or IP of a Kubernetes worker node using K8S_NODEPORT_HOST env variable"
+	  	exit 1
+	fi
+  
 	
-	  echo "Creating Registry Secret"
-	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
-	    --docker-server=$REPO_REGISTRY \
-	    --docker-username=$REPO_USERNAME \
-	    --docker-password=$REPO_PASSWORD \
-	    --docker-email=$REPO_EMAIL 
-	
-	  echo "Checking Secret"
-	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
-	  if [ "$SECRET" != "1" ]; then
-	    echo "secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully"
-	    exit 1
-	  fi
   fi
   setup_shared_cluster
+  get_wlthint3client_from_image
     
 elif [ "$JENKINS" = "true" ]; then
 

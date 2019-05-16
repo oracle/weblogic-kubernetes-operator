@@ -6,7 +6,7 @@ export DOMAIN_HOME=${DOMAIN_HOME_DIR}
 
 # Create the domain
 wlst.sh -skipWLSModuleScanning \
-        /u01/weblogic/createFMWDomain.py \
+        ${CREATE_DOMAIN_SCRIPT_DIR}/createFMWDomain.py \
         -oh /u01/oracle \
         -jh /usr/java/latest \
         -parent ${DOMAIN_HOME}/.. \
@@ -23,3 +23,4 @@ wlst.sh -skipWLSModuleScanning \
         -prodMode ${CUSTOM_PRODUCTION_MODE} \
         -managedServerCount ${CUSTOM_MANAGED_SERVER_COUNT} \
         -clusterName ${CUSTOM_CLUSTER_NAME}
+
