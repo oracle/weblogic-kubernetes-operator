@@ -35,6 +35,7 @@ public class BaseTest {
   public static final String OPERATOR2_YAML = "operator2.yaml";
   public static final String OPERATORBC_YAML = "operator_bc.yaml";
   public static final String OPERATOR_CHAIN_YAML = "operator_chain.yaml";
+  public static final String OPERATOR1_ELK_YAML = "operator_elk.yaml";
 
   // file used to customize domain properties for domain, PV and LB inputs yaml
   public static final String DOMAINONPV_WLST_YAML = "domainonpvwlst.yaml";

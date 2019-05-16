@@ -51,6 +51,23 @@ public class TestUtils {
     checkCmdInLoop(cmd.toString(), "1/1", podName);
   }
 
+  /**
+   * check pod is in Running state
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   * @param containerNum - container number in a pod
+   * @throws Exception
+   */
+  public static void checkPodReady(String podName, String domainNS, String containerNum)
+      throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for the pod passed from parameter podName
+    checkCmdInLoop(cmd.toString(), containerNum, podName);
+  }
+
   /** @param cmd - kubectl get pod <podname> -n namespace */
   public static void checkPodCreated(String podName, String domainNS) throws Exception {
 
@@ -706,6 +723,25 @@ public class TestUtils {
 
   public static Operator createOperator(String opYamlFile) throws Exception {
     return createOperator(opYamlFile, RESTCertType.SELF_SIGNED);
+  }
+
+  /**
+   * Create operator pod with options for multiple container in it
+   *
+   * @param opYamlFile - yaml file to create the Operator
+   * @param ctnsNum - the number of containers in Operator pod
+   * @throws Exception
+   */
+  public static Operator createOperator(String opYamlFile, String containerNum) throws Exception {
+    // create op
+    Operator operator = new Operator(opYamlFile, RESTCertType.SELF_SIGNED);
+
+    logger.info("Check Operator status");
+    operator.verifyPodCreated();
+    operator.verifyOperatorReady(containerNum);
+    operator.verifyExternalRESTService();
+
+    return operator;
   }
 
   public static Domain createDomain(String inputYaml) throws Exception {
