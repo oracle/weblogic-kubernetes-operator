@@ -200,11 +200,38 @@ public class ITPodsRestart extends BaseTest {
               + domain.getDomainUid()
               + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
 
-      TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
-      domain.verifyDomainServerPodRestart(
-          "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
+      if (BaseTest.SHARED_CLUSTER) {
+        String newImage =
+            System.getenv("REPO_REGISTRY") + "/weblogick8s/store/oracle/weblogic:duplicate";
+
+        // tag image with repo name
+        TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 " + newImage);
+
+        // login and push image to ocir
+        TestUtils.loginAndPushImageToOCIR(newImage);
+
+        // create ocir registry secret in the same ns as domain which is used while pulling the
+        // image
+        TestUtils.createDockerRegistrySecret(
+            "docker-store",
+            System.getenv("REPO_REGISTRY"),
+            System.getenv("REPO_USERNAME"),
+            System.getenv("REPO_PASSWORD"),
+            System.getenv("REPO_EMAIL"),
+            domain.getDomainNS());
+
+        // apply new domain yaml and verify pod restart
+        domain.verifyDomainServerPodRestart(
+            "\"store/oracle/weblogic:12.2.1.3\"", "\"" + newImage + "\"");
+      } else {
+        TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
+        domain.verifyDomainServerPodRestart(
+            "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
+      }
     } finally {
-      TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
+      if (!BaseTest.SHARED_CLUSTER) {
+        TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
+      }
     }
 
     logger.info("SUCCESS - " + testMethodName);
@@ -356,17 +383,14 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
 
-      logger.info("Verifying if the admin server is terminating");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
-
+      logger.info("Verifying if the admin server pod is recreated");
+      domain.verifyAdminServerRestarted();
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info("Verifying if the admin server is terminating");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      logger.info("Verifying if the admin server pod is recreated");
+      domain.verifyAdminServerRestarted();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -405,15 +429,13 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the cluster is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      domain.verifyManagedServersRestarted();
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the cluster is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      domain.verifyManagedServersRestarted();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -456,15 +478,13 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      domain.verifyManagedServersRestarted();
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(podName, "Terminating");
-      verifyPodStatus(podName, "Running");
+      domain.verifyManagedServersRestarted();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -504,23 +524,15 @@ public class ITPodsRestart extends BaseTest {
       ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
       logger.info(exec.stdout());
       logger.info("Verifying if the domain is restarted");
-      logger.info("Verifying if the admin server is restarted");
-      verifyPodStatus(adminPod, "Terminating");
-      verifyPodStatus(adminPod, "Running");
-      logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(msPod, "Terminating");
-      verifyPodStatus(msPod, "Running");
+      this.domain.verifyAdminServerRestarted();
+      this.domain.verifyManagedServersRestarted();
     } finally {
       logger.log(
           Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
       TestUtils.exec("kubectl apply -f " + originalYaml);
       logger.info("Verifying if the domain is restarted");
-      logger.info("Verifying if the admin server is restarted");
-      verifyPodStatus(adminPod, "Terminating");
-      verifyPodStatus(adminPod, "Running");
-      logger.info("Verifying if the managed server is restarted");
-      verifyPodStatus(msPod, "Terminating");
-      verifyPodStatus(msPod, "Running");
+      this.domain.verifyAdminServerRestarted();
+      this.domain.verifyManagedServersRestarted();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
