@@ -184,8 +184,8 @@ public class ITMultipleClusters extends BaseTest {
   }
 
   /**
-   * Create 2 dynamic clusters in a domain each having 2 managed servers. Verify the managed servers
-   * are running and verify the basic use cases.
+   * Create 2 dynamic clusters in a domain using WDT in inimage each having 2 managed servers.
+   * Verify the managed servers are running and verify the basic use cases.
    *
    * @throws Exception
    */
@@ -288,6 +288,7 @@ public class ITMultipleClusters extends BaseTest {
    * Verifies all of the servers in the cluster are in Running status
    *
    * @param Domain
+   * @param String array pod names to check the status for
    */
   private void verifyServersStatus(Domain domain, String[] pods) {
     K8sTestUtils testUtil = new K8sTestUtils();
