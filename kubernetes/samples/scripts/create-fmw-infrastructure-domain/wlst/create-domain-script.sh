@@ -22,4 +22,7 @@ wlst.sh -skipWLSModuleScanning \
         -managedServerPort ${CUSTOM_MANAGEDSERVER_PORT} \
         -prodMode ${CUSTOM_PRODUCTION_MODE} \
         -managedServerCount ${CUSTOM_MANAGED_SERVER_COUNT} \
-        -clusterName ${CUSTOM_CLUSTER_NAME}
+        -clusterName ${CUSTOM_CLUSTER_NAME} \
+        -exposeAdminT3Channel ${EXPOSE_T3_CHANNEL_PREFIX} \
+        -t3ChannelPublicAddress ${T3_PUBLIC_ADDRESS} \
+        -t3ChannelPort ${T3_CHANNEL_PORT}
