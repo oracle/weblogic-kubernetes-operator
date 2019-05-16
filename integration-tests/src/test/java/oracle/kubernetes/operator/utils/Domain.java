@@ -1713,20 +1713,11 @@ public class Domain {
       // domain in image
       if (domainMap.containsKey("domainHomeImageBase")
           && domainHomeImageBuildPath.contains("wdt")) {
-        Files.copy(
-            Paths.get(
-                BaseTest.getResultDir()
-                    + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml"),
-            Paths.get(
-                BaseTest.getResultDir()
-                    + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml.org"),
-            StandardCopyOption.REPLACE_EXISTING);
         TestUtils.copyFile(
             BaseTest.getProjectRoot()
                 + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml",
             BaseTest.getResultDir()
                 + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
-        logger.info("WDT DOMAIN MODEL");
         ExecResult exec =
             TestUtils.exec(
                 "cat "
