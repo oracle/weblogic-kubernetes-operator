@@ -228,8 +228,20 @@ SHARED_CLUSTER=true:
 | IMAGE_NAME_OPERATOR | Docker image name for operator. Default is weblogic-kubernetes-operator |
 | IMAGE_PULL_POLICY_OPERATOR | Default 'Never'. |
 | IMAGE_PULL_SECRET_OPERATOR | Default ''. |
- | IMAGE_PULL_SECRET_WEBLOGIC | Default ''.
+| IMAGE_PULL_SECRET_WEBLOGIC | Default ''. |
 
+The below env variables are required for SHARED_CLUSTER=true:
+
+| Variable | Description |
+| --- | --- |
+| REPO_REGISTRY | OCIR Server to push/pull the Operator image |
+| REPO_USERNAME | OCIR Username |
+| REPO_PASSWORD | OCIR token |
+| REPO_EMAIL | OCIR email |
+| DOCKER_USERNAME | Docker username to pull the Weblogic image  |
+| DOCKER_PASSWORD | Docker password |
+| DOCKER_EMAIL | Docker email |
+| K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. |
 
 Successful run will have the output like below:
 ```
