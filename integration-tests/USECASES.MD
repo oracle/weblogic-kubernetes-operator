@@ -115,3 +115,9 @@ Configuration Overrides Usecases
 | Replace/Append Configuration with corrupted yml file via exporter console| Try to replace/append monitoring exporter configuration with config file written in corrupted yml format, verify configuration has not changed |
 | Replace/Append Configuration with dublicated values in the config file via exporter console| Try to replace/append monitoring exporter configuration with dublicated values in the config file, verify configuration has not changed |
 | Replace/Append Configuration with invalid credentials via exporter console| Try to replace/append monitoring exporter configuration with varios combos for invalid credentials, verify configuration has not changed and `401 Unauthorized` exception was thrown |
+
+| Logging with Elastic Stack | Use Case |
+| --- | --- |
+| Search log level | Use Elasticsearch Count API to query logs of level=INFO and verify that total number of logs for level=INFO is not zero and failed count is zero |
+| Search Operator log | Use Elasticsearch Search APIs to query Operator log info and verify that log hits for type=weblogic-operator are not empty |
+| Search Weblogic log | Use Elasticsearch Search APIs to query Weblogic log info and verify that log hits for Weblogic servers are not empty |

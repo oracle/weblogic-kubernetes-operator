@@ -148,12 +148,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     this.na.invoke(stepline, packet);
     this.completionCallback = completionCallback;
 
-    if (LOGGER.isFineEnabled()) {
-      breadCrumbs = new ArrayList<>();
-      LOGGER.fine("{0} started", new Object[] {getName()});
-    }
-
     if (status.get() == NOT_COMPLETE) {
+      if (LOGGER.isFineEnabled()) {
+        breadCrumbs = new ArrayList<>();
+        LOGGER.fine("{0} started", new Object[] {getName()});
+      }
+
       owner.addRunnable(this);
     }
   }
@@ -262,7 +262,12 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         children = new ArrayList<>();
       }
       children.add(child);
-      addBreadCrumb(child);
+      if (status.get() == NOT_COMPLETE) {
+        addBreadCrumb(child);
+      } else {
+        // Race condition where child is created after parent is cancelled or done
+        child.status.set(CANCELLED);
+      }
     }
 
     return child;

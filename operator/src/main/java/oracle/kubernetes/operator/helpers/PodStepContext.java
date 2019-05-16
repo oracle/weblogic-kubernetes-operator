@@ -103,7 +103,21 @@ public abstract class PodStepContext extends StepContextBase {
 
   abstract Map<String, String> getPodAnnotations();
 
-  private class ConflictStep extends Step {
+  private abstract class BaseStep extends Step {
+    BaseStep() {
+      this(null);
+    }
+
+    BaseStep(Step next) {
+      super(next);
+    }
+
+    protected String getDetail() {
+      return getServerName();
+    }
+  }
+
+  private class ConflictStep extends BaseStep {
 
     @Override
     public NextAction apply(Packet packet) {
@@ -225,8 +239,12 @@ public abstract class PodStepContext extends StepContextBase {
   // ----------------------- step methods ------------------------------
 
   // Prevent the watcher from recreating pod with old spec
-  private void clearRecord() {
-    setRecordedPod(null);
+  private void markBeingDeleted() {
+    info.setServerPodBeingDeleted(getServerName(), Boolean.TRUE);
+  }
+
+  private void clearBeingDeleted() {
+    info.setServerPodBeingDeleted(getServerName(), Boolean.FALSE);
   }
 
   private void setRecordedPod(V1Pod pod) {
@@ -269,6 +287,7 @@ public abstract class PodStepContext extends StepContextBase {
    * @return a step to be scheduled.
    */
   Step createPod(Step next) {
+    clearBeingDeleted();
     return createPodAsync(createResponse(next));
   }
 
@@ -337,7 +356,7 @@ public abstract class PodStepContext extends StepContextBase {
     return new CyclePodStep(next);
   }
 
-  private class CyclePodStep extends Step {
+  private class CyclePodStep extends BaseStep {
 
     CyclePodStep(Step next) {
       super(next);
@@ -345,7 +364,7 @@ public abstract class PodStepContext extends StepContextBase {
 
     @Override
     public NextAction apply(Packet packet) {
-      clearRecord();
+      markBeingDeleted();
       return doNext(deletePod(getNext()), packet);
     }
   }
@@ -373,7 +392,7 @@ public abstract class PodStepContext extends StepContextBase {
     return compatibility.getIncompatibility();
   }
 
-  private class VerifyPodStep extends Step {
+  private class VerifyPodStep extends BaseStep {
 
     VerifyPodStep(Step next) {
       super(next);
@@ -399,11 +418,21 @@ public abstract class PodStepContext extends StepContextBase {
     }
   }
 
+  private abstract class BaseResponseStep extends ResponseStep<V1Pod> {
+    BaseResponseStep(Step next) {
+      super(next);
+    }
+
+    protected String getDetail() {
+      return getServerName();
+    }
+  }
+
   private ResponseStep<V1Pod> createResponse(Step next) {
     return new CreateResponseStep(next);
   }
 
-  private class CreateResponseStep extends ResponseStep<V1Pod> {
+  private class CreateResponseStep extends BaseResponseStep {
     CreateResponseStep(Step next) {
       super(next);
     }
@@ -433,6 +462,10 @@ public abstract class PodStepContext extends StepContextBase {
       super(next);
     }
 
+    protected String getDetail() {
+      return getServerName();
+    }
+
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponses) {
       if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
@@ -451,12 +484,10 @@ public abstract class PodStepContext extends StepContextBase {
     return new ReplacePodResponseStep(next);
   }
 
-  private class ReplacePodResponseStep extends ResponseStep<V1Pod> {
-    private final Step next;
+  private class ReplacePodResponseStep extends BaseResponseStep {
 
     ReplacePodResponseStep(Step next) {
       super(next);
-      this.next = next;
     }
 
     @Override
@@ -473,7 +504,8 @@ public abstract class PodStepContext extends StepContextBase {
         setRecordedPod(newPod);
       }
 
-      return doNext(next, packet);
+      PodAwaiterStepFactory pw = packet.getSPI(PodAwaiterStepFactory.class);
+      return doNext(pw.waitForReady(newPod, getNext()), packet);
     }
   }
 
@@ -481,7 +513,7 @@ public abstract class PodStepContext extends StepContextBase {
     return new PatchPodResponseStep(next);
   }
 
-  private class PatchPodResponseStep extends ResponseStep<V1Pod> {
+  private class PatchPodResponseStep extends BaseResponseStep {
     private final Step next;
 
     PatchPodResponseStep(Step next) {

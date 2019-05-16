@@ -147,12 +147,14 @@ public class DomainProcessorImpl implements DomainProcessor {
         if (info != null) {
           switch (item.type) {
             case "ADDED":
+              info.setServerPodBeingDeleted(serverName, Boolean.FALSE);
+              // fall through
             case "MODIFIED":
               info.setServerPodFromEvent(serverName, pod);
               break;
             case "DELETED":
               boolean removed = info.deleteServerPodFromEvent(serverName, pod);
-              if (removed && info.isNotDeleting()) {
+              if (removed && info.isNotDeleting() && !info.isServerPodBeingDeleted(serverName)) {
                 LOGGER.info(
                     MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
                 makeRightDomainPresence(info, true, false, true);
