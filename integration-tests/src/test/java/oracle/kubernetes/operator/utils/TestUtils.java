@@ -1379,4 +1379,25 @@ public class TestUtils {
     domain.callShellScriptToBuildDeployAppInPod(
         appName, scriptName, username, password, clusterURL, wsServiceName);
   }
+
+  public static ExecResult loginAndPushImageToOCIR(String image) throws Exception {
+    String dockerLoginAndPushCmd =
+        "docker login "
+            + System.getenv("REPO_REGISTRY")
+            + " -u "
+            + System.getenv("REPO_USERNAME")
+            + " -p \""
+            + System.getenv("REPO_PASSWORD")
+            + "\" && docker push "
+            + image;
+    ExecResult result = TestUtils.exec(dockerLoginAndPushCmd);
+    logger.info(
+        "cmd "
+            + dockerLoginAndPushCmd
+            + "\n result "
+            + result.stdout()
+            + "\n err "
+            + result.stderr());
+    return result;
+  }
 }
