@@ -159,6 +159,9 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
                 + ", got: "
                 + getMSPodsCount(domain1));
       }
+
+      testCompletedSuccessfully = true;
+
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
         domain1.destroy();
@@ -204,6 +207,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1 = new JRFDomain(domain1Map);
       domain1.verifyDomainCreated();
 
+      testCompletedSuccessfully = true;
+
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
         domain1.destroy();
@@ -248,6 +253,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       logger.info("Creating Domain & verifying the domain creation");
       domain1 = new JRFDomain(domain1Map);
       domain1.verifyDomainCreated();
+
+      testCompletedSuccessfully = true;
 
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
@@ -295,6 +302,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1 = new JRFDomain(domain1Map, true);
       domain1.verifyDomainCreated();
 
+      testCompletedSuccessfully = true;
+
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
         domain1.destroy();
@@ -339,6 +348,9 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
 
       // verify the Admin T3Channel is exposed
       testAdminT3Channel(domain1);
+
+      testCompletedSuccessfully = true;
+
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
         domain1.destroy();
@@ -400,12 +412,13 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    */
   private int getMSPodsNotReadyCount(JRFDomain domain) throws Exception {
 
+    String domainuid = (String) domain.getDomainMap().get("domainUID");
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pods -n ")
         .append(domain.getDomainNS())
         .append(" | grep ")
-        .append(managedServerNameBase)
+        .append(domainuid + "-" + managedServerNameBase)
         .append(" | grep 0/1 | wc -l");
     ExecResult result = TestUtils.exec(cmd.toString());
 
@@ -421,12 +434,13 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    */
   private int getMSPodsRunningAndReadyCount(JRFDomain domain) throws Exception {
 
+    String domainuid = (String) domain.getDomainMap().get("domainUID");
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pods -n ")
         .append(domain.getDomainNS())
         .append(" | grep ")
-        .append(managedServerNameBase)
+        .append(domainuid + "-" + managedServerNameBase)
         .append(" | grep 1/1 | grep Running | wc -l");
     ExecResult result = TestUtils.exec(cmd.toString());
 
@@ -441,12 +455,13 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   private int getMSPodsCount(JRFDomain domain) throws Exception {
+    String domainuid = (String) domain.getDomainMap().get("domainUID");
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pods -n ")
         .append(domain.getDomainNS())
         .append(" | grep ")
-        .append(managedServerNameBase)
+        .append(domainuid + "-" + managedServerNameBase)
         .append(" | wc -l");
     ExecResult result = TestUtils.exec(cmd.toString());
 
