@@ -230,7 +230,7 @@ def usage():
           '-rcuDb <rcu-database> -rcuPrefix <rcu-prefix> -rcuSchemaPwd <rcu-schema-password> ' \
           '-adminListenPort <adminListenPort> -adminName <adminName> ' \
           '-managedNameBase <managedNameBase> -managedServerPort <managedServerPort> -prodMode <prodMode> ' \
-          '-managedServerCount <managedCount> -clusterName <clusterName>' \
+          '-managedServerCount <managedCount> -clusterName <clusterName> ' \
           '-exposeAdminT3Channel <quoted true or false> -t3ChannelPublicAddress <address of the cluster> ' \
           '-t3ChannelPort <t3 channel port> '
     sys.exit(0)
