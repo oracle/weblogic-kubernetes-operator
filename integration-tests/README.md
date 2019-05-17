@@ -16,6 +16,8 @@ Shared cluster runs only Quick test use cases, Jenkins runs both Quick and Full 
 
 Use Cases covered in integration tests for the operator is available [here](USECASES.MD)
 
+JRF Use Cases are covered [here](JRFUSECASES.MD)
+
 # Directory Configuration and Structure
  
 Directory structure of source code:
@@ -226,8 +228,20 @@ SHARED_CLUSTER=true:
 | IMAGE_NAME_OPERATOR | Docker image name for operator. Default is weblogic-kubernetes-operator |
 | IMAGE_PULL_POLICY_OPERATOR | Default 'Never'. |
 | IMAGE_PULL_SECRET_OPERATOR | Default ''. |
- | IMAGE_PULL_SECRET_WEBLOGIC | Default ''.
+| IMAGE_PULL_SECRET_WEBLOGIC | Default ''. |
 
+The below env variables are required for SHARED_CLUSTER=true:
+
+| Variable | Description |
+| --- | --- |
+| REPO_REGISTRY | OCIR Server to push/pull the Operator image |
+| REPO_USERNAME | OCIR Username |
+| REPO_PASSWORD | OCIR token |
+| REPO_EMAIL | OCIR email |
+| DOCKER_USERNAME | Docker username to pull the Weblogic image  |
+| DOCKER_PASSWORD | Docker password |
+| DOCKER_EMAIL | Docker email |
+| K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. |
 
 Successful run will have the output like below:
 ```
@@ -281,6 +295,35 @@ Failed run will have the output like
 [INFO] Final Memory: 124M/1534M
 ```
 JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITOperator.xml". This file shows how much time each test case took to run and the failed test results if any.
+
+# How to run JRF domain In Operator related tests
+* Setup docker access to FMW Infrastructure 12c Image and Oracle Database 12c Image
+
+ Method 1 
+  - Setup a personal account on hub.docker.com
+  - Then sign in to hub.docker.com and signup for access to Oracle Database 12c Images via https://hub.docker.com/_/oracle-database-enterprise-edition
+  - Then export the following before running the tests: 
+	```
+	export DOCKER_USERNAME=<docker_username>
+	export DOCKER_PASSWORD=<docker_password>
+	export DOCKER_EMAIL=<docker_email>
+	```
+  - Setup an account in phx.ocir.io
+  - Then sign in to phx.ocir.io to get access to FMW Infrastructure 12c Image: **_phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3_**
+  - export the following before running the tests:
+    ```
+    export REPO_USERNAME=<ocir_username>
+    export REPO_PASSWORD=<ocir_password>
+    export REPO_EMAIL=<ocir_email>
+    ```
+ 
+ Method 2 
+ - Make sure the FMW Infrastructure image i.e. **_phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3_** and the Oracle database image i.e. **_store/oracle/database-enterprise:12.2.0.1_** already exist locally in a docker repository the k8s cluster can access
+		
+* Command to run the tests: 
+```
+mvn clean verify -P jrf-integration-tests 2>&1 | tee log.txt
+```
 
 # How to run a single test
 

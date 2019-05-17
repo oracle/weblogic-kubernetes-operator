@@ -193,8 +193,6 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   private void scaleDownAndverify(int decrNum) throws Exception {
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
 
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
