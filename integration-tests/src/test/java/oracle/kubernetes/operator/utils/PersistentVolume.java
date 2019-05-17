@@ -24,9 +24,10 @@ public class PersistentVolume {
 
     String cmd =
         BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/job.sh \"mkdir -p "
+            + "/src/integration-tests/bash/job.sh \"mkdir -m 777 -p "
             + dirPath
             + "\"";
+
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
