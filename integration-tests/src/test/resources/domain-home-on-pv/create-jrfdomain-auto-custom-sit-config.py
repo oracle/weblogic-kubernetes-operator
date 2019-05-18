@@ -240,7 +240,7 @@ def usage():
 #for index, arg in enumerate(sys.argv):
 #    print "sys.argv[" + str(index) + "] = " + str(sys.argv[index])
 
-if len(sys.argv) < 16:
+if len(sys.argv) < 19:
     usage()
 
 #oracleHome will be passed by command line parameter -oh.
