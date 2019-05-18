@@ -1,4 +1,4 @@
-# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2014, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 import os
@@ -34,9 +34,14 @@ class Infra12213Provisioner:
         self.domainParentDir = self.validateDirectory(domainParentDir, create=True)
         return
 
-    def createInfraDomain(self, domainName, user, password, db, dbPrefix, dbPassword, adminListenPort, adminName, adminPortEnabled, administrationPort, managedNameBase, managedServerPort, prodMode, managedCount, clusterName):
-        domainHome = self.createBaseDomain(domainName, user, password, adminListenPort, adminName, adminPortEnabled, administrationPort, managedNameBase, managedServerPort, prodMode, managedCount, clusterName)
-        self.extendDomain(domainHome, db, dbPrefix, dbPassword)
+    def createInfraDomain(self, domainName, user, password, db, dbPrefix, dbPassword, adminListenPort, adminName, adminPortEnabled, administrationPort,
+                          managedNameBase, managedServerPort, prodMode, managedCount, clusterName,
+                          exposeAdminT3Channel=None, t3ChannelPublicAddress=None, t3ChannelPort=None):
+        domainHome = self.createBaseDomain(domainName, user, password, adminListenPort, adminName, adminPortEnabled, administrationPort, managedNameBase,
+                                           managedServerPort, prodMode, managedCount, clusterName
+                                           )
+        self.extendDomain(domainHome, db, dbPrefix, dbPassword, exposeAdminT3Channel, t3ChannelPublicAddress,
+                          t3ChannelPort)
 
     def createBaseDomain(self, domainName, user, password, adminListenPort, adminName, adminPortEnabled, administrationPort, managedNameBase, managedServerPort, prodMode, managedCount, clusterName):
         baseTemplate = self.replaceTokens(self.JRF_12213_TEMPLATES['baseTemplate'])
@@ -71,7 +76,6 @@ class Infra12213Provisioner:
            create('AdminServer','SSL')
            cd('SSL/AdminServer')
            set('Enabled', 'True')
-
 
         # Define the user password for weblogic
         # =====================================
@@ -127,11 +131,16 @@ class Infra12213Provisioner:
         return domainHome
 
 
-    def extendDomain(self, domainHome, db, dbPrefix, dbPassword):
+    def extendDomain(self, domainHome, db, dbPrefix, dbPassword, exposeAdminT3Channel, t3ChannelPublicAddress,
+                     t3ChannelPort):
         print 'Extending domain at ' + domainHome
         print 'Database  ' + db
         readDomain(domainHome)
         setOption('AppDir', self.domainParentDir + '/applications')
+
+        print 'ExposeAdminT3Channel %s with %s:%s ' % (exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort)
+        if 'true' == exposeAdminT3Channel:
+            self.enable_admin_channel(t3ChannelPublicAddress, t3ChannelPort)
 
         print 'Applying JRF templates...'
         for extensionTemplate in self.JRF_12213_TEMPLATES['extensionTemplates']:
@@ -212,6 +221,18 @@ class Infra12213Provisioner:
             result = path.replace('@@ORACLE_HOME@@', oracleHome)
         return result
 
+    def enable_admin_channel(self, admin_channel_address, admin_channel_port):
+        if admin_channel_address == None or admin_channel_port == 'None':
+            return
+        cd('/')
+        admin_server_name = get('AdminServerName')
+        print('setting admin server t3channel for ' + admin_server_name)
+        cd('/Servers/' + admin_server_name)
+        create('T3Channel', 'NetworkAccessPoint')
+        cd('/Servers/' + admin_server_name + '/NetworkAccessPoint/T3Channel')
+        set('ListenPort', int(admin_channel_port))
+        set('PublicPort', int(admin_channel_port))
+        set('PublicAddress', admin_channel_address)
 
 #############################
 # Entry point to the script #
@@ -223,7 +244,9 @@ def usage():
           '-rcuDb <rcu-database> -rcuPrefix <rcu-prefix> -rcuSchemaPwd <rcu-schema-password> ' \
           '-adminListenPort <adminListenPort> -adminName <adminName> -adminPortEnabled <admin-port-enabled> -administrationPort <admin-port> ' \
           '-managedNameBase <managedNameBase> -managedServerPort <managedServerPort> -prodMode <prodMode> ' \
-          '-managedServerCount <managedCount> -clusterName <clusterName>'
+          '-managedServerCount <managedCount> -clusterName <clusterName> ' \
+          '-exposeAdminT3Channel <quoted true or false> -t3ChannelPublicAddress <address of the cluster> ' \
+          '-t3ChannelPort <t3 channel port> '
     sys.exit(0)
 
 # Uncomment for Debug only
@@ -231,7 +254,7 @@ def usage():
 #for index, arg in enumerate(sys.argv):
 #    print "sys.argv[" + str(index) + "] = " + str(sys.argv[index])
 
-if len(sys.argv) < 18:
+if len(sys.argv) < 16:
     usage()
 
 #oracleHome will be passed by command line parameter -oh.
@@ -250,7 +273,9 @@ rcuDb = None
 rcuSchemaPrefix = 'DEV12'
 #change rcuSchemaPassword to your infra schema password. Command line parameter -rcuSchemaPwd.
 rcuSchemaPassword = None
-
+exposeAdminT3Channel = None
+t3ChannelPort = None
+t3ChannelPublicAddress = None
 i = 1
 while i < len(sys.argv):
     if sys.argv[i] == '-oh':
@@ -307,10 +332,21 @@ while i < len(sys.argv):
     elif sys.argv[i] == '-clusterName':
         clusterName = sys.argv[i + 1]
         i += 2
+    elif sys.argv[i] == '-t3ChannelPublicAddress':
+        t3ChannelPublicAddress = sys.argv[i + 1]
+        i += 2
+    elif sys.argv[i] == '-t3ChannelPort':
+        t3ChannelPort = sys.argv[i + 1]
+        i += 2
+    elif sys.argv[i] == '-exposeAdminT3Channel':
+        exposeAdminT3Channel = sys.argv[i + 1]
+        i += 2
     else:
         print 'Unexpected argument switch at position ' + str(i) + ': ' + str(sys.argv[i])
         usage()
         sys.exit(1)
 
 provisioner = Infra12213Provisioner(oracleHome, javaHome, domainParentDir, adminListenPort, adminName, adminPortEnabled, administrationPort, managedNameBase, managedServerPort, prodMode, managedCount, clusterName)
-provisioner.createInfraDomain(domainName, domainUser, domainPassword, rcuDb, rcuSchemaPrefix, rcuSchemaPassword, adminListenPort, adminName, adminPortEnabled, administrationPort, managedNameBase, managedServerPort, prodMode, managedCount, clusterName)
+provisioner.createInfraDomain(domainName, domainUser, domainPassword, rcuDb, rcuSchemaPrefix, rcuSchemaPassword,
+                              adminListenPort, adminName, adminPortEnabled, administrationPort, managedNameBase, managedServerPort, prodMode, managedCount,
+                              clusterName, exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort)
