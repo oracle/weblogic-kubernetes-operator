@@ -1,4 +1,4 @@
-# Copyright 2014, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 import os
@@ -254,7 +254,7 @@ def usage():
 #for index, arg in enumerate(sys.argv):
 #    print "sys.argv[" + str(index) + "] = " + str(sys.argv[index])
 
-if len(sys.argv) < 16:
+if len(sys.argv) < 21:
     usage()
 
 #oracleHome will be passed by command line parameter -oh.

@@ -576,10 +576,7 @@ public class JrfInOperatorTest extends BaseTest {
 
       testAdminT3Channel(domain11);
       testAdminServerExternalService(domain11);
-      // testBasicUseCases(domain11);
-      //  Bug 29591809
-      // TODO: re-enable the test once the bug is fixed
-      // testAdminT3ChannelWithJMS(domain11);
+
       testCompletedSuccessfully = true;
 
     } finally {
