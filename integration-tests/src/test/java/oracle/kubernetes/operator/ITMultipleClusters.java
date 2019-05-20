@@ -121,7 +121,6 @@ public class ITMultipleClusters extends BaseTest {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
-      restoreDomainTemplate();
     }
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -178,7 +177,6 @@ public class ITMultipleClusters extends BaseTest {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
-      restoreDomainTemplate();
     }
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -194,9 +192,6 @@ public class ITMultipleClusters extends BaseTest {
     String DOMAINUID = "twoclusterdomainwdt";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    //    String wdttemplate =
-    //        BaseTest.getProjectRoot()
-    //            + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml";
     logger.info("Creating Operator & waiting for the script to complete execution");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
@@ -206,7 +201,6 @@ public class ITMultipleClusters extends BaseTest {
     try {
       Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
       domainMap.put("domainUID", DOMAINUID);
-      // domainMap.put("initialManagedServerReplicas", 4);
       if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
           || (domainMap.containsKey("loadBalancer")
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
@@ -216,21 +210,7 @@ public class ITMultipleClusters extends BaseTest {
           "customWdtTemplate",
           BaseTest.getProjectRoot()
               + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
-      domainMap.put(
-          "customDomainTemplate",
-          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/multipleclusters/");
       addCluster2ToDomainTemplate(domainMap);
-      //      logger.log(Level.INFO, "Making a backup of the wdt template file:{0}", wdttemplate);
-      //      if (!Files.exists(Paths.get(wdttemplate + ".org"))) {
-      //        Files.copy(Paths.get(wdttemplate), Paths.get(wdttemplate + ".org"));
-      //      }
-      //      Files.copy(
-      //          Paths.get(
-      //              BaseTest.getProjectRoot()
-      //                  +
-      // "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml"),
-      //          Paths.get(wdttemplate),
-      //          StandardCopyOption.REPLACE_EXISTING);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String pods[] = {
@@ -250,14 +230,6 @@ public class ITMultipleClusters extends BaseTest {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
-      //      restoreDomainTemplate();
-      //      if (Files.exists(Paths.get(wdttemplate + ".org"))) {
-      //        Files.copy(
-      //            Paths.get(wdttemplate + ".org"),
-      //            Paths.get(wdttemplate),
-      //            StandardCopyOption.REPLACE_EXISTING);
-      //        Files.deleteIfExists(Paths.get(wdttemplate + ".org"));
-      //      }
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -280,17 +252,6 @@ public class ITMultipleClusters extends BaseTest {
     domainMap.put("customDomainTemplate", customDomainTemplate);
     byte[] readAllBytes = Files.readAllBytes(Paths.get(customDomainTemplate));
     logger.info(new String(readAllBytes, StandardCharsets.UTF_8));
-  }
-
-  /**
-   * Restore the domain template to original state when test is finished
-   *
-   * @throws IOException
-   */
-  private void restoreDomainTemplate() throws IOException {
-    Files.copy(
-        Paths.get(template + ".org"), Paths.get(template), StandardCopyOption.REPLACE_EXISTING);
-    Files.delete(Paths.get(template + ".org"));
   }
 
   /**
