@@ -1395,8 +1395,8 @@ public class Domain {
     if (inputDomainMap.containsKey("customDomainTemplate")) {
       Files.copy(
           Paths.get((String) inputDomainMap.get("customDomainTemplate")),
-          Paths.get(
-              BaseTest.getResultDir() + "/kubernetes/samples/scripts/common/domain-template.yaml"));
+          Paths.get(BaseTest.getResultDir() + "/samples/scripts/common/domain-template.yaml"),
+          StandardCopyOption.REPLACE_EXISTING);
     }
 
     this.voyager =
