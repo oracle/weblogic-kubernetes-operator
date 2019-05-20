@@ -1392,6 +1392,13 @@ public class Domain {
     TestUtils.exec(
         "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
 
+    if (inputDomainMap.containsKey("customDomainTemplate")) {
+      Files.copy(
+          Paths.get((String) inputDomainMap.get("customDomainTemplate")),
+          Paths.get(
+              BaseTest.getResultDir() + "/kubernetes/samples/scripts/common/domain-template.yaml"));
+    }
+
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
             || (inputDomainMap.containsKey("loadBalancer")
@@ -1708,29 +1715,31 @@ public class Domain {
 
     // change CLUSTER_TYPE to CONFIGURED in create-domain-job-template.yaml for configured cluster
     // as samples only support DYNAMIC cluster
-    if (clusterType.equalsIgnoreCase("CONFIGURED")) {
 
-      // domain in image
-      if (domainMap.containsKey("domainHomeImageBase")
-          && domainHomeImageBuildPath.contains("wdt")) {
-        TestUtils.copyFile(
-            BaseTest.getProjectRoot()
-                + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml",
-            BaseTest.getResultDir()
-                + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
-        ExecResult exec =
-            TestUtils.exec(
-                "cat "
-                    + BaseTest.getResultDir()
-                    + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
-        logger.info(exec.stdout());
-      } else {
-        // domain on pv
-        StringBuffer createDomainJobTemplateFile = new StringBuffer(BaseTest.getResultDir());
-        createDomainJobTemplateFile.append(
-            "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml");
-        TestUtils.exec("sed -i -e 's?DYNAMIC?CONFIGURED?g' " + createDomainJobTemplateFile);
+    // domain in image
+    if (domainMap.containsKey("domainHomeImageBase") && domainHomeImageBuildPath.contains("wdt")) {
+      String wdtTemplatePath =
+          BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml";
+      if (domainMap.containsKey("customWdtTemplate")) {
+        wdtTemplatePath = (String) domainMap.get("customWdtTemplate");
       }
+      TestUtils.copyFile(
+          wdtTemplatePath,
+          BaseTest.getResultDir()
+              + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
+      ExecResult exec =
+          TestUtils.exec(
+              "cat "
+                  + BaseTest.getResultDir()
+                  + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
+      logger.info(exec.stdout());
+    } else if (clusterType.equalsIgnoreCase("CONFIGURED")) {
+      // domain on pv
+      StringBuffer createDomainJobTemplateFile = new StringBuffer(BaseTest.getResultDir());
+      createDomainJobTemplateFile.append(
+          "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml");
+      TestUtils.exec("sed -i -e 's?DYNAMIC?CONFIGURED?g' " + createDomainJobTemplateFile);
     }
   }
 

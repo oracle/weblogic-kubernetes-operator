@@ -99,7 +99,7 @@ public class ITMultipleClusters extends BaseTest {
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30366"));
       }
-      addCluster2ToDomainTemplate();
+      addCluster2ToDomainTemplate(domainMap);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String pods[] = {
@@ -156,7 +156,7 @@ public class ITMultipleClusters extends BaseTest {
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30377"));
       }
-      addCluster2ToDomainTemplate();
+      addCluster2ToDomainTemplate(domainMap);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String pods[] = {
@@ -194,9 +194,9 @@ public class ITMultipleClusters extends BaseTest {
     String DOMAINUID = "twoclusterdomainwdt";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String wdttemplate =
-        BaseTest.getProjectRoot()
-            + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml";
+    //    String wdttemplate =
+    //        BaseTest.getProjectRoot()
+    //            + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml";
     logger.info("Creating Operator & waiting for the script to complete execution");
     if (operator1 == null) {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
@@ -212,17 +212,25 @@ public class ITMultipleClusters extends BaseTest {
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30377"));
       }
-      addCluster2ToDomainTemplate();
-      logger.log(Level.INFO, "Making a backup of the wdt template file:{0}", wdttemplate);
-      if (!Files.exists(Paths.get(wdttemplate + ".org"))) {
-        Files.copy(Paths.get(wdttemplate), Paths.get(wdttemplate + ".org"));
-      }
-      Files.copy(
-          Paths.get(
-              BaseTest.getProjectRoot()
-                  + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml"),
-          Paths.get(wdttemplate),
-          StandardCopyOption.REPLACE_EXISTING);
+      domainMap.put(
+          "customWdtTemplate",
+          BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
+      domainMap.put(
+          "customDomainTemplate",
+          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/multipleclusters/");
+      addCluster2ToDomainTemplate(domainMap);
+      //      logger.log(Level.INFO, "Making a backup of the wdt template file:{0}", wdttemplate);
+      //      if (!Files.exists(Paths.get(wdttemplate + ".org"))) {
+      //        Files.copy(Paths.get(wdttemplate), Paths.get(wdttemplate + ".org"));
+      //      }
+      //      Files.copy(
+      //          Paths.get(
+      //              BaseTest.getProjectRoot()
+      //                  +
+      // "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml"),
+      //          Paths.get(wdttemplate),
+      //          StandardCopyOption.REPLACE_EXISTING);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String pods[] = {
@@ -242,14 +250,14 @@ public class ITMultipleClusters extends BaseTest {
       if (domain != null && !SMOKETEST && (JENKINS || testCompletedSuccessfully)) {
         domain.destroy();
       }
-      restoreDomainTemplate();
-      if (Files.exists(Paths.get(wdttemplate + ".org"))) {
-        Files.copy(
-            Paths.get(wdttemplate + ".org"),
-            Paths.get(wdttemplate),
-            StandardCopyOption.REPLACE_EXISTING);
-        Files.deleteIfExists(Paths.get(wdttemplate + ".org"));
-      }
+      //      restoreDomainTemplate();
+      //      if (Files.exists(Paths.get(wdttemplate + ".org"))) {
+      //        Files.copy(
+      //            Paths.get(wdttemplate + ".org"),
+      //            Paths.get(wdttemplate),
+      //            StandardCopyOption.REPLACE_EXISTING);
+      //        Files.deleteIfExists(Paths.get(wdttemplate + ".org"));
+      //      }
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -259,17 +267,18 @@ public class ITMultipleClusters extends BaseTest {
    *
    * @throws IOException when append fails
    */
-  private void addCluster2ToDomainTemplate() throws IOException {
+  private void addCluster2ToDomainTemplate(Map<String, Object> domainMap) throws IOException {
     String add =
         "  - clusterName: %CLUSTER_NAME%-2\n"
             + "    serverStartState: \"RUNNING\"\n"
             + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-    logger.info("Making a backup of the domain template file:" + template);
-    if (!Files.exists(Paths.get(template + ".org"))) {
-      Files.copy(Paths.get(template), Paths.get(template + ".org"));
-    }
-    Files.write(Paths.get(template), add.getBytes(), StandardOpenOption.APPEND);
-    byte[] readAllBytes = Files.readAllBytes(Paths.get(template));
+    String customDomainTemplate =
+        System.getProperty("java.io.tmpdir") + "/customDomainTemplate.yaml";
+    Files.copy(
+        Paths.get(template), Paths.get(customDomainTemplate), StandardCopyOption.REPLACE_EXISTING);
+    Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
+    domainMap.put("customDomainTemplate", customDomainTemplate);
+    byte[] readAllBytes = Files.readAllBytes(Paths.get(customDomainTemplate));
     logger.info(new String(readAllBytes, StandardCharsets.UTF_8));
   }
 
