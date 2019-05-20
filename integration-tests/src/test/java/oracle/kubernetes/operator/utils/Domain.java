@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -1398,6 +1399,11 @@ public class Domain {
           Paths.get(BaseTest.getResultDir() + "/samples/scripts/common/domain-template.yaml"),
           StandardCopyOption.REPLACE_EXISTING);
     }
+    logger.info("Domain Template");
+    byte[] readAllBytes =
+        Files.readAllBytes(
+            Paths.get(BaseTest.getResultDir() + "/samples/scripts/common/domain-template.yaml"));
+    logger.info(new String(readAllBytes, StandardCharsets.UTF_8));
 
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
