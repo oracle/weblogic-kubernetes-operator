@@ -482,7 +482,12 @@ public class ITOperator extends BaseTest {
     Domain domain = null;
     boolean testCompletedSuccessfully = false;
     try {
-      domain = TestUtils.createDomain(DOMAININIMAGE_WDT_YAML);
+      Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
+      domainMap.put(
+          "customWdtTemplate",
+          BaseTest.getProjectRoot()
+              + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml");
+      domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
 
       testBasicUseCases(domain);
