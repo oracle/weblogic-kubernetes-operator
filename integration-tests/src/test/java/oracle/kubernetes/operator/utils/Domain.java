@@ -1728,7 +1728,6 @@ public class Domain {
     // as samples only support DYNAMIC cluster
 
     // domain in image
-    String wdtTemplatePath = null;
     if (domainMap.containsKey("customWdtTemplate")) {
       TestUtils.copyFile(
           (String) domainMap.get("customWdtTemplate"),
