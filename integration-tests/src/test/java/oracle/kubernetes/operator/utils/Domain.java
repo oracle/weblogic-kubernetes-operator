@@ -1128,6 +1128,8 @@ public class Domain {
       gitCloneDockerImagesSample();
     }
 
+    copyDomainTemplate(domainMap);
+
     // copy create domain py script if domain map contains createDomainPyScript
     copyCreateDomainPy();
 
@@ -1393,8 +1395,6 @@ public class Domain {
     // copy samples to RESULT_DIR
     TestUtils.exec(
         "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
-
-    copyDomainTemplate(inputDomainMap);
 
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
