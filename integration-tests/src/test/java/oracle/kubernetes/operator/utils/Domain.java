@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.jms.ConnectionFactory;
 import javax.jms.QueueConnection;
@@ -1393,17 +1394,7 @@ public class Domain {
     TestUtils.exec(
         "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
 
-    if (inputDomainMap.containsKey("customDomainTemplate")) {
-      Files.copy(
-          Paths.get((String) inputDomainMap.get("customDomainTemplate")),
-          Paths.get(BaseTest.getResultDir() + "/samples/scripts/common/domain-template.yaml"),
-          StandardCopyOption.REPLACE_EXISTING);
-    }
-    logger.info("Domain Template");
-    byte[] readAllBytes =
-        Files.readAllBytes(
-            Paths.get(BaseTest.getResultDir() + "/samples/scripts/common/domain-template.yaml"));
-    logger.info(new String(readAllBytes, StandardCharsets.UTF_8));
+    copyDomainTemplate(inputDomainMap);
 
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
@@ -1501,6 +1492,20 @@ public class Domain {
 
     // create config map and secret for custom sit config
     createConfigMapAndSecretForSitConfig();
+  }
+
+  private void copyDomainTemplate(Map<String, Object> inputDomainMap) throws IOException {
+    if (inputDomainMap.containsKey("customDomainTemplate")) {
+      Files.copy(
+          Paths.get((String) inputDomainMap.get("customDomainTemplate")),
+          Paths.get(BaseTest.getResultDir() + "/samples/scripts/common/domain-template.yaml"),
+          StandardCopyOption.REPLACE_EXISTING);
+    }
+    logger.log(Level.FINEST, "Domain Template");
+    byte[] readAllBytes =
+        Files.readAllBytes(
+            Paths.get(BaseTest.getResultDir() + "/samples/scripts/common/domain-template.yaml"));
+    logger.log(Level.FINEST, new String(readAllBytes, StandardCharsets.UTF_8));
   }
 
   private String getNodeHost() throws Exception {
@@ -1723,15 +1728,10 @@ public class Domain {
     // as samples only support DYNAMIC cluster
 
     // domain in image
-    if (domainMap.containsKey("domainHomeImageBase") && domainHomeImageBuildPath.contains("wdt")) {
-      String wdtTemplatePath =
-          BaseTest.getProjectRoot()
-              + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml";
-      if (domainMap.containsKey("customWdtTemplate")) {
-        wdtTemplatePath = (String) domainMap.get("customWdtTemplate");
-      }
+    String wdtTemplatePath = null;
+    if (domainMap.containsKey("customWdtTemplate")) {
       TestUtils.copyFile(
-          wdtTemplatePath,
+          (String) domainMap.get("customWdtTemplate"),
           BaseTest.getResultDir()
               + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
       ExecResult exec =
@@ -1739,7 +1739,7 @@ public class Domain {
               "cat "
                   + BaseTest.getResultDir()
                   + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
-      logger.info(exec.stdout());
+      logger.log(Level.FINEST, exec.stdout());
     } else if (clusterType.equalsIgnoreCase("CONFIGURED")) {
       // domain on pv
       StringBuffer createDomainJobTemplateFile = new StringBuffer(BaseTest.getResultDir());
