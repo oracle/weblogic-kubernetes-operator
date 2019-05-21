@@ -5,7 +5,6 @@ package oracle.kubernetes.operator;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -34,7 +33,7 @@ public class ITMultipleClusters extends BaseTest {
   private static final String TWO_CONFIGURED_CLUSTER_SCRIPT =
       "create-domain-two-configured-cluster.py";
   private static final String TWO_MIXED_CLUSTER_SCRIPT = "create-domain-two-mixed-cluster.py";
-  private static String template;
+  private static String customDomainTemplate;
   private static final String DOMAINUID = "twoconfigclustdomain";
 
   /**
@@ -48,8 +47,16 @@ public class ITMultipleClusters extends BaseTest {
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
     initialize(APP_PROPS_FILE);
-    template =
+    String template =
         BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
+    String add =
+        "  - clusterName: %CLUSTER_NAME%-2\n"
+            + "    serverStartState: \"RUNNING\"\n"
+            + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
+    customDomainTemplate = BaseTest.getResultDir() + "/customDomainTemplate.yaml";
+    Files.copy(
+        Paths.get(template), Paths.get(customDomainTemplate), StandardCopyOption.REPLACE_EXISTING);
+    Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
   }
 
   /**
@@ -89,6 +96,7 @@ public class ITMultipleClusters extends BaseTest {
       Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
       domainMap.put("domainUID", DOMAINUID);
       domainMap.put("clusterType", "CONFIGURED");
+      domainMap.put("customDomainTemplate", customDomainTemplate);
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/"
@@ -98,7 +106,6 @@ public class ITMultipleClusters extends BaseTest {
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30366"));
       }
-      addCluster2ToDomainTemplate(domainMap);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String pods[] = {
@@ -110,7 +117,6 @@ public class ITMultipleClusters extends BaseTest {
         DOMAINUID + "-new-managed-server2",
       };
       verifyServersStatus(domain, pods);
-
       testBasicUseCases(domain);
       if (!SMOKETEST) {
         domain.testWlsLivenessProbe();
@@ -146,6 +152,7 @@ public class ITMultipleClusters extends BaseTest {
     try {
       Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
       domainMap.put("domainUID", DOMAINUID);
+      domainMap.put("customDomainTemplate", customDomainTemplate);
       domainMap.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/" + TWO_MIXED_CLUSTER_SCRIPT);
@@ -154,7 +161,6 @@ public class ITMultipleClusters extends BaseTest {
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
         domainMap.put("voyagerWebPort", new Integer("30377"));
       }
-      addCluster2ToDomainTemplate(domainMap);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String pods[] = {
@@ -200,6 +206,7 @@ public class ITMultipleClusters extends BaseTest {
     try {
       Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
       domainMap.put("domainUID", DOMAINUID);
+      domainMap.put("customDomainTemplate", customDomainTemplate);
       if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
           || (domainMap.containsKey("loadBalancer")
               && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
@@ -209,7 +216,6 @@ public class ITMultipleClusters extends BaseTest {
           "customWdtTemplate",
           BaseTest.getProjectRoot()
               + "/integration-tests/src/test/resources/multipleclusters/wdtmultipledynclusters.yml");
-      addCluster2ToDomainTemplate(domainMap);
       domain = TestUtils.createDomain(domainMap);
       domain.verifyDomainCreated();
       String pods[] = {
@@ -231,24 +237,6 @@ public class ITMultipleClusters extends BaseTest {
       }
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
-  }
-
-  /**
-   * Append a second cluster to the domain template
-   *
-   * @throws IOException when append fails
-   */
-  private void addCluster2ToDomainTemplate(Map<String, Object> domainMap) throws IOException {
-    String add =
-        "  - clusterName: %CLUSTER_NAME%-2\n"
-            + "    serverStartState: \"RUNNING\"\n"
-            + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-    String customDomainTemplate =
-        System.getProperty("java.io.tmpdir") + "/customDomainTemplate.yaml";
-    Files.copy(
-        Paths.get(template), Paths.get(customDomainTemplate), StandardCopyOption.REPLACE_EXISTING);
-    Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
-    domainMap.put("customDomainTemplate", customDomainTemplate);
   }
 
   /**
