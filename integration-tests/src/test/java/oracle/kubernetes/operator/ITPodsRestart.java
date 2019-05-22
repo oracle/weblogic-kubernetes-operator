@@ -200,11 +200,38 @@ public class ITPodsRestart extends BaseTest {
               + domain.getDomainUid()
               + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
 
-      TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
-      domain.verifyDomainServerPodRestart(
-          "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
+      if (BaseTest.SHARED_CLUSTER) {
+        String newImage =
+            System.getenv("REPO_REGISTRY") + "/weblogick8s/store/oracle/weblogic:duplicate";
+
+        // tag image with repo name
+        TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 " + newImage);
+
+        // login and push image to ocir
+        TestUtils.loginAndPushImageToOCIR(newImage);
+
+        // create ocir registry secret in the same ns as domain which is used while pulling the
+        // image
+        TestUtils.createDockerRegistrySecret(
+            "docker-store",
+            System.getenv("REPO_REGISTRY"),
+            System.getenv("REPO_USERNAME"),
+            System.getenv("REPO_PASSWORD"),
+            System.getenv("REPO_EMAIL"),
+            domain.getDomainNS());
+
+        // apply new domain yaml and verify pod restart
+        domain.verifyDomainServerPodRestart(
+            "\"store/oracle/weblogic:12.2.1.3\"", "\"" + newImage + "\"");
+      } else {
+        TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
+        domain.verifyDomainServerPodRestart(
+            "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
+      }
     } finally {
-      TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
+      if (!BaseTest.SHARED_CLUSTER) {
+        TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
+      }
     }
 
     logger.info("SUCCESS - " + testMethodName);
@@ -385,7 +412,7 @@ public class ITPodsRestart extends BaseTest {
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
       DomainCRD crd = new DomainCRD(originalYaml);
-      Map<String, String> cluster = new HashMap();
+      Map<String, Object> cluster = new HashMap();
       cluster.put("restartVersion", "v1.1");
       crd.addObjectNodeToCluster("cluster-1", cluster);
       String modYaml = crd.getYamlTree();

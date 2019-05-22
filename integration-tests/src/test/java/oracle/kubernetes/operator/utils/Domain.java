@@ -38,7 +38,7 @@ public class Domain {
   protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   protected Map<String, Object> domainMap;
-  private Map<String, Object> pvMap;
+  protected Map<String, Object> pvMap;
 
   // attributes from domain properties
   protected String domainUid = "";
@@ -61,6 +61,8 @@ public class Domain {
   protected String userProjectsDir = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
+  private String imageTag = "12.2.1.3";
+  private String imageName = "store/oracle/weblogic";
 
   protected String generatedInputYamlFile;
 
@@ -304,7 +306,13 @@ public class Domain {
      */
     StringBuffer curlCmd =
         new StringBuffer(
-            "kubectl exec " + this.getDomainUid() + "-" + this.adminServerName + " /usr/bin/curl ");
+            "kubectl exec -n "
+                + this.domainNS
+                + " "
+                + this.getDomainUid()
+                + "-"
+                + this.adminServerName
+                + " /usr/bin/curl ");
 
     /*
      * Make sure we can reach the port,
@@ -377,6 +385,7 @@ public class Domain {
       throw new RuntimeException("FAILURE: Webapp deployment failed with response code " + output);
     }
   }
+
   /**
    * deploy webapp using t3 channel port for wlst
    *
@@ -392,6 +401,28 @@ public class Domain {
       String appLocationInPod,
       String username,
       String password)
+      throws Exception {
+    deployWebAppViaWLST(webappName, webappLocation, appLocationInPod, username, password, false);
+  }
+
+  /**
+   * deploy webapp using adminPort or t3 channel port
+   *
+   * @param webappName
+   * @param webappLocation
+   * @param appLocationInPod
+   * @param username
+   * @param password
+   * @param useAdminPortToDeploy
+   * @throws Exception
+   */
+  public void deployWebAppViaWLST(
+      String webappName,
+      String webappLocation,
+      String appLocationInPod,
+      String username,
+      String password,
+      boolean useAdminPortToDeploy)
       throws Exception {
     String adminPod = domainUid + "-" + adminServerName;
 
@@ -410,7 +441,8 @@ public class Domain {
         adminPod,
         domainNS);
 
-    callShellScriptByExecToPod(username, password, webappName, appLocationInPod);
+    callShellScriptByExecToPod(
+        username, password, webappName, appLocationInPod, useAdminPortToDeploy);
   }
 
   /**
@@ -611,6 +643,10 @@ public class Domain {
    * @throws Exception
    */
   public void deletePVCAndCheckPVReleased() throws Exception {
+    deletePVCAndCheckPVReleased("create-weblogic-sample-domain-job");
+  }
+
+  public void deletePVCAndCheckPVReleased(String jobName) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     String pvBaseName = (String) pvMap.get("baseName");
     if (domainUid != null) pvBaseName = domainUid + "-" + pvBaseName;
@@ -620,7 +656,7 @@ public class Domain {
     if (result.exitValue() == 0) {
       logger.info("Status of PV before deleting PVC " + result.stdout());
     }
-    TestUtils.deletePVC(pvBaseName + "-pvc", domainNS, domainUid);
+    TestUtils.deletePVC(pvBaseName + "-pvc", domainNS, domainUid, jobName);
     String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
     boolean pvReleased = TestUtils.checkPVReleased(pvBaseName, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
@@ -630,19 +666,29 @@ public class Domain {
       logger.info("PV is released when PVC is deleted");
     }
   }
+
   /**
    * create domain on existing directory
    *
    * @throws Exception
    */
   public void createDomainOnExistingDirectory() throws Exception {
-    String domainStoragePath = domainMap.get("weblogicDomainStoragePath").toString();
-    String domainDir = domainStoragePath + "/domains/" + domainMap.get("domainUID").toString();
-    logger.info("making sure the domain directory exists");
-    if (domainDir != null && !(new File(domainDir).exists())) {
-      throw new RuntimeException(
-          "FAIL: the domain directory " + domainDir + " does not exist, exiting!");
-    }
+
+    // use krun.sh so that the dir check can work on shared cluster/remote k8s cluster env as well
+    String cmd =
+        BaseTest.getProjectRoot()
+            + "/src/integration-tests/bash/krun.sh -m "
+            + domainMap.get("persistentVolumeClaimName")
+            + ":/pvc-"
+            + domainMap.get("domainUID")
+            + " -c \"ls -ltr /pvc-"
+            + domainMap.get("domainUID")
+            + "/domains/"
+            + domainMap.get("domainUID")
+            + "\"";
+    logger.info("making sure the domain directory exists by running " + cmd);
+    ExecResult result = TestUtils.exec(cmd);
+    // logger.info("Command result " + result.stdout() + " err =" + result.stderr());
     logger.info("Run the script to create domain");
 
     // create domain using different output dir but pv is same, it fails as the domain was already
@@ -822,8 +868,23 @@ public class Domain {
         BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid);
 
     pvMap.values().removeIf(Objects::isNull);
+
     // k8s job mounts PVROOT /scratch/<usr>/wl_k8s_test_results to /scratch, create PV/PVC
     new PersistentVolume("/scratch/acceptance_test_pv/persistentVolume-" + domainUid, pvMap);
+
+    String cmd =
+        BaseTest.getProjectRoot()
+            + "/src/integration-tests/bash/krun.sh -m "
+            // + BaseTest.getPvRoot()
+            + "/scratch:/scratch -c \"ls -ltr /scratch "
+            + BaseTest.getPvRoot()
+            + " "
+            + BaseTest.getPvRoot()
+            + "/acceptance_test_pv"
+            + "\"";
+    logger.info("Check PVROOT by running " + cmd);
+    ExecResult result = ExecCommand.exec(cmd);
+    logger.info("ls -ltr output " + result.stdout() + " err " + result.stderr());
   }
 
   /**
@@ -1087,13 +1148,30 @@ public class Domain {
     String outputStr = result.stdout().trim();
     logger.info("Command returned " + outputStr);
 
-    // write configOverride and configOverrideSecrets to domain.yaml
-    if (domainMap.containsKey("configOverrides")) {
+    // for remote k8s cluster and domain in image case, push the domain image to OCIR
+    if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
+      String image =
+          System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:" + imageTag;
+      TestUtils.loginAndPushImageToOCIR(image);
+
+      // create ocir registry secret in the same ns as domain which is used while pulling the domain
+      // image
+      TestUtils.createDockerRegistrySecret(
+          "ocir-domain",
+          System.getenv("REPO_REGISTRY"),
+          System.getenv("REPO_USERNAME"),
+          System.getenv("REPO_PASSWORD"),
+          System.getenv("REPO_EMAIL"),
+          domainNS);
+    }
+
+    // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
+    if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")) {
       appendToDomainYamlAndCreate();
     }
   }
 
-  private void createLoadBalancer() throws Exception {
+  protected void createLoadBalancer() throws Exception {
     Map<String, Object> lbMap = new HashMap<String, Object>();
     lbMap.put("domainUID", domainUid);
     lbMap.put("namespace", domainNS);
@@ -1101,7 +1179,9 @@ public class Domain {
     lbMap.put("serviceName", domainUid + "-cluster-" + domainMap.get("clusterName"));
     if (voyager) {
       lbMap.put("loadBalancer", "VOYAGER");
-      lbMap.put("loadBalancerWebPort", domainMap.get("voyagerWebPort"));
+      lbMap.put(
+          "loadBalancerWebPort",
+          domainMap.getOrDefault("voyagerWebPort", new Integer(loadBalancerWebPort)));
     } else {
       lbMap.put("loadBalancer", domainMap.getOrDefault("loadBalancer", loadBalancer));
       lbMap.put(
@@ -1152,6 +1232,16 @@ public class Domain {
   private void callShellScriptByExecToPod(
       String username, String password, String webappName, String appLocationInPod)
       throws Exception {
+    callShellScriptByExecToPod(username, password, webappName, appLocationInPod, false);
+  }
+
+  private void callShellScriptByExecToPod(
+      String username,
+      String password,
+      String webappName,
+      String appLocationInPod,
+      boolean usingAdminPortToDeploy)
+      throws Exception {
 
     StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
     cmdKubectlSh
@@ -1175,8 +1265,16 @@ public class Domain {
         .append(domainUid)
         .append("-")
         .append(adminServerName)
-        .append(":")
-        .append(t3ChannelPort)
+        .append(":");
+
+    if (usingAdminPortToDeploy) {
+      String adminPort = (domainMap.getOrDefault("adminPort", 7001)).toString();
+      cmdKubectlSh.append(adminPort);
+    } else {
+      cmdKubectlSh.append(t3ChannelPort);
+    }
+
+    cmdKubectlSh
         .append(" ")
         .append(webappName)
         .append(" ")
@@ -1295,7 +1393,10 @@ public class Domain {
         "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
 
     this.voyager =
-        System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER");
+        (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
+            || (inputDomainMap.containsKey("loadBalancer")
+                && ((String) inputDomainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"));
+
     if (System.getenv("INGRESSPERDOMAIN") != null) {
       INGRESSPERDOMAIN = new Boolean(System.getenv("INGRESSPERDOMAIN")).booleanValue();
     }
@@ -1340,13 +1441,11 @@ public class Domain {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
     }
 
-    String imageName = "store/oracle/weblogic";
     if (System.getenv("IMAGE_NAME_WEBLOGIC") != null) {
       imageName = System.getenv("IMAGE_NAME_WEBLOGIC");
       logger.info("IMAGE_NAME_WEBLOGIC " + imageName);
     }
 
-    String imageTag = "12.2.1.3";
     if (System.getenv("IMAGE_TAG_WEBLOGIC") != null) {
       imageTag = System.getenv("IMAGE_TAG_WEBLOGIC");
       logger.info("IMAGE_TAG_WEBLOGIC " + imageTag);
@@ -1355,6 +1454,21 @@ public class Domain {
     if (!domainMap.containsKey("domainHomeImageBase")) {
       domainMap.put("domainHome", "/shared/domains/" + domainUid);
       domainMap.put("image", imageName + ":" + imageTag);
+      if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
+        domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
+      } else {
+        domainMap.put("imagePullSecretName", "docker-store");
+      }
+    } else {
+      // use default image attibute value for JENKINS and standalone runs and for SHARED_CLUSTER use
+      // below
+      if (BaseTest.SHARED_CLUSTER) {
+        domainMap.put(
+            "image",
+            System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:" + imageTag);
+        domainMap.put("imagePullSecretName", "ocir-domain");
+        domainMap.put("imagePullPolicy", "Always");
+      }
     }
 
     if (domainMap.containsKey("domainHomeImageBuildPath")) {
@@ -1368,11 +1482,7 @@ public class Domain {
               + "/"
               + ((String) domainMap.get("domainHomeImageBuildPath")).trim());
     }
-    if (System.getenv("IMAGE_PULL_SECRET_WEBLOGIC") != null) {
-      domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_WEBLOGIC"));
-    } else {
-      domainMap.put("imagePullSecretName", "docker-store");
-    }
+
     // remove null values if any attributes
     domainMap.values().removeIf(Objects::isNull);
 
@@ -1461,20 +1571,24 @@ public class Domain {
    *     command
    */
   private void appendToDomainYamlAndCreate() throws Exception {
-    String contentToAppend =
-        "  configOverrides: "
-            + domainUid
-            + "-"
-            + domainMap.get("configOverrides")
-            + "\n"
-            + "  configOverrideSecrets: [ \""
-            + domainUid
-            + "-test-secrets\" ]"
-            + "\n";
 
     String domainYaml =
         BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain.yaml";
-    Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+
+    if (domainMap.containsKey("configOverrides")) {
+      String contentToAppend =
+          "  configOverrides: "
+              + domainUid
+              + "-"
+              + domainMap.get("configOverrides")
+              + "\n"
+              + "  configOverrideSecrets: [ \""
+              + domainUid
+              + "-test-secrets\" ]"
+              + "\n";
+
+      Files.write(Paths.get(domainYaml), contentToAppend.getBytes(), StandardOpenOption.APPEND);
+    }
 
     String command = "kubectl create -f " + domainYaml;
     ExecResult result = TestUtils.exec(command);
@@ -1521,6 +1635,15 @@ public class Domain {
                   .toPath(),
               StandardCopyOption.REPLACE_EXISTING);
         }
+      } else if (domainMap.containsKey("rcuDatabaseURL")) {
+        Files.copy(
+            new File(BaseTest.getProjectRoot() + "/" + domainMap.get("createDomainPyScript"))
+                .toPath(),
+            new File(
+                    BaseTest.getResultDir()
+                        + "/samples/scripts/create-fmw-infrastructure-domain/common/createFMWDomain.py")
+                .toPath(),
+            StandardCopyOption.REPLACE_EXISTING);
       } else {
         // domain on pv case
         Files.copy(
@@ -1555,7 +1678,7 @@ public class Domain {
           .append(" -p ")
           .append(BaseTest.getPassword())
           .append(" -k -i ");
-    } else if (domainMap.containsKey("rcuCredentialsSecret")) {
+    } else if (domainMap.containsKey("rcuDatabaseURL")) {
       createDomainScriptCmd.append(
           "/samples/scripts/create-fmw-infrastructure-domain/create-domain.sh -v -i ");
     } else {
@@ -1564,8 +1687,9 @@ public class Domain {
     }
     createDomainScriptCmd.append(generatedInputYamlFile);
 
-    // skip executing yaml if configOverrides
-    if (!domainMap.containsKey("configOverrides")) {
+    // skip executing yaml if configOverrides or domain in image
+    if (!domainMap.containsKey("configOverrides")
+        && !domainMap.containsKey("domainHomeImageBase")) {
       createDomainScriptCmd.append(" -e ");
     }
 
