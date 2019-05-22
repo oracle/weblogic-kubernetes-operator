@@ -75,6 +75,8 @@ spec:
               value: "%PRODUCTION_MODE_ENABLED%"
             - name: CUSTOM_CONNECTION_STRING
               value: "%CUSTOM_CONNECTION_STRING%"
+            - name: EXPOSE_T3_CHANNEL_PREFIX
+              value: "%EXPOSE_T3_CHANNEL_PREFIX%"
       volumes:
         - name: create-fmw-infra-sample-domain-job-cm-volume
           configMap:
