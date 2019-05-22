@@ -128,6 +128,11 @@ function initialize {
   validateCommonInputs
 
   initOutputDir
+  getKubernetesClusterIP
+  if [ -z "${t3PublicAddress}" ]; then
+    t3PublicAddress="${K8S_IP}"
+  fi
+
 }
 
 # create domain configmap using what is in the createDomainFilesDir
