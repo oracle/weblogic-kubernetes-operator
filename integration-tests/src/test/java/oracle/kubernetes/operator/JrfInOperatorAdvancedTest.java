@@ -293,6 +293,13 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1Map.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-jrfdomain-admin-port-enabled.py");
+      // Use -Dweblogic.ssl.AcceptKSSDemoCertsEnabled=true so that managed servers can connect
+      // to admin server using SSL without running into host name verifcation check error
+      // in default JRF domain that uses KSS demo identity and trust
+      // https://docs.oracle.com/middleware/12213/wls/SECMG/kss.htm#SECMG673tm#ADMRF202
+      domain1Map.put(
+          "javaOptions",
+          "-Dweblogic.StdoutDebugEnabled=false -Dweblogic.ssl.AcceptKSSDemoCertsEnabled=true");
 
       // run RCU script to load db schema
       DBUtils.runRCU(rcuPodName, domain1Map);
