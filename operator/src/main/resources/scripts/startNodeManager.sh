@@ -26,6 +26,7 @@
 #                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.out
 #                       Default:
 #                          Use LOG_HOME.  If LOG_HOME not set, use NODEMGR_HOME.
+#   ADMIN_PORT_SECURE = "true" if the admin protocol is secure. Default is false
 #
 # If SERVER_NAME is set, then this NM is for a WL Server and these must also be set:
 # 
@@ -51,6 +52,7 @@ export WL_HOME="${WL_HOME:-/u01/oracle/wlserver}"
 stm_script=${WL_HOME}/server/bin/startNodeManager.sh
 
 SERVER_NAME=${SERVER_NAME:-introspector}
+ADMIN_PORT_SECURE=${ADMIN_PORT_SECURE:-false}
 
 trace "Starting node manager for domain-uid='$DOMAIN_UID' and server='$SERVER_NAME'."
 
@@ -244,7 +246,11 @@ EOF
   [ ! $? -eq 0 ] && trace "Failed to create '${wl_props_file}'." && exit 1
 
   if [ ! "${ADMIN_NAME}" = "${SERVER_NAME}" ]; then
-    echo "AdminURL=http\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
+    admin_protocol="http"
+    if [ "${ADMIN_PORT_SECURE}" = "true" ]; then
+      admin_protocol="https"
+    fi  
+    echo "AdminURL=$admin_protocol\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
   fi
 fi
 

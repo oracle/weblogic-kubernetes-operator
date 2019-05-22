@@ -89,13 +89,15 @@ public class ITServerDiscovery extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
+    if (!QUICKTEST) {
+      logger.info("++++++++++++++++++++++++++++++++++");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
 
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-    logger.info("SUCCESS");
+      logger.info("SUCCESS");
+    }
   }
 
   /**
@@ -191,8 +193,6 @@ public class ITServerDiscovery extends BaseTest {
   }
 
   private void scaleDownAndverify(int decrNum) throws Exception {
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
 
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
