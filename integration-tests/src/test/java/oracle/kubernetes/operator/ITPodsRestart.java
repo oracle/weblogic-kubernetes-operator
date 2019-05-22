@@ -199,16 +199,18 @@ public class ITPodsRestart extends BaseTest {
       logger.info(
           "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
-              + "  Image property: container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111 to container-registry.oracle.com/middleware/weblogic:duplicate");
+              + "  Image property: "
+              + getImageName()
+              + ":"
+              + getImageTag()
+              + " to /weblogick8s/middleware/weblogic:duplicate");
 
       if (BaseTest.SHARED_CLUSTER) {
         String newImage =
             System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
 
         // tag image with repo name
-        TestUtils.exec(
-            "docker tag container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111 "
-                + newImage);
+        TestUtils.exec("docker tag " + getImageName() + ":" + getImageTag() + " " + newImage);
 
         // login and push image to ocir
         TestUtils.loginAndPushImageToOCIR(newImage);
@@ -225,18 +227,23 @@ public class ITPodsRestart extends BaseTest {
 
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
-            "\"container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111\"",
-            "\"" + newImage + "\"");
+            "\"" + getImageName() + ":" + getImageTag() + "\"", "\"" + newImage + "\"");
       } else {
         TestUtils.exec(
-            "docker tag container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111 container-registry.oracle.com/middleware/weblogic:duplicate");
+            "docker tag "
+                + getImageName()
+                + ":"
+                + getImageTag()
+                + " "
+                + getImageName()
+                + ":duplicate");
         domain.verifyDomainServerPodRestart(
-            "\"container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111\"",
-            "\"container-registry.oracle.com/middleware/weblogic:duplicate\"");
+            "\"" + getImageName() + ":" + getImageTag() + "\"",
+            "\"" + getImageName() + ":duplicate" + "\"");
       }
     } finally {
       if (!BaseTest.SHARED_CLUSTER) {
-        TestUtils.exec("docker rmi -f container-registry.oracle.com/middleware/weblogic:duplicate");
+        TestUtils.exec("docker rmi -f " + getImageName() + ":duplicate");
       }
     }
 
