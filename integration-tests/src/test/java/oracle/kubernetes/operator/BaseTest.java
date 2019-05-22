@@ -69,6 +69,8 @@ public class BaseTest {
   protected static String appLocationInPod = "/u01/oracle/apps";
   private static String appLocationOnHost;
   private static Properties appProps;
+  private static String imageTag;
+  private static String imageName;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -104,6 +106,8 @@ public class BaseTest {
     }
     username = appProps.getProperty("username", username);
     password = appProps.getProperty("password", password);
+    imageTag = appProps.getProperty("weblogicImageTag");
+    imageName = appProps.getProperty("weblogicImageName");
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
@@ -227,6 +231,23 @@ public class BaseTest {
     logger.info("Env var BRANCH_NAME " + System.getenv("BRANCH_NAME"));
   }
 
+  /**
+   * getter method for imageTag field
+   *
+   * @return image tag of the WLS docker images
+   */
+  public static String getImageTag() {
+    return imageTag;
+  }
+
+  /**
+   * getter method for imageName
+   *
+   * @return image name of the WLS docker image
+   */
+  public static String getImageName() {
+    return imageName;
+  }
   /**
    * Call the basic usecases tests
    *
