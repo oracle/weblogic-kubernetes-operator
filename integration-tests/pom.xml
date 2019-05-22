@@ -113,6 +113,11 @@
 			<artifactId>jaxb-api</artifactId>
 			<version>2.3.1</version>
 		</dependency>
+		<dependency>
+			<groupId>net.sourceforge.htmlunit</groupId>
+			<artifactId>htmlunit</artifactId>
+			<version>2.32</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -352,7 +357,7 @@
 			<id>jrf-integration-tests</id>
 			<properties>
 				<skipITs>false</skipITs>
-				<includes-failsafe>**/JrfInOperatorTest.java</includes-failsafe>
+				<includes-failsafe>**/JrfInOperator*Test.java</includes-failsafe>
 				<jrf_enabled>true</jrf_enabled>
 			</properties>
 		</profile>

@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import oracle.kubernetes.operator.helpers.ClientPool;
@@ -68,6 +69,9 @@ public class ServerStatusReader {
       packet.put(SERVER_STATE_MAP, new ConcurrentHashMap<String, String>());
       packet.put(SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
 
+      AtomicInteger remainingServerHealthToRead = new AtomicInteger();
+      packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, remainingServerHealthToRead);
+
       Collection<StepAndPacket> startDetails =
           info.getServerPods()
               .map(pod -> createStatusReaderStep(packet, pod))
@@ -76,6 +80,7 @@ public class ServerStatusReader {
       if (startDetails.isEmpty()) {
         return doNext(packet);
       } else {
+        remainingServerHealthToRead.set(startDetails.size());
         return doForkJoin(getNext(), packet, startDetails);
       }
     }

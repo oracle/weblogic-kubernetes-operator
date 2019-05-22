@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.Map;
+import oracle.kubernetes.operator.BaseTest;
 
 /** JRF Domain class with all the utility methods */
 public class JRFDomain extends Domain {
@@ -29,23 +30,27 @@ public class JRFDomain extends Domain {
    * @throws Exception - if any error occurs
    */
   public JRFDomain(Map<String, Object> inputDomainMap) throws Exception {
+    this(inputDomainMap, false);
+  }
+
+  public JRFDomain(Map<String, Object> inputDomainMap, boolean adminPortEnabled) throws Exception {
     initialize(inputDomainMap);
-    updateDomainMapForJRF();
+    updateDomainMapForJRF(adminPortEnabled);
     createPV();
     createSecret();
     createRcuSecret();
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
-    // TODO: add load balancer later
-    // createLoadBalancer();
+    createLoadBalancer();
   }
 
   /**
    * update the domainMap with jrf specific information
    *
+   * @param adminPortEnabled - whether the adminPortEnabled, value true or false
    * @throws Exception - if any error occurs
    */
-  private void updateDomainMapForJRF() throws Exception {
+  private void updateDomainMapForJRF(boolean adminPortEnabled) throws Exception {
     // jrf specific input parameter
     domainMap.put(
         "image",
@@ -55,6 +60,17 @@ public class JRFDomain extends Domain {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_FMWINFRA"));
     } else {
       domainMap.put("imagePullSecretName", "ocir-store");
+    }
+
+    // update create-domain-script.sh if adminPortEnabled is true
+    if (adminPortEnabled) {
+      String createDomainScript =
+          BaseTest.getResultDir()
+              + "/samples/scripts/create-fmw-infrastructure-domain/wlst/create-domain-script.sh";
+      TestUtils.replaceStringInFile(
+          createDomainScript,
+          "-managedNameBase ",
+          "-adminPortEnabled true -administrationPort 9002 -managedNameBase ");
     }
   }
 

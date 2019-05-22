@@ -17,10 +17,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.HttpClient;
+import oracle.kubernetes.operator.http.Result;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.LoggingFilter;
@@ -42,6 +45,10 @@ import org.joda.time.DateTime;
 public class ReadHealthStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  public static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
+  public static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
+      OVERALL_HEALTH_NOT_AVAILABLE + " (possibly overloaded)";
 
   private ReadHealthStep(Step next) {
     super(next);
@@ -139,16 +146,14 @@ public class ReadHealthStep extends Step {
                   serverConfig.getAdminProtocolChannelName(),
                   serverConfig.getListenPort());
           if (serviceURL != null) {
-            String jsonResult =
-                httpClient
-                    .executePostUrlOnServiceClusterIP(
-                        getRetrieveHealthSearchUrl(),
-                        serviceURL,
-                        getRetrieveHealthSearchPayload(),
-                        true)
-                    .getResponse();
+            Result result =
+                httpClient.executePostUrlOnServiceClusterIP(
+                    getRetrieveHealthSearchUrl(),
+                    serviceURL,
+                    getRetrieveHealthSearchPayload(),
+                    false);
 
-            Pair<String, ServerHealth> pair = parseServerHealthJson(jsonResult);
+            Pair<String, ServerHealth> pair = createServerHealthFromResult(result);
 
             String state = pair.getLeft();
             if (state != null && !state.isEmpty()) {
@@ -162,9 +167,12 @@ public class ReadHealthStep extends Step {
             ConcurrentMap<String, ServerHealth> serverHealthMap =
                 (ConcurrentMap<String, ServerHealth>)
                     packet.get(ProcessingConstants.SERVER_HEALTH_MAP);
+
             serverHealthMap.put(
                 (String) packet.get(ProcessingConstants.SERVER_NAME), pair.getRight());
-            packet.put(ProcessingConstants.SERVER_HEALTH_READ, Boolean.TRUE);
+            AtomicInteger remainingServersHealthToRead =
+                packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
+            remainingServersHealthToRead.getAndDecrement();
           }
         }
         return doNext(packet);
@@ -177,6 +185,20 @@ public class ReadHealthStep extends Step {
             t);
         return doNext(packet);
       }
+    }
+
+    private Pair<String, ServerHealth> createServerHealthFromResult(Result restResult)
+        throws IOException {
+      if (restResult.isSuccessful()) {
+        return parseServerHealthJson(restResult.getResponse());
+      }
+      return new Pair<>(
+          WebLogicConstants.UNKNOWN_STATE,
+          new ServerHealth()
+              .withOverallHealth(
+                  restResult.isServerOverloaded()
+                      ? OVERALL_HEALTH_FOR_SERVER_OVERLOADED
+                      : OVERALL_HEALTH_NOT_AVAILABLE));
     }
 
     private Pair<String, ServerHealth> parseServerHealthJson(String jsonResult) throws IOException {
