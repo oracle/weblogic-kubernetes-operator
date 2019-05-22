@@ -3,7 +3,7 @@
 
 # This domain inputs file is used to create domain on pv using wlst option and traefik load balancer.
 
-adminServerName: adminserver
+adminServerName: admin-server
 domainUID: jrfdomain
 clusterName: infra-cluster
 configuredManagedServerCount: 4
