@@ -87,7 +87,7 @@ function pull_tag_images {
 	  echo "Creating Docker Secret"
 	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=index.docker.io/v1/ \
+	    --docker-server=container-registry.oracle.com/ \
 	    --docker-username=$DOCKER_USERNAME \
 	    --docker-password=$DOCKER_PASSWORD \
 	    --docker-email=$DOCKER_EMAIL 
@@ -99,7 +99,7 @@ function pull_tag_images {
 	    exit 1
 	  fi
 	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
-	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD container-registry.oracle.com
    	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
@@ -149,7 +149,7 @@ set +x
 	  echo "Creating Docker Secret"
 	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_ORACLEDB  \
-	    --docker-server=index.docker.io/v1/ \
+	    --docker-server=container-registry.oracle.com/ \
 	    --docker-username=$DOCKER_USERNAME \
 	    --docker-password=$DOCKER_PASSWORD \
 	    --docker-email=$DOCKER_EMAIL 
@@ -185,7 +185,7 @@ export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
 export PV_ROOT=${PV_ROOT:-$RESULT_ROOT}
 echo "RESULT_ROOT$RESULT_ROOT PV_ROOT$PV_ROOT"
 export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
-export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3}"
+export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3-190111}"
 
 if [ "$JRF_ENABLED" = true ] ; then
   export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-phx.ocir.io/weblogick8s/oracle/fmw-infrastructure}"
@@ -195,7 +195,7 @@ if [ "$JRF_ENABLED" = true ] ; then
   export IMAGE_PULL_SECRET_ORACLEDB="${IMAGE_PULL_SECRET_ORACLEDB:-docker-store}"
   
 fi
-export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-store/oracle/weblogic}"
+export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-container-registry.oracle.com/middleware/weblogic}"
 export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
     
 if [ -z "$BRANCH_NAME" ]; then
@@ -261,7 +261,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	
 	echo "Creating Docker Secret"
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=index.docker.io/v1/ \
+	    --docker-server=container-registry.oracle.com/ \
 	    --docker-username=$DOCKER_USERNAME \
 	    --docker-password=$DOCKER_PASSWORD \
 	    --docker-email=$DOCKER_EMAIL 
