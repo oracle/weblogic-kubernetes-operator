@@ -842,7 +842,7 @@ window.onload = function() {
       "properties": {
         "metadata": {
           "description": "The domain meta-data. Must include the name and namespace.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
         },
         "apiVersion": {
           "description": "The API version for the Domain.",
@@ -1133,7 +1133,7 @@ window.onload = function() {
           "description": "A list of image pull secrets for the WebLogic Docker image.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
           }
         },
         "domainHomeInImage": {
@@ -1176,7 +1176,7 @@ window.onload = function() {
         },
         "webLogicCredentialsSecret": {
           "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namepace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
         },
         "adminServer": {
           "description": "Configuration for the admin server.",
@@ -1353,18 +1353,18 @@ window.onload = function() {
         },
         "podSecurityContext": {
           "description": "Pod-level security attributes.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "volumes": {
           "description": "Additional volumes to be created in the server pod.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
           }
         },
         "resources": {
           "description": "Memory and cpu minimum requirements and limits for the server.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "annotations": {
           "description": "The annotations to be attached to generated resources.",
@@ -1374,7 +1374,7 @@ window.onload = function() {
           "description": "A list of environment variables to add to a server",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
         "nodeSelector": {
@@ -1385,7 +1385,7 @@ window.onload = function() {
           "description": "Additional volume mounts for the server pod.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
           }
         },
         "labels": {
@@ -1400,18 +1400,18 @@ window.onload = function() {
           "description": "Additional containers to be included in the server pod.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
         },
         "containerSecurityContext": {
           "description": "Container-level security attributes. Will override any matching pod-level attributes.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "initContainers": {
           "description": "Initialization containers",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
         },
         "shutdown": {
