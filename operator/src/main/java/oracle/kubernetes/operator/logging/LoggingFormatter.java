@@ -146,7 +146,7 @@ public class LoggingFormatter extends Formatter {
   /**
    * Get the domain UID currently being used by the step executing for the Fiber.
    *
-   * @param  fiber The current Fiber
+   * @param fiber The current Fiber
    * @return the domain UID or empty string
    */
   private String getDomainUID(Fiber fiber) {
