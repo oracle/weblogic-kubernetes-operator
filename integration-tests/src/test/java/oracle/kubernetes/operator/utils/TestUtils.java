@@ -51,6 +51,23 @@ public class TestUtils {
     checkCmdInLoop(cmd.toString(), "1/1", podName);
   }
 
+  /**
+   * check pod is in Running state
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   * @param containerNum - container number in a pod
+   * @throws Exception
+   */
+  public static void checkPodReady(String podName, String domainNS, String containerNum)
+      throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for the pod passed from parameter podName
+    checkCmdInLoop(cmd.toString(), containerNum, podName);
+  }
+
   /** @param cmd - kubectl get pod <podname> -n namespace */
   public static void checkPodCreated(String podName, String domainNS) throws Exception {
 
@@ -202,10 +219,10 @@ public class TestUtils {
     checkCmdInLoopForDelete(cmd.toString(), "\"" + namespace + "\" not found", namespace);
   }
 
-  public static void deletePVC(String pvcName, String namespace, String domainUid)
+  public static void deletePVC(String pvcName, String namespace, String domainUid, String jobName)
       throws Exception {
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
-    cmdDelJob.append(domainUid).append("-create-weblogic-sample-domain-job -n ").append(namespace);
+    cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
     logger.info("Deleting job " + cmdDelJob);
     exec(cmdDelJob.toString());
 
@@ -708,6 +725,25 @@ public class TestUtils {
     return createOperator(opYamlFile, RESTCertType.SELF_SIGNED);
   }
 
+  /**
+   * Create operator pod with options for multiple container in it
+   *
+   * @param opYamlFile - yaml file to create the Operator
+   * @param ctnsNum - the number of containers in Operator pod
+   * @throws Exception
+   */
+  public static Operator createOperator(String opYamlFile, String containerNum) throws Exception {
+    // create op
+    Operator operator = new Operator(opYamlFile, RESTCertType.SELF_SIGNED);
+
+    logger.info("Check Operator status");
+    operator.verifyPodCreated();
+    operator.verifyOperatorReady(containerNum);
+    operator.verifyExternalRESTService();
+
+    return operator;
+  }
+
   public static Domain createDomain(String inputYaml) throws Exception {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
@@ -884,6 +920,12 @@ public class TestUtils {
     domainMap.put("exposeAdminNodePort", true);
     domainMap.put("adminNodePort", 30700 + number);
     domainMap.put("t3ChannelPort", 30000 + number);
+    if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
+        || (domainMap.containsKey("loadBalancer")
+            && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
+      domainMap.put("voyagerWebPort", 30344 + number);
+      logger.info("For this domain voyagerWebPort is set to: 30344 + " + number);
+    }
     return domainMap;
   }
 
@@ -1336,5 +1378,26 @@ public class TestUtils {
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(
         appName, scriptName, username, password, clusterURL, wsServiceName);
+  }
+
+  public static ExecResult loginAndPushImageToOCIR(String image) throws Exception {
+    String dockerLoginAndPushCmd =
+        "docker login "
+            + System.getenv("REPO_REGISTRY")
+            + " -u "
+            + System.getenv("REPO_USERNAME")
+            + " -p \""
+            + System.getenv("REPO_PASSWORD")
+            + "\" && docker push "
+            + image;
+    ExecResult result = TestUtils.exec(dockerLoginAndPushCmd);
+    logger.info(
+        "cmd "
+            + dockerLoginAndPushCmd
+            + "\n result "
+            + result.stdout()
+            + "\n err "
+            + result.stderr());
+    return result;
   }
 }
