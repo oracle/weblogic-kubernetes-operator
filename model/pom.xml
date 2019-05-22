@@ -113,7 +113,7 @@
             </goals>
             <configuration>
               <rootClass>oracle.kubernetes.weblogic.domain.model.Domain</rootClass>
-              <kubernetesVersion>1.9.0</kubernetesVersion>
+              <kubernetesVersion>1.13.5</kubernetesVersion>
               <generateMarkdown>true</generateMarkdown>
             </configuration>
           </execution>
