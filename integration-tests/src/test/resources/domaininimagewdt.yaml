@@ -9,6 +9,6 @@ exposeAdminT3Channel: true
 exposeAdminNodePort: true
 voyagerWebPort: 30333
 domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt
-domainHomeImageBase: "store/oracle/weblogic:12.2.1.3"
+domainHomeImageBase: "container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111"
 logHomeOnPV: true
 clusterType: CONFIGURED

@@ -62,7 +62,7 @@ public class Domain {
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
   private String imageTag = "12.2.1.3";
-  private String imageName = "store/oracle/weblogic";
+  private String imageName = "middleware/weblogic";
 
   protected String generatedInputYamlFile;
 
