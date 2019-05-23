@@ -87,7 +87,7 @@ function pull_tag_images {
 	  echo "Creating Docker Secret"
 	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=container-registry.oracle.com/ \
+	    --docker-server=${WL_DOCKER_SERVER}/ \
 	    --docker-username=$DOCKER_USERNAME \
 	    --docker-password=$DOCKER_PASSWORD \
 	    --docker-email=$DOCKER_EMAIL 
@@ -99,7 +99,7 @@ function pull_tag_images {
 	    exit 1
 	  fi
 	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
-	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD container-registry.oracle.com
+	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD ${WL_DOCKER_SERVER}
    	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
@@ -149,7 +149,7 @@ set +x
 	  echo "Creating Docker Secret"
 	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_ORACLEDB  \
-	    --docker-server=container-registry.oracle.com/ \
+	    --docker-server=${WL_DOCKER_SERVER}/ \
 	    --docker-username=$DOCKER_USERNAME \
 	    --docker-password=$DOCKER_PASSWORD \
 	    --docker-email=$DOCKER_EMAIL 
@@ -179,6 +179,8 @@ function get_wlthint3client_from_image {
   docker rm -v $id
   
 }
+export WL_DOCKER_SERVER=container-registry.oracle.com
+export WLS_IMAGE_URI=/middleware/weblogic
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
 export RESULT_ROOT=${RESULT_ROOT:-/scratch/$USER/wl_k8s_test_results}
@@ -195,7 +197,7 @@ if [ "$JRF_ENABLED" = true ] ; then
   export IMAGE_PULL_SECRET_ORACLEDB="${IMAGE_PULL_SECRET_ORACLEDB:-docker-store}"
   
 fi
-export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-container-registry.oracle.com/middleware/weblogic}"
+export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-`echo ${WL_DOCKER_SERVER}``echo ${WLS_IMAGE_URI}`}"
 export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
     
 if [ -z "$BRANCH_NAME" ]; then
@@ -261,7 +263,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	
 	echo "Creating Docker Secret"
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=container-registry.oracle.com/ \
+	    --docker-server=${WL_DOCKER_SERVER}/ \
 	    --docker-username=$DOCKER_USERNAME \
 	    --docker-password=$DOCKER_PASSWORD \
 	    --docker-email=$DOCKER_EMAIL 

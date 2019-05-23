@@ -200,9 +200,9 @@ public class ITPodsRestart extends BaseTest {
           "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
               + "  Image property: "
-              + getImageName()
+              + getWeblogicImageName()
               + ":"
-              + getImageTag()
+              + getWeblogicImageTag()
               + " to /weblogick8s/middleware/weblogic:duplicate");
 
       if (BaseTest.SHARED_CLUSTER) {
@@ -210,7 +210,8 @@ public class ITPodsRestart extends BaseTest {
             System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
 
         // tag image with repo name
-        TestUtils.exec("docker tag " + getImageName() + ":" + getImageTag() + " " + newImage);
+        TestUtils.exec(
+            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage);
 
         // login and push image to ocir
         TestUtils.loginAndPushImageToOCIR(newImage);
@@ -227,23 +228,24 @@ public class ITPodsRestart extends BaseTest {
 
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
-            "\"" + getImageName() + ":" + getImageTag() + "\"", "\"" + newImage + "\"");
+            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
+            "\"" + newImage + "\"");
       } else {
         TestUtils.exec(
             "docker tag "
-                + getImageName()
+                + getWeblogicImageName()
                 + ":"
-                + getImageTag()
+                + getWeblogicImageTag()
                 + " "
-                + getImageName()
+                + getWeblogicImageName()
                 + ":duplicate");
         domain.verifyDomainServerPodRestart(
-            "\"" + getImageName() + ":" + getImageTag() + "\"",
-            "\"" + getImageName() + ":duplicate" + "\"");
+            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
+            "\"" + getWeblogicImageName() + ":duplicate" + "\"");
       }
     } finally {
       if (!BaseTest.SHARED_CLUSTER) {
-        TestUtils.exec("docker rmi -f " + getImageName() + ":duplicate");
+        TestUtils.exec("docker rmi -f " + getWeblogicImageName() + ":duplicate");
       }
     }
 
