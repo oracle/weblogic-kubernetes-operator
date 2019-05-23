@@ -1384,8 +1384,8 @@ public class Domain {
    *     accessed to read or if creating config map or secret fails for configoverrides
    */
   protected void initialize(Map<String, Object> inputDomainMap) throws Exception {
-    imageTag = BaseTest.getImageTag();
-    imageName = BaseTest.getImageName();
+    imageTag = BaseTest.getWeblogicImageTag();
+    imageName = BaseTest.getWeblogicImageName();
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
