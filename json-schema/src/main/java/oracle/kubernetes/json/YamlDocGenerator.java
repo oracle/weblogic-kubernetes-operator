@@ -104,7 +104,9 @@ public class YamlDocGenerator {
 
   String generateForProperty(String fieldName, Map<String, Object> subSchema) {
     return "| "
-        + "`" + fieldName + "`"
+        + "`"
+        + fieldName
+        + "`"
         + " | "
         + emptyIfNull(getType(fieldName, subSchema))
         + " | "
