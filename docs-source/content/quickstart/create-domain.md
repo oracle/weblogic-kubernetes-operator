@@ -22,7 +22,7 @@ Follow the directions in the [sample]({{< relref "/samples/simple/domains/domain
 including:
 
     * Copying the sample `kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
-domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`store/oracle/weblogic:12.2.1.3`).
+domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`container-registry.oracle.com/middleware/weblogic:12.2.1.3`).
 
     * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials, in this case, `sample-domain1-weblogic-credentials`.
 
