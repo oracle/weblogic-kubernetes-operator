@@ -76,21 +76,21 @@ function clean_shared_cluster {
 function pull_tag_images {
 
   set +x 
-  if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
+  if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ] || [ -z "$OCR_EMAIL" ]; then
 	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
-		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
+		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables OCR_USERNAME, OCR_PASSWORD and OCR_EMAIL to pull the image."
 	  	exit 1
 	fi
   fi
   
-  if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ] && [ -n "$DOCKER_EMAIL" ]; then  
+  if [ -n "$OCR_USERNAME" ] && [ -n "$OCR_PASSWORD" ] && [ -n "$OCR_EMAIL" ]; then  
 	  echo "Creating Docker Secret"
 	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
 	    --docker-server=${WL_DOCKER_SERVER}/ \
-	    --docker-username=$DOCKER_USERNAME \
-	    --docker-password=$DOCKER_PASSWORD \
-	    --docker-email=$DOCKER_EMAIL 
+	    --docker-username=$OCR_USERNAME \
+	    --docker-password=$OCR_PASSWORD \
+	    --docker-email=$OCR_EMAIL 
 	  
 	  echo "Checking Secret"
 	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
@@ -99,7 +99,7 @@ function pull_tag_images {
 	    exit 1
 	  fi
 	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
-	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD ${WL_DOCKER_SERVER}
+	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}
    	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
@@ -149,7 +149,7 @@ set +x
 	  echo "Creating Docker Secret"
 	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_ORACLEDB  \
-	    --docker-server=${WL_DOCKER_SERVER}/ \
+	    --docker-server=index.docker.io/v1/ \
 	    --docker-username=$DOCKER_USERNAME \
 	    --docker-password=$DOCKER_PASSWORD \
 	    --docker-email=$DOCKER_EMAIL 
