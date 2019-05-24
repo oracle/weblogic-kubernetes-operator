@@ -28,14 +28,25 @@ and accept the license agreement for the [WebLogic Server image](https://hub.doc
     $ docker pull traefik:1.7.6
     ```
 
-1. From the [Oracle Container Registry](https://container-registry.oracle.com), pull the WebLogic 12.2.1.3 install image with the `190111` tag:
+1. Log into the [Oracle Container Registry](https://container-registry.oracle.com). First time users,
+follow these [directions](https://docs.oracle.com/cd/E37670_01/E75728/html/oracle-registry-server.html).
+
+    a. Accept the Oracle Standard Terms and Restrictions.
+
+     ```bash
+     $ docker login container-registry.oracle.com
+     ```
+
+     b. Provide the same credentials that you used to log into the web interface.
+
+1. Find and then pull the WebLogic 12.2.1.3 install image:
 
     ```bash
-    $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111
+    $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.3
     ```  
 
 
-    {{% notice note %}} The WebLogic Docker image, `weblogic:12.2.1.3-190111`, has all the necessary patches applied.
+    {{% notice note %}} The WebLogic Docker image, `weblogic:12.2.1.3`, has all the necessary patches applied.
     {{% /notice %}}
 
 
