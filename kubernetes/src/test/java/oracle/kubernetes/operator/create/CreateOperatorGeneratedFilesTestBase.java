@@ -215,7 +215,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("ISTIO_ENABLED")
-                                                .value("false")
+                                                .value("false"))
                                         .resources(
                                             new V1ResourceRequirements()
                                                 .putRequestsItem("cpu", Quantity.fromString("100m"))
