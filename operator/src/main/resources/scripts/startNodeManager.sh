@@ -249,7 +249,6 @@ EOF
     admin_protocol="http"
     if [ "${ADMIN_PORT_SECURE}" = "true" ]; then
       admin_protocol="https"
-      fi
     fi  
     if [ "${ISTIO_ENABLED}" == "true" ]; then
       echo "AdminURL=t3\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
@@ -257,9 +256,6 @@ EOF
       echo "AdminURL=$admin_protocol\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
     fi
   fi
-fi
-
-
 
 ###############################################################################
 #
