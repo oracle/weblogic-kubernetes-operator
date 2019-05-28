@@ -256,6 +256,7 @@ EOF
       echo "AdminURL=$admin_protocol\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
     fi
   fi
+fi
 
 ###############################################################################
 #
