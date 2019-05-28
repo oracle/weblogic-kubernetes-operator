@@ -27,6 +27,7 @@ DomainSpec is a description of a domain.
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
+| `istioEnabled` | Boolean | True if this domain is deployed under Istio. Defaults to false. |
 | `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true.  |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for the managed servers. |
