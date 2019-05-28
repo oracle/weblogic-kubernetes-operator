@@ -193,6 +193,9 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
 
+  @Description("True if this domain is deployed under Istio. Defaults to false.")
+  private Boolean istioEnabled;
+
   /**
    * Adds a Cluster to the DomainSpec.
    *
@@ -422,6 +425,10 @@ public class DomainSpec extends BaseConfiguration {
     return Optional.ofNullable(domainHomeInImage).orElse(true);
   }
 
+  boolean istioEnabled() {
+    return Optional.ofNullable(istioEnabled).orElse(false);
+  }
+
   /**
    * Specifies whether the domain home is stored in the image.
    *
@@ -520,7 +527,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets);
+            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("istioEnabled", istioEnabled);
 
     return builder.toString();
   }
@@ -546,7 +554,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled)
             .append(includeServerOutInPodLog)
             .append(configOverrides)
-            .append(configOverrideSecrets);
+            .append(configOverrideSecrets)
+            .append(istioEnabled);
 
     return builder.toHashCode();
   }
@@ -580,7 +589,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets);
+            .append(configOverrideSecrets, rhs.configOverrideSecrets)
+            .append(istioEnabled, rhs.istioEnabled);
 
     return builder.isEquals();
   }

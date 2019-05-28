@@ -1145,6 +1145,10 @@ window.onload = function() {
           "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name",
           "type": "string"
         },
+        "istioEnabled": {
+          "description": "True if this domain is deployed under Istio. Defaults to false.",
+          "type": "boolean"
+        },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
           "type": "string",

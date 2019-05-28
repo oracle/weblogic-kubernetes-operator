@@ -134,3 +134,6 @@ createDomainScriptName: create-domain-job.sh
 # Kubernetes config map, which in turn is mounted to the `createDomainScriptsMountPath`,
 # so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
 createDomainFilesDir: wlst
+
+# istioEnabled specifies whether or not it is deployed under Istio.
+istioEnabled: false
