@@ -40,6 +40,8 @@ spec:
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
         {{- end }}
+        - name: ISTIO_ENABLED
+          value: {{ .istioEnabled | quote }}
         {{- if .mockWLS }}
         - name: "MOCK_WLS"
           value: "true"
