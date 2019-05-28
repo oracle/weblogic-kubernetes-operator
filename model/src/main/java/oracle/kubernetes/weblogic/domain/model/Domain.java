@@ -349,6 +349,10 @@ public class Domain {
     return spec.isDomainHomeInImage();
   }
 
+  public boolean istioEnabled() {
+    return spec.istioEnabled();
+  }
+
   /**
    * Returns the domain home.
    *

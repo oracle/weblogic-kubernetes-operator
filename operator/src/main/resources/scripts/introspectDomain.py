@@ -837,7 +837,7 @@ class SitConfigGenerator(Generator):
     # FWIW there's theoretically no need to 'add' or 'replace' when empty
     #   since the runtime default is the server listen-address.
     nap_name=nap.getName()
-    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0:
+    if not (nap.getListenAddress() is None) and len(nap.getListenAddress()) > 0 and not (nap_name.startswith('istio-')) and not (nap_name == 'T3Channel'):
       self.writeln("<d:network-access-point>")
       self.indent()
       self.writeln("<d:name>" + nap_name + "</d:name>")
