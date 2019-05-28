@@ -59,8 +59,7 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
         .addVolumeMountsItem(newVolumeMount().name("log-dir").mountPath("/logs").readOnly(false))
         .addEnvItem(
             newEnvVar().name("REMOTE_DEBUG_PORT").value(getInputs().getInternalDebugHttpPort()))
-        .addEnvItem(
-            newEnvVar().name("ISTIO_ENABLED").value("false"));
+        .addEnvItem(newEnvVar().name("ISTIO_ENABLED").value("false"));
     expected
         .getSpec()
         .getTemplate()
