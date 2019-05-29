@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 # Include common utility functions
-#source ${CREATE_DOMAIN_SCRIPT_DIR}/utility.sh
+source ${CREATE_DOMAIN_SCRIPT_DIR}/utility.sh
 
 export DOMAIN_HOME=${DOMAIN_HOME_DIR}
 
