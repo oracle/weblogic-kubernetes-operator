@@ -5,6 +5,7 @@ query_sync:
   url: http://coordinator:8999/
   refreshInterval: 5
 metricsNameSnakeCase: true
+restPort: 8001
 queries:
 - JVMRuntime:
     key: name
