@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 # Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -43,6 +43,35 @@ function setup_jenkins {
   rm -rf /tmp/helm
   helm init
   echo "Helm is configured."
+}
+
+function docker_login {
+
+  set +x 
+  if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
+        echo "DOCKER_USERNAME and DOCKER_PASSWORD not set !!!"
+	exit 1
+  fi
+  
+  if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then  
+	  echo "Creating Docker Secret"
+	  
+	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
+	    --docker-server=index.docker.io/v1/ \
+	    --docker-username=$DOCKER_USERNAME \
+	    --docker-password=$DOCKER_PASSWORD
+	  
+	  echo "Checking Secret"
+	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
+	  if [ "$SECRET" != "1" ]; then
+	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
+	    exit 1
+	  fi
+	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
+	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  fi
+  set -x
+
 }
 
 function setup_shared_cluster {
@@ -98,7 +127,9 @@ function pull_tag_images {
 	    exit 1
 	  fi
 	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
+          echo "docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}"
 	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}
+          echo "docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
    	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
@@ -220,6 +251,8 @@ fi
 export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
 
 echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPERATOR JAR_VERSION $JAR_VERSION
+
+docker_login
   
 if [ "$SHARED_CLUSTER" = "true" ]; then
   
