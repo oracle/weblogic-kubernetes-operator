@@ -288,8 +288,8 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 		fi
   	fi 
   	
-  	if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
-		echo "Provide Docker login details using DOCKER_USERNAME, DOCKER_PASSWORD & DOCKER_EMAIL env variables to push the Operator image to the repository."
+  	if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
+		echo "Provide Docker login details using OCR_USERNAME & OCR_PASSWORD env variables to push the Operator image to the repository."
 		exit 1
 	fi
 	
