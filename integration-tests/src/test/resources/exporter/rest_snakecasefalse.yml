@@ -4,6 +4,7 @@
 query_sync:
   url: http://coordinator:8999/
   refreshInterval: 5
+restPort: 8001
 queries:
 - applicationRuntimes:
     key: name
