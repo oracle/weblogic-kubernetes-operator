@@ -39,7 +39,7 @@ public abstract class BaseConfiguration {
       "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.")
   @SerializedName("serverService")
   @Expose
-  private KubernetesResource serverService = new KubernetesResource();
+  private ServerService serverService = new ServerService();
 
   /** Desired startup state. Legal values are RUNNING or ADMIN. */
   @EnumClass(ServerStartState.class)
@@ -229,12 +229,8 @@ public abstract class BaseConfiguration {
     serverPod.addAnnotations(name, value);
   }
 
-  public void setServerService(KubernetesResource serverService) {
-    this.serverService = serverService;
-  }
-
-  public KubernetesResource getServerService() {
-    return serverService;
+  public Boolean isPrecreateServerService() {
+    return serverService.isPrecreateService();
   }
 
   public Map<String, String> getServiceLabels() {

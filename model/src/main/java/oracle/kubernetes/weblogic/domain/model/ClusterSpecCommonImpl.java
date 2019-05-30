@@ -21,6 +21,11 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   }
 
   @Override
+  public Boolean isPrecreateServerService() {
+    return cluster.isPrecreateServerService();
+  }
+
+  @Override
   public Map<String, String> getServiceLabels() {
     return cluster.getServiceLabels();
   }
