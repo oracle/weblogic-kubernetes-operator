@@ -24,6 +24,9 @@ import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /**
  * Operator's mapping between custom resource Domain and runtime details about that domain,
@@ -467,6 +470,7 @@ public class DomainPresenceInfo {
     public final WlsServerConfig serverConfig;
     private String clusterName;
     private ServerSpec serverSpec;
+    private boolean isServiceOnly;
 
     /**
      * Create server startup info.
@@ -477,9 +481,26 @@ public class DomainPresenceInfo {
      */
     public ServerStartupInfo(
         WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
+      this(serverConfig, clusterName, serverSpec, false);
+    }
+
+    /**
+     * Create server startup info.
+     *
+     * @param serverConfig Server config scan
+     * @param clusterName the name of the cluster
+     * @param serverSpec the server startup configuration
+     * @param isServiceOnly true, if only the server service should be created
+     */
+    public ServerStartupInfo(
+        WlsServerConfig serverConfig,
+        String clusterName,
+        ServerSpec serverSpec,
+        boolean isServiceOnly) {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
       this.serverSpec = serverSpec;
+      this.isServiceOnly = isServiceOnly;
     }
 
     public String getServerName() {
@@ -501,6 +522,50 @@ public class DomainPresenceInfo {
 
     public List<V1EnvVar> getEnvironment() {
       return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
+    }
+
+    public boolean isServiceOnly() {
+      return isServiceOnly;
+    }
+
+    @Override
+    public String toString() {
+      return new ToStringBuilder(this)
+          .append("serverConfig", serverConfig)
+          .append("clusterName", clusterName)
+          .append("serverSpec", serverSpec)
+          .append("isServiceOnly", isServiceOnly)
+          .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      ServerStartupInfo that = (ServerStartupInfo) o;
+
+      return new EqualsBuilder()
+          .append(serverConfig, that.serverConfig)
+          .append(clusterName, that.clusterName)
+          .append(serverSpec, that.serverSpec)
+          .append(isServiceOnly, that.isServiceOnly)
+          .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder(17, 37)
+          .append(serverConfig)
+          .append(clusterName)
+          .append(serverSpec)
+          .append(isServiceOnly)
+          .toHashCode();
     }
   }
 }
