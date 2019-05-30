@@ -573,10 +573,10 @@ public class JrfInOperatorTest extends BaseTest {
 
       domain11 = new JRFDomain(domainMap);
       domain11.verifyDomainCreated();
-      testBasicUseCases(domain11);
-      //  Bug 29591809
-      // TODO: re-enable the test once the bug is fixed
-      // testAdminT3ChannelWithJMS(domain11);
+
+      testAdminT3Channel(domain11);
+      testAdminServerExternalService(domain11);
+
       testCompletedSuccessfully = true;
 
     } finally {
