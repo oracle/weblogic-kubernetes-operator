@@ -184,7 +184,8 @@ public class ITPodsRestart extends BaseTest {
   /**
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
    * Verify that all the server pods in the domain got re-started .The property tested is: image:
-   * "store/oracle/weblogic:12.2.1.3" --> image: "store/oracle/weblogic:duplicate"
+   * "container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111" --> image:
+   * "container-registry.oracle.com/middleware/weblogic:duplicate"
    *
    * @throws Exception
    */
@@ -198,14 +199,19 @@ public class ITPodsRestart extends BaseTest {
       logger.info(
           "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
-              + "  Image property: store/oracle/weblogic:12.2.1.3 to store/oracle/weblogic:duplicate");
+              + "  Image property: "
+              + getWeblogicImageName()
+              + ":"
+              + getWeblogicImageTag()
+              + " to /weblogick8s/middleware/weblogic:duplicate");
 
       if (BaseTest.SHARED_CLUSTER) {
         String newImage =
-            System.getenv("REPO_REGISTRY") + "/weblogick8s/store/oracle/weblogic:duplicate";
+            System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
 
         // tag image with repo name
-        TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 " + newImage);
+        TestUtils.exec(
+            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage);
 
         // login and push image to ocir
         TestUtils.loginAndPushImageToOCIR(newImage);
@@ -222,15 +228,24 @@ public class ITPodsRestart extends BaseTest {
 
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
-            "\"store/oracle/weblogic:12.2.1.3\"", "\"" + newImage + "\"");
+            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
+            "\"" + newImage + "\"");
       } else {
-        TestUtils.exec("docker tag store/oracle/weblogic:12.2.1.3 store/oracle/weblogic:duplicate");
+        TestUtils.exec(
+            "docker tag "
+                + getWeblogicImageName()
+                + ":"
+                + getWeblogicImageTag()
+                + " "
+                + getWeblogicImageName()
+                + ":duplicate");
         domain.verifyDomainServerPodRestart(
-            "\"store/oracle/weblogic:12.2.1.3\"", "\"store/oracle/weblogic:duplicate\"");
+            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
+            "\"" + getWeblogicImageName() + ":duplicate" + "\"");
       }
     } finally {
       if (!BaseTest.SHARED_CLUSTER) {
-        TestUtils.exec("docker rmi -f store/oracle/weblogic:duplicate");
+        TestUtils.exec("docker rmi -f " + getWeblogicImageName() + ":duplicate");
       }
     }
 
