@@ -6,12 +6,14 @@ package oracle.kubernetes.operator;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 
+import io.kubernetes.client.models.V1Pod;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Step;
 
 /** A test stub for processing domains in unit tests. */
 public abstract class DomainProcessorDelegateStub implements DomainProcessorDelegate {
@@ -32,7 +34,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
 
   @Override
   public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
-    return (pod, next) -> next;
+    return new PassthroughPodAwaiterStepFactory();
   }
 
   @Override
@@ -49,5 +51,17 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   public ScheduledFuture<?> scheduleWithFixedDelay(
       Runnable command, long initialDelay, long delay, TimeUnit unit) {
     return testSupport.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+  }
+
+  private static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
+    @Override
+    public Step waitForReady(V1Pod pod, Step next) {
+      return next;
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return next;
+    }
   }
 }

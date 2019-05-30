@@ -76,22 +76,14 @@ public class PodHelperTest {
   // from the pod (if any) in the SKO.
 
   @Test
-  public void afterDeletePodStepRun_removePodFromSko() {
+  public void afterDeletePodStepRun_markedForDeleteInSko() {
     testSupport.defineResources(pod);
     domainPresenceInfo.setServerPod(SERVER_NAME, pod);
 
     testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
 
-    MatcherAssert.assertThat(domainPresenceInfo.getServerPod(SERVER_NAME), nullValue());
-  }
-
-  @Test
-  public void whenPodNotFound_removePodFromSko() {
-    domainPresenceInfo.setServerPod(SERVER_NAME, pod);
-
-    testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
-
-    MatcherAssert.assertThat(domainPresenceInfo.getServerPod(SERVER_NAME), nullValue());
+    MatcherAssert.assertThat(
+        domainPresenceInfo.isServerPodBeingDeleted(SERVER_NAME), is(Boolean.TRUE));
   }
 
   @Test

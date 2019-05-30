@@ -102,7 +102,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> terminalStep);
+        new NullPodAwaiterStepFactory(terminalStep));
 
     expectDeletePod(getPodName()).returning(new V1Status());
     expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
@@ -117,7 +117,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> terminalStep);
+        new NullPodAwaiterStepFactory(terminalStep));
 
     V1Pod existingPod = createPod(testSupport.getPacket());
     mutator.mutate(existingPod);
@@ -146,7 +146,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> terminalStep);
+        new NullPodAwaiterStepFactory(terminalStep));
 
     initializeExistingPod(getIncompatiblePod());
     expectDeletePod(getPodName()).failingWithStatus(CallBuilder.NOT_FOUND);

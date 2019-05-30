@@ -33,7 +33,7 @@ DomainSpec is a description of a domain.
 | `replicas` | number | The number of managed servers to run in any cluster that does not specify a replica count. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods |
-| `serverService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for WebLogic server instances. |
+| `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 | `webLogicCredentialsSecret` | [Secret Reference](k8s1.13.5.md#secret-reference) | The name of a pre-created Kubernetes secret, in the domain's namepace, that holds the username and password needed to boot WebLogic Server under the 'username' and 'password' fields. |
@@ -60,7 +60,7 @@ AdminServer represents the operator configuration for the admin server.
 | `adminService` | [Admin Service](#admin-service) | Configures which of the admin server's WebLogic admin channels should be exposed outside the Kubernetes cluster via a node port service. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods |
-| `serverService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for WebLogic server instances. |
+| `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
@@ -76,7 +76,7 @@ An element representing a cluster in the domain configuration.
 | `replicas` | number | The number of managed servers to run in this cluster. |
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods |
-| `serverService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for WebLogic server instances. |
+| `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
@@ -89,7 +89,7 @@ ManagedServer represents the operator configuration for a single managed server.
 | `restartVersion` | string | If present, every time this value is updated the operator will restart the required servers. |
 | `serverName` | string | The name of the server. Required |
 | `serverPod` | [Server Pod](#server-pod) | Configuration affecting server pods |
-| `serverService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting ClusterIP Kubernetes services for WebLogic server instances. |
+| `serverService` | [Server Service](#server-service) | Customization affecting ClusterIP Kubernetes services for WebLogic server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
@@ -114,12 +114,13 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `volumeMounts` | array of [Volume Mount](k8s1.13.5.md#volume-mount) | Additional volume mounts for the server pod. |
 | `volumes` | array of [Volume](k8s1.13.5.md#volume) | Additional volumes to be created in the server pod. |
 
-### Kubernetes Resource
+### Server Service
 
 | Name | Type | Description |
 | --- | --- | --- |
 | `annotations` | Map | The annotations to be attached to generated resources. |
 | `labels` | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
+| `precreateService` | Boolean | If true, operator will create server services even for server instances without running pods. |
 
 ### Domain Condition
 
@@ -149,6 +150,13 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | `annotations` | Map | Annotations to associate with the external channel service |
 | `channels` | array of [Channel](#channel) | Specifies which of the admin server's WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server's node port service will not be created. |
 | `labels` | Map | Labels to associate with the external channel service |
+
+### Kubernetes Resource
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `annotations` | Map | The annotations to be attached to generated resources. |
+| `labels` | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
 
 ### Probe Tuning
 
