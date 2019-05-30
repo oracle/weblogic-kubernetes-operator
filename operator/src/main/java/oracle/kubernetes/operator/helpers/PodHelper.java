@@ -4,13 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodCondition;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1PodStatus;
+import io.kubernetes.client.models.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +13,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -422,16 +417,15 @@ public class PodHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      V1Pod oldPod = info.removeServerPod(serverName);
+      V1Pod oldPod = info.getServerPod(serverName);
 
       long gracePeriodSeconds = Shutdown.DEFAULT_TIMEOUT;
-      String serverName = null;
       String clusterName = null;
       if (oldPod != null) {
         Map<String, String> labels = oldPod.getMetadata().getLabels();
         if (labels != null) {
-          serverName = labels.get(LabelConstants.SERVERNAME_LABEL);
           clusterName = labels.get(LabelConstants.CLUSTERNAME_LABEL);
         }
 
@@ -448,6 +442,7 @@ public class PodHelper {
         }
 
         String name = oldPod.getMetadata().getName();
+        info.setServerPodBeingDeleted(serverName, Boolean.TRUE);
         return doNext(deletePod(name, info.getNamespace(), gracePeriodSeconds, getNext()), packet);
       } else {
         return doNext(packet);
@@ -455,9 +450,29 @@ public class PodHelper {
     }
 
     private Step deletePod(String name, String namespace, long gracePeriodSeconds, Step next) {
+
+      Step conflictStep =
+          new CallBuilder()
+              .readPodAsync(
+                  name,
+                  namespace,
+                  new DefaultResponseStep<>(next) {
+                    @Override
+                    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+                      V1Pod pod = callResponse.getResult();
+
+                      if (pod != null && !PodHelper.isDeleting(pod)) {
+                        // pod still needs to be deleted
+                        return doNext(DeletePodStep.this, packet);
+                      }
+                      return super.onSuccess(packet, callResponse);
+                    }
+                  });
+
       V1DeleteOptions deleteOptions = new V1DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       return new CallBuilder()
-          .deletePodAsync(name, namespace, deleteOptions, new DefaultResponseStep<>(next));
+          .deletePodAsync(
+              name, namespace, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
     }
   }
 
