@@ -186,7 +186,7 @@ public abstract class PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> next);
+        new PassthroughPodAwaiterStepFactory());
 
     onAdminExpectListPersistentVolume();
   }
@@ -416,7 +416,7 @@ public abstract class PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> terminalStep);
+        new NullPodAwaiterStepFactory(terminalStep));
 
     testSupport
         .createCannedResponse("patchPod")
@@ -1126,6 +1126,36 @@ public abstract class PodHelperTestBase {
         actualInstructions.add(new Gson().toJson((JsonElement) instruction));
 
       return actualInstructions.equals(expectedInstructions);
+    }
+  }
+
+  protected static class NullPodAwaiterStepFactory implements PodAwaiterStepFactory {
+    private final Step n;
+
+    NullPodAwaiterStepFactory(Step next) {
+      this.n = next;
+    }
+
+    @Override
+    public Step waitForReady(V1Pod pod, Step next) {
+      return n;
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return n;
+    }
+  }
+
+  protected static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
+    @Override
+    public Step waitForReady(V1Pod pod, Step next) {
+      return next;
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return next;
     }
   }
 }
