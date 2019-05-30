@@ -197,8 +197,13 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    // scale cluster to 1 managed server only to test functionality of the exporter without
+    // coordinator layer
+    scaleCluster(1);
+
     // make sure some config is there
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_jvm.yml");
+
     assertTrue(page.asText().contains("JVMRuntime"));
     assertFalse(page.asText().contains("WebAppComponentRuntime"));
     // run append
@@ -228,6 +233,8 @@ public class ITMonitoringExporter extends BaseTest {
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
 
+    resetMonitoringExporterToPreBuiltConfig();
+
     HtmlPage page =
         submitConfigureForm(exporterUrl, "replace", configPath + "/rest_oneattribval.yml");
     assertTrue(page.asText().contains("values: invocationTotalCount"));
@@ -249,6 +256,7 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    resetMonitoringExporterToPreBuiltConfig();
     HtmlPage page =
         submitConfigureForm(exporterUrl, "replace", configPath + "/rest_oneattribval.yml");
     assertTrue(page.asText().contains("values: invocationTotalCount"));
@@ -269,6 +277,7 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    resetMonitoringExporterToPreBuiltConfig();
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configPath + "/rest_empty.yml");
     assertTrue(page.asText().contains("queries:") && !page.asText().contains("values"));
     testCompletedSuccessfully = true;
@@ -286,6 +295,7 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    resetMonitoringExporterToPreBuiltConfig();
     final WebClient webClient = new WebClient();
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
@@ -306,6 +316,7 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "append", configPath + "/rest_notymlformat.yml", "Configuration is not in YAML format");
     testCompletedSuccessfully = true;
@@ -323,6 +334,7 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "replace", configPath + "/rest_notymlformat.yml", "Configuration is not in YAML format");
   }
@@ -358,6 +370,7 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "replace",
         configPath + "/rest_notyml.yml",
@@ -377,6 +390,7 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "replace",
         configPath + "/rest_dublicatedval.yml",
@@ -396,6 +410,7 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    resetMonitoringExporterToPreBuiltConfig();
     changeConfigNegative(
         "append",
         configPath + "/rest_dublicatedval.yml",
@@ -416,6 +431,7 @@ public class ITMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
+    resetMonitoringExporterToPreBuiltConfig();
     final WebClient webClient = new WebClient();
     HtmlPage originalPage = webClient.getPage(exporterUrl);
     assertNotNull(originalPage);
@@ -608,6 +624,8 @@ public class ITMonitoringExporter extends BaseTest {
     HtmlPage page2 = button.click();
     assertNotNull(page2);
     assertFalse((page2.asText()).contains("Error 500--Internal Server Error"));
+    // wait time for coordinator to update both managed configuration
+    Thread.sleep(15 * 1000);
     return page2;
   }
 
@@ -643,7 +661,7 @@ public class ITMonitoringExporter extends BaseTest {
         logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
         // git clone exporter project
         removeAndClone
-            .append(" git clone  https://github.com/oracle/weblogic-monitoring-exporter.git ")
+            .append(" git clone   https://github.com/oracle/weblogic-monitoring-exporter.git ")
             .append(monitoringExporterSrcDir);
         TestUtils.exec(removeAndClone.toString());
       }
@@ -719,6 +737,21 @@ public class ITMonitoringExporter extends BaseTest {
     logger.info("command result " + result.stdout().trim());
     domain.deployWebAppViaREST(
         "wlsexporter", exporterAppPath, BaseTest.getUsername(), BaseTest.getPassword());
+  }
+
+  private static void redeployMonitoringExporter(Domain domain) throws Exception {
+    String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
+
+    domain.undeployWebAppViaREST(
+        "wlsexporter", exporterAppPath, BaseTest.getUsername(), BaseTest.getPassword());
+    domain.deployWebAppViaREST(
+        "wlsexporter", exporterAppPath, BaseTest.getUsername(), BaseTest.getPassword());
+    // check if exporter is up
+    domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
+  }
+
+  private static void resetMonitoringExporterToPreBuiltConfig() throws Exception {
+    redeployMonitoringExporter(domain);
   }
 
   private static void deletePrometheusGrafana() throws Exception {
@@ -844,6 +877,17 @@ public class ITMonitoringExporter extends BaseTest {
 
     logger.info(" upgradeTraefikNamespace() Running " + cmd.toString());
     TestUtils.exec(cmd.toString());
+  }
+
+  /**
+   * call operator to scale to specified number of replicas
+   *
+   * @param replicas - number of managed servers
+   * @throws Exception
+   */
+  private void scaleCluster(int replicas) throws Exception {
+    logger.info("Scale up/down to " + replicas + " managed servers");
+    operator.scale(domain.getDomainUid(), domain.getClusterName(), replicas);
   }
 
   /**
