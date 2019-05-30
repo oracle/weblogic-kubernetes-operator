@@ -6,7 +6,6 @@ import sys
 
 import com.oracle.cie.domain.script.jython.WLSTException as WLSTException
 
-
 class Infra12213Provisioner:
 
     MACHINES = {
@@ -29,17 +28,22 @@ class Infra12213Provisioner:
         'serverGroupsToTarget' : [ 'JRF-MAN-SVR', 'WSMPM-MAN-SVR' ]
     }
 
-    def __init__(self, oracleHome, javaHome, domainParentDir, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName, t3_channel_port):
+    def __init__(self, oracleHome, javaHome, domainParentDir, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName):
         self.oracleHome = self.validateDirectory(oracleHome)
         self.javaHome = self.validateDirectory(javaHome)
         self.domainParentDir = self.validateDirectory(domainParentDir, create=True)
         return
 
-    def createInfraDomain(self, domainName, user, password, db, dbPrefix, dbPassword, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName, t3_channel_port):
-        domainHome = self.createBaseDomain(domainName, user, password, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName, t3_channel_port)
-        self.extendDomain(domainHome, db, dbPrefix, dbPassword)
+    def createInfraDomain(self, domainName, user, password, db, dbPrefix, dbPassword, adminListenPort, adminName,
+                          managedNameBase, managedServerPort, prodMode, managedCount, clusterName,
+                          exposeAdminT3Channel=None, t3ChannelPublicAddress=None, t3ChannelPort=None):
+        domainHome = self.createBaseDomain(domainName, user, password, adminListenPort, adminName, managedNameBase,
+                                           managedServerPort, prodMode, managedCount, clusterName
+                                           )
+        self.extendDomain(domainHome, db, dbPrefix, dbPassword, exposeAdminT3Channel, t3ChannelPublicAddress,
+                          t3ChannelPort)
 
-    def createBaseDomain(self, domainName, user, password, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName, t3_channel_port):
+    def createBaseDomain(self, domainName, user, password, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName):
         baseTemplate = self.replaceTokens(self.JRF_12213_TEMPLATES['baseTemplate'])
 
         readTemplate(baseTemplate)
@@ -62,20 +66,6 @@ class Infra12213Provisioner:
         #set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
         set('ListenPort', admin_port)
         set('Name', adminName)
-
-        create('T3Channel', 'NetworkAccessPoint')
-        cd('/Servers/%s/NetworkAccessPoints/T3Channel' % adminName)
-        set('PublicPort', t3_channel_port)
-        set('PublicAddress', 'junkvalue')
-        # Dont set listenaddress, introspector overrides automatically with sit-config
-        #set('ListenAddress', '%s-%s' % (domain_uid, admin_server_name_svc))
-        set('ListenPort', t3_channel_port)
-
-        cd('/Servers/%s' % adminName)
-        create(adminName,'Log')
-        cd('/Servers/%s/Log/%s' % (adminName, adminName))
-        # Give incorrect filelog, introspector overrides with sit-config
-        set('FileName', 'dirdoesnotexist')
 
         # Define the user password for weblogic
         # =====================================
@@ -127,11 +117,16 @@ class Infra12213Provisioner:
         return domainHome
 
 
-    def extendDomain(self, domainHome, db, dbPrefix, dbPassword):
+    def extendDomain(self, domainHome, db, dbPrefix, dbPassword, exposeAdminT3Channel, t3ChannelPublicAddress,
+                     t3ChannelPort):
         print 'Extending domain at ' + domainHome
         print 'Database  ' + db
         readDomain(domainHome)
         setOption('AppDir', self.domainParentDir + '/applications')
+
+        print 'ExposeAdminT3Channel %s with %s:%s ' % (exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort)
+        if 'true' == exposeAdminT3Channel:
+            self.enable_admin_channel(t3ChannelPublicAddress, t3ChannelPort)
 
         print 'Applying JRF templates...'
         for extensionTemplate in self.JRF_12213_TEMPLATES['extensionTemplates']:
@@ -212,6 +207,18 @@ class Infra12213Provisioner:
             result = path.replace('@@ORACLE_HOME@@', oracleHome)
         return result
 
+    def enable_admin_channel(self, admin_channel_address, admin_channel_port):
+        if admin_channel_address == None or admin_channel_port == 'None':
+            return
+        cd('/')
+        admin_server_name = get('AdminServerName')
+        print('setting admin server t3channel for ' + admin_server_name)
+        cd('/Servers/' + admin_server_name)
+        create('T3Channel', 'NetworkAccessPoint')
+        cd('/Servers/' + admin_server_name + '/NetworkAccessPoint/T3Channel')
+        set('ListenPort', int(admin_channel_port))
+        set('PublicPort', int(admin_channel_port))
+        set('PublicAddress', 'junkvalue')
 
 #############################
 # Entry point to the script #
@@ -223,24 +230,17 @@ def usage():
           '-rcuDb <rcu-database> -rcuPrefix <rcu-prefix> -rcuSchemaPwd <rcu-schema-password> ' \
           '-adminListenPort <adminListenPort> -adminName <adminName> ' \
           '-managedNameBase <managedNameBase> -managedServerPort <managedServerPort> -prodMode <prodMode> ' \
-          '-managedServerCount <managedCount> -clusterName <clusterName>'
+          '-managedServerCount <managedCount> -clusterName <clusterName> ' \
+          '-exposeAdminT3Channel <quoted true or false> -t3ChannelPublicAddress <address of the cluster> ' \
+          '-t3ChannelPort <t3 channel port> '
     sys.exit(0)
-
-def getEnvVar(var):
-  val=os.environ.get(var)
-  if val==None:
-    print "ERROR: Env var ",var, " not set."
-    sys.exit(1)
-  return val
-
-t3_channel_port = int(getEnvVar("T3_CHANNEL_PORT"))
 
 # Uncomment for Debug only
 #print str(sys.argv[0]) + " called with the following sys.argv array:"
 #for index, arg in enumerate(sys.argv):
 #    print "sys.argv[" + str(index) + "] = " + str(sys.argv[index])
 
-if len(sys.argv) < 16:
+if len(sys.argv) < 19:
     usage()
 
 #oracleHome will be passed by command line parameter -oh.
@@ -259,7 +259,9 @@ rcuDb = None
 rcuSchemaPrefix = 'DEV12'
 #change rcuSchemaPassword to your infra schema password. Command line parameter -rcuSchemaPwd.
 rcuSchemaPassword = None
-
+exposeAdminT3Channel = None
+t3ChannelPort = None
+t3ChannelPublicAddress = None
 i = 1
 while i < len(sys.argv):
     if sys.argv[i] == '-oh':
@@ -310,10 +312,21 @@ while i < len(sys.argv):
     elif sys.argv[i] == '-clusterName':
         clusterName = sys.argv[i + 1]
         i += 2
+    elif sys.argv[i] == '-t3ChannelPublicAddress':
+        t3ChannelPublicAddress = sys.argv[i + 1]
+        i += 2
+    elif sys.argv[i] == '-t3ChannelPort':
+        t3ChannelPort = sys.argv[i + 1]
+        i += 2
+    elif sys.argv[i] == '-exposeAdminT3Channel':
+        exposeAdminT3Channel = sys.argv[i + 1]
+        i += 2
     else:
         print 'Unexpected argument switch at position ' + str(i) + ': ' + str(sys.argv[i])
         usage()
         sys.exit(1)
 
-provisioner = Infra12213Provisioner(oracleHome, javaHome, domainParentDir, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName, t3_channel_port)
-provisioner.createInfraDomain(domainName, domainUser, domainPassword, rcuDb, rcuSchemaPrefix, rcuSchemaPassword, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName, t3_channel_port)
+provisioner = Infra12213Provisioner(oracleHome, javaHome, domainParentDir, adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount, clusterName)
+provisioner.createInfraDomain(domainName, domainUser, domainPassword, rcuDb, rcuSchemaPrefix, rcuSchemaPassword,
+                              adminListenPort, adminName, managedNameBase, managedServerPort, prodMode, managedCount,
+                              clusterName, exposeAdminT3Channel, t3ChannelPublicAddress, t3ChannelPort)

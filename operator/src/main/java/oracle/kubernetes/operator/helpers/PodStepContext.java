@@ -172,7 +172,21 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   Integer getAsPort() {
-    return domainTopology.getServerConfig(domainTopology.getAdminServerName()).getListenPort();
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .getLocalAdminProtocolChannelPort();
+  }
+
+  boolean isLocalAdminProtocolChannelSecure() {
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .isLocalAdminProtocolChannelSecure();
+  }
+
+  Integer getLocalAdminProtocolChannelPort() {
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .getLocalAdminProtocolChannelPort();
   }
 
   private String getLogHome() {
@@ -789,6 +803,9 @@ public abstract class PodStepContext extends StepContextBase {
     addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
     addEnvVar(vars, "ADMIN_NAME", getAsName());
     addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
+    if (isLocalAdminProtocolChannelSecure()) {
+      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+    }
     addEnvVar(vars, "SERVER_NAME", getServerName());
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
@@ -825,14 +842,21 @@ public abstract class PodStepContext extends StepContextBase {
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD)
-        .httpGet(httpGetAction(READINESS_PATH, getDefaultPort()));
+        .httpGet(
+            httpGetAction(
+                READINESS_PATH,
+                getLocalAdminProtocolChannelPort(),
+                isLocalAdminProtocolChannelSecure()));
     return readinessProbe;
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1HTTPGetAction httpGetAction(String path, int port) {
+  private V1HTTPGetAction httpGetAction(String path, int port, boolean useHTTPS) {
     V1HTTPGetAction getAction = new V1HTTPGetAction();
     getAction.path(path).port(new IntOrString(port));
+    if (useHTTPS) {
+      getAction.scheme("HTTPS");
+    }
     return getAction;
   }
 

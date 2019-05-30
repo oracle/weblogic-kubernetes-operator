@@ -174,6 +174,11 @@ public class DomainUpPlanTest {
     public Step waitForReady(V1Pod pod, Step next) {
       return null;
     }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return null;
+    }
   }
 
   @SuppressWarnings("unused")
