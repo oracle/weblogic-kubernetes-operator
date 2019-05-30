@@ -22,6 +22,10 @@ public class DefaultResponseStep<T> extends ResponseStep<T> {
     super(nextStep);
   }
 
+  public DefaultResponseStep(Step conflictStep, Step nextStep) {
+    super(conflictStep, nextStep);
+  }
+
   @Override
   public NextAction onFailure(Packet packet, CallResponse<T> callResponse) {
     return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
