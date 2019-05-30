@@ -71,6 +71,9 @@ public class ManagedServersUpStep extends Step {
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
         addToCluster(clusterName);
+      } else if (server.isPrecreateServerService()) {
+        servers.add(serverName);
+        addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server, true));
       }
     }
 
@@ -160,6 +163,7 @@ public class ManagedServersUpStep extends Step {
 
     info.setServerStartupInfo(factory.getStartupInfos());
     LOGGER.exiting();
+
     return doNext(
         NEXT_STEP_FACTORY.createServerStep(
             info, config, factory.servers, factory.createNextStep(getNext())),
@@ -196,8 +200,7 @@ public class ManagedServersUpStep extends Step {
 
   private static List<String> getServersToStop(
       DomainPresenceInfo info, List<String> serversToIgnore) {
-    return info.getServerPods()
-        .map(PodHelper::getPodServerName)
+    return info.getServerNames().stream()
         .filter(n -> !serversToIgnore.contains(n))
         .collect(Collectors.toList());
   }

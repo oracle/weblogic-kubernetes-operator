@@ -186,7 +186,7 @@ public abstract class PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> next);
+        new PassthroughPodAwaiterStepFactory());
 
     onAdminExpectListPersistentVolume();
   }
@@ -366,6 +366,23 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenPodCreatedWithAdminPortEnabled_readinessProbeHasReadinessCommand() {
+    final Integer ADMIN_PORT = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(ADMIN_PORT);
+    V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
+    assertThat(getAction.getPath(), equalTo("/weblogic/ready"));
+    assertThat(getAction.getPort().getIntValue(), equalTo(ADMIN_PORT));
+    assertThat(getAction.getScheme(), equalTo("HTTPS"));
+  }
+
+  @Test
+  public void whenPodCreatedWithAdminPortEnabled_adminPortSecureEnvVarIsTrue() {
+    final Integer ADMIN_PORT = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(ADMIN_PORT);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_PORT_SECURE", "true"));
+  }
+
+  @Test
   public void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
     configureServer()
         .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
@@ -399,7 +416,7 @@ public abstract class PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> terminalStep);
+        new NullPodAwaiterStepFactory(terminalStep));
 
     testSupport
         .createCannedResponse("patchPod")
@@ -1109,6 +1126,36 @@ public abstract class PodHelperTestBase {
         actualInstructions.add(new Gson().toJson((JsonElement) instruction));
 
       return actualInstructions.equals(expectedInstructions);
+    }
+  }
+
+  protected static class NullPodAwaiterStepFactory implements PodAwaiterStepFactory {
+    private final Step n;
+
+    NullPodAwaiterStepFactory(Step next) {
+      this.n = next;
+    }
+
+    @Override
+    public Step waitForReady(V1Pod pod, Step next) {
+      return n;
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return n;
+    }
+  }
+
+  protected static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
+    @Override
+    public Step waitForReady(V1Pod pod, Step next) {
+      return next;
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return next;
     }
   }
 }

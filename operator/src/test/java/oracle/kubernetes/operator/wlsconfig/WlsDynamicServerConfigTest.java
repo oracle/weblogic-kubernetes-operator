@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -83,5 +85,18 @@ public class WlsDynamicServerConfigTest {
     NetworkAccessPoint networkAccessPoint1 = wlsServerConfig.getNetworkAccessPoints().get(0);
     assertEquals(new Integer(9102), networkAccessPoint1.getListenPort());
     assertNull(networkAccessPoint1.getPublicPort());
+  }
+
+  @Test
+  public void verifyAdminPortIsSetOnServerConfigs() {
+    final int ADMIN_PORT = 9002;
+    List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
+    WlsServerConfig template =
+        new WlsServerConfig("template1", null, null, null, null, 9002, networkAccessPointList);
+
+    WlsServerConfig wlsServerConfig =
+        WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", true, template);
+
+    assertThat(wlsServerConfig.getAdminPort(), is(ADMIN_PORT));
   }
 }

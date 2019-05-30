@@ -159,6 +159,9 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
                 + ", got: "
                 + getMSPodsCount(domain1));
       }
+
+      testCompletedSuccessfully = true;
+
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
         domain1.destroy();
@@ -203,6 +206,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       logger.info("Creating Domain & verifying the domain creation");
       domain1 = new JRFDomain(domain1Map);
       domain1.verifyDomainCreated();
+
+      testCompletedSuccessfully = true;
 
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
@@ -249,6 +254,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1 = new JRFDomain(domain1Map);
       domain1.verifyDomainCreated();
 
+      testCompletedSuccessfully = true;
+
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
         domain1.destroy();
@@ -286,6 +293,13 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1Map.put(
           "createDomainPyScript",
           "integration-tests/src/test/resources/domain-home-on-pv/create-jrfdomain-admin-port-enabled.py");
+      // Use -Dweblogic.ssl.AcceptKSSDemoCertsEnabled=true so that managed servers can connect
+      // to admin server using SSL without running into host name verifcation check error
+      // in default JRF domain that uses KSS demo identity and trust
+      // https://docs.oracle.com/middleware/12213/wls/SECMG/kss.htm#SECMG673tm#ADMRF202
+      domain1Map.put(
+          "javaOptions",
+          "-Dweblogic.StdoutDebugEnabled=false -Dweblogic.ssl.AcceptKSSDemoCertsEnabled=true");
 
       // run RCU script to load db schema
       DBUtils.runRCU(rcuPodName, domain1Map);
@@ -294,6 +308,8 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       logger.info("Creating Domain & verifying the domain creation");
       domain1 = new JRFDomain(domain1Map, true);
       domain1.verifyDomainCreated();
+
+      testCompletedSuccessfully = true;
 
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
@@ -339,6 +355,9 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
 
       // verify the Admin T3Channel is exposed
       testAdminT3Channel(domain1);
+
+      testCompletedSuccessfully = true;
+
     } finally {
       if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
         domain1.destroy();
@@ -400,12 +419,13 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    */
   private int getMSPodsNotReadyCount(JRFDomain domain) throws Exception {
 
+    String domainuid = (String) domain.getDomainMap().get("domainUID");
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pods -n ")
         .append(domain.getDomainNS())
         .append(" | grep ")
-        .append(managedServerNameBase)
+        .append(domainuid + "-" + managedServerNameBase)
         .append(" | grep 0/1 | wc -l");
     ExecResult result = TestUtils.exec(cmd.toString());
 
@@ -421,12 +441,13 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    */
   private int getMSPodsRunningAndReadyCount(JRFDomain domain) throws Exception {
 
+    String domainuid = (String) domain.getDomainMap().get("domainUID");
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pods -n ")
         .append(domain.getDomainNS())
         .append(" | grep ")
-        .append(managedServerNameBase)
+        .append(domainuid + "-" + managedServerNameBase)
         .append(" | grep 1/1 | grep Running | wc -l");
     ExecResult result = TestUtils.exec(cmd.toString());
 
@@ -441,12 +462,13 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   private int getMSPodsCount(JRFDomain domain) throws Exception {
+    String domainuid = (String) domain.getDomainMap().get("domainUID");
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pods -n ")
         .append(domain.getDomainNS())
         .append(" | grep ")
-        .append(managedServerNameBase)
+        .append(domainuid + "-" + managedServerNameBase)
         .append(" | wc -l");
     ExecResult result = TestUtils.exec(cmd.toString());
 
