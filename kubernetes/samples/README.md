@@ -10,8 +10,8 @@ While these samples may be useful and usable as is, it is intended that you woul
 
 * [Sample for creating a Kubernetes secret](scripts/create-weblogic-domain-credentials/README.md) that contains the Administration Server credentials. This secret can be used in creating a WebLogic domain resource.
 * [Sample for creating a PV or PVC](scripts/create-weblogic-domain-pv-pvc/README.md) that can be used by a domain resource as the persistent storage for the WebLogic domain home or log files.
-* [Sample for creating a WebLogic domain home on an existing PV or PVC](scripts/create-weblogic-domain/domain-home-on-pv/README.md), and the domain resource YAML file for deploying the generated WebLogic domain.
-* [Sample for creating a WebLogic domain home inside a Docker image](scripts/create-weblogic-domain/domain-home-in-image/README.md), and the domain resource YAML file for deploying the generated WebLogic domain.
+* [Sample for creating a WebLogic domain home on an existing PV or PVC](../../docs-source/content/samples/simple/domains/domain-home-on-pv/_index.md), and the domain resource YAML file for deploying the generated WebLogic domain.
+* [Sample for creating a WebLogic domain home inside a Docker image](../../docs-source/content/samples/simple/domains/domain-home-in-image/_index.md), and the domain resource YAML file for deploying the generated WebLogic domain.
 * [Sample for configuring the Elasticsearch and Kibana](scripts/elasticsearch-and-kibana/README.md) deployments and services for the operator's logs.
 * [Sample for generating a self-signed certificate and private key](scripts/rest/README.md) that can be used for the operator's external REST API.
 * [Sample for creating an OKE cluster using Terraform](scripts/terraform/README.md).
