@@ -61,8 +61,8 @@ public class Domain {
   protected String userProjectsDir = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
-  private String imageTag = "12.2.1.3";
-  private String imageName = "store/oracle/weblogic";
+  private String imageTag;
+  private String imageName;
 
   protected String generatedInputYamlFile;
 
@@ -1384,6 +1384,8 @@ public class Domain {
    *     accessed to read or if creating config map or secret fails for configoverrides
    */
   protected void initialize(Map<String, Object> inputDomainMap) throws Exception {
+    imageTag = BaseTest.getWeblogicImageTag();
+    imageName = BaseTest.getWeblogicImageName();
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();
