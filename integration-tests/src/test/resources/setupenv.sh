@@ -138,64 +138,29 @@ function pull_tag_images {
 
 function pull_tag_images_jrf {
 
-set +x 
+  set +x
   # Check if fwm infra image exists
-  if [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ] || [ -z "$REPO_EMAIL" ]; then
+  if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
 	if [ -z $(docker images -q $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC) ]; then
-		echo "Image $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC doesn't exist. Provide Docker login details using env variables REPO_USERNAME, REPO_PASSWORD and REPO_EMAIL to pull the image."
+		echo "Image $IMAGE_NAME_FMWINFRA:$IMAGE_TAG_FMWINFRA doesn't exist. Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the image."
 	  	exit 1
 	fi
-  fi
-
-  # Create secret to pull fmw infra image if required env variables are provided
-  if [ -n "$REPO_USERNAME" ] && [ -n "$REPO_PASSWORD" ] && [ -n "$REPO_EMAIL" ]; then  
-		echo "Creating Registry Secret"
-    	kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-			    --docker-server=phx.ocir.io \
-			    --docker-username=$REPO_USERNAME \
-			    --docker-password=$REPO_PASSWORD \
-			    --docker-email=$REPO_EMAIL 
-	   	echo "Checking Secret"
-		SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-		if [ "$SECRET" != "1" ]; then
-		   echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-		   exit 1
-		fi
-
-		# pull fmw infra images
-		docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
-  fi
-	
-  # Check if OracleDB image exists
-  if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$DOCKER_EMAIL" ]; then
 	if [ -z $(docker images -q $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB) ]; then
-		echo "Image $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB doesn't exist. Provide Docker login details using env variables DOCKER_USERNAME, DOCKER_PASSWORD and DOCKER_EMAIL to pull the image."
-	  	exit 1
-	fi
+    	echo "Image $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB doesn't exist. Provide Docker login details using env variables OCR_USERNAME and OCR_PASSWORD to pull the image."
+      	exit 1
+    fi
   fi
-  
-  # Create secret to pull OracleDB image if required env variables are provided
-  if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ] && [ -n "$DOCKER_EMAIL" ]; then  
-	  echo "Creating Docker Secret"
-	  
-	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_ORACLEDB  \
-	    --docker-server=index.docker.io/v1/ \
-	    --docker-username=$DOCKER_USERNAME \
-	    --docker-password=$DOCKER_PASSWORD \
-	    --docker-email=$DOCKER_EMAIL 
-	  
-	  echo "Checking Secret"
-	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_ORACLEDB | grep $IMAGE_PULL_SECRET_ORACLEDB | wc | awk ' { print $1; }'`"
-	  if [ "$SECRET" != "1" ]; then
-	    echo "secret $IMAGE_PULL_SECRET_ORACLEDB was not created successfully"
-	    exit 1
-	  fi
-	  
-	  # pull oracle db image
-	  docker pull $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB
-  fi
-  set -x
 
+  # reuse the create secret logic
+  pull_tag_images
+
+  # pull fmw infra images
+  docker pull $IMAGE_NAME_FMWINFRA:$IMAGE_TAG_FMWINFRA
+
+  # pull oracle db image
+  docker pull $IMAGE_NAME_ORACLEDB:$IMAGE_TAG_ORACLEDB
+
+  set -x
 }
 
 function get_wlthint3client_from_image {
@@ -220,14 +185,14 @@ export BRANCH_NAME="${BRANCH_NAME:-$SHARED_CLUSTER_GIT_BRANCH}"
 export IMAGE_TAG_WEBLOGIC="${IMAGE_TAG_WEBLOGIC:-12.2.1.3-190111}"
 
 if [ "$JRF_ENABLED" = true ] ; then
-  export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-phx.ocir.io/weblogick8s/oracle/fmw-infrastructure}"
-  export IMAGE_PULL_SECRET_WEBLOGIC="ocir-store"
-  export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-store/oracle/database-enterprise}"
-  export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1}"
-  export IMAGE_PULL_SECRET_ORACLEDB="${IMAGE_PULL_SECRET_ORACLEDB:-docker-store}"
-  
+  export FMWINFRA_IMAGE_URI=/middleware/fmw-infrastructure
+  export IMAGE_TAG_FMWINFRA=12.2.1.3
+  export DB_IMAGE_URI=/database/enterprise
+  export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-`echo ${WL_DOCKER_SERVER}``echo ${DB_IMAGE_URI}`}"
+  export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1-slim}"
 fi
 export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-`echo ${WL_DOCKER_SERVER}``echo ${WLS_IMAGE_URI}`}"
+export IMAGE_NAME_FMWINFRA="${IMAGE_NAME_FMWINFRA:-`echo ${WL_DOCKER_SERVER}``echo ${FMWINFRA_IMAGE_URI}`}"
 export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
     
 if [ -z "$BRANCH_NAME" ]; then
