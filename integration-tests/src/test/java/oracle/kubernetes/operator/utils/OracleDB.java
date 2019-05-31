@@ -12,7 +12,8 @@ public class OracleDB {
   // DB default properties
   public static final String DEFAULT_DB_NAME = "infradb";
   public static final String DEFAULT_DB_NAMESPACE = "db";
-  public static final String DEFAULT_DB_IMAGE = "store/oracle/database-enterprise:12.2.0.1";
+  public static final String DEFAULT_DB_IMAGE =
+      "container-registry.oracle.com/database/enterprise:12.2.0.1-slim";
   public static final String DEFAULT_DB_PORT = "1521";
   public static final String DEFAULT_DB_SID = "InfraDB";
   public static final String DEFAULT_DB_PDB = "InfraPDB1";
