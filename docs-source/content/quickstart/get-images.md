@@ -30,7 +30,7 @@ and accept the license agreement for the [WebLogic Server image](https://hub.doc
 
 1. Obtain the WebLogic image from the [Oracle Container Registry](https://container-registry.oracle.com).
 
-    a. First time users, follow these [directions]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-or-obtaining-weblogic-docker-images" >}}).
+    a. First time users, follow these [directions]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
 
     b. Find and then pull the WebLogic 12.2.1.3 install image:
 
