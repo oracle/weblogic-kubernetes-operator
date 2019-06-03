@@ -91,7 +91,7 @@ public abstract class DomainValues {
         .clusterName("test-cluster")
         .clusterType(CLUSTER_TYPE_DYNAMIC)
         .domainName("TestDomain")
-        .weblogicImage("store/oracle/weblogic:19.1.0.0")
+        .weblogicImage("container-registry.oracle.com/middleware/weblogic:19.1.0.0")
         .domainUID("test-domain-uid")
         .javaOptions("TestJavaOptions")
         .loadBalancerDashboardPort("31315")
