@@ -13,7 +13,7 @@ exposeAdminT3Channel: true
 t3ChannelPort: 30014
 exposeAdminNodePort: true
 namespace: test2
-image: phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3
+image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
 ingressPerDomain: true
 rcuSchemaPrefix: jrfdomain2
 rcuDatabaseURL: infradb.db.svc.cluster.local:1521/InfraPDB1.us.oracle.com
