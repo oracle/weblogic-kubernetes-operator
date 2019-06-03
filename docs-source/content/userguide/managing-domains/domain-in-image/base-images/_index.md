@@ -59,14 +59,14 @@ If you choose this approach, you do not require the Kubernetes secret.
 The Oracle Container Registry contains images for licensed commercial Oracle software products that you may use in your enterprise. To access the Oracle Registry Server, you must have an Oracle Single Sign-On (SSO) account. The Oracle Container Registry provides a web interface that allows an administrator to authenticate and then to select the images for the software that your organization wishes to use. Oracle Standard Terms and Restrictions terms must be agreed to via the web interface. After the Oracle Standard Terms and Restrictions have been accepted, you can pull images of the software from the Oracle Container Registry using the standard Docker pull command.
 
 To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
-using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, click the Sign In link to create them.  
+using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
 
 Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
 Your acceptance of these terms are stored in a database that links the software images to your Oracle Single Sign-On login credentials.
 
 The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image which already has the necessary patches applied.
 
-First, you will need to log in to the Oracle Container Registry:
+First, you will need to log into the Oracle Container Registry:
 
 ```
 $ docker login container-registry.oracle.com
