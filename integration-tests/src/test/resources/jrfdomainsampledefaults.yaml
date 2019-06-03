@@ -9,3 +9,4 @@ ingressPerDomain: true
 voyagerWebPort: 30310
 rcuSchemaPrefix: jrfsampledef
 rcuDatabaseURL: infradb.db.svc.cluster.local:1521/InfraPDB1.us.oracle.com
+image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3

@@ -19,6 +19,6 @@ loadBalancer: TRAEFIK
 ingressPerDomain: true
 voyagerWebPort: 30311
 clusterType: CONFIGURED
-image: phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3
+image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
 rcuSchemaPrefix: jrfrecycle
 rcuDatabaseURL: infradb.db.svc.cluster.local:1521/InfraPDB1.us.oracle.com

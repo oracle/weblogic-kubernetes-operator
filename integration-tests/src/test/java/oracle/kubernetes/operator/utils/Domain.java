@@ -389,6 +389,36 @@ public class Domain {
   }
 
   /**
+   * undeploy webapp using nodehost and nodeport
+   *
+   * @throws Exception
+   */
+  public void undeployWebAppViaREST(
+      String webappName, String webappLocation, String username, String password) throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("curl --noproxy '*' --silent  --user ")
+        .append(username)
+        .append(":")
+        .append(password)
+        .append(" -H X-Requested-By:MyClient -H Accept:application/json")
+        .append(" -H Content-Type:application/json -d \"{}\" ")
+        .append(" -X DELETE http://")
+        .append(getNodeHost())
+        .append(":")
+        .append(getNodePort())
+        .append("/management/weblogic/latest/edit/appDeployments/")
+        .append(webappName)
+        .append(" --write-out %{http_code} -o /dev/null");
+    logger.fine("Command to undeploy webapp " + cmd);
+    ExecResult result = TestUtils.exec(cmd.toString());
+    String output = result.stdout().trim();
+    if (!output.contains("200")) {
+      throw new RuntimeException(
+          "FAILURE: Webapp undeployment failed with response code " + output);
+    }
+  }
+
+  /**
    * deploy webapp using t3 channel port for wlst
    *
    * @param webappName
@@ -500,7 +530,7 @@ public class Domain {
       }
       testAppUrl.append(webappName).append("/");
       // curl cmd to call webapp
-      StringBuffer curlCmd = new StringBuffer("curl --silent ");
+      StringBuffer curlCmd = new StringBuffer("curl --silent --noproxy '*' ");
       curlCmd
           .append(" -H 'host: ")
           .append(domainUid)
