@@ -43,7 +43,7 @@ managedServerPort: 8001
 # and has all the necessary patches applied; a `docker pull` is required if you already have this image.
 # Refer to https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/fmw-infra/
 # for details on how to obtain or create the image.
-image: oracle/fmw-infrastructure:12.2.1.3
+image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
 
 # Image pull policy
 # Legal values are "IfNotPresent", "Always", or "Never"
@@ -76,7 +76,7 @@ t3ChannelPort: 30012
 # kubernetes server address, which you can get by running "kubectl cluster-info".  If this
 # value is not set to that address, WLST will not be able to connect from outside the
 # kubernetes cluster.
-#t3PublicAddress: 
+#t3PublicAddress:
 
 # Boolean to indicate if the channel should be exposed as a service
 exposeAdminT3Channel: false
