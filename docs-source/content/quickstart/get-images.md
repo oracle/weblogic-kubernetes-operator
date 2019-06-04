@@ -28,14 +28,17 @@ and accept the license agreement for the [WebLogic Server image](https://hub.doc
     $ docker pull traefik:1.7.6
     ```
 
-1. Pull the WebLogic 12.2.1.3 install image:
+1. Obtain the WebLogic image from the [Oracle Container Registry](https://container-registry.oracle.com).
 
-    ```bash
-    $ docker pull store/oracle/weblogic:12.2.1.3
-    ```  
+    a. First time users, follow these [directions]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
 
+    b. Find and then pull the WebLogic 12.2.1.3 install image:
 
-    {{% notice note %}} The existing WebLogic Docker image, `store/oracle/weblogic:12.2.1.3`, was updated on January 17, 2019, and has all the necessary patches applied; a `docker pull` is required if you pulled the image prior to that date.
+     ```bash
+     $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.3
+     ```
+
+    {{% notice note %}} The WebLogic Docker image, `weblogic:12.2.1.3`, has all the necessary patches applied.
     {{% /notice %}}
 
 

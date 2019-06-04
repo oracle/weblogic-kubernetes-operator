@@ -75,6 +75,10 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
     return server.getPodAnnotations();
   }
 
+  public Boolean isPrecreateServerService() {
+    return server.isPrecreateServerService();
+  }
+
   @Override
   @Nonnull
   public Map<String, String> getServiceLabels() {
