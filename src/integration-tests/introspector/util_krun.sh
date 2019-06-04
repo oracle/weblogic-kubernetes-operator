@@ -74,10 +74,10 @@ cat << EOF
   Sample usage:
 
     # Use an alternate image and show the user/uid/gid for that image
-    ./krun.sh -i store/oracle/weblogic:12.2.1.3 -c 'id'
+    ./krun.sh -i container-registry.oracle.com/middleware/weblogic:12.2.1.3 -c 'id'
  
     # Get the WL version in a WL image
-    ./krun.sh -i store/oracle/weblogic:12.2.1.3 -c \\
+    ./krun.sh -i container-registry.oracle.com/middleware/weblogic:12.2.1.3 -c \\
       'source /u01/oracle/wlserver/server/bin/setWLSEnv.sh && java weblogic.version'
 
     # Mount an existing pvc to /shared, and jar up a couple of its directories

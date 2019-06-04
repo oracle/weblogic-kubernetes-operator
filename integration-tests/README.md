@@ -180,7 +180,7 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 
 * Maven and latest Git should be in PATH
 * export JAVA_HOME
-* export WEBLOGIC_IMAGE_NAME and WEBLOGIC_IMAGE_TAG if different from store/oracle/weblogic and 12.2.1.3
+* export WEBLOGIC_IMAGE_NAME and WEBLOGIC_IMAGE_TAG if different from middleware/weblogic and 12.2.1.3-190111
 * Setup docker access to WebLogic 12c Images 
 
  Method 1 
@@ -194,7 +194,7 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 	```
  
  Method 2 
- - Make sure the weblogic image i.e. store/oracle/weblogic:12.2.1.3 already exists locally in a docker repository the k8s cluster can access
+ - Make sure the weblogic image i.e. middleware/weblogic:12.2.1.3-190111 already exists locally in a docker repository the k8s cluster can access
  - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
   	- If not, see [https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-patch-wls-for-k8s].
 		
@@ -300,16 +300,9 @@ JUnit test results can be seen at "integration-tests/target/failsafe-reports/TES
 * Setup docker access to FMW Infrastructure 12c Image and Oracle Database 12c Image
 
  Method 1 
-  - Setup a personal account on hub.docker.com
-  - Then sign in to hub.docker.com and signup for access to Oracle Database 12c Images via https://hub.docker.com/_/oracle-database-enterprise-edition
-  - Then export the following before running the tests: 
-	```
-	export DOCKER_USERNAME=<docker_username>
-	export DOCKER_PASSWORD=<docker_password>
-	export DOCKER_EMAIL=<docker_email>
-	```
-  - Setup an account in phx.ocir.io
-  - Then sign in to phx.ocir.io to get access to FMW Infrastructure 12c Image: **_phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3_**
+  - Setup a personal account on container-registry.oracle.com
+  - Then sign in to container-registry.oracle.com and accept license for access to Oracle Database 12c Images:  **_container-registry.oracle.com/database/enterprise:12.2.0.1-slim_**
+  - And get access to FMW Infrastructure 12c Image: **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3_**
   - export the following before running the tests:
     ```
     export REPO_USERNAME=<ocir_username>
@@ -318,7 +311,7 @@ JUnit test results can be seen at "integration-tests/target/failsafe-reports/TES
     ```
  
  Method 2 
- - Make sure the FMW Infrastructure image i.e. **_phx.ocir.io/weblogick8s/oracle/fmw-infrastructure:12.2.1.3_** and the Oracle database image i.e. **_store/oracle/database-enterprise:12.2.0.1_** already exist locally in a docker repository the k8s cluster can access
+ - Make sure the FMW Infrastructure image i.e. **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3_** and the Oracle database image i.e. **_container-registry.oracle.com/database/enterprise:12.2.0.1-slim_** already exist locally in a docker repository the k8s cluster can access
 		
 * Command to run the tests: 
 ```

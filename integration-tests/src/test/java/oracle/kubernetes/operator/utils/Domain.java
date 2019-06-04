@@ -61,8 +61,8 @@ public class Domain {
   protected String userProjectsDir = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
-  private String imageTag = "12.2.1.3";
-  private String imageName = "store/oracle/weblogic";
+  private String imageTag;
+  private String imageName;
 
   protected String generatedInputYamlFile;
 
@@ -387,6 +387,36 @@ public class Domain {
   }
 
   /**
+   * undeploy webapp using nodehost and nodeport
+   *
+   * @throws Exception
+   */
+  public void undeployWebAppViaREST(
+      String webappName, String webappLocation, String username, String password) throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("curl --noproxy '*' --silent  --user ")
+        .append(username)
+        .append(":")
+        .append(password)
+        .append(" -H X-Requested-By:MyClient -H Accept:application/json")
+        .append(" -H Content-Type:application/json -d \"{}\" ")
+        .append(" -X DELETE http://")
+        .append(getNodeHost())
+        .append(":")
+        .append(getNodePort())
+        .append("/management/weblogic/latest/edit/appDeployments/")
+        .append(webappName)
+        .append(" --write-out %{http_code} -o /dev/null");
+    logger.fine("Command to undeploy webapp " + cmd);
+    ExecResult result = TestUtils.exec(cmd.toString());
+    String output = result.stdout().trim();
+    if (!output.contains("200")) {
+      throw new RuntimeException(
+          "FAILURE: Webapp undeployment failed with response code " + output);
+    }
+  }
+
+  /**
    * deploy webapp using t3 channel port for wlst
    *
    * @param webappName
@@ -498,7 +528,7 @@ public class Domain {
       }
       testAppUrl.append(webappName).append("/");
       // curl cmd to call webapp
-      StringBuffer curlCmd = new StringBuffer("curl --silent ");
+      StringBuffer curlCmd = new StringBuffer("curl --silent --noproxy '*' ");
       curlCmd
           .append(" -H 'host: ")
           .append(domainUid)
@@ -1384,6 +1414,8 @@ public class Domain {
    *     accessed to read or if creating config map or secret fails for configoverrides
    */
   protected void initialize(Map<String, Object> inputDomainMap) throws Exception {
+    imageTag = BaseTest.getWeblogicImageTag();
+    imageName = BaseTest.getWeblogicImageName();
     domainMap = inputDomainMap;
     this.userProjectsDir = BaseTest.getUserProjectsDir();
     this.projectRoot = BaseTest.getProjectRoot();

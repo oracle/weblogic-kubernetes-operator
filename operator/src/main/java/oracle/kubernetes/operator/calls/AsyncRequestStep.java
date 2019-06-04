@@ -12,6 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -287,7 +288,7 @@ public class AsyncRequestStep<T> extends Step {
 
         NextAction na = new NextAction();
         if (statusCode == 0 && retryCount <= maxRetryCount) {
-          na.invoke(retryStep, packet);
+          na.invoke(Optional.ofNullable(conflictStep).orElse(retryStep), packet);
         } else {
           LOGGER.info(MessageKeys.ASYNC_RETRY, String.valueOf(waitTime));
           na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
