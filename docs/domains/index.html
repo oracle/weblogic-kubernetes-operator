@@ -937,7 +937,7 @@ window.onload = function() {
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ServerService"
         },
         "serverPod": {
           "description": "Configuration affecting server pods",
@@ -1013,7 +1013,7 @@ window.onload = function() {
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ServerService"
         },
         "maxUnavailable": {
           "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
@@ -1105,7 +1105,7 @@ window.onload = function() {
           ]
         },
         "image": {
-          "description": "The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to store/oracle/weblogic:12.2.1.3.",
+          "description": "The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -1164,7 +1164,7 @@ window.onload = function() {
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ServerService"
         },
         "domainHome": {
           "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true",
@@ -1274,7 +1274,7 @@ window.onload = function() {
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ServerService"
         },
         "serverName": {
           "description": "The name of the server. Required",
@@ -1417,6 +1417,23 @@ window.onload = function() {
         "shutdown": {
           "description": "Configures how the operator should shutdown the server instance.",
           "$ref": "#/definitions/Shutdown"
+        }
+      }
+    },
+    "ServerService": {
+      "type": "object",
+      "properties": {
+        "precreateService": {
+          "description": "If true, operator will create server services even for server instances without running pods.",
+          "type": "boolean"
+        },
+        "annotations": {
+          "description": "The annotations to be attached to generated resources.",
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
+          "$ref": "#/definitions/Map"
         }
       }
     },
