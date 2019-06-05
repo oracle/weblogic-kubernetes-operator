@@ -5,6 +5,18 @@ weight = 5
 pre = "<b> </b>"
 +++
 
+#### Contents
+
+* [Limitations](#limitations)
+* [Obtaining the FMW Infrastructure Docker image](#obtaining-the-fmw-infrastructure-docker-image)
+* [Creating an FMW Infrastructure Docker image](#creating-an-fmw-infrastructure-docker-image)
+* [Configuring access to your database](#configuring-access-to-your-database)
+* [Running the Repository Creation Utility to set up your database schema](#running-the-repository-creation-utility-to-set-up-your-database-schema)
+* [Create a Kubernetes secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
+* [Creating an FMW Infrastructure domain](#creating-an-fmw-infrastructure-domain)
+* [Patching the FMW Infrastructure image](#patching-the-fmw-infrastructure-image)
+
+
 Starting with release 2.2, the operator supports FMW Infrastructure domains.
 This means domains that are created with the FMW Infrastructure installer rather than the WebLogic
 Server installer.  These domains contain the Java Required Files (JRF) feature and are
@@ -43,7 +55,7 @@ following limitations currently exist for FMW Infrastructure domains:
   before version 2.2.
 
 
-#### Obtaining the FMW Infrastructure Docker Image
+#### Obtaining the FMW Infrastructure Docker image
 
 The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
 The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log into the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
@@ -75,7 +87,7 @@ If desired, you can:
 Additional information about using this image is available in the
 [Oracle Container Registry](https://container-registry.oracle.com).
 
-#### Creating a FMW Infrastructure Docker image
+#### Creating an FMW Infrastructure Docker image
 
 You can also create a Docker image containing the FMW Infrastructure binaries.
 A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure)
@@ -388,15 +400,15 @@ is provided that demonstrates how to create the secret.  The schema owner user n
 `schemaPrefix` value followed by an underscore and a component name, such as `FMW1_STB`.  The schema owner
 password will be the password you provided for regular schema users during RCU creation.
 
-#### Creating a FMW Infrastructure domain
+#### Creating an FMW Infrastructure domain
 
 Now that you have your Docker images and you have created your RCU schemas, you are ready
 to create your domain.  A [sample]({{< relref "/samples/simple/domains/fmw-domain/_index.md" >}})
 is provided that demonstrates how to create a FMW Infrastructure domain.
 
-#### Patching the FMW Infrastructure Image
+#### Patching the FMW Infrastructure image
 
-There are two kind of patches that can be applied to the FMW Infrastructure binaries:
+There are two kinds of patches that can be applied to the FMW Infrastructure binaries:
 
 * Patches which are eligible for Zero Downtime Patching (ZDP), meaning that
   they can be applied with a rolling restart.
