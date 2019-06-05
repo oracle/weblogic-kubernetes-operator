@@ -75,6 +75,39 @@ If desired, you can:
 Additional information about using this image is available in the
 [Oracle Container Registry](https://container-registry.oracle.com).
 
+
+#### Obtaining the FMW Infrastructure Docker Image
+
+The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
+The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log into the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
+
+To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
+using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
+
+Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
+Your acceptance of these terms are stored in a database that links the software images to your Oracle Single Sign-On login credentials.
+
+
+First, you will need to log into the Oracle Container Registry:
+
+```
+$ docker login container-registry.oracle.com
+```
+
+Then, you can pull the image with this command:
+
+```
+$ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
+```
+If desired, you can:
+
+* Check the WLS version with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`
+
+* Check the WLS patches with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
+
+Additional information about using this image is available in the
+[Oracle Container Registry](https://container-registry.oracle.com).
+
 #### Creating a FMW Infrastructure Docker image
 
 You can also create a Docker image containing the FMW Infrastructure binaries.
