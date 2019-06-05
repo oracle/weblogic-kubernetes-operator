@@ -42,9 +42,42 @@ following limitations currently exist for FMW Infrastructure domains:
 * FMW Infrastructure domains are not supported with any version of the operator
   before version 2.2.
 
+
+#### Obtaining the FMW Infrastructure Docker Image
+
+The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
+The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log into the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
+
+To pull an image from the Oracle Container Registry, in a web browser, navigate to https://container-registry.oracle.com and log in
+using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
+
+Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
+Your acceptance of these terms are stored in a database that links the software images to your Oracle Single Sign-On login credentials.
+
+
+First, you will need to log into the Oracle Container Registry:
+
+```
+$ docker login container-registry.oracle.com
+```
+
+Then, you can pull the image with this command:
+
+```
+$ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3
+```
+If desired, you can:
+
+* Check the WLS version with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`
+
+* Check the WLS patches with `docker run container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
+
+Additional information about using this image is available in the
+[Oracle Container Registry](https://container-registry.oracle.com).
+
 #### Creating a FMW Infrastructure Docker image
 
-You will need to create a Docker image containing the FMW Infrastructure binaries.
+You can also create a Docker image containing the FMW Infrastructure binaries.
 A [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure)
 is provided in the Oracle GitHub account that demonstrates how to create a Docker image
 to run FMW Infrastructure.  
@@ -77,13 +110,19 @@ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
 
 This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
 
+All samples and instructions reference the pre-built and already patched image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`. When building your own image, you will need to rename `oracle/fmw-infrastructure:12213-update-k8s` to `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3`.
+
+```
+$ docker tag oracle/fmw-infrastructure:12213-update-k8s container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3
+```
+
 These samples will allow you to create a Docker image containing the FMW Infrastructure
 binaries and the necessary patch.  You can use this image to run the Repository Creation Utility
 and to run your domain using the "domain on a persistent volume" model. If you want to use
 the "domain in a Docker image" model, you will need to go one step further and add another
 layer with your domain in it.  You can use WLST or WDT to create your domain.
 
-Before creating a domain you will need to set up the necessary schemas in your database.
+Before creating a domain, you will need to set up the necessary schemas in your database.
 
 #### Configuring access to your database
 
@@ -254,12 +293,12 @@ image that you built earlier as a "service" pod to run RCU.  To do this, start u
 pod using that image as follows:
 
 ```bash
-kubectl run rcu --generator=run-pod/v1 --image oracle/fmw-infrastructure:12213-update-k8s -- sleep infinity
+kubectl run rcu --generator=run-pod/v1 --image container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3 -- sleep infinity
 
 ```
 
 This will create a Kubernetes deployment called `rcu` containing a pod running a container
-created from the `oracle/fmw-infrastructure:12213-update-k8s` image which will just run
+created from the `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3` image which will just run
 `sleep infinity`, which essentially creates a pod that we can "exec" into and use to run whatever
 commands we need to run.
 
@@ -344,7 +383,7 @@ You also need to create a Kubernetes secret containing the credentials for the d
 When you create your domain using the sample provided below, it will obtain the RCU credentials
 from this secret.
 
-A [sample](/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-rcu-credentials/README.md)
+A [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-credentials/README.md)
 is provided that demonstrates how to create the secret.  The schema owner user name required will be the
 `schemaPrefix` value followed by an underscore and a component name, such as `FMW1_STB`.  The schema owner
 password will be the password you provided for regular schema users during RCU creation.
