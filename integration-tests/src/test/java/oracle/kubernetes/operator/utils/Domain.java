@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.jms.ConnectionFactory;
 import javax.jms.QueueConnection;
@@ -1156,6 +1158,8 @@ public class Domain {
       gitCloneDockerImagesSample();
     }
 
+    copyDomainTemplate(domainMap);
+
     // copy create domain py script if domain map contains createDomainPyScript
     copyCreateDomainPy();
 
@@ -1522,6 +1526,20 @@ public class Domain {
     createConfigMapAndSecretForSitConfig();
   }
 
+  private void copyDomainTemplate(Map<String, Object> inputDomainMap) throws IOException {
+    if (inputDomainMap.containsKey("customDomainTemplate")) {
+      Files.copy(
+          Paths.get((String) inputDomainMap.get("customDomainTemplate")),
+          Paths.get(BaseTest.getResultDir() + "/samples/scripts/common/domain-template.yaml"),
+          StandardCopyOption.REPLACE_EXISTING);
+    }
+    logger.log(Level.FINEST, "Domain Template");
+    byte[] readAllBytes =
+        Files.readAllBytes(
+            Paths.get(BaseTest.getResultDir() + "/samples/scripts/common/domain-template.yaml"));
+    logger.log(Level.FINEST, new String(readAllBytes, StandardCharsets.UTF_8));
+  }
+
   private String getNodeHost() throws Exception {
     String cmd =
         "kubectl describe pod "
@@ -1740,23 +1758,25 @@ public class Domain {
 
     // change CLUSTER_TYPE to CONFIGURED in create-domain-job-template.yaml for configured cluster
     // as samples only support DYNAMIC cluster
-    if (clusterType.equalsIgnoreCase("CONFIGURED")) {
 
-      // domain in image
-      if (domainMap.containsKey("domainHomeImageBase")
-          && domainHomeImageBuildPath.contains("wdt")) {
-        TestUtils.copyFile(
-            BaseTest.getProjectRoot()
-                + "/integration-tests/src/test/resources/wdt/config.cluster.topology.yaml",
-            BaseTest.getResultDir()
-                + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
-      } else {
-        // domain on pv
-        StringBuffer createDomainJobTemplateFile = new StringBuffer(BaseTest.getResultDir());
-        createDomainJobTemplateFile.append(
-            "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml");
-        TestUtils.exec("sed -i -e 's?DYNAMIC?CONFIGURED?g' " + createDomainJobTemplateFile);
-      }
+    // domain in image
+    if (domainMap.containsKey("customWdtTemplate")) {
+      TestUtils.copyFile(
+          (String) domainMap.get("customWdtTemplate"),
+          BaseTest.getResultDir()
+              + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
+      ExecResult exec =
+          TestUtils.exec(
+              "cat "
+                  + BaseTest.getResultDir()
+                  + "/docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt/simple-topology.yaml");
+      logger.log(Level.FINEST, exec.stdout());
+    } else if (clusterType.equalsIgnoreCase("CONFIGURED")) {
+      // domain on pv
+      StringBuffer createDomainJobTemplateFile = new StringBuffer(BaseTest.getResultDir());
+      createDomainJobTemplateFile.append(
+          "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml");
+      TestUtils.exec("sed -i -e 's?DYNAMIC?CONFIGURED?g' " + createDomainJobTemplateFile);
     }
   }
 
