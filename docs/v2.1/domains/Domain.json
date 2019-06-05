@@ -1,0 +1,571 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.",
+  "type": "object",
+  "definitions": {
+    "AdminServer": {
+      "description": "AdminServer represents the operator configuration for the admin server.",
+      "type": "object",
+      "properties": {
+        "serverStartState": {
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "ADMIN"
+          ]
+        },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
+        "serverPod": {
+          "description": "Configuration affecting server pods",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED.",
+          "type": "string",
+          "enum": [
+            "ALWAYS",
+            "NEVER",
+            "IF_NEEDED"
+          ]
+        },
+        "adminService": {
+          "description": "Configures which of the admin server\u0027s WebLogic admin channels should be exposed outside the Kubernetes cluster via a node port service.",
+          "$ref": "#/definitions/AdminService"
+        },
+        "restartVersion": {
+          "description": "If present, every time this value is updated the operator will restart the required servers.",
+          "type": "string"
+        }
+      }
+    },
+    "AdminService": {
+      "type": "object",
+      "properties": {
+        "channels": {
+          "description": "Specifies which of the admin server\u0027s WebLogic channels should be exposed outside the Kubernetes cluster via a node port service, along with the node port for each channel. If not specified, the admin server\u0027s node port service will not be created.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Channel"
+          }
+        },
+        "annotations": {
+          "description": "Annotations to associate with the external channel service",
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "Labels to associate with the external channel service",
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "Channel": {
+      "description": "Describes a single channel used by the admin server.",
+      "type": "object",
+      "properties": {
+        "channelName": {
+          "description": "Name of channel.\n\u0027default\u0027 refers to the admin server\u0027s default channel (configured via the ServerMBean\u0027s ListenPort) \n\u0027default-secure\u0027 refers to the admin server\u0027s default secure channel (configured via the ServerMBean\u0027s SSLMBean\u0027s ListenPort) \n\u0027default-admin\u0027 refers to the admin server\u0027s default administrative channel (configured via the DomainMBean\u0027s AdministrationPort) \nOtherwise, the name is the name of one of the admin server\u0027s network access points (configured via the ServerMBean\u0027s NetworkAccessMBeans).",
+          "type": "string"
+        },
+        "nodePort": {
+          "description": "Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel.",
+          "type": "number"
+        }
+      },
+      "required": [
+        "channelName"
+      ]
+    },
+    "Cluster": {
+      "description": "An element representing a cluster in the domain configuration.",
+      "type": "object",
+      "properties": {
+        "serverStartState": {
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "ADMIN"
+          ]
+        },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
+        "maxUnavailable": {
+          "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
+          "type": "number",
+          "minimum": 1
+        },
+        "replicas": {
+          "description": "The number of managed servers to run in this cluster.",
+          "type": "number",
+          "minimum": 0
+        },
+        "clusterName": {
+          "description": "The name of this cluster. Required",
+          "type": "string"
+        },
+        "serverPod": {
+          "description": "Configuration affecting server pods",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "clusterService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic cluster.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED.",
+          "type": "string",
+          "enum": [
+            "NEVER",
+            "IF_NEEDED"
+          ]
+        },
+        "restartVersion": {
+          "description": "If present, every time this value is updated the operator will restart the required servers.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "clusterName"
+      ]
+    },
+    "DateTime": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "DomainCondition": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "description": "Unique, one-word, CamelCase reason for the condition\u0027s last transition.",
+          "type": "string"
+        },
+        "lastTransitionTime": {
+          "description": "Last time the condition transitioned from one status to another.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "message": {
+          "description": "Human-readable message indicating details about last transition.",
+          "type": "string"
+        },
+        "type": {
+          "description": "The type of the condition. Valid types are Progressing, Available, and Failed. Required",
+          "type": "string",
+          "enum": [
+            "Progressing",
+            "Available",
+            "Failed"
+          ]
+        },
+        "lastProbeTime": {
+          "description": "Last time we probed the condition.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "status": {
+          "description": "Status is the status of the condition. Can be True, False, Unknown. Required",
+          "type": "string"
+        }
+      }
+    },
+    "DomainSpec": {
+      "description": "DomainSpec is a description of a domain.",
+      "type": "object",
+      "properties": {
+        "serverStartState": {
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "ADMIN"
+          ]
+        },
+        "image": {
+          "description": "The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to store/oracle/weblogic:12.2.1.3.",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNotPresent"
+          ]
+        },
+        "replicas": {
+          "description": "The number of managed servers to run in any cluster that does not specify a replica count.",
+          "type": "number",
+          "minimum": 0
+        },
+        "configOverrideSecrets": {
+          "description": "A list of names of the secrets for optional WebLogic configuration overrides.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "imagePullSecrets": {
+          "description": "A list of image pull secrets for the WebLogic Docker image.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+          }
+        },
+        "domainHomeInImage": {
+          "description": "True if this domain\u0027s home is defined in the docker image for the domain. Defaults to true.",
+          "type": "boolean"
+        },
+        "domainUID": {
+          "pattern": "^[a-z0-9_.]{1,253}$",
+          "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name",
+          "type": "string"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
+          "type": "string",
+          "enum": [
+            "NEVER",
+            "IF_NEEDED",
+            "ADMIN_ONLY"
+          ]
+        },
+        "restartVersion": {
+          "description": "If present, every time this value is updated the operator will restart the required servers.",
+          "type": "string"
+        },
+        "configOverrides": {
+          "description": "The name of the config map for optional WebLogic configuration overrides.",
+          "type": "string"
+        },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
+        "domainHome": {
+          "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true",
+          "type": "string"
+        },
+        "logHomeEnabled": {
+          "description": "Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true. ",
+          "type": "boolean"
+        },
+        "webLogicCredentialsSecret": {
+          "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namepace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+        },
+        "adminServer": {
+          "description": "Configuration for the admin server.",
+          "$ref": "#/definitions/AdminServer"
+        },
+        "serverPod": {
+          "description": "Configuration affecting server pods",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "logHome": {
+          "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
+          "type": "string"
+        },
+        "includeServerOutInPodLog": {
+          "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
+          "type": "boolean"
+        },
+        "managedServers": {
+          "description": "Configuration for the managed servers.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManagedServer"
+          }
+        },
+        "clusters": {
+          "description": "Configuration for the clusters.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Cluster"
+          }
+        }
+      }
+    },
+    "DomainStatus": {
+      "description": "DomainStatus represents information about the status of a domain. Status may trail the actual state of a system.",
+      "type": "object",
+      "properties": {
+        "reason": {
+          "description": "A brief CamelCase message indicating details about why the domain is in this state.",
+          "type": "string"
+        },
+        "servers": {
+          "description": "Status of WebLogic servers in this domain.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServerStatus"
+          }
+        },
+        "replicas": {
+          "description": "The number of running managed servers in the WebLogic cluster if there is only one cluster in the domain and where the cluster does not explicitly configure its replicas in a cluster specification.",
+          "type": "number",
+          "minimum": 0
+        },
+        "startTime": {
+          "description": "RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "conditions": {
+          "description": "Current service state of domain.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DomainCondition"
+          }
+        },
+        "message": {
+          "description": "A human readable message indicating details about why the domain is in this condition.",
+          "type": "string"
+        }
+      }
+    },
+    "KubernetesResource": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "The annotations to be attached to generated resources.",
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "ManagedServer": {
+      "description": "ManagedServer represents the operator configuration for a single managed server.",
+      "type": "object",
+      "properties": {
+        "serverStartState": {
+          "description": "The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING.",
+          "type": "string",
+          "enum": [
+            "RUNNING",
+            "ADMIN"
+          ]
+        },
+        "serverService": {
+          "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
+          "$ref": "#/definitions/KubernetesResource"
+        },
+        "serverName": {
+          "description": "The name of the server. Required",
+          "type": "string"
+        },
+        "serverPod": {
+          "description": "Configuration affecting server pods",
+          "$ref": "#/definitions/ServerPod"
+        },
+        "serverStartPolicy": {
+          "description": "The strategy for deciding whether to start a server. Legal values are ALWAYS, NEVER, or IF_NEEDED.",
+          "type": "string",
+          "enum": [
+            "ALWAYS",
+            "NEVER",
+            "IF_NEEDED"
+          ]
+        },
+        "restartVersion": {
+          "description": "If present, every time this value is updated the operator will restart the required servers.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "serverName"
+      ]
+    },
+    "Map": {
+      "type": "object",
+      "properties": {}
+    },
+    "ProbeTuning": {
+      "type": "object",
+      "properties": {
+        "periodSeconds": {
+          "description": "The number of seconds between checks",
+          "type": "number"
+        },
+        "timeoutSeconds": {
+          "description": "The number of seconds with no response that indicates a failure",
+          "type": "number"
+        },
+        "initialDelaySeconds": {
+          "description": "The number of seconds before the first check is performed",
+          "type": "number"
+        }
+      }
+    },
+    "ServerHealth": {
+      "type": "object",
+      "properties": {
+        "overallHealth": {
+          "description": "Server health of this WebLogic server.",
+          "type": "string"
+        },
+        "activationTime": {
+          "description": "RFC 3339 date and time at which the server started.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "subsystems": {
+          "description": "Status of unhealthy subsystems, if any.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SubsystemHealth"
+          }
+        }
+      }
+    },
+    "ServerPod": {
+      "description": "ServerPod describes the configuration for a Kubernetes pod for a server.",
+      "type": "object",
+      "properties": {
+        "livenessProbe": {
+          "description": "Settings for the liveness probe associated with a server.",
+          "$ref": "#/definitions/ProbeTuning"
+        },
+        "podSecurityContext": {
+          "description": "Pod-level security attributes.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+        },
+        "volumes": {
+          "description": "Additional volumes to be created in the server pod.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+          }
+        },
+        "resources": {
+          "description": "Memory and cpu minimum requirements and limits for the server.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "annotations": {
+          "description": "The annotations to be attached to generated resources.",
+          "$ref": "#/definitions/Map"
+        },
+        "env": {
+          "description": "A list of environment variables to add to a server",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "nodeSelector": {
+          "description": "Selector which must match a node\u0027s labels for the pod to be scheduled on that node.",
+          "$ref": "#/definitions/Map"
+        },
+        "volumeMounts": {
+          "description": "Additional volume mounts for the server pod.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+          }
+        },
+        "labels": {
+          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
+          "$ref": "#/definitions/Map"
+        },
+        "readinessProbe": {
+          "description": "Settings for the readiness probe associated with a server.",
+          "$ref": "#/definitions/ProbeTuning"
+        },
+        "containers": {
+          "description": "Additional containers to be included in the server pod.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+          }
+        },
+        "containerSecurityContext": {
+          "description": "Container-level security attributes. Will override any matching pod-level attributes.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+        },
+        "initContainers": {
+          "description": "Initialization containers",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+          }
+        }
+      }
+    },
+    "ServerStatus": {
+      "type": "object",
+      "properties": {
+        "nodeName": {
+          "description": "Name of node that is hosting the Pod containing this WebLogic server.",
+          "type": "string"
+        },
+        "clusterName": {
+          "description": "WebLogic cluster name, if the server is part of a cluster.",
+          "type": "string"
+        },
+        "serverName": {
+          "description": "WebLogic server name. Required",
+          "type": "string"
+        },
+        "health": {
+          "description": "Current status and health of a specific WebLogic server.",
+          "$ref": "#/definitions/ServerHealth"
+        },
+        "state": {
+          "description": "Current state of this WebLogic server. Required",
+          "type": "string"
+        }
+      }
+    },
+    "SubsystemHealth": {
+      "type": "object",
+      "properties": {
+        "symptoms": {
+          "description": "Symptoms provided by the reporting subsystem.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "health": {
+          "description": "Server health of this WebLogic server. Required",
+          "type": "string"
+        },
+        "subsystemName": {
+          "description": "Name of subsystem providing symptom information. Required",
+          "type": "string"
+        }
+      }
+    }
+  },
+  "properties": {
+    "metadata": {
+      "description": "The domain meta-data. Must include the name and namespace.",
+      "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+    },
+    "apiVersion": {
+      "description": "The API version for the Domain.",
+      "type": "string"
+    },
+    "kind": {
+      "description": "The type of resource. Must be \u0027Domain\u0027.",
+      "type": "string"
+    },
+    "spec": {
+      "description": "The specification of the domain. Required",
+      "$ref": "#/definitions/DomainSpec"
+    },
+    "status": {
+      "description": "The current status of the domain. Updated by the operator.",
+      "$ref": "#/definitions/DomainStatus"
+    }
+  },
+  "required": [
+    "metadata",
+    "spec"
+  ]
+}
