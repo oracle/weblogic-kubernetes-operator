@@ -5,7 +5,7 @@ weight = 5
 pre = "<b> </b>"
 +++
 
-Starting with release 2.2, the operator supports FMW Infrastructure domains.
+Starting with release 2.2.0, the operator supports FMW Infrastructure domains.
 This means domains that are created with the FMW Infrastructure installer rather than the WebLogic
 Server installer.  These domains contain the Java Required Files (JRF) feature and are
 the pre-requisite for "upper stack" products like Oracle SOA Suite, for example.
@@ -40,7 +40,7 @@ following limitations currently exist for FMW Infrastructure domains:
   FMW Infrastructure domains.  Note that you can still use all of the scaling features,
   you just need to define the maximum size of your cluster at domain creation time.
 * FMW Infrastructure domains are not supported with any version of the operator
-  before version 2.2.
+  before version 2.2.0.
 
 
 #### Obtaining the FMW Infrastructure Docker Image
