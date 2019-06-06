@@ -17,7 +17,7 @@
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ServerService"
         },
         "serverPod": {
           "description": "Configuration affecting server pods",
@@ -93,7 +93,7 @@
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ServerService"
         },
         "maxUnavailable": {
           "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
@@ -185,7 +185,7 @@
           ]
         },
         "image": {
-          "description": "The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to store/oracle/weblogic:12.2.1.3.",
+          "description": "The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -213,7 +213,7 @@
           "description": "A list of image pull secrets for the WebLogic Docker image.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
           }
         },
         "domainHomeInImage": {
@@ -244,7 +244,7 @@
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ServerService"
         },
         "domainHome": {
           "description": "The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true",
@@ -256,7 +256,7 @@
         },
         "webLogicCredentialsSecret": {
           "description": "The name of a pre-created Kubernetes secret, in the domain\u0027s namepace, that holds the username and password needed to boot WebLogic Server under the \u0027username\u0027 and \u0027password\u0027 fields.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecretReference"
         },
         "adminServer": {
           "description": "Configuration for the admin server.",
@@ -354,7 +354,7 @@
         },
         "serverService": {
           "description": "Customization affecting ClusterIP Kubernetes services for WebLogic server instances.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ServerService"
         },
         "serverName": {
           "description": "The name of the server. Required",
@@ -407,7 +407,7 @@
       "type": "object",
       "properties": {
         "overallHealth": {
-          "description": "Server health of this WebLogic server.",
+          "description": "Server health of this WebLogic server. If the value is \"Not available\", the operator has failed to read the health. If the value is \"Not available (possibly overloaded)\", the operator has failed to read the health of the server possibly due to the server is in overloaded state",
           "type": "string"
         },
         "activationTime": {
@@ -433,18 +433,18 @@
         },
         "podSecurityContext": {
           "description": "Pod-level security attributes.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "volumes": {
           "description": "Additional volumes to be created in the server pod.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
           }
         },
         "resources": {
           "description": "Memory and cpu minimum requirements and limits for the server.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "annotations": {
           "description": "The annotations to be attached to generated resources.",
@@ -454,7 +454,7 @@
           "description": "A list of environment variables to add to a server",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
         "nodeSelector": {
@@ -465,7 +465,7 @@
           "description": "Additional volume mounts for the server pod.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
           }
         },
         "labels": {
@@ -480,19 +480,40 @@
           "description": "Additional containers to be included in the server pod.",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
         },
         "containerSecurityContext": {
           "description": "Container-level security attributes. Will override any matching pod-level attributes.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "initContainers": {
           "description": "Initialization containers",
           "type": "array",
           "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
           }
+        },
+        "shutdown": {
+          "description": "Configures how the operator should shutdown the server instance.",
+          "$ref": "#/definitions/Shutdown"
+        }
+      }
+    },
+    "ServerService": {
+      "type": "object",
+      "properties": {
+        "precreateService": {
+          "description": "If true, operator will create server services even for server instances without running pods.",
+          "type": "boolean"
+        },
+        "annotations": {
+          "description": "The annotations to be attached to generated resources.",
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
+          "$ref": "#/definitions/Map"
         }
       }
     },
@@ -521,6 +542,28 @@
         }
       }
     },
+    "Shutdown": {
+      "description": "Shutdown describes the configuration for shutting down a server instance.",
+      "type": "object",
+      "properties": {
+        "ignoreSessions": {
+          "description": "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling. Not required. Defaults to false.",
+          "type": "boolean"
+        },
+        "shutdownType": {
+          "description": "Tells the operator how to shutdown server instances. Not required. Defaults to graceful shutdown.",
+          "type": "string",
+          "enum": [
+            "Graceful",
+            "Forced"
+          ]
+        },
+        "timeoutSeconds": {
+          "description": "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Not required. Defaults to 30 seconds.",
+          "type": "number"
+        }
+      }
+    },
     "SubsystemHealth": {
       "type": "object",
       "properties": {
@@ -545,7 +588,7 @@
   "properties": {
     "metadata": {
       "description": "The domain meta-data. Must include the name and namespace.",
-      "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+      "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
     },
     "apiVersion": {
       "description": "The API version for the Domain.",

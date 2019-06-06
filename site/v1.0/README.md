@@ -15,7 +15,7 @@ Oracle has been working with the WebLogic community to find ways to make it as e
 *	A mechanism to create a WebLogic domain on a Kubernetes persistent volume. This persistent volume can reside in NFS.
 *	A mechanism to define a WebLogic domain as a Kubernetes resource (using a Kubernetes custom resource definition).
 *	The ability to automatically start servers based on declarative startup parameters and desired states.
-* The ability to manage a WebLogic configured or dynamic cluster.
+*   The ability to manage a WebLogic configured or dynamic cluster.
 *	The ability to automatically expose the WebLogic Server Administration Console outside the Kubernetes cluster (if desired).
 *	The ability to automatically expose T3 channels outside the Kubernetes domain (if desired).
 *	The ability to automatically expose HTTP paths on a WebLogic domain outside the Kubernetes domain with load balancing, and to update the load balancer when Managed Servers in the WebLogic domain are started or stopped.
@@ -38,7 +38,7 @@ In this documentation, several important terms are used and are intended to have
 | Ingress	| A Kubernetes Ingress provides access to applications and services in a Kubernetes environment to external clients.  An Ingress may also provide additional features like load balancing. |
 | Namespace	| A Kubernetes namespace is a named entity that can be used to group together related objects, for example, pods and services. |
 | Operator	| A Kubernetes operator is software that performs management of complex applications. |
-|Pod	| A Kubernetes pod contains one or more containers and is the object that provides the execution environment for an instance of an application component, such as a web server or database. |
+| Pod	| A Kubernetes pod contains one or more containers and is the object that provides the execution environment for an instance of an application component, such as a web server or database. |
 | Job	 | A Kubernetes job is a type of controller that creates one or more pods that run to completion to complete a specific task. |
 | Secret	| A Kubernetes secret is a named object that can store secret information like usernames, passwords, X.509 certificates, or any other arbitrary data. |
 |Service	| A Kubernetes service exposes application endpoints inside a pod to other pods, or outside the Kubernetes cluster.  A service may also provide additional features like load balancing. |
@@ -50,13 +50,13 @@ Before using the operator, it is highly recommended that you read the [design ph
 ## Exposing applications outside the Kubernetes cluster
 The operator can configure services to expose WebLogic applications and features outside of the Kubernetes cluster.  Care should be taken when exposing anything externally to ensure that the appropriate security considerations are taken into account. In this regard, there is no significant difference between a WebLogic domain running in a Kubernetes cluster and a domain running in a traditional data center.  The same kinds of considerations should be taken into account, for example:
 
-* Only expose those protocols and ports that need to be exposed.
+*   Only expose those protocols and ports that need to be exposed.
 *	Use secure protocols (HTTPS, T3S, and such).
 *	Use custom channels to restrict the protocols that are exposed.
 *	Is load balancing required?
 *	Is certificate-based integrity needed?
 *	How will users authenticate?
-* Is the network channel encrypted?
+*   Is the network channel encrypted?
 
 While it is natural to expose web applications outside the cluster, exposing administrative features like the Administration Console and a T3 channel for WLST should be given more careful consideration.  There are alternative options that should be weighed.  For example, Kubernetes provides the ability to securely access a shell running in a container in a pod in the cluster.  WLST could be executed from such an environment, meaning the T3 communications are entirely within the Kubernetes cluster and therefore more secure.
 
@@ -109,7 +109,7 @@ Before installing the Oracle WebLogic Server Kubernetes Operator, ensure that th
 The overall process of installing and configuring the operator, and using it to manage WebLogic domains, consists of the following steps:
 
 *	Registering for access to the Oracle Container Registry
-* Setting up secrets to access the Oracle Container Registry
+*   Setting up secrets to access the Oracle Container Registry
 *	Customizing the operator parameters file
 *	Deploying the operator to a Kubernetes cluster
 *	Setting up secrets for the Administration Server credentials
@@ -163,9 +163,9 @@ For information about how to shut down a domain running in Kubernetes, see [Shut
 
 ## Removing a domain
 
-To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/delete-domain) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
+To permanently remove the Kubernetes resources for a domain from a Kubernetes cluster, run the [Delete WebLogic domain resources](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script. This script will delete a specific domain, or all domains, and all the Kubernetes resources associated with a set of given domains. The script will also attempt a clean shutdown of a domain’s WebLogic pods before deleting its resources.  You can run the script in a test mode to show what would be shutdown and deleted without actually performing the shutdowns and deletions.   For script help, use its `-h` option.
 
-The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/) script or the [integration tests](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/src/integration-tests/bash).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
+The script will remove only domain-related resources which are labeled with the `domainUID` label, such as resources created by the [Create WebLogic domain](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/) script or the [integration tests](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/integration-tests/bash/krun.sh).  If you manually created resources and have not labelled them with a `domainUID`, the script will not remove them.   One way to label a resource that has already been deployed is:
 
 ```
 kubectl -n <Namespace> label <ResourceType> <ResourceName> domainUID=<domainUID>
@@ -198,7 +198,7 @@ To remove more than one operator, repeat these steps for each operator namespace
 
 # Developer guide
 
-Developers interested in this project are encouraged to read the [Developer guide](developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kuberentes API.
+Developers interested in this project are encouraged to read the [Developer guide](developer.md) to learn how to build the project, run tests, and so on.  The Developer guide also provides details about the structure of the code, coding standards, and the Asynchronous Call facility used in the code to manage calls to the Kubernetes API.
 
 Please take a look at our [wish list](https://github.com/oracle/weblogic-kubernetes-operator/wiki/Wish-list) to get an idea of the kind of features we would like to add to the operator.  Maybe you will see something you would like to contribute to!
 

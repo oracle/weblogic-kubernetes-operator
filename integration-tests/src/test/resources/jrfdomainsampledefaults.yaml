@@ -1,0 +1,12 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+# This domain inputs file is used to create domain using default values from samples for most of the input values
+
+domainUID: jrfsampledef
+loadBalancer: TRAEFIK
+ingressPerDomain: true
+voyagerWebPort: 30310
+rcuSchemaPrefix: jrfsampledef
+rcuDatabaseURL: infradb.db.svc.cluster.local:1521/InfraPDB1.us.oracle.com
+image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3

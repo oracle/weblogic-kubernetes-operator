@@ -12,6 +12,14 @@ import javax.annotation.Nonnull;
 
 public abstract class ClusterSpec {
   /**
+   * Returns true if per-server instance services should be created for cluster member services even
+   * if pods are not running for these instances.
+   *
+   * @return true, if per-server instances services should be pre-created.
+   */
+  public abstract Boolean isPrecreateServerService();
+
+  /**
    * Returns the labels applied to server instance services.
    *
    * @return a map of labels
@@ -62,4 +70,12 @@ public abstract class ClusterSpec {
   public List<V1Container> getContainers() {
     return Collections.emptyList();
   }
+
+  /**
+   * Returns the shutdown configuration.
+   *
+   * @return shutdown configuration
+   */
+  @Nonnull
+  public abstract Shutdown getShutdown();
 }

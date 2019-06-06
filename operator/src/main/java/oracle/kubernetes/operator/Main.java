@@ -41,8 +41,8 @@ import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -174,9 +174,6 @@ public class Main {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
 
-    // start liveness thread
-    startLivenessThread();
-
     try {
       engine.getExecutor().execute(Main::begin);
 
@@ -225,6 +222,12 @@ public class Main {
           .getExecutor()
           .scheduleWithFixedDelay(
               recheckDomains(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+
+      // Wait until all other initialization is done before marking ready and
+      // starting liveness thread
+
+      // mark ready and start liveness thread
+      markReadyAndStartLivenessThread();
 
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
@@ -429,10 +432,16 @@ public class Main {
     RestServer.destroy();
   }
 
-  private static void startLivenessThread() {
-    LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
-    // every five seconds we need to update the last modified time on the liveness file
-    wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(), 5, 5, TimeUnit.SECONDS);
+  private static void markReadyAndStartLivenessThread() {
+    try {
+      OperatorReady.create();
+
+      LOGGER.info(MessageKeys.STARTING_LIVENESS_THREAD);
+      // every five seconds we need to update the last modified time on the liveness file
+      wrappedExecutorService.scheduleWithFixedDelay(new OperatorLiveness(), 5, 5, TimeUnit.SECONDS);
+    } catch (IOException io) {
+      LOGGER.severe(MessageKeys.EXCEPTION, io);
+    }
   }
 
   private static final Semaphore shutdownSignal = new Semaphore(0);
@@ -495,7 +504,10 @@ public class Main {
   }
 
   private static Collection<String> getTargetNamespaces() {
-    return getTargetNamespaces(tuningAndConfig.get("targetNamespaces"), operatorNamespace);
+    return getTargetNamespaces(
+        Optional.ofNullable(System.getenv("OPERATOR_TARGET_NAMESPACES"))
+            .orElse(tuningAndConfig.get("targetNamespaces")),
+        operatorNamespace);
   }
 
   private static class DomainListStep extends ResponseStep<DomainList> {
@@ -658,14 +670,12 @@ public class Main {
 
       if (result != null) {
         for (V1Pod pod : result.getItems()) {
-          String domainUID = PodWatcher.getPodDomainUID(pod);
-          String serverName = PodWatcher.getPodServerName(pod);
+          String domainUID = PodHelper.getPodDomainUID(pod);
+          String serverName = PodHelper.getPodServerName(pod);
           if (domainUID != null && serverName != null) {
             DomainPresenceInfo info =
                 dpis.computeIfAbsent(domainUID, k -> new DomainPresenceInfo(ns, domainUID));
-            ServerKubernetesObjects sko =
-                info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-            sko.getPod().set(pod);
+            info.setServerPod(serverName, pod);
           }
         }
       }

@@ -38,7 +38,8 @@ public abstract class StepContextBase implements StepContextConstants {
 
     List<V1EnvVar> vars = getConfiguredEnvVars(tuningParameters);
 
-    addDefaultEnvVarIfMissing(vars, "USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom");
+    addDefaultEnvVarIfMissing(
+        vars, "USER_MEM_ARGS", "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom");
 
     hideAdminUserCredentials(vars);
     doSubstitution(vars);
@@ -77,6 +78,24 @@ public abstract class StepContextBase implements StepContextConstants {
 
   protected void addDefaultEnvVarIfMissing(List<V1EnvVar> vars, String name, String value) {
     if (!hasEnvVar(vars, name)) {
+      addEnvVar(vars, name, value);
+    }
+  }
+
+  protected V1EnvVar findEnvVar(List<V1EnvVar> vars, String name) {
+    for (V1EnvVar var : vars) {
+      if (name.equals(var.getName())) {
+        return var;
+      }
+    }
+    return null;
+  }
+
+  protected void addOrReplaceEnvVar(List<V1EnvVar> vars, String name, String value) {
+    V1EnvVar var = findEnvVar(vars, name);
+    if (var != null) {
+      var.value(value);
+    } else {
       addEnvVar(vars, name, value);
     }
   }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # When the customer enables the operator's external REST api (by setting
@@ -83,7 +83,6 @@ OP_PKCS12="${TEMP_DIR}/${OP_PREFIX}.p12"
 OP_CSR="${TEMP_DIR}/${OP_PREFIX}.csr"
 OP_CERT_PEM="${TEMP_DIR}/${OP_PREFIX}.cert.pem"
 OP_KEY_PEM="${TEMP_DIR}/${OP_PREFIX}.key.pem"
-KEYTOOL=/usr/java/jdk1.8.0_141/bin/keytool
 
 # generate a keypair for the operator's REST service, putting it in a keystore
 keytool \

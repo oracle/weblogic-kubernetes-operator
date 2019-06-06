@@ -9,7 +9,7 @@ import static java.util.Collections.singletonList;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.PROCESS_CLASSES;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.objectweb.asm.Opcodes.ASM5;
+import static org.objectweb.asm.Opcodes.ASM7;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
@@ -393,7 +393,7 @@ public class JsonSchemaMojoTest {
     private Class<?> theClass;
 
     Visitor(Class<?> theClass) {
-      super(ASM5);
+      super(ASM7);
       this.theClass = theClass;
     }
 
@@ -438,7 +438,7 @@ public class JsonSchemaMojoTest {
     private Map<String, AnnotationInfo> annotations;
 
     MojoAnnotationVisitor(Map<String, AnnotationInfo> annotations, String desc) {
-      super(ASM5);
+      super(ASM7);
       this.annotations = annotations;
       annotationClassDesc = desc;
       annotations.put(desc, new AnnotationInfo());
@@ -490,7 +490,7 @@ public class JsonSchemaMojoTest {
     private final Map<String, AnnotationInfo> annotationMap;
 
     MojoFieldVisitor(Field field) {
-      super(ASM5);
+      super(ASM7);
       this.annotationMap = getOrCreateAnnotationMap(field);
     }
 

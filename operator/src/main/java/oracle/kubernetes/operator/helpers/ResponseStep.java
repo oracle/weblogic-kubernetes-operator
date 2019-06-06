@@ -28,9 +28,12 @@ public abstract class ResponseStep<T> extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private Step previousStep = null;
+  private final Step conflictStep;
 
   /** Constructor specifying no next step. */
-  public ResponseStep() {}
+  public ResponseStep() {
+    this(null);
+  }
 
   /**
    * Constructor specifying next step.
@@ -38,7 +41,18 @@ public abstract class ResponseStep<T> extends Step {
    * @param nextStep Next step
    */
   public ResponseStep(Step nextStep) {
+    this(null, nextStep);
+  }
+
+  /**
+   * Constructor specifying conflict and next step.
+   *
+   * @param conflictStep Conflict step
+   * @param nextStep Next step
+   */
+  public ResponseStep(Step conflictStep, Step nextStep) {
     super(nextStep);
+    this.conflictStep = conflictStep;
   }
 
   public final void setPrevious(Step previousStep) {
@@ -62,7 +76,7 @@ public abstract class ResponseStep<T> extends Step {
 
     if (nextAction == null) {
       // call timed-out
-      nextAction = doPotentialRetry(null, packet, null, 0, null);
+      nextAction = doPotentialRetry(conflictStep, packet, null, 0, null);
       if (nextAction == null) {
         nextAction = doEnd(packet);
       }

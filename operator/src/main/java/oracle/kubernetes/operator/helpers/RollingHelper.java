@@ -4,14 +4,10 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import io.kubernetes.client.models.V1Pod;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -23,8 +19,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 /**
  * After the {@link PodHelper} identifies servers that are presently running, but that are using an
@@ -71,20 +65,11 @@ public class RollingHelper {
       DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
-      DomainStatus status = dom.getStatus();
       // These are presently Ready servers
-      List<String> availableServers = new ArrayList<>();
-      List<ServerStatus> ss = status != null ? status.getServers() : null;
-      if (ss != null) {
-        for (ServerStatus s : ss) {
-          if (WebLogicConstants.RUNNING_STATE.equals(s.getState())) {
-            availableServers.add(s.getServerName());
-          }
-        }
-      }
+      List<String> availableServers = getReadyServers(info);
 
       Collection<StepAndPacket> serversThatCanRestartNow = new ArrayList<>();
-      Map<String, Collection<StepAndPacket>> clusteredRestarts = new HashMap<>();
+      Map<String, Queue<StepAndPacket>> clusteredRestarts = new HashMap<>();
 
       List<String> servers = new ArrayList<>();
       for (Map.Entry<String, StepAndPacket> entry : rolling.entrySet()) {
@@ -106,9 +91,9 @@ public class RollingHelper {
         }
 
         // clustered server
-        Collection<StepAndPacket> cr = clusteredRestarts.get(clusterName);
+        Queue<StepAndPacket> cr = clusteredRestarts.get(clusterName);
         if (cr == null) {
-          cr = new ArrayList<>();
+          cr = new ConcurrentLinkedQueue<>();
           clusteredRestarts.put(clusterName, cr);
         }
         cr.add(entry.getValue());
@@ -126,7 +111,7 @@ public class RollingHelper {
       }
 
       if (!clusteredRestarts.isEmpty()) {
-        for (Map.Entry<String, Collection<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
+        for (Map.Entry<String, Queue<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
           work.add(
               new StepAndPacket(
                   new RollSpecificClusterStep(entry.getKey(), entry.getValue(), null), packet));
@@ -156,94 +141,88 @@ public class RollingHelper {
     }
   }
 
+  private static List<String> getReadyServers(DomainPresenceInfo info) {
+    // These are presently Ready servers
+    List<String> availableServers = new ArrayList<>();
+    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+      V1Pod pod = entry.getValue().getPod().get();
+      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
+        availableServers.add(entry.getKey());
+      }
+    }
+    return availableServers;
+  }
+
   private static class RollSpecificClusterStep extends Step {
     private final String clusterName;
-    private final Iterator<StepAndPacket> it;
+    private final Queue<StepAndPacket> servers;
 
     public RollSpecificClusterStep(
-        String clusterName, Collection<StepAndPacket> clusteredServerRestarts, Step next) {
+        String clusterName, Queue<StepAndPacket> clusteredServerRestarts, Step next) {
       super(next);
       this.clusterName = clusterName;
-      it = clusteredServerRestarts.iterator();
+      servers = clusteredServerRestarts;
+    }
+
+    @Override
+    public String getDetail() {
+      return clusterName;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      if (it.hasNext()) {
-        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-        WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
-        // Refresh as this is constantly changing
-        Domain dom = info.getDomain();
-        DomainStatus status = dom.getStatus();
-        // These are presently Ready servers
-        List<String> availableServers = new ArrayList<>();
-        List<ServerStatus> ss = status.getServers();
-        if (ss != null) {
-          for (ServerStatus s : ss) {
-            if (WebLogicConstants.RUNNING_STATE.equals(s.getState())) {
-              availableServers.add(s.getServerName());
+      // Refresh as this is constantly changing
+      Domain dom = info.getDomain();
+      // These are presently Ready servers
+      List<String> availableServers = getReadyServers(info);
+
+      List<String> readyServers = new ArrayList<>();
+
+      int countReady = 0;
+      WlsClusterConfig cluster = config != null ? config.getClusterConfig(clusterName) : null;
+      if (cluster != null) {
+        List<WlsServerConfig> serversConfigs = cluster.getServerConfigs();
+        if (serversConfigs != null) {
+          for (WlsServerConfig s : serversConfigs) {
+            // figure out how many servers are currently ready
+            String name = s.getName();
+            if (availableServers.contains(name)) {
+              readyServers.add(s.getName());
+              countReady++;
             }
           }
         }
-
-        List<String> servers = new ArrayList<>();
-        List<String> readyServers = new ArrayList<>();
-
-        Collection<StepAndPacket> serversThatCanRestartNow = new ArrayList<>();
-        // We will always restart at least one server
-        StepAndPacket current = it.next();
-        serversThatCanRestartNow.add(current);
-
-        WlsServerConfig serverConfig =
-            (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
-        servers.add(serverConfig != null ? serverConfig.getName() : config.getAdminServerName());
-
-        // See if we can restart more now
-        if (it.hasNext()) {
-          // we are already pending a restart of one server, so start count at -1
-          int countReady = -1;
-          WlsClusterConfig cluster = config != null ? config.getClusterConfig(clusterName) : null;
-          if (cluster != null) {
-            List<WlsServerConfig> serversConfigs = cluster.getServerConfigs();
-            if (serversConfigs != null) {
-              for (WlsServerConfig s : serversConfigs) {
-                // figure out how many servers are currently ready
-                if (availableServers.contains(s.getName())) {
-                  readyServers.add(s.getName());
-                  countReady++;
-                }
-              }
-            }
-          }
-
-          // then add as many as possible next() entries leaving at least minimum cluster
-          // availability
-          while (countReady-- > dom.getMinAvailable(clusterName)) {
-            current = it.next();
-            serverConfig = (WlsServerConfig) current.packet.get(ProcessingConstants.SERVER_SCAN);
-            String serverName = null;
-            if (serverConfig != null) {
-              serverName = serverConfig.getName();
-            } else if (config != null) {
-              serverName = config.getAdminServerName();
-            }
-            if (serverName != null) {
-              servers.add(serverName);
-            }
-            serversThatCanRestartNow.add(current);
-            if (!it.hasNext()) {
-              break;
-            }
-          }
-        }
-
-        readyServers.removeAll(servers);
-        LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
-
-        return doNext(new ServersThatCanRestartNowStep(serversThatCanRestartNow, this), packet);
       }
 
+      LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
+
+      int countToRestartNow = Math.max(1, countReady - dom.getMinAvailable(clusterName));
+      Collection<StepAndPacket> restarts = new ArrayList<>();
+      for (int i = 0; i < countToRestartNow; i++) {
+        restarts.add(new StepAndPacket(new RestartOneClusteredServerStep(servers, null), packet));
+      }
+      return doForkJoin(getNext(), packet, restarts);
+    }
+  }
+
+  private static class RestartOneClusteredServerStep extends Step {
+    private final Queue<StepAndPacket> servers;
+
+    public RestartOneClusteredServerStep(Queue<StepAndPacket> servers, Step next) {
+      super(next);
+      this.servers = servers;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      StepAndPacket serverToRestart = servers.poll();
+      if (serverToRestart != null) {
+        Collection<StepAndPacket> col = Collections.singleton(serverToRestart);
+        return doForkJoin(this, packet, col);
+      }
       return doNext(packet);
     }
   }

@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
@@ -34,11 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
-import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.*;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -52,6 +49,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 @SuppressWarnings("deprecation")
@@ -105,7 +103,21 @@ public abstract class PodStepContext extends StepContextBase {
 
   abstract Map<String, String> getPodAnnotations();
 
-  private class ConflictStep extends Step {
+  private abstract class BaseStep extends Step {
+    BaseStep() {
+      this(null);
+    }
+
+    BaseStep(Step next) {
+      super(next);
+    }
+
+    protected String getDetail() {
+      return getServerName();
+    }
+  }
+
+  private class ConflictStep extends BaseStep {
 
     @Override
     public NextAction apply(Packet packet) {
@@ -160,7 +172,21 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   Integer getAsPort() {
-    return domainTopology.getServerConfig(domainTopology.getAdminServerName()).getListenPort();
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .getLocalAdminProtocolChannelPort();
+  }
+
+  boolean isLocalAdminProtocolChannelSecure() {
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .isLocalAdminProtocolChannelSecure();
+  }
+
+  Integer getLocalAdminProtocolChannelPort() {
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .getLocalAdminProtocolChannelPort();
   }
 
   private String getLogHome() {
@@ -224,19 +250,19 @@ public abstract class PodStepContext extends StepContextBase {
 
   abstract String getServerName();
 
-  ServerKubernetesObjects getSko() {
-    return info.getServers().computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
-  }
-
   // ----------------------- step methods ------------------------------
 
   // Prevent the watcher from recreating pod with old spec
-  private void clearRecord() {
-    setRecordedPod(null);
+  private void markBeingDeleted() {
+    info.setServerPodBeingDeleted(getServerName(), Boolean.TRUE);
+  }
+
+  private void clearBeingDeleted() {
+    info.setServerPodBeingDeleted(getServerName(), Boolean.FALSE);
   }
 
   private void setRecordedPod(V1Pod pod) {
-    getSko().getPod().set(pod);
+    info.setServerPod(getServerName(), pod);
   }
 
   /**
@@ -275,6 +301,7 @@ public abstract class PodStepContext extends StepContextBase {
    * @return a step to be scheduled.
    */
   Step createPod(Step next) {
+    clearBeingDeleted();
     return createPodAsync(createResponse(next));
   }
 
@@ -343,7 +370,7 @@ public abstract class PodStepContext extends StepContextBase {
     return new CyclePodStep(next);
   }
 
-  private class CyclePodStep extends Step {
+  private class CyclePodStep extends BaseStep {
 
     CyclePodStep(Step next) {
       super(next);
@@ -351,7 +378,7 @@ public abstract class PodStepContext extends StepContextBase {
 
     @Override
     public NextAction apply(Packet packet) {
-      clearRecord();
+      markBeingDeleted();
       return doNext(deletePod(getNext()), packet);
     }
   }
@@ -379,7 +406,7 @@ public abstract class PodStepContext extends StepContextBase {
     return compatibility.getIncompatibility();
   }
 
-  private class VerifyPodStep extends Step {
+  private class VerifyPodStep extends BaseStep {
 
     VerifyPodStep(Step next) {
       super(next);
@@ -387,7 +414,7 @@ public abstract class PodStepContext extends StepContextBase {
 
     @Override
     public NextAction apply(Packet packet) {
-      V1Pod currentPod = getSko().getPod().get();
+      V1Pod currentPod = info.getServerPod(getServerName());
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
@@ -405,11 +432,21 @@ public abstract class PodStepContext extends StepContextBase {
     }
   }
 
+  private abstract class BaseResponseStep extends ResponseStep<V1Pod> {
+    BaseResponseStep(Step next) {
+      super(next);
+    }
+
+    protected String getDetail() {
+      return getServerName();
+    }
+  }
+
   private ResponseStep<V1Pod> createResponse(Step next) {
     return new CreateResponseStep(next);
   }
 
-  private class CreateResponseStep extends ResponseStep<V1Pod> {
+  private class CreateResponseStep extends BaseResponseStep {
     CreateResponseStep(Step next) {
       super(next);
     }
@@ -423,6 +460,7 @@ public abstract class PodStepContext extends StepContextBase {
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
       logPodCreated();
       if (callResponse.getResult() != null) {
+        info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
         setRecordedPod(callResponse.getResult());
       }
       return doNext(packet);
@@ -436,6 +474,10 @@ public abstract class PodStepContext extends StepContextBase {
   private class DeleteResponseStep extends ResponseStep<V1Status> {
     DeleteResponseStep(Step next) {
       super(next);
+    }
+
+    protected String getDetail() {
+      return getServerName();
     }
 
     @Override
@@ -456,12 +498,10 @@ public abstract class PodStepContext extends StepContextBase {
     return new ReplacePodResponseStep(next);
   }
 
-  private class ReplacePodResponseStep extends ResponseStep<V1Pod> {
-    private final Step next;
+  private class ReplacePodResponseStep extends BaseResponseStep {
 
     ReplacePodResponseStep(Step next) {
       super(next);
-      this.next = next;
     }
 
     @Override
@@ -478,8 +518,8 @@ public abstract class PodStepContext extends StepContextBase {
         setRecordedPod(newPod);
       }
 
-      PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
-      return doNext(pw.waitForReady(newPod, next), packet);
+      PodAwaiterStepFactory pw = packet.getSPI(PodAwaiterStepFactory.class);
+      return doNext(pw.waitForReady(newPod, getNext()), packet);
     }
   }
 
@@ -487,7 +527,7 @@ public abstract class PodStepContext extends StepContextBase {
     return new PatchPodResponseStep(next);
   }
 
-  private class PatchPodResponseStep extends ResponseStep<V1Pod> {
+  private class PatchPodResponseStep extends BaseResponseStep {
     private final Step next;
 
     PatchPodResponseStep(Step next) {
@@ -509,8 +549,7 @@ public abstract class PodStepContext extends StepContextBase {
         setRecordedPod(newPod);
       }
 
-      PodAwaiterStepFactory pw = PodHelper.getPodAwaiterStepFactory(packet);
-      return doNext(pw.waitForReady(newPod, next), packet);
+      return doNext(next, packet);
     }
   }
 
@@ -575,20 +614,90 @@ public abstract class PodStepContext extends StepContextBase {
 
   // ---------------------- model methods ------------------------------
 
-  private V1Pod createPodModel() {
+  V1Pod createPodModel() {
     return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
   }
 
-  // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
+  protected Optional<V1Container> getContainer(V1Pod v1Pod) {
+    return v1Pod.getSpec().getContainers().stream().filter(this::isK8sContainer).findFirst();
+  }
+
+  protected boolean isK8sContainer(V1Container c) {
+    return KubernetesConstants.CONTAINER_NAME.equals(c.getName());
+  }
+
   V1Pod withNonHashedElements(V1Pod pod) {
     V1ObjectMeta metadata = pod.getMetadata();
+    // Adds labels and annotations to a pod, skipping any whose names begin with "weblogic."
     getPodLabels().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putLabelsItem(e.getKey(), e.getValue()));
     getPodAnnotations().entrySet().stream()
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
+
+    updateForStarupMode(pod);
+    updateForShutdown(pod);
     return pod;
+  }
+
+  final void updateForStarupMode(V1Pod pod) {
+    ServerSpec serverSpec = getServerSpec();
+    if (serverSpec != null) {
+      String desiredState = serverSpec.getDesiredState();
+      if (!WebLogicConstants.RUNNING_STATE.equals(desiredState)) {
+        getContainer(pod)
+            .ifPresent(
+                c -> {
+                  List<V1EnvVar> env = c.getEnv();
+                  addDefaultEnvVarIfMissing(env, "STARTUP_MODE", desiredState);
+                });
+      }
+    }
+  }
+
+  /**
+   * Inserts into the pod the environment variables and other configuration related to shutdown
+   * behavior.
+   *
+   * @param pod The pod
+   */
+  final void updateForShutdown(V1Pod pod) {
+    String shutdownType;
+    Long timeout;
+    boolean ignoreSessions;
+
+    ServerSpec serverSpec = getServerSpec();
+    if (serverSpec != null) {
+      Shutdown shutdown = serverSpec.getShutdown();
+      shutdownType = shutdown.getShutdownType();
+      timeout = shutdown.getTimeoutSeconds();
+      ignoreSessions = shutdown.getIgnoreSessions();
+    } else {
+      shutdownType = GRACEFUL_SHUTDOWNTYPE;
+      timeout = Shutdown.DEFAULT_TIMEOUT;
+      ignoreSessions = Shutdown.DEFAULT_IGNORESESSIONS;
+    }
+
+    getContainer(pod)
+        .ifPresent(
+            c -> {
+              List<V1EnvVar> env = c.getEnv();
+              if (scan != null) {
+                Integer localAdminPort = scan.getLocalAdminProtocolChannelPort();
+                addOrReplaceEnvVar(env, "LOCAL_ADMIN_PORT", String.valueOf(localAdminPort));
+                addOrReplaceEnvVar(
+                    env,
+                    "LOCAL_ADMIN_PROTOCOL",
+                    localAdminPort.equals(scan.getListenPort()) ? "t3" : "t3s");
+              }
+              addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdownType);
+              addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(timeout));
+              addDefaultEnvVarIfMissing(
+                  env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(ignoreSessions));
+            });
+
+    pod.getSpec().terminationGracePeriodSeconds(timeout + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME);
   }
 
   private static boolean isCustomerItem(Map.Entry<String, String> entry) {
@@ -694,6 +803,9 @@ public abstract class PodStepContext extends StepContextBase {
     addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
     addEnvVar(vars, "ADMIN_NAME", getAsName());
     addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
+    if (isLocalAdminProtocolChannelSecure()) {
+      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+    }
     addEnvVar(vars, "SERVER_NAME", getServerName());
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
@@ -730,14 +842,21 @@ public abstract class PodStepContext extends StepContextBase {
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD)
-        .httpGet(httpGetAction(READINESS_PATH, getDefaultPort()));
+        .httpGet(
+            httpGetAction(
+                READINESS_PATH,
+                getLocalAdminProtocolChannelPort(),
+                isLocalAdminProtocolChannelSecure()));
     return readinessProbe;
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1HTTPGetAction httpGetAction(String path, int port) {
+  private V1HTTPGetAction httpGetAction(String path, int port, boolean useHTTPS) {
     V1HTTPGetAction getAction = new V1HTTPGetAction();
     getAction.path(path).port(new IntOrString(port));
+    if (useHTTPS) {
+      getAction.scheme("HTTPS");
+    }
     return getAction;
   }
 

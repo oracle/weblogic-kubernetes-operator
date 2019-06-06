@@ -121,6 +121,17 @@ public class Operator {
   }
 
   /**
+   * verifies operator pod is deleted
+   *
+   * @throws Exception
+   */
+  public void verifyPodDeleted() throws Exception {
+    logger.info("Checking if Operator pod is deleted");
+    // empty string for pod name as there is only one pod
+    TestUtils.checkPodDeleted("", operatorNS);
+  }
+
+  /**
    * verifies operator pod is ready
    *
    * @throws Exception
@@ -129,6 +140,18 @@ public class Operator {
     logger.info("Checking if Operator pod is Ready");
     // empty string for pod name as there is only one pod
     TestUtils.checkPodReady("", operatorNS);
+  }
+
+  /**
+   * verifies operator pod is ready
+   *
+   * @param containerNum - container number in a pod
+   * @throws Exception
+   */
+  public void verifyOperatorReady(String containerNum) throws Exception {
+    logger.info("Checking if Operator pod is Ready");
+    // empty string for pod name as there is only one pod
+    TestUtils.checkPodReady("", operatorNS, containerNum);
   }
 
   /**
@@ -286,6 +309,10 @@ public class Operator {
   }
 
   public void callHelmInstall() throws Exception {
+    String imagePullPolicy =
+        System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null
+            ? System.getenv("IMAGE_PULL_POLICY_OPERATOR")
+            : "IfNotPresent";
     StringBuffer cmd = new StringBuffer("cd ");
     cmd.append(BaseTest.getProjectRoot())
         .append(" && helm install kubernetes/charts/weblogic-operator ");
@@ -295,7 +322,9 @@ public class Operator {
         .append(generatedInputYamlFile)
         .append(" --namespace ")
         .append(operatorNS)
-        .append(" --wait --timeout 60");
+        .append(" --set \"imagePullPolicy=")
+        .append(imagePullPolicy)
+        .append("\" --wait --timeout 60");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -378,7 +407,13 @@ public class Operator {
         sb.append(operatorNS);
         break;
     }
-    sb.append(" DNS:");
+    // here we are assuming that if the "host name" starts with a digit, then it is actually
+    // an IP address, and so we need to use the "IP" prefix in the SANS.
+    if (Character.isDigit(TestUtils.getHostName().charAt(0))) {
+      sb.append(" IP:");
+    } else {
+      sb.append(" DNS:");
+    }
     sb.append(TestUtils.getHostName());
     sb.append(" >> ");
     sb.append(generatedInputYamlFile);
@@ -476,7 +511,7 @@ public class Operator {
     }
 
     // customize the inputs yaml file to use our pre-built docker image
-    // IMAGE_NAME_OPERATOR & IMAGE_TAG_OPERATOR variables are used for wercker
+    // IMAGE_NAME_OPERATOR & IMAGE_TAG_OPERATOR variables are used for shared cluster
     if (System.getenv("IMAGE_NAME_OPERATOR") != null
         && System.getenv("IMAGE_TAG_OPERATOR") != null) {
       operatorMap.put(
@@ -495,6 +530,49 @@ public class Operator {
     }
   }
 
+  /**
+   * restart operator pod using replicas
+   *
+   * @throws Exception
+   */
+  public void restartUsingReplicas() throws Exception {
+    stopUsingReplicas();
+    startUsingReplicas();
+  }
+
+  /**
+   * stop operator pod by scaling its replicaset to 0
+   *
+   * @throws Exception
+   */
+  public void stopUsingReplicas() throws Exception {
+    String cmd = "kubectl scale --replicas=0 deployment/weblogic-operator" + " -n " + operatorNS;
+    logger.info("Undeploy Operator using command:\n" + cmd);
+
+    ExecResult result = TestUtils.exec(cmd);
+
+    logger.info("stdout : \n" + result.stdout());
+
+    logger.info("Checking if operator pod is deleted");
+    verifyPodDeleted();
+  }
+
+  /**
+   * start operator pod by scaling its replicaset to 1
+   *
+   * @throws Exception
+   */
+  public void startUsingReplicas() throws Exception {
+    String cmd = "kubectl scale --replicas=1 deployment/weblogic-operator" + " -n " + operatorNS;
+    logger.info("Deploy Operator using command:\n" + cmd);
+
+    ExecResult result = TestUtils.exec(cmd);
+
+    logger.info("Checking if operator pod is running");
+    verifyPodCreated();
+    verifyOperatorReady();
+  }
+
   public String getOperatorNamespace() {
     return operatorNS;
   }
@@ -505,5 +583,22 @@ public class Operator {
 
   public RESTCertType getRestCertType() {
     return restCertType;
+  }
+
+  /**
+   * Retrieve Operator pod name
+   *
+   * @return Operator pod name
+   * @throws Exception
+   */
+  public String getOperatorPodName() throws Exception {
+    String cmd =
+        "kubectl get pod -n "
+            + getOperatorNamespace()
+            + " -o jsonpath=\"{.items[0].metadata.name}\"";
+    logger.info("Command to query Operator pod name: " + cmd);
+    ExecResult result = TestUtils.exec(cmd);
+
+    return result.stdout();
   }
 }

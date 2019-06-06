@@ -14,4 +14,8 @@
             <d:public-address f:combine-mode="replace">${secret:customsitconfigdomain-test-secrets.hostname}</d:public-address>
         </d:network-access-point>
     </d:server>
+    <d:server-template>
+        <d:name>cluster-1-template</d:name>
+        <d:max-message-size f:combine-mode="add">77777777</d:max-message-size>
+    </d:server-template>
 </d:domain>

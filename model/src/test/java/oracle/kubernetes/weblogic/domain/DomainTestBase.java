@@ -338,20 +338,6 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenDesiredStateAdminAndSpecifiedOnServer_managedServerHasJavaOption() {
-    configureServer(SERVER1)
-        .withDesiredState("ADMIN")
-        .withEnvironmentVariable(NAME1, VALUE1)
-        .withEnvironmentVariable(NAME2, VALUE2);
-
-    ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
-
-    assertThat(
-        spec.getEnvironmentVariables(),
-        hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN")));
-  }
-
-  @Test
   public void whenSpecifiedOnCluster_managedServerHasEnvironmentVariables() {
     configureCluster(CLUSTER_NAME)
         .withEnvironmentVariable(NAME1, VALUE1)
@@ -370,9 +356,7 @@ public abstract class DomainTestBase {
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
-    assertThat(
-        spec.getEnvironmentVariables(),
-        hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN value")));
+    assertThat(spec.getEnvironmentVariables(), hasItem(envVar("JAVA_OPTIONS", "value")));
   }
 
   @Test
@@ -399,7 +383,7 @@ public abstract class DomainTestBase {
                 hasItem(
                     envVar(
                         "USER_MEM_ARGS",
-                        "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "))));
+                        "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "))));
     assertThat(serverSpec.getDesiredState(), equalTo("RUNNING"));
   }
 
@@ -408,9 +392,6 @@ public abstract class DomainTestBase {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server2", null);
 
-    assertThat(
-        serverSpec.getEnvironmentVariables(),
-        hasItem(envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN")));
     assertThat(serverSpec.getDesiredState(), equalTo("ADMIN"));
   }
 

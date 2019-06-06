@@ -50,7 +50,7 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
 
   @Override
   public List<V1EnvVar> getEnvironmentVariables() {
-    return withStateAdjustments(server.getEnv());
+    return server.getEnv();
   }
 
   @Override
@@ -73,6 +73,10 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   @Nonnull
   public Map<String, String> getPodAnnotations() {
     return server.getPodAnnotations();
+  }
+
+  public Boolean isPrecreateServerService() {
+    return server.isPrecreateServerService();
   }
 
   @Override
@@ -140,6 +144,12 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   @Override
   public ProbeTuning getReadinessProbe() {
     return server.getReadinessProbe();
+  }
+
+  @Nonnull
+  @Override
+  public Shutdown getShutdown() {
+    return server.getShutdown();
   }
 
   @Nonnull

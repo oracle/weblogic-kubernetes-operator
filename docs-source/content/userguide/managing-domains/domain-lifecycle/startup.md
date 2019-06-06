@@ -11,13 +11,16 @@ and which servers should be restarted. To start, stop, or restart servers, modif
 
 * [Starting and stopping servers](#starting-and-stopping-servers)
     * [Common starting and stopping scenarios](#common-starting-and-stopping-scenarios)
+* [Shutdown options](#shutdown-options)
 * [Restarting servers](#restarting-servers)
     * [Rolling restarts](#rolling-restarts)
     * [Common restarting scenarios](#common-restarting-scenarios)
 
-There are properties on the domain resource that specify which servers should be running
-and which servers should be restarted. To start, stop, or restart servers, modify these properties on the domain resource
-(for example, by using `kubectl` or the Kubernetes REST API).  The operator will notice the changes and apply them.
+There are properties on the domain resource that specify which servers should be running,
+which servers should be restarted and the desired initial state. To start, stop, or restart servers, modify these properties on the domain resource
+(for example, by using `kubectl` or the Kubernetes REST API).  The operator will notice the changes and apply them.  Beginning,
+with operator version 2.2, there are now properties to control server shutdown handling, such as whether the shutdown
+will be graceful, the timeout, and if in-flight sessions are given the opportunity to complete.
 
 ### Starting and stopping servers
 
@@ -66,6 +69,16 @@ Servers configured as `ALWAYS` count toward the cluster's `replicas` count.
 If more servers are configured as `ALWAYS` than the cluster's `replicas` count, they will all be started and the `replicas` count will be ignored.
 {{% /notice %}}
 
+### Server start state
+
+For some use cases, such as an externally managed zero downtime patching (ZDP), it may be necessary to start WebLogic Server
+so that at the end of its startup process, the server is in an administrative state.  This can be achieved using the `serverStartState`
+property, which is available at domain, cluster, and server levels.  When `serverStartState` is set to `ADMIN`, then servers will
+progress only to the administrative state.  You could then use the WebLogic console, REST API, or a WLST script to make any necessary
+updates before advancing the server to the running state.
+
+Changes to the `serverStartState` property do not affect already started servers.
+
 ### Common starting and stopping scenarios
 
 #### Normal running state
@@ -74,50 +87,60 @@ In this case, the domain resource does not need to specify `serverStartPolicy`, 
 
 For example:
 ```
-   domain:
-     spec:
-       image: ...
-       replicas: 10
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    image: ...
+    replicas: 10
 ```
 
 #### Shut down all the servers
 Sometimes you need to completely shut down the domain (for example, take it out of service).
 ```
-   domain:
-     spec:
-       serverStartPolicy: "NEVER"
-       ...
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    serverStartPolicy: "NEVER"
+    ...
 ```
 
 #### Only start the Administration Server
 Sometimes you want to start the Administration Server only, that is, take the domain out of service but leave the Administration Server running so that you can administer the domain.
 ```
-   domain:
-     spec:
-       serverStartPolicy: "ADMIN_ONLY"
-       ...
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    serverStartPolicy: "ADMIN_ONLY"
+    ...
 ```
 
 #### Shut down a cluster
 To shut down a cluster (for example, take it out of service), add it to the domain resource and set its `serverStartPolicy` to `NEVER`.
 ```
-   domain:
-     spec:
-       clusters:
-       - clusterName: "cluster1"
-         serverStartPolicy: "NEVER"
-       ...
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    clusters:
+    - clusterName: "cluster1"
+      serverStartPolicy: "NEVER"
+    ...
 ```
 
 #### Shut down a specific standalone server
 To shut down a specific standalone server, add it to the domain resource and set its `serverStartPolicy` to `NEVER`.
 ```
-   domain:
-     spec:
-       managedServers:
-       - serverName: "server1"
-         serverStartPolicy: "NEVER"
-       ...
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    managedServers:
+    - serverName: "server1"
+      serverStartPolicy: "NEVER"
+    ...
 ```
 
 #### Force a specific clustered Managed Server to start
@@ -126,17 +149,80 @@ However, sometimes some of the Managed Servers are different (for example, suppo
 
 This is done by adding the server to the domain resource and setting its `serverStartPolicy` to `ALWAYS`.
 ```
-   domain:
-     spec:
-       managedServers:
-       - serverName: "cluster1_server1"
-         serverStartPolicy: "ALWAYS"
-       ...
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    managedServers:
+    - serverName: "cluster1_server1"
+      serverStartPolicy: "ALWAYS"
+    ...
 ```
 
 {{% notice note %}}
 The server will count toward the cluster's `replicas` count.  Also, if you configure more than the `replicas` servers count to `ALWAYS`, they will all be started, even though the `replicas` count will be exceeded.
 {{%/ notice %}}
+
+### Shutdown options
+
+The domain resource includes the element `serverPod` that is available under `spec`, `adminServer` and each entry of 
+`clusters` and `managedServers`. The `serverPod` element controls many details of how pods are created for server instances.
+
+The `shutdown` element of `serverPod` controls how servers will be shutdown.  This element has three properties:
+`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` property can be set to either `Graceful`, the default, 
+or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to 
+complete shutdown before the server is killed.  The `ignoreSessions` property, which is only applicable for graceful shutdown, when `false`,
+the default, allows the shutdown process to take longer to give time for any active sessions to complete up to the configured timeout.
+The operator runtime monitors this property but will not restart any server pods solely to adjust the shutdown options.
+Instead, server pods created or restarted because of another property change will be configured to shutdown, at the appropriate
+time, using the shutdown options set when the server pod is created.
+
+#### Shutdown environment variables
+
+The operator runtime configures shutdown behavior with the use of the following environment variables. Users may
+instead simply configure these environment variables directly.  When a user-configured environment variable is present,
+the operator will not override the environment variable based on the shutdown configuration.
+
+| Environment Variables | Default Value | Supported Values |
+| --- | --- | --- |
+| `SHUTDOWN_TYPE` | `Graceful` | `Graceful` or `Forced` |
+| `SHUTDOWN_TIMEOUT` | 30 | Whole number in seconds where 0 means no timeout |
+| `SHUTDOWN_IGNORE_SESSIONS` | `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful |
+
+#### `shutdown` rules
+
+You can specify the `serverPod` element, including the `shutdown` element, at the domain, cluster, and server levels. If
+`shutdown` is specified at multiple levels, such as for a cluster and for a member server that is part of that cluster,
+then the shutdown configuration for a specific server is the combination of all of the relevant values with each field
+having the value from the `shutdown` element at the most specific scope.  
+
+For instance, given the following domain resource:
+```
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    serverPod:
+      shutdown:
+        shutdownType: Graceful
+        timeoutSeconds: 45
+    clusters:
+    - clusterName: "cluster1"
+      serverPod:
+        shutdown:
+          ignoreSessions: true
+    managedServers:
+    - serverName: "cluster1_server1"
+      serverPod:
+        shutdown:
+          timeoutSeconds: 60
+          ignoreSessions: false
+    ...
+```
+
+Graceful shutdown is used for all servers in the domain because this is specified at the domain level and is not overridden at 
+any cluster or server level.  The "cluster1" cluster defaults to ignoring sessions; however, the "cluster1_server1" server
+instance will not ignore sessions and will have a longer timeout.
 
 ### Restarting servers
 
@@ -164,7 +250,6 @@ The operator will restart servers when any of the follow properties on the domai
 * `readinessProbe`
 * `resources`
 * `restartVersion`
-* `serverStartState`
 * `volumes`
 * `volumeMounts`
 
@@ -173,6 +258,11 @@ If the only change detected is the addition or modification of a domain-specifie
 the operator will *patch* the server's pod rather than restarting it. Removing a label or annotation from
 the domain resource will cause neither a restart nor a patch. It is possible to force a restart to remove
 such a label or annotation by modifying the `restartVersion`.
+{{% /notice %}}
+
+{{% notice note %}}
+Prior to version 2.2, the operator incorrectly restarted servers when the `serverStartState` property was changed.  Now, 
+this property has no affect on already running servers.
 {{% /notice %}}
 
 ### Rolling restarts
@@ -211,10 +301,12 @@ The servers will also be restarted if `restartVersion` is removed from the domai
 Set `restartVersion` at the domain level to a new value.
 
 ```
-   domain:
-     spec:
-       restartVersion: "domainV1"
-       ...
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    restartVersion: "domainV1"
+    ...
 ```
 
 #### Restart all the servers in the cluster
@@ -222,13 +314,15 @@ Set `restartVersion` at the domain level to a new value.
 Set `restartVersion` at the cluster level to a new value.
 
 ```
-   domain:
-     spec:
-       clusters:
-       - clusterName : "cluster1"
-         restartVersion: "cluster1V1"
-         maxUnavailable: 2
-       ...
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    clusters:
+    - clusterName : "cluster1"
+      restartVersion: "cluster1V1"
+      maxUnavailable: 2
+    ...
 ```
 
 #### Restart the Administration Server
@@ -236,11 +330,13 @@ Set `restartVersion` at the cluster level to a new value.
 Set `restartVersion` at the `adminServer` level to a new value.
 
 ```
-   domain:
-     spec:
-       adminServer:
-         restartVersion: "adminV1"
-       ...
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    adminServer:
+      restartVersion: "adminV1"
+    ...
 ```
 
 #### Restart a standalone or clustered Managed Server
@@ -248,14 +344,16 @@ Set `restartVersion` at the `adminServer` level to a new value.
 Set `restartVersion` at the `managedServer` level to a new value.
 
 ```
-   domain:
-     spec:
-       managedServers:
-       - serverName: "standalone_server1"
-         restartVersion: "v1"
-       - serverName: "cluster1_server1"
-         restartVersion: "v1"
-       ...
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    managedServers:
+    - serverName: "standalone_server1"
+      restartVersion: "v1"
+    - serverName: "cluster1_server1"
+      restartVersion: "v1"
+    ...
 ```
 #### Full domain restarts
 
@@ -265,23 +363,27 @@ then restart them.  Unlike rolling restarts, the operator cannot detect and init
 To manually initiate a full domain restart:
 
 1. Change the domain level `serverStartPolicy` on the domain resource to `NEVER`.
-    ```
-       domain:
-         spec:
-           serverStartPolicy: "NEVER"
-           ...
-    ```
+```
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    serverStartPolicy: "NEVER"
+    ...
+```
 
 2. Wait for the operator to stop ALL the servers for that domain.
 
 3. To restart the domain, set the domain level `serverStartPolicy` back to `IF_NEEDED`. Alternatively, you do not
 have to specify the `serverStartPolicy` as the default value is `IF_NEEDED`.
 
-    ```
-       domain:
-         spec:
-           serverStartPolicy: "IF_NEEDED"
-           ...
-    ```
+```
+  kind: Domain
+  metadata:
+    name: domain1
+  spec:
+    serverStartPolicy: "IF_NEEDED"
+    ...
+```
 
 4. The operator will restart all the servers in the domain.
