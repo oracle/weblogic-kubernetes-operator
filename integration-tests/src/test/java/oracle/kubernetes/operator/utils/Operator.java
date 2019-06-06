@@ -483,12 +483,14 @@ public class Operator {
       // create domain namespaces
 
       ArrayList<String> domainNamespaces = (ArrayList<String>) operatorMap.get("domainNamespaces");
-      for (int i = 0; i < domainNamespaces.size(); i++) {
-        String domainNS = domainNamespaces.get(i);
-        logger.info("domainNamespace " + domainNS);
-        if (!domainNS.equals("default")) {
-          logger.info("Creating domain namespace " + domainNS);
-          ExecCommand.exec("kubectl create namespace " + domainNS);
+      if (domainNamespaces != null) {
+        for (int i = 0; i < domainNamespaces.size(); i++) {
+          String domainNS = domainNamespaces.get(i);
+          logger.info("domainNamespace " + domainNS);
+          if (!domainNS.equals("default")) {
+            logger.info("Creating domain namespace " + domainNS);
+            ExecCommand.exec("kubectl create namespace " + domainNS);
+          }
         }
       }
     }

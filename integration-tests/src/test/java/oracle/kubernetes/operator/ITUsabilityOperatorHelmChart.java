@@ -536,7 +536,41 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
   }
 
   /**
-   * Helm will install the operator with empty target domains namespaces
+   * Helm will install the operator with no override for domainNamespaces, resulting in the use of
+   * "default" as the target namespace. NOTE: This test must not override domainNamespaces with an
+   * empty set or the operator will fail when it performs security checks because the RoleBinding
+   * for the weblogic-operator-rolebinding-namespace will be missing. Rather, just remove the
+   * domainNamespaces override completely so that we pick up the Operator defaults specified in the
+   * Operator helm chart values.yaml.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void testCreateWithMissingTargetDomainInstall() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    Operator operator = null;
+    try {
+      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
+      operatorMap.remove("domainNamespaces");
+      operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
+      operator.callHelmInstall();
+      operator.verifyOperatorReady();
+
+    } finally {
+      number++;
+      if (operator != null) {
+        operator.destroy();
+      }
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Helm will install the operator with empty string as target domains namespaces. This is
+   * equivalent to what the QuickStart guide does when it installs the operator with ' --set
+   * "domainNamespaces={}" '
    *
    * @throws Exception
    */
@@ -549,6 +583,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
     try {
       Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
       ArrayList<String> targetDomainsNS = new ArrayList<String>();
+      targetDomainsNS.add("");
       operatorMap.replace("domainNamespaces", targetDomainsNS);
       operator = new Operator(operatorMap, RESTCertType.SELF_SIGNED);
       operator.callHelmInstall();
