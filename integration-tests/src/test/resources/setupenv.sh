@@ -223,7 +223,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
   
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
   
-  clean_shared_cluster
+  clean_shared_cluster || true
     
   if [ "$JRF_ENABLED" = true ] ; then
 	pull_tag_images_jrf	
