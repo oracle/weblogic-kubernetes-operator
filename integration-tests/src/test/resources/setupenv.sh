@@ -261,6 +261,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
   fi
   setup_shared_cluster
   get_wlthint3client_from_image
+  docker images
     
 elif [ "$JENKINS" = "true" ]; then
 
