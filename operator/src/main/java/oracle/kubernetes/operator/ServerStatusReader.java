@@ -5,6 +5,8 @@
 package oracle.kubernetes.operator;
 
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
@@ -15,16 +17,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.LastKnownStatus;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -36,6 +39,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
+import org.joda.time.DateTime;
 
 /** Creates an asynchronous step to read the WebLogic server state from a particular pod. */
 public class ServerStatusReader {
@@ -62,59 +66,57 @@ public class ServerStatusReader {
 
     @Override
     public NextAction apply(Packet packet) {
-      ConcurrentMap<String, String> serverStateMap = new ConcurrentHashMap<>();
-      packet.put(ProcessingConstants.SERVER_STATE_MAP, serverStateMap);
+      packet.put(SERVER_STATE_MAP, new ConcurrentHashMap<String, String>());
+      packet.put(SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
 
-      ConcurrentMap<String, ServerHealth> serverHealthMap = new ConcurrentHashMap<>();
-      packet.put(ProcessingConstants.SERVER_HEALTH_MAP, serverHealthMap);
+      AtomicInteger remainingServerHealthToRead = new AtomicInteger();
+      packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, remainingServerHealthToRead);
 
-      Collection<StepAndPacket> startDetails = new ArrayList<>();
-      for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-        String serverName = entry.getKey();
-        ServerKubernetesObjects sko = entry.getValue();
-        if (sko != null) {
-          V1Pod pod = sko.getPod().get();
-          if (pod != null) {
-            Packet p = packet.clone();
-            startDetails.add(
-                new StepAndPacket(
-                    createServerStatusReaderStep(sko, pod, serverName, timeoutSeconds), p));
-          }
-        }
-      }
+      Collection<StepAndPacket> startDetails =
+          info.getServerPods()
+              .map(pod -> createStatusReaderStep(packet, pod))
+              .collect(Collectors.toList());
 
       if (startDetails.isEmpty()) {
         return doNext(packet);
+      } else {
+        remainingServerHealthToRead.set(startDetails.size());
+        return doForkJoin(getNext(), packet, startDetails);
       }
-      return doForkJoin(getNext(), packet, startDetails);
+    }
+
+    private StepAndPacket createStatusReaderStep(Packet packet, V1Pod pod) {
+      return new StepAndPacket(
+          createServerStatusReaderStep(info, pod, PodHelper.getPodServerName(pod), timeoutSeconds),
+          packet.clone());
     }
   }
 
   /**
    * Creates asynchronous step to read WebLogic server state from a particular pod.
    *
-   * @param sko Server objects
+   * @param info the domain presence
    * @param pod The pod
    * @param serverName Server name
    * @param timeoutSeconds Timeout in seconds
    * @return Created step
    */
   private static Step createServerStatusReaderStep(
-      ServerKubernetesObjects sko, V1Pod pod, String serverName, long timeoutSeconds) {
+      DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
     return new ServerStatusReaderStep(
-        sko, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, null));
+        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
   }
 
   private static class ServerStatusReaderStep extends Step {
-    private final ServerKubernetesObjects sko;
+    private final DomainPresenceInfo info;
     private final V1Pod pod;
     private final String serverName;
     private final long timeoutSeconds;
 
     ServerStatusReaderStep(
-        ServerKubernetesObjects sko, V1Pod pod, String serverName, long timeoutSeconds, Step next) {
+        DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds, Step next) {
       super(next);
-      this.sko = sko;
+      this.info = info;
       this.pod = pod;
       this.serverName = serverName;
       this.timeoutSeconds = timeoutSeconds;
@@ -124,18 +126,25 @@ public class ServerStatusReader {
     public NextAction apply(Packet packet) {
       @SuppressWarnings("unchecked")
       ConcurrentMap<String, String> serverStateMap =
-          (ConcurrentMap<String, String>) packet.get(ProcessingConstants.SERVER_STATE_MAP);
+          (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
 
-      if (PodWatcher.getReadyStatus(pod)) {
-        sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
-        serverStateMap.put(serverName, WebLogicConstants.RUNNING_STATE);
-        return doNext(packet);
-      } else {
-        String lastKnownState = sko.getLastKnownStatus().get();
-        if (lastKnownState != null) {
-          serverStateMap.put(serverName, lastKnownState);
+      TuningParameters.MainTuning main = TuningParameters.getInstance().getMainTuning();
+      LastKnownStatus lastKnownStatus = info.getLastKnownServerStatus(serverName);
+      if (lastKnownStatus != null
+          && !WebLogicConstants.UNKNOWN_STATE.equals(lastKnownStatus.getStatus())
+          && lastKnownStatus.getUnchangedCount() >= main.unchangedCountToDelayStatusRecheck) {
+        if (DateTime.now()
+            .isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
+          String state = lastKnownStatus.getStatus();
+          serverStateMap.put(serverName, state);
           return doNext(packet);
         }
+      }
+
+      if (PodHelper.getReadyStatus(pod)) {
+        // set default to UNKNOWN; will be corrected in ReadHealthStep
+        serverStateMap.put(serverName, WebLogicConstants.UNKNOWN_STATE);
+        return doNext(packet);
       }
 
       // Even though we don't need input data for this call, the API server is
@@ -158,8 +167,18 @@ public class ServerStatusReader {
 
               InputStream in = proc.getInputStream();
               if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-                try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
-                  state = CharStreams.toString(reader);
+                int exitValue = proc.exitValue();
+                if (exitValue == 0) {
+                  try (final Reader reader = new InputStreamReader(in, Charsets.UTF_8)) {
+                    state = CharStreams.toString(reader);
+                  }
+                } else if (exitValue == 1 || exitValue == 2) {
+                  state =
+                      PodHelper.isDeleting(pod)
+                          ? WebLogicConstants.SHUTDOWN_STATE
+                          : WebLogicConstants.STARTING_STATE;
+                } else {
+                  state = WebLogicConstants.UNKNOWN_STATE;
                 }
               }
             } catch (InterruptedException ignore) {
@@ -173,29 +192,53 @@ public class ServerStatusReader {
               }
             }
 
-            serverStateMap.put(
-                serverName, state != null ? state.trim() : WebLogicConstants.UNKNOWN_STATE);
+            state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
+            serverStateMap.put(serverName, state);
             fiber.resume(packet);
           });
+    }
+
+    private String chooseStateOrLastKnownServerStatus(
+        LastKnownStatus lastKnownStatus, String state) {
+      if (state != null) {
+        state = state.trim();
+        if (!state.isEmpty()) {
+          info.updateLastKnownServerStatus(serverName, state);
+          return state;
+        }
+      }
+
+      if (lastKnownStatus != null) {
+        return lastKnownStatus.getStatus();
+      }
+      state =
+          (PodHelper.isDeleting(pod)
+              ? WebLogicConstants.SHUTTING_DOWN_STATE
+              : WebLogicConstants.STARTING_STATE);
+      info.updateLastKnownServerStatus(serverName, state);
+      return state;
     }
   }
 
   private static class ServerHealthStep extends Step {
     private final String serverName;
+    private final V1Pod pod;
 
-    ServerHealthStep(String serverName, Step next) {
+    ServerHealthStep(String serverName, V1Pod pod, Step next) {
       super(next);
       this.serverName = serverName;
+      this.pod = pod;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       @SuppressWarnings("unchecked")
       ConcurrentMap<String, String> serverStateMap =
-          (ConcurrentMap<String, String>) packet.get(ProcessingConstants.SERVER_STATE_MAP);
+          (ConcurrentMap<String, String>) packet.get(SERVER_STATE_MAP);
       String state = serverStateMap.get(serverName);
 
-      if (WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
+      if (PodHelper.getReadyStatus(pod)
+          || WebLogicConstants.STATES_SUPPORTING_REST.contains(state)) {
         packet.put(ProcessingConstants.SERVER_NAME, serverName);
         return doNext(STEP_FACTORY.apply(getNext()), packet);
       }

@@ -16,11 +16,15 @@ public class LegalNames {
     return toServerName(domainUID, serverName);
   }
 
-  public static String toServerName(String domainUID, String serverName) {
+  private static String toServerName(String domainUID, String serverName) {
     return toDNS1123LegalName(String.format(SERVER_PATTERN, domainUID, serverName));
   }
 
-  static String toPodName(String domainUID, String serverName) {
+  public static String toEventName(String domainUID, String serverName) {
+    return toServerName(domainUID, serverName);
+  }
+
+  public static String toPodName(String domainUID, String serverName) {
     return toServerName(domainUID, serverName);
   }
 
@@ -32,7 +36,7 @@ public class LegalNames {
     return toDNS1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUID));
   }
 
-  static String toExternalServiceName(String domainUID, String serverName) {
+  public static String toExternalServiceName(String domainUID, String serverName) {
     return toDNS1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUID, serverName));
   }
 

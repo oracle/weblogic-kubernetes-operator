@@ -59,7 +59,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
 
-      tearDown();
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
       logger.info("SUCCESS");
     }
@@ -630,6 +630,10 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
       logger.info("verify that old domain is not managed by operator");
       verifyOperatorDomainManagement(operator, domain, false);
       verifyOperatorDomainManagement(operator, domainnew, true);
+      logger.info("Upgrade to add first domain namespace in target domains");
+      targetDomainsNS.add("test" + (number));
+      upgradeOperatorDomainNamespaces(operator, targetDomainsNS);
+      verifyOperatorDomainManagement(operator, domain, true);
       testCompletedSuccessfully = true;
     } finally {
       if (domain != null) {
@@ -700,6 +704,7 @@ public class ITUsabilityOperatorHelmChart extends BaseTest {
               .contains(
                   "Response {\"status\":404,\"detail\":\"/operator/latest/domains/test" + number)) {
           } else {
+            logger.info("Got 404, Operator can not access the domain " + domain.getDomainUid());
             break;
           }
         }

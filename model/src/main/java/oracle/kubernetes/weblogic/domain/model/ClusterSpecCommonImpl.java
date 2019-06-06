@@ -21,6 +21,11 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   }
 
   @Override
+  public Boolean isPrecreateServerService() {
+    return cluster.isPrecreateServerService();
+  }
+
+  @Override
   public Map<String, String> getServiceLabels() {
     return cluster.getServiceLabels();
   }
@@ -48,5 +53,10 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   @Override
   public List<V1Container> getContainers() {
     return cluster.getContainers();
+  }
+
+  @Override
+  public Shutdown getShutdown() {
+    return cluster.getShutdown();
   }
 }

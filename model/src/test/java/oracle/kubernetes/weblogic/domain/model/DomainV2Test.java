@@ -707,7 +707,9 @@ public class DomainV2Test extends DomainTestBase {
         serverSpec.getEnvironmentVariables(),
         containsInAnyOrder(
             envVar("JAVA_OPTIONS", "-server"),
-            envVar("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "),
+            envVar(
+                "USER_MEM_ARGS",
+                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "),
             envVar("var1", "value0")));
     assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
     assertThat(
@@ -724,7 +726,7 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(
         serverSpec.getEnvironmentVariables(),
         containsInAnyOrder(
-            envVar("JAVA_OPTIONS", "-Dweblogic.management.startupMode=ADMIN -verbose"),
+            envVar("JAVA_OPTIONS", "-verbose"),
             envVar("USER_MEM_ARGS", "-Xms64m -Xmx256m "),
             envVar("var1", "value0")));
     assertThat(serverSpec.getConfigOverrides(), equalTo("overrides-config-map"));
@@ -1099,6 +1101,35 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(serverSpecContainers.get(1).getName(), is("cont1"));
     assertThat(serverSpecContainers.get(1).getImage(), is("busybox"));
     assertThat(serverSpecContainers.get(1).getCommand().get(2), containsString("cat cont"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_ShutdownIsReadFromSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    Shutdown shutdown = domain.getSpec().getShutdown();
+    assertThat(shutdown.getShutdownType(), is("Graceful"));
+    assertThat(shutdown.getTimeoutSeconds(), is(45l));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_ShutdownIsReadFromClusterSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    Shutdown shutdown = domain.getCluster("cluster2").getShutdown();
+    assertThat(shutdown.getShutdownType(), is("Graceful"));
+    assertThat(shutdown.getTimeoutSeconds(), is(45l));
+    assertThat(shutdown.getIgnoreSessions(), is(true));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_ShutdownIsReadFromServerSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    Shutdown shutdown = domain.getServer("server2", "cluster2").getShutdown();
+    assertThat(shutdown.getShutdownType(), is("Graceful"));
+    assertThat(shutdown.getTimeoutSeconds(), is(60l));
+    assertThat(shutdown.getIgnoreSessions(), is(false));
   }
 
   @Test

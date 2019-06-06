@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyStore;
@@ -48,6 +49,23 @@ public class TestUtils {
 
     // check for admin pod
     checkCmdInLoop(cmd.toString(), "1/1", podName);
+  }
+
+  /**
+   * check pod is in Running state
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   * @param containerNum - container number in a pod
+   * @throws Exception
+   */
+  public static void checkPodReady(String podName, String domainNS, String containerNum)
+      throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for the pod passed from parameter podName
+    checkCmdInLoop(cmd.toString(), containerNum, podName);
   }
 
   /** @param cmd - kubectl get pod <podname> -n namespace */
@@ -195,10 +213,16 @@ public class TestUtils {
     checkCmdInLoopForDelete(cmd.toString(), "\"" + domainUid + "\" not found", domainUid);
   }
 
-  public static void deletePVC(String pvcName, String namespace, String domainUid)
+  public static void checkNamespaceDeleted(String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get ns ").append(namespace);
+    checkCmdInLoopForDelete(cmd.toString(), "\"" + namespace + "\" not found", namespace);
+  }
+
+  public static void deletePVC(String pvcName, String namespace, String domainUid, String jobName)
       throws Exception {
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
-    cmdDelJob.append(domainUid).append("-create-weblogic-sample-domain-job -n ").append(namespace);
+    cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
     logger.info("Deleting job " + cmdDelJob);
     exec(cmdDelJob.toString());
 
@@ -211,9 +235,20 @@ public class TestUtils {
   public static ExecResult exec(String cmd) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
-      logger.info("Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
+      logger.info(
+          "Command "
+              + cmd
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
       throw new RuntimeException(
-          "FAILURE: Command " + cmd + " failed with " + result.stderr() + " \n " + result.stdout());
+          "FAILURE: Command "
+              + cmd
+              + " failed with stderr = "
+              + result.stderr()
+              + " \n stdout = "
+              + result.stdout());
     }
     return result;
   }
@@ -690,6 +725,25 @@ public class TestUtils {
     return createOperator(opYamlFile, RESTCertType.SELF_SIGNED);
   }
 
+  /**
+   * Create operator pod with options for multiple container in it
+   *
+   * @param opYamlFile - yaml file to create the Operator
+   * @param ctnsNum - the number of containers in Operator pod
+   * @throws Exception
+   */
+  public static Operator createOperator(String opYamlFile, String containerNum) throws Exception {
+    // create op
+    Operator operator = new Operator(opYamlFile, RESTCertType.SELF_SIGNED);
+
+    logger.info("Check Operator status");
+    operator.verifyPodCreated();
+    operator.verifyOperatorReady(containerNum);
+    operator.verifyExternalRESTService();
+
+    return operator;
+  }
+
   public static Domain createDomain(String inputYaml) throws Exception {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
@@ -866,6 +920,12 @@ public class TestUtils {
     domainMap.put("exposeAdminNodePort", true);
     domainMap.put("adminNodePort", 30700 + number);
     domainMap.put("t3ChannelPort", 30000 + number);
+    if ((System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
+        || (domainMap.containsKey("loadBalancer")
+            && ((String) domainMap.get("loadBalancer")).equalsIgnoreCase("VOYAGER"))) {
+      domainMap.put("voyagerWebPort", 30344 + number);
+      logger.info("For this domain voyagerWebPort is set to: 30344 + " + number);
+    }
     return domainMap;
   }
 
@@ -1039,6 +1099,23 @@ public class TestUtils {
     k8sTestUtils.verifyNoClusterRoleBindings(domain1LabelSelector);
   }
 
+  /**
+   * Replaces the string matching the given search pattern with a new string.
+   *
+   * @param filename - filename in which the string will be replaced
+   * @param originalString - the string which needs to be replaced
+   * @param newString - the new string to replace
+   * @throws Exception - if any error occurs
+   */
+  public static void replaceStringInFile(String filename, String originalString, String newString)
+      throws Exception {
+    Path path = Paths.get(filename);
+
+    String content = new String(Files.readAllBytes(path));
+    content = content.replaceAll(originalString, newString);
+    Files.write(path, content.getBytes());
+  }
+
   private static KeyStore createKeyStore(Operator operator) throws Exception {
     // get operator external certificate from weblogic-operator.yaml
     String opExtCertFile = getExternalOperatorCertificate(operator);
@@ -1065,7 +1142,7 @@ public class TestUtils {
     return myKeyStore;
   }
 
-  private static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
+  public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
       throws Exception {
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
@@ -1083,7 +1160,7 @@ public class TestUtils {
         logger.info(
             "Pod "
                 + k8sObjName
-                + " is not Running Ite ["
+                + " is not Running/Ready Ite ["
                 + i
                 + "/"
                 + BaseTest.getMaxIterationsPod()
@@ -1106,7 +1183,12 @@ public class TestUtils {
     while (i < BaseTest.getMaxIterationsPod()) {
       ExecResult result = ExecCommand.exec(cmd.toString());
       if (result.exitValue() != 0) {
-        throw new RuntimeException("FAILURE: Command " + cmd + " failed " + result.stderr());
+        if (result.stderr().contains(matchStr)) {
+          logger.info("DEBUG: " + result.stderr());
+          break;
+        } else {
+          throw new RuntimeException("FAILURE: Command " + cmd + " failed " + result.stderr());
+        }
       }
       if (result.exitValue() == 0 && !result.stdout().trim().equals("0")) {
         logger.info("Command " + cmd + " returned " + result.stdout());
@@ -1187,5 +1269,135 @@ public class TestUtils {
   public static void copyFile(String fromFile, String toFile) throws Exception {
     logger.info("Copying file from  " + fromFile + " to " + toFile);
     Files.copy(new File(fromFile).toPath(), Paths.get(toFile), StandardCopyOption.REPLACE_EXISTING);
+  }
+
+  /**
+   * retrieve IP address info for cluster service.
+   *
+   * @param domainUID - name of domain.
+   * @param clusterName - name Web Logic cluster
+   * @param domainNS - domain namespace
+   * @throws Exception - exception will be thrown if kubectl command will fail
+   */
+  public static String retrieveClusterIP(String domainUID, String clusterName, String domainNS)
+      throws Exception {
+    // kubectl get service domainonpvwlst-cluster-cluster-1 | grep ClusterIP | awk '{print $3}'
+    StringBuffer cmd = new StringBuffer("kubectl get service ");
+    cmd.append(domainUID);
+    cmd.append("-cluster-");
+    cmd.append(clusterName);
+    cmd.append(" -n ").append(domainNS);
+    cmd.append(" | grep ClusterIP | awk '{print $3}' ");
+    logger.info(
+        " Get ClusterIP for "
+            + clusterName
+            + " in namespace "
+            + domainNS
+            + " with command: '"
+            + cmd
+            + "'");
+
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String stdout = result.stdout();
+    logger.info(" ClusterIP for cluster: " + clusterName + " found: ");
+    logger.info(stdout);
+    return stdout;
+  }
+
+  /**
+   * Create dir to save Web Service App files. Copy the shell script file and all App files over to
+   * the admin pod Run the shell script to build WARs files and deploy the Web Service App and it's
+   * client Servlet App in the admin pod
+   *
+   * @param domain - Domain where to build and deploy app
+   * @param appName - WebService App name to be deployed
+   * @param scriptName - a shell script to build and deploy the App in the admin pod
+   * @param username - weblogic user name
+   * @param password - weblogc password
+   * @param args - by default it use TestWSApp name for webservices impl files, or add arg for
+   *     different name
+   * @throws Exception - exception reported as a failure to build or deploy ws
+   */
+  public static void buildDeployWebServiceAppInPod(
+      Domain domain,
+      String appName,
+      String scriptName,
+      String username,
+      String password,
+      String... args)
+      throws Exception {
+    String adminServerPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + appName;
+    String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + appName;
+    String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
+    String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
+
+    // Default values to build archive file
+    final String initInfoDirName = "WEB-INF";
+    String archiveExt = "war";
+    String infoDirName = initInfoDirName;
+    String domainNS = domain.getDomainNS();
+    int managedServerPort = ((Integer) (domain.getDomainMap()).get("managedServerPort")).intValue();
+    String wsServiceName = (args.length == 0) ? BaseTest.TESTWSSERVICE : args[0];
+    String clusterURL =
+        retrieveClusterIP(domain.getDomainUid(), domain.getClusterName(), domainNS)
+            + ":"
+            + managedServerPort;
+    logger.info(
+        "Build and deploy WebService App: "
+            + appName
+            + "."
+            + archiveExt
+            + " in the admin pod with web service name "
+            + wsServiceName);
+
+    // Create app dir in the admin pod
+    StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
+    mkdirCmd.append(appLocationInPod + "'");
+
+    // Create app dir in the admin pod
+    kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
+
+    // Create WEB-INF in the app dir
+    mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
+    mkdirCmd.append(appLocationInPod + "/WEB-INF'");
+    kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
+
+    // Copy shell script to the admin pod
+    copyFileViaCat(scriptPathOnHost, scriptPathInPod, adminServerPod, domainNS);
+
+    // Copy all App files to the admin pod
+    copyAppFilesToPod(appLocationOnHost, appLocationInPod, adminServerPod, domainNS);
+
+    // Copy all App files to the admin pod
+    copyAppFilesToPod(
+        appLocationOnHost + "/WEB-INF", appLocationInPod + "/WEB-INF", adminServerPod, domainNS);
+
+    logger.info("Creating WebService and WebService Servlet Client Applications");
+
+    // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
+    domain.callShellScriptToBuildDeployAppInPod(
+        appName, scriptName, username, password, clusterURL, wsServiceName);
+  }
+
+  public static ExecResult loginAndPushImageToOCIR(String image) throws Exception {
+    String dockerLoginAndPushCmd =
+        "docker login "
+            + System.getenv("REPO_REGISTRY")
+            + " -u "
+            + System.getenv("REPO_USERNAME")
+            + " -p \""
+            + System.getenv("REPO_PASSWORD")
+            + "\" && docker push "
+            + image;
+    ExecResult result = TestUtils.exec(dockerLoginAndPushCmd);
+    logger.info(
+        "cmd "
+            + dockerLoginAndPushCmd
+            + "\n result "
+            + result.stdout()
+            + "\n err "
+            + result.stderr());
+    return result;
   }
 }

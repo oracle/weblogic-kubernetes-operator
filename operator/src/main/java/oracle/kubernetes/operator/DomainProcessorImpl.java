@@ -16,6 +16,7 @@ import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
@@ -31,11 +32,12 @@ import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
@@ -135,66 +137,24 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   public void dispatchPodWatch(Watch.Response<V1Pod> item) {
-    V1Pod p = item.object;
-    if (p != null) {
-      V1ObjectMeta metadata = p.getMetadata();
+    V1Pod pod = item.object;
+    if (pod != null) {
+      V1ObjectMeta metadata = pod.getMetadata();
       String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
       String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
       if (domainUID != null && serverName != null) {
         DomainPresenceInfo info = getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
         if (info != null) {
-          ServerKubernetesObjects sko =
-              info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
           switch (item.type) {
             case "ADDED":
-              sko.getPod()
-                  .accumulateAndGet(
-                      p,
-                      (current, ob) -> {
-                        if (current != null) {
-                          if (KubernetesUtils.isFirstNewer(current.getMetadata(), metadata)) {
-                            return current;
-                          }
-                        }
-                        return ob;
-                      });
-              break;
+              info.setServerPodBeingDeleted(serverName, Boolean.FALSE);
+              // fall through
             case "MODIFIED":
-              if (PodWatcher.isReady(p)) {
-                sko.getLastKnownStatus().set(WebLogicConstants.RUNNING_STATE);
-              } else {
-                sko.getLastKnownStatus().compareAndSet(WebLogicConstants.RUNNING_STATE, null);
-              }
-              sko.getPod()
-                  .accumulateAndGet(
-                      p,
-                      (current, ob) -> {
-                        if (current != null) {
-                          if (!KubernetesUtils.isFirstNewer(current.getMetadata(), metadata)) {
-                            return ob;
-                          }
-                        }
-                        // If the skoPod is null then the operator deleted this pod
-                        // and modifications are to the terminating pod
-                        return current;
-                      });
+              info.setServerPodFromEvent(serverName, pod);
               break;
             case "DELETED":
-              V1Pod oldPod =
-                  sko.getPod()
-                      .getAndAccumulate(
-                          p,
-                          (current, ob) -> {
-                            if (current != null) {
-                              if (!KubernetesUtils.isFirstNewer(current.getMetadata(), metadata)) {
-                                sko.getLastKnownStatus().set(WebLogicConstants.SHUTDOWN_STATE);
-                                return null;
-                              }
-                            }
-                            return current;
-                          });
-              if (oldPod != null && info.isNotDeleting()) {
-                // Pod was deleted, but sko still contained a non-null entry
+              boolean removed = info.deleteServerPodFromEvent(serverName, pod);
+              if (removed && info.isNotDeleting() && !info.isServerPodBeingDeleted(serverName)) {
                 LOGGER.info(
                     MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
                 makeRightDomainPresence(info, true, false, true);
@@ -207,6 +167,14 @@ public class DomainProcessorImpl implements DomainProcessor {
         }
       }
     }
+  }
+
+  private V1Pod getNewerPod(V1Pod first, V1Pod second) {
+    return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
+  }
+
+  private V1ObjectMeta getMetadata(V1Pod pod) {
+    return pod == null ? null : pod.getMetadata();
   }
 
   public void dispatchServiceWatch(Watch.Response<V1Service> item) {
@@ -265,30 +233,24 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static void onEvent(V1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
-    if (ref != null) {
-      String name = ref.getName();
-      String message = event.getMessage();
-      if (message != null) {
-        if (message.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE)) {
-          String ns = event.getMetadata().getNamespace();
-          Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
-          if (map != null) {
-            for (DomainPresenceInfo d : map.values()) {
-              String domainUIDPlusDash = d.getDomainUID() + "-";
-              if (name.startsWith(domainUIDPlusDash)) {
-                String serverName = name.substring(domainUIDPlusDash.length());
-                ServerKubernetesObjects sko = d.getServers().get(serverName);
-                if (sko != null) {
-                  int idx = message.lastIndexOf(':');
-                  sko.getLastKnownStatus().set(message.substring(idx + 1).trim());
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    if (ref == null) return;
+
+    String[] domainAndServer = ref.getName().split("-");
+    String domainUid = domainAndServer[0];
+    String serverName = domainAndServer[1];
+    String status = getReadinessStatus(event);
+    if (status == null) return;
+
+    Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
+        .map(m -> m.get(domainUid))
+        .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
+  }
+
+  private static String getReadinessStatus(V1Event event) {
+    return Optional.ofNullable(event.getMessage())
+        .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
+        .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
+        .orElse(null);
   }
 
   /**
@@ -331,7 +293,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
 
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
-    AtomicInteger unchangedCount = new AtomicInteger(0);
+    final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     Runnable command =
         new Runnable() {
           public void run() {
@@ -343,6 +305,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .put(
                       ProcessingConstants.DOMAIN_COMPONENT_NAME,
                       Component.createFor(info, delegate.getVersion()));
+              packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
               MainTuning main = TuningParameters.getInstance().getMainTuning();
               Step strategy =
                   DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
@@ -354,45 +317,19 @@ public class DomainProcessorImpl implements DomainProcessor {
                   new CompletionCallback() {
                     @Override
                     public void onCompletion(Packet packet) {
-                      Boolean isStatusUnchanged =
-                          (Boolean) packet.get(ProcessingConstants.STATUS_UNCHANGED);
-                      if (Boolean.TRUE.equals(isStatusUnchanged)) {
-                        if (unchangedCount.incrementAndGet()
-                            == main.unchangedCountToDelayStatusRecheck) {
-                          // slow down retries because of sufficient unchanged statuses
-                          registerStatusUpdater(
-                              info.getNamespace(),
-                              info.getDomainUID(),
-                              delegate.scheduleWithFixedDelay(
-                                  r,
-                                  main.eventualLongDelay,
-                                  main.eventualLongDelay,
-                                  TimeUnit.SECONDS));
-                        }
+                      AtomicInteger serverHealthRead =
+                          packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
+                      if (serverHealthRead == null || serverHealthRead.get() == 0) {
+                        loggingFilter.setFiltering(false).resetLogHistory();
                       } else {
-                        // reset to trying after shorter delay because of changed status
-                        unchangedCount.set(0);
-                        registerStatusUpdater(
-                            info.getNamespace(),
-                            info.getDomainUID(),
-                            delegate.scheduleWithFixedDelay(
-                                r,
-                                main.initialShortDelay,
-                                main.initialShortDelay,
-                                TimeUnit.SECONDS));
+                        loggingFilter.setFiltering(true);
                       }
                     }
 
                     @Override
                     public void onThrowable(Packet packet, Throwable throwable) {
                       LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                      // retry to trying after shorter delay because of exception
-                      unchangedCount.set(0);
-                      registerStatusUpdater(
-                          info.getNamespace(),
-                          info.getDomainUID(),
-                          delegate.scheduleWithFixedDelay(
-                              r, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+                      loggingFilter.setFiltering(true);
                     }
                   });
             } catch (Throwable t) {
@@ -542,11 +479,9 @@ public class DomainProcessorImpl implements DomainProcessor {
       V1PodList result = callResponse.getResult();
       if (result != null) {
         for (V1Pod pod : result.getItems()) {
-          String serverName = PodWatcher.getPodServerName(pod);
+          String serverName = PodHelper.getPodServerName(pod);
           if (serverName != null) {
-            ServerKubernetesObjects sko =
-                info.getServers().computeIfAbsent(serverName, k -> new ServerKubernetesObjects());
-            sko.getPod().set(pod);
+            info.setServerPod(serverName, pod);
           }
         }
       }
