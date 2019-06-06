@@ -12,17 +12,17 @@
     <title>Manage domains :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1556641272" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1559835673" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1559835673"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1556641272"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1556641272"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1559835673"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1559835673"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1556641272"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1559835673"></script>
 
     
   </div>
@@ -119,9 +119,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/prerequisites/" title="Prerequisites" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/prerequisites/" title="Before you begin" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/quickstart/prerequisites/">
-        Prerequisites
+        Before you begin
         
         </a>
     </li>
@@ -773,6 +773,30 @@
  
   
     
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/fmw-infra/" title="FMW domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/fmw-infra/">
+          <b> </b>FMW domains
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
     <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/" title="Configuration overrides" class="dd-item 
         
         
@@ -1265,6 +1289,30 @@
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/manually-create-domain/">
           Manually
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
+          FMW Infrastructure domain
           
       </a>
       
@@ -2175,7 +2223,7 @@ expose channels outside the Kubernetes cluster.<br />
 <li><p><em>Host Path Persistent Volumes:</em> If using a <code>hostPath</code> persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
 that many cloud provider&rsquo;s volume providers may not support volumes across availability zones.  You may want to use NFS or a clustered file system to work around this limitation.</p></li>
 
-<li><p><em>Security Note:</em> The <code>USER_MEM_ARGS</code> environment variable defaults to <code>-Djava.security.egd=file:/dev/./urandom</code> in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the <code>env</code> attribute under the <code>serverPod</code> configuration.</p></li>
+<li><p><em>Security Note:</em> The <code>USER_MEM_ARGS</code> environment variable defaults to <code>-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom</code> in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your domain resource YAML file using the <code>env</code> attribute under the <code>serverPod</code> configuration.</p></li>
 </ul>
 
 <p>The following features are <strong>not</strong> certified or supported in this release:</p>
@@ -2801,22 +2849,6 @@ See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lif
                     
 
                     
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
             
         
                     
@@ -2845,41 +2877,6 @@ See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lif
                     
                     
 
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
                     
             
         
@@ -2948,6 +2945,73 @@ See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lif
             
         
                     
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
                         
             
             
@@ -3078,6 +3142,22 @@ See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lif
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -3640,20 +3720,20 @@ See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lif
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1559835673"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1559835673"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1556641272" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1556641272"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1559835673" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1559835673"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

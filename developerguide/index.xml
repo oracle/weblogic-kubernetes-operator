@@ -18,7 +18,8 @@
       
       <guid>/weblogic-kubernetes-operator/developerguide/requirements/</guid>
       <description>In addition to the requirements listed in the User guide, the following software is also required to obtain and build the operator:
- Git (1.8 or later recommended) Java Developer Kit (1.8u131 or later recommended; please use 1.8, tests will not work on 1.9 or later versions) Apache Maven (3.3 or later recommended)  The operator is written primarily in Java, BASH shell scripts, and WLST scripts. The Java code uses features introduced in Java 1.</description>
+ Git (1.8 or later recommended) Java Developer Kit (11 required, 11.0.2 recommended) Apache Maven (3.5.3 min, 3.6 recommended)  The operator is written primarily in Java, BASH shell scripts, and WLST scripts.
+Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.</description>
     </item>
     
     <item>
@@ -102,7 +103,7 @@ After this, the operator starts watches for changes to Domain resources and any 
       <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
  If you have not already done so, clone the repository.
 git clone https://github.com/oracle/weblogic-kubernetes-operator  Create a new branch from master.
-git checkout master git pull origin master git checkout -b your-branch  Make your documentation updates by editing the source files in docs-source/content. Make sure you only check in the changes from the docs-source/content area; do not build the site and check in the static files.</description>
+git checkout master git pull origin master git checkout -b your-branch  Make your documentation updates by editing the source files in docs-source/content. Make sure you check in the changes from the docs-source/content area only; do not build the site and check in the static files.</description>
     </item>
     
     <item>

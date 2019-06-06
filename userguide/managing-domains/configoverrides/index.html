@@ -12,17 +12,17 @@
     <title>Configuration overrides :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1556641272" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1556641272" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1559835673" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1559835673" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1559835673"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1556641272"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1556641272"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1559835673"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1559835673"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1556641272"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1559835673"></script>
 
     
   </div>
@@ -119,9 +119,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/prerequisites/" title="Prerequisites" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/prerequisites/" title="Before you begin" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/quickstart/prerequisites/">
-        Prerequisites
+        Before you begin
         
         </a>
     </li>
@@ -773,6 +773,30 @@
  
   
     
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/fmw-infra/" title="FMW domains" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/managing-domains/fmw-infra/">
+          <b> </b>FMW domains
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
     <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/" title="Configuration overrides" class="dd-item 
         parent
         active
@@ -1265,6 +1289,30 @@
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/manually-create-domain/">
           Manually
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
+          FMW Infrastructure domain
           
       </a>
       
@@ -2253,6 +2301,7 @@
 <li>Server and domain log locations</li>
 <li>Node Manager related configuration</li>
 <li>Changing any existing MBean name</li>
+<li>Adding or removing a module (for example, a JDBC module)</li>
 </ul>
 
 <p><strong>Specifically, do not use custom overrides for:</strong></p>
@@ -2264,6 +2313,7 @@
 <li>Servers</li>
 <li>Clusters</li>
 <li>Network Access Points (custom channels)</li>
+<li>Modules</li>
 </ul></li>
 <li>Changing any of the following:
 
@@ -2322,7 +2372,7 @@
 </tbody>
 </table>
 
-<p>A <code>MODULENAME</code> must correspond to the MBean name of a system resource defined in your original <code>config.xml</code> file.</p>
+<p>A <code>MODULENAME</code> must correspond to the MBean name of a system resource defined in your original <code>config.xml</code> file. It&rsquo;s not possible to add a new module by using overrides. If you need your overrides to set up a new module, then have your original configuration specify &lsquo;skeleton&rsquo; modules that can be overridden.</p>
 
 <h4 id="override-template-schemas">Override template schemas</h4>
 
@@ -2386,7 +2436,7 @@
 
 <h4 id="override-template-syntax-special-requirements">Override template syntax special requirements</h4>
 
-<p><strong>Check each item below to ensure custom situational configuration takes effect:</strong></p>
+<p><strong>Check each item below for best practices and to ensure custom situational configuration takes effect:</strong></p>
 
 <ul>
 <li>Reference the name of the current bean and each parent bean in any hierarchy you override.
@@ -2411,8 +2461,11 @@
 <ul>
 <li>See the <code>max-message-size</code> stanza in <a href="#override-template-samples">Override template samples</a> for an example.</li>
 </ul></li>
-<li>If you are changing the value of an existing attribute within a domain home <code>config.xml</code>, then the attribute needs a <code>replace</code> verb.</li>
+<li>If you are changing the value of an existing attribute within a domain home <code>config.xml</code>, then the attribute needs a <code>replace</code> verb.
+
+<ul>
 <li>See the <code>public-address</code> stanza in  <a href="#override-template-samples">Override template samples</a> for an example.</li>
+</ul></li>
 </ul></li>
 <li>When overriding <code>config.xml</code>:
 
@@ -2428,6 +2481,13 @@
 
 <ul>
 <li>It is a best practice to use XML namespace abbreviations <code>jms:</code>, <code>jdbc:</code>, and <code>wldf:</code> respectively for JMS, JDBC, and WLDF (diagnostics) module override files.</li>
+<li>A module must already exist in your original configuration if you want to override it; it&rsquo;s not possible to add a new module by using overrides. If you need your overrides to set up a new module, then have your original configuration specify &lsquo;skeleton&rsquo; modules that can be overridden.</li>
+<li>See <a href="#overriding-a-data-source-module">Overriding a data source module</a> for best practice advice. Note that similar advice applies generally to other module types.</li>
+</ul></li>
+<li>Consider having your original configuration reference invalid user names, passwords, and URLs:
+
+<ul>
+<li>If your original (non-overridden) configuration references non-working user names, passwords, and URLS, then this helps guard against accidentally deploying a working configuration that&rsquo;s invalid for the intended environment. For example, if your base configuration references a working QA database, and there is some mistake in setting up overrides, then it&rsquo;s possible the running servers will connect to the QA database when you deploy to your production environment.</li>
 </ul></li>
 </ul>
 
@@ -2467,7 +2527,15 @@
 
 <h4 id="overriding-a-data-source-module">Overriding a data source module</h4>
 
-<p>The following <code>jdbc-testDS.xml</code> override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named <code>testDS</code> via <code>secret macros</code>.  The generated situational configuration that replaces the macros with secret values will be located in the <code>DOMAIN_HOME/optconfig/jdbc</code> directory.   The <code>password-encrypted</code> field will be populated with an encrypted value because it uses a secret macro with an <code>:encrypt</code> suffix.  The secret is named <code>dbsecret</code> and contains three keys: <code>url</code>, <code>username</code>, and <code>password</code>.</p>
+<p>The following <code>jdbc-testDS.xml</code> override template demonstrates setting the URL, user name, and password-encrypted fields of a JDBC module named <code>testDS</code> by using <code>secret macros</code>.  The generated situational configuration that replaces the macros with secret values will be located in the <code>DOMAIN_HOME/optconfig/jdbc</code> directory.   The <code>password-encrypted</code> field will be populated with an encrypted value because it uses a secret macro with an <code>:encrypt</code> suffix.  The secret is named <code>dbsecret</code> and contains three keys: <code>url</code>, <code>username</code>, and <code>password</code>.</p>
+
+<p>Best practices for data source modules and their overrides:</p>
+
+<ul>
+<li>A data source module must already exist in your original configuration if you want to override it; it&rsquo;s not possible to add a new module by using overrides. If you need your overrides to set up a new module, then have your original configuration specify &lsquo;skeleton&rsquo; modules that can be overridden. See the next two bulleted items for the typical contents of a skeleton data source module.</li>
+<li>Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the data source successfully connect to a database that&rsquo;s wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes deployment could cause your production applications to use your QA database.</li>
+<li>Set your original (non-overridden) <code>JDBCConnectionPoolParams</code> <code>MinCapacity</code> and <code>InitialCapacity</code> to <code>0</code>, and set your original <code>DriverName</code> to a reference an existing JDBC Driver. This ensures that you can still successfully boot a server even when you have configured invalid URL/username/password values, your database isn&rsquo;t running, and/or you haven&rsquo;t specified your overrides yet.</li>
+</ul>
 
 <pre><code>&lt;?xml version='1.0' encoding='UTF-8'?&gt;
 &lt;jdbc:jdbc-data-source xmlns:jdbc=&quot;http://xmlns.oracle.com/weblogic/jdbc-data-source&quot;
@@ -2524,7 +2592,7 @@ kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
 <li><p>Create any Kubernetes secrets referenced by a template &lsquo;secret macro&rsquo;.</p>
 
 <ul>
-<li>Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords via <code>Opaque</code> type secrets in their <code>data</code> field, so that they can&rsquo;t be easily read at a casual glance. For more information, see <a href="https://kubernetes.io/docs/concepts/configuration/secret/">https://kubernetes.io/docs/concepts/configuration/secret/</a>.</li>
+<li>Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords by using <code>Opaque</code> type secrets in their <code>data</code> field, so that they can&rsquo;t be easily read at a casual glance. For more information, see <a href="https://kubernetes.io/docs/concepts/configuration/secret/">https://kubernetes.io/docs/concepts/configuration/secret/</a>.</li>
 <li>Secrets must be in the same Kubernetes namespace as the domain.</li>
 <li>If a secret is going to be used by a single <code>DOMAIN_UID</code>, then we recommend adding the <code>weblogic.domainUID=&lt;mydomainuid&gt;</code> label to help track the resource.</li>
 <li>For example:
@@ -2672,7 +2740,7 @@ at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(Doma
 <li>The introspector job&rsquo;s pod:
 
 <ul>
-<li>Mounts the Kubernetes configuration map and secrets specified via the operator domain resource <code>configOverrides</code>, <code>webLogicCredentialsSecret</code>, and <code>configOverrideSecrets</code> fields.</li>
+<li>Mounts the Kubernetes configuration map and secrets specified by using the operator domain resource <code>configOverrides</code>, <code>webLogicCredentialsSecret</code>, and <code>configOverrideSecrets</code> fields.</li>
 <li>Reads the mounted situational configuration templates from the configuration map and expands them to create the actual situational configuration files for the domain:
 
 <ul>
@@ -3244,6 +3312,22 @@ at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(Doma
             
                 
                     
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
                     
                 
                 
@@ -3565,6 +3649,22 @@ at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(Doma
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -4114,7 +4214,7 @@ at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(Doma
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/" title="Base images"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/managing-domains/fmw-infra/" title="FMW domains"> <i class="fa fa-chevron-left"></i></a>
 		
 		
 			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/managing-domains/ingress/" title="Ingress" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
@@ -4127,20 +4227,20 @@ at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(Doma
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1559835673"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1556641272"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1556641272"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1559835673"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1559835673"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1556641272" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1556641272"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1559835673" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1559835673"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

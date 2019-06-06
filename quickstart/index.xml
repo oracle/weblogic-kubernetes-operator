@@ -22,7 +22,7 @@ Important note for users of operator releases before 2.0   Click here to expand 
     </item>
     
     <item>
-      <title>Prerequisites</title>
+      <title>Before you begin</title>
       <link>/weblogic-kubernetes-operator/quickstart/prerequisites/</link>
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
@@ -41,7 +41,7 @@ You should clone this repository to your local machine so that you have access t
       <description>Get these images and put them into your local registry.  If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store and accept the license agreement for the WebLogic Server image.
  Log in to the Docker store from your Docker client:
 $ docker login  Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:2.1  Pull the Traefik load balancer image:
+$ docker pull oracle/weblogic-kubernetes-operator:2.2  Pull the Traefik load balancer image:
 $ docker pull traefik:1.</description>
     </item>
     
