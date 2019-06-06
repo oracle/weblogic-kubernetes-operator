@@ -229,8 +229,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	pull_tag_images_jrf
   else
   	export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
-	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
-  
+	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC  
   
   	if [ "$IMAGE_PULL_POLICY_OPERATOR" = "Always" ]; then 
 		if [ -z "$REPO_REGISTRY" ] || [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ] || [ -z "$REPO_EMAIL" ]; then
@@ -251,26 +250,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 		    echo "secret $IMAGE_PULL_SECRET_OPERATOR was not created successfully"
 		    exit 1
 		fi
-  	fi 
-  	
-  	if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
-		echo "Provide Docker login details using OCR_USERNAME & OCR_PASSWORD env variables to push the Operator image to the repository."
-		exit 1
-	fi
-	
-	echo "Creating Docker Secret"
-	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=${WL_DOCKER_SERVER}/ \
-	    --docker-username=$DOCKER_USERNAME \
-	    --docker-password=$DOCKER_PASSWORD \
-	    --docker-email=$DOCKER_EMAIL 
-	
-	echo "Checking Secret"
-	SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-	if [ "$SECRET" != "1" ]; then
-		echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-	    exit 1
-	fi
+  	fi
 	  
 	if [ -z "$K8S_NODEPORT_HOST" ]; then
 	  	echo "When running in shared cluster option, provide DNS name or IP of a Kubernetes worker node using K8S_NODEPORT_HOST env variable"
