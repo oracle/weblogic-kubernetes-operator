@@ -88,9 +88,9 @@ function setup_shared_cluster {
   kubectl get po -n kube-system
   
   echo "Existing helm charts "
-  helm ls
+  helm ls --all
   echo "Deleting installed helm charts"
-  helm list --short | xargs -L1 helm delete --purge
+  helm list --short --all | xargs -L1 helm delete --purge
   echo "After helm delete, list of installed helm charts is: "
   helm ls
 
