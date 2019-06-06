@@ -222,6 +222,15 @@ echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPER
 if [ "$SHARED_CLUSTER" = "true" ]; then
   
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
+  echo "REPO_REGISTRY=$REPO_REGISTRY"
+  echo "REPO_USERNAME=$REPO_USERNAME"
+  echo "REPO_PASSWORD=$REPO_PASSWORD"
+  echo "REPO_EMAIL=$REPO_EMAIL"
+  echo "IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC"
+  echo "WL_DOCKER_SERVER=$WL_DOCKER_SERVER"
+  echo "DOCKER_USERNAME=$DOCKER_USERNAME"
+  echo "DOCKER_PASSWORD=$DOCKER_PASSWORD"
+  echo "DOCKER_EMAIL=$DOCKER_EMAIL"
   
   clean_shared_cluster || true
     
