@@ -6,27 +6,35 @@ package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** Kubernetes pods and services associated with a single WebLogic server. */
-public class ServerKubernetesObjects {
+class ServerKubernetesObjects {
   private final AtomicReference<V1Pod> pod = new AtomicReference<>(null);
-  private final AtomicReference<String> lastKnownStatus = new AtomicReference<>(null);
+  private final AtomicBoolean isPodBeingDeleted = new AtomicBoolean(false);
+  private final AtomicReference<LastKnownStatus> lastKnownStatus = new AtomicReference<>(null);
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
   private final AtomicReference<V1Service> externalService = new AtomicReference<>();
-  private final ConcurrentMap<String, V1Service> channels = new ConcurrentHashMap<>();
 
-  public ServerKubernetesObjects() {}
+  ServerKubernetesObjects() {}
 
   /**
    * The Pod.
    *
    * @return Pod
    */
-  public AtomicReference<V1Pod> getPod() {
+  AtomicReference<V1Pod> getPod() {
     return pod;
+  }
+
+  /**
+   * Flag indicating if the operator is deleting this pod.
+   *
+   * @return true, if operator is deleting this pod
+   */
+  AtomicBoolean isPodBeingDeleted() {
+    return isPodBeingDeleted;
   }
 
   /**
@@ -34,7 +42,7 @@ public class ServerKubernetesObjects {
    *
    * @return Status
    */
-  public AtomicReference<String> getLastKnownStatus() {
+  AtomicReference<LastKnownStatus> getLastKnownStatus() {
     return lastKnownStatus;
   }
 
@@ -43,17 +51,8 @@ public class ServerKubernetesObjects {
    *
    * @return Service
    */
-  public AtomicReference<V1Service> getService() {
+  AtomicReference<V1Service> getService() {
     return service;
-  }
-
-  /**
-   * Channel map.
-   *
-   * @return Map from channel name to Service
-   */
-  public ConcurrentMap<String, V1Service> getChannels() {
-    return channels;
   }
 
   AtomicReference<V1Service> getExternalService() {

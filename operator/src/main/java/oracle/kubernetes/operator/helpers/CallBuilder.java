@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.net.HttpURLConnection.HTTP_CONFLICT;
-
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiCallback;
 import io.kubernetes.client.ApiClient;
@@ -49,9 +47,6 @@ import oracle.kubernetes.operator.calls.CancellableCall;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.PatchUtils;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
@@ -64,8 +59,6 @@ public class CallBuilder {
 
   /** HTTP status code for "Not Found". */
   public static final int NOT_FOUND = 404;
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final SynchronousCallDispatcher DEFAULT_DISPATCHER =
       new SynchronousCallDispatcher() {
@@ -168,65 +161,6 @@ public class CallBuilder {
     RequestParams requestParams = new RequestParams("getVersion", null, null, null);
     return executeSynchronousCall(
         requestParams, ((client, params) -> new VersionApi(client).getCode()));
-  }
-
-  /**
-   * Class extended by callers to {@link
-   * #executeSynchronousCallWithConflictRetry(RequestParamsBuilder, SynchronousCallFactory,
-   * ConflictRetry)} for building the RequestParams to be passed to {@link
-   * #executeSynchronousCall(RequestParams, SynchronousCallFactory)}.
-   *
-   * @param <T> Type of kubernetes object to be passed to the API
-   */
-  abstract static class RequestParamsBuilder<T> {
-    T body;
-
-    public RequestParamsBuilder(T body) {
-      this.body = body;
-    }
-
-    abstract RequestParams buildRequestParams();
-
-    void setBody(T body) {
-      this.body = body;
-    }
-  }
-
-  private <T> T executeSynchronousCallWithConflictRetry(
-      RequestParamsBuilder requestParamsBuilder,
-      SynchronousCallFactory<T> factory,
-      ConflictRetry<T> conflictRetry)
-      throws ApiException {
-    int retryCount = 0;
-    while (retryCount == 0 || retryCount < maxRetryCount) {
-      retryCount++;
-      RequestParams requestParams = requestParamsBuilder.buildRequestParams();
-      try {
-        return executeSynchronousCall(requestParams, factory);
-      } catch (ApiException apiException) {
-        boolean retry = false;
-        if (apiException.getCode() == HTTP_CONFLICT
-            && conflictRetry != null
-            && retryCount < maxRetryCount) {
-          T body = conflictRetry.getUpdatedObject();
-          if (body != null) {
-            requestParamsBuilder.setBody(body);
-            retry = true;
-            LOGGER.fine(
-                MessageKeys.SYNC_RETRY,
-                requestParams.call,
-                apiException.getCode(),
-                apiException.getMessage(),
-                retryCount,
-                maxRetryCount);
-          }
-        }
-        if (!retry) {
-          throw apiException;
-        }
-      }
-    }
-    return null;
   }
 
   private <T> T executeSynchronousCall(
@@ -364,33 +298,6 @@ public class CallBuilder {
                   (Domain) requestParams.body,
                   pretty,
                   null);
-
-  /**
-   * Replace domain.
-   *
-   * @param uid the domain uid (unique within the k8s cluster)
-   * @param namespace Namespace
-   * @param body Body
-   * @param conflictRetry ConflictRetry implementation to be called to obtain the latest version of
-   *     the Domain for retrying the replaceDomain synchronous call if previous call failed with
-   *     Conflict response code (409)
-   * @return Replaced domain
-   * @throws ApiException APIException
-   */
-  public Domain replaceDomainWithConflictRetry(
-      String uid, String namespace, Domain body, ConflictRetry<Domain> conflictRetry)
-      throws ApiException {
-    return executeSynchronousCallWithConflictRetry(
-        new RequestParamsBuilder<Domain>(body) {
-
-          @Override
-          RequestParams buildRequestParams() {
-            return new RequestParams("replaceDomain", namespace, uid, body);
-          }
-        },
-        REPLACE_DOMAIN_CALL,
-        conflictRetry);
-  }
 
   /**
    * Replace domain.

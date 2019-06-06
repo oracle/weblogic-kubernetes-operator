@@ -84,6 +84,9 @@ public interface ServerSpec {
   @Nonnull
   ProbeTuning getReadinessProbe();
 
+  @Nonnull
+  Shutdown getShutdown();
+
   /**
    * Returns the labels applied to the pod.
    *
@@ -99,6 +102,14 @@ public interface ServerSpec {
    */
   @Nonnull
   Map<String, String> getPodAnnotations();
+
+  /**
+   * Returns true if the per-server instance service should be created for this server instance even
+   * if the pod for this server instance is not running.
+   *
+   * @return true, if the per-server instance service should be pre-created
+   */
+  Boolean isPrecreateServerService();
 
   /**
    * Returns the labels applied to the service.

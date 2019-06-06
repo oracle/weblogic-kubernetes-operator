@@ -1,5 +1,6 @@
-#!/bin/sh
-# Copyright 2017, 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+#!/bin/bash
+
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 #
@@ -25,6 +26,7 @@
 #                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.out
 #                       Default:
 #                          Use LOG_HOME.  If LOG_HOME not set, use NODEMGR_HOME.
+#   ADMIN_PORT_SECURE = "true" if the admin protocol is secure. Default is false
 #
 # If SERVER_NAME is set, then this NM is for a WL Server and these must also be set:
 # 
@@ -50,6 +52,7 @@ export WL_HOME="${WL_HOME:-/u01/oracle/wlserver}"
 stm_script=${WL_HOME}/server/bin/startNodeManager.sh
 
 SERVER_NAME=${SERVER_NAME:-introspector}
+ADMIN_PORT_SECURE=${ADMIN_PORT_SECURE:-false}
 
 trace "Starting node manager for domain-uid='$DOMAIN_UID' and server='$SERVER_NAME'."
 
@@ -175,7 +178,7 @@ cat <<EOF > ${nm_props_file}
   JavaHome=${JAVA_HOME}
   LogLevel=FINEST
   DomainsFileEnabled=true
-  ListenAddress=${SERVICE_NAME}
+  ListenAddress=127.0.0.1
   NativeVersionEnabled=true
   ListenPort=5556
   LogToStderr=true
@@ -187,7 +190,7 @@ cat <<EOF > ${nm_props_file}
   weblogic.StopScriptEnabled=false
   StateCheckInterval=500
   CrashRecoveryEnabled=false
-  weblogic.StartScriptEnabled=false
+  weblogic.StartScriptEnabled=true
   LogFormatter=weblogic.nodemanager.server.LogFormatter
   ListenBacklog=50
   LogFile=${nodemgr_log_file}
@@ -243,7 +246,11 @@ EOF
   [ ! $? -eq 0 ] && trace "Failed to create '${wl_props_file}'." && exit 1
 
   if [ ! "${ADMIN_NAME}" = "${SERVER_NAME}" ]; then
-    echo "AdminURL=http\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
+    admin_protocol="http"
+    if [ "${ADMIN_PORT_SECURE}" = "true" ]; then
+      admin_protocol="https"
+    fi  
+    echo "AdminURL=$admin_protocol\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
   fi
 fi
 
@@ -290,7 +297,7 @@ ${stm_script} > ${nodemgr_out_file} 2>&1 &
 
 wait_count=0
 start_secs=$SECONDS
-max_wait_secs=15
+max_wait_secs=${NODE_MANAGER_MAX_WAIT:-60}
 while [ 1 -eq 1 ]; do
   sleep 1
   if [ -e ${nodemgr_log_file} ] && [ `grep -c "Plain socket listener started" ${nodemgr_log_file}` -gt 0 ]; then

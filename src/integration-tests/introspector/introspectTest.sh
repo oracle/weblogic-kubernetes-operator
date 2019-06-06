@@ -59,8 +59,8 @@ export PV_ROOT=${PV_ROOT:-/scratch/$USER/wl_k8s_test_results}
 # Set env vars for to-be-created domain:
 #
 
-export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-store/oracle/weblogic}
-export WEBLOGIC_IMAGE_TAG=${WEBLOGIC_IMAGE_TAG:-19.1.0.0}
+export WEBLOGIC_IMAGE_NAME=${WEBLOGIC_IMAGE_NAME:-container-registry.oracle.com/middleware/weblogic}
+export WEBLOGIC_IMAGE_TAG=${WEBLOGIC_IMAGE_TAG:-12.2.1.3}
 export WEBLOGIC_IMAGE_PULL_POLICY=${WEBLOGIC_IMAGE_PULL_POLICY:-IfNotPresent}
 
 export DOMAIN_UID=${DOMAIN_UID:-domain1}
@@ -313,7 +313,7 @@ function deployCustomOverridesConfigMap() {
 function createTestRootPVDir() {
   trace "Info: PV_ROOT='$PV_ROOT'"
 
-  # TBD on Wercker/Jenkins PV_ROOT will differ and may already exist or be remote
+  # TBD on shared cluster/Jenkins PV_ROOT will differ and may already exist or be remote
   #     so we need to add logic/booleans to skip the following mkdir/chmod as needed
 
   mkdir -p ${PV_ROOT} || exit 1

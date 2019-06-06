@@ -1,0 +1,17 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
+query_sync:
+  url: http://coordinator:8999/
+  refreshInterval: 5
+metricsNameSnakeCase: true
+restPort: 8001
+queries:
+- applicationRuntimes:
+    key: name
+    keyName: app
+    componentRuntimes:
+      servlets:
+        prefix: weblogic_servlet_
+        key: servletName
+        values: [invocationTotalCount, executionTimeAverage]

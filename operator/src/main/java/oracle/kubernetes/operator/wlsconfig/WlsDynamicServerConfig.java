@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains configuration of a WLS server that belongs to a dynamic cluster. */
 public class WlsDynamicServerConfig extends WlsServerConfig {
@@ -73,6 +72,7 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
         macroSubstitutor.substituteMacro(serverTemplate.getListenAddress()),
         sslListenPort,
         macroSubstitutor.substituteMacro(serverTemplate.getMachineName()),
+        serverTemplate.getAdminPort(),
         networkAccessPoints);
   }
 
@@ -85,6 +85,7 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
    * @param listenAddress listen address of the dynamic server
    * @param sslListenPort SSL listen port of the dynamic server
    * @param machineName machine name of the dynamic server
+   * @param adminPort administration port if administration port is enabled
    * @param networkAccessPoints network access points or channels configured for this dynamic server
    */
   private WlsDynamicServerConfig(
@@ -93,8 +94,16 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
       String listenAddress,
       Integer sslListenPort,
       String machineName,
+      Integer adminPort,
       List<NetworkAccessPoint> networkAccessPoints) {
-    super(name, listenAddress, machineName, listenPort, sslListenPort, null, networkAccessPoints);
+    super(
+        name,
+        listenAddress,
+        machineName,
+        listenPort,
+        sslListenPort,
+        adminPort,
+        networkAccessPoints);
   }
 
   /**
@@ -105,10 +114,5 @@ public class WlsDynamicServerConfig extends WlsServerConfig {
   @Override
   public boolean isDynamicServer() {
     return true;
-  }
-
-  @Override
-  public String toString() {
-    return new ToStringBuilder(this).toString();
   }
 }

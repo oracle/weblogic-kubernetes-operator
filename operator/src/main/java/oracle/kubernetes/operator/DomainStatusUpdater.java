@@ -15,7 +15,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 
 import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -31,14 +30,12 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.work.Fiber;
-import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -147,9 +144,6 @@ public class DomainStatusUpdater {
         }
       }
 
-      // This will control if we need to re-check states soon or if we can slow down checks
-      packet.put(ProcessingConstants.STATUS_UNCHANGED, !status.isModified());
-
       if (status.isModified()) {
         LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUID(), status);
       }
@@ -187,7 +181,7 @@ public class DomainStatusUpdater {
       }
 
       private boolean shouldBeRunning(ServerStartupInfo startupInfo) {
-        return "RUNNING".equals(startupInfo.getDesiredState());
+        return !startupInfo.isServiceOnly() && RUNNING_STATE.equals(startupInfo.getDesiredState());
       }
 
       private boolean isNotRunning(@Nonnull String serverName) {
@@ -195,11 +189,7 @@ public class DomainStatusUpdater {
       }
 
       private boolean isHasFailedPod() {
-        return getServers().values().stream().anyMatch(this::isPodFailed);
-      }
-
-      private boolean isPodFailed(ServerKubernetesObjects sko) {
-        return Optional.ofNullable(sko.getPod().get()).map(PodWatcher::isFailed).orElse(false);
+        return getInfo().getServerPods().anyMatch(PodHelper::isFailed);
       }
 
       Map<String, ServerStatus> getServerStatuses() {
@@ -237,11 +227,9 @@ public class DomainStatusUpdater {
       }
 
       private String getNodeName(String serverName) {
-        return getPod(serverName).map(p -> p.getSpec().getNodeName()).orElse(null);
-      }
-
-      private Optional<V1Pod> getPod(String serverName) {
-        return Optional.ofNullable(getServers().get(serverName)).map(s -> s.getPod().get());
+        return Optional.ofNullable(getInfo().getServerPod(serverName))
+            .map(p -> p.getSpec().getNodeName())
+            .orElse(null);
       }
 
       private String getClusterName(String serverName) {
@@ -251,21 +239,17 @@ public class DomainStatusUpdater {
       }
 
       private String getClusterNameFromPod(String serverName) {
-        return getPod(serverName)
+        return Optional.ofNullable(getInfo().getServerPod(serverName))
             .map(p -> p.getMetadata().getLabels().get(CLUSTERNAME_LABEL))
             .orElse(null);
       }
 
       private Collection<String> getServerNames() {
-        Set<String> result = new HashSet<>(getServers().keySet());
+        Set<String> result = new HashSet<>(getInfo().getServerNames());
         if (config != null) {
           result.addAll(config.getServerConfigs().keySet());
         }
         return result;
-      }
-
-      private Map<String, ServerKubernetesObjects> getServers() {
-        return getInfo().getServers();
       }
     }
   }
@@ -279,47 +263,15 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
-    return new ProgressingHookStep(reason, isPreserveAvailable, next);
-  }
-
-  private static class ProgressingHookStep extends Step {
-    private final String reason;
-    private final boolean isPreserveAvailable;
-
-    private ProgressingHookStep(String reason, boolean isPreserveAvailable, Step next) {
-      super(next);
-      this.reason = reason;
-      this.isPreserveAvailable = isPreserveAvailable;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Fiber f = Fiber.current().createChildFiber();
-      Packet p = new Packet();
-      p.getComponents().putAll(packet.getComponents());
-      f.start(
-          new ProgressingStep(reason, isPreserveAvailable),
-          p,
-          new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {}
-
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-            }
-          });
-
-      return doNext(packet);
-    }
+    return new ProgressingStep(reason, isPreserveAvailable, next);
   }
 
   private static class ProgressingStep extends Step {
     private final String reason;
     private final boolean isPreserveAvailable;
 
-    private ProgressingStep(String reason, boolean isPreserveAvailable) {
-      super(null);
+    private ProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
+      super(next);
       this.reason = reason;
       this.isPreserveAvailable = isPreserveAvailable;
     }
@@ -390,44 +342,14 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createAvailableStep(String reason, Step next) {
-    return new AvailableHookStep(reason, next);
-  }
-
-  private static class AvailableHookStep extends Step {
-    private final String reason;
-
-    private AvailableHookStep(String reason, Step next) {
-      super(next);
-      this.reason = reason;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Fiber f = Fiber.current().createChildFiber();
-      Packet p = new Packet();
-      p.getComponents().putAll(packet.getComponents());
-      f.start(
-          new AvailableStep(reason),
-          p,
-          new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {}
-
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-            }
-          });
-
-      return doNext(packet);
-    }
+    return new AvailableStep(reason, next);
   }
 
   private static class AvailableStep extends Step {
     private final String reason;
 
-    private AvailableStep(String reason) {
-      super(null);
+    private AvailableStep(String reason, Step next) {
+      super(next);
       this.reason = reason;
     }
 
@@ -513,44 +435,14 @@ public class DomainStatusUpdater {
    * @return Step
    */
   static Step createFailedStep(Throwable throwable, Step next) {
-    return new FailedHookStep(throwable, next);
-  }
-
-  private static class FailedHookStep extends Step {
-    private final Throwable throwable;
-
-    private FailedHookStep(Throwable throwable, Step next) {
-      super(next);
-      this.throwable = throwable;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Fiber f = Fiber.current().createChildFiber();
-      Packet p = new Packet();
-      p.getComponents().putAll(packet.getComponents());
-      f.start(
-          new FailedStep(throwable),
-          p,
-          new CompletionCallback() {
-            @Override
-            public void onCompletion(Packet packet) {}
-
-            @Override
-            public void onThrowable(Packet packet, Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-            }
-          });
-
-      return doNext(packet);
-    }
+    return new FailedStep(throwable, next);
   }
 
   private static class FailedStep extends Step {
     private final Throwable throwable;
 
-    private FailedStep(Throwable throwable) {
-      super(null);
+    private FailedStep(Throwable throwable, Step next) {
+      super(next);
       this.throwable = throwable;
     }
 

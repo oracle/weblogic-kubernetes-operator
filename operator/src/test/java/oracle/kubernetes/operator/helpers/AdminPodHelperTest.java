@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.helpers;
 
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
@@ -100,7 +102,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> terminalStep);
+        new NullPodAwaiterStepFactory(terminalStep));
 
     expectDeletePod(getPodName()).returning(new V1Status());
     expectCreatePod(podWithName(getPodName())).returning(createTestPodModel());
@@ -115,7 +117,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> terminalStep);
+        new NullPodAwaiterStepFactory(terminalStep));
 
     V1Pod existingPod = createPod(testSupport.getPacket());
     mutator.mutate(existingPod);
@@ -144,7 +146,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> terminalStep);
+        new NullPodAwaiterStepFactory(terminalStep));
 
     initializeExistingPod(getIncompatiblePod());
     expectDeletePod(getPodName()).failingWithStatus(CallBuilder.NOT_FOUND);
@@ -337,6 +339,44 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         getCreatedPodSpecContainer().getVolumeMounts(),
         allOf(
             hasVolumeMount("volume1", "/domain-path1"), hasVolumeMount("volume2", "/server-path")));
+  }
+
+  @Test
+  public void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+    getConfigurator().withServerStartState(ADMIN_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+  }
+
+  @Test
+  public void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+    getConfigurator().configureAdminServer().withServerStartState(ADMIN_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+  }
+
+  @Test
+  public void whenDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
+    getConfigurator()
+        .withServerStartState(RUNNING_STATE)
+        .configureAdminServer()
+        .withServerStartState(ADMIN_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE)));
+  }
+
+  @Test
+  public void whenDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
+    getConfigurator()
+        .withServerStartState(ADMIN_STATE)
+        .configureAdminServer()
+        .withServerStartState(RUNNING_STATE);
+
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(), not(allOf(hasEnvVar("STARTUP_MODE", ADMIN_STATE))));
   }
 
   @Test

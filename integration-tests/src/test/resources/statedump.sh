@@ -17,7 +17,7 @@ function state_dump {
      local SCRIPTPATH="$PROJECT_ROOT/src/integration-tests/bash"
      local LEASE_ID="$LEASE_ID"
      local ARCHIVE_DIR="$RESULT_ROOT/acceptance_test_pv_archive"
-     local ARCHIVE_FILE="IntSuite.`date '+%Y%m%d%H%M%S'`.jar"
+     local ARCHIVE_FILE="IntSuite.${IT_CLASS}.PV.`date '+%Y%m%d%H%M%S'`.jar"
      local ARCHIVE="$ARCHIVE_DIR/$ARCHIVE_FILE"
 
      if [ ! -d "$RESULT_DIR" ]; then
@@ -95,27 +95,31 @@ function state_dump {
   echo "Archiving pv directory using a kubernetes job.  Look for it on k8s cluster in $PV_ROOT/acceptance_test_pv_archive"
   local outfile=${DUMP_DIR}/archive_pv_job.out
 
-  if [ "$WERCKER" = "true" ]; then
-	$SCRIPTPATH/job.sh "/scripts/archive.sh /scratch/acceptance_test_pv /scratch/acceptance_test_pv_archive" 2>&1 | tee ${outfile}
-	if [ "$?" = "0" ]; then
-     	echo Job complete.
-  	else
-    	echo Job failed.  See ${outfile}.
-  	fi
-  else
-  
-  	$SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
+  if [ "$JENKINS" = "true" ] || [ "$SHARED_CLUSTER" = "true" ]; then
+    # echo "Running $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m ${PV_ROOT}:/sharedparent -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}"
+  	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m "${PV_ROOT}:/sharedparent" -c 'jar cf /sharedparent/pvarchive.jar /sharedparent/acceptance_test_pv' 2>&1 | tee ${outfile}
   	if [ "$?" = "0" ]; then
-    	$SCRIPTPATH/krun.sh -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
+  		#echo "Running $SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m  ${PV_ROOT}:/sharedparent -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1"
+    	$SCRIPTPATH/krun.sh -i openjdk:11-oracle -t 300 -d ${RESULT_DIR} -m  "${PV_ROOT}:/sharedparent" -c 'base64 /sharedparent/pvarchive.jar' > $RESULT_DIR/pvarchive.b64 2>&1
 	 	if [ "$?" = "0" ]; then
+	 		#echo "Running base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE"
    			base64 -di $RESULT_DIR/pvarchive.b64 > $ARCHIVE
    			if [ "$?" = "0" ]; then
    				echo Run complete. Archived to $ARCHIVE
    			else 
    				echo Run failed. 
    			fi
+   			# Jenkins can only publish logs under the workspace
+			mkdir -p ${JENKINS_RESULTS_DIR}
+			cp $ARCHIVE ${JENKINS_RESULTS_DIR}
+			if [ "$?" = "0" ]; then
+   				echo Copy complete. Archive $ARCHIVE copied to ${JENKINS_RESULTS_DIR}
+   			else 
+   				echo Failed to copy archive $ARCHIVE to ${JENKINS_RESULTS_DIR}
+	   		fi
 	 	else
      		# command failed
+     		echo Run failed
   			cat $RESULT_DIR/pvarchive.b64 | head -100
 	 	fi
 	 	# rm $RESULT_DIR/pvarchive.b64
@@ -145,7 +149,11 @@ function state_dump {
   rm -rf ${RESULT_DIR}/samples
   
   # now archive all the local test files
-  $SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
+  if [ "$JENKINS" = "true" ] || [ "$SHARED_CLUSTER" = "true" ]; then
+  	$SCRIPTPATH/archive.sh "${RESULT_DIR}" "${JENKINS_RESULTS_DIR}"
+  else 
+  	$SCRIPTPATH/archive.sh "${RESULT_DIR}" "${RESULT_DIR}_archive"
+  fi
   
   echo Done with state dump
 }

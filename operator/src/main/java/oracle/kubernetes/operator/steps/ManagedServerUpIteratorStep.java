@@ -85,6 +85,8 @@ public class ManagedServerUpIteratorStep extends Step {
   // "clusterScan"
   // "envVars"
   private static Step bringManagedServerUp(ServerStartupInfo ssi, Step next) {
-    return PodHelper.createManagedPodStep(ServiceHelper.createForServerStep(next));
+    return ssi.isServiceOnly()
+        ? ServiceHelper.createForServerStep(new ServerDownStep(ssi.getServerName(), true, next))
+        : ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(next));
   }
 }

@@ -63,7 +63,9 @@ public class ITSessionMigration extends BaseTest {
       // create domain
       if (domain == null) {
         logger.info("Creating WLS Domain & waiting for the script to complete execution");
-        domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
+        Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+        wlstDomainMap.put("domainUID", "sessmigdomainonpvwlst");
+        domain = TestUtils.createDomain(wlstDomainMap);
         domain.verifyDomainCreated();
       }
 
@@ -97,7 +99,7 @@ public class ITSessionMigration extends BaseTest {
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
 
-      tearDown();
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
       logger.info("SUCCESS");
     }
