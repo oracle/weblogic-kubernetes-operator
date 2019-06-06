@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>CI/CD considerations on WebLogic Kubernetes Operator</title>
+    <link>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/</link>
+    <description>Recent content in CI/CD considerations on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 11 Apr 2019 13:01:55 -0400</lastBuildDate>
+    
+	<atom:link href="http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Docker image layering</title>
+      <link>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/layering/</link>
+      <pubDate>Thu, 11 Apr 2019 13:15:32 -0400</pubDate>
+      
+      <guid>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/layering/</guid>
+      <description>Docker images are composed of layers, as shown in the diagram below. If you download the standard weblogic:12.2.1.3 image from the Docker Store, then you can see these layers using the command docker inspect store/oracle/weblogic:12.2.1.3 (the domain layer will not be there). You are not required to use layers, but efficient use of layers is considered a best practice.
+Why is it important to maintain the layering of images? Layering is an important technique in Docker images.</description>
+    </item>
+    
+    <item>
+      <title>Why layering matters</title>
+      <link>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/why-layering-matters/</link>
+      <pubDate>Thu, 11 Apr 2019 13:27:58 -0400</pubDate>
+      
+      <guid>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/why-layering-matters/</guid>
+      <description>How does layering affect our CI/CD process? Now that we know more about layering, let’s talk about why it is important to our CI/CD process. Let&amp;rsquo;s consider the kinds of updates we might want to make to our domain:
+You might want to update the domain by:
+ Installing a patch on the operating system or a library. Updating the version of the JDK you are using. Picking up a new version of WebLogic Server.</description>
+    </item>
+    
+    <item>
+      <title>Choose an approach</title>
+      <link>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/choose-an-approach/</link>
+      <pubDate>Thu, 11 Apr 2019 13:36:57 -0400</pubDate>
+      
+      <guid>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/choose-an-approach/</guid>
+      <description>Let&amp;rsquo;s review what we have discussed and talk about when we might want to use various approaches. We can start by asking ourselves questions like these:
+ Can you make the desired change with a configuration override?
+The WebLogic Kubernetes Operator allows you to inject a number of configuration overrides into your pods before starting any servers in the domain. This allows you to use the same image for multiple different configurations.</description>
+    </item>
+    
+    <item>
+      <title>Mutate the domain layer</title>
+      <link>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/mutate-the-domain-layer/</link>
+      <pubDate>Thu, 11 Apr 2019 13:43:41 -0400</pubDate>
+      
+      <guid>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/mutate-the-domain-layer/</guid>
+      <description>If you need to mutate the domain layer, and keep the same domain encryption keys, then there are some choices about how to implement that, as alluded to previously. Let&amp;rsquo;s explore those in some more detail now.
+The first option is to implement each mutation as a delta to the previous state. This is conceptually similar to how immutable objects (like Java Strings) are implemented, a &amp;ldquo;copy on write&amp;rdquo; approach applied to the domain configuration as a unit.</description>
+    </item>
+    
+    <item>
+      <title>Copy domains</title>
+      <link>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/how-to-copy-domains/</link>
+      <pubDate>Thu, 11 Apr 2019 13:48:15 -0400</pubDate>
+      
+      <guid>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/how-to-copy-domains/</guid>
+      <description>The recommended approach to save a copy of a domain is to simply ZIP (or tar) the domain directory. However, there is a very important caveat with this recommendation - when you unzip the domain, it must go back into exactly the same location (Domain Home) in the (new) file system. Using this approach will maintain the same domain encryption key.
+The best practice/recommended approach is to create a &amp;ldquo;primordial domain&amp;rdquo; which does not contain any applications or resources, and to create a ZIP file of this domain before starting any servers.</description>
+    </item>
+    
+    <item>
+      <title>Tools</title>
+      <link>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/tools/</link>
+      <pubDate>Thu, 11 Apr 2019 13:50:15 -0400</pubDate>
+      
+      <guid>http://oracle.github.io/weblogic-kubernetes-operator/2.1/userguide/cicd/tools/</guid>
+      <description>WebLogic Deploy Tooling (WDT) You can use several of the WDT tools in a CI/CD pipeline. For example, the createDomain tool creates a new domain based on a simple model, and updateDomain (and deployApps) uses the same model concept to update an existing domain (preserving the same domain encryption key). The deployApps tool is very similar to the updateDomain tool, but limits what can be updated to application-related configuration attributes such as data sources and application archives.</description>
+    </item>
+    
+  </channel>
+</rss>
