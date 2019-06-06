@@ -222,29 +222,11 @@ echo IMAGE_NAME_OPERATOR $IMAGE_NAME_OPERATOR IMAGE_TAG_OPERATOR $IMAGE_TAG_OPER
 if [ "$SHARED_CLUSTER" = "true" ]; then
   
   echo "Test Suite is running locally on a shared cluster and k8s is running on remote nodes."
-  v1=$REPO_REGISTRY
-  echo $v1 | rev
-  v2=$REPO_USERNAME
-  echo $v2 | rev
-  v2=$REPO_PASSWORD
-  echo $v3 | rev
-  v3=$REPO_EMAIL
-  echo $v4 | rev
-  v4=$IMAGE_PULL_SECRET_WEBLOGIC
-  echo $v5 | rev
-  v5=$WL_DOCKER_SERVER
-  echo $v6 | rev
-  v6=$DOCKER_USERNAME
-  echo $v7 | rev
-  v7=$DOCKER_PASSWORD
-  echo $v8 | rev
-  v8=$DOCKER_EMAIL
-  echo $v9 | rev
   
   clean_shared_cluster || true
     
   if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf	
+	pull_tag_images_jrf
   else
   	export IMAGE_PULL_SECRET_OPERATOR=$IMAGE_PULL_SECRET_OPERATOR
 	export IMAGE_PULL_SECRET_WEBLOGIC=$IMAGE_PULL_SECRET_WEBLOGIC
@@ -294,7 +276,7 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	  	echo "When running in shared cluster option, provide DNS name or IP of a Kubernetes worker node using K8S_NODEPORT_HOST env variable"
 	  	exit 1
 	fi
-  
+        pull_tag_images
 	
   fi
   setup_shared_cluster
