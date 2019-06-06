@@ -13,12 +13,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.ServerKubernetesObjects;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -70,6 +71,9 @@ public class ManagedServersUpStep extends Step {
         servers.add(serverName);
         addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server));
         addToCluster(clusterName);
+      } else if (server.isPrecreateServerService()) {
+        servers.add(serverName);
+        addStartupInfo(new ServerStartupInfo(serverConfig, clusterName, server, true));
       }
     }
 
@@ -159,6 +163,7 @@ public class ManagedServersUpStep extends Step {
 
     info.setServerStartupInfo(factory.getStartupInfos());
     LOGGER.exiting();
+
     return doNext(
         NEXT_STEP_FACTORY.createServerStep(
             info, config, factory.servers, factory.createNextStep(getNext())),
@@ -166,14 +171,7 @@ public class ManagedServersUpStep extends Step {
   }
 
   public static Collection<String> getRunningServers(DomainPresenceInfo info) {
-    Collection<String> runningList = new ArrayList<>();
-    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-      ServerKubernetesObjects sko = entry.getValue();
-      if (sko != null && sko.getPod().get() != null) {
-        runningList.add(entry.getKey());
-      }
-    }
-    return runningList;
+    return info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList());
   }
 
   private static Step scaleDownIfNecessary(
@@ -191,8 +189,7 @@ public class ManagedServersUpStep extends Step {
       serversToIgnore.add(domainTopology.getAdminServerName());
     }
 
-    Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop =
-        getServersToStop(info, serversToIgnore);
+    List<String> serversToStop = getServersToStop(info, serversToIgnore);
 
     if (!serversToStop.isEmpty()) {
       insert(steps, new ServerDownIteratorStep(serversToStop, null));
@@ -201,15 +198,11 @@ public class ManagedServersUpStep extends Step {
     return Step.chain(steps.toArray(new Step[0]));
   }
 
-  private static Collection<Map.Entry<String, ServerKubernetesObjects>> getServersToStop(
+  private static List<String> getServersToStop(
       DomainPresenceInfo info, List<String> serversToIgnore) {
-    Collection<Map.Entry<String, ServerKubernetesObjects>> serversToStop = new ArrayList<>();
-    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-      if (!serversToIgnore.contains(entry.getKey())) {
-        serversToStop.add(entry);
-      }
-    }
-    return serversToStop;
+    return info.getServerNames().stream()
+        .filter(n -> !serversToIgnore.contains(n))
+        .collect(Collectors.toList());
   }
 
   private static Step createAvailableHookStep() {

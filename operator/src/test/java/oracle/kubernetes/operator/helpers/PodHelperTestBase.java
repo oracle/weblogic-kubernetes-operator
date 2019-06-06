@@ -183,6 +183,11 @@ public abstract class PodHelperTestBase {
         .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainTopology)
         .addToPacket(SERVER_SCAN, domainTopology.getServerConfig(serverName))
         .addDomainPresenceInfo(domainPresenceInfo);
+    testSupport.addComponent(
+        ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+        PodAwaiterStepFactory.class,
+        new PassthroughPodAwaiterStepFactory());
+
     onAdminExpectListPersistentVolume();
   }
 
@@ -361,6 +366,23 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
+  public void whenPodCreatedWithAdminPortEnabled_readinessProbeHasReadinessCommand() {
+    final Integer ADMIN_PORT = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(ADMIN_PORT);
+    V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
+    assertThat(getAction.getPath(), equalTo("/weblogic/ready"));
+    assertThat(getAction.getPort().getIntValue(), equalTo(ADMIN_PORT));
+    assertThat(getAction.getScheme(), equalTo("HTTPS"));
+  }
+
+  @Test
+  public void whenPodCreatedWithAdminPortEnabled_adminPortSecureEnvVarIsTrue() {
+    final Integer ADMIN_PORT = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(ADMIN_PORT);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_PORT_SECURE", "true"));
+  }
+
+  @Test
   public void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
     configureServer()
         .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
@@ -394,7 +416,7 @@ public abstract class PodHelperTestBase {
     testSupport.addComponent(
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
-        (pod, next) -> terminalStep);
+        new NullPodAwaiterStepFactory(terminalStep));
 
     testSupport
         .createCannedResponse("patchPod")
@@ -430,7 +452,9 @@ public abstract class PodHelperTestBase {
             hasEnvVar("LOG_HOME", null),
             hasEnvVar("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())),
             hasEnvVar("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)),
-            hasEnvVar("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom")));
+            hasEnvVar(
+                "USER_MEM_ARGS",
+                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom")));
   }
 
   @Test
@@ -830,24 +854,16 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenCompliantPodExists_recordIt() {
+  public void whenCompliantPodExists_logIt() {
     initializeExistingPod();
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsFine(getExistsMessageKey()));
-    ServerKubernetesObjects sko =
-        domainPresenceInfo
-            .getServers()
-            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
-    assertThat(sko.getPod().get(), equalTo(createPodModel()));
+    assertThat(domainPresenceInfo.getServerPod(serverName), equalTo(createPodModel()));
   }
 
   void initializeExistingPod(V1Pod pod) {
-    ServerKubernetesObjects sko =
-        domainPresenceInfo
-            .getServers()
-            .computeIfAbsent(getServerName(), k -> new ServerKubernetesObjects());
-    sko.getPod().set(pod);
+    domainPresenceInfo.setServerPod(getServerName(), pod);
   }
 
   abstract String getExistsMessageKey();
@@ -926,7 +942,10 @@ public abstract class PodHelperTestBase {
         .addEnvItem(envItem("LOG_HOME", null))
         .addEnvItem(envItem("SERVICE_NAME", LegalNames.toServerServiceName(UID, getServerName())))
         .addEnvItem(envItem("AS_SERVICE_NAME", LegalNames.toServerServiceName(UID, ADMIN_SERVER)))
-        .addEnvItem(envItem("USER_MEM_ARGS", "-Djava.security.egd=file:/dev/./urandom"))
+        .addEnvItem(
+            envItem(
+                "USER_MEM_ARGS",
+                "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom"))
         .livenessProbe(createLivenessProbe())
         .readinessProbe(createReadinessProbe());
   }
@@ -1107,6 +1126,36 @@ public abstract class PodHelperTestBase {
         actualInstructions.add(new Gson().toJson((JsonElement) instruction));
 
       return actualInstructions.equals(expectedInstructions);
+    }
+  }
+
+  protected static class NullPodAwaiterStepFactory implements PodAwaiterStepFactory {
+    private final Step n;
+
+    NullPodAwaiterStepFactory(Step next) {
+      this.n = next;
+    }
+
+    @Override
+    public Step waitForReady(V1Pod pod, Step next) {
+      return n;
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return n;
+    }
+  }
+
+  protected static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
+    @Override
+    public Step waitForReady(V1Pod pod, Step next) {
+      return next;
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
+      return next;
     }
   }
 }

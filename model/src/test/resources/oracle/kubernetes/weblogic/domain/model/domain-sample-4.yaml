@@ -19,7 +19,7 @@ spec:
   replicas: 2
 
   # The Operator currently does not support other images
-  image: "store/oracle/weblogic:12.2.1.3"
+  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.3"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: IfNotPresent
   # Identify which Secret contains the credentials for pulling the image
@@ -49,6 +49,9 @@ spec:
       limits:
         memory: "128Mi"
         cpu: "500m"
+    shutdown:
+      shutdownType: Graceful
+      timeoutSeconds: 45
 
   # configured wls configuration overrides configmap name
   configOverrides: overrides-config-map
@@ -102,7 +105,7 @@ spec:
           - name: JAVA_OPTIONS
             value: "-server"
           - name: USER_MEM_ARGS
-            value: "-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m "
+            value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
         nodeSelector:
           os_arch: arm64
         resources:
@@ -113,6 +116,10 @@ spec:
     - serverName: server2
       serverStartState: ADMIN
       restartVersion: "3"
+      serverPod:
+        shutdown:
+          timeoutSeconds: 60
+          ignoreSessions: false
 
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
   clusters:
@@ -133,4 +140,6 @@ spec:
             value: "-verbose"
           - name: USER_MEM_ARGS
             value: "-Xms64m -Xmx256m "
+        shutdown:
+          ignoreSessions: true
       restartVersion: "2"

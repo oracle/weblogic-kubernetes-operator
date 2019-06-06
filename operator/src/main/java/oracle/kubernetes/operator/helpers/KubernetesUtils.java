@@ -134,7 +134,7 @@ public class KubernetesUtils {
     return Integer.parseInt(metadata.getResourceVersion());
   }
 
-  public static V1ObjectMeta withOperatorLabels(V1ObjectMeta meta, String uid) {
+  public static V1ObjectMeta withOperatorLabels(String uid, V1ObjectMeta meta) {
     return meta.putLabelsItem(LabelConstants.DOMAINUID_LABEL, uid)
         .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true");
   }

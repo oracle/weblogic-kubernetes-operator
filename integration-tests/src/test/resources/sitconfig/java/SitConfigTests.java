@@ -68,8 +68,8 @@ public class SitConfigTests {
   private ServerRuntimeMBean serverRuntime;
   private static final String JNDI = "/jndi/";
 
-  private final String adminHost;
-  private final String adminPort;
+  private String adminHost;
+  private String adminPort;
   private final String adminUser;
   private final String adminPassword;
 
@@ -107,6 +107,14 @@ public class SitConfigTests {
       test.verifyRestartMax(5);
       test.verifyT3ChannelPublicAddress(adminHost);
       test.verifyT3ChannelPublicPort(30091);
+    }
+
+    if (testName.equals("testCustomSitConfigOverridesForDomainMS")) {
+      // the values passed to these verify methods are the attribute values overrrideen in the
+      // config.xml. These are just randomly chosen attributes and values to override
+      String serverName = args[5];
+      test.connectToManagedServer(serverName);
+      test.verifyMaxMessageSize(77777777);
     }
 
     if (testName.equals("testCustomSitConfigOverridesForJdbc")) {
@@ -572,6 +580,28 @@ public class SitConfigTests {
     WLDFSystemResourceMBean wldfResource = domain.lookupWLDFSystemResource(resourceName);
     assert wldfResource != null : "WLDF resource is null";
     return wldfResource;
+  }
+
+  /**
+   * Looks up the managed server public listen address and port, closes the existing MBeanServer
+   * connection to admin server and creates MBeanServer connection to the given managed server
+   *
+   * @param serverName name of the managed server to which to create MBeanServerConnection
+   * @throws Exception when connection close fails or when new connection to managed server fails.
+   */
+  private void connectToManagedServer(String serverName) throws Exception {
+    ServerMBean[] servers = runtimeServiceMBean.getDomainConfiguration().getServers();
+    try {
+      for (ServerMBean server : servers) {
+        if (server.getName().equals(serverName)) {
+          adminHost = server.getListenAddress();
+          adminPort = String.valueOf(server.getListenPort());
+        }
+      }
+    } finally {
+      jmxConnector.close();
+      createConnections();
+    }
   }
 
   /**

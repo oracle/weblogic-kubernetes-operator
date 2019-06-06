@@ -136,7 +136,6 @@ public class DomainUpPlanTest {
     assertThat(
         plan,
         hasChainWithStepsInOrder(
-            "ProgressingHookStep",
             "DomainPresenceStep",
             // "DeleteIntrospectorJobStep",
             "DomainIntrospectorJobStep",
@@ -173,6 +172,11 @@ public class DomainUpPlanTest {
   static class NullPodWaiter implements PodAwaiterStepFactory {
     @Override
     public Step waitForReady(V1Pod pod, Step next) {
+      return null;
+    }
+
+    @Override
+    public Step waitForDelete(V1Pod pod, Step next) {
       return null;
     }
   }

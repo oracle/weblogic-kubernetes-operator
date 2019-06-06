@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -41,7 +41,7 @@ public class BeforeAdminServiceStepTest {
   private Step nextStep = new TerminalStep();
   private List<Memento> mementos = new ArrayList<>();
   private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
-  private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
+  private FiberTestSupport testSupport = new FiberTestSupport();
   private BeforeAdminServiceStep step = new BeforeAdminServiceStep(nextStep);
 
   private DomainPresenceInfo createDomainPresenceInfo() {
@@ -63,7 +63,6 @@ public class BeforeAdminServiceStepTest {
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(testSupport.installRequestStepFactory());
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_NAME, ADMIN_PORT_NUM);
     configSupport.setAdminServerName(ADMIN_NAME);
