@@ -19,7 +19,7 @@ and which servers should be restarted. To start, stop, or restart servers, modif
 There are properties on the domain resource that specify which servers should be running,
 which servers should be restarted and the desired initial state. To start, stop, or restart servers, modify these properties on the domain resource
 (for example, by using `kubectl` or the Kubernetes REST API).  The operator will notice the changes and apply them.  Beginning,
-with operator version 2.2.0, there are now properties to control server shutdown handling, such as whether the shutdown
+with operator version 2.2, there are now properties to control server shutdown handling, such as whether the shutdown
 will be graceful, the timeout, and if in-flight sessions are given the opportunity to complete.
 
 ### Starting and stopping servers
@@ -261,7 +261,7 @@ such a label or annotation by modifying the `restartVersion`.
 {{% /notice %}}
 
 {{% notice note %}}
-Prior to version 2.2.0, the operator incorrectly restarted servers when the `serverStartState` property was changed.  Now, 
+Prior to version 2.2, the operator incorrectly restarted servers when the `serverStartState` property was changed.  Now, 
 this property has no affect on already running servers.
 {{% /notice %}}
 
