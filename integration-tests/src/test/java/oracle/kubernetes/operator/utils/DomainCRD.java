@@ -71,6 +71,96 @@ public class DomainCRD {
   }
 
   /**
+   * A utility method to add attributes to domain in domain.yaml
+   *
+   * @param attributes - A HashMap of key value pairs
+   */
+  public void addShutdownOptionToDomain(Map<String, Object> attributes) throws Exception {
+    // modify admin server restartVersion
+    JsonNode specNode = getSpecNode();
+    addShutdownOptionToObjectNode(specNode, attributes);
+  }
+
+  /**
+   * A utility method to add attributes to domain in domain.yaml
+   *
+   * @param attributes - A HashMap of key value pairs
+   */
+  public void addEnvOption(Map<String, String> attributes) throws Exception {
+    /*
+       ArrayNode managedservers = null;
+    JsonNode managedserverNode = null;
+    if (root.path("spec").path("managedServers").isMissingNode()) {
+      logger.info("Missing MS Node");
+      managedservers = objectMapper.createArrayNode();
+      ObjectNode managedserver = objectMapper.createObjectNode();
+      managedserver.put("serverName", managedServerName);
+      managedservers.add(managedserver);
+      ((ObjectNode) root).set("managedServers", managedservers);
+      managedserverNode = managedserver;
+    } else {
+      managedservers = (ArrayNode) root.path("spec").path("managedServers");
+      if (managedservers.size() != 0) {
+        for (JsonNode managedserver : managedservers) {
+          if (managedserver.get("serverName").equals(managedServerName)) {
+            managedserverNode = managedserver;
+          }
+        }
+      } else {
+        ObjectNode managedserver = objectMapper.createObjectNode();
+        managedserver.put("serverName", managedServerName);
+        managedservers.add(managedserver);
+      }
+    }
+    return managedserverNode;
+
+     */
+    // modify admin server restartVersion
+    JsonNode specNode = getSpecNode();
+    JsonNode envNode = null;
+    JsonNode podOptions = specNode.path("serverPod");
+    JsonNode envNodes = (ArrayNode) specNode.path("serverPod").path("env");
+
+    if (specNode.path("serverPod").isMissingNode()) {
+      logger.info("Missing serverPod Node");
+      podOptions = objectMapper.createObjectNode();
+      envNodes = objectMapper.createArrayNode();
+      ((ObjectNode) podOptions).set("env", envNodes);
+      ((ObjectNode) specNode).set("serverPod", podOptions);
+
+    } else {
+
+      if (podOptions.path("env").isMissingNode()) {
+        envNodes = objectMapper.createArrayNode();
+        ((ObjectNode) podOptions).set("env", envNodes);
+      }
+    }
+    envNodes = (ArrayNode) podOptions.path("env");
+    for (Map.Entry<String, String> entry : attributes.entrySet()) {
+      if (envNodes.size() != 0) {
+        for (JsonNode envNode1 : envNodes) {
+
+          logger.info(" checking node " + envNode1.get("name"));
+          if (envNode1.get("name").equals(entry.getKey())) {
+            ((ObjectNode) envNode1).put("value", entry.getValue());
+          }
+        }
+
+        envNode = objectMapper.createObjectNode();
+        ((ObjectNode) envNode).put("name", entry.getKey());
+        ((ObjectNode) envNode).put("value", entry.getValue());
+        ((ArrayNode) envNodes).add(envNode);
+
+      } else {
+        envNode = objectMapper.createObjectNode();
+        ((ObjectNode) envNode).put("name", entry.getKey());
+        ((ObjectNode) envNode).put("value", entry.getValue());
+        ((ArrayNode) envNodes).add(envNode);
+      }
+    }
+  }
+
+  /**
    * A utility method to add attributes to adminServer node in domain.yaml
    *
    * @param attributes - A HashMap of key value pairs
@@ -103,6 +193,19 @@ public class DomainCRD {
   }
 
   /**
+   * A utility method to add shutdown element and attributes to cluster node in domain.yaml
+   *
+   * @param ClusterName - Name of the cluster to which the attributes to be added
+   * @param attributes - A HashMap of key value pairs
+   */
+  public void addShutdownOptionsToCluster(String ClusterName, Map<String, Object> attributes)
+      throws Exception {
+
+    JsonNode clusterNode = getClusterNode(ClusterName);
+    addShutdownOptionToObjectNode(clusterNode, attributes);
+  }
+
+  /**
    * A utility method to add attributes to managed server node in domain.yaml
    *
    * @param managedServerName - Name of the managed server to which the attributes to be added
@@ -113,6 +216,72 @@ public class DomainCRD {
     for (Map.Entry<String, String> entry : attributes.entrySet()) {
       ((ObjectNode) managedServerNode).put(entry.getKey(), entry.getValue());
     }
+    try {
+      String jsonString =
+          objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(managedServerNode);
+      System.out.println(jsonString);
+    } catch (Exception ex) {
+    }
+  }
+
+  /**
+   * A utility method to add attributes to managed server node in domain.yaml
+   *
+   * @param managedServerName - Name of the managed server to which the attributes to be added
+   * @param attributes - A HashMap of key value pairs
+   */
+  public void addShutDownOptionToMS(String managedServerName, Map<String, Object> attributes)
+      throws Exception {
+    JsonNode managedServerNode = getManagedServerNode(managedServerName);
+    addShutdownOptionToObjectNode(managedServerNode, attributes);
+  }
+
+  /**
+   * A utility method to add attributes to managed server node in domain.yaml
+   *
+   * @param jsonNode - the json node (domain,cluster,or manserver to which the attributes to be
+   *     added
+   * @param attributes - A HashMap of key value pairs
+   */
+  private void addShutdownOptionToObjectNode(JsonNode jsonNode, Map<String, Object> attributes)
+      throws Exception {
+    String[] propNames = {"serverPod", "shutdown"};
+    JsonNode myNode = jsonNode;
+    for (int i = 0; i < propNames.length; i++) {
+      if (myNode.path(propNames[i]).isMissingNode()) {
+
+        logger.info("  property " + propNames[i] + " is not present, adding it  crd ");
+
+        ObjectNode someSubNode = objectMapper.createObjectNode();
+        ((ObjectNode) myNode).put(propNames[i], someSubNode);
+        myNode = someSubNode;
+
+      } else {
+        myNode = myNode.path(propNames[i]);
+      }
+    }
+
+    for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+      String dataType = entry.getValue().getClass().getSimpleName();
+
+      if (dataType.equalsIgnoreCase("Integer")) {
+        logger.info(
+            "Read Json Key :" + entry.getKey() + " | type :int | value:" + entry.getValue());
+        ((ObjectNode) myNode).put(entry.getKey(), (int) entry.getValue());
+
+      } else if (dataType.equalsIgnoreCase("Boolean")) {
+        logger.info(
+            "Read Json Key :" + entry.getKey() + " | type :boolean | value:" + entry.getValue());
+        ((ObjectNode) myNode).put(entry.getKey(), (boolean) entry.getValue());
+
+      } else if (dataType.equalsIgnoreCase("String")) {
+        logger.info(
+            "Read Json Key :" + entry.getKey() + " | type :string | value:" + entry.getValue());
+        ((ObjectNode) myNode).put(entry.getKey(), (String) entry.getValue());
+      }
+    }
+    String jsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(myNode);
+    System.out.println(jsonString);
   }
 
   /** Gets the spec node entry from Domain CRD JSON tree */
@@ -161,25 +330,30 @@ public class DomainCRD {
    * @return managed server node entry from Domain CRD JSON tree
    */
   private JsonNode getManagedServerNode(String managedServerName) {
+
     ArrayNode managedservers = null;
     JsonNode managedserverNode = null;
+    JsonNode specNode = getSpecNode();
     if (root.path("spec").path("managedServers").isMissingNode()) {
       logger.info("Missing MS Node");
       managedservers = objectMapper.createArrayNode();
       ObjectNode managedserver = objectMapper.createObjectNode();
       managedserver.put("serverName", managedServerName);
       managedservers.add(managedserver);
-      ((ObjectNode) root).set("managedServers", managedservers);
+
+      ((ObjectNode) specNode).set("managedServers", managedservers);
       managedserverNode = managedserver;
     } else {
       managedservers = (ArrayNode) root.path("spec").path("managedServers");
       if (managedservers.size() != 0) {
         for (JsonNode managedserver : managedservers) {
-          if (managedserver.get("serverName").equals(managedServerName)) {
+          if (managedserver.get("serverName").asText().equals(managedServerName)) {
+            logger.info("Found managedServer with name " + managedServerName);
             managedserverNode = managedserver;
           }
         }
       } else {
+        logger.info("Creating node for managedServer with name " + managedServerName);
         ObjectNode managedserver = objectMapper.createObjectNode();
         managedserver.put("serverName", managedServerName);
         managedservers.add(managedserver);
