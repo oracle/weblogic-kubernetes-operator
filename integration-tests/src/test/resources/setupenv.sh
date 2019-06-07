@@ -59,7 +59,8 @@ function docker_login {
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
 	    --docker-server=index.docker.io/v1/ \
 	    --docker-username=$DOCKER_USERNAME \
-	    --docker-password=$DOCKER_PASSWORD
+	    --docker-password=$DOCKER_PASSWORD \
+            --dry-run -o yaml | kubectl apply -f -
 	  
 	  echo "Checking Secret"
 	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
@@ -118,7 +119,8 @@ function pull_tag_images {
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
 	    --docker-server=${WL_DOCKER_SERVER}/ \
 	    --docker-username=$OCR_USERNAME \
-	    --docker-password=$OCR_PASSWORD
+	    --docker-password=$OCR_PASSWORD \
+            --dry-run -o yaml | kubectl apply -f -
 	  
 	  echo "Checking Secret"
 	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
@@ -127,13 +129,12 @@ function pull_tag_images {
 	    exit 1
 	  fi
 	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
-          echo "docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}"
+          # echo "docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}"
 	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}
-          echo "docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
+          # echo "docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
    	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
-
 }
 
 function pull_tag_images_jrf {
@@ -242,7 +243,8 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 		    --docker-server=$REPO_REGISTRY \
 		    --docker-username=$REPO_USERNAME \
 		    --docker-password=$REPO_PASSWORD \
-		    --docker-email=$REPO_EMAIL 
+		    --docker-email=$REPO_EMAIL  \
+                    --dry-run -o yaml | kubectl apply -f -
 	
 		echo "Checking Secret"
 		SECRET="`kubectl get secret $IMAGE_PULL_SECRET_OPERATOR | grep $IMAGE_PULL_SECRET_OPERATOR | wc | awk ' { print $1; }'`"
