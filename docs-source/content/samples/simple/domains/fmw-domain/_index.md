@@ -32,6 +32,8 @@ The following prerequisites must be handled prior to running the create domain s
   with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
+* Configure access to your database. For details, see [here]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#configuring-access-to-your-database" >}}).  
+* Create a Kubernetes secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
 #### Use the script to create a domain
 
