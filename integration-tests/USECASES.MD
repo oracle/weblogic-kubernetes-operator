@@ -79,6 +79,17 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Server pods restarted by changing restartVersion at cluster level | Verify managed server pods part of the dynamic cluster are restarted by adding restartVersion property at cluster level : `restartVersion: "v1.1"` |
 | Server pods restarted by changing restartVersion at domain level | Verify all the server pods in the weblogic domain are restarted by adding restartVersion property at domain level: `restartVersion: "v1.1"` |
 
+| Server Pods Shutdown options| Use Case |
+| --- | --- |
+| Shutdown options: domain level| Verify that shutdown options set at the domain level will apply to all servers in the domain  |
+| Shutdown options: managed server level | Verify that shutdown options set at the managed server level will apply only to the specified server  |
+| Shutdown options: managed server level | Verify that shutdown options set at the cluster level will apply only to the all servers in that cluster  |
+| Shutdown options: use env variables | Verify that shutdown options set using env vars will apply   |
+| Shutdown option ignoreSessions | Verify that shutdown option: ignoreSessions(true, false) will effect shutdown time of the pod   |
+| Shutdown option timeout | Verify that shutdown option: timeout will effect shutdown time of the pod   |
+| Shutdown option Forced | Verify that shutdown option: Forced will effect shutdown time of the pod   |
+| Shutdown overrides | Verify that shutdown options set on (managed server or cluster) (lowest level) will take priority over domain level settings   |
+
 Configuration Overrides Usecases
 
 | Override | Usecase |
