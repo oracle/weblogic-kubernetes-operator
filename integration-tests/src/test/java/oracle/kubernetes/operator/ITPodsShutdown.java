@@ -18,6 +18,7 @@ import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -90,7 +91,7 @@ public class ITPodsShutdown extends BaseTest {
    *
    * @throws Exception
    */
-  // @AfterClass
+  @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
@@ -520,7 +521,7 @@ public class ITPodsShutdown extends BaseTest {
     if (deployApp) {
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-      domain.callWebAppAndVerifyLoadBalancing(testAppName, false);
+      domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet", false);
     }
     String nodePortHost = domain.getHostNameForCurl();
     int nodePort = domain.getLoadBalancerWebPort();
