@@ -521,7 +521,7 @@ public class ITPodsShutdown extends BaseTest {
     if (deployApp) {
       domain.buildDeployJavaAppInPod(
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
-      domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet", false);
+      domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
     }
     String nodePortHost = domain.getHostNameForCurl();
     int nodePort = domain.getLoadBalancerWebPort();
