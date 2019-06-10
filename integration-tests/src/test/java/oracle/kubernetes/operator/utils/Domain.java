@@ -384,8 +384,8 @@ public class Domain {
         .append(":")
         .append(getNodePort())
         .append("/management/weblogic/latest/edit/appDeployments")
-        .append(" --write-out %{http_code} -o /dev/null");
-    logger.fine("Command to deploy webapp " + cmd);
+        .append(" --write-out %{http_code} ");
+    logger.info("Command to deploy webapp " + cmd);
     ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
     logger.info("curl output " + output + " \n err " + result.stderr());
