@@ -431,7 +431,7 @@ public class ITPodsShutdown extends BaseTest {
   private static void updateCRDYamlVerifyShutdown(DomainCRD crd, long delayTime) throws Exception {
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
-
+    terminationTime = 0;
     // Write the modified yaml to a new file
     Path path = Paths.get(shutdownTmpDir, "shutdown.managed.yaml");
     logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
