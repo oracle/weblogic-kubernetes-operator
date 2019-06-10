@@ -220,7 +220,7 @@ public class ITPodsRestart extends BaseTest {
         // image
         TestUtils.createDockerRegistrySecret(
             "docker-store",
-            System.getenv("WL_DOCKER_SERVER"),
+            BaseTest.getWeblogicImageServer(),
             System.getenv("OCR_USERNAME"),
             System.getenv("OCR_PASSWORD"),
             "none@oracle.com ",
