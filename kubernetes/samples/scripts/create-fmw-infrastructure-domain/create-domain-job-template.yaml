@@ -37,8 +37,6 @@ spec:
               value: "%DOMAIN_UID%"
             - name: ADMIN_SERVER_NAME_SVC
               value: "%ADMIN_SERVER_NAME_SVC%"
-            - name: CLUSTER_TYPE
-              value: "DYNAMIC"
             - name: T3_CHANNEL_PORT
               value: "%T3_CHANNEL_PORT%"
             - name: T3_PUBLIC_ADDRESS
