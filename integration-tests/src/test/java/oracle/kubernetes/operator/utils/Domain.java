@@ -389,6 +389,7 @@ public class Domain {
     ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
     logger.info("curl output " + output + " \n err " + result.stderr());
+    logger.info(getHostNameForCurl());
     if (!output.contains("202")) {
       throw new RuntimeException("FAILURE: Webapp deployment failed with response code " + output);
     }
