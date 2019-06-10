@@ -220,10 +220,10 @@ public class ITPodsRestart extends BaseTest {
         // image
         TestUtils.createDockerRegistrySecret(
             "docker-store",
-            System.getenv("REPO_REGISTRY"),
-            System.getenv("REPO_USERNAME"),
-            System.getenv("REPO_PASSWORD"),
-            System.getenv("REPO_EMAIL"),
+            System.getenv("WL_DOCKER_SERVER"),
+            System.getenv("OCR_USERNAME"),
+            System.getenv("OCR_PASSWORD"),
+            "none@oracle.com ",
             domain.getDomainNS());
 
         // apply new domain yaml and verify pod restart
