@@ -363,7 +363,12 @@ public class Domain {
   public void deployWebAppViaREST(
       String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
-    cmd.append("curl --silent  --user ")
+    if (!BaseTest.SHARED_CLUSTER) {
+      cmd.append("curl --noproxy '*' ");
+    } else {
+      cmd.append("curl ");
+    }
+    cmd.append("--silent  --user ")
         .append(username)
         .append(":")
         .append(password)
