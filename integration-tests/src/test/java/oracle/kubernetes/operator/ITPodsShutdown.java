@@ -74,17 +74,10 @@ public class ITPodsShutdown extends BaseTest {
               + domain.getDomainUid()
               + "/domain.yaml";
       Assert.assertNotNull(domain);
-      // Build WAR in the admin pod and deploy it from the admin pod to a weblogic target
-      // domain.buildDeployJavaAppInPod(
-      //  testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNS();
       BaseTest.setWaitTimePod(2);
       BaseTest.setMaxIterationsPod(100);
-      // Wait some time for deployment gets ready
-      // Thread.sleep(10 * 1000);
-      // restart managed server to get default shutdown time with default shutdown options
-
     }
   }
 
@@ -311,7 +304,7 @@ public class ITPodsShutdown extends BaseTest {
     updateCRDYamlVerifyShutdown(crd, delayTime);
 
     Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
-    if ((2 * terminationDefaultOptionsTime < terminationTime)) {
+    if ((terminationDefaultOptionsTime < terminationTime)) {
       logger.info("\"FAILURE: ignored timeout Forced value during shutdown");
       throw new Exception("FAILURE: ignored timeoutValue during shutdown");
     }
@@ -404,7 +397,7 @@ public class ITPodsShutdown extends BaseTest {
 
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
     updateCRDYamlVerifyShutdown(crd, 0);
-    // scale up to 2 replicase to check both managed servers in the cluster
+    // scale up to 2 replicas to check both managed servers in the cluster
     scaleCluster(2);
     checkShutdownUpdatedProp(domainUid + "-managed-server1", "Graceful");
     checkShutdownUpdatedProp(domainUid + "-managed-server2", "Forced");
@@ -563,30 +556,6 @@ public class ITPodsShutdown extends BaseTest {
   }
 
   /**
-   * Return time for pod to be deleted initiates a pod restart.
-   *
-   * @param podName
-   * @throws Exception
-   */
-  /*
-  public static long checkShutdownTime(String podName) throws Exception {
-    String namespace = domainNS;
-    long startTime = System.currentTimeMillis();
-    long maxWaitMillis = 280 * 1000;
-
-    // checking time up to next restart
-    TestUtils.checkPodCreated(podName, namespace);
-    long currentTime = System.currentTimeMillis();
-    if ((currentTime - startTime) > maxWaitMillis) {
-      throw new RuntimeException(
-          "Pod " + podName + " not terminating within " + maxWaitMillis / 1000 + " seconds");
-    }
-    logger.info("The time to terminate the pod is " + (currentTime - startTime));
-    return (currentTime - startTime);
-  }
-  */
-
-  /**
    * shutdown managed server
    *
    * @throws Exception
@@ -594,9 +563,7 @@ public class ITPodsShutdown extends BaseTest {
   public static void shutdownServer(String serverName) throws Exception {
 
     String cmd = "kubectl delete pod " + domainUid + "-" + serverName + " -n " + domainNS;
-
     logger.info("command to shutdown server <" + serverName + "> is: " + cmd);
-
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
       throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
