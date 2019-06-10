@@ -590,6 +590,14 @@ public class BaseTest {
     return maxIterationsPod;
   }
 
+  public static void setMaxIterationsPod(int iterationsPod) {
+    maxIterationsPod = iterationsPod;
+  }
+
+  public static void setWaitTimePod(int timePod) {
+    waitTimePod = timePod;
+  }
+
   public static int getWaitTimePod() {
     return waitTimePod;
   }
