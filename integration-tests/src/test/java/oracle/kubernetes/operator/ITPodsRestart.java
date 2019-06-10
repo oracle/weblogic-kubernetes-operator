@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCRD;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
@@ -218,13 +219,37 @@ public class ITPodsRestart extends BaseTest {
 
         // create ocir registry secret in the same ns as domain which is used while pulling the
         // image
-        TestUtils.createDockerRegistrySecret(
-            "docker-store",
-            BaseTest.getWeblogicImageServer(),
-            System.getenv("OCR_USERNAME"),
-            System.getenv("OCR_PASSWORD"),
-            "none@oracle.com ",
-            domain.getDomainNS());
+        //        TestUtils.createDockerRegistrySecret(
+        //            "docker-store",
+        //            BaseTest.getWeblogicImageServer(),
+        //            System.getenv("OCR_USERNAME"),
+        //            System.getenv("OCR_PASSWORD"),
+        //            "none@oracle.com ",
+        //            domain.getDomainNS());
+
+        String command =
+            "kubectl create secret docker-registry docker-store "
+                + "--docker-server="
+                + BaseTest.getWeblogicImageServer()
+                + " --docker-username="
+                + System.getenv("OCR_USERNAME")
+                + " --docker-password="
+                + System.getenv("OCR_PASSWORD")
+                + " -n "
+                + domain.getDomainNS()
+                + " --dry-run -o yaml | kubectl apply -f - ";
+
+        logger.info("Executing " + command);
+        ExecResult result = ExecCommand.exec(command);
+        logger.info(
+            "Command "
+                + command
+                + " return value "
+                + result.exitValue()
+                + " \n failed with stderr = "
+                + result.stderr()
+                + " \n stdout = "
+                + result.stdout());
 
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
