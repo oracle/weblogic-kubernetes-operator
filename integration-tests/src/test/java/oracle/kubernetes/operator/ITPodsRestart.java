@@ -97,7 +97,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -120,7 +120,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -142,7 +142,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -165,7 +165,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -261,7 +261,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -298,7 +298,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -336,7 +336,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  @Test
+  // @Test
   public void testServerPodsRestartByChangingResource() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -371,7 +371,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  @Test
+  // @Test
   public void testAdminServerRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -417,7 +417,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  @Test
+  // @Test
   public void testClusterRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -464,7 +464,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  // @Test
+  // // @Test
   public void testMSRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -511,7 +511,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  @Test
+  // @Test
   public void testDomainRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
