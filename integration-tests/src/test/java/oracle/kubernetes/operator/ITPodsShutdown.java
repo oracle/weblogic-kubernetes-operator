@@ -79,6 +79,8 @@ public class ITPodsShutdown extends BaseTest {
       //  testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNS();
+      BaseTest.setWaitTimePod(2);
+      BaseTest.setMaxIterationsPod(100);
       // Wait some time for deployment gets ready
       // Thread.sleep(10 * 1000);
       // restart managed server to get default shutdown time with default shutdown options
