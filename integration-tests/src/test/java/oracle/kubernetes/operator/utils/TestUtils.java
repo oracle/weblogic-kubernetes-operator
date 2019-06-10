@@ -240,7 +240,7 @@ public class TestUtils {
               + cmd
               + " return value "
               + result.exitValue()
-              + " failed with stderr = "
+              + " \n failed with stderr = "
               + result.stderr()
               + " \n stdout = "
               + result.stdout());
