@@ -117,7 +117,7 @@ function pull_tag_images {
 	  echo "Creating Docker Secret"
 	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=${WL_DOCKER_SERVER}/ \
+	    --docker-server=${OCR_SERVER}/ \
 	    --docker-username=$OCR_USERNAME \
 	    --docker-password=$OCR_PASSWORD \
             --dry-run -o yaml | kubectl apply -f -
@@ -129,8 +129,8 @@ function pull_tag_images {
 	    exit 1
 	  fi
 	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
-          # echo "docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}"
-	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${WL_DOCKER_SERVER}
+          # echo "docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}"
+	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
           # echo "docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
    	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
@@ -175,7 +175,7 @@ function get_wlthint3client_from_image {
   docker rm -v $id
   
 }
-export WL_DOCKER_SERVER=container-registry.oracle.com
+export OCR_SERVER=container-registry.oracle.com
 export WLS_IMAGE_URI=/middleware/weblogic
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
@@ -189,11 +189,11 @@ if [ "$JRF_ENABLED" = true ] ; then
   export FMWINFRA_IMAGE_URI=/middleware/fmw-infrastructure
   export IMAGE_TAG_FMWINFRA=12.2.1.3
   export DB_IMAGE_URI=/database/enterprise
-  export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-`echo ${WL_DOCKER_SERVER}``echo ${DB_IMAGE_URI}`}"
+  export IMAGE_NAME_ORACLEDB="${IMAGE_NAME_ORACLEDB:-`echo ${OCR_SERVER}``echo ${DB_IMAGE_URI}`}"
   export IMAGE_TAG_ORACLEDB="${IMAGE_TAG_ORACLEDB:-12.2.0.1-slim}"
 fi
-export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-`echo ${WL_DOCKER_SERVER}``echo ${WLS_IMAGE_URI}`}"
-export IMAGE_NAME_FMWINFRA="${IMAGE_NAME_FMWINFRA:-`echo ${WL_DOCKER_SERVER}``echo ${FMWINFRA_IMAGE_URI}`}"
+export IMAGE_NAME_WEBLOGIC="${IMAGE_NAME_WEBLOGIC:-`echo ${OCR_SERVER}``echo ${WLS_IMAGE_URI}`}"
+export IMAGE_NAME_FMWINFRA="${IMAGE_NAME_FMWINFRA:-`echo ${OCR_SERVER}``echo ${FMWINFRA_IMAGE_URI}`}"
 export IMAGE_PULL_SECRET_WEBLOGIC="${IMAGE_PULL_SECRET_WEBLOGIC:-docker-store}"
     
 if [ -z "$BRANCH_NAME" ]; then
