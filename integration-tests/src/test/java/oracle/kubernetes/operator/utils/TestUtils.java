@@ -238,6 +238,8 @@ public class TestUtils {
       logger.info(
           "Command "
               + cmd
+              + " return value "
+              + result.exitValue()
               + " failed with stderr = "
               + result.stderr()
               + " \n stdout = "
