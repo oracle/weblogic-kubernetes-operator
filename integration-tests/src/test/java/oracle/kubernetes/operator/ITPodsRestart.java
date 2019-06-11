@@ -198,6 +198,21 @@ public class ITPodsRestart extends BaseTest {
 
     try {
       ExecAndPrintLog("docker images");
+      String images[] = {
+        System.getenv("REPO_REGISTRY") + "/weblogick8s/weblogic-kubernetes-operator",
+        System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image",
+        "domain-home-in-image",
+        "domain-home-in-image-wdt",
+        System.getenv("REPO_REGISTRY") + "/weblogick8s/wdt/wls",
+        "oracle/weblogic-kubernetes-operator",
+        "store/oracle/weblogic",
+        System.getenv("REPO_REGISTRY") + "/weblogick8s/store/oracle/weblogic"
+      };
+      for (String image : images) {
+        ExecAndPrintLog("docker rmi `docker images -q " + image + " `");
+      }
+      ExecAndPrintLog("docker rmi $(docker images -f \"dangling=true\" -q)");
+      ExecAndPrintLog("docker images");
       logger.info(
           "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
@@ -232,6 +247,17 @@ public class ITPodsRestart extends BaseTest {
         //            "none@oracle.com ",
         //            domain.getDomainNS());
 
+        ExecAndPrintLog(
+            "kubectl create secret docker-registry docker-store "
+                + "--docker-server="
+                + System.getenv("REPO_REGISTRY")
+                + " --docker-username="
+                + System.getenv("REPO_USERNAME")
+                + " --docker-password="
+                + System.getenv("REPO_PASSWORD")
+                + " -n "
+                + domain.getDomainNS()
+                + " --dry-run -o yaml");
         String command =
             "kubectl create secret docker-registry docker-store "
                 + "--docker-server="
