@@ -469,7 +469,8 @@ public class ITOperator extends BaseTest {
    */
   @Test
   public void testDomainInImageUsingWDT() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assume.assumeFalse(QUICKTEST);
+
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
