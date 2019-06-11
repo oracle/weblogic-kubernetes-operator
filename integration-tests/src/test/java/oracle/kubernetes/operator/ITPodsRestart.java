@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCRD;
-import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
@@ -197,25 +196,7 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     try {
-      ExecAndPrintLog("docker images");
-      String images1[] = {
-        "aa168fda9148",
-        "f4ebe13a774d",
-        "1a0416dcad6b",
-        "11311c769c45",
-        "752895b7af34",
-        "f284edce6956",
-        "27ded50d518c",
-        "6cdb96a19a82",
-        "4d0e7bd02c03",
-        "85dfdb97e0de",
-        "d58f0d158db5",
-        "d58f0d158db5"
-      };
-      for (String image : images1) {
-        ExecAndPrintLog("docker rmi -f " + image);
-      }
-      ExecAndPrintLog("docker images");
+      TestUtils.ExecAndPrintLog("docker images");
       logger.info(
           "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
@@ -231,20 +212,20 @@ public class ITPodsRestart extends BaseTest {
         String newImage =
             System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
 
+        // tag image with repo name
         String tag =
             "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
-        // tag image with repo name
-        ExecAndPrintLog(tag);
-        ExecAndPrintLog("docker images");
+        TestUtils.ExecAndPrintLog(tag);
+        TestUtils.ExecAndPrintLog("docker images");
 
-        ExecAndPrintLog(
+        TestUtils.ExecAndPrintLog(
             "docker login "
                 + System.getenv("REPO_REGISTRY")
                 + " -u "
                 + System.getenv("REPO_USERNAME")
                 + " -p "
                 + System.getenv("REPO_PASSWORD"));
-        ExecAndPrintLog("docker push " + newImage);
+        TestUtils.ExecAndPrintLog("docker push " + newImage);
 
         // login and push image to ocir
         // TestUtils.loginAndPushImageToOCIR(newImage);
@@ -259,7 +240,7 @@ public class ITPodsRestart extends BaseTest {
         //            "none@oracle.com ",
         //            domain.getDomainNS());
 
-        ExecAndPrintLog(
+        TestUtils.ExecAndPrintLog(
             "kubectl create secret docker-registry docker-store "
                 + "--docker-server="
                 + System.getenv("REPO_REGISTRY")
@@ -281,7 +262,7 @@ public class ITPodsRestart extends BaseTest {
                 + " -n "
                 + domain.getDomainNS()
                 + " --dry-run -o yaml | kubectl apply -f - ";
-        ExecAndPrintLog(command);
+        TestUtils.ExecAndPrintLog(command);
 
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
@@ -307,19 +288,6 @@ public class ITPodsRestart extends BaseTest {
     }
 
     logger.info("SUCCESS - " + testMethodName);
-  }
-
-  private void ExecAndPrintLog(String command) throws Exception {
-    ExecResult result = ExecCommand.exec(command);
-    logger.info(
-        "\nCommand "
-            + command
-            + "\nreturn value: "
-            + result.exitValue()
-            + "\nstderr = "
-            + result.stderr()
-            + "\nstdout = "
-            + result.stdout());
   }
 
   /**
