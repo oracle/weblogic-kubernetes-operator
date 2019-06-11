@@ -77,8 +77,8 @@ public class ITPodsShutdown extends BaseTest {
       Assert.assertNotNull(domain);
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNS();
-      // BaseTest.setWaitTimePod(2);
-      // BaseTest.setMaxIterationsPod(100);
+      BaseTest.setWaitTimePod(5);
+      BaseTest.setMaxIterationsPod(50);
     }
   }
 
@@ -488,13 +488,16 @@ public class ITPodsShutdown extends BaseTest {
         TestUtils.checkPodDeleted(domainUid + "-managed-server1", domainNS);
         TestUtils.checkPodDeleted(domainUid + "-admin-server", domainNS);
     */
+    this.domain.shutdown();
     logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
     ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
     logger.info(exec.stdout());
 
     logger.info("Verifying if the domain is restarted");
-    this.domain.verifyAdminServerRestarted();
-    this.domain.verifyManagedServersRestarted();
+    TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
+    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
+    // this.domain.verifyAdminServerRestarted();
+    // this.domain.verifyManagedServersRestarted();
 
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {
@@ -509,7 +512,7 @@ public class ITPodsShutdown extends BaseTest {
 
     // logger.info("Checking termination time");
     // terminationTime = checkShutdownTime(domainUid + "-managed-server1");
-    // logger.info(" termination time " + terminationTime);
+    logger.info(" termination time: " + terminationTime);
   }
 
   private static void getDefaultShutdownTime() throws Exception {
@@ -523,13 +526,16 @@ public class ITPodsShutdown extends BaseTest {
   private static void resetDomainCRD() throws Exception {
 
     // reset the domain crd
+    domain.shutdown();
     logger.log(Level.INFO, "kubectl apply -f ", originalYaml);
     ExecResult exec = TestUtils.exec("kubectl apply -f " + originalYaml);
     logger.info(exec.stdout());
     logger.info("Verifying if the domain is restarted");
+    Thread.sleep(10 * 1000);
     // should restart domain
-    domain.verifyAdminServerRestarted();
-    domain.verifyManagedServersRestarted();
+    TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
+    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
+
     Assert.assertTrue(
         "Property value was not found in the updated domain crd ",
         checkShutdownUpdatedProp(domainUid + "-admin-server", "30", "false", "Graceful"));
