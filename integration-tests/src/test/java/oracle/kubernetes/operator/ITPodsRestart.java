@@ -184,7 +184,7 @@ public class ITPodsRestart extends BaseTest {
   /**
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
    * Verify that all the server pods in the domain got re-started .The property tested is: image:
-   * "container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111" --> image:
+   * "container-registry.oracle.com/middleware/weblogic:12.2.1.3" --> image:
    * "container-registry.oracle.com/middleware/weblogic:duplicate"
    *
    * @throws Exception
