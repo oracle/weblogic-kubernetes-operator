@@ -237,6 +237,9 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 			echo "Provide Docker login details using REPO_REGISTRY, REPO_USERNAME, REPO_PASSWORD & REPO_EMAIL env variables to push the Operator image to the repository."
 			exit 1
 	  	fi
+
+                echo "login to $REPO_REGISTRY"
+                docker login $REPO_REGISTRY -u $REPO_USERNAME -p $REPO_PASSWORD
 	  	
 	  	echo "Creating Registry Secret"
 	  	kubectl create secret docker-registry $IMAGE_PULL_SECRET_OPERATOR  \
