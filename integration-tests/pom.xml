@@ -29,6 +29,8 @@
 	<properties>
 		<src-integration-test>${project.basedir}/src/test/java</src-integration-test>
 		<resource-integration-test>${project.basedir}/src/test/resources</resource-integration-test>
+	 <maven.compiler.source>1.8</maven.compiler.source>
+	 <maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 
 	<dependencies>
@@ -44,8 +46,9 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>${junit-version}</version>
+			<version>4.11</version>
 			<scope>test</scope>
+		 <type>jar</type>
 		</dependency>
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
