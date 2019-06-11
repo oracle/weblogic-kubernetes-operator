@@ -199,101 +199,21 @@ public class ITPodsRestart extends BaseTest {
     try {
       ExecAndPrintLog("docker images");
       String images1[] = {
-        "9de773965c6b",
-        "5c523ecea17f",
-        "634ab59891b8",
-        "c9ea22528100",
-        "77979f22eea8",
-        "5261b5bb1682",
-        "fa63a9fa105a",
-        "b52f5dd28662",
-        "52c5109f9ad9",
-        "e6205477ca28",
-        "9b54850cad70",
-        "a3c1f631d78b",
-        "321290079459",
-        "0abdfd581194",
-        "46641d6abd6a",
+        "aa168fda9148",
+        "f4ebe13a774d",
+        "1a0416dcad6b",
+        "11311c769c45",
+        "752895b7af34",
+        "f284edce6956",
+        "27ded50d518c",
+        "6cdb96a19a82",
         "4d0e7bd02c03",
-        "4d0e7bd02c03",
-        "aaea54bce1ea",
-        "1b2806e9b91b",
-        "26310d8c7e81",
-        "b8d808b2fc8c",
-        "a570b3a13826",
-        "e81b76899dd9",
-        "060dff5892a6",
-        "1f1b15e1640a",
-        "83d42e23d7b5",
-        "ca9b2c67199a",
-        "1997b422fe38",
-        "f8356b77b86a",
-        "6cbdf81e788b",
-        "d2659213623e",
-        "373153704253",
-        "584151651c94",
-        "d1b3d8091750",
-        "1af5e0f6d09f",
-        "1eb1067c8bc1",
-        "d4b8f09c756c",
-        "20853267c6cd",
-        "a9436d968bd6",
-        "40f75e58f1b8",
-        "18794492338f",
-        "9cec71b9f912",
-        "a75eca5a040a",
-        "f4cd13108db7",
-        "a25cb4eeaacd",
-        "1ccec66cf648",
-        "03aae768cc41",
-        "d1e87f62f9a1",
-        "180b1ae20d0b",
-        "e3098cafb0d6",
-        "74bc3f982470",
-        "d3efd9b5d292",
-        "ddf1f76315de",
-        "1b5a237afc1e",
-        "bef9fd7ffdb0",
-        "963a3f8a3b1d",
-        "a3b2f2fa2c91",
-        "c8f1bcbd4825",
-        "97c40ae16c56",
-        "44abca094a5b",
-        "fafe74bcdf98",
-        "944d31a10b23",
-        "f1febf596a81",
-        "efc87baca08f",
-        "48072f5521f8",
-        "ac47af0772dd",
-        "84321a1dbd53",
-        "1802f7158e13",
-        "307fe1f9cc96",
-        "7e23b521d1be",
-        "d815f1273f3a",
-        "e33cfeb1defc",
-        "4f45aa601eef",
-        "6053dbc2d144",
-        "7c4672911c1c",
-        "0224d6384efc",
-        "ec52e4bf2e5a",
-        "e927f202c152",
-        "4c40c13af322",
-        "e9a1a5eff9c4",
+        "85dfdb97e0de",
         "d58f0d158db5",
         "d58f0d158db5"
       };
-      String images[] = {
-        System.getenv("REPO_REGISTRY") + "/weblogick8s/weblogic-kubernetes-operator",
-        System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image",
-        "domain-home-in-image",
-        "domain-home-in-image-wdt",
-        System.getenv("REPO_REGISTRY") + "/weblogick8s/wdt/wls",
-        "oracle/weblogic-kubernetes-operator",
-        "store/oracle/weblogic",
-        System.getenv("REPO_REGISTRY") + "/weblogick8s/store/oracle/weblogic"
-      };
       for (String image : images1) {
-        ExecAndPrintLog("docker rmi " + image);
+        ExecAndPrintLog("docker rmi -f " + image);
       }
       ExecAndPrintLog("docker images");
       logger.info(
@@ -392,7 +312,7 @@ public class ITPodsRestart extends BaseTest {
   private void ExecAndPrintLog(String command) throws Exception {
     ExecResult result = ExecCommand.exec(command);
     logger.info(
-        "Command "
+        "\nCommand "
             + command
             + "\nreturn value: "
             + result.exitValue()
