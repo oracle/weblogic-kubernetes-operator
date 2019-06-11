@@ -1402,4 +1402,17 @@ public class TestUtils {
             + result.stderr());
     return result;
   }
+
+  public static void ExecAndPrintLog(String command) throws Exception {
+    ExecResult result = ExecCommand.exec(command);
+    logger.info(
+        "\nCommand "
+            + command
+            + "\nreturn value: "
+            + result.exitValue()
+            + "\nstderr = "
+            + result.stderr()
+            + "\nstdout = "
+            + result.stdout());
+  }
 }
