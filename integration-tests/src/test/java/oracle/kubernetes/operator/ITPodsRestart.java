@@ -218,6 +218,7 @@ public class ITPodsRestart extends BaseTest {
         TestUtils.ExecAndPrintLog(tag);
         TestUtils.ExecAndPrintLog("docker images");
 
+        TestUtils.ExecAndPrintLog("docker logout " + System.getenv("REPO_REGISTRY"));
         TestUtils.ExecAndPrintLog(
             "docker login "
                 + System.getenv("REPO_REGISTRY")
@@ -240,6 +241,7 @@ public class ITPodsRestart extends BaseTest {
         //            "none@oracle.com ",
         //            domain.getDomainNS());
 
+        TestUtils.ExecAndPrintLog("kubectl delete secret docker-store -n" + domain.getDomainNS());
         TestUtils.ExecAndPrintLog(
             "kubectl create secret docker-registry docker-store "
                 + "--docker-server="
