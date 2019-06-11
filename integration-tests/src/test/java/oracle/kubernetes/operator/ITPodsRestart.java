@@ -218,14 +218,14 @@ public class ITPodsRestart extends BaseTest {
         TestUtils.ExecAndPrintLog(tag);
         TestUtils.ExecAndPrintLog("docker images");
 
-        TestUtils.ExecAndPrintLog("docker logout " + System.getenv("REPO_REGISTRY"));
-        TestUtils.ExecAndPrintLog(
-            "docker login "
-                + System.getenv("REPO_REGISTRY")
-                + " -u "
-                + System.getenv("REPO_USERNAME")
-                + " -p "
-                + System.getenv("REPO_PASSWORD"));
+        // TestUtils.ExecAndPrintLog("docker logout " + System.getenv("REPO_REGISTRY"));
+        //        TestUtils.ExecAndPrintLog(
+        //            "docker login "
+        //                + System.getenv("REPO_REGISTRY")
+        //                + " -u "
+        //                + System.getenv("REPO_USERNAME")
+        //                + " -p "
+        //                + System.getenv("REPO_PASSWORD"));
         TestUtils.ExecAndPrintLog("docker push " + newImage);
 
         // login and push image to ocir
@@ -241,7 +241,10 @@ public class ITPodsRestart extends BaseTest {
         //            "none@oracle.com ",
         //            domain.getDomainNS());
 
-        TestUtils.ExecAndPrintLog("kubectl delete secret docker-store -n " + domain.getDomainNS());
+        // TestUtils.ExecAndPrintLog("kubectl delete secret docker-store -n " +
+        // domain.getDomainNS());
+        TestUtils.ExecAndPrintLog("kubectl get secret --all-namespaces");
+        TestUtils.ExecAndPrintLog("kubectl describe secret docker-store");
         TestUtils.ExecAndPrintLog(
             "kubectl create secret docker-registry docker-store "
                 + "--docker-server="
@@ -250,6 +253,8 @@ public class ITPodsRestart extends BaseTest {
                 + System.getenv("REPO_USERNAME")
                 + " --docker-password="
                 + System.getenv("REPO_PASSWORD")
+                + " --docker_email="
+                + System.getenv("REPO_EMAIL")
                 + " -n "
                 + domain.getDomainNS()
                 + " --dry-run -o yaml");
@@ -261,6 +266,8 @@ public class ITPodsRestart extends BaseTest {
                 + System.getenv("REPO_USERNAME")
                 + " --docker-password="
                 + System.getenv("REPO_PASSWORD")
+                + " --docker_email="
+                + System.getenv("REPO_EMAIL")
                 + " -n "
                 + domain.getDomainNS()
                 + " --dry-run -o yaml | kubectl apply -f - ";
