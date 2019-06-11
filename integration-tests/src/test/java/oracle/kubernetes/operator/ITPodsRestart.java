@@ -241,7 +241,7 @@ public class ITPodsRestart extends BaseTest {
         //            "none@oracle.com ",
         //            domain.getDomainNS());
 
-        TestUtils.ExecAndPrintLog("kubectl delete secret docker-store -n" + domain.getDomainNS());
+        TestUtils.ExecAndPrintLog("kubectl delete secret docker-store -n " + domain.getDomainNS());
         TestUtils.ExecAndPrintLog(
             "kubectl create secret docker-registry docker-store "
                 + "--docker-server="
