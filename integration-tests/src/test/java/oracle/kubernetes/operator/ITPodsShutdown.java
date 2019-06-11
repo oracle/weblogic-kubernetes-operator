@@ -481,13 +481,6 @@ public class ITPodsShutdown extends BaseTest {
     Files.write(path, modYaml.getBytes(charset));
     modifiedYaml = path.toString();
     // Apply the new yaml to update the domain crd
-    /*
-        logger.log(Level.INFO, "kubectl delete -f {0}", originalYaml);
-        ExecResult exec = TestUtils.exec("kubectl delete -f " + originalYaml);
-        logger.info(exec.stdout());
-        TestUtils.checkPodDeleted(domainUid + "-managed-server1", domainNS);
-        TestUtils.checkPodDeleted(domainUid + "-admin-server", domainNS);
-    */
     this.domain.shutdown();
     logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
     ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
@@ -496,8 +489,6 @@ public class ITPodsShutdown extends BaseTest {
     logger.info("Verifying if the domain is restarted");
     TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
     TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
-    // this.domain.verifyAdminServerRestarted();
-    // this.domain.verifyManagedServersRestarted();
 
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {
@@ -509,15 +500,13 @@ public class ITPodsShutdown extends BaseTest {
       Thread.sleep(5 * 1000);
     }
     terminationTime = shutdownServer("managed-server1");
-
-    // logger.info("Checking termination time");
-    // terminationTime = checkShutdownTime(domainUid + "-managed-server1");
     logger.info(" termination time: " + terminationTime);
+    TestUtils.checkPodCreated(domainUid + "-admin-server", domainNS);
+    TestUtils.checkPodCreated(domainUid + "-managed-server1", domainNS);
   }
 
   private static void getDefaultShutdownTime() throws Exception {
     terminationDefaultOptionsTime = shutdownServer("managed-server1");
-    // terminationDefaultOptionsTime = checkShutdownTime(domainUid + "-managed-server1");
     logger.info(
         " termination pod's time with default shutdown options is: "
             + terminationDefaultOptionsTime);
@@ -620,10 +609,6 @@ public class ITPodsShutdown extends BaseTest {
     long endTime = System.currentTimeMillis();
     terminationTime = endTime - startTime;
     return terminationTime;
-    // String output = result.stdout().trim();
-    // logger.info("output from shutting down  server:\n" + output);
-    // TestUtils.checkPodTerminating(domainUid + "-" + serverName, domainNS);
-    // logger.info(" Pod " + domainUid + "-" + serverName + " is Terminating status :\n" + output);
   }
 
   private static boolean checkShutdownUpdatedProp(String podName, String... props)
@@ -649,53 +634,10 @@ public class ITPodsShutdown extends BaseTest {
         propFound.put(prop, new Boolean(true));
       }
     }
-    if (props.length == propFound.size()) found = true;
-    return found;
-  }
-
-  private static long checkShutdownTime(String podName) throws Exception {
-    long startTime = System.currentTimeMillis();
-    long endTime = 0;
-    int maxIterations = 50;
-    int waitPodTime = 5;
-    String matchStr = "Terminating";
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
-    int i = 0;
-    while (i < maxIterations) {
-      ExecResult result = ExecCommand.exec(cmd.toString());
-
-      // pod might not have been created or if created loop till condition
-      if ((result.exitValue() == 0 && result.stdout().contains(matchStr))) {
-        logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
-
-        // check for last iteration
-        if (i == (maxIterations - 1)) {
-          throw new RuntimeException(
-              "FAILURE: pod " + podName + " is still in " + matchStr + " status, exiting!");
-        }
-        logger.info(
-            "Pod "
-                + podName
-                + " is "
-                + matchStr
-                + " Ite ["
-                + i
-                + "/"
-                + maxIterations
-                + "], sleeping "
-                + waitPodTime
-                + " seconds more");
-
-        Thread.sleep(maxIterations * 1000);
-        i++;
-      } else {
-        endTime = System.currentTimeMillis();
-        logger.info("Pod " + podName + " is not in the " + matchStr + " status or does not exists");
-        break;
-      }
+    if (props.length == propFound.size()) {
+      found = true;
     }
-    return (endTime - startTime);
+    return found;
   }
 }
 
