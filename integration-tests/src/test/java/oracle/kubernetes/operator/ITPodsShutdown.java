@@ -18,7 +18,6 @@ import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -45,6 +44,7 @@ public class ITPodsShutdown extends BaseTest {
   private static final String testAppName = "httpsessionreptestapp";
   private static final String scriptName = "buildDeployAppInPod.sh";
   private static String modifiedYaml = null;
+  private static int podVer = 1;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -86,7 +86,7 @@ public class ITPodsShutdown extends BaseTest {
    *
    * @throws Exception
    */
-  @AfterClass
+  // @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
@@ -111,7 +111,6 @@ public class ITPodsShutdown extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetDomainCRD();
     String podName = domainUid + "-managed-server1";
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown options in managed server-1 node
@@ -122,10 +121,16 @@ public class ITPodsShutdown extends BaseTest {
     shutdownProps.put("shutdownType", "Forced");
     shutdownProps.put("ignoreSessions", true);
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
-    updateCRDYamlVerifyShutdown(crd, 0);
-    Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "Graceful"));
-    Assert.assertTrue(
-        checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced", "160", "true"));
+    try {
+      updateCRDYamlVerifyShutdown(crd, 0);
+      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "Graceful"));
+      Assert.assertTrue(
+          checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced", "160", "true"));
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      resetDomainCRD();
+    }
   }
 
   /**
@@ -139,7 +144,7 @@ public class ITPodsShutdown extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetDomainCRD();
+
     Files.createDirectories(Paths.get(shutdownTmpDir));
 
     // Modify the original domain yaml to include shutdown options in cluster-1 node
@@ -151,9 +156,15 @@ public class ITPodsShutdown extends BaseTest {
     shutdownProps.put("ignoreSessions", true);
 
     crd.addShutdownOptionsToCluster(domain.getClusterName(), shutdownProps);
-    updateCRDYamlVerifyShutdown(crd, 0);
-    Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "Graceful"));
-    Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
+    try {
+      updateCRDYamlVerifyShutdown(crd, 0);
+      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "Graceful"));
+      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      resetDomainCRD();
+    }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
@@ -168,7 +179,7 @@ public class ITPodsShutdown extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetDomainCRD();
+
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown options in domain spec node
     DomainCRD crd = new DomainCRD(originalYaml);
@@ -176,11 +187,15 @@ public class ITPodsShutdown extends BaseTest {
     Map<String, Object> shutdownProps = new HashMap();
     shutdownProps.put("timeoutSeconds", 160);
     crd.addShutdownOptionToDomain(shutdownProps);
-
-    updateCRDYamlVerifyShutdown(crd, 0);
-    Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "160"));
-    Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "160"));
-
+    try {
+      updateCRDYamlVerifyShutdown(crd, 0);
+      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-admin-server", "160"));
+      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "160"));
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      resetDomainCRD();
+    }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
@@ -197,7 +212,6 @@ public class ITPodsShutdown extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    resetDomainCRD();
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown options in domain spec node
     DomainCRD crd = new DomainCRD(originalYaml);
@@ -224,17 +238,23 @@ public class ITPodsShutdown extends BaseTest {
     shutdownProps.put("ignoreSessions", true);
 
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
-    updateCRDYamlVerifyShutdown(crd, delayTime);
-    Assert.assertTrue(
-        checkShutdownUpdatedProp(domainUid + "-managed-server1", "160", "true", "Graceful"));
+    try {
+      updateCRDYamlVerifyShutdown(crd, delayTime);
+      Assert.assertTrue(
+          checkShutdownUpdatedProp(domainUid + "-managed-server1", "160", "true", "Graceful"));
 
-    long terminationTimeWithIgnoreSessionTrue = terminationTime;
-    logger.info(
-        " Termination time with ignoreSessions=true :" + terminationTimeWithIgnoreSessionTrue);
+      long terminationTimeWithIgnoreSessionTrue = terminationTime;
+      logger.info(
+          " Termination time with ignoreSessions=true :" + terminationTimeWithIgnoreSessionTrue);
 
-    if (terminationTimeWithIgnoreSessionFalse < terminationTimeWithIgnoreSessionTrue) {
-      logger.info("FAILURE: did not ignore opened sessions during shutdown");
-      throw new Exception("FAILURE: did not ignore opened sessions during shutdown");
+      if (terminationTimeWithIgnoreSessionFalse < terminationTimeWithIgnoreSessionTrue) {
+        logger.info("FAILURE: did not ignore opened sessions during shutdown");
+        throw new Exception("FAILURE: did not ignore opened sessions during shutdown");
+      }
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      resetDomainCRD();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -252,7 +272,6 @@ public class ITPodsShutdown extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    resetDomainCRD();
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown options in domain spec node
     DomainCRD crd = new DomainCRD(originalYaml);
@@ -263,14 +282,18 @@ public class ITPodsShutdown extends BaseTest {
     shutdownProps.put("timeoutSeconds", 20);
     shutdownProps.put("ignoreSessions", false);
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
-
-    updateCRDYamlVerifyShutdown(crd, delayTime);
-
-    Assert.assertTrue(
-        checkShutdownUpdatedProp(domainUid + "-managed-server1", "20", "false", "Graceful"));
-    if (terminationTime > (3 * 20 * 1000)) {
-      logger.info("\"FAILURE: ignored timeoutValue during shutdown");
-      throw new Exception("FAILURE: ignored timeoutValue during shutdown");
+    try {
+      updateCRDYamlVerifyShutdown(crd, delayTime);
+      Assert.assertTrue(
+          checkShutdownUpdatedProp(domainUid + "-managed-server1", "20", "false", "Graceful"));
+      if (terminationTime > (3 * 20 * 1000)) {
+        logger.info("\"FAILURE: ignored timeoutValue during shutdown");
+        throw new Exception("FAILURE: ignored timeoutValue during shutdown");
+      }
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      resetDomainCRD();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -288,7 +311,6 @@ public class ITPodsShutdown extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    resetDomainCRD();
     if (terminationDefaultOptionsTime == 0) {
       getDefaultShutdownTime();
     }
@@ -301,12 +323,18 @@ public class ITPodsShutdown extends BaseTest {
     Map<String, Object> shutdownProps = new HashMap();
     shutdownProps.put("shutdownType", "Forced");
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
-    updateCRDYamlVerifyShutdown(crd, delayTime);
+    try {
+      updateCRDYamlVerifyShutdown(crd, delayTime);
 
-    Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
-    if ((terminationDefaultOptionsTime < terminationTime)) {
-      logger.info("\"FAILURE: ignored timeout Forced value during shutdown");
-      throw new Exception("FAILURE: ignored timeoutValue during shutdown");
+      Assert.assertTrue(checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced"));
+      if ((terminationDefaultOptionsTime < terminationTime)) {
+        logger.info("\"FAILURE: ignored timeout Forced value during shutdown");
+        throw new Exception("FAILURE: ignored timeoutValue during shutdown");
+      }
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      resetDomainCRD();
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -321,7 +349,6 @@ public class ITPodsShutdown extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetDomainCRD();
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown env vars options in domain spec node
     DomainCRD crd = new DomainCRD(originalYaml);
@@ -329,9 +356,17 @@ public class ITPodsShutdown extends BaseTest {
     Map<String, String> envOpt = new HashMap();
     envOpt.put("SHUTDOWN_TYPE", "Forced");
     envOpt.put("SHUTDOWN_TIMEOUT", "60");
-    envOpt.put("SHUTDOWN_IGNORE_SESSIONS", "true");
+    envOpt.put("SHUTDOWN_IGNORE_SESSIONS", "false");
     crd.addEnvOption(envOpt);
-    updateCRDYamlVerifyShutdown(crd, 0);
+    try {
+      updateCRDYamlVerifyShutdown(crd, 0);
+      checkShutdownUpdatedProp(domainUid + "-managed-server1", "Forced", "60", "false");
+      checkShutdownUpdatedProp(domainUid + "-admin-server", "Forced", "60", "false");
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      resetDomainCRD();
+    }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
@@ -346,7 +381,6 @@ public class ITPodsShutdown extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetDomainCRD();
 
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown options in domain spec node
@@ -355,18 +389,24 @@ public class ITPodsShutdown extends BaseTest {
     Map<String, String> envOpt = new HashMap();
     envOpt.put("SHUTDOWN_TYPE", "Forced");
     envOpt.put("SHUTDOWN_TIMEOUT", "60");
-    envOpt.put("SHUTDOWN_IGNORE_SESSIONS", "true");
-
     crd.addEnvOption(envOpt);
+
     Map<String, Object> shutdownProps = new HashMap();
     shutdownProps.put("timeoutSeconds", 20);
     shutdownProps.put("shutdownType", "Graceful");
     shutdownProps.put("ignoreSessions", false);
 
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
-    updateCRDYamlVerifyShutdown(crd, 0);
-    checkShutdownUpdatedProp(domainUid + "-managed-server1", "Graceful");
-    checkShutdownUpdatedProp(domainUid + "-admin-server", "Forced", "60", "true");
+    try {
+      updateCRDYamlVerifyShutdown(crd, 0);
+      checkShutdownUpdatedProp(domainUid + "-managed-server1", "Graceful", "20");
+      checkShutdownUpdatedProp(domainUid + "-admin-server", "Forced", "60");
+
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      resetDomainCRD();
+    }
 
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
@@ -382,7 +422,6 @@ public class ITPodsShutdown extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    resetDomainCRD();
     Files.createDirectories(Paths.get(shutdownTmpDir));
     // Modify the original domain yaml to include shutdown env vars options in domain spec node
     DomainCRD crd = new DomainCRD(originalYaml);
@@ -396,13 +435,17 @@ public class ITPodsShutdown extends BaseTest {
     shutdownProps.put("shutdownType", "Graceful");
 
     crd.addShutDownOptionToMS("managed-server1", shutdownProps);
-    updateCRDYamlVerifyShutdown(crd, 0);
-    // scale up to 2 replicas to check both managed servers in the cluster
-    scaleCluster(2);
-    checkShutdownUpdatedProp(domainUid + "-managed-server1", "Graceful");
-    checkShutdownUpdatedProp(domainUid + "-managed-server2", "Forced");
-    // reset to one replica
-    scaleCluster(1);
+    try {
+      updateCRDYamlVerifyShutdown(crd, 0);
+      // scale up to 2 replicas to check both managed servers in the cluster
+      scaleCluster(2);
+      checkShutdownUpdatedProp(domainUid + "-managed-server1", "Graceful");
+      checkShutdownUpdatedProp(domainUid + "-managed-server2", "Forced");
+    } finally {
+      logger.log(
+          Level.INFO, "Reverting back the domain to old crd\n kubectl apply -f {0}", originalYaml);
+      resetDomainCRD();
+    }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
@@ -421,10 +464,15 @@ public class ITPodsShutdown extends BaseTest {
     return domain;
   }
 
-  private static void updateCRDYamlVerifyShutdown(DomainCRD crd, long delayTime) throws Exception {
+  private void updateCRDYamlVerifyShutdown(DomainCRD crd, long delayTime) throws Exception {
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     terminationTime = 0;
+    // change version to restart domain
+    Map<String, String> domain = new HashMap();
+    domain.put("restartVersion", "v1." + podVer);
+    podVer++;
+    crd.addObjectNodeToDomain(domain);
     // Write the modified yaml to a new file
     Path path = Paths.get(shutdownTmpDir, "shutdown.managed.yaml");
     logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
@@ -432,39 +480,40 @@ public class ITPodsShutdown extends BaseTest {
     Files.write(path, modYaml.getBytes(charset));
     modifiedYaml = path.toString();
     // Apply the new yaml to update the domain crd
-
-    logger.log(Level.INFO, "kubectl delete -f {0}", originalYaml);
-    ExecResult exec = TestUtils.exec("kubectl delete -f " + originalYaml);
-    logger.info(exec.stdout());
-    TestUtils.checkPodDeleted(domainUid + "-managed-server1", domainNS);
-    TestUtils.checkPodDeleted(domainUid + "-admin-server", domainNS);
-
+    /*
+        logger.log(Level.INFO, "kubectl delete -f {0}", originalYaml);
+        ExecResult exec = TestUtils.exec("kubectl delete -f " + originalYaml);
+        logger.info(exec.stdout());
+        TestUtils.checkPodDeleted(domainUid + "-managed-server1", domainNS);
+        TestUtils.checkPodDeleted(domainUid + "-admin-server", domainNS);
+    */
     logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
-    exec = TestUtils.exec("kubectl apply -f " + path.toString());
+    ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
     logger.info(exec.stdout());
 
-    TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
-    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
+    logger.info("Verifying if the domain is restarted");
+    this.domain.verifyAdminServerRestarted();
+    this.domain.verifyManagedServersRestarted();
 
     // invoke servlet to keep sessions opened, terminate pod and check shutdown time
     if (delayTime > 0) {
       String testAppPath = "httpsessionreptestapp/CounterServlet?invalidate";
-      callWebApp(testAppPath, domain, true);
-      SessionDelayThread sessionDelay = new SessionDelayThread(delayTime, domain);
+      callWebApp(testAppPath, this.domain, true);
+      SessionDelayThread sessionDelay = new SessionDelayThread(delayTime, this.domain);
       new Thread(sessionDelay).start();
       // sleep 5 secs before shutdown
       Thread.sleep(5 * 1000);
     }
-    shutdownServer("managed-server1");
+    terminationTime = shutdownServer("managed-server1");
 
-    logger.info("Checking termination time");
-    terminationTime = checkShutdownTime(domainUid + "-managed-server1");
-    logger.info(" termination time " + terminationTime);
+    // logger.info("Checking termination time");
+    // terminationTime = checkShutdownTime(domainUid + "-managed-server1");
+    // logger.info(" termination time " + terminationTime);
   }
 
   private static void getDefaultShutdownTime() throws Exception {
-    shutdownServer("managed-server1");
-    terminationDefaultOptionsTime = checkShutdownTime(domainUid + "-managed-server1");
+    terminationDefaultOptionsTime = shutdownServer("managed-server1");
+    // terminationDefaultOptionsTime = checkShutdownTime(domainUid + "-managed-server1");
     logger.info(
         " termination pod's time with default shutdown options is: "
             + terminationDefaultOptionsTime);
@@ -473,21 +522,13 @@ public class ITPodsShutdown extends BaseTest {
   private static void resetDomainCRD() throws Exception {
 
     // reset the domain crd
-    if (modifiedYaml != null) {
-      logger.log(Level.INFO, "kubectl delete -f ", modifiedYaml);
-      ExecResult exec = TestUtils.exec("kubectl delete -f " + modifiedYaml);
-      logger.info(exec.stdout());
-      TestUtils.checkPodDeleted(domainUid + "-managed-server1", domainNS);
-      TestUtils.checkPodDeleted(domainUid + "-admin-server", domainNS);
-
-      logger.log(Level.INFO, "kubectl apply -f ", originalYaml);
-      exec = TestUtils.exec("kubectl apply -f " + originalYaml);
-      logger.info(exec.stdout());
-    }
+    logger.log(Level.INFO, "kubectl apply -f ", originalYaml);
+    ExecResult exec = TestUtils.exec("kubectl apply -f " + originalYaml);
+    logger.info(exec.stdout());
+    logger.info("Verifying if the domain is restarted");
     // should restart domain
-    TestUtils.checkPodReady(domainUid + "-admin-server", domainNS);
-    TestUtils.checkPodReady(domainUid + "-managed-server1", domainNS);
-
+    domain.verifyAdminServerRestarted();
+    domain.verifyManagedServersRestarted();
     Assert.assertTrue(
         "Property value was not found in the updated domain crd ",
         checkShutdownUpdatedProp(domainUid + "-admin-server", "30", "false", "Graceful"));
@@ -560,21 +601,26 @@ public class ITPodsShutdown extends BaseTest {
    *
    * @throws Exception
    */
-  public static void shutdownServer(String serverName) throws Exception {
-
+  private static long shutdownServer(String serverName) throws Exception {
+    long startTime = System.currentTimeMillis();
     String cmd = "kubectl delete pod " + domainUid + "-" + serverName + " -n " + domainNS;
     logger.info("command to shutdown server <" + serverName + "> is: " + cmd);
     ExecResult result = ExecCommand.exec(cmd);
     if (result.exitValue() != 0) {
+      terminationTime = 0;
       throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
     }
-    String output = result.stdout().trim();
-    logger.info("output from shutting down  server:\n" + output);
-    TestUtils.checkPodTerminating(domainUid + "-" + serverName, domainNS);
-    logger.info(" Pod " + domainUid + "-" + serverName + " is Terminating status :\n" + output);
+    long endTime = System.currentTimeMillis();
+    terminationTime = endTime - startTime;
+    return terminationTime;
+    // String output = result.stdout().trim();
+    // logger.info("output from shutting down  server:\n" + output);
+    // TestUtils.checkPodTerminating(domainUid + "-" + serverName, domainNS);
+    // logger.info(" Pod " + domainUid + "-" + serverName + " is Terminating status :\n" + output);
   }
 
-  public static boolean checkShutdownUpdatedProp(String podName, String... props) throws Exception {
+  private static boolean checkShutdownUpdatedProp(String podName, String... props)
+      throws Exception {
     // kubectl get pod domainonpvwlst-managed-server1 | grep SHUTDOWN
     HashMap<String, Boolean> propFound = new HashMap<String, Boolean>();
     StringBuffer cmd = new StringBuffer("kubectl get pod ");
@@ -600,7 +646,7 @@ public class ITPodsShutdown extends BaseTest {
     return found;
   }
 
-  public static long checkShutdownTime(String podName) throws Exception {
+  private static long checkShutdownTime(String podName) throws Exception {
     long startTime = System.currentTimeMillis();
     long endTime = 0;
     int maxIterations = 50;
@@ -671,7 +717,7 @@ class SessionDelayThread implements Runnable {
    * @param delayTime - sleep time in mills to keep session alive
    * @throws Exception
    */
-  public static void keepSessionAlive(long delayTime, Domain domain) throws Exception {
+  private static void keepSessionAlive(long delayTime, Domain domain) throws Exception {
     String testAppPath = "httpsessionreptestapp/CounterServlet?delayTime=" + delayTime;
     ITPodsShutdown.callWebApp(testAppPath, domain, false);
   }
