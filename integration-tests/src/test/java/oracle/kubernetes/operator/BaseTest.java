@@ -263,7 +263,7 @@ public class BaseTest {
   /**
    * getter method for weblogicImageServer
    *
-   * @return image name of the WLS docker image
+   * @return registry name of the WLS container
    */
   public static String getWeblogicImageServer() {
     return weblogicImageServer;
