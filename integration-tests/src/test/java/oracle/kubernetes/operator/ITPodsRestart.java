@@ -97,7 +97,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -120,7 +120,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -142,7 +142,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -165,7 +165,7 @@ public class ITPodsRestart extends BaseTest {
    *
    * @throws Exception
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -205,79 +205,37 @@ public class ITPodsRestart extends BaseTest {
               + ":"
               + getWeblogicImageTag()
               + " to "
-              + System.getenv("REPO_REGISTRY")
               + "/weblogick8s/middleware/weblogic:duplicate");
 
       if (BaseTest.SHARED_CLUSTER) {
-        String newImage =
-            System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
+        // unskip this code once OWLS-74986 is fixed.
+        if (false) {
+          String newImage =
+              System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
+          // tag image with repo name
+          String tag =
+              "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
+          TestUtils.ExecAndPrintLog(tag);
+          TestUtils.ExecAndPrintLog("docker images");
 
-        // tag image with repo name
-        String tag =
-            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
-        TestUtils.ExecAndPrintLog(tag);
-        TestUtils.ExecAndPrintLog("docker images");
+          // login and push image to ocir
+          TestUtils.loginAndPushImageToOCIR(newImage);
 
-        // TestUtils.ExecAndPrintLog("docker logout " + System.getenv("REPO_REGISTRY"));
-        //        TestUtils.ExecAndPrintLog(
-        //            "docker login "
-        //                + System.getenv("REPO_REGISTRY")
-        //                + " -u "
-        //                + System.getenv("REPO_USERNAME")
-        //                + " -p "
-        //                + System.getenv("REPO_PASSWORD"));
-        TestUtils.ExecAndPrintLog("docker push " + newImage);
+          // create ocir registry secret in the same ns as domain which is used while pulling the
+          // image
+          TestUtils.createDockerRegistrySecret(
+              "docker-store",
+              System.getenv("REPO_REGISTRY"),
+              System.getenv("REPO_USERNAME"),
+              System.getenv("REPO_PASSWORD"),
+              System.getenv("REPO_EMAIL"),
+              domain.getDomainNS());
 
-        // login and push image to ocir
-        // TestUtils.loginAndPushImageToOCIR(newImage);
-
-        // create ocir registry secret in the same ns as domain which is used while pulling the
-        // image
-        //        TestUtils.createDockerRegistrySecret(
-        //            "docker-store",
-        //            BaseTest.getWeblogicImageServer(),
-        //            System.getenv("OCR_USERNAME"),
-        //            System.getenv("OCR_PASSWORD"),
-        //            "none@oracle.com ",
-        //            domain.getDomainNS());
-
-        // TestUtils.ExecAndPrintLog("kubectl delete secret docker-store -n " +
-        // domain.getDomainNS());
-        TestUtils.ExecAndPrintLog("kubectl get secret --all-namespaces");
-        TestUtils.ExecAndPrintLog("kubectl describe secret docker-store");
-        TestUtils.ExecAndPrintLog(
-            "kubectl create secret docker-registry docker-store "
-                + "--docker-server="
-                + System.getenv("REPO_REGISTRY")
-                + " --docker-username="
-                + System.getenv("REPO_USERNAME")
-                + " --docker-password="
-                + System.getenv("REPO_PASSWORD")
-                + " --docker_email="
-                + System.getenv("REPO_EMAIL")
-                + " -n "
-                + domain.getDomainNS()
-                + " --dry-run -o yaml");
-        String command =
-            "kubectl create secret docker-registry docker-store "
-                + "--docker-server="
-                + System.getenv("REPO_REGISTRY")
-                + " --docker-username="
-                + System.getenv("REPO_USERNAME")
-                + " --docker-password="
-                + System.getenv("REPO_PASSWORD")
-                + " --docker_email="
-                + System.getenv("REPO_EMAIL")
-                + " -n "
-                + domain.getDomainNS()
-                + " --dry-run -o yaml | kubectl apply -f - ";
-        TestUtils.ExecAndPrintLog(command);
-
-        // apply new domain yaml and verify pod restart
-        newImage = getWeblogicImageName() + ":12.2.1.3";
-        domain.verifyDomainServerPodRestart(
-            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
-            "\"" + newImage + "\"");
+          // apply new domain yaml and verify pod restart
+          domain.verifyDomainServerPodRestart(
+              "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
+              "\"" + newImage + "\"");
+        }
       } else {
         TestUtils.exec(
             "docker tag "
@@ -309,7 +267,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -346,7 +304,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -384,7 +342,7 @@ public class ITPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  // @Test
+  @Test
   public void testServerPodsRestartByChangingResource() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -419,7 +377,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  // @Test
+  @Test
   public void testAdminServerRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -465,7 +423,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  // @Test
+  @Test
   public void testClusterRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -512,7 +470,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  // // @Test
+  // @Test
   public void testMSRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -559,7 +517,7 @@ public class ITPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  // @Test
+  @Test
   public void testDomainRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();

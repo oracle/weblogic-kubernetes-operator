@@ -73,29 +73,31 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (!QUICKTEST) {
-      initialize(APP_PROPS_FILE);
-      logger.info("Checking if operator and domain are running, if not creating");
-      if (operator == null) {
-        Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
-        operator = new Operator(operatorMap, Operator.RESTCertType.SELF_SIGNED);
-        Assert.assertNotNull(operator);
-        operator.callHelmInstall();
+    if (!BaseTest.SHARED_CLUSTER) {
+      if (!QUICKTEST) {
+        initialize(APP_PROPS_FILE);
+        logger.info("Checking if operator and domain are running, if not creating");
+        if (operator == null) {
+          Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
+          operator = new Operator(operatorMap, Operator.RESTCertType.SELF_SIGNED);
+          Assert.assertNotNull(operator);
+          operator.callHelmInstall();
+        }
+        if (domain == null) {
+          domain = createVerifyDomain(number, operator);
+          Assert.assertNotNull(domain);
+        }
+        myhost = domain.getHostNameForCurl();
+        exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
+        metricsUrl = exporterUrl + "metrics";
+        monitoringExporterDir = BaseTest.getResultDir() + "/monitoring";
+        resourceExporterDir =
+            BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
+        configPath = resourceExporterDir;
+        upgradeTraefikHostName();
+        deployRunMonitoringExporter(domain, operator);
+        buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
       }
-      if (domain == null) {
-        domain = createVerifyDomain(number, operator);
-        Assert.assertNotNull(domain);
-      }
-      myhost = domain.getHostNameForCurl();
-      exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
-      metricsUrl = exporterUrl + "metrics";
-      monitoringExporterDir = BaseTest.getResultDir() + "/monitoring";
-      resourceExporterDir =
-          BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
-      configPath = resourceExporterDir;
-      upgradeTraefikHostName();
-      deployRunMonitoringExporter(domain, operator);
-      buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
     }
   }
 
@@ -106,19 +108,21 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
-      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-      logger.info("BEGIN");
-      logger.info("Run once, release cluster lease");
-      if (domain != null) {
-        domain.destroy();
+    if (!BaseTest.SHARED_CLUSTER) {
+      if (!QUICKTEST) {
+        logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+        logger.info("BEGIN");
+        logger.info("Run once, release cluster lease");
+        if (domain != null) {
+          domain.destroy();
+        }
+        if (operator != null) {
+          operator.destroy();
+        }
+        deletePrometheusGrafana();
+        tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+        logger.info("SUCCESS");
       }
-      if (operator != null) {
-        operator.destroy();
-      }
-      deletePrometheusGrafana();
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      logger.info("SUCCESS");
     }
   }
 
@@ -129,6 +133,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test01_CheckMetricsViaPrometheus() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -145,6 +150,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test02_ReplaceConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -193,6 +199,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test03_AppendConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -228,6 +235,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -252,6 +260,7 @@ public class ITMonitoringExporter extends BaseTest {
   @Test
   public void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
       throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -273,6 +282,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test06_ReplaceWithEmptyConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -291,6 +301,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test07_AppendWithEmptyConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -312,6 +323,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test08_1AppendWithNotYmlConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -330,6 +342,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test08_2ReplaceWithNotYmlConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -346,6 +359,7 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws Exception
    */
   public void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -366,6 +380,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test10_ReplaceWithCorruptedYmlConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -386,6 +401,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -406,6 +422,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test12_AppendWithDublicatedValuesConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -427,6 +444,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test13_ReplaceMetricsNameSnakeCaseFalseConfiguration() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -453,6 +471,7 @@ public class ITMonitoringExporter extends BaseTest {
   // verify that change configuration fails without authentication
   @Test
   public void test14_ChangeConfigNoCredentials() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -478,6 +497,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test15_ChangeConfigInvalidUser() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -499,6 +519,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test16_ChangeConfigInvalidPass() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -518,6 +539,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test17_ChangeConfigEmptyUser() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -539,6 +561,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @Test
   public void test18_ChangeConfigEmptyPass() throws Exception {
+    Assume.assumeFalse(BaseTest.SHARED_CLUSTER);
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);

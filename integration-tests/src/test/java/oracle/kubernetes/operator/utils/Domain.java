@@ -969,14 +969,6 @@ public class Domain {
                   + "/weblogic-domains/"
                   + domainUid
                   + "/domain_new.yaml");
-      logger.info(
-          TestUtils.exec(
-                  "cat "
-                      + BaseTest.getUserProjectsDir()
-                      + "/weblogic-domains/"
-                      + domainUid
-                      + "/domain_new.yaml")
-              .stdout());
       logger.info("kubectl execut with command: " + command.toString());
       TestUtils.exec(command.toString());
 
