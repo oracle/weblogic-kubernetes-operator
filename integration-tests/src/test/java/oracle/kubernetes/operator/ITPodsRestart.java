@@ -274,6 +274,7 @@ public class ITPodsRestart extends BaseTest {
         TestUtils.ExecAndPrintLog(command);
 
         // apply new domain yaml and verify pod restart
+        newImage = getWeblogicImageName() + ":12.2.1.3";
         domain.verifyDomainServerPodRestart(
             "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
             "\"" + newImage + "\"");
