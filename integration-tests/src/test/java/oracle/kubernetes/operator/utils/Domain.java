@@ -386,10 +386,10 @@ public class Domain {
         .append("/management/weblogic/latest/edit/appDeployments")
         .append(" --write-out %{http_code} ");
     logger.info("Command to deploy webapp " + cmd);
+    logger.info(getHostNameForCurl());
     ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
     logger.info("curl output " + output + " \n err " + result.stderr());
-    logger.info(getHostNameForCurl());
     if (!output.contains("202")) {
       throw new RuntimeException("FAILURE: Webapp deployment failed with response code " + output);
     }

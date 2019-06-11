@@ -197,6 +197,7 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     try {
+      ExecAndPrintLog("docker images");
       logger.info(
           "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
@@ -204,15 +205,19 @@ public class ITPodsRestart extends BaseTest {
               + getWeblogicImageName()
               + ":"
               + getWeblogicImageTag()
-              + " to /weblogick8s/middleware/weblogic:duplicate");
+              + " to "
+              + System.getenv("REPO_REGISTRY")
+              + "/weblogick8s/middleware/weblogic:duplicate");
 
       if (BaseTest.SHARED_CLUSTER) {
         String newImage =
             System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
 
+        String tag =
+            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
         // tag image with repo name
-        TestUtils.exec(
-            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage);
+        ExecAndPrintLog(tag);
+        ExecAndPrintLog("docker images");
 
         // login and push image to ocir
         TestUtils.loginAndPushImageToOCIR(newImage);
@@ -230,26 +235,15 @@ public class ITPodsRestart extends BaseTest {
         String command =
             "kubectl create secret docker-registry docker-store "
                 + "--docker-server="
-                + BaseTest.getWeblogicImageServer()
+                + System.getenv("REPO_REGISTRY")
                 + " --docker-username="
-                + System.getenv("OCR_USERNAME")
+                + System.getenv("REPO_USERNAME")
                 + " --docker-password="
-                + System.getenv("OCR_PASSWORD")
+                + System.getenv("REPO_PASSWORD")
                 + " -n "
                 + domain.getDomainNS()
                 + " --dry-run -o yaml | kubectl apply -f - ";
-
-        logger.info("Executing " + command);
-        ExecResult result = ExecCommand.exec(command);
-        logger.info(
-            "Command "
-                + command
-                + " return value "
-                + result.exitValue()
-                + " \n failed with stderr = "
-                + result.stderr()
-                + " \n stdout = "
-                + result.stdout());
+        ExecAndPrintLog(command);
 
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
@@ -275,6 +269,19 @@ public class ITPodsRestart extends BaseTest {
     }
 
     logger.info("SUCCESS - " + testMethodName);
+  }
+
+  private void ExecAndPrintLog(String command) throws Exception {
+    ExecResult result = ExecCommand.exec(command);
+    logger.info(
+        "Command "
+            + command
+            + "\nreturn value: "
+            + result.exitValue()
+            + "\nstderr = "
+            + result.stderr()
+            + "\nstdout = "
+            + result.stdout());
   }
 
   /**
