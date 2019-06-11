@@ -34,6 +34,8 @@ spec:
   %LOG_HOME_ON_PV_PREFIX%logHomeEnabled: %LOG_HOME_ENABLED%
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
   %LOG_HOME_ON_PV_PREFIX%logHome: %LOG_HOME%
+  # The in-pod location for data storage of default and custom file stores files
+  dataHome: "%DATA_HOME%"
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain

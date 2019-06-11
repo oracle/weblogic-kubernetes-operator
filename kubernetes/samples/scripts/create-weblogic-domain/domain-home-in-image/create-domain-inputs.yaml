@@ -85,6 +85,12 @@ logHomeOnPV: false
 # Otherwise, it is ignored.
 logHome: /shared/logs/domain1
 
+# The in-pod location for data storage of default and custom file stores.
+# If not specified, the value is derived from the domainUID as /shared/data/<domainUID>
+# This parameter is required if 'domainHomeOnPV' is true.
+# Otherwise, it is ignored.
+dataHome: /shared/data/domains/domain1
+
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012
 

@@ -20,6 +20,7 @@ DomainSpec is a description of a domain.
 | `clusters` | array of [Cluster](#cluster) | Configuration for the clusters. |
 | `configOverrides` | string | The name of the config map for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | array of string | A list of names of the secrets for optional WebLogic configuration overrides. |
+| `dataHome` | string | The in-pod name of the directory for data storage of default and custom file stores. |
 | `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true |
 | `domainHomeInImage` | Boolean | True if this domain's home is defined in the docker image for the domain. Defaults to true. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name |

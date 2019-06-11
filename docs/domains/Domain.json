@@ -238,6 +238,10 @@
           "description": "If present, every time this value is updated the operator will restart the required servers.",
           "type": "string"
         },
+        "dataHome": {
+          "description": "The in-pod name of the directory for data storage of default and custom file stores.",
+          "type": "string"
+        },
         "configOverrides": {
           "description": "The name of the config map for optional WebLogic configuration overrides.",
           "type": "string"

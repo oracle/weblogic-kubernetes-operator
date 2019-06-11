@@ -271,6 +271,10 @@ function createFiles {
     logHome="${domainPVMountPath}/logs/${domainUID}"
   fi
 
+  if [ -z "${dataHome}" ]; then
+    dataHome="${domainPVMountPath}/data/${domainUID}"
+  fi
+
   if [ -z "${persistentVolumeClaimName}" ]; then
     persistentVolumeClaimName="${domainUID}-weblogic-sample-pvc"
   fi
@@ -413,6 +417,7 @@ function createFiles {
   sed -i -e "s:%LOG_HOME_ON_PV_PREFIX%:${logHomeOnPVPrefix}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME_ENABLED%:${logHomeOnPV}:g" ${dcrOutput}
   sed -i -e "s:%LOG_HOME%:${logHome}:g" ${dcrOutput}
+  sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${dcrOutput}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
   sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}

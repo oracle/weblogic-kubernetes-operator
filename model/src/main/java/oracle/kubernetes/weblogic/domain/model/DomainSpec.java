@@ -95,6 +95,11 @@ public class DomainSpec extends BaseConfiguration {
           + "Defaults to false if domainHomeInImage is true. ")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
+  /** The in-pod name of the directory for data storage of default and custom file stores. */
+  @Description(
+      "The in-pod name of the directory for data storage of default and custom file stores.")
+  private String dataHome;
+
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @Description("If true (the default), the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
@@ -394,6 +399,19 @@ public class DomainSpec extends BaseConfiguration {
    */
   public void setLogHomeEnabled(boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
+  }
+
+  /**
+   * Data Home.
+   *
+   * @return The in-pod name of the directory for data storage of default and custom file stores.
+   */
+  String getDataHome() {
+    return dataHome;
+  }
+
+  public void setDataHome(String dataHome) {
+    this.dataHome = dataHome;
   }
 
   /**

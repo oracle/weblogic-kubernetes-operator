@@ -41,6 +41,9 @@ public class JobHelperTest {
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
 
+  private static final String DATA_HOME = "DATA_HOME";
+  private static final String DEFAULT_DATA_HOME = "/shared/data/JobHelperTestDomain";
+
   @Test
   public void creatingServers_true_whenClusterReplicas_gt_0() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
@@ -255,6 +258,45 @@ public class JobHelperTest {
     MatcherAssert.assertThat(
         getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
         allOf(hasEnvVar("item1", END_VALUE_1)));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeDefault() {
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    MatcherAssert.assertThat(
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        allOf(hasEnvVar(DATA_HOME, DEFAULT_DATA_HOME)));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeDefined() {
+    final String EMPTY_DATA_HOME = "/u01/data/JobHelperTestDomain";
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    configureDomain(domainPresenceInfo).withEnvironmentVariable("DATA_HOME", EMPTY_DATA_HOME);
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    MatcherAssert.assertThat(
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        allOf(hasEnvVar(DATA_HOME, EMPTY_DATA_HOME)));
   }
 
   @Test

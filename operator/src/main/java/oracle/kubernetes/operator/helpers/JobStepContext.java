@@ -117,6 +117,10 @@ public abstract class JobStepContext extends StepContextBase {
     return getDomain().getLogHome();
   }
 
+  protected String getDataHome() {
+    return getDomain().getDataHome();
+  }
+
   protected boolean isDomainHomeInImage() {
     return getDomain().isDomainHomeInImage();
   }
@@ -131,6 +135,15 @@ public abstract class JobStepContext extends StepContextBase {
       return DEFAULT_LOG_HOME + File.separator + getDomainUID();
     }
     return logHome;
+  }
+
+  String getEffectiveDataHome() {
+    String dataHome = getDataHome();
+    if (dataHome == null) {
+      // dataHome not specified, use default value
+      return DEFAULT_DATA_HOME + File.separator + getDomainUID();
+    }
+    return dataHome;
   }
 
   String getIncludeServerOutInPodLog() {
