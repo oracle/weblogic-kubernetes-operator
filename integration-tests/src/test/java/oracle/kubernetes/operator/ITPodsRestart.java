@@ -208,34 +208,32 @@ public class ITPodsRestart extends BaseTest {
               + "/weblogick8s/middleware/weblogic:duplicate");
 
       if (BaseTest.SHARED_CLUSTER) {
-        // unskip this code once OWLS-74986 is fixed.
-        if (false) {
-          String newImage =
-              System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
-          // tag image with repo name
-          String tag =
-              "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
-          TestUtils.ExecAndPrintLog(tag);
-          TestUtils.ExecAndPrintLog("docker images");
+        String newImage =
+            System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
+        // tag image with repo name
+        String tag =
+            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
+        TestUtils.ExecAndPrintLog(tag);
+        TestUtils.ExecAndPrintLog("docker images");
 
-          // login and push image to ocir
-          TestUtils.loginAndPushImageToOCIR(newImage);
+        // login and push image to ocir
+        TestUtils.loginAndPushImageToOCIR(newImage);
 
-          // create ocir registry secret in the same ns as domain which is used while pulling the
-          // image
-          TestUtils.createDockerRegistrySecret(
-              "docker-store",
-              System.getenv("REPO_REGISTRY"),
-              System.getenv("REPO_USERNAME"),
-              System.getenv("REPO_PASSWORD"),
-              System.getenv("REPO_EMAIL"),
-              domain.getDomainNS());
+        // create ocir registry secret in the same ns as domain which is used while pulling the
+        // image
+        TestUtils.createDockerRegistrySecret(
+            "docker-store",
+            System.getenv("REPO_REGISTRY"),
+            System.getenv("REPO_USERNAME"),
+            System.getenv("REPO_PASSWORD"),
+            System.getenv("REPO_EMAIL"),
+            domain.getDomainNS());
 
-          // apply new domain yaml and verify pod restart
-          domain.verifyDomainServerPodRestart(
-              "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
-              "\"" + newImage + "\"");
-        }
+        // apply new domain yaml and verify pod restart
+        domain.verifyDomainServerPodRestart(
+            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
+            "\"" + newImage + "\"");
+
       } else {
         TestUtils.exec(
             "docker tag "
