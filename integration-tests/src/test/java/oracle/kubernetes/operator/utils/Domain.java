@@ -363,12 +363,7 @@ public class Domain {
   public void deployWebAppViaREST(
       String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
-    if (!BaseTest.SHARED_CLUSTER) {
-      cmd.append("curl --noproxy '*' ");
-    } else {
-      cmd.append("curl ");
-    }
-    cmd.append("--silent  --user ")
+    cmd.append("curl --noproxy '*' --silent  --user ")
         .append(username)
         .append(":")
         .append(password)
@@ -386,7 +381,6 @@ public class Domain {
         .append("/management/weblogic/latest/edit/appDeployments")
         .append(" --write-out %{http_code} ");
     logger.info("Command to deploy webapp " + cmd);
-    logger.info(getHostNameForCurl());
     ExecResult result = TestUtils.exec(cmd.toString());
     String output = result.stdout().trim();
     logger.info("curl output " + output + " \n err " + result.stderr());
