@@ -45,18 +45,22 @@ public class ITMultipleClusters extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    // initialize test properties and create the directories
-    initialize(APP_PROPS_FILE);
-    String template =
-        BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
-    String add =
-        "  - clusterName: %CLUSTER_NAME%-2\n"
-            + "    serverStartState: \"RUNNING\"\n"
-            + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
-    customDomainTemplate = BaseTest.getResultDir() + "/customDomainTemplate.yaml";
-    Files.copy(
-        Paths.get(template), Paths.get(customDomainTemplate), StandardCopyOption.REPLACE_EXISTING);
-    Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
+    if (!QUICKTEST) {
+      // initialize test properties and create the directories
+      initialize(APP_PROPS_FILE);
+      String template =
+          BaseTest.getProjectRoot() + "/kubernetes/samples/scripts/common/domain-template.yaml";
+      String add =
+          "  - clusterName: %CLUSTER_NAME%-2\n"
+              + "    serverStartState: \"RUNNING\"\n"
+              + "    replicas: %INITIAL_MANAGED_SERVER_REPLICAS%\n";
+      customDomainTemplate = BaseTest.getResultDir() + "/customDomainTemplate.yaml";
+      Files.copy(
+          Paths.get(template),
+          Paths.get(customDomainTemplate),
+          StandardCopyOption.REPLACE_EXISTING);
+      Files.write(Paths.get(customDomainTemplate), add.getBytes(), StandardOpenOption.APPEND);
+    }
   }
 
   /**
@@ -66,13 +70,14 @@ public class ITMultipleClusters extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-    logger.info("BEGIN");
-    logger.info("Run once, release cluster lease");
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-    logger.info("SUCCESS");
+    if (!QUICKTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      logger.info("SUCCESS");
+    }
   }
-
   /**
    * Create 2 configured clusters in a domain each having 2 managed servers. Verify the managed
    * servers are running and verify the basic use cases.
@@ -81,6 +86,7 @@ public class ITMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoConfiguredCluster() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -138,6 +144,7 @@ public class ITMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoMixedCluster() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String DOMAINUID = "twomixedclusterdomain";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -194,6 +201,7 @@ public class ITMultipleClusters extends BaseTest {
    */
   @Test
   public void testCreateDomainTwoClusterWDTInImage() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String DOMAINUID = "twoclusterdomainwdt";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
