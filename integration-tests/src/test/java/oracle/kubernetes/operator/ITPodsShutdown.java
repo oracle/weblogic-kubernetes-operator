@@ -18,6 +18,7 @@ import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -76,8 +77,8 @@ public class ITPodsShutdown extends BaseTest {
       Assert.assertNotNull(domain);
       domainUid = domain.getDomainUid();
       domainNS = domain.getDomainNS();
-      BaseTest.setWaitTimePod(2);
-      BaseTest.setMaxIterationsPod(100);
+      // BaseTest.setWaitTimePod(2);
+      // BaseTest.setMaxIterationsPod(100);
     }
   }
 
@@ -86,7 +87,7 @@ public class ITPodsShutdown extends BaseTest {
    *
    * @throws Exception
    */
-  // @AfterClass
+  @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
