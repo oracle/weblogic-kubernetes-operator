@@ -261,7 +261,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.8.1</version>
+            <version>3.9</version>
         </dependency>
 
         <!-- Grizzly & jersey server side code -->
@@ -284,7 +284,7 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>1.11</version>
+            <version>1.12</version>
             <type>jar</type>
         </dependency>
         <dependency>

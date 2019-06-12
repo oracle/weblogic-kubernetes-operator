@@ -155,7 +155,7 @@
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>8.19</version>
+            <version>8.21</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -536,7 +536,7 @@
       <dependency>
         <groupId>io.kubernetes</groupId>
         <artifactId>client-java</artifactId>
-        <version>4.0.0</version>
+        <version>5.0.0</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -575,14 +575,14 @@
     <maven.version.range>[3.5.2,)</maven.version.range>
     <maven-enforcer-plugin-version>3.0.0-M2</maven-enforcer-plugin-version>
     <maven-clean-plugin-version>3.1.0</maven-clean-plugin-version>
-    <maven-compiler-plugin-version>3.8.0</maven-compiler-plugin-version>
+    <maven-compiler-plugin-version>3.8.1</maven-compiler-plugin-version>
     <maven-deploy-plugin-version>3.0.0-M1</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.0.0-M1</maven-install-plugin-version>
-    <maven-jar-plugin-version>3.1.1</maven-jar-plugin-version>
+    <maven-jar-plugin-version>3.1.2</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.1.0</maven-resources-plugin-version>
     <maven-site-plugin-version>3.7.1</maven-site-plugin-version>
     <maven-surefire-plugin-version>3.0.0-M3</maven-surefire-plugin-version>
-    <maven-checkstyle-plugin-version>3.0.0</maven-checkstyle-plugin-version>
+    <maven-checkstyle-plugin-version>3.1.0</maven-checkstyle-plugin-version>
     <maven-pmd-plugin-version>3.12.0</maven-pmd-plugin-version>
     <maven-release-plugin-version>2.5.3</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.1.0</maven-javadoc-plugin-version>
@@ -591,12 +591,12 @@
     <exec-maven-plugin-version>1.6.0</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>3.1.11</spotbugs-maven-plugin-version>
     <swagger-core-version>1.5.22</swagger-core-version>
-    <jodatime-version>2.10.1</jodatime-version>
+    <jodatime-version>2.10.2</jodatime-version>
     <maven-plugin-version>1.0.0</maven-plugin-version>
     <junit-version>4.12</junit-version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>2.28</jersey-version> <!-- switched from 2.23 to 2.26 to get the RestServer to work -->
-    <jackson-version>2.9.8</jackson-version>
+    <jackson-version>2.9.9</jackson-version>
     <snakeyaml-version>1.24</snakeyaml-version>
     <guava-version>27.0.1-jre</guava-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
