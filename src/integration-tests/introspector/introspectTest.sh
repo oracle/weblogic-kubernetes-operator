@@ -136,7 +136,8 @@ function cleanupMajor() {
   if [ $status -ne 0 ]; then
     trace "Error:  cleanup failed.   Cleanup output:"
     cat ${test_home}/cleanup.out
-    exit 1
+    trace "Error:  cleanup failed."
+    return 1
   fi
 }
 
@@ -633,7 +634,8 @@ function checkDataSource() {
 #
 
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then
-  cleanupMajor
+  # retry on failure
+  cleanupMajor || cleanupMajor || exit 1
 else
   # This path assumes we've already run the test succesfully once, it re-uses
   # the existing domain-home/pv/pvc/secret/etc, deletes wl pods, deletes introspect job, then
