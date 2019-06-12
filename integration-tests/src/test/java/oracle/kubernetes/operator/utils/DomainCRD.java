@@ -63,7 +63,6 @@ public class DomainCRD {
    * @param attributes - A HashMap of key value pairs
    */
   public void addObjectNodeToDomain(Map<String, String> attributes) {
-    // modify admin server restartVersion
     JsonNode specNode = getSpecNode();
     for (Map.Entry<String, String> entry : attributes.entrySet()) {
       ((ObjectNode) specNode).put(entry.getKey(), entry.getValue());
@@ -76,7 +75,6 @@ public class DomainCRD {
    * @param attributes - A HashMap of key value pairs
    */
   public void addShutdownOptionToDomain(Map<String, Object> attributes) throws Exception {
-    // modify admin server restartVersion
     JsonNode specNode = getSpecNode();
     addShutdownOptionToObjectNode(specNode, attributes);
   }
@@ -87,35 +85,6 @@ public class DomainCRD {
    * @param attributes - A HashMap of key value pairs
    */
   public void addEnvOption(Map<String, String> attributes) throws Exception {
-    /*
-       ArrayNode managedservers = null;
-    JsonNode managedserverNode = null;
-    if (root.path("spec").path("managedServers").isMissingNode()) {
-      logger.info("Missing MS Node");
-      managedservers = objectMapper.createArrayNode();
-      ObjectNode managedserver = objectMapper.createObjectNode();
-      managedserver.put("serverName", managedServerName);
-      managedservers.add(managedserver);
-      ((ObjectNode) root).set("managedServers", managedservers);
-      managedserverNode = managedserver;
-    } else {
-      managedservers = (ArrayNode) root.path("spec").path("managedServers");
-      if (managedservers.size() != 0) {
-        for (JsonNode managedserver : managedservers) {
-          if (managedserver.get("serverName").equals(managedServerName)) {
-            managedserverNode = managedserver;
-          }
-        }
-      } else {
-        ObjectNode managedserver = objectMapper.createObjectNode();
-        managedserver.put("serverName", managedServerName);
-        managedservers.add(managedserver);
-      }
-    }
-    return managedserverNode;
-
-     */
-    // modify admin server restartVersion
     JsonNode specNode = getSpecNode();
     JsonNode envNode = null;
     JsonNode podOptions = specNode.path("serverPod");
@@ -145,7 +114,6 @@ public class DomainCRD {
             ((ObjectNode) envNode1).put("value", entry.getValue());
           }
         }
-
         envNode = objectMapper.createObjectNode();
         ((ObjectNode) envNode).put("name", entry.getKey());
         ((ObjectNode) envNode).put("value", entry.getValue());
