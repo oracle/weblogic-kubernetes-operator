@@ -83,7 +83,7 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | --- | --- |
 | Shutdown options: domain level| Verify that shutdown options set at the domain level will apply to all servers in the domain  |
 | Shutdown options: managed server level | Verify that shutdown options set at the managed server level will apply only to the specified server  |
-| Shutdown options: managed server level | Verify that shutdown options set at the cluster level will apply only to the all servers in that cluster  |
+| Shutdown options: cluster level | Verify that shutdown options set at the cluster level will apply only to the all servers in that cluster  |
 | Shutdown options: use env variables | Verify that shutdown options set using env vars will apply   |
 | Shutdown option ignoreSessions | Verify that shutdown option: ignoreSessions(true, false) will effect shutdown time of the pod   |
 | Shutdown option timeout | Verify that shutdown option: timeout will effect shutdown time of the pod   |
