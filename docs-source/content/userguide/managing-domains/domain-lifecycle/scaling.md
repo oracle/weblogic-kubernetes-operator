@@ -206,9 +206,12 @@ apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
-- apiGroups: ["apiextensions.k8s.io", "weblogic.oracle"]
-  resources: ["customresourcedefinitions", "domains"]
-  verbs: ["get", "list", "update"]
+  - apiGroups: ["weblogic.oracle"]
+    resources: ["domains"]
+    verbs: ["get", "list", "update"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list"]
 ---
 #
 # creating role-bindings for cluster role
