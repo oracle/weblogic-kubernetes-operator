@@ -73,6 +73,7 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
+    QUICKTEST = false;
     if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
       logger.info("Checking if operator and domain are running, if not creating");
