@@ -206,7 +206,8 @@ public class ITPodsShutdown extends BaseTest {
    *
    * @throws Exception when domain.yaml cannot be read or modified
    */
-  @Test
+  // commenting out due OWLS-75023
+  // @Test
   public void testAddShutdownOptionsToMSIgnoreSessions() throws Exception {
 
     Assume.assumeFalse(QUICKTEST);
@@ -248,7 +249,8 @@ public class ITPodsShutdown extends BaseTest {
       logger.info(
           " Termination time with ignoreSessions=true :" + terminationTimeWithIgnoreSessionTrue);
 
-      if (terminationTimeWithIgnoreSessionFalse < terminationTimeWithIgnoreSessionTrue) {
+      if (terminationTimeWithIgnoreSessionFalse - (50 * 1000)
+          < terminationTimeWithIgnoreSessionTrue) {
         logger.info("FAILURE: did not ignore opened sessions during shutdown");
         throw new Exception("FAILURE: did not ignore opened sessions during shutdown");
       }
