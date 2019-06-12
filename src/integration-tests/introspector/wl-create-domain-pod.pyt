@@ -191,7 +191,8 @@ def createOracleDataSource(dsName,dsJNDI,dsGlobalTX,dsXAInterface,dsHost,dsPort,
   createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL, dsUser, dsPass, dsMinSize, dsMaxSize, dsTest, dsTarget)
 
 def createMySQLDataSource(dsName,dsJNDI,dsGlobalTX,dsXAInterface,dsHost,dsPort,dsDB,dsUser,dsPass,dsMinSize,dsMaxSize,dsTarget):
-  dsDriver='com.mysql.cj.jdbc.Driver'
+  #dsDriver='com.mysql.cj.jdbc.Driver'
+  dsDriver='com.mysql.jdbc.Driver'
   dsURL='jdbc:mysql://' + dsHost + ':' + dsPort + '/' + dsDB
   dsTest='SQL SELECT 1'
   createDataSource(dsName, dsJNDI, dsDriver, dsGlobalTX, dsXAInterface, dsURL, dsUser, dsPass, dsMinSize, dsMaxSize, dsTest, dsTarget)
