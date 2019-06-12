@@ -209,6 +209,9 @@ rules:
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains"]
   verbs: ["get", "list", "update"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["get", "list"]
 ---
 #
 # creating role-bindings for cluster role
