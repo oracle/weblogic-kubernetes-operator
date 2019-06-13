@@ -1123,6 +1123,16 @@ def main(env):
     finally:
       env.close()
     exit(exitcode=0)
+  except WLSTException, e:
+    print e
+    trace("Domain introspection failed with WLST exception:")
+    traceback.print_exc()
+    exit(exitcode=1)
+  except UndeclaredThrowableException, f:
+    print f
+    trace("Domain introspection failed with undeclared exception:")
+    traceback.print_exc()
+    exit(exitcode=1)
   except:
     trace("Domain introspection unexpectedly failed:")
     traceback.print_exc()
