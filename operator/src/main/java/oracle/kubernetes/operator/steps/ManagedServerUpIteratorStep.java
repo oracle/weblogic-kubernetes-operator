@@ -86,7 +86,8 @@ public class ManagedServerUpIteratorStep extends Step {
   // "envVars"
   private static Step bringManagedServerUp(ServerStartupInfo ssi, Step next) {
     return ssi.isServiceOnly()
-        ? ServiceHelper.createForServerStep(new ServerDownStep(ssi.getServerName(), true, next))
+        ? ServiceHelper.createForServerStep(
+            true, new ServerDownStep(ssi.getServerName(), true, next))
         : ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(next));
   }
 }
