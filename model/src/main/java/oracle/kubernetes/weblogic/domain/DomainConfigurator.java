@@ -139,6 +139,17 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Sets the data home value.
+   *
+   * @param dataHome the data home value
+   * @return this object
+   */
+  public DomainConfigurator withDataHome(String dataHome) {
+    getDomainSpec().setDataHome(dataHome);
+    return this;
+  }
+
+  /**
    * Sets the WebLogic configuration overrides configmap name for the domain.
    *
    * @param configMapName Name of the Kubernetes configmap that contains the config overrides

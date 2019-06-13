@@ -176,9 +176,18 @@ checkEnv \
   AS_SERVICE_NAME || exitOrLoop
 
 trace "LOG_HOME=${LOG_HOME}"
+trace "DATA_HOME=${DATA_HOME}"
 trace "SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG}"
 trace "USER_MEM_ARGS=${USER_MEM_ARGS}"
 trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
+
+#
+# DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
+#
+if [ -n ${DATA_HOME} ] && [ ! -d ${DATA_HOME} ]; then
+  createFolder ${DATA_HOME}
+  trace "Created data home directory: '${DATA_HOME}'"
+fi
 
 #
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:

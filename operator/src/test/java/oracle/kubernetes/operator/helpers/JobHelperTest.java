@@ -8,6 +8,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 import io.kubernetes.client.models.V1Container;
@@ -261,7 +262,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeDefault() {
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvNotDefined() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     Packet packet = new Packet();
@@ -273,17 +274,17 @@ public class JobHelperTest {
     V1JobSpec jobSpec =
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
-    MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
-        allOf(hasEnvVar(DATA_HOME, DEFAULT_DATA_HOME)));
+    List<V1EnvVar> envVarList =
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv();
+    assertFalse("Did not expect env var DATA_HOME to be defined", envVarList.contains(DATA_HOME));
   }
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeDefined() {
-    final String EMPTY_DATA_HOME = "/u01/data/JobHelperTestDomain";
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined() {
+    final String OVERRIDE_DATA_HOME = "/u01/data/JobHelperTestDomain";
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
-    configureDomain(domainPresenceInfo).withEnvironmentVariable("DATA_HOME", EMPTY_DATA_HOME);
+    configureDomain(domainPresenceInfo).withDataHome(OVERRIDE_DATA_HOME);
 
     Packet packet = new Packet();
     packet
@@ -296,7 +297,28 @@ public class JobHelperTest {
 
     MatcherAssert.assertThat(
         getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
-        allOf(hasEnvVar(DATA_HOME, EMPTY_DATA_HOME)));
+        allOf(hasEnvVar(DATA_HOME, OVERRIDE_DATA_HOME)));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyEmptyDataHome() {
+    final String EMPTY_DATA_HOME = "";
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    configureDomain(domainPresenceInfo).withDataHome(EMPTY_DATA_HOME);
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    List<V1EnvVar> envVarList =
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv();
+    assertFalse("Did not expect env var DATA_HOME to be defined", envVarList.contains(DATA_HOME));
   }
 
   @Test

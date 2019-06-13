@@ -48,6 +48,18 @@ trace "Introspecting the domain"
 trace "Current environment:"
 env
 
+#
+# Define helper fn to create a folder
+#
+
+function createFolder {
+  mkdir -m 750 -p $1
+  if [ ! -d $1 ]; then
+    trace "Unable to create folder $1"
+    exit 1
+  fi
+}
+
 # set defaults
 
 export WL_HOME=${WL_HOME:-/u01/oracle/wlserver}
@@ -73,6 +85,17 @@ done
 for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME; do
   [ ! -d "${!dir_var}" ] && trace "Error: missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
+
+trace "DATA_HOME=${DATA_HOME}"
+
+#
+# DATA_HOME env variable exists implies override directory specified.  Attempt to create directory
+#
+if [ -n ${DATA_HOME} ] && [ ! -d ${DATA_HOME} ]; then
+  createFolder ${DATA_HOME}
+  trace "Created data home directory: '${DATA_HOME}'"
+fi
+
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 

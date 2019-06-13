@@ -107,7 +107,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
     self.LOG_HOME                 = self.getEnv('LOG_HOME')
-    self.DATA_HOME                 = self.getEnv('DATA_HOME')
+    self.DATA_HOME                 = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
     # initialize globals
@@ -220,7 +220,7 @@ class OfflineWlstEnv(object):
 
   def getEnvOrDef(self, name, deflt):
     val = os.getenv(name)
-    if val == None or val == "null":
+    if val == None or val == "null" or len(val) == 0:
       return deflt
     return val
 
@@ -912,7 +912,7 @@ class SitConfigGenerator(Generator):
     dfsaction=''
     fileaction=''
     if bean.getDefaultFileStore() is None:
-      # don't know why, but don't need to "add" a missing domain log bean, and adding it causes trouble
+      # don't know why, but don't need to "add" a missing default file store bean, and adding it causes trouble
       dfsaction=' f:combine-mode="add"'
       fileaction=' f:combine-mode="add"'
     else:

@@ -272,7 +272,7 @@ function createFiles {
   fi
 
   if [ -z "${dataHome}" ]; then
-    dataHome="${domainPVMountPath}/data/${domainUID}"
+    dataHome=""
   fi
 
   if [ -z "${persistentVolumeClaimName}" ]; then

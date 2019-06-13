@@ -137,15 +137,6 @@ public abstract class JobStepContext extends StepContextBase {
     return logHome;
   }
 
-  String getEffectiveDataHome() {
-    String dataHome = getDataHome();
-    if (dataHome == null) {
-      // dataHome not specified, use default value
-      return DEFAULT_DATA_HOME + File.separator + getDomainUID();
-    }
-    return dataHome;
-  }
-
   String getIncludeServerOutInPodLog() {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }

@@ -207,15 +207,6 @@ public abstract class PodStepContext extends StepContextBase {
     return logHome;
   }
 
-  private String getEffectiveDataHome() {
-    String dataHome = getDataHome();
-    if (dataHome == null) {
-      // dataHome not specified, use default value
-      return DEFAULT_DATA_HOME + File.separator + getDomainUID();
-    }
-    return dataHome;
-  }
-
   private String getIncludeServerOutInPodLog() {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
@@ -823,7 +814,10 @@ public abstract class PodStepContext extends StepContextBase {
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
     addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
-    addEnvVar(vars, "DATA_HOME", getEffectiveDataHome());
+    String dataHome = getDataHome();
+    if (dataHome != null && !dataHome.isEmpty()) {
+      addEnvVar(vars, "DATA_HOME", getDataHome());
+    }
     addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
     addEnvVar(
         vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
