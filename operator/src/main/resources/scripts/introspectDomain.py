@@ -83,6 +83,8 @@ import traceback
 import inspect
 import distutils.dir_util
 import os
+import glob
+from java.util import Collections
 import shutil
 import re
 from datetime import datetime
@@ -123,6 +125,7 @@ class OfflineWlstEnv(object):
     self.BOOT_FILE          = self.INTROSPECT_HOME + '/boot.properties'
     self.USERCONFIG_FILE    = self.INTROSPECT_HOME + '/userConfigNodeManager.secure'
     self.USERKEY_FILE       = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
+    self.DOMAIN_ZIP         = self.INTROSPECT_HOME + '/domainzip.secure'
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -149,6 +152,7 @@ class OfflineWlstEnv(object):
       if os.path.isfile(the_file_path):
         os.unlink(the_file_path)
 
+    #self.buildDomainFromWDT()
     # load domain home into WLST
 
     trace("About to load domain from "+self.getDomainHome())
@@ -222,6 +226,46 @@ class OfflineWlstEnv(object):
 
   def toDNS1123Legal(self, address):
     return address.lower().replace('_','-')
+
+  def buildDomainFromWDT(self):
+
+    if os.path.exists(self.getDomainHome()) and not os.listdir(self.getDomainHome()):
+      return
+
+    model_home = '/u01/model_home/'
+    model_root = model_home + os.path.sep + 'models'
+    archive_root = model_home + os.path.sep + 'archives'
+    variable_root = model_home + os.path.sep + 'variables'
+
+    model_list = ''
+    archive_list = ''
+    variable_list = ''
+
+    models = glob.glob(model_root + os.path.sep + '*.yaml')
+    if len(models) > 0:
+      Collections.sort(models)
+      model_list = ','.join(models)
+      model_list = '-model_file ' + model_list
+
+    archives = glob.glob(archive_root + os.path.sep + '*.zip')
+    if len(archives) > 0:
+      archive_list = '-archive_file ' + archives[0]
+
+    variables = glob.glob(variable_root + os.path.sep + '*.properties')
+    if len(variables) > 0:
+      variable_list = '-variable_file ' + variables[0]
+
+    cmd = ' '.join(['/u01/weblogic-deploy/bin/createDomain.sh', '-oracle_home', '/u01/oracle', '-domain_home',
+                    self.getDomainHome(), model_list, archive_list, variable_list])
+
+    trace('wdt command ' + cmd)
+
+    rc = os.system(cmd)
+    if rc != 0:
+      trace("WDT Create domain failed:")
+      exit(exitcode=1)
+
+
 
 class SecretManager(object):
 
@@ -1115,6 +1159,9 @@ class DomainIntrospector(SecretManager):
 
 def main(env):
   try:
+    #  Needs to build the domain first
+
+
     env.open()
     try:
       DomainIntrospector(env).introspect()

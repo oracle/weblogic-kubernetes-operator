@@ -36,6 +36,55 @@
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
 #
 
+
+function createWLDomain() {
+    model_home="/u01/model_home"
+    model_root="${model_home}/models"
+    archive_root="${model_home}/archives"
+    variable_root="${model_home}/variables"
+    model_list=""
+    archive_list=""
+    variable_list=""
+
+    for file in $(ls ${model_root}/*.yaml | sort)
+        do
+            if [ "$model_list" != "" ]; then
+                model_list="${model_list},"
+            fi
+            model_list="${model_list}${file}"
+        done
+    for file in $(ls ${archive_root}/*.zip | sort)
+        do
+            if [ "$archive_list" != "" ]; then
+                archive_list="${archive_list},"
+            fi
+            archive_list="${archive_list}${file}"
+        done
+
+    for file in $(ls ${variable_root}/*.properties | sort)
+        do
+            if [ "$variable_list" != "" ]; then
+                variable_list="${variable_list},"
+            fi
+            variable_list="${variable_list}${file}"
+        done
+
+    if [ "$variable_list" != "" ]; then
+        variable_list="-variable_file ${variable_list}"
+    fi
+
+    if [ "$archive_list" != "" ]; then
+        archive_list="-archive_file ${archive_list}"
+    fi
+
+    if [ "$model_list" != "" ]; then
+        model_list="-model_file ${model_list}"
+    fi
+
+    /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list $archive_list $variable_list
+
+}
+
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 # setup tracing
@@ -70,15 +119,21 @@ for script_file in "${SCRIPTPATH}/wlst.sh" \
   [ ! -f "$script_file" ] && trace "Error: missing file '${script_file}'." && exit 1 
 done 
 
-for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME; do
+for dir_var in JAVA_HOME WL_HOME MW_HOME; do
   [ ! -d "${!dir_var}" ] && trace "Error: missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
+
+if [ ! -d "$DOMAIN_HOME" ]; then
+    mkdir -p $DOMAIN_HOME
+    createWLDomain
+fi
+
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 
 exportEffectiveDomainHome || exit 1
 
-# start node manager
+# start node manager -why ??
 
 trace "Starting node manager"
 
