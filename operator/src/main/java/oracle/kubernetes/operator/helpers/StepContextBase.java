@@ -5,12 +5,17 @@
 package oracle.kubernetes.operator.helpers;
 
 import io.kubernetes.client.models.V1EnvVar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 
 public abstract class StepContextBase implements StepContextConstants {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   // Map of <token, substitution string> to be used in the translate method
   // Subclass should populate this map prior to calling translate().
@@ -51,6 +56,87 @@ public abstract class StepContextBase implements StepContextConstants {
     for (V1EnvVar var : vars) {
       var.setValue(translate(var.getValue()));
     }
+  }
+
+  protected void doDeepSubstitution(Object obj) {
+    if (obj != null) {
+      if (obj instanceof List) {
+        ListIterator<Object> it = ((List) obj).listIterator();
+        while (it.hasNext()) {
+          Object member = it.next();
+          if (member instanceof String) {
+            String trans = translate((String) member);
+            if (!member.equals(trans)) {
+              it.set(trans);
+            }
+          } else if (member != null && isModelClass(member.getClass())) {
+            doDeepSubstitution(member);
+          }
+        }
+      } else {
+        try {
+          Class cls = obj.getClass();
+          if (isModelClass(cls)) {
+            List<Method> modelOrListBeans = modelOrListBeans(cls);
+            for (Method item : modelOrListBeans) {
+              doDeepSubstitution(item.invoke(obj));
+            }
+
+            List<Pair<Method, Method>> stringBeans = stringBeans(cls);
+            for (Pair<Method, Method> item : stringBeans) {
+              item.getRight().invoke(obj, translate((String) item.getLeft().invoke(obj)));
+            }
+          }
+        } catch (IllegalAccessException | InvocationTargetException e) {
+          LOGGER.severe(MessageKeys.EXCEPTION, e);
+        }
+      }
+    }
+  }
+
+  private boolean isModelOrListClass(Class cls) {
+    return isModelClass(cls) || List.class.isAssignableFrom(cls);
+  }
+
+  private boolean isModelClass(Class cls) {
+    return cls.getPackageName().startsWith("io.kubernetes.client.models")
+        || cls.getPackageName().startsWith("oracle.kubernetes.weblogic.domain.model");
+  }
+
+  private List<Method> modelOrListBeans(Class cls) {
+    List<Method> results = new ArrayList<>();
+    Method[] methods = cls.getMethods();
+    if (methods != null) {
+      for (Method m : methods) {
+        if (m.getName().startsWith("get")
+            && isModelOrListClass(m.getReturnType())
+            && m.getParameterCount() == 0) {
+          results.add(m);
+        }
+      }
+    }
+    return results;
+  }
+
+  private List<Pair<Method, Method>> stringBeans(Class cls) {
+    List<Pair<Method, Method>> results = new ArrayList<>();
+    Method[] methods = cls.getMethods();
+    if (methods != null) {
+      for (Method m : methods) {
+        if (m.getName().startsWith("get")
+            && m.getReturnType().equals(String.class)
+            && m.getParameterCount() == 0) {
+          try {
+            Method set = cls.getMethod("set" + m.getName().substring(3), String.class);
+            if (set != null) {
+              results.add(new Pair<>(m, set));
+            }
+          } catch (NoSuchMethodException nsme) {
+          }
+        }
+      }
+    }
+    return results;
   }
 
   private String translate(String rawValue) {

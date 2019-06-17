@@ -747,6 +747,8 @@ public abstract class PodStepContext extends StepContextBase {
       podSpec.addVolumesItem(additionalVolume);
     }
 
+    doDeepSubstitution(podSpec);
+
     return podSpec;
   }
 
