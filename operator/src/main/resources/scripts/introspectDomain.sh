@@ -82,7 +82,11 @@ function createWLDomain() {
     fi
 
     /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list $archive_list $variable_list
-
+    ret=$?
+    if [ $ret -ne 0 ]; then
+       echo "Create Domain Failed"
+       exit 1
+    fi
 }
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
