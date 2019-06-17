@@ -151,6 +151,14 @@ function copySitCfg() {
   fi
 }
 
+
+if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
+  cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.zip && jar xvf /tmp/domain.zip
+  # zip does not store external attributes - should we use find ?
+  chmod +x $DOMAIN_HOME/bin/*.sh $DOMAIN_HOME/*.sh
+fi
+
+
 #
 # Configure startup mode
 #
@@ -179,6 +187,8 @@ trace "LOG_HOME=${LOG_HOME}"
 trace "SERVER_OUT_IN_POD_LOG=${SERVER_OUT_IN_POD_LOG}"
 trace "USER_MEM_ARGS=${USER_MEM_ARGS}"
 trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
+
+
 
 #
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:

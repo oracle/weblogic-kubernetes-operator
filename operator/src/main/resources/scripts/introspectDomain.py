@@ -78,16 +78,16 @@
 
 
 import base64
-import sys
-import traceback
-import inspect
 import distutils.dir_util
-import os
 import glob
-from java.util import Collections
-import shutil
+import inspect
+import os
 import re
-from datetime import datetime
+import sys
+import tempfile
+import traceback
+import zipfile
+from java.util import Collections
 
 # Include this script's current directory in the import path (so we can import traceUtils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
@@ -788,6 +788,45 @@ class UserConfigAndKeyGenerator(Generator):
     finally:
       nmDisconnect()
 
+class DomainSeedGenerator(Generator):
+
+  def __init__(self, env):
+    Generator.__init__(self, env, env.DOMAIN_ZIP)
+    self.env = env
+    self.domainzip = tempfile.mktemp(".zip")
+    self.ziph = zipfile.ZipFile(self.domainzip, 'w', zipfile.ZIP_DEFLATED)
+    self.domain_home = self.env.getDomainHome()
+
+  def generate(self):
+    self.open()
+    try:
+      self.addDomainSeed()
+      self.close()
+      self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addDomainSeed(self):
+    self.zipdir_base64out()
+
+  def zipdir_base64out(self):
+    if self.domain_home:
+      os.path.walk(self.domain_home, self.myvisit, self.ziph)
+      self.ziph.close()
+      domain_data = self.env.readBinaryFile(self.domainzip)
+      b64 = ""
+      for s in base64.encodestring(domain_data).splitlines():
+        b64 = b64 + s
+      self.writeln(b64)
+
+
+  def myvisit(self, ziph, dir, files):
+    for file in files:
+      file_name = os.path.join(dir,file)
+      if os.path.isfile(file_name):
+        ziph.write(file_name)
+
+
 class SitConfigGenerator(Generator):
 
   def __init__(self, env):
@@ -1147,6 +1186,7 @@ class DomainIntrospector(SecretManager):
       SitConfigGenerator(self.env).generate()
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
+      DomainSeedGenerator(self.env).generate()
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()
 
