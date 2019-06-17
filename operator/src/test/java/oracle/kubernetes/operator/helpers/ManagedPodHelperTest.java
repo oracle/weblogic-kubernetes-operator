@@ -146,6 +146,21 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenClusterHasAdditionalVolumesWithVariables_createManagedPodWithSubstitutions() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
+        .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(
+            hasVolume("volume1", "/source-" + SERVER_NAME),
+            hasVolume("volume2", "/source-domain1")));
+  }
+
+  @Test
   public void createManagedPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList());
 
