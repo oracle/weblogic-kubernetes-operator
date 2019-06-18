@@ -89,6 +89,44 @@ public class ITOperatorUpgrade extends BaseTest {
     // verify the domain is not restarted but the operator image running is 2.1
     createOperator();
     verifyDomainCreated();
+    upgradeOperator("oracle/weblogic-kubernetes-operator:2.1");
+    destroyOperator();
+  }
+
+  @Test
+  public void testOperatorUpgradeTo2_2_0() throws Exception {
+    // checkout weblogic operator image 2.0
+    // pull traefik , wls and operator images
+    // create service account, etc.,
+    // create traefik loadbalancer
+    // create operator
+    // create domain
+
+    // pull operator 2.1 image
+    // helm upgrade to operator 2.1
+    // verify the domain is not restarted but the operator image running is 2.1
+    createOperator();
+    verifyDomainCreated();
+    upgradeOperator("oracle/weblogic-kubernetes-operator:2.2.0");
+    destroyOperator();
+  }
+
+  @Test
+  public void testOperatorUpgradeTodevelop() throws Exception {
+    // checkout weblogic operator image 2.0
+    // pull traefik , wls and operator images
+    // create service account, etc.,
+    // create traefik loadbalancer
+    // create operator
+    // create domain
+
+    // pull operator 2.1 image
+    // helm upgrade to operator 2.1
+    // verify the domain is not restarted but the operator image running is 2.1
+    createOperator();
+    verifyDomainCreated();
+    upgradeOperator("weblogic-kubernetes-operator:test_opupgrade");
+    destroyOperator();
   }
 
   private void createOperator() throws Exception {
@@ -195,5 +233,18 @@ public class ITOperatorUpgrade extends BaseTest {
       logger.info("Checking if managed server (" + managedServerNameBase + i + ") is Running");
       TestUtils.checkPodReady(DUID + "-" + managedServerNameBase + i, DOM_NS);
     }
+  }
+
+  private void upgradeOperator(String upgradeRelease) throws Exception {
+    TestUtils.ExecAndPrintLog(
+        "cd "
+            + opUpgradeTmpDir
+            + " && helm upgrade --reuse-values --set 'image="
+            + upgradeRelease
+            + "' --wait operator weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
+  }
+
+  private void destroyOperator() throws Exception {
+    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
   }
 }
