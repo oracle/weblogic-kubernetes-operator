@@ -239,7 +239,7 @@ RestartInterval=3600
 NumberOfFilesLimited=true
 FileTimeSpan=24
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap ${serverOutOption} ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap -Dweblogic.SituationalConfig.failBootOnError=true ${serverOutOption} ${JAVA_OPTIONS}
 
 EOF
  
