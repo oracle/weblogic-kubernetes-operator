@@ -92,21 +92,21 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void createOperator() throws Exception {
-    TestUtils.exec("kubectl create namespace " + OP_NS);
-    TestUtils.exec("kubectl create serviceaccount -n " + DOM_NS + " " + OP_SA);
-    TestUtils.exec("kubectl create namespace " + DOM_NS);
+    TestUtils.ExecAndPrintLog("kubectl create namespace " + OP_NS);
+    TestUtils.ExecAndPrintLog("kubectl create serviceaccount -n " + OP_NS + " " + OP_SA);
+    TestUtils.ExecAndPrintLog("kubectl create namespace " + DOM_NS);
 
-    TestUtils.exec(
+    TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
             + " && git clone -b "
             + OP_REL
             + " https://github.com/oracle/weblogic-kubernetes-operator");
-    TestUtils.exec(
+    TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
-            + " && helm install stable/traefik --name traefik-operator --namespace traefik --values weblogic-kubernetes-operator/kubernetes/samples/charts/traefik/values.yaml --set 'kubernetes.namespaces={traefik}' --wait");
-    TestUtils.exec(
+            + " && helm install stable/traefik --name traefik-operator --namespace traefik --values weblogic-kubernetes-operator/kubernetes/samples/charts/traefik/values.yaml --set 'kubernetes.namespaces={traefik}' --wait --timeout 60");
+    TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
             + " && helm install weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator --name operator --namespace "
@@ -114,25 +114,27 @@ public class ITOperatorUpgrade extends BaseTest {
             + " --set serviceAccount="
             + OP_SA
             + " --set 'domainNamespaces={}' --wait");
-    TestUtils.exec(
+    Thread.sleep(10 * 1000);
+    TestUtils.ExecAndPrintLog("helm list");
+    TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS);
+    TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
             + " && helm upgrade --reuse-values --set 'domainNamespaces={"
             + DOM_NS
             + "}' --wait operator weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
-    TestUtils.exec(
+    TestUtils.ExecAndPrintLog(
         "helm upgrade --reuse-values --set 'kubernetes.namespaces={traefik,"
             + DOM_NS
             + "}' --wait traefik-operator stable/traefik");
-    TestUtils.exec(
+    TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
             + " && weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh -u weblogic -p welcome1 -n "
             + DOM_NS
             + " -d "
             + DUID);
-
-    TestUtils.exec(
+    TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
             + " && cp weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml .");
@@ -145,7 +147,7 @@ public class ITOperatorUpgrade extends BaseTest {
     logger.log(Level.INFO, "to {0}", src.toString());
     Files.write(src, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
 
-    TestUtils.exec(
+    TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
             + " && weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -i "
@@ -155,10 +157,10 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private static void pullImages() throws Exception {
-    TestUtils.exec("docker pull oracle/weblogic-kubernetes-operator:" + OP_REL);
-    TestUtils.exec("docker pull traefik:1.7.6");
-    TestUtils.exec(
-        "docker pull" + BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
+    TestUtils.ExecAndPrintLog("docker pull oracle/weblogic-kubernetes-operator:" + OP_REL);
+    TestUtils.ExecAndPrintLog("docker pull traefik:1.7.6");
+    TestUtils.ExecAndPrintLog(
+        "docker pull " + BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
   }
 
   private void verifyDomainCreated() throws Exception {
