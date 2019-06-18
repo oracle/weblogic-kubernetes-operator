@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -311,6 +311,13 @@ class TopologyGenerator(Generator):
       ret = None
     return ret
 
+  def getSSLWA(self,server):
+    try:
+      ret = server.getSSL()
+    except:
+      trace("Ignoring getSSL() exception, this is expected.")
+      ret = None
+    return ret
 
   def validateAdminServer(self):
     adminServerName = self.env.getDomain().getAdminServerName()
@@ -325,7 +332,7 @@ class TopologyGenerator(Generator):
       addError("The admin server '" + adminServerName + "' does not exist.")
       return
     cluster = adminServer.getCluster()
-    if cluster != None:
+    if cluster is not None:
       self.addError("The admin server " + self.name(adminServer) + " belongs to the cluster " + self.name(cluster) + ".")
 
   def validateClusters(self):
@@ -362,13 +369,14 @@ class TopologyGenerator(Generator):
   ADMIN_LISTEN_PORT = 'admin listen port'
   ADMIN_LISTEN_PORT_ENABLED = 'admin listen port enabled'
 
-  def getServerClusterPortPropertyValue(server, clusterListenPortProperty):
+  def getServerClusterPortPropertyValue(self, server, clusterListenPortProperty):
     sslListenPort = None
-    if server.getSSL() != None:
-      sslListenPort = server.getSSL().getListenPort()
+    ssl = self.getSSLWA(server)
+    if ssl is not None:
+      sslListenPort = ssl.getListenPort()
     sslListenPortEnabled = None
-    if server.getSSL()!= None:
-      sslListenPortEnabled = server.getSSL().isListenPortEnabled()
+    if ssl is not None:
+      sslListenPortEnabled = ssl.isListenPortEnabled()
     return {
              LISTEN_PORT: server.getListenPort(),
              LISTEN_PORT_ENABLED: server.isListenPortEnabled(),
@@ -390,7 +398,7 @@ class TopologyGenerator(Generator):
       if cluster is server.getCluster():
         listenPort = server.getListenPort()
         listenPortEnabled = server.isListenPortEnabled()
-        ssl = server.getSSL()
+        ssl = self.getSSLWA(server)
         sslListenPort = None
         sslListenPortEnabled = None
         if ssl is not None:
@@ -427,7 +435,7 @@ class TopologyGenerator(Generator):
     firstListenPortProperty = None
     for server in self.env.getDomain().getServers():
       if cluster is server.getCluster():
-        listenPortProperty = getServerClusterPortPropertyValue(server, clusterListenPortProperty)
+        listenPortProperty = getServerClusterPortPropertyValue(self, server, clusterListenPortProperty)
         if firstServer is None:
           firstServer = server
           firstListenPortProperty = listenPortProperty
@@ -590,7 +598,7 @@ class TopologyGenerator(Generator):
     self.addNetworkAccessPoints(server)
 
   def addSSL(self, server):
-    ssl = server.getSSL()
+    ssl = self.getSSLWA(server)
     if ssl is not None and ssl.isEnabled():
       self.indent()
       self.writeln("sslListenPort: " + str(ssl.getListenPort()))
@@ -845,6 +853,14 @@ class SitConfigGenerator(Generator):
       self.undent()
       self.writeln("</d:network-access-point>")
 
+  def getLogWA(self,server):
+    try:
+      ret = server.getLog()
+    except:
+      trace("Ignoring getLog() exception, this is expected.")
+      ret = None
+    return ret
+
   def customizeLog(self, name, bean, isDomainBean):
     logs_dir = self.env.getDomainLogHome()
     if logs_dir is None or len(logs_dir) == 0:
@@ -852,13 +868,14 @@ class SitConfigGenerator(Generator):
 
     logaction=''
     fileaction=''
-    if bean.getLog() is None:
+    log = self.getLogWA(bean)
+    if log is None:
       if not isDomainBean:
         # don't know why, but don't need to "add" a missing domain log bean, and adding it causes trouble
         logaction=' f:combine-mode="add"'
       fileaction=' f:combine-mode="add"'
     else:
-      if bean.getLog().getFileName() is None:
+      if log.getFileName() is None:
         fileaction=' f:combine-mode="add"'
       else:
         fileaction=' f:combine-mode="replace"'
@@ -1129,6 +1146,7 @@ def main(env):
     traceback.print_exc()
     exit(exitcode=1)
   except UndeclaredThrowableException, f:
+    dumpStack()
     print f
     trace("Domain introspection failed with undeclared exception:")
     traceback.print_exc()
