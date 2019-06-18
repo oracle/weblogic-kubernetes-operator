@@ -209,14 +209,14 @@ class OfflineWlstEnv(object):
 
   def getEnv(self, name):
     val = os.getenv(name)
-    if val == None or val == "null":
+    if val is None or val == "null":
       trace("ERROR: Env var "+name+" not set.")
       sys.exit(1)
     return val
 
   def getEnvOrDef(self, name, deflt):
     val = os.getenv(name)
-    if val == None or val == "null":
+    if val is None or val == "null":
       return deflt
     return val
 
@@ -303,7 +303,7 @@ class TopologyGenerator(Generator):
   #     at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
   #     at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
   #     at java.lang.reflect.Method.invoke(Method.java:498)
-  def getDynamicServersWA(self,cluster):
+  def getDynamicServersOrNone(self,cluster):
     try:
       ret = cluster.getDynamicServers()
     except:
@@ -311,7 +311,15 @@ class TopologyGenerator(Generator):
       ret = None
     return ret
 
-  def getSSLWA(self,server):
+  def getClusterOrNone(self,server):
+    try:
+      ret = server.getCluster()
+    except:
+      trace("Ignoring getCluster() exception, this is expected.")
+      ret = None
+    return ret
+
+  def getSSLOrNone(self,server):
     try:
       ret = server.getSSL()
     except:
@@ -321,7 +329,7 @@ class TopologyGenerator(Generator):
 
   def validateAdminServer(self):
     adminServerName = self.env.getDomain().getAdminServerName()
-    if adminServerName == None:
+    if adminServerName is None:
       addError("The admin server name is null.")
       return
     adminServer = None
@@ -331,7 +339,7 @@ class TopologyGenerator(Generator):
     if adminServer is None:
       addError("The admin server '" + adminServerName + "' does not exist.")
       return
-    cluster = adminServer.getCluster()
+    cluster = self.getClusterOrNone(adminServer)
     if cluster is not None:
       self.addError("The admin server " + self.name(adminServer) + " belongs to the cluster " + self.name(cluster) + ".")
 
@@ -340,7 +348,7 @@ class TopologyGenerator(Generator):
       self.validateCluster(cluster)
 
   def validateCluster(self, cluster):
-    if self.getDynamicServersWA(cluster) is None:
+    if self.getDynamicServersOrNone(cluster) is None:
       self.validateNonDynamicCluster(cluster)
     else:
       self.validateDynamicCluster(cluster)
@@ -353,7 +361,7 @@ class TopologyGenerator(Generator):
 
   def validateNonDynamicClusterReferencedByAtLeastOneServer(self, cluster):
     for server in self.env.getDomain().getServers():
-      if server.getCluster() is cluster:
+      if self.getClusterOrNone(server) is cluster:
         return
     self.addError("The non-dynamic cluster " + self.name(cluster) + " is not referenced by any servers.")
 
@@ -371,7 +379,7 @@ class TopologyGenerator(Generator):
 
   def getServerClusterPortPropertyValue(self, server, clusterListenPortProperty):
     sslListenPort = None
-    ssl = self.getSSLWA(server)
+    ssl = self.getSSLOrNone(server)
     if ssl is not None:
       sslListenPort = ssl.getListenPort()
     sslListenPortEnabled = None
@@ -395,10 +403,10 @@ class TopologyGenerator(Generator):
     firstAdminPort = None
     firstAdminPortEnabled = None
     for server in self.env.getDomain().getServers():
-      if cluster is server.getCluster():
+      if cluster is self.getClusterOrNone(server):
         listenPort = server.getListenPort()
         listenPortEnabled = server.isListenPortEnabled()
-        ssl = self.getSSLWA(server)
+        ssl = self.getSSLOrNone(server)
         sslListenPort = None
         sslListenPortEnabled = None
         if ssl is not None:
@@ -434,7 +442,7 @@ class TopologyGenerator(Generator):
     firstServer = None
     firstListenPortProperty = None
     for server in self.env.getDomain().getServers():
-      if cluster is server.getCluster():
+      if cluster is self.getClusterOrNone(server):
         listenPortProperty = getServerClusterPortPropertyValue(self, server, clusterListenPortProperty)
         if firstServer is None:
           firstServer = server
@@ -448,7 +456,7 @@ class TopologyGenerator(Generator):
      firstServer = None
      serverNap = {}
      for server in self.env.getDomain().getServers():
-       if cluster is server.getCluster():
+       if cluster is self.getClusterOrNone(server):
          if firstServer is None:
            for nap in server.getNetworkAccessPoints():
              serverNap[nap.getName()] = nap.getProtocol() + "~" + str(nap.getListenPort());
@@ -489,7 +497,7 @@ class TopologyGenerator(Generator):
 
   def validateDynamicClusterNotReferencedByAnyServers(self, cluster):
     for server in self.env.getDomain().getServers():
-      if server.getCluster() is cluster:
+      if self.getClusterOrNone(server) is cluster:
         self.addError("The dynamic cluster " + self.name(cluster) + " is referenced by the server " + self.name(server) + ".")
 
   def validateDynamicClusterDynamicServersDoNotUseCalculatedListenPorts(self, cluster):
@@ -543,13 +551,13 @@ class TopologyGenerator(Generator):
   def getConfiguredClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersWA(cluster) is None:
+      if self.getDynamicServersOrNone(cluster) is None:
         rtn.append(cluster)
     return rtn
 
   def addConfiguredCluster(self, cluster):
     self.writeln("- name: " + self.name(cluster))
-    dynamicServers = self.getDynamicServersWA(cluster)
+    dynamicServers = self.getDynamicServersOrNone(cluster)
     if dynamicServers is not None:
       self.indent();
       self.writeln("dynamicServersConfig:")
@@ -579,7 +587,7 @@ class TopologyGenerator(Generator):
   def getClusteredServers(self, cluster):
     rtn = []
     for server in self.env.getDomain().getServers():
-      if server.getCluster() is cluster:
+      if self.getClusterOrNone(server) is cluster:
         rtn.append(server)
     return rtn
 
@@ -598,7 +606,7 @@ class TopologyGenerator(Generator):
     self.addNetworkAccessPoints(server)
 
   def addSSL(self, server):
-    ssl = self.getSSLWA(server)
+    ssl = self.getSSLOrNone(server)
     if ssl is not None and ssl.isEnabled():
       self.indent()
       self.writeln("sslListenPort: " + str(ssl.getListenPort()))
@@ -631,7 +639,7 @@ class TopologyGenerator(Generator):
   def getDynamicClusters(self):
     rtn = []
     for cluster in self.env.getDomain().getClusters():
-      if self.getDynamicServersWA(cluster) is not None:
+      if self.getDynamicServersOrNone(cluster) is not None:
         rtn.append(cluster)
     return rtn
 
@@ -659,7 +667,7 @@ class TopologyGenerator(Generator):
     self.writeln("servers:")
     self.indent()
     for server in self.env.getDomain().getServers():
-      if server.getCluster() is None:
+      if self.getClusterOrNone(server) is None:
         self.addServer(server)
     self.undent()
 
@@ -853,7 +861,7 @@ class SitConfigGenerator(Generator):
       self.undent()
       self.writeln("</d:network-access-point>")
 
-  def getLogWA(self,server):
+  def getLogOrNone(self,server):
     try:
       ret = server.getLog()
     except:
@@ -868,7 +876,7 @@ class SitConfigGenerator(Generator):
 
     logaction=''
     fileaction=''
-    log = self.getLogWA(bean)
+    log = self.getLogOrNone(bean)
     if log is None:
       if not isDomainBean:
         # don't know why, but don't need to "add" a missing domain log bean, and adding it causes trouble
