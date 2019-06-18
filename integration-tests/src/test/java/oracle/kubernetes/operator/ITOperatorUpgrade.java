@@ -143,7 +143,7 @@ public class ITOperatorUpgrade extends BaseTest {
     logger.log(Level.INFO, "Copying {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
     String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll("namespace:default", "namespace: " + DOM_NS);
+    content = content.replaceAll("namespace: default", "namespace: " + DOM_NS);
     logger.log(Level.INFO, "to {0}", src.toString());
     Files.write(src, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
 
