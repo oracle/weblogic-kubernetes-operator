@@ -30,9 +30,6 @@ public class Domain {
   /** The pattern for computing the default shared logs directory. */
   private static final String LOG_HOME_DEFAULT_PATTERN = "/shared/logs/%s";
 
-  /** The pattern for computing the default data storage of default and custom file stores. */
-  private static final String DATA_HOME_DEFAULT_PATTERN = "/shared/data/%s";
-
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.

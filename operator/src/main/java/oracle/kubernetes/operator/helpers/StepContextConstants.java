@@ -19,7 +19,6 @@ public interface StepContextConstants {
   static final String STORAGE_MOUNT_PATH = "/shared";
   static final String NODEMGR_HOME = "/u01/nodemanager";
   static final String DEFAULT_LOG_HOME = "/shared/logs";
-  static final String DEFAULT_DATA_HOME = STORAGE_MOUNT_PATH + "/data";
   static final int FAILURE_THRESHOLD = 1;
 
   static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";

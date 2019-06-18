@@ -95,9 +95,15 @@ public class DomainSpec extends BaseConfiguration {
           + "Defaults to false if domainHomeInImage is true. ")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
-  /** The in-pod name of the directory for data storage of default and custom file stores. */
+  /**
+   * An optional, in-pod location for data storage of default and custom file stores. If dataHome is
+   * not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage
+   * directories are determined from the WebLogic domain home configuration.
+   */
   @Description(
-      "The in-pod name of the directory for data storage of default and custom file stores.")
+      "An optional, in-pod location for data storage of default and custom file stores. "
+          + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
+          + "then the data storage directories are determined from the WebLogic domain home configuration.")
   private String dataHome;
 
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
@@ -404,7 +410,12 @@ public class DomainSpec extends BaseConfiguration {
   /**
    * Data Home.
    *
-   * @return The in-pod name of the directory for data storage of default and custom file stores.
+   * <p>An optional, in-pod location for data storage of default and custom file stores. If dataHome
+   * is not specified or its value is either not set or empty (e.g. dataHome: "") then the data
+   * storage directories are determined from the WebLogic domain home configuration.
+   *
+   * @return The in-pod location for data storage of default and custom file stores. Null if
+   *     dataHome is not specified or its value is either not set or empty.
    */
   String getDataHome() {
     return dataHome;

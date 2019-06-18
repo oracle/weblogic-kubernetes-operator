@@ -43,7 +43,6 @@ public class JobHelperTest {
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
 
   private static final String DATA_HOME = "DATA_HOME";
-  private static final String DEFAULT_DATA_HOME = "/shared/data/JobHelperTestDomain";
 
   @Test
   public void creatingServers_true_whenClusterReplicas_gt_0() {
@@ -306,6 +305,27 @@ public class JobHelperTest {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo).withDataHome(EMPTY_DATA_HOME);
+
+    Packet packet = new Packet();
+    packet
+        .getComponents()
+        .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
+    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+        new DomainIntrospectorJobStepContext(domainPresenceInfo, packet);
+    V1JobSpec jobSpec =
+        domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+
+    List<V1EnvVar> envVarList =
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv();
+    assertFalse("Did not expect env var DATA_HOME to be defined", envVarList.contains(DATA_HOME));
+  }
+
+  @Test
+  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyNullDataHome() {
+    final String NULL_DATA_HOME = null;
+    DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+
+    configureDomain(domainPresenceInfo).withDataHome(NULL_DATA_HOME);
 
     Packet packet = new Packet();
     packet

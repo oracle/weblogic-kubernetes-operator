@@ -85,10 +85,10 @@ logHomeOnPV: false
 # Otherwise, it is ignored.
 logHome: /shared/logs/domain1
 
-# The in-pod location for data storage of default and custom file stores.
+# An (optional) in-pod location for data storage of default and custom file stores.
 # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
-# configured 'Directory' value in the config.xml, or the default mbean value, will be used.
-#dataHome: /shared/data/domain1
+# data storage directories are determined from the WebLogic domain home configuration.
+#dataHome:
 
 # Port for the T3Channel of the NetworkAccessPoint
 t3ChannelPort: 30012
