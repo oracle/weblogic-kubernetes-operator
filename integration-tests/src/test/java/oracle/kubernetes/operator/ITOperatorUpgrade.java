@@ -70,7 +70,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Before
-  public static void beforeTest() throws IOException, Exception {
+  public void beforeTest() throws IOException, Exception {
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
     setEnv("IMAGE_TAG_OPERATOR", OP_BASE_REL);
@@ -88,7 +88,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @After
-  public static void afterTest() throws IOException {
+  public void afterTest() throws IOException {
     Files.deleteIfExists(Paths.get(opUpgradeTmpDir));
     operator20 = null;
   }
