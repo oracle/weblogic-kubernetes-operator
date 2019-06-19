@@ -37,6 +37,11 @@ Please be aware of the following important considerations for WebLogic domains r
   configuration overrides.  This occurs if the domain resource `logHomeEnabled` field is explicitly set to `true`, or if `logHomeEnabled` isn't set
   and `domainHomeInImage` is explicitly set to `false`.   When overriding, the log location will be the location specified by the `logHome` setting.
 
+* _Default and Custom File Store Locations:_ The operator can automatically override both the default and custom file store locations, 
+  using situational configuration overrides, using the optional `dataHome` setting.  The value specified for the `dataHome` setting
+  represents an in-pod directory location.  If the `dataHome` setting is not specified or its value is either not set or empty (e.g. dataHome: "")
+  then the data storage directories are determined from the WebLogic domain home configuration.
+
 * _Listen Address Overrides:_  The operator will automatically override all WebLogic domain default,
   SSL, admin, or custom channel listen addresses (using situational configuration overrides).  These will become `domainUID` followed by a
   hyphen and then the server name, all lower case, and underscores converted to hyphens.  For example, if `domainUID=domain1` and

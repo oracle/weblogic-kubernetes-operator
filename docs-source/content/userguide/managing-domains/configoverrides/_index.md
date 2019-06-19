@@ -101,6 +101,7 @@ Typical attributes for overrides include:
   * Default, SSL, and Admin channel `Enabled`, listen address, and port
   * Network Access Point (custom channel), listen address, or port
   * Server and domain log locations -- use the `logHome` domain setting instead
+  * Location for data storage of default and custom file stores -- use the `dataHome` domain setting instead
   * Node Manager access credentials
   * Any existing MBean name (for example, you cannot change the domain name)
 
