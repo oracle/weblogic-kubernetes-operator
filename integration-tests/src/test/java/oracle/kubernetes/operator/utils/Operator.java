@@ -313,9 +313,24 @@ public class Operator {
         System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null
             ? System.getenv("IMAGE_PULL_POLICY_OPERATOR")
             : "IfNotPresent";
-    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-operator ");
+    StringBuffer cmd = new StringBuffer("");
+    if (operatorMap.containsKey("operatorVersion")
+        && operatorMap.containsKey("operatorVersionDir")) {
+      TestUtils.ExecAndPrintLog(
+          "cd "
+              + operatorMap.get("operatorVersionDir")
+              + " && git clone -b "
+              + operatorMap.get("operatorVersion")
+              + " https://github.com/oracle/weblogic-kubernetes-operator");
+      cmd.append("cd ");
+      cmd.append(operatorMap.get("operatorVersionDir"))
+          .append(
+              " && helm install weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator ");
+    } else {
+      cmd.append("cd ");
+      cmd.append(BaseTest.getProjectRoot())
+          .append(" && helm install kubernetes/charts/weblogic-operator ");
+    }
     cmd.append(" --name ")
         .append(operatorMap.get("releaseName"))
         .append(" --values ")
