@@ -3,6 +3,8 @@
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator;
 
+import static oracle.kubernetes.operator.BaseTest.DOMAININIMAGE_WLST_YAML;
+import static oracle.kubernetes.operator.BaseTest.JENKINS;
 import static oracle.kubernetes.operator.BaseTest.OPERATOR1_YAML;
 import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
 import static oracle.kubernetes.operator.BaseTest.logger;
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -81,10 +84,25 @@ public class ITOperatorUpgrade extends BaseTest {
     operatorMap.put("namespace", OP_NS);
     operatorMap.put("releaseName", OP_DEP_NAME);
     operatorMap.put("serviceAccount", OP_SA);
+    operatorMap.remove("externalRestEnabled");
     List<String> dom_ns = new ArrayList<String>();
     dom_ns.add(DOM_NS);
-    operatorMap.put("domainNameSpaces", dom_ns);
+    operatorMap.put("domainNamespaces", dom_ns);
     operator20 = TestUtils.createOperator(operatorMap, Operator.RESTCertType.SELF_SIGNED);
+    Domain domain = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
+      wlstDomainMap.put("domainUID", "operator20domain");
+      wlstDomainMap.put("namespace", dom_ns);
+      domain = TestUtils.createDomain(wlstDomainMap);
+      domain.verifyDomainCreated();
+      testBasicUseCases(domain);
+      testClusterScaling(operator20, domain);
+      testCompletedSuccessfully = true;
+    } finally {
+      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
+    }
   }
 
   @After
