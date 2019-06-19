@@ -3,18 +3,28 @@
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator;
 
+import static oracle.kubernetes.operator.BaseTest.OPERATOR1_YAML;
+import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
 import static oracle.kubernetes.operator.BaseTest.logger;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.ExecResult;
+import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -28,9 +38,10 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITOperatorUpgrade extends BaseTest {
 
+  private static final String OP_BASE_REL = "2.0";
   private static final String OP_REL = "2.0";
   private static final String OP_NS = "weblogic-operator";
-  private static final String OP_DEP = "operator";
+  private static final String OP_DEP_NAME = "operator-upgrade";
   private static final String OP_SA = "operator-sa";
   private static final String DOM_NS = "weblogic-domain";
   private static final String DUID = "domain1";
@@ -39,6 +50,8 @@ public class ITOperatorUpgrade extends BaseTest {
   private static final int initialManagedServerReplicas = 2;
   private static final String API_VER = "v2";
   private static String opUpgradeTmpDir;
+
+  private static Operator operator20, operator2;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -53,8 +66,31 @@ public class ITOperatorUpgrade extends BaseTest {
       initialize(APP_PROPS_FILE);
       pullImages();
       opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
-      Files.createDirectories(Paths.get(opUpgradeTmpDir));
     }
+  }
+
+  @Before
+  public static void beforeTest() throws IOException, Exception {
+    Files.createDirectories(Paths.get(opUpgradeTmpDir));
+    setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
+    setEnv("IMAGE_TAG_OPERATOR", OP_BASE_REL);
+
+    Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
+    operatorMap.put("operatorVersion", OP_BASE_REL);
+    operatorMap.put("operatorVersionDir", opUpgradeTmpDir);
+    operatorMap.put("namespace", OP_NS);
+    operatorMap.put("releaseName", OP_DEP_NAME);
+    operatorMap.put("serviceAccount", OP_SA);
+    List<String> dom_ns = new ArrayList<String>();
+    dom_ns.add(DOM_NS);
+    operatorMap.put("domainNameSpaces", dom_ns);
+    operator20 = TestUtils.createOperator(operatorMap, Operator.RESTCertType.SELF_SIGNED);
+  }
+
+  @After
+  public static void afterTest() throws IOException {
+    Files.deleteIfExists(Paths.get(opUpgradeTmpDir));
+    operator20 = null;
   }
 
   /**
@@ -68,9 +104,7 @@ public class ITOperatorUpgrade extends BaseTest {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
-
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-
       logger.info("SUCCESS");
     }
   }
@@ -87,13 +121,13 @@ public class ITOperatorUpgrade extends BaseTest {
     // pull operator 2.1 image
     // helm upgrade to operator 2.1
     // verify the domain is not restarted but the operator image running is 2.1
-    createOperator();
+    // createOperator();
     verifyDomainCreated();
-    upgradeOperator("oracle/weblogic-kubernetes-operator:2.1");
-    destroyOperator();
+    // upgradeOperator("oracle/weblogic-kubernetes-operator:2.1");
+    // destroyOperator();
   }
 
-  @Test
+  // @Test
   public void testOperatorUpgradeTo2_2_0() throws Exception {
     // checkout weblogic operator image 2.0
     // pull traefik , wls and operator images
@@ -111,7 +145,7 @@ public class ITOperatorUpgrade extends BaseTest {
     destroyOperator();
   }
 
-  @Test
+  // @Test
   public void testOperatorUpgradeTodevelop() throws Exception {
     // checkout weblogic operator image 2.0
     // pull traefik , wls and operator images
@@ -125,7 +159,7 @@ public class ITOperatorUpgrade extends BaseTest {
     // verify the domain is not restarted but the operator image running is 2.1
     createOperator();
     verifyDomainCreated();
-    upgradeOperator("weblogic-kubernetes-operator:test_opupgrade");
+    upgradeOperator("oracle/weblogic-kubernetes-operator:2.1");
     destroyOperator();
   }
 
@@ -147,7 +181,9 @@ public class ITOperatorUpgrade extends BaseTest {
     TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
-            + " && helm install weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator --name operator --namespace "
+            + " && helm install weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator --name "
+            + OP_DEP_NAME
+            + " --namespace "
             + OP_NS
             + " --set serviceAccount="
             + OP_SA
@@ -245,6 +281,21 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void destroyOperator() throws Exception {
+    TestUtils.ExecAndPrintLog(
+        "cd " + opUpgradeTmpDir + " && kubectl get domain domain1 -o yaml -n " + DOM_NS);
     tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+  }
+
+  public static void setEnv(String key, String value) {
+    try {
+      Map<String, String> env = System.getenv();
+      Class<?> cl = env.getClass();
+      Field field = cl.getDeclaredField("m");
+      field.setAccessible(true);
+      Map<String, String> writableEnv = (Map<String, String>) field.get(env);
+      writableEnv.put(key, value);
+    } catch (Exception e) {
+      throw new IllegalStateException("Failed to set environment variable", e);
+    }
   }
 }
