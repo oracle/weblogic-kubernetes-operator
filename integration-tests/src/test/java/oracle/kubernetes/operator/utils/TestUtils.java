@@ -723,6 +723,20 @@ public class TestUtils {
     return operator;
   }
 
+  public static Operator createOperator(Map<String, Object> inputMap, RESTCertType restCertType)
+      throws Exception {
+    // create op
+    Operator operator = new Operator(inputMap, restCertType);
+    operator.callHelmInstall();
+
+    logger.info("Check Operator status");
+    operator.verifyPodCreated();
+    operator.verifyOperatorReady();
+    operator.verifyExternalRESTService();
+
+    return operator;
+  }
+
   public static Operator createOperator(String opYamlFile) throws Exception {
     return createOperator(opYamlFile, RESTCertType.SELF_SIGNED);
   }
