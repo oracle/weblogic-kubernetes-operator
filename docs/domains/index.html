@@ -1190,6 +1190,10 @@ window.onload = function() {
           "description": "The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files",
           "type": "string"
         },
+        "failBootOnSituationalError": {
+          "description": "If true (the default), the WebLogic server boot would fail if any errors occur  when applying situational configuration files during server startup. If false, WebLogic server would start if there are errors in the situational configuration files, and some configuration overrides may not be applied.",
+          "type": "boolean"
+        },
         "includeServerOutInPodLog": {
           "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
           "type": "boolean"
