@@ -338,6 +338,11 @@ spec:
 
 Incorrectly formatted override files may be accepted without warnings or errors and will not prevent WebLogic pods from booting. So, it is important to make sure that the template files are correct in a QA environment, otherwise your WebLogic Servers may start even though critically required overrides are failing to take effect.
 
+On WebLogic servers that support the weblogic.SituationalConfig.failBootOnError system property ( Note: it is not supported in WebLogic 12.2.1.3 ), 
+by default the WebLogic server will fail to boot if any situational configuration files are invalid.
+This can be configured by using the `failBootOnSituationalError` attribute in the Domain spec to `false` to start up the WebLogic servers even with 
+incorrectly formatted override files.
+
 * Make sure you've followed each step in the [Step-by-step guide](#step-by-step-guide).
 
 * If WebLogic pods do not come up at all, then:
@@ -366,6 +371,14 @@ Incorrectly formatted override files may be accepted without warnings or errors 
       * This directory, or a subdirectory within this directory, should contain each of your custom situational configuration files.
       * If it doesn't, then this likely indicates your domain resource `configOverrides` was not set to match your custom override configuration map name, or that your custom override configuration map does not contain your override files.
 
+* If the Administration Server pod do start but fails to reach ready state:
+  * Check if there is a message ` WebLogic server failed to start due to missing or invalid situational configuration files` in the Administration Server pod's `kubectl log`
+    * This suggests that the Administration Server failed to start may be caused by errors found in the a configuration override file.
+      * Lines containing the String `<Warning>` may be found in the Administration Server pod log to provide more hints. 
+      * For example:
+        * `<Jun 20, 2019 3:48:45 AM GMT> <Warning> <Management> <BEA-141323> <The situational config file has an invalid format, it is being ignored: XMLSituationalConfigFile[/shared/domains/domain1/optconfig/jdbc/testDS-0527-jdbc-situational-config.xml] because org.xml.sax.SAXParseException; lineNumber: 8; columnNumber: 3; The element type "jdbc:jdbc-driver-params" must be terminated by the matching end-tag "</jdbc:jdbc-driver-params>".`
+      * The warning message suggests a syntax error is found in the provided configuration override file for the testDS JDBC datasource.
+  
 * If you'd like to verify that the situational configuration is taking effect in the WebLogic MBean tree, then one way to do this is to compare the `server config` and `domain config` MBean tree values.
   * The `domain config` value should reflect the original value in your domain home configuration.
   * The `server config` value should reflect the overridden value.
