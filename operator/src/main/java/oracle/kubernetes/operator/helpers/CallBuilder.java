@@ -591,8 +591,8 @@ public class CallBuilder {
         .deleteNamespacedConfigMapAsync(
             name,
             namespace,
-            body,
             pretty,
+            body,
             null,
             gracePeriodSeconds,
             orphanDependents,
@@ -764,8 +764,8 @@ public class CallBuilder {
         .deleteNamespacedPodAsync(
             name,
             namespace,
-            deleteOptions,
             pretty,
+            deleteOptions,
             null,
             gracePeriodSeconds,
             orphanDependents,
@@ -933,8 +933,8 @@ public class CallBuilder {
         .deleteNamespacedJobAsync(
             name,
             namespace,
-            body,
             pretty,
+            body,
             null,
             gracePeriodSeconds,
             orphanDependents,
@@ -1120,8 +1120,8 @@ public class CallBuilder {
           .deleteNamespacedService(
               name,
               namespace,
-              deleteOptions,
               pretty,
+              deleteOptions,
               null,
               gracePeriodSeconds,
               orphanDependents,
@@ -1142,8 +1142,8 @@ public class CallBuilder {
         .deleteNamespacedServiceAsync(
             name,
             namespace,
-            deleteOptions,
             pretty,
+            deleteOptions,
             null,
             gracePeriodSeconds,
             orphanDependents,
@@ -1290,8 +1290,8 @@ public class CallBuilder {
           new CoreV1Api(client)
               .deletePersistentVolume(
                   requestParams.name,
-                  (V1DeleteOptions) requestParams.body,
                   pretty,
+                  (V1DeleteOptions) requestParams.body,
                   null,
                   gracePeriodSeconds,
                   orphanDependents,
@@ -1310,8 +1310,8 @@ public class CallBuilder {
               new CoreV1Api(client)
                   .deletePersistentVolumeAsync(
                       requestParams.name,
-                      (V1DeleteOptions) requestParams.body,
                       pretty,
+                      (V1DeleteOptions) requestParams.body,
                       null,
                       gracePeriodSeconds,
                       orphanDependents,
@@ -1422,8 +1422,8 @@ public class CallBuilder {
               .deleteNamespacedPersistentVolumeClaim(
                   requestParams.name,
                   requestParams.namespace,
-                  (V1DeleteOptions) requestParams.body,
                   pretty,
+                  (V1DeleteOptions) requestParams.body,
                   null,
                   gracePeriodSeconds,
                   orphanDependents,
@@ -1442,8 +1442,8 @@ public class CallBuilder {
                   .deleteNamespacedPersistentVolumeClaimAsync(
                       requestParams.name,
                       requestParams.namespace,
-                      (V1DeleteOptions) requestParams.body,
                       pretty,
+                      (V1DeleteOptions) requestParams.body,
                       null,
                       gracePeriodSeconds,
                       orphanDependents,
@@ -1525,8 +1525,8 @@ public class CallBuilder {
           .deleteNamespacedSecret(
               name,
               namespace,
-              deleteOptions,
               pretty,
+              deleteOptions,
               null,
               gracePeriodSeconds,
               orphanDependents,
