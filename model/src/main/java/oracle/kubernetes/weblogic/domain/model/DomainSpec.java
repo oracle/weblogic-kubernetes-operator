@@ -106,11 +106,12 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.3.0
    */
   @Description(
-      "If true (the default), the WebLogic server boot would fail if any errors occur "
-          + " when applying situational configuration files during server startup."
+      "If true (the default), on WebLogic server that supports this feature, the WebLogic server "
+          + " boot would fail if any errors occur when applying situational configuration "
+          + " during server startup."
           + " If false, WebLogic server would start if there are errors in the"
-          + " situational configuration files, and some configuration overrides may"
-          + " not be applied.")
+          + " situational configuration files, but some configuration overrides may"
+          + " be skipped.")
   private Boolean failBootOnSituationalError;
 
   /**
