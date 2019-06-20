@@ -110,7 +110,12 @@ function waitForShutdownMarker() {
   # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
   #
   trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
+  logged=false
   while true; do
+    if [ "$logged" != 'true' ] && grep -q "BEA-141335" ${SERVER_OUT_FILE} ; then
+      trace "WebLogic server failed to start due to missing or invalid situational configuration files. Please check ${SERVER_OUT_FILE} for details"
+      logged=true
+    fi
     if [ -e /weblogic-operator/doShutdown ] ; then
       exit 0
     fi
@@ -137,6 +142,9 @@ function copySitCfg() {
   if [ $? = 0 ]; then
     for local_fname in ${src_dir}/${fil_prefix}*.xml ; do
       copyIfChanged $local_fname $tgt_dir/`basename ${local_fname/${fil_prefix}//}`
+      trace "Printing contents of situational configuration file $local_fname:"
+      file_content=`cat $local_fname`
+      echo "$file_content"
     done
   fi
 
