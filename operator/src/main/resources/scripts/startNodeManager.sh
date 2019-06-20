@@ -26,7 +26,8 @@
 #                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.out
 #                       Default:
 #                          Use LOG_HOME.  If LOG_HOME not set, use NODEMGR_HOME.
-#   ADMIN_PORT_SECURE = "true" if the admin protocol is secure. Default is false#   FAIL_BOOT_ON_SITUATIONAL_ERROR = "true" if WebLogic server should fail to 
+#   ADMIN_PORT_SECURE = "true" if the admin protocol is secure. Default is false
+#   FAIL_BOOT_ON_SITUATIONAL_ERROR = "true" if WebLogic server should fail to 
 #                       boot if situational configuration related errors are 
 #                       found. Default to "true" if unspecified.
 #
