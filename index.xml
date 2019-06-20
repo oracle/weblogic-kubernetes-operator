@@ -124,16 +124,6 @@ Important note for users of operator releases before 2.0   Click here to expand 
     </item>
     
     <item>
-      <title>Recent changes</title>
-      <link>/weblogic-kubernetes-operator/recent-changes/</link>
-      <pubDate>Fri, 22 Feb 2019 15:27:38 -0500</pubDate>
-      
-      <guid>/weblogic-kubernetes-operator/recent-changes/</guid>
-      <description>This document tracks recent changes to the operator, especially ones that introduce backward incompatibilities.
-   Date Version Introduces backward incompatibilities Change     June 6, 2019 v2.2.0 no Added support for FMW Infrastructure domains. WebLogic Server instances are now gracefully shut down by default and shutdown options are configurable. Operator is now built and runs on JDK 11.   April 4, 2019 v2.1 no Customers can add init and sidecar containers to generated pods.</description>
-    </item>
-    
-    <item>
       <title>Why layering matters</title>
       <link>/weblogic-kubernetes-operator/userguide/cicd/why-layering-matters/</link>
       <pubDate>Thu, 11 Apr 2019 13:27:58 -0400</pubDate>
@@ -531,7 +521,8 @@ git checkout master git pull origin master git checkout -b your-branch  Make you
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Recent changes    Date Version Introduces backward incompatibilities Change     June 6, 2019 v2.2.0 no Added support for FMW Infrastructure domains. WebLogic Server instances are now gracefully shut down by default and shutdown options are configurable. Operator is now built and runs on JDK 11.   April 4, 2019 v2.1 no Customers can add init and sidecar containers to generated pods.   March 4, 2019 v2.</description>
+      <description>Recent changes    Date Version Introduces backward incompatibilities Change     June 20, 2019 v2.2.1 no The operator now supports Kubernetes 1.14.0+. This release is primarily a bug fix release and resolves the following issues:
+Servers in domains, where the domain home is on a persistent volume, would sometimes fail to start. These failures would be during the introspection phase following a full domain shutdown. Now, the introspection script better handles the relevant error conditions.</description>
     </item>
     
   </channel>
