@@ -708,7 +708,7 @@ public class ITMonitoringExporter extends BaseTest {
   private static void deployMonitoringExporterPrometethusGrafana(
       String exporterAppPath, Domain domain, Operator operator) throws Exception {
 
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
 
     String crdCmd = " kubectl apply -f " + samplesDir + "monitoring-namespace.yaml";
     ExecResult result = ExecCommand.exec(crdCmd);
@@ -735,17 +735,21 @@ public class ITMonitoringExporter extends BaseTest {
     crdCmd = " kubectl apply -f " + samplesDir + "grafana-deployment.yaml";
     result = ExecCommand.exec(crdCmd);
     logger.info("command result " + result.stdout().trim());
-    domain.deployWebAppViaREST(
-        "wlsexporter", exporterAppPath, BaseTest.getUsername(), BaseTest.getPassword());
+    Map<String, Object> domainMap = domain.getDomainMap();
+    // create the app directory in admin pod
+    TestUtils.kubectlexec(
+        domain.getDomainUid() + ("-") + domainMap.get("adminServerName"),
+        "" + domainMap.get("namespace"),
+        " -- mkdir -p " + appLocationInPod);
+    domain.deployWebAppViaWLST(
+        "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
   }
 
   private static void redeployMonitoringExporter(Domain domain) throws Exception {
     String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
 
-    domain.undeployWebAppViaREST(
-        "wlsexporter", exporterAppPath, BaseTest.getUsername(), BaseTest.getPassword());
-    domain.deployWebAppViaREST(
-        "wlsexporter", exporterAppPath, BaseTest.getUsername(), BaseTest.getPassword());
+    domain.deployWebAppViaWLST(
+        "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
     // check if exporter is up
     domain.callWebAppAndVerifyLoadBalancing("wls-exporter", false);
   }
@@ -756,7 +760,7 @@ public class ITMonitoringExporter extends BaseTest {
 
   private static void deletePrometheusGrafana() throws Exception {
 
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
 
     String crdCmd = " kubectl delete -f " + samplesDir + "prometheus-deployment.yaml";
     TestUtils.exec(crdCmd);
@@ -776,7 +780,7 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws IOException when copying files from source location to staging area fails
    */
   private static void createCoordinatorFile(String domainNS) throws IOException {
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
     Path src = Paths.get(resourceExporterDir + "/coordinator.yml");
     Path dst = Paths.get(samplesDir + "/coordinator_" + domainNS + ".yaml");
     if (!dst.toFile().exists()) {
@@ -796,7 +800,7 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws IOException when copying files from source location to staging area fails
    */
   private static void createCrossNSRBACFile(String domainNS, String operatorNS) throws IOException {
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
     Path src = Paths.get(samplesDir + "/crossnsrbac.yaml");
     Path dst = Paths.get(samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml");
     if (!dst.toFile().exists()) {

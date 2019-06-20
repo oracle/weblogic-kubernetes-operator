@@ -71,6 +71,7 @@ public class BaseTest {
   private static Properties appProps;
   private static String weblogicImageTag;
   private static String weblogicImageName;
+  private static String weblogicImageServer;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -114,6 +115,10 @@ public class BaseTest {
         System.getenv("IMAGE_NAME_WEBLOGIC") != null
             ? System.getenv("IMAGE_NAME_WEBLOGIC")
             : appProps.getProperty("weblogicImageName");
+    weblogicImageServer =
+        System.getenv("OCR_SERVER") != null
+            ? System.getenv("OCR_SERVER")
+            : appProps.getProperty("OCR_SERVER");
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
@@ -254,6 +259,16 @@ public class BaseTest {
   public static String getWeblogicImageName() {
     return weblogicImageName;
   }
+
+  /**
+   * getter method for weblogicImageServer
+   *
+   * @return registry name of the WLS container
+   */
+  public static String getWeblogicImageServer() {
+    return weblogicImageServer;
+  }
+
   /**
    * Call the basic usecases tests
    *
@@ -615,6 +630,14 @@ public class BaseTest {
 
   public static int getMaxIterationsPod() {
     return maxIterationsPod;
+  }
+
+  public static void setMaxIterationsPod(int iterationsPod) {
+    maxIterationsPod = iterationsPod;
+  }
+
+  public static void setWaitTimePod(int timePod) {
+    waitTimePod = timePod;
   }
 
   public static int getWaitTimePod() {

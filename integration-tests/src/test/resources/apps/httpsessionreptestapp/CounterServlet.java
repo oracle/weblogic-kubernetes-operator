@@ -67,24 +67,34 @@ public class CounterServlet extends HttpServlet {
     response.setContentType("text/xml; charset=UTF-8");
     PrintWriter out = response.getWriter();
     HttpSession currentSession = request.getSession(true);
-      
+
     if (currentSession != null) {
-      out.println("<result>"); 
-      
-      if (request.getParameter("invalidate") != null) {
-        currentSession.invalidate();
-        out.println("Your session is invalidated");
+      out.println("<result>");
+
+    if (request.getParameter("delayTime") != null ) {
+      try {
+        out.println("<sleep>Starting to sleep : " + (Integer.valueOf(request.getParameter("delayTime"))) + "</sleep>");
+        Thread.sleep(Integer.valueOf(request.getParameter("delayTime")));
+        out.println("<sleep>Ending to sleep</sleep>");
+      } catch (InterruptedException ex){
+        //just ignore
+      }
+    }
+
+    if (request.getParameter("invalidate") != null) {
+      currentSession.invalidate();
+      out.println("Your session is invalidated");
+    } else {
+      if (request.getParameter("setCounter") != null) {
+        currentSession.setAttribute("count", Integer.valueOf(request.getParameter("setCounter")));
+      } else if (request.getParameter("getCounter") != null ) {
+        currentSession.setAttribute("count", ((Integer) currentSession.getAttribute("count")));
+      } else if (request.getParameter("setCounter") == null && currentSession.isNew()) {
+        currentSession.setAttribute("count", new Integer(1));
       } else {
-        if (request.getParameter("setCounter") != null) {
-          currentSession.setAttribute("count", Integer.valueOf(request.getParameter("setCounter")));
-        } else if (request.getParameter("getCounter") != null ) {
-          currentSession.setAttribute("count", ((Integer) currentSession.getAttribute("count")));
-        } else if (request.getParameter("setCounter") == null && currentSession.isNew()) {
-          currentSession.setAttribute("count", new Integer(1));
-        } else {
-          int count = ((Integer) currentSession.getAttribute("count")).intValue();
-          currentSession.setAttribute("count", new Integer(++count));
-        }
+        int count = ((Integer) currentSession.getAttribute("count")).intValue();
+        currentSession.setAttribute("count", new Integer(++count));
+      }
       
         out.println("<sessioncreatetime>"+currentSession.getCreationTime()+"</sessioncreatetime>");
         out.println("<sessionid>"+currentSession.getId()+"</sessionid>"); 
