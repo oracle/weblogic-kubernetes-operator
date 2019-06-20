@@ -238,7 +238,9 @@ public class TestUtils {
       logger.info(
           "Command "
               + cmd
-              + " failed with stderr = "
+              + " return value "
+              + result.exitValue()
+              + " \n failed with stderr = "
               + result.stderr()
               + " \n stdout = "
               + result.stdout());
@@ -1399,5 +1401,18 @@ public class TestUtils {
             + "\n err "
             + result.stderr());
     return result;
+  }
+
+  public static void ExecAndPrintLog(String command) throws Exception {
+    ExecResult result = ExecCommand.exec(command);
+    logger.info(
+        "\nCommand "
+            + command
+            + "\nreturn value: "
+            + result.exitValue()
+            + "\nstderr = "
+            + result.stderr()
+            + "\nstdout = "
+            + result.stdout());
   }
 }

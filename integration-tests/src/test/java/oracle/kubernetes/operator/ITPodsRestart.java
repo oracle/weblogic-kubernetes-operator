@@ -184,7 +184,7 @@ public class ITPodsRestart extends BaseTest {
   /**
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
    * Verify that all the server pods in the domain got re-started .The property tested is: image:
-   * "container-registry.oracle.com/middleware/weblogic:12.2.1.3-190111" --> image:
+   * "container-registry.oracle.com/middleware/weblogic:12.2.1.3" --> image:
    * "container-registry.oracle.com/middleware/weblogic:duplicate"
    *
    * @throws Exception
@@ -196,6 +196,7 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     try {
+      TestUtils.ExecAndPrintLog("docker images");
       logger.info(
           "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
@@ -203,15 +204,17 @@ public class ITPodsRestart extends BaseTest {
               + getWeblogicImageName()
               + ":"
               + getWeblogicImageTag()
-              + " to /weblogick8s/middleware/weblogic:duplicate");
+              + " to "
+              + "/weblogick8s/middleware/weblogic:duplicate");
 
       if (BaseTest.SHARED_CLUSTER) {
         String newImage =
             System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
-
         // tag image with repo name
-        TestUtils.exec(
-            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage);
+        String tag =
+            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
+        TestUtils.ExecAndPrintLog(tag);
+        TestUtils.ExecAndPrintLog("docker images");
 
         // login and push image to ocir
         TestUtils.loginAndPushImageToOCIR(newImage);
@@ -230,6 +233,7 @@ public class ITPodsRestart extends BaseTest {
         domain.verifyDomainServerPodRestart(
             "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
             "\"" + newImage + "\"");
+
       } else {
         TestUtils.exec(
             "docker tag "
