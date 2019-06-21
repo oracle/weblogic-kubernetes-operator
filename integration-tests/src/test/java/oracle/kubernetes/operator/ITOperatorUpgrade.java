@@ -216,7 +216,7 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void checkDomainRollingRestarted() throws Exception {
     domain.verifyAdminServerRestarted();
-    TestUtils.checkPodReady(DUID + domain.getAdminServerName(), DOM_NS);
+    TestUtils.checkPodReady(DUID + "-" + domain.getAdminServerName(), DOM_NS);
     for (int i = 2; i >= 1; i--) {
       logger.info(
           "Checking if managed server pod(" + DUID + "--managed-server" + i + ") is restarted");
