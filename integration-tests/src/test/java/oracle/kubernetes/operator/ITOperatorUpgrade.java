@@ -36,6 +36,7 @@ import org.junit.runners.MethodSorters;
 public class ITOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
+  private static final String OP_TARGET_RELEASE = "apiVersion: weblogic.oracle/v4";
   private static final String OP_NS = "weblogic-operator";
   private static final String OP_DEP_NAME = "operator-upgrade";
   private static final String OP_SA = "operator-sa";
@@ -139,7 +140,7 @@ public class ITOperatorUpgrade extends BaseTest {
     // verifyDomainCreated();
     testCompletedSuccessfully = false;
     upgradeOperator("weblogic-kubernetes-operator:test_opupgrade");
-    checkOperatorVersion("v2");
+    checkOperatorVersion(OP_TARGET_RELEASE);
     domain.verifyDomainCreated();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
@@ -195,7 +196,7 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void checkOperatorVersion(String version) throws Exception {
     ExecResult result = ExecCommand.exec("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
-    if (!result.stdout().contains("apiVersion: weblogic.oracle/" + version)) {
+    if (!result.stdout().contains(version)) {
       logger.log(Level.INFO, result.stdout());
       throw new RuntimeException("FAILURE: Didn't get the expected operator version");
     }
