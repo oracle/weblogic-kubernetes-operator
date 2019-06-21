@@ -174,7 +174,11 @@ public class ITOperatorUpgrade extends BaseTest {
     upgradeOperator(OP_TARGET_RELEASE);
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     domain.verifyAdminServerRestarted();
-    domain.verifyManagedServersRestarted();
+    TestUtils.checkPodTerminating(DUID + "-managed-server2", DOM_NS);
+    TestUtils.checkPodCreated(DUID + "-managed-server2", DOM_NS);
+    TestUtils.checkPodTerminating(DUID + "-managed-server1", DOM_NS);
+    TestUtils.checkPodCreated(DUID + "-managed-server1", DOM_NS);
+    // domain.verifyManagedServersRestarted();
     // domain.verifyDomainCreated();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
