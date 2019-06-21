@@ -173,7 +173,9 @@ public class ITOperatorUpgrade extends BaseTest {
   private void upgradeOperator() throws Exception {
     upgradeOperator(OP_TARGET_RELEASE);
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
-    domain.verifyDomainCreated();
+    domain.verifyAdminServerRestarted();
+    domain.verifyManagedServersRestarted();
+    // domain.verifyDomainCreated();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
   }
