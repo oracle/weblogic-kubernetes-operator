@@ -65,6 +65,7 @@ public class ITOperatorUpgrade extends BaseTest {
 
   @Before
   public void beforeTest() throws Exception {
+    logger.log(Level.INFO, "+++++++++++++++Beginning BeforeTest Setup+++++++++++++++++++++");
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
     setEnv("IMAGE_TAG_OPERATOR", OP_BASE_REL);
@@ -88,10 +89,12 @@ public class ITOperatorUpgrade extends BaseTest {
     domain.verifyDomainCreated();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
+    logger.log(Level.INFO, "+++++++++++++++Done BeforeTest Setup+++++++++++++++++++++");
   }
 
   @After
   public void afterTest() throws Exception {
+    logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest Setup+++++++++++++++++++++");
     if (domain != null && (JENKINS || testCompletedSuccessfully)) {
       domain.destroy();
     }
@@ -100,6 +103,7 @@ public class ITOperatorUpgrade extends BaseTest {
       operator20 = null;
     }
     Files.deleteIfExists(Paths.get(opUpgradeTmpDir));
+    logger.log(Level.INFO, "+++++++++++++++Done AfterTest Setup+++++++++++++++++++++");
   }
 
   /**
@@ -120,6 +124,8 @@ public class ITOperatorUpgrade extends BaseTest {
 
   @Test
   public void testOperatorUpgradeTo2_1() throws Exception {
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
     // checkout weblogic operator image 2.0
     // pull traefik , wls and operator images
     // create service account, etc.,
@@ -139,12 +145,13 @@ public class ITOperatorUpgrade extends BaseTest {
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
     testCompletedSuccessfully = true;
-
-    // destroyOperator();
+    logger.info("SUCCESS - " + testMethod);
   }
 
   @Test
   public void testOperatorUpgradeTo2_2_0() throws Exception {
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
     testCompletedSuccessfully = false;
     upgradeOperator("oracle/weblogic-kubernetes-operator:2.2.0");
     checkOperatorVersion("v3");
@@ -152,10 +159,13 @@ public class ITOperatorUpgrade extends BaseTest {
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
     testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethod);
   }
 
   @Test
   public void testOperatorUpgradeTodevelop() throws Exception {
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
     testCompletedSuccessfully = false;
     upgradeOperator("oracle/weblogic-kubernetes-operator:test_opupgrade");
     checkOperatorVersion("v4");
@@ -163,6 +173,7 @@ public class ITOperatorUpgrade extends BaseTest {
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
     testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethod);
   }
 
   private static void pullImages() throws Exception {
