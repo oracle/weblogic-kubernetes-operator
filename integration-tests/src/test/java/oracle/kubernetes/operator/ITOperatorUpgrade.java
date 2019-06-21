@@ -86,6 +86,7 @@ public class ITOperatorUpgrade extends BaseTest {
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
+    checkOperatorVersion("apiVersion: weblogic.oracle/v2");
     domain.verifyDomainCreated();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
