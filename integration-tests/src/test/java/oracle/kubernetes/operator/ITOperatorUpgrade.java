@@ -171,15 +171,9 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void upgradeOperator() throws Exception {
-    upgradeOperator(OP_TARGET_RELEASE);
+    upgradeOperatorHelm(OP_TARGET_RELEASE);
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
-    domain.verifyAdminServerRestarted();
-    TestUtils.checkPodTerminating(DUID + "-managed-server2", DOM_NS);
-    TestUtils.checkPodCreated(DUID + "-managed-server2", DOM_NS);
-    TestUtils.checkPodTerminating(DUID + "-managed-server1", DOM_NS);
-    TestUtils.checkPodCreated(DUID + "-managed-server1", DOM_NS);
-    // domain.verifyManagedServersRestarted();
-    // domain.verifyDomainCreated();
+    checkDomainRollingRestarted();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
   }
@@ -188,7 +182,7 @@ public class ITOperatorUpgrade extends BaseTest {
     TestUtils.exec("docker pull oracle/weblogic-kubernetes-operator:" + OP_BASE_REL);
   }
 
-  private void upgradeOperator(String upgradeRelease) throws Exception {
+  private void upgradeOperatorHelm(String upgradeRelease) throws Exception {
     TestUtils.ExecAndPrintLog(
         "cd "
             + BaseTest.getProjectRoot()
@@ -217,6 +211,18 @@ public class ITOperatorUpgrade extends BaseTest {
       writableEnv.put(key, value);
     } catch (Exception e) {
       throw new IllegalStateException("Failed to set environment variable", e);
+    }
+  }
+
+  private void checkDomainRollingRestarted() throws Exception {
+    domain.verifyAdminServerRestarted();
+    TestUtils.checkPodReady(DUID + domain.getAdminServerName(), DOM_NS);
+    for (int i = 2; i >= 1; i--) {
+      logger.info(
+          "Checking if managed server pod(" + DUID + "--managed-server" + i + ") is restarted");
+      TestUtils.checkPodTerminating(DUID + "-managed-server" + i, DOM_NS);
+      TestUtils.checkPodCreated(DUID + "-managed-server" + i, DOM_NS);
+      TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
     }
   }
 }
