@@ -4,24 +4,19 @@
 package oracle.kubernetes.operator;
 
 import static oracle.kubernetes.operator.BaseTest.DOMAININIMAGE_WLST_YAML;
-import static oracle.kubernetes.operator.BaseTest.JENKINS;
 import static oracle.kubernetes.operator.BaseTest.OPERATOR1_YAML;
 import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
 import static oracle.kubernetes.operator.BaseTest.logger;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -42,19 +37,15 @@ import org.junit.runners.MethodSorters;
 public class ITOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
-  private static final String OP_REL = "2.0";
   private static final String OP_NS = "weblogic-operator";
   private static final String OP_DEP_NAME = "operator-upgrade";
   private static final String OP_SA = "operator-sa";
   private static final String DOM_NS = "weblogic-domain";
   private static final String DUID = "domain1";
-  private static final String managedServerNameBase = "managed-server";
-  private static final String adminServerName = "admin-server";
-  private static final int initialManagedServerReplicas = 2;
-  private static final String API_VER = "v2";
   private static String opUpgradeTmpDir;
-
-  private static Operator operator20, operator2;
+  private Domain domain = null;
+  private static Operator operator20;
+  private boolean testCompletedSuccessfully = true;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -73,7 +64,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Before
-  public void beforeTest() throws IOException, Exception {
+  public void beforeTest() throws Exception {
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
     setEnv("IMAGE_TAG_OPERATOR", OP_BASE_REL);
@@ -84,31 +75,31 @@ public class ITOperatorUpgrade extends BaseTest {
     operatorMap.put("namespace", OP_NS);
     operatorMap.put("releaseName", OP_DEP_NAME);
     operatorMap.put("serviceAccount", OP_SA);
-    operatorMap.remove("externalRestEnabled");
     List<String> dom_ns = new ArrayList<String>();
     dom_ns.add(DOM_NS);
     operatorMap.put("domainNamespaces", dom_ns);
-    operator20 = TestUtils.createOperator(operatorMap, Operator.RESTCertType.SELF_SIGNED);
-    Domain domain = null;
-    boolean testCompletedSuccessfully = false;
-    try {
-      Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
-      wlstDomainMap.put("domainUID", "operator20domain");
-      wlstDomainMap.put("namespace", dom_ns);
-      domain = TestUtils.createDomain(wlstDomainMap);
-      domain.verifyDomainCreated();
-      testBasicUseCases(domain);
-      testClusterScaling(operator20, domain);
-      testCompletedSuccessfully = true;
-    } finally {
-      if (domain != null && (JENKINS || testCompletedSuccessfully)) domain.destroy();
-    }
+    operator20 = TestUtils.createOperator(operatorMap, Operator.RESTCertType.LEGACY);
+
+    Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
+    wlstDomainMap.put("domainUID", "operator20domain");
+    wlstDomainMap.put("namespace", DOM_NS);
+    wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
+    domain = TestUtils.createDomain(wlstDomainMap);
+    domain.verifyDomainCreated();
+    testBasicUseCases(domain);
+    testClusterScaling(operator20, domain);
   }
 
   @After
-  public void afterTest() throws IOException {
+  public void afterTest() throws Exception {
+    if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+      domain.destroy();
+    }
+    if (operator20 != null && (JENKINS || testCompletedSuccessfully)) {
+      operator20.destroy();
+      operator20 = null;
+    }
     Files.deleteIfExists(Paths.get(opUpgradeTmpDir));
-    operator20 = null;
   }
 
   /**
@@ -140,168 +131,64 @@ public class ITOperatorUpgrade extends BaseTest {
     // helm upgrade to operator 2.1
     // verify the domain is not restarted but the operator image running is 2.1
     // createOperator();
-    verifyDomainCreated();
-    // upgradeOperator("oracle/weblogic-kubernetes-operator:2.1");
+    // verifyDomainCreated();
+    testCompletedSuccessfully = false;
+    upgradeOperator("oracle/weblogic-kubernetes-operator:2.1");
+    checkOperatorVersion("v2");
+    domain.verifyDomainCreated();
+    testBasicUseCases(domain);
+    testClusterScaling(operator20, domain);
+    testCompletedSuccessfully = true;
+
     // destroyOperator();
   }
 
-  // @Test
+  @Test
   public void testOperatorUpgradeTo2_2_0() throws Exception {
-    // checkout weblogic operator image 2.0
-    // pull traefik , wls and operator images
-    // create service account, etc.,
-    // create traefik loadbalancer
-    // create operator
-    // create domain
-
-    // pull operator 2.1 image
-    // helm upgrade to operator 2.1
-    // verify the domain is not restarted but the operator image running is 2.1
-    createOperator();
-    verifyDomainCreated();
+    testCompletedSuccessfully = false;
     upgradeOperator("oracle/weblogic-kubernetes-operator:2.2.0");
-    destroyOperator();
+    checkOperatorVersion("v3");
+    domain.verifyDomainCreated();
+    testBasicUseCases(domain);
+    testClusterScaling(operator20, domain);
+    testCompletedSuccessfully = true;
   }
 
-  // @Test
+  @Test
   public void testOperatorUpgradeTodevelop() throws Exception {
-    // checkout weblogic operator image 2.0
-    // pull traefik , wls and operator images
-    // create service account, etc.,
-    // create traefik loadbalancer
-    // create operator
-    // create domain
-
-    // pull operator 2.1 image
-    // helm upgrade to operator 2.1
-    // verify the domain is not restarted but the operator image running is 2.1
-    createOperator();
-    verifyDomainCreated();
-    upgradeOperator("oracle/weblogic-kubernetes-operator:2.1");
-    destroyOperator();
-  }
-
-  private void createOperator() throws Exception {
-    TestUtils.ExecAndPrintLog("kubectl create namespace " + OP_NS);
-    TestUtils.ExecAndPrintLog("kubectl create serviceaccount -n " + OP_NS + " " + OP_SA);
-    TestUtils.ExecAndPrintLog("kubectl create namespace " + DOM_NS);
-
-    TestUtils.ExecAndPrintLog(
-        "cd "
-            + opUpgradeTmpDir
-            + " && git clone -b "
-            + OP_REL
-            + " https://github.com/oracle/weblogic-kubernetes-operator");
-    TestUtils.ExecAndPrintLog(
-        "cd "
-            + opUpgradeTmpDir
-            + " && helm install stable/traefik --name traefik-operator --namespace traefik --values weblogic-kubernetes-operator/kubernetes/samples/charts/traefik/values.yaml --set 'kubernetes.namespaces={traefik}' --wait --timeout 60");
-    TestUtils.ExecAndPrintLog(
-        "cd "
-            + opUpgradeTmpDir
-            + " && helm install weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator --name "
-            + OP_DEP_NAME
-            + " --namespace "
-            + OP_NS
-            + " --set serviceAccount="
-            + OP_SA
-            + " --set 'domainNamespaces={}' --wait");
-    Thread.sleep(10 * 1000);
-    TestUtils.ExecAndPrintLog("helm list");
-    TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS);
-    TestUtils.ExecAndPrintLog(
-        "cd "
-            + opUpgradeTmpDir
-            + " && helm upgrade --reuse-values --set 'domainNamespaces={"
-            + DOM_NS
-            + "}' --wait operator weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
-    TestUtils.ExecAndPrintLog(
-        "helm upgrade --reuse-values --set 'kubernetes.namespaces={traefik,"
-            + DOM_NS
-            + "}' --wait traefik-operator stable/traefik");
-    TestUtils.ExecAndPrintLog(
-        "cd "
-            + opUpgradeTmpDir
-            + " && weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh -u weblogic -p welcome1 -n "
-            + DOM_NS
-            + " -d "
-            + DUID);
-    TestUtils.ExecAndPrintLog(
-        "cd "
-            + opUpgradeTmpDir
-            + " && cp weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml .");
-
-    Path src = Paths.get(opUpgradeTmpDir + "/create-domain-inputs.yaml");
-    logger.log(Level.INFO, "Copying {0}", src.toString());
-    Charset charset = StandardCharsets.UTF_8;
-    String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll("namespace: default", "namespace: " + DOM_NS);
-    logger.log(Level.INFO, "to {0}", src.toString());
-    Files.write(src, content.getBytes(charset), StandardOpenOption.TRUNCATE_EXISTING);
-
-    TestUtils.ExecAndPrintLog(
-        "cd "
-            + opUpgradeTmpDir
-            + " && weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh -i "
-            + "create-domain-inputs.yaml -o "
-            + opUpgradeTmpDir
-            + " -u weblogic -p welcome1 -e");
+    testCompletedSuccessfully = false;
+    upgradeOperator("oracle/weblogic-kubernetes-operator:test_opupgrade");
+    checkOperatorVersion("v4");
+    domain.verifyDomainCreated();
+    testBasicUseCases(domain);
+    testClusterScaling(operator20, domain);
+    testCompletedSuccessfully = true;
   }
 
   private static void pullImages() throws Exception {
-    TestUtils.ExecAndPrintLog("docker pull oracle/weblogic-kubernetes-operator:" + OP_REL);
-    TestUtils.ExecAndPrintLog("docker pull traefik:1.7.6");
-    TestUtils.ExecAndPrintLog(
+    TestUtils.exec("docker pull oracle/weblogic-kubernetes-operator:" + OP_BASE_REL);
+    TestUtils.exec("docker pull traefik:1.7.6");
+    TestUtils.exec(
         "docker pull " + BaseTest.getWeblogicImageName() + ":" + BaseTest.getWeblogicImageTag());
   }
 
-  private void verifyDomainCreated() throws Exception {
-    StringBuffer command = new StringBuffer();
-    command.append("kubectl get domain ").append(DUID).append(" -n ").append(DOM_NS);
-    ExecResult result = TestUtils.exec(command.toString());
-    if (!result.stdout().contains(DUID)) {
-      throw new RuntimeException("FAILURE: domain not found, exiting!");
-    }
-
-    // verify pods created
-    logger.info("Checking if admin pod(" + DUID + "-" + adminServerName + ") is Running");
-    TestUtils.checkPodCreated(DUID + "-" + adminServerName, DOM_NS);
-
-    // check managed server pods
-    for (int i = 1; i <= initialManagedServerReplicas; i++) {
-      logger.info(
-          "Checking if managed pod(" + DUID + "-" + managedServerNameBase + i + ") is Running");
-      TestUtils.checkPodCreated(DUID + "-" + managedServerNameBase + i, DOM_NS);
-    }
-
-    // check services created
-    for (int i = 1; i <= initialManagedServerReplicas; i++) {
-      logger.info(
-          "Checking if managed service(" + DUID + "-" + managedServerNameBase + i + ") is created");
-      TestUtils.checkServiceCreated(DUID + "-" + managedServerNameBase + i, DOM_NS);
-    }
-
-    // check pods are ready
-    TestUtils.checkPodReady(DUID + "-" + adminServerName, DOM_NS);
-    for (int i = 1; i <= initialManagedServerReplicas; i++) {
-      logger.info("Checking if managed server (" + managedServerNameBase + i + ") is Running");
-      TestUtils.checkPodReady(DUID + "-" + managedServerNameBase + i, DOM_NS);
-    }
-  }
-
   private void upgradeOperator(String upgradeRelease) throws Exception {
-    TestUtils.ExecAndPrintLog(
+    TestUtils.exec(
         "cd "
             + opUpgradeTmpDir
             + " && helm upgrade --reuse-values --set 'image="
             + upgradeRelease
-            + "' --wait operator weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
+            + "' --wait "
+            + OP_DEP_NAME
+            + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
   }
 
-  private void destroyOperator() throws Exception {
-    TestUtils.ExecAndPrintLog(
-        "cd " + opUpgradeTmpDir + " && kubectl get domain domain1 -o yaml -n " + DOM_NS);
-    tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+  private void checkOperatorVersion(String version) throws Exception {
+    ExecResult result = ExecCommand.exec("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
+    if (!result.stdout().contains("apiVersion: weblogic.oracle/" + version)) {
+      logger.log(Level.INFO, result.stdout());
+      throw new RuntimeException("FAILURE: Didn't get the expected operator version");
+    }
   }
 
   public static void setEnv(String key, String value) {
