@@ -187,7 +187,7 @@ public class ITOperatorUpgrade extends BaseTest {
             + BaseTest.getProjectRoot()
             + " && helm upgrade --reuse-values --set 'image="
             + upgradeRelease
-            + "' --wait --timeout 60"
+            + "' --wait --timeout 60 "
             + OP_DEP_NAME
             + " kubernetes/charts/weblogic-operator");
   }
