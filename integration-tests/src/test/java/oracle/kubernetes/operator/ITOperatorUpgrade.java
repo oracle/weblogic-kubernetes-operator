@@ -22,7 +22,6 @@ import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -63,16 +62,15 @@ public class ITOperatorUpgrade extends BaseTest {
     }
   }
 
-  @Before
-  public void beforeTest() throws Exception {
+  private void setupOperatorAndDomain(String operatorRelease) throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning BeforeTest Setup+++++++++++++++++++++");
     Files.deleteIfExists(Paths.get(opUpgradeTmpDir));
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
-    setEnv("IMAGE_TAG_OPERATOR", OP_BASE_REL);
+    setEnv("IMAGE_TAG_OPERATOR", operatorRelease);
 
     Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
-    operatorMap.put("operatorVersion", OP_BASE_REL);
+    operatorMap.put("operatorVersion", operatorRelease);
     operatorMap.put("operatorVersionDir", opUpgradeTmpDir);
     operatorMap.put("namespace", OP_NS);
     operatorMap.put("releaseName", OP_DEP_NAME);
@@ -123,9 +121,10 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeTo2_1() throws Exception {
+  public void testOperatorUpgradeFrom2_0ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    setupOperatorAndDomain("2.0");
     // checkout weblogic operator image 2.0
     // pull traefik , wls and operator images
     // create service account, etc.,
@@ -139,7 +138,7 @@ public class ITOperatorUpgrade extends BaseTest {
     // createOperator();
     // verifyDomainCreated();
     testCompletedSuccessfully = false;
-    upgradeOperator("oracle/weblogic-kubernetes-operator:2.1");
+    upgradeOperator("oracle/weblogic-kubernetes-operator:test_opupgrade");
     checkOperatorVersion("v2");
     domain.verifyDomainCreated();
     testBasicUseCases(domain);
@@ -186,12 +185,12 @@ public class ITOperatorUpgrade extends BaseTest {
   private void upgradeOperator(String upgradeRelease) throws Exception {
     TestUtils.exec(
         "cd "
-            + opUpgradeTmpDir
+            + BaseTest.getProjectRoot()
             + " && helm upgrade --reuse-values --set 'image="
             + upgradeRelease
             + "' --wait "
             + OP_DEP_NAME
-            + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
+            + " kubernetes/charts/weblogic-operator");
   }
 
   private void checkOperatorVersion(String version) throws Exception {
