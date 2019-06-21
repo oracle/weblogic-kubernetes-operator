@@ -147,7 +147,7 @@ public class ITOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_0_1ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    setupOperatorAndDomain("2.0.1");
+    setupOperatorAndDomain("release/2.0.1");
     upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
@@ -156,7 +156,7 @@ public class ITOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_1ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    setupOperatorAndDomain("2.1");
+    setupOperatorAndDomain("release/2.1");
     upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
@@ -165,7 +165,16 @@ public class ITOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_2_0ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    setupOperatorAndDomain("2.2.0");
+    setupOperatorAndDomain("release/2.2.0");
+    upgradeOperator(false);
+    logger.info("SUCCESS - " + testMethod);
+  }
+
+  @Test
+  public void testOperatorUpgradeFrom2_2_1ToDevelop() throws Exception {
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    setupOperatorAndDomain("release/2.2.1");
     upgradeOperator(false);
     logger.info("SUCCESS - " + testMethod);
   }
