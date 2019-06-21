@@ -66,11 +66,22 @@ public class ServiceHelper {
    * @return Step for internal service creation
    */
   public static Step createForServerStep(Step next) {
-    return new ForServerStep(next);
+    return createForServerStep(false, next);
+  }
+
+  /**
+   * Create asynchronous step for internal cluster service.
+   *
+   * @param isPreserveServices true, if this service is for a placeholder service with no pod
+   * @param next Next processing step
+   * @return Step for internal service creation
+   */
+  public static Step createForServerStep(boolean isPreserveServices, Step next) {
+    return new ForServerStep(isPreserveServices, next);
   }
 
   static V1Service createServerServiceModel(Packet packet) {
-    return new ServerServiceStepContext(null, packet).createModel();
+    return new ServerServiceStepContext(false, null, packet).createModel();
   }
 
   public static void addToPresence(DomainPresenceInfo info, V1Service service) {
@@ -125,13 +136,16 @@ public class ServiceHelper {
   }
 
   private static class ForServerStep extends ServiceHelperStep {
-    ForServerStep(Step next) {
+    private final boolean isPreserveServices;
+
+    ForServerStep(boolean isPreserveServices, Step next) {
       super(next);
+      this.isPreserveServices = isPreserveServices;
     }
 
     @Override
     protected ServiceStepContext createContext(Packet packet) {
-      return new ServerServiceStepContext(this, packet);
+      return new ServerServiceStepContext(isPreserveServices, this, packet);
     }
   }
 
@@ -153,13 +167,15 @@ public class ServiceHelper {
   }
 
   private static class ServerServiceStepContext extends ServiceStepContext {
+    private final boolean isPreserveServices;
     protected final String serverName;
     protected final String clusterName;
     protected final KubernetesVersion version;
     final WlsServerConfig scan;
 
-    ServerServiceStepContext(Step conflictStep, Packet packet) {
+    ServerServiceStepContext(boolean isPreserveServices, Step conflictStep, Packet packet) {
       super(conflictStep, packet, OperatorServiceType.SERVER);
+      this.isPreserveServices = isPreserveServices;
       serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
       scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
@@ -170,7 +186,7 @@ public class ServiceHelper {
     protected V1ServiceSpec createServiceSpec() {
       V1ServiceSpec serviceSpec =
           super.createServiceSpec()
-              .clusterIP("None")
+              .clusterIP(isPreserveServices ? null : "None")
               .ports(createServicePorts())
               .putSelectorItem(LabelConstants.SERVERNAME_LABEL, getServerName());
       if (isPublishNotReadyAddressesSupported())
