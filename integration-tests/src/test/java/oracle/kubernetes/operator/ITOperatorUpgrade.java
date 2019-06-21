@@ -42,7 +42,7 @@ public class ITOperatorUpgrade extends BaseTest {
   private static final String OP_DEP_NAME = "operator-upgrade";
   private static final String OP_SA = "operator-sa";
   private static final String DOM_NS = "weblogic-domain";
-  private static final String DUID = "domain1";
+  private static final String DUID = "operator20domain";
   private static String opUpgradeTmpDir;
   private Domain domain = null;
   private static Operator operator20;
@@ -82,7 +82,7 @@ public class ITOperatorUpgrade extends BaseTest {
     operator20 = TestUtils.createOperator(operatorMap, Operator.RESTCertType.LEGACY);
 
     Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
-    wlstDomainMap.put("domainUID", "operator20domain");
+    wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
@@ -182,12 +182,12 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void upgradeOperator(String upgradeRelease) throws Exception {
-    TestUtils.exec(
+    TestUtils.ExecAndPrintLog(
         "cd "
             + BaseTest.getProjectRoot()
             + " && helm upgrade --reuse-values --set 'image="
             + upgradeRelease
-            + "' --wait "
+            + "' --wait --timeout 60"
             + OP_DEP_NAME
             + " kubernetes/charts/weblogic-operator");
   }
