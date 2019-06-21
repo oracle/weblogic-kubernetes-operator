@@ -63,7 +63,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void setupOperatorAndDomain(String operatorRelease) throws Exception {
-    logger.log(Level.INFO, "+++++++++++++++Beginning BeforeTest Setup+++++++++++++++++++++");
+    logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     Files.deleteIfExists(Paths.get(opUpgradeTmpDir));
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
@@ -88,7 +88,7 @@ public class ITOperatorUpgrade extends BaseTest {
     domain.verifyDomainCreated();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
-    logger.log(Level.INFO, "+++++++++++++++Done BeforeTest Setup+++++++++++++++++++++");
+    logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
 
   @After
@@ -138,7 +138,7 @@ public class ITOperatorUpgrade extends BaseTest {
     // createOperator();
     // verifyDomainCreated();
     testCompletedSuccessfully = false;
-    upgradeOperator("oracle/weblogic-kubernetes-operator:test_opupgrade");
+    upgradeOperator("weblogic-kubernetes-operator:test_opupgrade");
     checkOperatorVersion("v2");
     domain.verifyDomainCreated();
     testBasicUseCases(domain);
