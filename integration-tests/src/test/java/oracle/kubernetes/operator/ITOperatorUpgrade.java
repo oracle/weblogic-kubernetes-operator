@@ -65,9 +65,8 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void setupOperatorAndDomain(String operatorBaseRelease) throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
-    Files.deleteIfExists(Paths.get(opUpgradeTmpDir));
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
-    // Files.createDirectories(Paths.get(opUpgradeTmpDir));
+    Files.createDirectories(Paths.get(opUpgradeTmpDir));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
     setEnv("IMAGE_TAG_OPERATOR", operatorBaseRelease);
 
