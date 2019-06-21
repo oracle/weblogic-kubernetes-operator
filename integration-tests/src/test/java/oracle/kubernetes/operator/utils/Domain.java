@@ -119,7 +119,7 @@ public class Domain {
    */
   public void verifyPodsCreated() throws Exception {
     // check admin pod
-    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Created");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
@@ -131,7 +131,7 @@ public class Domain {
                 + "-"
                 + managedServerNameBase
                 + i
-                + ") is Running");
+                + ") is Created");
         TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
       }
     }
@@ -179,13 +179,14 @@ public class Domain {
    */
   public void verifyServersReady() throws Exception {
     // check admin pod
-    logger.info("Checking if admin server is Running");
+    logger.info("Checking if admin server is Running and Ready");
     TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
-        logger.info("Checking if managed server (" + managedServerNameBase + i + ") is Running");
+        logger.info(
+            "Checking if managed server (" + managedServerNameBase + i + ") is Running and Ready");
         TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
       }
     } else {
