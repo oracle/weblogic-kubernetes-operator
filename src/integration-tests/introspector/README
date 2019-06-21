@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 ------------
@@ -35,9 +35,9 @@ Internal Test Flow:
 
 () Cleanup test k8s artifacts and any old created domain.
 
-   <operator-src>/src/integration-tests/bash/cleanup.sh 
+   <operator-src>/src/integration-tests/bash/cleanup.sh
 
-() Create a test directory in the k8s cluster via kubectl run. 
+() Create a test directory in the k8s cluster via kubectl run.
 
    See createTestRoot.sh
 
@@ -48,8 +48,8 @@ Internal Test Flow:
 () Deploy a secret for the admin credentials.
 
    wl-secret.yamlt
-                          
-() Create a domain home. 
+
+() Create a domain home.
 
    wl-create-domain-pod.yamlt, wl-create-domain-pod.sh, wl-create-domain-pod.pyt
 
@@ -64,7 +64,7 @@ Internal Test Flow:
 () Parse the introspector job pod's output into files and deploy them in a configmap.
 
 () Start the admin server pod.   The startServer.sh and start-server.py
-   scripts will use files from the configmap for situational config and login 
+   scripts will use files from the configmap for situational config and login
    credentials.
 
    wl-pod.yamlt
@@ -76,7 +76,7 @@ Internal Test Flow:
    wl-nodeport-svc.yamlt
 
 () Start a managed server pod.   The startServer.sh and start-server.py
-   scripts will use files from the configmap for situational config and login 
+   scripts will use files from the configmap for situational config and login
    credentials.
 
    wl-pod.yamlt
