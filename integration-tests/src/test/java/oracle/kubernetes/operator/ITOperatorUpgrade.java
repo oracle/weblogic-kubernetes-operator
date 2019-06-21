@@ -66,6 +66,7 @@ public class ITOperatorUpgrade extends BaseTest {
   @Before
   public void beforeTest() throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning BeforeTest Setup+++++++++++++++++++++");
+    Files.deleteIfExists(Paths.get(opUpgradeTmpDir));
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
     setEnv("IMAGE_TAG_OPERATOR", OP_BASE_REL);
@@ -95,14 +96,13 @@ public class ITOperatorUpgrade extends BaseTest {
   @After
   public void afterTest() throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest Setup+++++++++++++++++++++");
-    if (domain != null && (JENKINS || testCompletedSuccessfully)) {
+    if (domain != null) {
       domain.destroy();
     }
-    if (operator20 != null && (JENKINS || testCompletedSuccessfully)) {
+    if (operator20 != null) {
       operator20.destroy();
       operator20 = null;
     }
-    Files.deleteIfExists(Paths.get(opUpgradeTmpDir));
     logger.log(Level.INFO, "+++++++++++++++Done AfterTest Setup+++++++++++++++++++++");
   }
 
