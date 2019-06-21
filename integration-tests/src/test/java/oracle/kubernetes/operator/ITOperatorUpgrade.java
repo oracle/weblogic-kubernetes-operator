@@ -94,7 +94,7 @@ public class ITOperatorUpgrade extends BaseTest {
 
   @After
   public void afterTest() throws Exception {
-    logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest Setup+++++++++++++++++++++");
+    logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
     if (domain != null) {
       domain.destroy();
     }
@@ -102,7 +102,7 @@ public class ITOperatorUpgrade extends BaseTest {
       operator20.destroy();
       operator20 = null;
     }
-    logger.log(Level.INFO, "+++++++++++++++Done AfterTest Setup+++++++++++++++++++++");
+    logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
   }
 
   /**
