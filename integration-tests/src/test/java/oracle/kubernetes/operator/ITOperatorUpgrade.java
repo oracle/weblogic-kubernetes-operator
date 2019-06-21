@@ -139,7 +139,7 @@ public class ITOperatorUpgrade extends BaseTest {
     // createOperator();
     // verifyDomainCreated();
     setupOperatorAndDomain("2.0");
-    upgradeOperator();
+    upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
 
@@ -148,7 +148,7 @@ public class ITOperatorUpgrade extends BaseTest {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("2.0.1");
-    upgradeOperator();
+    upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
 
@@ -157,7 +157,7 @@ public class ITOperatorUpgrade extends BaseTest {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("2.1");
-    upgradeOperator();
+    upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
 
@@ -166,14 +166,14 @@ public class ITOperatorUpgrade extends BaseTest {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("2.2.0");
-    upgradeOperator();
+    upgradeOperator(false);
     logger.info("SUCCESS - " + testMethod);
   }
 
-  private void upgradeOperator() throws Exception {
+  private void upgradeOperator(boolean restart) throws Exception {
     upgradeOperatorHelm(OP_TARGET_RELEASE);
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
-    checkDomainRollingRestarted();
+    if (restart) checkDomainRollingRestarted();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
   }
