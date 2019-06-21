@@ -338,7 +338,7 @@ spec:
 
 Incorrectly formatted override files may be accepted without warnings or errors and will not prevent WebLogic pods from booting. So, it is important to make sure that the template files are correct in a QA environment, otherwise your WebLogic Servers may start even though critically required overrides are failing to take effect.
 
-On WebLogic servers that support the weblogic.SituationalConfig.failBootOnError system property ( Note: it is not supported in WebLogic 12.2.1.3 ), 
+On WebLogic Servers that support the `weblogic.SituationalConfig.failBootOnError` system property ( Note: It is not supported in WebLogic Server 12.2.1.3 ), 
 by default the WebLogic server will fail to boot if any situational configuration files are invalid.
 This can be configured by using the `failBootOnSituationalError` attribute in the Domain spec to `false` to start up the WebLogic servers even with 
 incorrectly formatted override files.
