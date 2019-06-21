@@ -1426,8 +1426,22 @@ public class Domain {
     this.projectRoot = BaseTest.getProjectRoot();
 
     // copy samples to RESULT_DIR
-    TestUtils.exec(
-        "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
+    if (domainMap.containsKey("projectRoot")) {
+      logger.log(
+          Level.INFO,
+          "Copying "
+              + domainMap.get("projectRoot")
+              + "/kubernetes/samples to "
+              + BaseTest.getResultDir());
+      TestUtils.exec(
+          "cp -rf "
+              + domainMap.get("projectRoot")
+              + "/kubernetes/samples "
+              + BaseTest.getResultDir());
+    } else {
+      TestUtils.exec(
+          "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
+    }
 
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
