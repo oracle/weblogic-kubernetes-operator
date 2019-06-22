@@ -103,6 +103,16 @@ public class ITOperatorUpgrade extends BaseTest {
       operator20.destroy();
       operator20 = null;
     }
+    TestUtils.ExecAndPrintLog(
+        "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --grace-period=0 --force --ignore-not-found -n "
+            + OP_NS);
+    TestUtils.ExecAndPrintLog(
+        "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --grace-period=0 --force --ignore-not-found -n "
+            + DOM_NS);
+    TestUtils.ExecAndPrintLog(
+        "kubectl delete crd --all --grace-period=0 --ignore-not-found  --force");
+    TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-operator --ignore-not-found  --force");
+    TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-domain --ignore-not-found  --force");
     logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
   }
 
@@ -165,7 +175,7 @@ public class ITOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_2_0ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    setupOperatorAndDomain("release/2.2.0");
+    setupOperatorAndDomain("release/2.2");
     upgradeOperator(false);
     logger.info("SUCCESS - " + testMethod);
   }
