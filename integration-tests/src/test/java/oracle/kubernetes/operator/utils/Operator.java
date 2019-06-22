@@ -341,6 +341,7 @@ public class Operator {
         .append(imagePullPolicy)
         .append("\" --wait --timeout 60");
     logger.info("Running " + cmd);
+    TestUtils.ExecAndPrintLog("cat " + generatedInputYamlFile);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       reportHelmFailure(cmd.toString(), result);
