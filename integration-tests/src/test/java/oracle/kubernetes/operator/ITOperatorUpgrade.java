@@ -212,7 +212,7 @@ public class ITOperatorUpgrade extends BaseTest {
     TestUtils.ExecAndPrintLog(
         "cd "
             + BaseTest.getProjectRoot()
-            + " && helm upgrade --reuse-values --set 'imagePullPolicy=Always' --set 'image="
+            + " && helm upgrade --reuse-values --set 'image="
             + upgradeRelease
             + "' --wait --timeout 60 "
             + OP_DEP_NAME
