@@ -113,6 +113,7 @@ public class ITOperatorUpgrade extends BaseTest {
         "kubectl delete crd --all --grace-period=0 --ignore-not-found  --force");
     TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-operator --ignore-not-found  --force");
     TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-domain --ignore-not-found  --force");
+    TestUtils.ExecAndPrintLog(BaseTest.getProjectRoot() + "/src/integration-tests/bash/cleanup.sh");
     logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
   }
 
