@@ -1428,8 +1428,5 @@ public class TestUtils {
             + result.stderr()
             + "\nstdout = "
             + result.stdout());
-    if (result.exitValue() != 0) {
-      throw new RuntimeException("FAILURE: Command " + command + " failed");
-    }
   }
 }
