@@ -214,6 +214,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void checkOperatorVersion(String version) throws Exception {
+    TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
     ExecResult result = ExecCommand.exec("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
     if (!result.stdout().contains(version)) {
       logger.log(Level.INFO, result.stdout());
