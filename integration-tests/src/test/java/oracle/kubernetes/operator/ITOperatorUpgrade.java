@@ -63,15 +63,16 @@ public class ITOperatorUpgrade extends BaseTest {
     }
   }
 
-  private void setupOperatorAndDomain(String operatorBaseRelease) throws Exception {
+  private void setupOperatorAndDomain(String operatorGitRelease, String operatorRelease)
+      throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
-    setEnv("IMAGE_TAG_OPERATOR", operatorBaseRelease);
+    setEnv("IMAGE_TAG_OPERATOR", operatorRelease);
 
     Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
-    operatorMap.put("operatorVersion", operatorBaseRelease);
+    operatorMap.put("operatorVersion", operatorGitRelease);
     operatorMap.put("operatorVersionDir", opUpgradeTmpDir);
     operatorMap.put("namespace", OP_NS);
     operatorMap.put("releaseName", OP_DEP_NAME);
@@ -148,7 +149,7 @@ public class ITOperatorUpgrade extends BaseTest {
     // verify the domain is not restarted but the operator image running is 2.1
     // createOperator();
     // verifyDomainCreated();
-    setupOperatorAndDomain("2.0");
+    setupOperatorAndDomain("2.0", "2.0");
     upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
@@ -157,7 +158,7 @@ public class ITOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_0_1ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    setupOperatorAndDomain("release/2.0.1");
+    setupOperatorAndDomain("release/2.0.1", "2.0.1");
     upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
@@ -166,7 +167,7 @@ public class ITOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_1ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    setupOperatorAndDomain("release/2.1");
+    setupOperatorAndDomain("release/2.1", "2.1");
     upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
@@ -175,7 +176,7 @@ public class ITOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_2_0ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    setupOperatorAndDomain("release/2.2");
+    setupOperatorAndDomain("release/2.2", "2.2.0");
     upgradeOperator(false);
     logger.info("SUCCESS - " + testMethod);
   }
@@ -184,7 +185,7 @@ public class ITOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_2_1ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    setupOperatorAndDomain("release/2.2.1");
+    setupOperatorAndDomain("release/2.2.1", "2.2.1");
     upgradeOperator(false);
     logger.info("SUCCESS - " + testMethod);
   }
