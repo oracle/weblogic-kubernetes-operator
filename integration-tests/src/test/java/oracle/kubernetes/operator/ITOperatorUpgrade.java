@@ -90,12 +90,15 @@ public class ITOperatorUpgrade extends BaseTest {
     domain.verifyDomainCreated();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
+    TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
+    TestUtils.ExecAndPrintLog("docker imges");
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
 
   @After
   public void cleanupOperatorAndDomain() throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
+    TestUtils.ExecAndPrintLog("docker imges");
     if (domain != null) {
       domain.destroy();
     }
