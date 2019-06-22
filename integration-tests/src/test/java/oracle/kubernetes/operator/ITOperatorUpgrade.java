@@ -68,8 +68,8 @@ public class ITOperatorUpgrade extends BaseTest {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
-    // setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
-    // setEnv("IMAGE_TAG_OPERATOR", operatorRelease);
+    setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
+    setEnv("IMAGE_TAG_OPERATOR", operatorRelease);
 
     Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
     operatorMap.put("operatorVersion", operatorGitRelease);
@@ -153,6 +153,8 @@ public class ITOperatorUpgrade extends BaseTest {
     // createOperator();
     // verifyDomainCreated();
     setupOperatorAndDomain("2.0", "2.0");
+    setEnv("IMAGE_NAME_OPERATOR", "weblogic-kubernetes-operator");
+    setEnv("IMAGE_TAG_OPERATOR", "latest");
     upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
