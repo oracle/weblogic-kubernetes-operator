@@ -1,4 +1,4 @@
-# Copyright 2018, Oracle Corporation and/or its affiliates. All rights reserved.
+# Copyright 2018, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.a
 
 import sys
@@ -7,7 +7,7 @@ import os
 #
 # This program verifies that bean attr values are expected values,
 # it can be used to demonstrate situational config overrides.
-# 
+#
 # Usage:
 #
 #   Create a file with lines of format:
@@ -17,16 +17,16 @@ import os
 #      /Servers/admin-server,ListenAddress,,domain1-admin-server
 #
 #   Special values '*' and '!':
-# 
+#
 #      original-val=*
 #      If you don't want to check the original-val is a specific
 #      expected value, then specify an asterisk (*) instead
 #      of the expected value.
 #
 #      overridden-val=!
-#      If you don't want to check that the overridden-val is a specific 
+#      If you don't want to check that the overridden-val is a specific
 #      expected val, but only want to assert that it's different than
-#      the original-val, then specify a bang (!) instead of the 
+#      the original-val, then specify a bang (!) instead of the
 #      expected value.
 #
 #   Then run this program:
@@ -44,12 +44,12 @@ import os
 #
 #   The program exits with a non-zero exit code on any failure
 #   (including an unexpected attribute value).
-# 
+#
 # Sample usage in an Operator k8s WL pod:
-#   Assumptions:  
-#        Assumes a configuration with 'admin-server' listen-address of localhost, and 
+#   Assumptions:
+#        Assumes a configuration with 'admin-server' listen-address of localhost, and
 #        'managed-server1' listen-address of localhost, and assumes that these have
-#         been overridden by sit-cfg to be 'domain1-admin-server' and 
+#         been overridden by sit-cfg to be 'domain1-admin-server' and
 #        'domain1-managed-server1' respectively.
 #
 #   test_home=/tmp/introspect
@@ -130,7 +130,7 @@ for line in file:
     addError(
       "Error: got '" + originalActual + "'"
              + " but expected value '" + originalExpected + "'"
-             + " for bean_path=domainConfig/" + bean_path 
+             + " for bean_path=domainConfig/" + bean_path
              + " attr='" + attr + "'. "
     )
 
@@ -139,7 +139,7 @@ for line in file:
     addError(
       "Error: got '" + overriddenActual + "'"
              + " but expected value '" + overriddenExpected + "'"
-             + " for bean_path=serverConfig/" + bean_path 
+             + " for bean_path=serverConfig/" + bean_path
              + " attr='" + attr + "'. "
     )
 
@@ -148,7 +148,7 @@ for line in file:
     addError(
       "Error: expected original value and actual value to differ "
              + " but got value '" + originalActual + "' for both"
-             + " for bean_path=serverConfig/" + bean_path 
+             + " for bean_path=serverConfig/" + bean_path
              + " attr='" + attr + "'. "
     )
 
@@ -158,7 +158,7 @@ for line in file:
     + " originalExpected/Actual='" + originalExpected + "'/'" + originalActual + "'"
     + " overriddenExpected/Actual='" + overriddenExpected + "'/'" + overriddenActual + "'"
   )
-file.close()		
+file.close()
 
 if len(errors) > 0:
   print "Found " + str(len(errors)) + " errors:"

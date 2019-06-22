@@ -708,7 +708,7 @@ public class ITMonitoringExporter extends BaseTest {
   private static void deployMonitoringExporterPrometethusGrafana(
       String exporterAppPath, Domain domain, Operator operator) throws Exception {
 
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
 
     String crdCmd = " kubectl apply -f " + samplesDir + "monitoring-namespace.yaml";
     ExecResult result = ExecCommand.exec(crdCmd);
@@ -760,7 +760,7 @@ public class ITMonitoringExporter extends BaseTest {
 
   private static void deletePrometheusGrafana() throws Exception {
 
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
 
     String crdCmd = " kubectl delete -f " + samplesDir + "prometheus-deployment.yaml";
     TestUtils.exec(crdCmd);
@@ -780,7 +780,7 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws IOException when copying files from source location to staging area fails
    */
   private static void createCoordinatorFile(String domainNS) throws IOException {
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
     Path src = Paths.get(resourceExporterDir + "/coordinator.yml");
     Path dst = Paths.get(samplesDir + "/coordinator_" + domainNS + ".yaml");
     if (!dst.toFile().exists()) {
@@ -800,7 +800,7 @@ public class ITMonitoringExporter extends BaseTest {
    * @throws IOException when copying files from source location to staging area fails
    */
   private static void createCrossNSRBACFile(String domainNS, String operatorNS) throws IOException {
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/";
+    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
     Path src = Paths.get(samplesDir + "/crossnsrbac.yaml");
     Path dst = Paths.get(samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml");
     if (!dst.toFile().exists()) {
