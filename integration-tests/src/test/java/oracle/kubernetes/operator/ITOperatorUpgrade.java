@@ -167,7 +167,7 @@ public class ITOperatorUpgrade extends BaseTest {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("release/2.1", "2.1");
-    upgradeOperator(true);
+    upgradeOperator(false);
     logger.info("SUCCESS - " + testMethod);
   }
 
