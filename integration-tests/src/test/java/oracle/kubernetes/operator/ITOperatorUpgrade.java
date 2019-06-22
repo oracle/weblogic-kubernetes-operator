@@ -75,7 +75,6 @@ public class ITOperatorUpgrade extends BaseTest {
     operatorMap.put("namespace", OP_NS);
     operatorMap.put("releaseName", OP_DEP_NAME);
     operatorMap.put("serviceAccount", OP_SA);
-    operatorMap.put("imagePullPolicy", "Always");
     List<String> dom_ns = new ArrayList<String>();
     dom_ns.add(DOM_NS);
     operatorMap.put("domainNamespaces", dom_ns);
