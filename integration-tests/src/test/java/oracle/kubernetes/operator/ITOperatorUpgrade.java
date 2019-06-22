@@ -91,6 +91,7 @@ public class ITOperatorUpgrade extends BaseTest {
     testClusterScaling(operator20, domain);
     TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
     TestUtils.ExecAndPrintLog("docker images");
+    TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS + " -o yaml");
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
 
