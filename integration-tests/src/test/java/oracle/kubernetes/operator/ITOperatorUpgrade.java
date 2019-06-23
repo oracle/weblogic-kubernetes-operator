@@ -221,12 +221,12 @@ public class ITOperatorUpgrade extends BaseTest {
   private void upgradeOperatorHelm(String upgradeRelease) throws Exception {
     TestUtils.ExecAndPrintLog(
         "cd "
-            + BaseTest.getProjectRoot()
+            + opUpgradeTmpDir
             + " && helm upgrade --reuse-values --set 'image="
             + upgradeRelease
             + "' --wait --timeout 60 "
             + OP_DEP_NAME
-            + " kubernetes/charts/weblogic-operator");
+            + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
   }
 
   private void checkOperatorVersion(String version) throws Exception {
