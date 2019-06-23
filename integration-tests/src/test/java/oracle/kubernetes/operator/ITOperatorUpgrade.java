@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
+import oracle.kubernetes.operator.utils.ExecCommand;
+import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.After;
@@ -195,12 +197,13 @@ public class ITOperatorUpgrade extends BaseTest {
   private void upgradeOperator(boolean restart) throws Exception {
     upgradeOperatorHelm(OP_TARGET_RELEASE);
     printCompVersions();
-    checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     if (restart) checkDomainRollingRestarted();
+    checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     printCompVersions();
     TestUtils.ExecAndPrintLog("docker images");
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
+    checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     printCompVersions();
   }
 
@@ -222,12 +225,11 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void checkOperatorVersion(String version) throws Exception {
     TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
-    //    ExecResult result = ExecCommand.exec("kubectl get domain " + DUID + " -o yaml -n " +
-    // DOM_NS);
-    //    if (!result.stdout().contains(version)) {
-    //      logger.log(Level.INFO, result.stdout());
-    //      throw new RuntimeException("FAILURE: Didn't get the expected operator version");
-    //    }
+    ExecResult result = ExecCommand.exec("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
+    if (!result.stdout().contains(version)) {
+      logger.log(Level.INFO, result.stdout());
+      throw new RuntimeException("FAILURE: Didn't get the expected operator version");
+    }
   }
 
   public static void setEnv(String key, String value) {
