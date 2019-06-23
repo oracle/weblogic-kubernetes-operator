@@ -157,8 +157,8 @@ public class ITOperatorUpgrade extends BaseTest {
     // createOperator();
     // verifyDomainCreated();
     setupOperatorAndDomain("2.0", "2.0");
-    setEnv("IMAGE_NAME_OPERATOR", "weblogic-kubernetes-operator");
-    setEnv("IMAGE_TAG_OPERATOR", "latest");
+    // setEnv("IMAGE_NAME_OPERATOR", "weblogic-kubernetes-operator");
+    // setEnv("IMAGE_TAG_OPERATOR", "latest");
     upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
   }
