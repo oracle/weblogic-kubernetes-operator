@@ -88,8 +88,8 @@ public class ITOperatorUpgrade extends BaseTest {
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
     domain.verifyDomainCreated();
-    testBasicUseCases(domain);
-    testClusterScaling(operator20, domain);
+    // testBasicUseCases(domain);
+    // testClusterScaling(operator20, domain);
     printCompVersions();
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
@@ -202,12 +202,13 @@ public class ITOperatorUpgrade extends BaseTest {
   private void upgradeOperator(boolean restart) throws Exception {
     upgradeOperatorHelm(OP_TARGET_RELEASE);
     printCompVersions();
+    Thread.sleep(20000);
     if (restart) checkDomainRollingRestarted();
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     printCompVersions();
     TestUtils.ExecAndPrintLog("docker images");
     testBasicUseCases(domain);
-    testClusterScaling(operator20, domain);
+    // testClusterScaling(operator20, domain);
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     printCompVersions();
   }
