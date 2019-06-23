@@ -70,7 +70,6 @@ public class ITOperatorUpgrade extends BaseTest {
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
     setEnv("IMAGE_TAG_OPERATOR", operatorRelease);
-
     Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
     operatorMap.put("operatorVersion", operatorGitRelease);
     operatorMap.put("operatorVersionDir", opUpgradeTmpDir);
@@ -88,8 +87,8 @@ public class ITOperatorUpgrade extends BaseTest {
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
     domain.verifyDomainCreated();
-    // testBasicUseCases(domain);
-    // testClusterScaling(operator20, domain);
+    testBasicUseCases(domain);
+    testClusterScaling(operator20, domain);
     printCompVersions();
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
@@ -201,14 +200,14 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperator(boolean restart) throws Exception {
     upgradeOperatorHelm(OP_TARGET_RELEASE);
-    printCompVersions();
     Thread.sleep(20000);
+    printCompVersions();
     if (restart) checkDomainRollingRestarted();
     printCompVersions();
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     TestUtils.ExecAndPrintLog("docker images");
-    // testBasicUseCases(domain);
-    // testClusterScaling(operator20, domain);
+    testBasicUseCases(domain);
+    testClusterScaling(operator20, domain);
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     printCompVersions();
   }
@@ -230,7 +229,6 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void checkOperatorVersion(String version) throws Exception {
-    TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
     ExecResult result = ExecCommand.exec("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
     if (!result.stdout().contains(version)) {
       logger.log(Level.INFO, result.stdout());
