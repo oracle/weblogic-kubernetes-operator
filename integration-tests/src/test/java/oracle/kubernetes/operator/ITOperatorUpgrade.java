@@ -204,8 +204,8 @@ public class ITOperatorUpgrade extends BaseTest {
     printCompVersions();
     Thread.sleep(20000);
     if (restart) checkDomainRollingRestarted();
-    checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     printCompVersions();
+    checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     TestUtils.ExecAndPrintLog("docker images");
     // testBasicUseCases(domain);
     // testClusterScaling(operator20, domain);
