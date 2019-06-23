@@ -197,9 +197,11 @@ public class ITOperatorUpgrade extends BaseTest {
     printCompVersions();
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     if (restart) checkDomainRollingRestarted();
+    printCompVersions();
     TestUtils.ExecAndPrintLog("docker images");
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
+    printCompVersions();
   }
 
   private static void pullImages() throws Exception {
