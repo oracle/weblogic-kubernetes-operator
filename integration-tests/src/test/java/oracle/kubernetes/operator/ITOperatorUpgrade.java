@@ -88,16 +88,14 @@ public class ITOperatorUpgrade extends BaseTest {
     domain.verifyDomainCreated();
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
-    TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
-    TestUtils.ExecAndPrintLog("docker images");
-    TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS + " -o yaml");
+    printCompVersions();
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
 
   @After
   public void cleanupOperatorAndDomain() throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
-    TestUtils.ExecAndPrintLog("docker imges");
+    TestUtils.ExecAndPrintLog("docker images");
     if (domain != null) {
       domain.destroy();
     }
@@ -196,8 +194,10 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperator(boolean restart) throws Exception {
     upgradeOperatorHelm(OP_TARGET_RELEASE);
+    printCompVersions();
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     if (restart) checkDomainRollingRestarted();
+    TestUtils.ExecAndPrintLog("docker images");
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
   }
@@ -251,5 +251,11 @@ public class ITOperatorUpgrade extends BaseTest {
       TestUtils.checkPodCreated(DUID + "-managed-server" + i, DOM_NS);
       TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
     }
+  }
+
+  private void printCompVersions() throws Exception {
+    TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
+    TestUtils.ExecAndPrintLog("docker images");
+    TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS + " -o yaml");
   }
 }
