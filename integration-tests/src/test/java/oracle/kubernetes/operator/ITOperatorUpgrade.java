@@ -37,7 +37,7 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
   private static final String OP_TARGET_RELEASE_VERSION = "apiVersion: weblogic.oracle/v4";
-  private static final String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
+  private static final String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:test_opupgrade";
   private static final String OP_NS = "weblogic-operator";
   private static final String OP_DEP_NAME = "operator-upgrade";
   private static final String OP_SA = "operator-sa";
@@ -207,7 +207,7 @@ public class ITOperatorUpgrade extends BaseTest {
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     printCompVersions();
     TestUtils.ExecAndPrintLog("docker images");
-    testBasicUseCases(domain);
+    // testBasicUseCases(domain);
     // testClusterScaling(operator20, domain);
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     printCompVersions();
