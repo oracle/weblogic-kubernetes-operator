@@ -247,8 +247,8 @@ public class ITOperatorUpgrade extends BaseTest {
     Thread.sleep(1000 * 20);
     logger.log(Level.INFO, operator20.getHelmValues());
     String operatorPodName = operator20.getOperatorPodName();
-
-    TestUtils.ExecAndPrintLog("kubectl logs -n weblogic-operator " + operatorPodName);
+    ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
+    // TestUtils.ExecAndPrintLog("kubectl logs -n weblogic-operator " + operatorPodName);
   }
 
   private void checkOperatorVersion(String version) throws Exception {
