@@ -67,7 +67,9 @@ public class ITOperatorUpgrade extends BaseTest {
       throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
+    TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir, "develop").toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
+    Files.createDirectories(Paths.get(opUpgradeTmpDir, "develop"));
     setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
     setEnv("IMAGE_TAG_OPERATOR", operatorRelease);
     Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
@@ -218,10 +220,21 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperatorHelm(String upgradeRelease) throws Exception {
     TestUtils.ExecAndPrintLog(
-        "docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest");
+        "cd "
+            + Paths.get(opUpgradeTmpDir, "develop").toString()
+            + " && git clone -b develop "
+            + " https://github.com/oracle/weblogic-kubernetes-operator");
     TestUtils.ExecAndPrintLog(
-        "docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest oracle/weblogic-kubernetes-operator:latest");
-    upgradeRelease = "oracle/weblogic-kubernetes-operator:latest";
+        "cd "
+            + Paths.get(opUpgradeTmpDir, "develop", "weblogic-kubernetes-operator").toString()
+            + " && docker build --build-arg http_proxy="
+            + System.getenv("http_proxy")
+            + " --build-arg https_proxy="
+            + System.getenv("https_proxy")
+            + " --build-arg no_proxy="
+            + System.getenv("no_proxy")
+            + " -t weblogic-kubernetes-operator:develop --build-arg VERSION=2.3.0 --no-cache=true .");
+    upgradeRelease = "weblogic-kubernetes-operator:develop";
     TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
