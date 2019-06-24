@@ -1788,6 +1788,7 @@ public class Domain {
   /**
    * Shut down a ms by setting serverStartPolicy to NEVER
    *
+   * @param msName - a managed server name to be stopped
    * @throws Exception
    */
   public void shutdownManagedServerUsingServerStartPolicy(String msName) throws Exception {
@@ -1801,20 +1802,14 @@ public class Domain {
             + "\",\"serverStartPolicy\":\"NEVER\"}]}}' --type merge";
 
     logger.info("command to shutdown managed server <" + msName + "> is: " + cmd);
-
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
-    String output = result.stdout().trim();
-    logger.info("output from shutting down managed server:\n" + output);
-
+    TestUtils.exec(cmd);
     TestUtils.checkPodDeleted(domainUid + "-" + msName, domainNS);
   }
 
   /**
    * Restart a ms by setting serverStartPolicy to IF_NEEDED
    *
+   * @param msName - a managed server name to be started
    * @throws Exception
    */
   public void restartManagedServerUsingServerStartPolicy(String msName) throws Exception {
@@ -1828,14 +1823,7 @@ public class Domain {
             + "\",\"serverStartPolicy\":\"IF_NEEDED\"}]}}' --type merge";
 
     logger.info("command to restart managed server <" + msName + "> is: " + cmd);
-
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
-    String output = result.stdout().trim();
-    logger.info("output from restarting managed server:\n" + output);
-
+    TestUtils.exec(cmd);
     TestUtils.checkPodCreated(domainUid + "-" + msName, domainNS);
     TestUtils.checkPodReady(domainUid + "-" + msName, domainNS);
   }
@@ -2033,4 +2021,61 @@ public class Domain {
     callShellScriptToBuildDeployAppInPod(
         appName, scriptName, username, password, infoDirName, archiveExt);
   }
+
+  /**
+   * Shut down a ms by setting serverStartPolicy to NEVER
+   *
+   * @param msName - a managed server name to be stopped
+   * @throws Exception
+   */
+  /*
+   public void shutdownManagedServerUsingServerStartPolicy(String msName) throws Exception {
+    String cmd =
+      "kubectl patch domain "
+             + domainUid
+             + " -n "
+             + domainNS
+             + " -p '{\"spec\":{\"managedServers\":[{\"serverName\":\""
+             + msName
+             + "\",\"serverStartPolicy\":\"NEVER\"}]}}' --type merge";
+
+    logger.info("command to shutdown managed server <" + msName + "> is: " + cmd);
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
+    logger.info("output from shutting down managed server:\n" + output);
+
+    TestUtils.checkPodDeleted(domainUid + "-" + msName, domainNS);
+  }
+  */
+  /**
+   * Restart a ms by setting serverStartPolicy to IF_NEEDED
+   *
+   * @param msName - a managed server name to be started
+   * @throws Exception
+   */
+  /*
+  public void restartManagedServerUsingServerStartPolicy(String msName) throws Exception {
+    String cmd =
+        "kubectl patch domain "
+            + domainUid
+            + " -n "
+            + domainNS
+            + " -p '{\"spec\":{\"managedServers\":[{\"serverName\":\""
+            + msName
+            + "\",\"serverStartPolicy\":\"IF_NEEDED\"}]}}' --type merge";
+
+    logger.info("command to restart managed server <" + msName + "> is: " + cmd);
+    ExecResult result = ExecCommand.exec(cmd);
+    if (result.exitValue() != 0) {
+      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
+    }
+    String output = result.stdout().trim();
+    logger.info("output from restarting managed server:\n" + output);
+
+    TestUtils.checkPodCreated(domainUid + "-" + msName, domainNS);
+    TestUtils.checkPodReady(domainUid + "-" + msName, domainNS);
+  }*/
 }
