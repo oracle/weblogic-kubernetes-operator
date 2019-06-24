@@ -197,7 +197,11 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperator(boolean restart) throws Exception {
     upgradeOperatorHelm(OP_TARGET_RELEASE);
-    Thread.sleep(20000);
+    for (int i = 0; i < 10; i++) {
+      Thread.sleep(20000);
+      TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS);
+      TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS + " -o yaml");
+    }
     printCompVersions();
     if (restart) checkDomainRollingRestarted();
     printCompVersions();
