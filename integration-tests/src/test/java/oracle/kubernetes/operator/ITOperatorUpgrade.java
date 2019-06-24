@@ -60,6 +60,7 @@ public class ITOperatorUpgrade extends BaseTest {
       initialize(APP_PROPS_FILE);
       pullImages();
       opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
+      findOperatorJar();
     }
   }
 
@@ -94,6 +95,7 @@ public class ITOperatorUpgrade extends BaseTest {
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
     printCompVersions();
+    findOperatorJar();
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
 
@@ -201,15 +203,9 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperator(boolean restart) throws Exception {
     upgradeOperatorHelm(OP_TARGET_RELEASE);
-    for (int i = 0; i < 5; i++) {
-      Thread.sleep(20000);
-      TestUtils.ExecAndPrintLog("docker images");
-      TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS);
-      TestUtils.ExecAndPrintLog("kubectl get pods -n " + DOM_NS);
-      TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS + " -o yaml");
-      TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
-    }
+    printCompVersions();
     if (restart) checkDomainRollingRestarted();
+    printCompVersions();
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
@@ -246,6 +242,9 @@ public class ITOperatorUpgrade extends BaseTest {
             + "' --wait --timeout 60 "
             + OP_DEP_NAME
             + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
+    Thread.sleep(1000 * 30);
+    TestUtils.ExecAndPrintLog(
+        "kubectl logs -n weblogic-operator `kubectl get pods -n weblogic-operator --no-headers -o custom-columns=\":metadata.name\"`");
   }
 
   private void checkOperatorVersion(String version) throws Exception {
@@ -285,5 +284,9 @@ public class ITOperatorUpgrade extends BaseTest {
     TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
     TestUtils.ExecAndPrintLog("docker images");
     TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS + " -o yaml");
+  }
+
+  private static void findOperatorJar() throws Exception {
+    TestUtils.ExecAndPrintLog("find /scratch -name weblogic-kubernetes-operator-2.3.0.jar");
   }
 }
