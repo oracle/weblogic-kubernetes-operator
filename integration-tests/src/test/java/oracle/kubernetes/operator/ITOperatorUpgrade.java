@@ -243,8 +243,10 @@ public class ITOperatorUpgrade extends BaseTest {
             + OP_DEP_NAME
             + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
     Thread.sleep(1000 * 30);
-    TestUtils.ExecAndPrintLog(
-        "kubectl logs -n weblogic-operator `kubectl get pods -n weblogic-operator --no-headers -o custom-columns=\":metadata.name\"`");
+    ExecResult result =
+        ExecCommand.exec(
+            "kubectl get pods -n weblogic-operator --no-headers -o custom-columns=\":metadata.name\"");
+    TestUtils.ExecAndPrintLog("kubectl logs -n weblogic-operator " + result.stdout());
   }
 
   private void checkOperatorVersion(String version) throws Exception {
