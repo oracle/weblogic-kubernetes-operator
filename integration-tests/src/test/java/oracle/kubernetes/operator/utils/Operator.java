@@ -314,18 +314,18 @@ public class Operator {
             ? System.getenv("IMAGE_PULL_POLICY_OPERATOR")
             : "IfNotPresent";
     StringBuffer cmd = new StringBuffer("");
-    if (operatorMap.containsKey("operatorVersion")
-        && operatorMap.containsKey("operatorVersionDir")) {
+    if (operatorMap.containsKey("operatorGitVersion")
+        && operatorMap.containsKey("operatorGitVersionDir")) {
       TestUtils.ExecAndPrintLog(
           "cd "
-              + operatorMap.get("operatorVersionDir")
+              + operatorMap.get("operatorGitVersionDir")
               + " && git clone -b "
-              + operatorMap.get("operatorVersion")
+              + operatorMap.get("operatorGitVersion")
               + " https://github.com/oracle/weblogic-kubernetes-operator");
       cmd.append("cd ");
-      cmd.append(operatorMap.get("operatorVersionDir"))
-          .append(
-              " && helm install weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator ");
+      cmd.append(operatorMap.get("operatorGitVersionDir"))
+          .append("/weblogic-kubernetes-operator")
+          .append(" && helm install kubernetes/charts/weblogic-operator ");
     } else {
       cmd.append("cd ");
       cmd.append(BaseTest.getProjectRoot())
@@ -535,6 +535,10 @@ public class Operator {
       operatorMap.put(
           "image",
           System.getenv("IMAGE_NAME_OPERATOR") + ":" + System.getenv("IMAGE_TAG_OPERATOR"));
+    } else if (operatorMap.containsKey("operatorImageName")) {
+      operatorMap.put(
+          "image",
+          operatorMap.get("operatorImageName") + ":" + operatorMap.get("operatorImageTag"));
     } else {
       operatorMap.put(
           "image",
