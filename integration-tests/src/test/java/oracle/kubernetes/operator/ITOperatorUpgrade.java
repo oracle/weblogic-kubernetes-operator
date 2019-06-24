@@ -234,6 +234,7 @@ public class ITOperatorUpgrade extends BaseTest {
     //            + " -t weblogic-kubernetes-operator:develop --build-arg VERSION=2.3.0
     // --no-cache=true .");
     // upgradeRelease = "weblogic-kubernetes-operator:develop";
+    logger.log(Level.INFO, operator20.getHelmValues());
     TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
@@ -242,11 +243,12 @@ public class ITOperatorUpgrade extends BaseTest {
             + "' --wait --timeout 60 "
             + OP_DEP_NAME
             + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
-    Thread.sleep(1000 * 30);
-    ExecResult result =
-        ExecCommand.exec(
-            "kubectl get pods -n weblogic-operator --no-headers -o custom-columns=\":metadata.name\"");
-    TestUtils.ExecAndPrintLog("kubectl logs -n weblogic-operator " + result.stdout());
+    logger.log(Level.INFO, "Sleeping for 20 secs");
+    Thread.sleep(1000 * 20);
+    logger.log(Level.INFO, operator20.getHelmValues());
+    String operatorPodName = operator20.getOperatorPodName();
+
+    TestUtils.ExecAndPrintLog("kubectl logs -n weblogic-operator " + operatorPodName);
   }
 
   private void checkOperatorVersion(String version) throws Exception {
