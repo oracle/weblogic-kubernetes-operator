@@ -197,20 +197,18 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperator(boolean restart) throws Exception {
     upgradeOperatorHelm(OP_TARGET_RELEASE);
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 5; i++) {
       Thread.sleep(20000);
+      TestUtils.ExecAndPrintLog("docker images");
       TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS);
+      TestUtils.ExecAndPrintLog("kubectl get pods -n " + DOM_NS);
       TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS + " -o yaml");
+      TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
     }
-    printCompVersions();
     if (restart) checkDomainRollingRestarted();
-    printCompVersions();
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
-    TestUtils.ExecAndPrintLog("docker images");
     testBasicUseCases(domain);
     testClusterScaling(operator20, domain);
-    checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
-    printCompVersions();
   }
 
   private static void pullImages() throws Exception {
@@ -223,6 +221,7 @@ public class ITOperatorUpgrade extends BaseTest {
         "docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest");
     TestUtils.ExecAndPrintLog(
         "docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest oracle/weblogic-kubernetes-operator:latest");
+    upgradeRelease = "oracle/weblogic-kubernetes-operator:latest";
     TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
