@@ -220,6 +220,10 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperatorHelm(String upgradeRelease) throws Exception {
     TestUtils.ExecAndPrintLog(
+        "docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest");
+    TestUtils.ExecAndPrintLog(
+        "docker pull wlsldi-v2.docker.oraclecorp.com/weblogic-operator:latest oracle/weblogic-kubernetes-operator:latest");
+    TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
             + " && helm upgrade --reuse-values --set 'image="
