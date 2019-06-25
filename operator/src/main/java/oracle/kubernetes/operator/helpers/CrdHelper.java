@@ -39,12 +39,13 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import static oracle.kubernetes.operator.VersionConstants.DEFAULT_OPERATOR_VERSION;
 
 /** Helper class to ensure Domain CRD is created. */
-public class CRDHelper {
+public class CrdHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final CRDComparator COMPARATOR = new CRDComparatorImpl();
 
-  private CRDHelper() {}
+  private CrdHelper() {
+  }
 
   /**
    * Factory for {@link Step} that creates Domain CRD.
@@ -53,16 +54,16 @@ public class CRDHelper {
    * @param next Next step
    * @return Step for creating Domain custom resource definition
    */
-  public static Step createDomainCRDStep(KubernetesVersion version, Step next) {
-    return new CRDStep(version, next);
+  public static Step createDomainCrdStep(KubernetesVersion version, Step next) {
+    return new CrdStep(version, next);
   }
 
-  static class CRDStep extends Step {
-    CRDContext context;
+  static class CrdStep extends Step {
+    CrdContext context;
 
-    CRDStep(KubernetesVersion version, Step next) {
+    CrdStep(KubernetesVersion version, Step next) {
       super(next);
-      context = new CRDContext(version, this);
+      context = new CrdContext(version, this);
     }
 
     @Override
@@ -71,12 +72,12 @@ public class CRDHelper {
     }
   }
 
-  static class CRDContext {
+  static class CrdContext {
     private final Step conflictStep;
     private final V1beta1CustomResourceDefinition model;
     private final KubernetesVersion version;
 
-    CRDContext(KubernetesVersion version, Step conflictStep) {
+    CrdContext(KubernetesVersion version, Step conflictStep) {
       this.version = version;
       this.conflictStep = conflictStep;
       this.model = createModel(version);
@@ -101,9 +102,9 @@ public class CRDHelper {
           new V1beta1CustomResourceDefinitionSpec()
               .group(KubernetesConstants.DOMAIN_GROUP)
               .version(KubernetesConstants.DOMAIN_VERSION)
-              .versions(getCRDVersions())
+              .versions(getCrdVersions())
               .scope("Namespaced")
-              .names(getCRDNames())
+              .names(getCrdNames())
               .validation(createSchemaValidation());
       if (version.isCRDSubresourcesSupported()) {
         spec.setSubresources(
@@ -120,7 +121,7 @@ public class CRDHelper {
       return spec;
     }
 
-    static List<V1beta1CustomResourceDefinitionVersion> getCRDVersions() {
+    static List<V1beta1CustomResourceDefinitionVersion> getCrdVersions() {
       List<V1beta1CustomResourceDefinitionVersion> versions =
           Arrays.stream(KubernetesConstants.DOMAIN_ALTERNATE_VERSIONS)
               .map(e -> new V1beta1CustomResourceDefinitionVersion().name(e).served(true))
@@ -134,7 +135,7 @@ public class CRDHelper {
       return versions;
     }
 
-    static V1beta1CustomResourceDefinitionNames getCRDNames() {
+    static V1beta1CustomResourceDefinitionNames getCrdNames() {
       return new V1beta1CustomResourceDefinitionNames()
           .plural(KubernetesConstants.DOMAIN_PLURAL)
           .singular(KubernetesConstants.DOMAIN_SINGULAR)
