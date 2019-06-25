@@ -100,23 +100,6 @@ public class DomainSpec extends BaseConfiguration {
   private Boolean includeServerOutInPodLog;
 
   /**
-   * Whether to fail to WebLogic server boot if any situational configuration error occurs during
-   * server startup. Default is true.
-   *
-   * @since 2.3.0
-   */
-  @Description(
-      "In WebLogic Server versions that support this feature (greater than 12.2.1.3.0): "
-          + " <li>If true (the default) the WebLogic Server would fail to boot"
-          + " if it encounters an error while loading situational configuration files"
-          + " during server startup, or if any situational configuration file has an invalid format,"
-          + " </li>"
-          + " <li>If false, and if there are errors in the situational configuration "
-          + "files, then WebLogic Server would start but some configuration overrides may"
-          + " be skipped.</li>")
-  private Boolean failBootOnSituationalError;
-
-  /**
    * The WebLogic Docker image.
    *
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3
@@ -430,21 +413,6 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * @return whether to fail WebLogic server boot if any error occurs when applying situational
-   *     configuration files during server startup.
-   * @since 2.3.0
-   */
-  boolean getFailBootOnSituationalError() {
-    return Optional.ofNullable(failBootOnSituationalError)
-        .orElse(KubernetesConstants.DEFAULT_FAIL_BOOT_ON_SITUATIONAL_ERROR);
-  }
-
-  public DomainSpec withFailBootOnSituationalError(boolean failBootOnSituationalError) {
-    this.failBootOnSituationalError = failBootOnSituationalError;
-    return this;
-  }
-
-  /**
    * Returns true if this domain's home is defined in the default docker image for the domain.
    *
    * @return true or false
@@ -551,7 +519,6 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
-            .append("failBootOnSituationalError", failBootOnSituationalError)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets);
 
