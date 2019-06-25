@@ -241,14 +241,15 @@ public class ITOperatorUpgrade extends BaseTest {
     String operatorPodName = operator20.getOperatorPodName();
     ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
     logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG BEFORE UPGRADE $$$$$$$$$$$$$$$$");
-    TestUtils.ExecAndPrintLog(
-        "cd "
-            + opUpgradeTmpDir
-            + " && helm upgrade --reuse-values --set 'image="
-            + upgradeRelease
-            + "' --wait --timeout 60 "
-            + OP_DEP_NAME
-            + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
+    operator20.callHelmUpgrade("image=" + upgradeRelease);
+    //    TestUtils.ExecAndPrintLog(
+    //        "cd "
+    //            + opUpgradeTmpDir
+    //            + " && helm upgrade --reuse-values --set 'image="
+    //            + upgradeRelease
+    //            + "' --wait --timeout 60 "
+    //            + OP_DEP_NAME
+    //            + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
     logger.log(Level.INFO, "Sleeping for 20 secs");
     Thread.sleep(1000 * 20);
     logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$HELM VALUES AFTER UPGRADE$$$$$$$$$$$$$$$$");
