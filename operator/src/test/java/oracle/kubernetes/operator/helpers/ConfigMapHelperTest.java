@@ -4,26 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.ProcessingConstants.SCRIPT_CONFIG_MAP;
-import static oracle.kubernetes.operator.logging.MessageKeys.CM_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CM_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.CM_REPLACED;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1ObjectMeta;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -36,6 +16,12 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -51,6 +37,21 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.operator.ProcessingConstants.SCRIPT_CONFIG_MAP;
+import static oracle.kubernetes.operator.logging.MessageKeys.CM_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.CM_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.CM_REPLACED;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 public class ConfigMapHelperTest {
   private static final String DOMAIN_NS = "namespace";

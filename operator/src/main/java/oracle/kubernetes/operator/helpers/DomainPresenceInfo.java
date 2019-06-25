@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +16,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;

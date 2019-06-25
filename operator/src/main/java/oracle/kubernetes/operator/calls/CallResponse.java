@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.operator.calls;
 
-import io.kubernetes.client.ApiException;
 import java.util.List;
 import java.util.Map;
+
+import io.kubernetes.client.ApiException;
 
 public final class CallResponse<T> {
   private final T result;

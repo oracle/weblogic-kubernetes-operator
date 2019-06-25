@@ -4,6 +4,24 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+
+import com.meterware.simplestub.Memento;
+import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import static oracle.kubernetes.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICA_MORE_THAN_WLS_SERVERS;
@@ -15,23 +33,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
-import com.meterware.simplestub.Memento;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 
 public class WlsClusterConfigTest {
 

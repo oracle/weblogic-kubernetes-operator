@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.operator.work;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,8 +20,13 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 
 /**
  * Support for writing unit tests that use a fiber to run steps. Such tests can call #runStep to

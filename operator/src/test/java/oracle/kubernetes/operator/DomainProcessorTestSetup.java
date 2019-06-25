@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -22,6 +20,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
+
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 
 /**
  * Setup for tests that will involve running the main domain processor functionality. Such tests

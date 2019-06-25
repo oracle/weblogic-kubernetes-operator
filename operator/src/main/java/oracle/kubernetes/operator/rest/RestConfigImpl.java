@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.rest;
 
 import java.util.Collection;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.backend.RestBackend;

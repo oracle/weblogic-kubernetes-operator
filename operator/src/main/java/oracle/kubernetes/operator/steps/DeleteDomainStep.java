@@ -4,13 +4,11 @@
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
-import static oracle.kubernetes.operator.LabelConstants.getCreatedbyOperatorSelector;
+import java.util.stream.Collectors;
 
 import io.kubernetes.client.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1ServiceList;
-import java.util.stream.Collectors;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
@@ -19,6 +17,9 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
+import static oracle.kubernetes.operator.LabelConstants.getCreatedbyOperatorSelector;
 
 public class DeleteDomainStep extends Step {
   private final DomainPresenceInfo info;

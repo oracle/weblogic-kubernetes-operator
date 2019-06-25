@@ -4,22 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.meterware.pseudoserver.HttpUserAgentTest;
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodCondition;
-import io.kubernetes.client.models.V1PodStatus;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -30,6 +14,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+
+import com.meterware.pseudoserver.HttpUserAgentTest;
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodCondition;
+import io.kubernetes.client.models.V1PodStatus;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -47,6 +40,14 @@ import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ServerStatusReaderTest extends HttpUserAgentTest {
   private static final String NS = "namespace";

@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.custom;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.kubernetes.client.models.V1ObjectMeta;
-import java.util.Map;
 
 /** Example Custom Resource class */
 public class TestDomain {

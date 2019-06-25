@@ -4,8 +4,9 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1Service;
 import java.util.Optional;
+
+import io.kubernetes.client.models.V1Service;
 
 /** Describes the service types supported by the operator. */
 public enum OperatorServiceType {

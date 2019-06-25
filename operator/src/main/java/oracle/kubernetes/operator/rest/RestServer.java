@@ -4,7 +4,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import io.kubernetes.client.util.SSLUtils;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -16,6 +15,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+
+import io.kubernetes.client.util.SSLUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.resource.VersionsResource;

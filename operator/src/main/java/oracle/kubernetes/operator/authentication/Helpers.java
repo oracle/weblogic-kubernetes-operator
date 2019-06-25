@@ -4,6 +4,10 @@
 
 package oracle.kubernetes.operator.authentication;
 
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.CoreV1Api;
@@ -11,9 +15,6 @@ import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServiceAccountList;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Map.Entry;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.codec.binary.Base64;

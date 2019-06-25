@@ -4,14 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.core.AllOf.allOf;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
@@ -35,11 +32,6 @@ import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -55,6 +47,15 @@ import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.core.AllOf.allOf;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"ConstantConditions, unchecked", "SameParameterValue", "deprecation"})
 public class DomainIntrospectorJobTest {

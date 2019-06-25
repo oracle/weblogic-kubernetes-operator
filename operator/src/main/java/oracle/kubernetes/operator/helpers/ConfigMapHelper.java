@@ -4,13 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1ObjectMeta;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -19,6 +12,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -36,6 +35,8 @@ import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.joda.time.DateTime;
+
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");

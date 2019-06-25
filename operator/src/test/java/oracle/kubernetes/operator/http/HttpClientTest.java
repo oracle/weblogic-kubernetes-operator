@@ -3,16 +3,6 @@
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator.http;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-
-import com.meterware.simplestub.Stub;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -24,11 +14,22 @@ import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import com.meterware.simplestub.Stub;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1ServiceSpec;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class HttpClientTest {
 

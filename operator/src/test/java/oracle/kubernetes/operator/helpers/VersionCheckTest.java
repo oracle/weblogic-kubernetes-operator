@@ -4,21 +4,14 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.LOG_MSG_TEST;
-import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.VERSION_TEST;
-import static oracle.kubernetes.operator.helpers.VersionCheckTest.VersionMatcher.returnsVersion;
-import static oracle.kubernetes.operator.logging.MessageKeys.*;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.VersionInfo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.LogRecord;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.VersionInfo;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import org.hamcrest.Description;
@@ -29,6 +22,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.LOG_MSG_TEST;
+import static oracle.kubernetes.operator.helpers.VersionCheckTest.TestType.VERSION_TEST;
+import static oracle.kubernetes.operator.helpers.VersionCheckTest.VersionMatcher.returnsVersion;
+import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK;
+import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_CHECK_FAILURE;
+import static oracle.kubernetes.operator.logging.MessageKeys.K8S_VERSION_TOO_LOW;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @RunWith(Parameterized.class)
 public class VersionCheckTest {

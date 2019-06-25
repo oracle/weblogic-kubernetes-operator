@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Properties;
+
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class MacroSubstitutorTest {
 

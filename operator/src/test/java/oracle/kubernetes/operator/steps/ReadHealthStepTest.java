@@ -4,18 +4,6 @@
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
-import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.Stub;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +11,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.Stub;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1ServiceSpec;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -39,6 +33,13 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class ReadHealthStepTest {
   // The log messages to be checked during this test

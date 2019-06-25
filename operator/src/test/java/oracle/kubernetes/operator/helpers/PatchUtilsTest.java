@@ -4,16 +4,17 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import java.util.List;
 import javax.json.Json;
 import javax.json.JsonPatch;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import oracle.kubernetes.operator.utils.PatchUtils;
 import org.junit.Test;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class PatchUtilsTest {
   @Test

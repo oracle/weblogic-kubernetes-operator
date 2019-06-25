@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.After;

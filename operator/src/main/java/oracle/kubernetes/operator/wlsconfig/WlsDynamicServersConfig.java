@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
