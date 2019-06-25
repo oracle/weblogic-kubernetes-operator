@@ -4,9 +4,12 @@
 
 package oracle.kubernetes.weblogic.domain.api;
 
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.ApiCallback;
@@ -19,14 +22,12 @@ import io.kubernetes.client.ProgressRequestBody;
 import io.kubernetes.client.ProgressResponseBody;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1Status;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
 
 public class WeblogicApi {
   private ApiClient apiClient;
