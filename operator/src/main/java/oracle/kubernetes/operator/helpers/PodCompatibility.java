@@ -4,21 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.LabelConstants.CLUSTERRESTARTVERSION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINRESTARTVERSION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-import static oracle.kubernetes.operator.helpers.PodCompatibility.asSet;
-import static oracle.kubernetes.operator.helpers.PodCompatibility.getMissingElements;
-import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.INTERNAL_OPERATOR_CERT_ENV;
-
-import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1ResourceRequirements;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -32,7 +17,23 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Probe;
+import io.kubernetes.client.models.V1ResourceRequirements;
 import oracle.kubernetes.operator.LabelConstants;
+
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERRESTARTVERSION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINRESTARTVERSION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LABEL;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.helpers.PodCompatibility.asSet;
+import static oracle.kubernetes.operator.helpers.PodCompatibility.getMissingElements;
+import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.INTERNAL_OPERATOR_CERT_ENV;
 
 /** A class which defines the compatability rules for existing vs. specified pods. */
 class PodCompatibility extends CollectiveCompatibility {
