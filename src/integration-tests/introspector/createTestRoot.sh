@@ -1,10 +1,13 @@
 #!/bin/sh
 
+# Copyright 2017, 2019, Oracle Corporation and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+
 # This script runs in a pod via krun.sh, it sets up the top
-# level directory for this test that in turn is mounted as /shared by the 
+# level directory for this test that in turn is mounted as /shared by the
 # test's wl-pvc, wl-pv, and wl-pod yamlt (plus similar 'mysql' yamlt).
 
-# The 'acceptance_test_pv' directory it creates matches the directory 
+# The 'acceptance_test_pv' directory it creates matches the directory
 # expected by the integration test 'cleanup.sh' script.
 
 # The 'pv-root' directory is mounted in the krun.sh command line.  It physically
