@@ -113,7 +113,14 @@ function waitForShutdownMarker() {
   logged=false
   while true; do
     if [ "$logged" != 'true' ] && grep -q "BEA-141335" ${SERVER_OUT_FILE} ; then
-      trace "WebLogic server failed to start due to missing or invalid situational configuration files. Please check ${SERVER_OUT_FILE} for details"
+      msg=("WebLogic server failed to start due to missing or invalid"
+           "situational configuration files, which may be due to invalid"
+           "configOverride templates (these are specified via the"
+           "configOverride attribute in the Domain custom resource)."
+           "For details, please search your pod log or"
+           "${SERVER_OUT_FILE} for the keyword 'situational'."
+          )
+      trace "${msg[*]}"
       logged=true
     fi
     if [ -e /weblogic-operator/doShutdown ] ; then

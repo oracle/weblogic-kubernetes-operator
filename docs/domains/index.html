@@ -1191,7 +1191,7 @@ window.onload = function() {
           "type": "string"
         },
         "failBootOnSituationalError": {
-          "description": "If true (the default), on WebLogic server that supports this feature, the WebLogic server  boot would fail if any errors occur when applying situational configuration  during server startup. If false, WebLogic server would start if there are errors in the situational configuration files, but some configuration overrides may be skipped.",
+          "description": "In WebLogic Server versions that support this feature (greater than 12.2.1.3.0):  \u003cli\u003eIf true (the default) the WebLogic Server would fail to boot if it encounters an error while loading situational configuration files during server startup, or if any situational configuration file has an invalid format, \u003c/li\u003e \u003cli\u003eIf false, and if there are errors in the situational configuration files, then WebLogic Server would start but some configuration overrides may be skipped.\u003c/li\u003e",
           "type": "boolean"
         },
         "includeServerOutInPodLog": {
