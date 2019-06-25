@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1SecretReference;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -15,6 +11,11 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1SecretReference;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.VersionConstants;
