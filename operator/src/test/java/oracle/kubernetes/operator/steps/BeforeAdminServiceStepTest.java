@@ -4,14 +4,11 @@
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.V1ObjectMeta;
-import java.util.ArrayList;
-import java.util.List;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -27,6 +24,10 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class BeforeAdminServiceStepTest {
 

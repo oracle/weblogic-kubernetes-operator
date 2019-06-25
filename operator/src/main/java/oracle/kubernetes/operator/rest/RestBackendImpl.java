@@ -4,9 +4,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1TokenReviewStatus;
-import io.kubernetes.client.models.V1UserInfo;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +20,10 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1TokenReviewStatus;
+import io.kubernetes.client.models.V1UserInfo;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;

@@ -4,17 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
@@ -32,11 +26,6 @@ import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -48,6 +37,18 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class KubernetesTestSupportTest {
   private static final String NS = "namespace1";

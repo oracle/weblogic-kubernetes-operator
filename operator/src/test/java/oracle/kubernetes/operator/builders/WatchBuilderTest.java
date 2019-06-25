@@ -4,6 +4,31 @@
 
 package oracle.kubernetes.operator.builders;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Queue;
+
+import com.meterware.pseudoserver.HttpUserAgentTest;
+import com.meterware.pseudoserver.PseudoServlet;
+import com.meterware.pseudoserver.WebResource;
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
+import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static java.net.HttpURLConnection.HTTP_ENTITY_TOO_LARGE;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -21,30 +46,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.fail;
-
-import com.meterware.pseudoserver.HttpUserAgentTest;
-import com.meterware.pseudoserver.PseudoServlet;
-import com.meterware.pseudoserver.WebResource;
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Queue;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Tests watches created by the WatchBuilder, verifying that they are created with the correct query

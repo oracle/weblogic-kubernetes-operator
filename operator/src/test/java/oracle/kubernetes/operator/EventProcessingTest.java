@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
@@ -16,11 +17,6 @@ import io.kubernetes.client.models.V1Event;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Pod;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -29,6 +25,11 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class EventProcessingTest {
   private static final String NS = "namespace";

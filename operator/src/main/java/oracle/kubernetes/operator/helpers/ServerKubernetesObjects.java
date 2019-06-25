@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
 
 /** Kubernetes pods and services associated with a single WebLogic server. */
 class ServerKubernetesObjects {

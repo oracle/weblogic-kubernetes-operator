@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.kubernetes.client.ApiException;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;

@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1DeleteOptions;
 import io.kubernetes.client.models.V1Namespace;
@@ -11,8 +14,6 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.VersionInfo;
-import java.util.HashMap;
-import java.util.Map;
 import oracle.kubernetes.operator.helpers.CallBuilderFactory;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import org.junit.After;

@@ -4,11 +4,6 @@
 
 package oracle.kubernetes.operator.logging;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.JSON;
-import io.swagger.annotations.ApiModel;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -19,6 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.JSON;
+import io.swagger.annotations.ApiModel;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Packet;

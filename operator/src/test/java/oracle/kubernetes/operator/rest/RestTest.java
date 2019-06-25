@@ -4,17 +4,6 @@
 
 package oracle.kubernetes.operator.rest;
 
-import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
-import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
-import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.google.gson.Gson;
-import com.meterware.simplestub.Memento;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +21,9 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.google.gson.Gson;
+import com.meterware.simplestub.Memento;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.rest.model.ScaleClusterParamsModel;
@@ -44,6 +36,15 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.rest.AuthenticationFilter.ACCESS_TOKEN_PREFIX;
+import static oracle.kubernetes.operator.rest.RestTest.JsonArrayMatcher.withValues;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
 public class RestTest extends JerseyTest {

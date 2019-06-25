@@ -4,12 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
+import java.net.HttpURLConnection;
+import java.util.Collections;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
-import java.net.HttpURLConnection;
-import java.util.Collections;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -18,6 +17,8 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
 /**
  * Support for writing unit tests that use CallBuilder to send requests that expect asynchronous
