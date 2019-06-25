@@ -4,7 +4,16 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import static java.util.Collections.emptyList;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.annotation.Nullable;
+import javax.validation.Valid;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Capabilities;
@@ -16,20 +25,12 @@ import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.annotation.Nullable;
-import javax.validation.Valid;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static java.util.Collections.emptyList;
 
 @Description("ServerPod describes the configuration for a Kubernetes pod for a server.")
 class ServerPod extends KubernetesResource {

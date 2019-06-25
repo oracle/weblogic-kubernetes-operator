@@ -4,21 +4,22 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import java.util.Arrays;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
-import java.util.Arrays;
-import javax.annotation.Nonnull;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.VersionConstants.DOMAIN_V2;
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 
 public class DomainCommonConfigurator extends DomainConfigurator {
 
