@@ -207,10 +207,6 @@ public abstract class PodStepContext extends StepContextBase {
     return Boolean.toString(getDomain().isIncludeServerOutInPodLog());
   }
 
-  private boolean getFailBootOnSituationalError() {
-    return getDomain().isFailBootOnSituationalError();
-  }
-
   private List<V1ContainerPort> getContainerPorts() {
     if (scan != null) {
       List<V1ContainerPort> ports = new ArrayList<>();
@@ -818,9 +814,6 @@ public abstract class PodStepContext extends StepContextBase {
     addEnvVar(
         vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
     addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));
-    if (!getFailBootOnSituationalError()) {
-      addEnvVar(vars, "FAIL_BOOT_ON_SITUATIONAL_ERROR", "false");
-    }
     if (mockWLS()) {
       addEnvVar(vars, "MOCK_WLS", "true");
     }
