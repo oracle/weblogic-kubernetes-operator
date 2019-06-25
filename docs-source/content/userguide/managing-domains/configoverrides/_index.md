@@ -338,10 +338,10 @@ spec:
 
 Incorrectly formatted override files may be accepted without warnings or errors and will not prevent WebLogic pods from booting. So, it is important to make sure that the template files are correct in a QA environment, otherwise your WebLogic Servers may start even though critically required overrides are failing to take effect.
 
-On WebLogic Servers that support the `weblogic.SituationalConfig.failBootOnError` system property ( Note: It is not supported in WebLogic Server 12.2.1.3.0 ), 
-by default the WebLogic server will fail to boot if any situational configuration files are invalid.
-By setting the `failBootOnSituationalError` attribute in the Domain spec to `false`, you can start up the WebLogic Servers even with 
-incorrectly formatted override files.
+On WebLogic Servers that support the `weblogic.SituationalConfig.failBootOnError` system property ( Note: It is not supported in WebLogic Server 12.2.1.3.0 ),
+by default the WebLogic server will fail to boot if any situational configuration files are invalid,
+if it encounters an error while loading situational configuration files.
+By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in the Kubernetes containers for the WebLogic Servers to `false`, you can start up the WebLogic Servers even with incorrectly formatted override files.
 
 * Make sure you've followed each step in the [Step-by-step guide](#step-by-step-guide).
 

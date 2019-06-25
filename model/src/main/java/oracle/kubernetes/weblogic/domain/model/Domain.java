@@ -345,10 +345,6 @@ public class Domain {
     return spec.getIncludeServerOutInPodLog();
   }
 
-  public boolean isFailBootOnSituationalError() {
-    return spec.getFailBootOnSituationalError();
-  }
-
   public boolean isDomainHomeInImage() {
     return spec.isDomainHomeInImage();
   }
