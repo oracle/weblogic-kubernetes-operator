@@ -4,15 +4,16 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
-
 import java.util.Optional;
+
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
 
 @Description("Shutdown describes the configuration for shutting down a server instance.")
 public class Shutdown {

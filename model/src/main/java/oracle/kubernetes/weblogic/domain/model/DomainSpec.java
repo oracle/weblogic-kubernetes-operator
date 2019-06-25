@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
-
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1SecretReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +11,9 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1SecretReference;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
@@ -26,6 +25,8 @@ import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
 
 /** DomainSpec is a description of a domain. */
 @Description("DomainSpec is a description of a domain.")
