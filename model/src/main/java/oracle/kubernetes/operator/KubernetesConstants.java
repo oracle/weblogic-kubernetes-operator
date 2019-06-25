@@ -26,7 +26,6 @@ public interface KubernetesConstants {
   String[] DOMAIN_ALTERNATE_VERSIONS = {"v2", "v3"};
 
   boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;
-  boolean DEFAULT_FAIL_BOOT_ON_SITUATIONAL_ERROR = true;
 
   String CONTAINER_NAME = "weblogic-server";
 
