@@ -257,6 +257,7 @@ public class ITOperatorUpgrade extends BaseTest {
     logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ BEGIN OPERATOR LOG $$$$$$$$$$$$$$$$");
     ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
     logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG $$$$$$$$$$$$$$$$");
+    TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
     // TestUtils.ExecAndPrintLog("kubectl logs -n weblogic-operator " + operatorPodName);
   }
 
