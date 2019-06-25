@@ -138,22 +138,23 @@ public class Domain {
   }
 
   /**
-   * 
+   * verify services are created
+   *
    * @throws Exception
    */
   public void verifyServicesCreated() throws Exception {
-   verifyServicesCreated(false);
+    verifyServicesCreated(false);
   }
-  
+
   /**
    * verify services are created
    *
-   * @param precreateService - if true check services are created for configuredManagedServerCount number of servers else
-   * check for initialManagedServerReplicas number of servers
+   * @param precreateService - if true check services are created for configuredManagedServerCount
+   *     number of servers else check for initialManagedServerReplicas number of servers
    * @throws Exception
- */
+   */
   public void verifyServicesCreated(boolean precreateService) throws Exception {
-      // check admin service
+    // check admin service
     logger.info("Checking if admin service(" + domainUid + "-" + adminServerName + ") is created");
     TestUtils.checkServiceCreated(domainUid + "-" + adminServerName, domainNS);
 
@@ -169,7 +170,9 @@ public class Domain {
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server services
-      for (int i = 1; i <= (precreateService? configuredManagedServerCount: initialManagedServerReplicas); i++) {
+      for (int i = 1;
+          i <= (precreateService ? configuredManagedServerCount : initialManagedServerReplicas);
+          i++) {
         logger.info(
             "Checking if managed service("
                 + domainUid
@@ -635,18 +638,18 @@ public class Domain {
     verifyPodsCreated();
     verifyServersReady();
   }
-  
+
   /**
    * add precreateService true in domain.yaml
    *
    * @throws Exception
    */
   public void enablePrecreateService() throws Exception {
-    String patchStr = "'{\"spec\":{\"serverService\":{\"precreateService\":true}}'";
+    String patchStr = "'{\"spec\":{\"serverService\":{\"precreateService\":true}}}'";
     TestUtils.kubectlpatch(domainUid, domainNS, patchStr);
     verifyServicesCreated(true);
   }
-  
+
   /**
    * verify domain is deleted
    *
@@ -1798,7 +1801,8 @@ public class Domain {
    */
   public void shutdownManagedServerUsingServerStartPolicy(String msName) throws Exception {
     logger.info("About to shutdown managed server <" + msName + ">");
-    String patchStr = "'{\"spec\":{\"managedServers\":[{\"serverName\":\""
+    String patchStr =
+        "'{\"spec\":{\"managedServers\":[{\"serverName\":\""
             + msName
             + "\",\"serverStartPolicy\":\"NEVER\"}]}}' ";
     TestUtils.kubectlpatch(domainUid, domainNS, patchStr);
@@ -1813,11 +1817,12 @@ public class Domain {
    */
   public void restartManagedServerUsingServerStartPolicy(String msName) throws Exception {
     logger.info("About to restart managed server <" + msName + "> ");
-    String patchStr = "'{\"spec\":{\"managedServers\":[{\"serverName\":\""
+    String patchStr =
+        "'{\"spec\":{\"managedServers\":[{\"serverName\":\""
             + msName
             + "\",\"serverStartPolicy\":\"IF_NEEDED\"}]}}'";
     TestUtils.kubectlpatch(domainUid, domainNS, patchStr);
-    
+
     TestUtils.checkPodCreated(domainUid + "-" + msName, domainNS);
     TestUtils.checkPodReady(domainUid + "-" + msName, domainNS);
   }
