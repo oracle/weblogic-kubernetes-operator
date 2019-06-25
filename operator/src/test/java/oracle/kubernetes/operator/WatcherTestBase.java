@@ -4,20 +4,13 @@
 
 package oracle.kubernetes.operator;
 
-import static java.net.HttpURLConnection.HTTP_GONE;
-import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
-import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
@@ -25,6 +18,14 @@ import oracle.kubernetes.operator.builders.WatchEvent;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static java.net.HttpURLConnection.HTTP_GONE;
+import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
+import static oracle.kubernetes.operator.builders.EventMatcher.modifyEvent;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 
 /** Tests behavior of the Watcher class. */
 @SuppressWarnings("SameParameterValue")

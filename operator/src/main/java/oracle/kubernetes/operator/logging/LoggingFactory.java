@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator.logging;
 
-import io.kubernetes.client.JSON;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import io.kubernetes.client.JSON;
 
 /** A factory to create Loggers. */
 public class LoggingFactory {

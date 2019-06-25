@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.steps;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.RollingHelper;

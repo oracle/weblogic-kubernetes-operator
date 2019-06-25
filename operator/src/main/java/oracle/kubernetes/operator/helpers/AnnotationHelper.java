@@ -4,13 +4,14 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Yaml;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
 import org.apache.commons.codec.digest.DigestUtils;
 
 /** Annotates pods, services with details about the Domain instance and checks these annotations. */

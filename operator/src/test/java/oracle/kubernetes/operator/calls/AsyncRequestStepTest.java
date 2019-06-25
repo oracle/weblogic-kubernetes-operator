@@ -4,23 +4,16 @@
 
 package oracle.kubernetes.operator.calls;
 
-import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertTrue;
-
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.ApiCallback;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.ApiCallback;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -30,6 +23,14 @@ import oracle.kubernetes.operator.work.Packet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertTrue;
 
 public class AsyncRequestStepTest {
 

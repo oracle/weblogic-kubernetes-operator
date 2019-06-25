@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.operator.http;
 
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-import io.kubernetes.client.models.V1ServiceSpec;
 import java.util.Arrays;
 import java.util.Map;
 import javax.ws.rs.client.Client;
@@ -16,6 +12,11 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
+
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1ServiceSpec;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;

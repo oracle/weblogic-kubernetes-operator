@@ -4,11 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static java.net.HttpURLConnection.HTTP_CONFLICT;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
 
 import com.google.gson.GsonBuilder;
 import com.meterware.pseudoserver.HttpUserAgentTest;
@@ -26,11 +26,6 @@ import io.kubernetes.client.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.VersionInfo;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Consumer;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -41,6 +36,12 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
 public class CallBuilderTest extends HttpUserAgentTest {

@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import oracle.kubernetes.operator.helpers.LegalNames;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;

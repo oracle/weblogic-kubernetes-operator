@@ -4,6 +4,26 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+
+import com.meterware.simplestub.Memento;
+import oracle.kubernetes.TestUtils;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import org.hamcrest.Description;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static oracle.kubernetes.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
@@ -20,25 +40,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import com.meterware.simplestub.Memento;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import oracle.kubernetes.TestUtils;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
-import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.hamcrest.Description;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /** Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved. */
 public class WlsDomainConfigTest {

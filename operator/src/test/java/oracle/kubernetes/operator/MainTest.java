@@ -4,17 +4,18 @@
 
 package oracle.kubernetes.operator;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import io.kubernetes.client.models.V1ObjectMeta;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+
+import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Test;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class MainTest {
 

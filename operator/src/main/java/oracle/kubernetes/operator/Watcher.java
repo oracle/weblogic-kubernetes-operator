@@ -4,15 +4,14 @@
 
 package oracle.kubernetes.operator;
 
-import static java.net.HttpURLConnection.HTTP_GONE;
+import java.lang.reflect.Method;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.util.Watch;
-import java.lang.reflect.Method;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -20,6 +19,8 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
+
+import static java.net.HttpURLConnection.HTTP_GONE;
 
 /**
  * This class handles the Watching interface and drives the watch support for a specific type of

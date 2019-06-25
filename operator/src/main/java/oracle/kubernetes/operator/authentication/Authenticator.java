@@ -4,6 +4,12 @@
 
 package oracle.kubernetes.operator.authentication;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import com.squareup.okhttp.OkHttpClient;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -11,11 +17,6 @@ import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.util.Config;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 

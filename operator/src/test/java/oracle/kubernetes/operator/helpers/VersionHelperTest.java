@@ -4,13 +4,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.LabelConstants.*;
-import static oracle.kubernetes.operator.helpers.VersionHelper.*;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-
 import io.kubernetes.client.models.V1ObjectMeta;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.helpers.VersionHelper.matchesResourceVersion;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 public class VersionHelperTest {
 

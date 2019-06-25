@@ -4,6 +4,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import io.kubernetes.client.models.V1ConfigMapVolumeSource;
+import io.kubernetes.client.models.V1Volume;
+import io.kubernetes.client.models.V1VolumeMount;
+
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
@@ -13,12 +20,6 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.DEBUG_CM_V
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SIT_CONFIG_MAP_VOLUME_SUFFIX;
-
-import io.kubernetes.client.models.V1ConfigMapVolumeSource;
-import io.kubernetes.client.models.V1Volume;
-import io.kubernetes.client.models.V1VolumeMount;
-import java.util.ArrayList;
-import java.util.List;
 
 class PodDefaults {
   static final String K8S_SERVICE_ACCOUNT_MOUNT_PATH =
