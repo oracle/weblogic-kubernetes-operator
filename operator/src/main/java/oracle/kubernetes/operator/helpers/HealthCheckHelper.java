@@ -167,7 +167,7 @@ public final class HealthCheckHelper {
   private static void check(
       List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op) {
     String verb = op.name();
-    String apiGroup = r.getAPIGroup();
+    String apiGroup = r.getApiGroup();
     String resource = r.getResource();
     String sub = r.getSubResource();
     if (sub != null && !sub.isEmpty()) {

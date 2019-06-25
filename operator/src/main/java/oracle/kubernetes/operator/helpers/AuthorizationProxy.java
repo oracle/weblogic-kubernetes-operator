@@ -88,7 +88,7 @@ public class AuthorizationProxy {
       return subResource;
     }
 
-    public String getAPIGroup() {
+    public String getApiGroup() {
       return apiGroup;
     }
   }
