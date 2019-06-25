@@ -206,7 +206,7 @@ public class ITOperatorUpgrade extends BaseTest {
     printCompVersions();
     if (restart) checkDomainRollingRestarted();
     printCompVersions();
-    // checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
+    checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     // testBasicUseCases(domain);
     // testClusterScaling(operator20, domain);
   }
