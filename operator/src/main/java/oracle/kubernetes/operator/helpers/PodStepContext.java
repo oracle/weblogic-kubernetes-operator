@@ -4,9 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
-import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.models.V1Container;
@@ -26,16 +32,12 @@ import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
-import oracle.kubernetes.operator.*;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -51,6 +53,10 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+
+import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTYPE;
+import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
 
 @SuppressWarnings("deprecation")
 public abstract class PodStepContext extends StepContextBase {

@@ -4,14 +4,10 @@
 
 package oracle.kubernetes.operator.rest;
 
-import static java.net.HttpURLConnection.HTTP_CONFLICT;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import javax.ws.rs.WebApplicationException;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -21,10 +17,6 @@ import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1TokenReviewStatus;
 import io.kubernetes.client.models.V1UserInfo;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import javax.ws.rs.WebApplicationException;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.rest.RestBackendImpl.TopologyRetriever;
@@ -40,6 +32,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.TOKEN_REVIEW;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
 public class RestBackendImplTest {

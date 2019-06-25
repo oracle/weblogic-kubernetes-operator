@@ -4,25 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
-
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServicePort;
-import io.kubernetes.client.models.V1ServiceSpec;
-import io.kubernetes.client.models.V1Status;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServicePort;
+import io.kubernetes.client.models.V1ServiceSpec;
+import io.kubernetes.client.models.V1Status;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -51,6 +39,19 @@ import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 
 public class ServiceHelper {
   public static final String CLUSTER_IP_TYPE = "ClusterIP";

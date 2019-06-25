@@ -4,16 +4,17 @@
 
 package oracle.kubernetes.operator.work;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-
-import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.meterware.simplestub.Memento;
 import oracle.kubernetes.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 
 public class StepChainTest {
   private FiberTestSupport testSupport = new FiberTestSupport();

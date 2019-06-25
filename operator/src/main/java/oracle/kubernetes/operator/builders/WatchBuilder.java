@@ -4,6 +4,11 @@
 
 package oracle.kubernetes.operator.builders;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -15,10 +20,6 @@ import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.util.Watch;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;

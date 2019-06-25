@@ -4,16 +4,17 @@
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-
-import io.kubernetes.client.models.V1Pod;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
 
 /** A test stub for processing domains in unit tests. */
 public abstract class DomainProcessorDelegateStub implements DomainProcessorDelegate {

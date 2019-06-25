@@ -4,12 +4,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.LogMatcher.containsInfo;
-import static oracle.kubernetes.operator.VersionConstants.OPERATOR_V1;
-import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
@@ -20,13 +21,6 @@ import io.kubernetes.client.models.V1beta1CustomResourceDefinitionSpec;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinitionVersion;
 import io.kubernetes.client.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.models.V1beta1JSONSchemaProps;
-import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -34,6 +28,13 @@ import oracle.kubernetes.operator.work.Step;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.LogMatcher.containsInfo;
+import static oracle.kubernetes.operator.VersionConstants.OPERATOR_V1;
+import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class CRDHelperTest {
   private static final KubernetesVersion KUBERNETES_VERSION = new KubernetesVersion(1, 10);

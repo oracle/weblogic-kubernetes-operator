@@ -4,16 +4,17 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Map;
+
+import oracle.kubernetes.operator.utils.InMemoryFileSystem;
+import org.junit.Test;
+
 import static oracle.kubernetes.operator.helpers.ConfigMapHelperTest.SCRIPT_NAMES;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
-import oracle.kubernetes.operator.utils.InMemoryFileSystem;
-import org.junit.Test;
 
 public class FileGroupReaderTest {
 

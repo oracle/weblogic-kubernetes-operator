@@ -7,6 +7,7 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;

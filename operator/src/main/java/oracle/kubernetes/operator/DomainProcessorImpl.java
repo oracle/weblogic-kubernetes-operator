@@ -4,15 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Event;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1ObjectReference;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodList;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceList;
-import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +14,16 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
+
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Event;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1ObjectReference;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodList;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceList;
+import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;

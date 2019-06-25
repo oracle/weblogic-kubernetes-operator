@@ -4,8 +4,9 @@
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.ApiException;
 import java.io.IOException;
+
+import io.kubernetes.client.ApiException;
 
 /** A base class for an object which can execute a command in an Kubertenes containers. */
 public abstract class KubernetesExec {

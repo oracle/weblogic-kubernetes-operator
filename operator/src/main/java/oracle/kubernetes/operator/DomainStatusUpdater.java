@@ -4,17 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
-
-import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -26,6 +15,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+
+import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -44,6 +35,16 @@ import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 
 /**
  * Updates for status of Domain. This class has two modes: 1) Watching for Pod state changes by

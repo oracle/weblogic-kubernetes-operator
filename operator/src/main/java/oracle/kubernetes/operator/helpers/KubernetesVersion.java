@@ -4,8 +4,9 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.VersionInfo;
 import java.util.Objects;
+
+import io.kubernetes.client.models.VersionInfo;
 
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion {

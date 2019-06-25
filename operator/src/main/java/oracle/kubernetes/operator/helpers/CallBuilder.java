@@ -4,6 +4,10 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Optional;
+import java.util.function.Consumer;
+import javax.json.JsonPatch;
+
 import com.squareup.okhttp.Call;
 import io.kubernetes.client.ApiCallback;
 import io.kubernetes.client.ApiClient;
@@ -35,9 +39,6 @@ import io.kubernetes.client.models.V1SubjectAccessReview;
 import io.kubernetes.client.models.V1TokenReview;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.VersionInfo;
-import java.util.Optional;
-import java.util.function.Consumer;
-import javax.json.JsonPatch;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParameters.CallBuilderTuning;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;

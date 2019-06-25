@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator;
 
 import javax.annotation.Nonnull;
+
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;

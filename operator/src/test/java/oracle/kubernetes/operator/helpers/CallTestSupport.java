@@ -4,9 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.ApiException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,6 +13,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.ApiException;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;

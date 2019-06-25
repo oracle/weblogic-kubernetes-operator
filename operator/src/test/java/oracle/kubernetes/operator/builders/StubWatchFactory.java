@@ -4,12 +4,6 @@
 
 package oracle.kubernetes.operator.builders;
 
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import com.squareup.okhttp.Call;
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.util.Watch;
-import io.kubernetes.client.util.Watch.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -19,6 +13,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
+
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import com.squareup.okhttp.Call;
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.util.Watch;
+import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.helpers.Pool;
 
 /**

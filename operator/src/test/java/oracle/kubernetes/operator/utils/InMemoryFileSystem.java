@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
@@ -25,6 +23,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nonnull;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
 
 public abstract class InMemoryFileSystem extends FileSystem {
   private FileSystemProviderStub provider = createStrictStub(FileSystemProviderStub.class);

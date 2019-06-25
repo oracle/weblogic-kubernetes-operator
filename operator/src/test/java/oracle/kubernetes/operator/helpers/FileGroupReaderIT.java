@@ -4,12 +4,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Map;
+
+import org.junit.Test;
+
 import static oracle.kubernetes.operator.helpers.ConfigMapHelperTest.SCRIPT_NAMES;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import java.util.Map;
-import org.junit.Test;
 
 public class FileGroupReaderIT {
 
