@@ -1410,7 +1410,8 @@ public class TestUtils {
     return result;
   }
 
-  public static ExecResult kubectlpatch(String domainUid, String domainNS, String patchStr) {
+  public static ExecResult kubectlpatch(String domainUid, String domainNS, String patchStr)
+      throws Exception {
     String cmd =
         "kubectl patch domain "
             + domainUid
