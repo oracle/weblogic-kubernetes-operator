@@ -27,7 +27,7 @@
 #                       Default:
 #                          Use LOG_HOME.  If LOG_HOME not set, use NODEMGR_HOME.
 #   ADMIN_PORT_SECURE = "true" if the admin protocol is secure. Default is false
-#   FAIL_BOOT_ON_SITUATIONAL_ERROR = "true" if WebLogic server should fail to 
+#   FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR = "true" if WebLogic server should fail to 
 #                       boot if situational configuration related errors are 
 #                       found. Default to "true" if unspecified.
 #
@@ -116,14 +116,14 @@ export NODEMGR_HOME=${NODEMGR_HOME}/${DOMAIN_UID}/${SERVER_NAME}
 createFolder ${NODEMGR_HOME} 
 
 NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}/${DOMAIN_UID}}}
-FAIL_BOOT_ON_SITUATIONAL_ERROR=${FAIL_BOOT_ON_SITUATIONAL_ERROR:-true}
+FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true}
 
 trace "Info: NODEMGR_HOME='${NODEMGR_HOME}'"
 trace "Info: LOG_HOME='${LOG_HOME}'"
 trace "Info: SERVER_NAME='${SERVER_NAME}'"
 trace "Info: DOMAIN_UID='${DOMAIN_UID}'"
 trace "Info: NODEMGR_LOG_HOME='${NODEMGR_LOG_HOME}'"
-trace "Info: FAIL_BOOT_ON_SITUATIONAL_ERROR='${FAIL_BOOT_ON_SITUATIONAL_ERROR}'"
+trace "Info: FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR='${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR}'"
 
 createFolder ${NODEMGR_LOG_HOME}
 
@@ -244,7 +244,7 @@ RestartInterval=3600
 NumberOfFilesLimited=true
 FileTimeSpan=24
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_ERROR} ${serverOutOption} ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} -XX\\:+UnlockExperimentalVMOptions -XX\\:+UseCGroupMemoryLimitForHeap -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} ${serverOutOption} ${JAVA_OPTIONS}
 
 EOF
  

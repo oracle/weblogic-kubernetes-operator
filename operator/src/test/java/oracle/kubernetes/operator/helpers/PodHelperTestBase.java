@@ -473,14 +473,6 @@ public abstract class PodHelperTestBase {
         getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID)));
   }
 
-  @Test
-  public void whenPodCreated_withFalseFailBootOnSituationalError_hasEnvVariable() {
-    domainPresenceInfo.getDomain().getSpec().withFailBootOnSituationalError(false);
-    assertThat(
-        getCreatedPodSpecContainer().getEnv(),
-        allOf(hasEnvVar("FAIL_BOOT_ON_SITUATIONAL_ERROR", "false")));
-  }
-
   static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
     return hasItem(new V1EnvVar().name(name).value(value));
   }
