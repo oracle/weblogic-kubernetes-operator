@@ -236,6 +236,11 @@ public class ITOperatorUpgrade extends BaseTest {
     // upgradeRelease = "weblogic-kubernetes-operator:develop";
     logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$HELM VALUES BEFORE UPGRADE$$$$$$$$$$$$$$$$");
     operator20.getHelmValues();
+    logger.log(
+        Level.INFO, "$$$$$$$$$$$$$$$$$$$ BEGIN OPERATOR LOG BEFORE UPGRADE $$$$$$$$$$$$$$$$");
+    String operatorPodName = operator20.getOperatorPodName();
+    ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
+    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG BEFORE UPGRADE $$$$$$$$$$$$$$$$");
     TestUtils.ExecAndPrintLog(
         "cd "
             + opUpgradeTmpDir
@@ -248,7 +253,7 @@ public class ITOperatorUpgrade extends BaseTest {
     Thread.sleep(1000 * 20);
     logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$HELM VALUES AFTER UPGRADE$$$$$$$$$$$$$$$$");
     operator20.getHelmValues();
-    String operatorPodName = operator20.getOperatorPodName();
+    operatorPodName = operator20.getOperatorPodName();
     logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ BEGIN OPERATOR LOG $$$$$$$$$$$$$$$$");
     ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
     logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG $$$$$$$$$$$$$$$$");
