@@ -4,13 +4,14 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import java.util.Arrays;
+import javax.annotation.Nonnull;
+
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1SecurityContext;
-import java.util.Arrays;
-import javax.annotation.Nonnull;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
