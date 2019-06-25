@@ -143,6 +143,8 @@
               <configLocation>weblogic-kubernetes-operator/checkstyle/customized_google_checks.xml</configLocation>
               <suppressionsLocation>weblogic-kubernetes-operator/checkstyle/suppressions.xml</suppressionsLocation>
               <encoding>UTF-8</encoding>
+              <failOnViolation>true</failOnViolation>
+              <violationSeverity>warning</violationSeverity>
             </configuration>
           </execution>
         </executions>
