@@ -27,13 +27,13 @@ public interface RestBackend {
    * @param domainUid - the unique identifier assigned to a WebLogic domain.
    * @return whether or not this domainUID has been registered with the WebLogic operator.
    */
-  public boolean isDomainUID(String domainUid);
+  public boolean isDomainUid(String domainUid);
 
   /**
    * Get the names of the clusters in a WebLogic domain.
    *
    * @param domainUid - the unique identifier assigned to the Weblogic domain when it was registered
-   *     with the WebLogic operator. The caller is responsible for calling isDomainUID first and not
+   *     with the WebLogic operator. The caller is responsible for calling isDomainUid first and not
    *     calling this method if the domain has not been registered.
    * @return a Set of Weblogic cluster names.
    */
@@ -43,7 +43,7 @@ public interface RestBackend {
    * Determines whether or not a cluster exists in a WebLogic domain.
    *
    * @param domainUid - the unique identifier assigned to the Weblogic domain when it was registered
-   *     with the WebLogic operator. The caller is responsible for calling isDomainUID first and not
+   *     with the WebLogic operator. The caller is responsible for calling isDomainUid first and not
    *     calling this method if the domain has not been registered.
    * @param cluster - the name of the cluster in the WebLogic domain.
    * @return whether or not a cluster with this name exists in the WebLogic domain.
@@ -57,7 +57,7 @@ public interface RestBackend {
    * servers.
    *
    * @param domainUid - the unique identifier assigned to the Weblogic domain when it was registered
-   *     with the WebLogic operator. The caller is responsible for calling isDomainUID first and not
+   *     with the WebLogic operator. The caller is responsible for calling isDomainUid first and not
    *     calling this method if the domain has not been registered.
    * @param cluster - the name of the cluster in the WebLogic domain. The caller is responsible for
    *     calling isCluster first and not calling this method if the cluster does not exist.

@@ -18,7 +18,8 @@ public class NetworkAccessPoint {
   Integer listenPort;
   Integer publicPort;
 
-  public NetworkAccessPoint() {}
+  public NetworkAccessPoint() {
+  }
 
   NetworkAccessPoint(Map<String, Object> networkAccessPointConfigMap) {
     this(

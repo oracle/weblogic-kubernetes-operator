@@ -62,7 +62,7 @@ public class LoggingFormatter extends Formatter {
 
     // the toString() format for the model classes is inappropriate for our logs
     // so, replace with the JSON serialization
-    JSON j = LoggingFactory.getJSON();
+    JSON j = LoggingFactory.getJson();
     if (j != null) {
       Object[] parameters = record.getParameters();
       if (parameters != null) {
@@ -113,7 +113,7 @@ public class LoggingFormatter extends Formatter {
     map.put(TIMESTAMP, dateString);
     map.put(THREAD, thread);
     map.put(FIBER, fiber != null ? fiber.toString() : "");
-    map.put(DOMAIN_UID, getDomainUID(fiber));
+    map.put(DOMAIN_UID, getDomainUid(fiber));
     map.put(LOG_LEVEL, level);
     map.put(SOURCE_CLASS, sourceClassName);
     map.put(SOURCE_METHOD, sourceMethodName);
@@ -150,7 +150,7 @@ public class LoggingFormatter extends Formatter {
    * @param fiber The current Fiber
    * @return the domain UID or empty string
    */
-  private String getDomainUID(Fiber fiber) {
+  private String getDomainUid(Fiber fiber) {
 
     Packet packet = fiber == null ? null : fiber.getPacket();
     if (packet != null) {

@@ -394,7 +394,7 @@ public class RestTest extends JerseyTest {
     }
 
     @Override
-    public boolean isDomainUID(String domainUID) {
+    public boolean isDomainUid(String domainUID) {
       return domainClusters.containsKey(domainUID);
     }
 
