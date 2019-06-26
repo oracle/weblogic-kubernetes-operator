@@ -424,10 +424,10 @@ public class WlsClusterConfig {
    * @return true if the result means the update was successful, false otherwise
    */
   static boolean checkUpdateDynamicClusterSizeJsonResult(String jsonResult) {
-    final String EXPECTED_RESULT = "{}";
+    final String expectedResult = "{}";
 
     boolean result = false;
-    if (EXPECTED_RESULT.equals(jsonResult)) {
+    if (expectedResult.equals(jsonResult)) {
       result = true;
     }
     return result;

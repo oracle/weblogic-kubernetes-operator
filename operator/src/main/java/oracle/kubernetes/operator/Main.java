@@ -422,6 +422,13 @@ public class Main {
     return targetNamespaces;
   }
 
+  private static Collection<String> getTargetNamespaces() {
+    return getTargetNamespaces(
+            Optional.ofNullable(System.getenv("OPERATOR_TARGET_NAMESPACES"))
+                    .orElse(tuningAndConfig.get("targetNamespaces")),
+            operatorNamespace);
+  }
+
   private static void startRestServer(String principal, Collection<String> targetNamespaces)
       throws Exception {
     RestServer.create(new RestConfigImpl(principal, targetNamespaces));
@@ -502,13 +509,6 @@ public class Main {
 
   private static String computeOperatorNamespace() {
     return Optional.ofNullable(System.getenv("OPERATOR_NAMESPACE")).orElse("default");
-  }
-
-  private static Collection<String> getTargetNamespaces() {
-    return getTargetNamespaces(
-        Optional.ofNullable(System.getenv("OPERATOR_TARGET_NAMESPACES"))
-            .orElse(tuningAndConfig.get("targetNamespaces")),
-        operatorNamespace);
   }
 
   private static class DomainListStep extends ResponseStep<DomainList> {

@@ -330,7 +330,8 @@ public class WlsDynamicServersConfig {
    *     configuration which will used in the payload to the REST call to WLS admin server
    */
   static String getSearchFields() {
-    return "'serverTemplate', 'dynamicClusterSize', 'maxDynamicClusterSize', 'serverNamePrefix', 'calculatedListenPorts', 'dynamicServerNames', 'machineNameMatchExpression' ";
+    return "'serverTemplate', 'dynamicClusterSize', 'maxDynamicClusterSize', 'serverNamePrefix', "
+            + "'calculatedListenPorts', 'dynamicServerNames', 'machineNameMatchExpression' ";
   }
 
   @Override
