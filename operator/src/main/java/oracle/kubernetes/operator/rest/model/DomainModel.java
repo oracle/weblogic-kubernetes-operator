@@ -43,6 +43,6 @@ public class DomainModel extends ItemModel {
 
   @Override
   protected String propertiesToString() {
-    return "domainUid=" + getDomainUid() + ", " + super.propertiesToString();
+    return "domainUID=" + getDomainUid() + ", " + super.propertiesToString();
   }
 }
