@@ -111,7 +111,8 @@ class FileGroupReader {
     }
 
     @Override
-    public void close() {}
+    public void close() {
+    }
   }
 
   class JarScriptPath implements ScriptPath {

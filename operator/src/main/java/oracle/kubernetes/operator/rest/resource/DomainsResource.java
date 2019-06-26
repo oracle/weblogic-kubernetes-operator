@@ -58,20 +58,20 @@ public class DomainsResource extends BaseResource {
   /**
    * Construct and return a 'domain' jaxrs child resource.
    *
-   * @param domainUID - the unique identifier assigned to the WebLogic domain when it was registered
+   * @param domainUid - the unique identifier assigned to the WebLogic domain when it was registered
    *     with the WebLogic operator.
    * @return the domain sub resource, throws a WebApplicationException if domainUID is not
    *     registered.
    */
   @Path("{domainUID}")
-  public DomainResource getDomainResource(@PathParam("domainUID") String domainUID) {
-    LOGGER.entering(href(), domainUID);
-    if (!getBackend().isDomainUID(domainUID)) {
-      WebApplicationException e = notFound(domainUID);
+  public DomainResource getDomainResource(@PathParam("domainUID") String domainUid) {
+    LOGGER.entering(href(), domainUid);
+    if (!getBackend().isDomainUid(domainUid)) {
+      WebApplicationException e = notFound(domainUid);
       LOGGER.throwing(e);
       throw e;
     }
-    DomainResource result = new DomainResource(this, domainUID);
+    DomainResource result = new DomainResource(this, domainUid);
     LOGGER.exiting(result);
     return result;
   }

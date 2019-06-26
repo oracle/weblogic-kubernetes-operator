@@ -281,6 +281,17 @@ class ServerPod extends KubernetesResource {
     }
   }
 
+  private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
+    if (from != null) {
+      if (from.getRequests() != null) {
+        from.getRequests().forEach(to.getRequests()::putIfAbsent);
+      }
+      if (from.getLimits() != null) {
+        from.getLimits().forEach(to.getLimits()::putIfAbsent);
+      }
+    }
+  }
+
   private void addIfMissing(V1Volume var) {
     if (!hasVolumeName(var.getName())) {
       addAdditionalVolume(var);
@@ -325,17 +336,6 @@ class ServerPod extends KubernetesResource {
       }
     }
     return false;
-  }
-
-  private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
-    if (from != null) {
-      if (from.getRequests() != null) {
-        from.getRequests().forEach(to.getRequests()::putIfAbsent);
-      }
-      if (from.getLimits() != null) {
-        from.getLimits().forEach(to.getLimits()::putIfAbsent);
-      }
-    }
   }
 
   private boolean hasVolumeName(String name) {

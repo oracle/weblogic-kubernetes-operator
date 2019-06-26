@@ -66,7 +66,7 @@ public abstract class JobStepContext extends StepContextBase {
     return info.getNamespace();
   }
 
-  String getDomainUID() {
+  String getDomainUid() {
     return getDomain().getDomainUid();
   }
 
@@ -129,7 +129,7 @@ public abstract class JobStepContext extends StepContextBase {
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
       // logHome not specified, use default value
-      return DEFAULT_LOG_HOME + File.separator + getDomainUID();
+      return DEFAULT_LOG_HOME + File.separator + getDomainUid();
     }
     return logHome;
   }
@@ -189,7 +189,7 @@ public abstract class JobStepContext extends StepContextBase {
             .name(getJobName())
             .namespace(getNamespace())
             .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
-            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
+            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
             .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     return metadata;
   }

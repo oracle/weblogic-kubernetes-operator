@@ -15,7 +15,7 @@ public class LoggingFacade {
 
   private final Logger logger;
   public static final String TRACE = "OWLS-KO-TRACE: ";
-  protected final String CLASS = LoggingFacade.class.getName();
+  protected static final String CLASS = LoggingFacade.class.getName();
 
   public LoggingFacade(Logger logger) {
     this.logger = logger;

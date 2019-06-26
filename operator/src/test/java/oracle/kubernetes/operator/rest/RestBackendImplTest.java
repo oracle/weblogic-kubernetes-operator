@@ -69,7 +69,7 @@ public class RestBackendImplTest {
 
   private class TopologyRetrieverStub implements TopologyRetriever {
     @Override
-    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUID) {
+    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUid) {
       return config;
     }
   }

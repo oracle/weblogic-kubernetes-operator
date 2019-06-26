@@ -92,8 +92,8 @@ public class TestMain implements Main {
   }
 
   @Override
-  public void defineSchemaUrlAndContents(URL schemaURL, URL cacheUrl) {
-    schemas.put(schemaURL, cacheUrl);
+  public void defineSchemaUrlAndContents(URL schemaUrl, URL cacheUrl) {
+    schemas.put(schemaUrl, cacheUrl);
   }
 
   @Override
