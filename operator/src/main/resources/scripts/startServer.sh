@@ -102,6 +102,12 @@ function waitUntilShutdown() {
     trace "Showing the server out file from ${SERVER_OUT_FILE}"
     ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} &
   fi
+  FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true} 
+  SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-30}
+  if [ ${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} == 'true' ] ; then
+    trace "Monitor server out file ${SERVER_OUT_FILE} for certain known errors"
+    ${SCRIPTPATH}/monitorLog.sh ${SERVER_OUT_FILE} ${SERVER_OUT_MONITOR_INTERVAL} &
+  fi
   waitForShutdownMarker
 }
 
@@ -110,19 +116,7 @@ function waitForShutdownMarker() {
   # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
   #
   trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
-  logged=false
   while true; do
-    if [ "$logged" != 'true' ] && grep -q "BEA-141335" ${SERVER_OUT_FILE} ; then
-      msg=("WebLogic server failed to start due to missing or invalid"
-           "situational configuration files, which may be due to invalid"
-           "configOverride templates (these are specified via the"
-           "configOverride attribute in the Domain custom resource)."
-           "For details, please search your pod log or"
-           "${SERVER_OUT_FILE} for the keyword 'situational'."
-          )
-      trace "${msg[*]}"
-      logged=true
-    fi
     if [ -e /weblogic-operator/doShutdown ] ; then
       exit 0
     fi
@@ -150,8 +144,7 @@ function copySitCfg() {
     for local_fname in ${src_dir}/${fil_prefix}*.xml ; do
       copyIfChanged $local_fname $tgt_dir/`basename ${local_fname/${fil_prefix}//}`
       trace "Printing contents of situational configuration file $local_fname:"
-      file_content=`cat $local_fname`
-      echo "$file_content"
+      echo `cat $local_fname`
     done
   fi
 
