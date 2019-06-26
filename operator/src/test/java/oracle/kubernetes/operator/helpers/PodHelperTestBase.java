@@ -579,7 +579,7 @@ public abstract class PodHelperTestBase {
   CallTestSupport.CannedResponse expectListPersistentVolume() {
     return testSupport
         .createCannedResponse("listPersistentVolume")
-        .withLabelSelectors("weblogic.domainUid=" + UID);
+        .withLabelSelectors("weblogic.domainUID=" + UID);
   }
 
   @Test

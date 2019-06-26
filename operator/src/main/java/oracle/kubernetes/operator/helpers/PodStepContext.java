@@ -906,6 +906,6 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private boolean mockWls() {
-    return Boolean.getBoolean("mockWls");
+    return Boolean.getBoolean("mockWLS");
   }
 }
