@@ -53,19 +53,19 @@ public class HttpClientTest {
   }
 
   @Test
-  public void messageLogged_when_executePostUrlOnServiceClusterIP_fails() throws HTTPException {
+  public void messageLogged_when_executePostUrlOnServiceClusterIP_fails() throws HttpException {
     executePostUrl(false);
     assertThat(logRecords, containsFine(HTTP_METHOD_FAILED, Status.NOT_FOUND.getStatusCode()));
   }
 
-  @Test(expected = HTTPException.class)
+  @Test(expected = HttpException.class)
   public void throws_when_executePostUrlOnServiceClusterIP_withThrowOnFailure_fails()
-      throws HTTPException {
+      throws HttpException {
     ignoreMessage(HTTP_METHOD_FAILED);
     executePostUrl(true);
   }
 
-  private void executePostUrl(boolean throwOnFailure) throws HTTPException {
+  private void executePostUrl(boolean throwOnFailure) throws HttpException {
     ClientStub clientStub =
         Stub.createStub(ClientStub.class)
             .withResponse(Stub.createStub(ResponseStub.class, Status.NOT_FOUND, null));
@@ -88,7 +88,7 @@ public class HttpClientTest {
     ports.add(new V1ServicePort().port(PORT).name(CHANNEL_NAME));
     V1Service service =
         new V1Service().spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports));
-    String url = HttpClient.getServiceURL(service, null, CHANNEL_NAME, PORT);
+    String url = HttpClient.getServiceUrl(service, null, CHANNEL_NAME, PORT);
     assertEquals("http://" + CLUSTER_IP + ":" + PORT, url);
   }
 
@@ -107,7 +107,7 @@ public class HttpClientTest {
             .spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports))
             .metadata(new V1ObjectMeta().namespace(NAMESPACE).name(SERVICE_NAME));
 
-    String url = HttpClient.getServiceURL(service, null, CHANNEL_NAME, PORT);
+    String url = HttpClient.getServiceUrl(service, null, CHANNEL_NAME, PORT);
     assertEquals("http://" + SERVICE_NAME + "." + NAMESPACE + ".pod.cluster.local:" + PORT, url);
   }
 

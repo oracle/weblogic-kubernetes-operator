@@ -140,17 +140,17 @@ public class ReadHealthStep extends Step {
               packet.get(ProcessingConstants.SERVER_NAME));
         } else {
 
-          String serviceURL =
-              HttpClient.getServiceURL(
+          String serviceUrl =
+              HttpClient.getServiceUrl(
                   service,
                   pod,
                   serverConfig.getAdminProtocolChannelName(),
                   serverConfig.getListenPort());
-          if (serviceURL != null) {
+          if (serviceUrl != null) {
             Result result =
                 httpClient.executePostUrlOnServiceClusterIP(
                     getRetrieveHealthSearchUrl(),
-                    serviceURL,
+                    serviceUrl,
                     getRetrieveHealthSearchPayload(),
                     false);
 
