@@ -188,6 +188,10 @@ public class DomainPresenceInfo {
     return pod == null ? null : pod.getMetadata();
   }
 
+  private V1ObjectMeta getMetadata(V1Service service) {
+    return service == null ? null : service.getMetadata();
+  }
+  
   /**
    * Computes the result of a delete attempt. If the current pod is newer than the one associated
    * with the delete event, returns it; otherwise returns null, thus deleting the value.
@@ -207,6 +211,18 @@ public class DomainPresenceInfo {
 
   private V1Pod getNewerCurrentOrNull(V1Pod pod, V1Pod event) {
     return KubernetesUtils.isFirstNewer(getMetadata(pod), getMetadata(event)) ? pod : null;
+  }
+
+  /**
+   * Computes the result of a delete attempt. If the current service is newer than the one
+   * associated with the delete event, returns it; otherwise returns null, thus deleting the value.
+   *
+   * @param service the current service
+   * @param event the service associated with the delete event
+   * @return the new value for the service.
+   */
+  private V1Service getNewerCurrentOrNull(V1Service service, V1Service event) {
+    return KubernetesUtils.isFirstNewer(getMetadata(service), getMetadata(event)) ? service : null;
   }
 
   /**
@@ -277,18 +293,6 @@ public class DomainPresenceInfo {
     return deletedService != null;
   }
 
-  /**
-   * Computes the result of a delete attempt. If the current service is newer than the one
-   * associated with the delete event, returns it; otherwise returns null, thus deleting the value.
-   *
-   * @param service the current service
-   * @param event the service associated with the delete event
-   * @return the new value for the service.
-   */
-  private V1Service getNewerCurrentOrNull(V1Service service, V1Service event) {
-    return KubernetesUtils.isFirstNewer(getMetadata(service), getMetadata(event)) ? service : null;
-  }
-
   void removeClusterService(String clusterName) {
     clusters.remove(clusterName);
   }
@@ -326,10 +330,6 @@ public class DomainPresenceInfo {
 
   private V1Service getNewerService(V1Service first, V1Service second) {
     return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
-  }
-
-  private V1ObjectMeta getMetadata(V1Service service) {
-    return service == null ? null : service.getMetadata();
   }
 
   public V1Service getExternalService(String serverName) {

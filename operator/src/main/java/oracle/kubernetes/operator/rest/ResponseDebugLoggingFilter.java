@@ -35,7 +35,7 @@ public class ResponseDebugLoggingFilter extends BaseDebugLoggingFilter
     }
     LOGGER.entering();
     try {
-      String reqHeaders = getLoggableHeaders(req);
+      final String reqHeaders = getLoggableHeaders(req);
       LOGGER.fine("uri=" + req.getUriInfo().getRequestUri().toString());
       LOGGER.fine("method=" + req.getMethod());
       Object prop = req.getProperty(FILTER_REQUEST_START_TIME);

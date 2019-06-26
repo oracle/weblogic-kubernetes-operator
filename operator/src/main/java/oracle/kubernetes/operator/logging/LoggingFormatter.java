@@ -79,7 +79,7 @@ public class LoggingFormatter extends Formatter {
       }
     }
 
-    String message = formatMessage(record);
+    final String message = formatMessage(record);
     String code = "";
     Map<String, List<String>> headers = PLACEHOLDER;
     String body = "";
@@ -132,7 +132,8 @@ public class LoggingFormatter extends Formatter {
 
     } catch (JsonProcessingException e) {
       String tmp =
-          "{\"@timestamp\":%1$s,\"level\":%2$s, \"class\":%3$s, \"method\":\"format\", \"timeInMillis\":%4$d, \"@message\":\"Exception while preparing json object\",\"exception\":%5$s}\n";
+          "{\"@timestamp\":%1$s,\"level\":%2$s, \"class\":%3$s, \"method\":\"format\", \"timeInMillis\":%4$d, "
+                  + "\"@message\":\"Exception while preparing json object\",\"exception\":%5$s}\n";
       return String.format(
           tmp,
           dateString,

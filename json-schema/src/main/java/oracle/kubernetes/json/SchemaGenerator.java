@@ -421,7 +421,7 @@ public class SchemaGenerator {
       result.put("type", "string");
       result.put("format", "date-time");
     } else {
-      Map<String, Object> properties = new HashMap<>();
+      final Map<String, Object> properties = new HashMap<>();
       List<String> requiredFields = new ArrayList<>();
       result.put("type", "object");
       if (includeAdditionalProperties) result.put("additionalProperties", "false");
