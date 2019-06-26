@@ -98,7 +98,8 @@ public final class HealthCheckHelper {
     namespaceAccessChecks.put(AuthorizationProxy.Resource.TOKENREVIEWS, cOperations);
   }
 
-  private HealthCheckHelper() {}
+  private HealthCheckHelper() {
+  }
 
   /**
    * Verify Access.

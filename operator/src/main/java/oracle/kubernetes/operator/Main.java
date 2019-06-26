@@ -533,14 +533,14 @@ public class Main {
       DomainProcessor x = packet.getSpi(DomainProcessor.class);
       DomainProcessor dp = x != null ? x : processor;
 
-      Set<String> domainUIDs = new HashSet<>();
+      Set<String> domainUids = new HashSet<>();
       if (callResponse.getResult() != null) {
         for (Domain dom : callResponse.getResult().getItems()) {
-          String domainUID = dom.getDomainUid();
-          domainUIDs.add(domainUID);
+          String domainUid = dom.getDomainUid();
+          domainUids.add(domainUid);
           DomainPresenceInfo info =
               dpis.compute(
-                  domainUID,
+                  domainUid,
                   (k, v) -> {
                     if (v == null) {
                       return new DomainPresenceInfo(dom);
@@ -555,7 +555,7 @@ public class Main {
 
       dpis.forEach(
           (key, value) -> {
-            if (!domainUIDs.contains(key)) {
+            if (!domainUids.contains(key)) {
               // This is a stranded DomainPresenceInfo.
               value.setDeleting(true);
               value.setPopulated(true);
@@ -598,10 +598,10 @@ public class Main {
 
       if (result != null) {
         for (V1Service service : result.getItems()) {
-          String domainUID = ServiceHelper.getServiceDomainUID(service);
-          if (domainUID != null) {
+          String domainUid = ServiceHelper.getServiceDomainUID(service);
+          if (domainUid != null) {
             DomainPresenceInfo info =
-                dpis.computeIfAbsent(domainUID, k -> new DomainPresenceInfo(ns, domainUID));
+                dpis.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
             ServiceHelper.addToPresence(info, service);
           }
         }
@@ -671,11 +671,11 @@ public class Main {
 
       if (result != null) {
         for (V1Pod pod : result.getItems()) {
-          String domainUID = PodHelper.getPodDomainUID(pod);
+          String domainUid = PodHelper.getPodDomainUID(pod);
           String serverName = PodHelper.getPodServerName(pod);
-          if (domainUID != null && serverName != null) {
+          if (domainUid != null && serverName != null) {
             DomainPresenceInfo info =
-                dpis.computeIfAbsent(domainUID, k -> new DomainPresenceInfo(ns, domainUID));
+                dpis.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
             info.setServerPod(serverName, pod);
           }
         }

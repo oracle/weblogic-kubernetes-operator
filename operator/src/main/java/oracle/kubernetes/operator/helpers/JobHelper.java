@@ -39,10 +39,11 @@ public class JobHelper {
   static final String START_TIME = "WlsRetriever-startTime";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private JobHelper() {}
+  private JobHelper() {
+  }
 
-  static String createJobName(String domainUID) {
-    return LegalNames.toJobIntrospectorName(domainUID);
+  static String createJobName(String domainUid) {
+    return LegalNames.toJobIntrospectorName(domainUid);
   }
 
   static class DomainIntrospectorJobStepContext extends JobStepContext {
@@ -73,7 +74,7 @@ public class JobHelper {
 
     @Override
     String getJobName() {
-      return LegalNames.toJobIntrospectorName(getDomainUID());
+      return LegalNames.toJobIntrospectorName(getDomainUid());
     }
 
     Domain getDomain() {
@@ -97,7 +98,7 @@ public class JobHelper {
           PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
 
       addEnvVar(vars, "NAMESPACE", getNamespace());
-      addEnvVar(vars, "DOMAIN_UID", getDomainUID());
+      addEnvVar(vars, "DOMAIN_UID", getDomainUid());
       addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
       addEnvVar(vars, "NODEMGR_HOME", getNodeManagerHome());
       addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
@@ -217,23 +218,23 @@ public class JobHelper {
   /**
    * Factory for {@link Step} that deletes WebLogic domain introspector job.
    *
-   * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
+   * @param domainUid The unique identifier assigned to the Weblogic domain when it was registered
    * @param namespace Namespace
    * @param next Next processing step
    * @return Step for deleting the domain introsepctor jod
    */
   public static Step deleteDomainIntrospectorJobStep(
-      String domainUID, String namespace, Step next) {
-    return new DeleteIntrospectorJobStep(domainUID, namespace, next);
+      String domainUid, String namespace, Step next) {
+    return new DeleteIntrospectorJobStep(domainUid, namespace, next);
   }
 
   private static class DeleteIntrospectorJobStep extends Step {
-    private String domainUID;
+    private String domainUid;
     private String namespace;
 
-    DeleteIntrospectorJobStep(String domainUID, String namespace, Step next) {
+    DeleteIntrospectorJobStep(String domainUid, String namespace, Step next) {
       super(next);
-      this.domainUID = domainUID;
+      this.domainUid = domainUid;
       this.namespace = namespace;
     }
 
@@ -246,13 +247,13 @@ public class JobHelper {
       return MessageKeys.JOB_DELETED;
     }
 
-    void logJobDeleted(String domainUID, String namespace, String jobName) {
-      LOGGER.info(getJobDeletedMessageKey(), domainUID, namespace, jobName);
+    void logJobDeleted(String domainUid, String namespace, String jobName) {
+      LOGGER.info(getJobDeletedMessageKey(), domainUid, namespace, jobName);
     }
 
     private Step deleteJob(Step next) {
-      String jobName = JobHelper.createJobName(this.domainUID);
-      logJobDeleted(this.domainUID, namespace, jobName);
+      String jobName = JobHelper.createJobName(this.domainUid);
+      logJobDeleted(this.domainUid, namespace, jobName);
       return new CallBuilder()
           .deleteJobAsync(
               jobName,
@@ -326,13 +327,13 @@ public class JobHelper {
 
         // Delete the job once we've successfully read the result
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-        java.lang.String domainUID = info.getDomain().getDomainUid();
+        java.lang.String domainUid = info.getDomain().getDomainUid();
         java.lang.String namespace = info.getNamespace();
 
         cleanupJobArtifacts(packet);
 
         return doNext(
-            JobHelper.deleteDomainIntrospectorJobStep(domainUID, namespace, getNext()), packet);
+            JobHelper.deleteDomainIntrospectorJobStep(domainUid, namespace, getNext()), packet);
       }
 
       return onFailure(packet, callResponse);
@@ -363,25 +364,25 @@ public class JobHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      String domainUID = info.getDomain().getDomainUid();
+      String domainUid = info.getDomain().getDomainUid();
       String namespace = info.getNamespace();
 
-      return doNext(readDomainIntrospectorPod(domainUID, namespace, getNext()), packet);
+      return doNext(readDomainIntrospectorPod(domainUid, namespace, getNext()), packet);
     }
 
-    private Step readDomainIntrospectorPod(String domainUID, String namespace, Step next) {
+    private Step readDomainIntrospectorPod(String domainUid, String namespace, Step next) {
       return new CallBuilder()
           .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
-          .listPodAsync(namespace, new PodListStep(domainUID, namespace, next));
+          .listPodAsync(namespace, new PodListStep(domainUid, namespace, next));
     }
   }
 
   private static class PodListStep extends ResponseStep<V1PodList> {
-    private final String domainUID;
+    private final String domainUid;
 
-    PodListStep(String domainUID, String ns, Step next) {
+    PodListStep(String domainUid, String ns, Step next) {
       super(next);
-      this.domainUID = domainUID;
+      this.domainUid = domainUid;
     }
 
     @Override
@@ -391,7 +392,7 @@ public class JobHelper {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      String jobNamePrefix = createJobName(domainUID);
+      String jobNamePrefix = createJobName(domainUid);
       V1PodList result = callResponse.getResult();
       if (result != null) {
         for (V1Pod pod : result.getItems()) {

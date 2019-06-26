@@ -23,7 +23,7 @@ public class FiberGate {
   private final Engine engine;
   private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<String, Fiber>();
 
-  private final Fiber PLACEHOLDER;
+  private final Fiber placeholder;
 
   /**
    * Constructor taking Engine for running Fibers.
@@ -32,7 +32,7 @@ public class FiberGate {
    */
   public FiberGate(Engine engine) {
     this.engine = engine;
-    this.PLACEHOLDER = engine.createFiber();
+    this.placeholder = engine.createFiber();
   }
 
   public ScheduledExecutorService getExecutor() {
@@ -65,7 +65,7 @@ public class FiberGate {
    */
   public Fiber startFiberIfNoCurrentFiber(
       String key, Step strategy, Packet packet, CompletionCallback callback) {
-    return startFiberIfLastFiberMatches(key, PLACEHOLDER, strategy, packet, callback);
+    return startFiberIfLastFiberMatches(key, placeholder, strategy, packet, callback);
   }
 
   /**
@@ -83,7 +83,7 @@ public class FiberGate {
     Fiber f = engine.createFiber();
     WaitForOldFiberStep wfofs;
     if (old != null) {
-      if (old == PLACEHOLDER) {
+      if (old == placeholder) {
         if (gateMap.putIfAbsent(key, f) != null) {
           return null;
         }

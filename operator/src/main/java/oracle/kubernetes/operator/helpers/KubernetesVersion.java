@@ -123,7 +123,7 @@ public class KubernetesVersion {
     return this.major > 1 || (this.major == 1 && this.minor >= 8);
   }
 
-  boolean isCRDSubresourcesSupported() {
+  boolean isCrdSubresourcesSupported() {
     return this.major > 1 || (this.major == 1 && this.minor >= 10);
   }
 
@@ -132,7 +132,7 @@ public class KubernetesVersion {
   // until 1.13.  This is validated against the published recent changes doc.
   // *NOTE*: To use this, update CrdHelper to include the status subresource and also
   // update DomainStatusUpdater to use replaceDomainStatusAsync
-  boolean isCRDSubresourcesStatusPatternSupported() {
+  boolean isCrdSubresourcesStatusPatternSupported() {
     return this.major > 1 || (this.major == 1 && this.minor >= 13);
   }
 

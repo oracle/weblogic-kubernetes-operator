@@ -76,7 +76,7 @@ public class TestFileSystem extends FileSystem {
   }
 
   @Override
-  URL toURL(File file) throws MalformedURLException {
+  URL toUrl(File file) throws MalformedURLException {
     return urls.get(file);
   }
 
