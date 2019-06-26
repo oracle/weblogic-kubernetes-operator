@@ -105,7 +105,7 @@ public class ServiceHelper {
     return OperatorServiceType.getType(service).deleteFromEvent(info, service);
   }
 
-  public static String getServiceDomainUID(V1Service service) {
+  public static String getServiceDomainUid(V1Service service) {
     return getLabelValue(service, LabelConstants.DOMAINUID_LABEL);
   }
 
@@ -236,7 +236,7 @@ public class ServiceHelper {
 
     @Override
     protected void logServiceExists() {
-      LOGGER.fine(getServiceExistsMessageKey(), getDomainUID(), getServerName());
+      LOGGER.fine(getServiceExistsMessageKey(), getDomainUid(), getServerName());
     }
 
     private String getServiceExistsMessageKey() {
@@ -245,7 +245,7 @@ public class ServiceHelper {
 
     @Override
     protected void logServiceCreated(String messageKey) {
-      LOGGER.info(messageKey, getDomainUID(), getServerName());
+      LOGGER.info(messageKey, getDomainUid(), getServerName());
     }
 
     @Override
@@ -284,7 +284,7 @@ public class ServiceHelper {
 
     @Override
     protected String createServiceName() {
-      return LegalNames.toServerServiceName(getDomainUID(), getServerName());
+      return LegalNames.toServerServiceName(getDomainUid(), getServerName());
     }
 
     @Override
@@ -360,7 +360,7 @@ public class ServiceHelper {
     protected V1ServiceSpec createServiceSpec() {
       return new V1ServiceSpec()
           .type(getSpecType())
-          .putSelectorItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
+          .putSelectorItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putSelectorItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
           .ports(createServicePorts());
     }
@@ -389,7 +389,7 @@ public class ServiceHelper {
 
     V1ServicePort createServicePort(String portName, Integer port) {
       return new V1ServicePort()
-          .name(LegalNames.toDNS1123LegalName(portName))
+          .name(LegalNames.toDns1123LegalName(portName))
           .port(port)
           .protocol("TCP");
     }
@@ -404,7 +404,7 @@ public class ServiceHelper {
       metadata
           .putLabelsItem(
               LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DEFAULT_DOMAIN_VERSION)
-          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
+          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
 
@@ -422,7 +422,7 @@ public class ServiceHelper {
       return info.getDomain();
     }
 
-    String getDomainUID() {
+    String getDomainUid() {
       return getDomain().getDomainUid();
     }
 
@@ -660,7 +660,7 @@ public class ServiceHelper {
     }
 
     protected String createServiceName() {
-      return LegalNames.toClusterServiceName(getDomainUID(), clusterName);
+      return LegalNames.toClusterServiceName(getDomainUid(), clusterName);
     }
 
     @Override
@@ -680,12 +680,12 @@ public class ServiceHelper {
 
     @Override
     protected void logServiceCreated(String messageKey) {
-      LOGGER.info(messageKey, getDomainUID(), clusterName);
+      LOGGER.info(messageKey, getDomainUid(), clusterName);
     }
 
     @Override
     protected void logServiceExists() {
-      LOGGER.fine(CLUSTER_SERVICE_EXISTS, getDomainUID(), clusterName);
+      LOGGER.fine(CLUSTER_SERVICE_EXISTS, getDomainUid(), clusterName);
     }
 
     @Override
@@ -764,7 +764,7 @@ public class ServiceHelper {
 
     @Override
     protected String createServiceName() {
-      return LegalNames.toExternalServiceName(getDomainUID(), adminServerName);
+      return LegalNames.toExternalServiceName(getDomainUid(), adminServerName);
     }
 
     @Override
@@ -809,12 +809,12 @@ public class ServiceHelper {
 
     @Override
     protected void logServiceCreated(String messageKey) {
-      LOGGER.info(messageKey, getDomainUID());
+      LOGGER.info(messageKey, getDomainUid());
     }
 
     @Override
     protected void logServiceExists() {
-      LOGGER.fine(EXTERNAL_CHANNEL_SERVICE_EXISTS, getDomainUID());
+      LOGGER.fine(EXTERNAL_CHANNEL_SERVICE_EXISTS, getDomainUid());
     }
 
     protected List<V1ServicePort> createServicePorts() {

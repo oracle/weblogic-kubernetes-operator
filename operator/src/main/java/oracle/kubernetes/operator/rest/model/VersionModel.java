@@ -8,7 +8,8 @@ package oracle.kubernetes.operator.rest.model;
 public class VersionModel extends ItemModel {
 
   /** Construct an empty VersionModel. */
-  public VersionModel() {}
+  public VersionModel() {
+  }
 
   /**
    * Construct a populated VersionModel.

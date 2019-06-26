@@ -293,7 +293,7 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a message which requires parameters at the INFO level with a logging filter applied
+   * Logs a message which requires parameters at the INFO level with a logging filter applied.
    *
    * @param loggingFilter LoggingFilter to be applied, can be null
    * @param msg the message to log
@@ -464,7 +464,7 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a message which requires parameters at the SEVERE level with a logging filter applied
+   * Logs a message which requires parameters at the SEVERE level with a logging filter applied.
    *
    * @param loggingFilter LoggingFilter to be applied, can be null
    * @param msg the message to log
@@ -491,7 +491,7 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a message which accompanies a Throwable at the SEVERE level with a logging filter applied
+   * Logs a message which accompanies a Throwable at the SEVERE level with a logging filter applied.
    *
    * @param loggingFilter LoggingFilter to be applied, can be null
    * @param msg the message to log
@@ -542,7 +542,7 @@ public class LoggingFacade {
   }
 
   /**
-   * Logs a message which requires parameters at the WARNING level with a logging filter applied
+   * Logs a message which requires parameters at the WARNING level with a logging filter applied.
    *
    * @param loggingFilter LoggingFilter to be applied, can be null
    * @param msg the message to log

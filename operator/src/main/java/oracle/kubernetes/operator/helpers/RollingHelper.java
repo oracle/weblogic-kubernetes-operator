@@ -36,7 +36,8 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 public class RollingHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private RollingHelper() {}
+  private RollingHelper() {
+  }
 
   /**
    * Creates an asynchronous step that completes the rolling. The rolling parameter is a map from

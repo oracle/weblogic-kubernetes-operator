@@ -48,7 +48,8 @@ public class ServerStatusReader {
   private static KubernetesExecFactory EXEC_FACTORY = new KubernetesExecFactoryImpl();
   private static Function<Step, Step> STEP_FACTORY = ReadHealthStep::createReadHealthStep;
 
-  private ServerStatusReader() {}
+  private ServerStatusReader() {
+  }
 
   static Step createDomainStatusReaderStep(
       DomainPresenceInfo info, long timeoutSeconds, Step next) {
