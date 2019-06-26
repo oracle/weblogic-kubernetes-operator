@@ -49,7 +49,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for createNamespacedDomain
+   * Build call for createNamespacedDomain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
@@ -73,10 +73,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = body;
+    final Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -85,17 +85,17 @@ public class WeblogicApi {
                 + DOMAIN_PLURAL)
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (includeUninitialized != null)
       localVarQueryParams.addAll(
           apiClient.parameterToPair("includeUninitialized", includeUninitialized));
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
@@ -174,7 +174,7 @@ public class WeblogicApi {
   }
 
   /**
-   * create a Domain
+   * create a Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
@@ -197,7 +197,7 @@ public class WeblogicApi {
   }
 
   /**
-   * create a Domain
+   * create a Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
@@ -222,7 +222,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) create a Domain
+   * (asynchronously) create a Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param body (required)
@@ -281,13 +281,13 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for deleteCollectionNamespacedDomain
+   * Build call for deleteCollectionNamespacedDomain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param _continue The continue option should be set when retrieving more results from the
+   * @param ctue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
@@ -341,7 +341,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -351,10 +351,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = null;
+    final Object localVarPostBody = null;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -363,14 +363,14 @@ public class WeblogicApi {
                 + DOMAIN_PLURAL)
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (includeUninitialized != null)
       localVarQueryParams.addAll(
           apiClient.parameterToPair("includeUninitialized", includeUninitialized));
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    if (_continue != null)
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
+    if (ctue != null)
+      localVarQueryParams.addAll(apiClient.parameterToPair("continue", ctue));
     if (fieldSelector != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
     if (labelSelector != null)
@@ -382,9 +382,9 @@ public class WeblogicApi {
       localVarQueryParams.addAll(apiClient.parameterToPair("timeoutSeconds", timeoutSeconds));
     if (watch != null) localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
@@ -432,7 +432,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -454,7 +454,7 @@ public class WeblogicApi {
             namespace,
             includeUninitialized,
             pretty,
-            _continue,
+            ctue,
             fieldSelector,
             labelSelector,
             limit,
@@ -467,13 +467,13 @@ public class WeblogicApi {
   }
 
   /**
-   * delete collection of Domain
+   * delete collection of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param _continue The continue option should be set when retrieving more results from the
+   * @param ctue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
@@ -526,7 +526,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -539,7 +539,7 @@ public class WeblogicApi {
             namespace,
             includeUninitialized,
             pretty,
-            _continue,
+            ctue,
             fieldSelector,
             labelSelector,
             limit,
@@ -550,13 +550,13 @@ public class WeblogicApi {
   }
 
   /**
-   * delete collection of Domain
+   * delete collection of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param _continue The continue option should be set when retrieving more results from the
+   * @param ctue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
@@ -609,7 +609,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -622,7 +622,7 @@ public class WeblogicApi {
             namespace,
             includeUninitialized,
             pretty,
-            _continue,
+            ctue,
             fieldSelector,
             labelSelector,
             limit,
@@ -636,13 +636,13 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) delete collection of Domain
+   * (asynchronously) delete collection of Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param _continue The continue option should be set when retrieving more results from the
+   * @param ctue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
@@ -695,7 +695,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -731,7 +731,7 @@ public class WeblogicApi {
             namespace,
             includeUninitialized,
             pretty,
-            _continue,
+            ctue,
             fieldSelector,
             labelSelector,
             limit,
@@ -746,7 +746,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for deleteNamespacedDomain
+   * Build call for deleteNamespacedDomain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -787,10 +787,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = body;
+    final Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -801,8 +801,8 @@ public class WeblogicApi {
             .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
     if (gracePeriodSeconds != null)
@@ -813,9 +813,9 @@ public class WeblogicApi {
     if (propagationPolicy != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("propagationPolicy", propagationPolicy));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
@@ -906,7 +906,7 @@ public class WeblogicApi {
   }
 
   /**
-   * delete a Domain
+   * delete a Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -958,7 +958,7 @@ public class WeblogicApi {
   }
 
   /**
-   * delete a Domain
+   * delete a Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1013,7 +1013,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) delete a Domain
+   * (asynchronously) delete a Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1092,13 +1092,13 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for listNamespacedDomain
+   * Build call for listNamespacedDomain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param _continue The continue option should be set when retrieving more results from the
+   * @param ctue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
@@ -1152,7 +1152,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -1162,10 +1162,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = null;
+    final Object localVarPostBody = null;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -1174,14 +1174,14 @@ public class WeblogicApi {
                 + DOMAIN_PLURAL)
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (includeUninitialized != null)
       localVarQueryParams.addAll(
           apiClient.parameterToPair("includeUninitialized", includeUninitialized));
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    if (_continue != null)
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", _continue));
+    if (ctue != null)
+      localVarQueryParams.addAll(apiClient.parameterToPair("continue", ctue));
     if (fieldSelector != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
     if (labelSelector != null)
@@ -1193,9 +1193,9 @@ public class WeblogicApi {
       localVarQueryParams.addAll(apiClient.parameterToPair("timeoutSeconds", timeoutSeconds));
     if (watch != null) localVarQueryParams.addAll(apiClient.parameterToPair("watch", watch));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json",
@@ -1247,7 +1247,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -1269,7 +1269,7 @@ public class WeblogicApi {
             namespace,
             includeUninitialized,
             pretty,
-            _continue,
+            ctue,
             fieldSelector,
             labelSelector,
             limit,
@@ -1282,13 +1282,13 @@ public class WeblogicApi {
   }
 
   /**
-   * list or watch objects of kind Domain
+   * list or watch objects of kind Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param _continue The continue option should be set when retrieving more results from the
+   * @param ctue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
@@ -1341,7 +1341,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -1354,7 +1354,7 @@ public class WeblogicApi {
             namespace,
             includeUninitialized,
             pretty,
-            _continue,
+            ctue,
             fieldSelector,
             labelSelector,
             limit,
@@ -1365,13 +1365,13 @@ public class WeblogicApi {
   }
 
   /**
-   * list or watch objects of kind Domain
+   * list or watch objects of kind Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param _continue The continue option should be set when retrieving more results from the
+   * @param ctue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
@@ -1424,7 +1424,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -1437,7 +1437,7 @@ public class WeblogicApi {
             namespace,
             includeUninitialized,
             pretty,
-            _continue,
+            ctue,
             fieldSelector,
             labelSelector,
             limit,
@@ -1451,13 +1451,13 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) list or watch objects of kind Domain
+   * (asynchronously) list or watch objects of kind Domain.
    *
    * @param namespace object name and auth scope, such as for teams and projects (required)
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param _continue The continue option should be set when retrieving more results from the
+   * @param ctue The continue option should be set when retrieving more results from the
    *     server. Since this value is server defined, clients may only use the continue value from a
    *     previous query result with identical query parameters (except for the value of continue)
    *     and the server may reject a continue value it does not recognize. If the specified continue
@@ -1510,7 +1510,7 @@ public class WeblogicApi {
       String namespace,
       Boolean includeUninitialized,
       String pretty,
-      String _continue,
+      String ctue,
       String fieldSelector,
       String labelSelector,
       Integer limit,
@@ -1546,7 +1546,7 @@ public class WeblogicApi {
             namespace,
             includeUninitialized,
             pretty,
-            _continue,
+            ctue,
             fieldSelector,
             labelSelector,
             limit,
@@ -1561,7 +1561,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for patchNamespacedDomain
+   * Build call for patchNamespacedDomain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1584,10 +1584,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = body;
+    final Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -1598,14 +1598,14 @@ public class WeblogicApi {
             .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
@@ -1688,7 +1688,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update the specified Domain
+   * partially update the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1710,7 +1710,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update the specified Domain
+   * partially update the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1733,7 +1733,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) partially update the specified Domain
+   * (asynchronously) partially update the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1783,8 +1783,9 @@ public class WeblogicApi {
     apiClient.executeAsync(call, localVarReturnType, callback);
     return call;
   }
+
   /**
-   * Build call for patchNamespacedDomainStatus
+   * Build call for patchNamespacedDomainStatus.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1807,10 +1808,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = body;
+    final Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -1821,14 +1822,14 @@ public class WeblogicApi {
             .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
@@ -1911,7 +1912,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update status of the specified Domain
+   * partially update status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1933,7 +1934,7 @@ public class WeblogicApi {
   }
 
   /**
-   * partially update status of the specified Domain
+   * partially update status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -1957,7 +1958,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) partially update status of the specified Domain
+   * (asynchronously) partially update status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2009,7 +2010,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for readNamespacedDomain
+   * Build call for readNamespacedDomain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2032,10 +2033,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = null;
+    final Object localVarPostBody = null;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -2046,15 +2047,15 @@ public class WeblogicApi {
             .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (exact != null) localVarQueryParams.addAll(apiClient.parameterToPair("exact", exact));
     if (export != null) localVarQueryParams.addAll(apiClient.parameterToPair("export", export));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
@@ -2127,7 +2128,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read the specified Domain
+   * read the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2149,7 +2150,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read the specified Domain
+   * read the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2172,7 +2173,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) read the specified Domain
+   * (asynchronously) read the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2224,7 +2225,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for readNamespacedDomainStatus
+   * Build call for readNamespacedDomainStatus.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2241,10 +2242,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = null;
+    final Object localVarPostBody = null;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -2255,13 +2256,13 @@ public class WeblogicApi {
             .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
@@ -2332,7 +2333,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read status of the specified Domain
+   * read status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2348,7 +2349,7 @@ public class WeblogicApi {
   }
 
   /**
-   * read status of the specified Domain
+   * read status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2366,7 +2367,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) read status of the specified Domain
+   * (asynchronously) read status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2409,7 +2410,7 @@ public class WeblogicApi {
   }
 
   /**
-   * Build call for replaceNamespacedDomain
+   * Build call for replaceNamespacedDomain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2432,10 +2433,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = body;
+    final Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -2446,14 +2447,14 @@ public class WeblogicApi {
             .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
@@ -2532,7 +2533,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace the specified Domain
+   * replace the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2554,7 +2555,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace the specified Domain
+   * replace the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2578,7 +2579,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) replace the specified Domain
+   * (asynchronously) replace the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2628,8 +2629,9 @@ public class WeblogicApi {
     apiClient.executeAsync(call, localVarReturnType, callback);
     return call;
   }
+
   /**
-   * Build call for replaceNamespacedDomainStatus
+   * Build call for replaceNamespacedDomainStatus.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2652,10 +2654,10 @@ public class WeblogicApi {
       final ProgressResponseBody.ProgressListener progressListener,
       final ProgressRequestBody.ProgressRequestListener progressRequestListener)
       throws ApiException {
-    Object localVarPostBody = body;
+    final Object localVarPostBody = body;
 
     // create path and map variables
-    String localVarPath =
+    final String localVarPath =
         ("/apis/"
                 + DOMAIN_GROUP
                 + "/"
@@ -2666,14 +2668,14 @@ public class WeblogicApi {
             .replaceAll("\\{" + "name" + "\\}", apiClient.escapeString(name.toString()))
             .replaceAll("\\{" + "namespace" + "\\}", apiClient.escapeString(namespace.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<Pair>();
-    List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarQueryParams = new ArrayList<Pair>();
+    final List<Pair> localVarCollectionQueryParams = new ArrayList<Pair>();
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
     if (dryRun != null) localVarQueryParams.addAll(apiClient.parameterToPair("dryRun", dryRun));
 
-    Map<String, String> localVarHeaderParams = new HashMap<String, String>();
+    final Map<String, String> localVarHeaderParams = new HashMap<String, String>();
 
-    Map<String, Object> localVarFormParams = new HashMap<String, Object>();
+    final Map<String, Object> localVarFormParams = new HashMap<String, Object>();
 
     final String[] localVarAccepts = {
       "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
@@ -2752,7 +2754,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace status of the specified Domain
+   * replace status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2774,7 +2776,7 @@ public class WeblogicApi {
   }
 
   /**
-   * replace status of the specified Domain
+   * replace status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)
@@ -2798,7 +2800,7 @@ public class WeblogicApi {
   }
 
   /**
-   * (asynchronously) replace status of the specified Domain
+   * (asynchronously) replace status of the specified Domain.
    *
    * @param name name of the Domain (required)
    * @param namespace object name and auth scope, such as for teams and projects (required)

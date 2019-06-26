@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -91,7 +92,7 @@ public class JsonSchemaMojo extends AbstractMojo {
       if (kubernetesVersion != null) main.setKubernetesVersion(kubernetesVersion);
       for (ExternalSchema externalSchema : externalSchemas)
         main.defineSchemaUrlAndContents(
-            externalSchema.getUrl(), externalSchema.getCacheURL(baseDir));
+            externalSchema.getUrl(), externalSchema.getCacheUrl(baseDir));
     } catch (IOException e) {
       throw new MojoExecutionException("Unable to define external schema: ", e);
     }
@@ -117,12 +118,12 @@ public class JsonSchemaMojo extends AbstractMojo {
   }
 
   private URL[] toUrls(List<String> paths) {
-    return paths.stream().map(this::toURL).toArray(URL[]::new);
+    return paths.stream().map(this::toUrl).toArray(URL[]::new);
   }
 
-  private URL toURL(String classpathElement) {
+  private URL toUrl(String classpathElement) {
     try {
-      return fileSystem.toURL(new File(classpathElement));
+      return fileSystem.toUrl(new File(classpathElement));
     } catch (MalformedURLException e) {
       throw new UncheckedMalformedUrlException(e);
     }

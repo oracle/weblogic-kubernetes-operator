@@ -8,7 +8,8 @@ package oracle.kubernetes.operator.rest.model;
 public class LinkModel extends BaseModel {
 
   /** Construct an empty LinkModel. */
-  public LinkModel() {}
+  public LinkModel() {
+  }
 
   /**
    * Construct a populated untitled LinkModel.

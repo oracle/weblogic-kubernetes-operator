@@ -9,7 +9,8 @@ package oracle.kubernetes.operator.logging;
  * the code more readable.
  */
 public class MessageKeys {
-  private MessageKeys() {}
+  private MessageKeys() {
+  }
 
   public static final String OPERATOR_STARTED = "WLSKO-0000";
   public static final String CREATING_API_CLIENT = "WLSKO-0001";

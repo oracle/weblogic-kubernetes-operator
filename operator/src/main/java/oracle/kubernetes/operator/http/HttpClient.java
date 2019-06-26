@@ -49,12 +49,12 @@ public class HttpClient {
    * issue a HTTP GET request.
    *
    * @param requestUrl The request URL containing the request of the REST call
-   * @param serviceURL The service URL containing the host and port of the server where the HTTP
+   * @param serviceUrl The service URL containing the host and port of the server where the HTTP
    *     request is to be sent to
    * @return A Result object containing the respond from the REST call
    */
-  public Result executeGetOnServiceClusterIP(String requestUrl, String serviceURL) {
-    String url = serviceURL + requestUrl;
+  public Result executeGetOnServiceClusterIP(String requestUrl, String serviceUrl) {
+    String url = serviceUrl + requestUrl;
     WebTarget target = httpClient.target(url);
     Invocation.Builder invocationBuilder =
         target
@@ -78,22 +78,22 @@ public class HttpClient {
 
   /**
    * Constructs a URL using the provided service URL and request URL, and use the resulting URL and
-   * the payload provided to issue a HTTP POST request. This method does not throw HTTPException if
+   * the payload provided to issue a HTTP POST request. This method does not throw HttpException if
    * the HTTP request returns failure status code
    *
    * @param requestUrl The request URL containing the request of the REST call
-   * @param serviceURL The service URL containing the host and port of the server where the HTTP
+   * @param serviceUrl The service URL containing the host and port of the server where the HTTP
    *     request is to be sent to
    * @param payload The payload to be used in the HTTP POST request
    * @return A Result object containing the respond from the REST call
    */
   public Result executePostUrlOnServiceClusterIP(
-      String requestUrl, String serviceURL, String payload) {
+      String requestUrl, String serviceUrl, String payload) {
     Result result = null;
     try {
-      result = executePostUrlOnServiceClusterIP(requestUrl, serviceURL, payload, false);
-    } catch (HTTPException httpException) {
-      // ignore as executePostUrlOnServiceClusterIP only throw HTTPException if throwOnFailure is
+      result = executePostUrlOnServiceClusterIP(requestUrl, serviceUrl, payload, false);
+    } catch (HttpException httpException) {
+      // ignore as executePostUrlOnServiceClusterIP only throw HttpException if throwOnFailure is
       // true
     }
     return result;
@@ -104,19 +104,19 @@ public class HttpClient {
    * the payload provided to issue a HTTP POST request.
    *
    * @param requestUrl The request URL containing the request of the REST call
-   * @param serviceURL The service URL containing the host and port of the server where the HTTP
+   * @param serviceUrl The service URL containing the host and port of the server where the HTTP
    *     request is to be sent to
    * @param payload The payload to be used in the HTTP POST request
-   * @param throwOnFailure Throws HTTPException if the status code in the HTTP response indicates
+   * @param throwOnFailure Throws HttpException if the status code in the HTTP response indicates
    *     any error
    * @return A Result object containing the respond from the REST call
-   * @throws HTTPException if throwOnFailure is true and the status of the HTTP response indicates
+   * @throws HttpException if throwOnFailure is true and the status of the HTTP response indicates
    *     the request was not successful
    */
   public Result executePostUrlOnServiceClusterIP(
-      String requestUrl, String serviceURL, String payload, boolean throwOnFailure)
-      throws HTTPException {
-    String url = serviceURL + requestUrl;
+      String requestUrl, String serviceUrl, String payload, boolean throwOnFailure)
+      throws HttpException {
+    String url = serviceUrl + requestUrl;
     WebTarget target = httpClient.target(url);
     Invocation.Builder invocationBuilder =
         target
@@ -137,7 +137,7 @@ public class HttpClient {
     } else {
       LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, "POST", url, response.getStatus());
       if (throwOnFailure) {
-        throw new HTTPException(status);
+        throw new HttpException(status);
       }
     }
     return new Result(responseString, status, successful);
@@ -263,7 +263,7 @@ public class HttpClient {
    * @param defaultPort default port, if enabled. Other ports will use SSL.
    * @return The URL of the Service or null if the URL cannot be found.
    */
-  public static String getServiceURL(
+  public static String getServiceUrl(
       V1Service service, V1Pod pod, String adminChannel, Integer defaultPort) {
     if (service != null) {
       V1ServiceSpec spec = service.getSpec();
@@ -295,9 +295,9 @@ public class HttpClient {
           port = spec.getPorts().iterator().next().getPort();
         }
         portalIP += ":" + port;
-        String serviceURL = (port.equals(defaultPort) ? HTTP_PROTOCOL : HTTPS_PROTOCOL) + portalIP;
-        LOGGER.fine(MessageKeys.SERVICE_URL, serviceURL);
-        return serviceURL;
+        String serviceUrl = (port.equals(defaultPort) ? HTTP_PROTOCOL : HTTPS_PROTOCOL) + portalIP;
+        LOGGER.fine(MessageKeys.SERVICE_URL, serviceUrl);
+        return serviceUrl;
       }
     }
     return null;
