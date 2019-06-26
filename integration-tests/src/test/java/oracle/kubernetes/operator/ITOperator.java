@@ -251,14 +251,16 @@ public class ITOperator extends BaseTest {
     try {
       domain = TestUtils.createDomain(DOMAIN_ADMINONLY_YAML);
       domain.verifyDomainCreated();
+      modifyDomainConfig(domain);
+
     } finally {
       if (domain != null) {
         // create domain on existing dir
-        domain.destroy();
+        // domain.destroy();
       }
     }
 
-    domain.createDomainOnExistingDirectory();
+    // domain.createDomainOnExistingDirectory();
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -507,5 +509,28 @@ public class ITOperator extends BaseTest {
       testOperatorLifecycle(operator, domain);
     }
     return domain;
+  }
+
+  private void modifyDomainConfig(Domain domain) throws Exception {
+    String adminPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/modifyAcceptBacklog.py",
+        appLocationInPod + "/modifyAcceptBacklog.py",
+        adminPod,
+        domain.getDomainNS());
+
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
+        appLocationInPod + "/callpyscript.sh",
+        adminPod,
+        domain.getDomainNS());
+    String[] args = {
+      appLocationInPod + "/modifyAcceptBacklog.py",
+      BaseTest.getUsername(),
+      BaseTest.getPassword(),
+      "t3://" + adminPod + ":" + domain.getDomainMap().get("t3ChannelPort")
+    };
+    domain.callShellScriptByExecToPod(
+        adminPod, domain.getDomainNS(), appLocationInPod, "callpyscript.sh", args);
   }
 }
