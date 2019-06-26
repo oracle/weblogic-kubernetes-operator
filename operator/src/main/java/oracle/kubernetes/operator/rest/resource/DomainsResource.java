@@ -45,9 +45,9 @@ public class DomainsResource extends BaseResource {
   public CollectionModel<DomainModel> get() {
     LOGGER.entering(href());
     CollectionModel<DomainModel> collection = new CollectionModel<DomainModel>();
-    for (String domainUID : getBackend().getDomainUIDs()) {
-      DomainModel item = new DomainModel(domainUID);
-      item.addSelfLinks(href(item.getDomainUID()));
+    for (String domainUid : getBackend().getDomainUids()) {
+      DomainModel item = new DomainModel(domainUid);
+      item.addSelfLinks(href(item.getDomainUid()));
       collection.addItem(item);
     }
     addSelfAndParentLinks(collection);

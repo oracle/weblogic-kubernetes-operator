@@ -26,7 +26,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
   private Domain domain = createDomain();
 
   private static Domain createDomain() {
-    return new Domain().withSpec(new DomainSpec().withDomainUID(UID));
+    return new Domain().withSpec(new DomainSpec().withDomainUid(UID));
   }
 
   @Override

@@ -150,13 +150,13 @@ public class RestBackendImpl implements RestBackend {
   }
 
   @Override
-  public Set<String> getDomainUIDs() {
+  public Set<String> getDomainUids() {
     LOGGER.entering();
     authorize(null, Operation.list);
     Set<String> result = new TreeSet<>();
     List<Domain> domains = getDomainsList();
     for (Domain domain : domains) {
-      result.add(domain.getDomainUID());
+      result.add(domain.getDomainUid());
     }
     LOGGER.exiting(result);
     return result;
@@ -182,7 +182,7 @@ public class RestBackendImpl implements RestBackend {
   public boolean isDomainUID(String domainUID) {
     LOGGER.entering(domainUID);
     authorize(null, Operation.list);
-    boolean result = getDomainUIDs().contains(domainUID);
+    boolean result = getDomainUids().contains(domainUID);
     LOGGER.exiting(result);
     return result;
   }
@@ -247,7 +247,7 @@ public class RestBackendImpl implements RestBackend {
 
       new CallBuilder()
           .patchDomain(
-              domain.getDomainUID(), domain.getMetadata().getNamespace(), patchBuilder.build());
+              domain.getDomainUid(), domain.getMetadata().getNamespace(), patchBuilder.build());
     } catch (ApiException e) {
       throw handleApiException(e);
     }
@@ -264,7 +264,7 @@ public class RestBackendImpl implements RestBackend {
       Domain domain, String cluster, int requestedSize) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
-    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domain.getDomainUID(), cluster);
+    WlsClusterConfig wlsClusterConfig = getWlsClusterConfig(domain.getDomainUid(), cluster);
 
     // Verify the current configured cluster size
     int maxClusterSize = wlsClusterConfig.getMaxClusterSize();
@@ -319,7 +319,7 @@ public class RestBackendImpl implements RestBackend {
 
   private Domain findDomain(String domainUID, List<Domain> domains) {
     for (Domain domain : domains) {
-      if (domainUID.equals(domain.getDomainUID())) {
+      if (domainUID.equals(domain.getDomainUid())) {
         return domain;
       }
     }

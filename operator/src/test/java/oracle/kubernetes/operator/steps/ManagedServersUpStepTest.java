@@ -96,7 +96,7 @@ public class ManagedServersUpStepTest {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainUID(UID).withReplicas(1);
+    return new DomainSpec().withDomainUid(UID).withReplicas(1);
   }
 
   @Before

@@ -82,20 +82,20 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static final Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
       new ConcurrentHashMap<>();
 
-  private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUID) {
-    return DOMAINS.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUID);
+  private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
+    return DOMAINS.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
   }
 
   private static void registerDomainPresenceInfo(DomainPresenceInfo info) {
     DOMAINS
         .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
-        .put(info.getDomainUID(), info);
+        .put(info.getDomainUid(), info);
   }
 
-  private static void unregisterPresenceInfo(String ns, String domainUID) {
+  private static void unregisterPresenceInfo(String ns, String domainUid) {
     Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
     if (map != null) {
-      map.remove(domainUID);
+      map.remove(domainUid);
     }
   }
 
@@ -103,18 +103,18 @@ public class DomainProcessorImpl implements DomainProcessor {
       statusUpdaters = new ConcurrentHashMap<>();
 
   private static void registerStatusUpdater(
-      String ns, String domainUID, ScheduledFuture<?> future) {
+      String ns, String domainUid, ScheduledFuture<?> future) {
     ScheduledFuture<?> existing =
-        statusUpdaters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).put(domainUID, future);
+        statusUpdaters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).put(domainUid, future);
     if (existing != null) {
       existing.cancel(false);
     }
   }
 
-  private static void unregisterStatusUpdater(String ns, String domainUID) {
+  private static void unregisterStatusUpdater(String ns, String domainUid) {
     ConcurrentMap<String, ScheduledFuture<?>> map = statusUpdaters.get(ns);
     if (map != null) {
-      ScheduledFuture<?> existing = map.remove(domainUID);
+      ScheduledFuture<?> existing = map.remove(domainUid);
       if (existing != null) {
         existing.cancel(true);
       }
@@ -129,7 +129,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         DomainPresenceInfo value =
             (dom != null)
                 ? new DomainPresenceInfo(dom)
-                : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUID());
+                : new DomainPresenceInfo(dpi.getNamespace(), dpi.getDomainUid());
         value.setDeleting(true);
         value.setPopulated(true);
         makeRightDomainPresence(value, true, true, false);
@@ -141,10 +141,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     V1Pod pod = item.object;
     if (pod != null) {
       V1ObjectMeta metadata = pod.getMetadata();
-      String domainUID = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
+      String domainUid = metadata.getLabels().get(LabelConstants.DOMAINUID_LABEL);
       String serverName = metadata.getLabels().get(LabelConstants.SERVERNAME_LABEL);
-      if (domainUID != null && serverName != null) {
-        DomainPresenceInfo info = getExistingDomainPresenceInfo(metadata.getNamespace(), domainUID);
+      if (domainUid != null && serverName != null) {
+        DomainPresenceInfo info = getExistingDomainPresenceInfo(metadata.getNamespace(), domainUid);
         if (info != null) {
           switch (item.type) {
             case "ADDED":
@@ -157,7 +157,7 @@ public class DomainProcessorImpl implements DomainProcessor {
               boolean removed = info.deleteServerPodFromEvent(serverName, pod);
               if (removed && info.isNotDeleting() && !info.isServerPodBeingDeleted(serverName)) {
                 LOGGER.info(
-                    MessageKeys.POD_DELETED, domainUID, metadata.getNamespace(), serverName);
+                    MessageKeys.POD_DELETED, domainUid, metadata.getNamespace(), serverName);
                 makeRightDomainPresence(info, true, false, true);
               }
               break;
@@ -180,11 +180,11 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   public void dispatchServiceWatch(Watch.Response<V1Service> item) {
     V1Service service = item.object;
-    String domainUID = ServiceHelper.getServiceDomainUID(service);
-    if (domainUID == null) return;
+    String domainUid = ServiceHelper.getServiceDomainUID(service);
+    if (domainUid == null) return;
 
     DomainPresenceInfo info =
-        getExistingDomainPresenceInfo(service.getMetadata().getNamespace(), domainUID);
+        getExistingDomainPresenceInfo(service.getMetadata().getNamespace(), domainUid);
     if (info == null) return;
 
     switch (item.type) {
@@ -261,24 +261,24 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
   public void dispatchDomainWatch(Watch.Response<Domain> item) {
     Domain d;
-    String domainUID;
+    String domainUid;
     switch (item.type) {
       case "ADDED":
         d = item.object;
-        domainUID = d.getDomainUID();
-        LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
+        domainUid = d.getDomainUid();
+        LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUid);
         makeRightDomainPresence(new DomainPresenceInfo(d), true, false, true);
         break;
       case "MODIFIED":
         d = item.object;
-        domainUID = d.getDomainUID();
-        LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUID);
+        domainUid = d.getDomainUid();
+        LOGGER.info(MessageKeys.WATCH_DOMAIN, domainUid);
         makeRightDomainPresence(new DomainPresenceInfo(d), false, false, true);
         break;
       case "DELETED":
         d = item.object;
-        domainUID = d.getDomainUID();
-        LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUID);
+        domainUid = d.getDomainUid();
+        LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domainUid);
         makeRightDomainPresence(new DomainPresenceInfo(d), true, true, true);
         break;
 
@@ -312,7 +312,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
               FiberGate gate = getStatusFiberGate(info.getNamespace());
               gate.startFiberIfNoCurrentFiber(
-                  info.getDomainUID(),
+                  info.getDomainUid(),
                   strategy,
                   packet,
                   new CompletionCallback() {
@@ -342,7 +342,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     MainTuning main = TuningParameters.getInstance().getMainTuning();
     registerStatusUpdater(
         info.getNamespace(),
-        info.getDomainUID(),
+        info.getDomainUid(),
         delegate.scheduleWithFixedDelay(
             command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
   }
@@ -359,24 +359,24 @@ public class DomainProcessorImpl implements DomainProcessor {
       DomainPresenceControl.normalizeDomainSpec(spec);
     }
     String ns = info.getNamespace();
-    String domainUID = info.getDomainUID();
+    String domainUid = info.getDomainUid();
 
     if (delegate.isNamespaceRunning(ns)) {
-      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
+      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
       if (existing != null) {
         Domain current = existing.getDomain();
         if (current != null) {
           // Is this an outdated watch event?
           if (domain != null
               && KubernetesUtils.isFirstNewer(current.getMetadata(), domain.getMetadata())) {
-            LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
+            LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUid);
             return;
           }
           // Has the spec actually changed? We will get watch events for status updates
           if (!explicitRecheck && spec != null && spec.equals(current.getSpec())) {
             // nothing in the spec has changed, but status likely did; update current
             existing.setDomain(domain);
-            LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUID);
+            LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, domainUid);
             return;
           }
         }
@@ -389,17 +389,17 @@ public class DomainProcessorImpl implements DomainProcessor {
   private void internalMakeRightDomainPresence(
       @Nullable DomainPresenceInfo info, boolean isDeleting, boolean isWillInterrupt) {
     String ns = info.getNamespace();
-    String domainUID = info.getDomainUID();
+    String domainUid = info.getDomainUid();
     Domain dom = info.getDomain();
     if (isDeleting || delegate.isNamespaceRunning(ns)) {
-      LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUID);
+      LOGGER.info(MessageKeys.PROCESSING_DOMAIN, domainUid);
       Step strategy =
           new StartPlanStep(
               info, isDeleting ? createDomainDownPlan(info) : createDomainUpPlan(info));
 
       runDomainPlan(
           dom,
-          domainUID,
+          domainUid,
           ns,
           new StepAndPacket(strategy, new Packet()),
           isDeleting,
@@ -440,7 +440,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      unregisterPresenceInfo(info.getNamespace(), info.getDomainUID());
+      unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
       return doNext(packet);
     }
   }
@@ -448,7 +448,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Step readExistingPods(DomainPresenceInfo info) {
     return new CallBuilder()
         .withLabelSelectors(
-            LabelConstants.forDomainUidSelector(info.getDomainUID()),
+            LabelConstants.forDomainUidSelector(info.getDomainUid()),
             LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listPodAsync(info.getNamespace(), new PodListStep(info));
   }
@@ -456,7 +456,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private Step readExistingServices(DomainPresenceInfo info) {
     return new CallBuilder()
         .withLabelSelectors(
-            LabelConstants.forDomainUidSelector(info.getDomainUID()),
+            LabelConstants.forDomainUidSelector(info.getDomainUid()),
             LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listServiceAsync(info.getNamespace(), new ServiceListStep(info));
   }
@@ -520,7 +520,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private void runDomainPlan(
       Domain dom,
-      String domainUID,
+      String domainUid,
       String ns,
       Step.StepAndPacket plan,
       boolean isDeleting,
@@ -538,7 +538,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             LOGGER.severe(MessageKeys.EXCEPTION, throwable);
 
             gate.startFiberIfLastFiberMatches(
-                domainUID,
+                domainUid,
                 Fiber.getCurrentIfSet(),
                 DomainStatusUpdater.createFailedStep(throwable, null),
                 plan.packet,
@@ -557,7 +557,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getExecutor()
                 .schedule(
                     () -> {
-                      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUID);
+                      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
                         existing.setPopulated(false);
                         // proceed only if we have not already retried max number of times
@@ -572,7 +572,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                         } else {
                           LOGGER.severe(
                               MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
-                              domainUID,
+                              domainUid,
                               ns,
                               DomainPresence.getDomainPresenceFailureRetryMaxCount(),
                               throwable);
@@ -585,9 +585,9 @@ public class DomainProcessorImpl implements DomainProcessor {
         };
 
     if (isWillInterrupt) {
-      gate.startFiber(domainUID, plan.step, plan.packet, cc);
+      gate.startFiber(domainUid, plan.step, plan.packet, cc);
     } else {
-      gate.startFiberIfNoCurrentFiber(domainUID, plan.step, plan.packet, cc);
+      gate.startFiberIfNoCurrentFiber(domainUid, plan.step, plan.packet, cc);
     }
   }
 
@@ -615,16 +615,16 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     return Step.chain(
         new UpHeadStep(info),
-        ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUID()),
+        ConfigMapHelper.readExistingSituConfigMap(info.getNamespace(), info.getDomainUid()),
         strategy);
   }
 
   private Step createDomainDownPlan(DomainPresenceInfo info) {
     String ns = info.getNamespace();
-    String domainUID = info.getDomainUID();
+    String domainUid = info.getDomainUid();
     return Step.chain(
         new DownHeadStep(info, ns),
-        new DeleteDomainStep(info, ns, domainUID),
+        new DeleteDomainStep(info, ns, domainUid),
         new UnregisterStep(info));
   }
 
@@ -685,7 +685,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public NextAction apply(Packet packet) {
       info.setDeleting(true);
-      unregisterStatusUpdater(ns, info.getDomainUID());
+      unregisterStatusUpdater(ns, info.getDomainUid());
       PodAwaiterStepFactory pw = delegate.getPodAwaiterStepFactory(ns);
       packet
           .getComponents()
@@ -700,7 +700,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      packet.getSPI(DomainPresenceInfo.class).complete();
+      packet.getSpi(DomainPresenceInfo.class).complete();
       return doNext(packet);
     }
   }
@@ -717,7 +717,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     List<Step> resources = new ArrayList<>();
     resources.add(
         JobHelper.deleteDomainIntrospectorJobStep(
-            dom.getDomainUID(), dom.getMetadata().getNamespace(), null));
+            dom.getDomainUid(), dom.getMetadata().getNamespace(), null));
     resources.add(JobHelper.createDomainIntrospectorJobStep(next));
     return resources.toArray(new Step[0]);
   }

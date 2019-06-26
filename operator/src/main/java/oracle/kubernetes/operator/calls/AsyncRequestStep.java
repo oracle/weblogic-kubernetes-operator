@@ -98,13 +98,13 @@ public class AsyncRequestStep<T> extends Step {
     Component oldResponse = packet.getComponents().remove(RESPONSE_COMPONENT_NAME);
     if (oldResponse != null) {
       @SuppressWarnings("unchecked")
-      CallResponse<T> old = oldResponse.getSPI(CallResponse.class);
+      CallResponse<T> old = oldResponse.getSpi(CallResponse.class);
       if (old != null && old.getResult() != null) {
         // called again, access continue value, if available
         cont = accessContinue(old.getResult());
       }
 
-      retry = oldResponse.getSPI(RetryStrategy.class);
+      retry = oldResponse.getSpi(RetryStrategy.class);
     }
     String c = (cont != null) ? cont : "";
     if (retry == null) {
