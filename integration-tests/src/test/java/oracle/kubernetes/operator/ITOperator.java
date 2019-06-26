@@ -502,7 +502,9 @@ public class ITOperator extends BaseTest {
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
     if (!SMOKETEST) {
+      domain.enablePrecreateService();
       testClusterScaling(operator, domain);
+      domain.verifyServicesCreated(true);
       testDomainLifecyle(operator, domain);
       testOperatorLifecycle(operator, domain);
     }
