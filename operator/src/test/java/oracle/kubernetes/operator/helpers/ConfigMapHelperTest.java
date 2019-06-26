@@ -69,7 +69,8 @@ public class ConfigMapHelperTest {
     "traceUtils.py",
     "traceUtils.sh",
     "wlst.sh",
-    "tailLog.sh"
+    "tailLog.sh",
+    "monitorLog.sh"
   };
 
   private static final String introspectResult =
