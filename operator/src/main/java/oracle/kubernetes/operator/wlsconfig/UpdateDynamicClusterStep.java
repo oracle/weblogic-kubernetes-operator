@@ -57,7 +57,7 @@ public class UpdateDynamicClusterStep extends Step {
         long startTime = System.currentTimeMillis();
 
         String serviceURL =
-            HttpClient.getServiceURL(
+            HttpClient.getServiceUrl(
                 info.getServerService(domainTopology.getAdminServerName()),
                 info.getServerPod(domainTopology.getAdminServerName()),
                 adminConfig.getAdminProtocolChannelName(),
