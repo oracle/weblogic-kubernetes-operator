@@ -106,7 +106,7 @@ public class CrdHelper {
               .scope("Namespaced")
               .names(getCrdNames())
               .validation(createSchemaValidation());
-      if (version.isCRDSubresourcesSupported()) {
+      if (version.isCrdSubresourcesSupported()) {
         spec.setSubresources(
             new V1beta1CustomResourceSubresources()
                 .scale(

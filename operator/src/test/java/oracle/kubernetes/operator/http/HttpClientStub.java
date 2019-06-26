@@ -16,8 +16,8 @@ public abstract class HttpClientStub extends HttpClient {
 
   @Override
   public Result executePostUrlOnServiceClusterIP(
-      String requestUrl, String serviceURL, String payload, boolean throwOnFailure)
-      throws HTTPException {
+          String requestUrl, String serviceUrl, String payload, boolean throwOnFailure)
+      throws HttpException {
     return new Result(response, status, successful);
   }
 

@@ -73,10 +73,10 @@ public class RestBackendImpl implements RestBackend {
     LOGGER.exiting();
   }
 
-  private void authorize(String domainUID, Operation operation) {
-    LOGGER.entering(domainUID, operation);
+  private void authorize(String domainUid, Operation operation) {
+    LOGGER.entering(domainUid, operation);
     boolean authorized;
-    if (domainUID == null) {
+    if (domainUid == null) {
       authorized =
           atz.check(
               userInfo.getUsername(),
@@ -93,9 +93,9 @@ public class RestBackendImpl implements RestBackend {
               userInfo.getGroups(),
               operation,
               Resource.DOMAINS,
-              domainUID,
+              domainUid,
               Scope.namespace,
-              getNamespace(domainUID));
+              getNamespace(domainUid));
     }
     if (authorized) {
       LOGGER.exiting();
@@ -107,19 +107,19 @@ public class RestBackendImpl implements RestBackend {
     throw e;
   }
 
-  private String getNamespace(String domainUID) {
-    if (domainUID == null) {
+  private String getNamespace(String domainUid) {
+    if (domainUid == null) {
       throw new AssertionError(formatMessage(MessageKeys.NULL_DOMAIN_UID));
     }
 
-    return getNamespace(domainUID, getDomainsList());
+    return getNamespace(domainUid, getDomainsList());
   }
 
-  private String getNamespace(String domainUID, List<Domain> domains) {
-    if (domainUID == null) {
+  private String getNamespace(String domainUid, List<Domain> domains) {
+    if (domainUid == null) {
       throw new AssertionError(formatMessage(MessageKeys.NULL_DOMAIN_UID));
     }
-    Domain domain = findDomain(domainUID, domains);
+    Domain domain = findDomain(domainUid, domains);
     return domain.getMetadata().getNamespace();
   }
 
@@ -179,54 +179,54 @@ public class RestBackendImpl implements RestBackend {
   }
 
   @Override
-  public boolean isDomainUID(String domainUID) {
-    LOGGER.entering(domainUID);
+  public boolean isDomainUid(String domainUid) {
+    LOGGER.entering(domainUid);
     authorize(null, Operation.list);
-    boolean result = getDomainUids().contains(domainUID);
+    boolean result = getDomainUids().contains(domainUid);
     LOGGER.exiting(result);
     return result;
   }
 
   @Override
-  public Set<String> getClusters(String domainUID) {
-    LOGGER.entering(domainUID);
-    if (!isDomainUID(domainUID)) {
-      throw new AssertionError(formatMessage(MessageKeys.INVALID_DOMAIN_UID, domainUID));
+  public Set<String> getClusters(String domainUid) {
+    LOGGER.entering(domainUid);
+    if (!isDomainUid(domainUid)) {
+      throw new AssertionError(formatMessage(MessageKeys.INVALID_DOMAIN_UID, domainUid));
     }
-    authorize(domainUID, Operation.get);
+    authorize(domainUid, Operation.get);
 
     // Get list of WLS Configured Clusters defined for the corresponding WLS Domain identified by
     // Domain UID
-    Map<String, WlsClusterConfig> wlsClusterConfigs = getWLSConfiguredClusters(domainUID);
+    Map<String, WlsClusterConfig> wlsClusterConfigs = getWlsConfiguredClusters(domainUid);
     Set<String> result = wlsClusterConfigs.keySet();
     LOGGER.exiting(result);
     return result;
   }
 
   @Override
-  public boolean isCluster(String domainUID, String cluster) {
-    LOGGER.entering(domainUID, cluster);
-    authorize(domainUID, Operation.list);
-    boolean result = getClusters(domainUID).contains(cluster);
+  public boolean isCluster(String domainUid, String cluster) {
+    LOGGER.entering(domainUid, cluster);
+    authorize(domainUid, Operation.list);
+    boolean result = getClusters(domainUid).contains(cluster);
     LOGGER.exiting(result);
     return result;
   }
 
   @Override
-  public void scaleCluster(String domainUID, String cluster, int managedServerCount) {
-    LOGGER.entering(domainUID, cluster, managedServerCount);
+  public void scaleCluster(String domainUid, String cluster, int managedServerCount) {
+    LOGGER.entering(domainUid, cluster, managedServerCount);
 
     if (managedServerCount < 0) {
       throw createWebApplicationException(
           Status.BAD_REQUEST, MessageKeys.INVALID_MANAGE_SERVER_COUNT, managedServerCount);
     }
 
-    authorize(domainUID, Operation.update);
+    authorize(domainUid, Operation.update);
 
     List<Domain> domains = getDomainsList();
-    Domain domain = findDomain(domainUID, domains);
+    Domain domain = findDomain(domainUid, domains);
 
-    verifyWLSConfiguredClusterCapacity(domain, cluster, managedServerCount);
+    verifyWlsConfiguredClusterCapacity(domain, cluster, managedServerCount);
 
     patchDomain(domain, cluster, managedServerCount);
     LOGGER.exiting();
@@ -260,7 +260,7 @@ public class RestBackendImpl implements RestBackend {
     return -1;
   }
 
-  private void verifyWLSConfiguredClusterCapacity(
+  private void verifyWlsConfiguredClusterCapacity(
       Domain domain, String cluster, int requestedSize) {
     // Query WebLogic Admin Server for current configured WebLogic Cluster size
     // and verify we have enough configured managed servers to auto-scale
@@ -279,21 +279,21 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
-  private WlsClusterConfig getWlsClusterConfig(String domainUID, String cluster) {
-    return getWlsDomainConfig(domainUID).getClusterConfig(cluster);
+  private WlsClusterConfig getWlsClusterConfig(String domainUid, String cluster) {
+    return getWlsDomainConfig(domainUid).getClusterConfig(cluster);
   }
 
-  private Map<String, WlsClusterConfig> getWLSConfiguredClusters(String domainUID) {
-    return getWlsDomainConfig(domainUID).getClusterConfigs();
+  private Map<String, WlsClusterConfig> getWlsConfiguredClusters(String domainUid) {
+    return getWlsDomainConfig(domainUid).getClusterConfigs();
   }
 
   interface TopologyRetriever {
-    WlsDomainConfig getWlsDomainConfig(String ns, String domainUID);
+    WlsDomainConfig getWlsDomainConfig(String ns, String domainUid);
   }
 
   private static final TopologyRetriever INSTANCE =
-      (String ns, String domainUID) -> {
-        Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUID);
+      (String ns, String domainUid) -> {
+        Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUid);
         if (s != null) {
           return s.getWlsDomainConfig();
         }
@@ -303,13 +303,13 @@ public class RestBackendImpl implements RestBackend {
   /**
    * Find the WlsDomainConfig corresponding to the given domain UID.
    *
-   * @param domainUID The domain UID
+   * @param domainUid The domain UID
    * @return The WlsDomainConfig containing the WebLogic configuration corresponding to the given
    *     domain UID. This method returns an empty configuration object if no configuration is found.
    */
-  WlsDomainConfig getWlsDomainConfig(String domainUID) {
+  WlsDomainConfig getWlsDomainConfig(String domainUid) {
     for (String ns : targetNamespaces) {
-      WlsDomainConfig config = INSTANCE.getWlsDomainConfig(ns, domainUID);
+      WlsDomainConfig config = INSTANCE.getWlsDomainConfig(ns, domainUid);
       if (config != null) {
         return config;
       }
@@ -317,15 +317,15 @@ public class RestBackendImpl implements RestBackend {
     return new WlsDomainConfig(null);
   }
 
-  private Domain findDomain(String domainUID, List<Domain> domains) {
+  private Domain findDomain(String domainUid, List<Domain> domains) {
     for (Domain domain : domains) {
-      if (domainUID.equals(domain.getDomainUid())) {
+      if (domainUid.equals(domain.getDomainUid())) {
         return domain;
       }
     }
 
     throw createWebApplicationException(
-        Status.NOT_FOUND, MessageKeys.MATCHING_DOMAIN_NOT_FOUND, domainUID);
+        Status.NOT_FOUND, MessageKeys.MATCHING_DOMAIN_NOT_FOUND, domainUid);
   }
 
   private WebApplicationException handleApiException(ApiException e) {

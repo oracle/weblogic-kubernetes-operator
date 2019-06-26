@@ -4,9 +4,6 @@
 
 package oracle.kubernetes.json;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.SerializedName;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,6 +24,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import javax.annotation.Nonnull;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.SerializedName;
 import org.joda.time.DateTime;
 
 public class SchemaGenerator {
