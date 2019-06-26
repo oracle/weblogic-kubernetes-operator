@@ -31,7 +31,7 @@ while true; do
     exit 0
   fi
   if grep -q "BEA-000360" $1 ; then
-    trace "WebLogic Server started successfully. Script exiting."
+    trace "WebLogic Server started successfully."
     exit 0
   fi
   sleep $2
