@@ -18,11 +18,11 @@ public class LoggingFactory {
 
   private static JSON json = new JSON();
 
-  public static void setJSON(JSON json) {
+  public static void setJson(JSON json) {
     LoggingFactory.json = json;
   }
 
-  static JSON getJSON() {
+  static JSON getJson() {
     return json;
   }
 

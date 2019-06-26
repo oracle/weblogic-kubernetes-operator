@@ -153,7 +153,7 @@ public abstract class PodStepContext extends StepContextBase {
     return info.getNamespace();
   }
 
-  String getDomainUID() {
+  String getDomainUid() {
     return getDomain().getDomainUid();
   }
 
@@ -170,7 +170,7 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   String getPodName() {
-    return LegalNames.toPodName(getDomainUID(), getServerName());
+    return LegalNames.toPodName(getDomainUid(), getServerName());
   }
 
   String getAsName() {
@@ -204,7 +204,7 @@ public abstract class PodStepContext extends StepContextBase {
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
       // logHome not specified, use default value
-      return DEFAULT_LOG_HOME + File.separator + getDomainUID();
+      return DEFAULT_LOG_HOME + File.separator + getDomainUid();
     }
     return logHome;
   }
@@ -349,19 +349,19 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private void logPodCreated() {
-    LOGGER.info(getPodCreatedMessageKey(), getDomainUID(), getServerName());
+    LOGGER.info(getPodCreatedMessageKey(), getDomainUid(), getServerName());
   }
 
   private void logPodExists() {
-    LOGGER.fine(getPodExistsMessageKey(), getDomainUID(), getServerName());
+    LOGGER.fine(getPodExistsMessageKey(), getDomainUid(), getServerName());
   }
 
   private void logPodPatched() {
-    LOGGER.info(getPodPatchedMessageKey(), getDomainUID(), getServerName());
+    LOGGER.info(getPodPatchedMessageKey(), getDomainUid(), getServerName());
   }
 
   private void logPodReplaced() {
-    LOGGER.info(getPodReplacedMessageKey(), getDomainUID(), getServerName());
+    LOGGER.info(getPodReplacedMessageKey(), getDomainUid(), getServerName());
   }
 
   abstract String getPodCreatedMessageKey();
@@ -571,10 +571,10 @@ public abstract class PodStepContext extends StepContextBase {
 
     @Override
     public NextAction apply(Packet packet) {
-      String domainUID = getDomainUID();
+      String domainUid = getDomainUid();
       Step list =
           new CallBuilder()
-              .withLabelSelectors(forDomainUidSelector(domainUID))
+              .withLabelSelectors(forDomainUidSelector(domainUid))
               .listPersistentVolumeAsync(
                   new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
                     @Override
@@ -600,7 +600,7 @@ public abstract class PodStepContext extends StepContextBase {
                                 MessageKeys.PV_ACCESS_MODE_FAILED,
                                 pv.getMetadata().getName(),
                                 getDomainResourceName(),
-                                domainUID,
+                                domainUid,
                                 READ_WRITE_MANY_ACCESS);
                           }
                         }
@@ -608,7 +608,7 @@ public abstract class PodStepContext extends StepContextBase {
                         LOGGER.warning(
                             MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID,
                             getDomainResourceName(),
-                            domainUID);
+                            domainUid);
                       }
                       return doNext(packet);
                     }
@@ -719,7 +719,7 @@ public abstract class PodStepContext extends StepContextBase {
     V1ObjectMeta metadata = new V1ObjectMeta().name(getPodName()).namespace(getNamespace());
     metadata
         .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_DOMAIN_VERSION)
-        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
+        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
         .putLabelsItem(LabelConstants.DOMAINNAME_LABEL, getDomainName())
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
@@ -749,15 +749,15 @@ public abstract class PodStepContext extends StepContextBase {
 
     podSpec.setImagePullSecrets(getServerSpec().getImagePullSecrets());
 
-    for (V1Volume additionalVolume : getVolumes(getDomainUID())) {
+    for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
 
     return podSpec;
   }
 
-  private List<V1Volume> getVolumes(String domainUID) {
-    List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUID);
+  private List<V1Volume> getVolumes(String domainUid) {
+    List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
     volumes.addAll(getServerSpec().getAdditionalVolumes());
     return volumes;
   }
@@ -774,7 +774,7 @@ public abstract class PodStepContext extends StepContextBase {
             .lifecycle(createLifecycle())
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
 
-    if (!mockWLS()) {
+    if (!mockWls()) {
       v1Container.readinessProbe(createReadinessProbe(tuningParameters.getPodTuning()));
     }
 
@@ -798,7 +798,7 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   private List<V1VolumeMount> getVolumeMounts() {
-    List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUID());
+    List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid());
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
     return mounts;
   }
@@ -813,14 +813,14 @@ public abstract class PodStepContext extends StepContextBase {
       addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
     }
     addEnvVar(vars, "SERVER_NAME", getServerName());
-    addEnvVar(vars, "DOMAIN_UID", getDomainUID());
+    addEnvVar(vars, "DOMAIN_UID", getDomainUid());
     addEnvVar(vars, "NODEMGR_HOME", NODEMGR_HOME);
     addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
     addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
     addEnvVar(
-        vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getServerName()));
-    addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUID(), getAsName()));
-    if (mockWLS()) {
+        vars, "SERVICE_NAME", LegalNames.toServerServiceName(getDomainUid(), getServerName()));
+    addEnvVar(vars, "AS_SERVICE_NAME", LegalNames.toServerServiceName(getDomainUid(), getAsName()));
+    if (mockWls()) {
       addEnvVar(vars, "MOCK_WLS", "true");
     }
   }
@@ -857,10 +857,10 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1HTTPGetAction httpGetAction(String path, int port, boolean useHTTPS) {
+  private V1HTTPGetAction httpGetAction(String path, int port, boolean useHttps) {
     V1HTTPGetAction getAction = new V1HTTPGetAction();
     getAction.path(path).port(new IntOrString(port));
-    if (useHTTPS) {
+    if (useHttps) {
       getAction.scheme("HTTPS");
     }
     return getAction;
@@ -905,7 +905,7 @@ public abstract class PodStepContext extends StepContextBase {
         .orElse(tuning.livenessProbePeriodSeconds);
   }
 
-  private boolean mockWLS() {
-    return Boolean.getBoolean("mockWLS");
+  private boolean mockWls() {
+    return Boolean.getBoolean("mockWls");
   }
 }
