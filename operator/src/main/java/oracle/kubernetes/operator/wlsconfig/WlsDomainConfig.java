@@ -50,6 +50,69 @@ public class WlsDomainConfig implements WlsDomain {
     return WlsDomainConfig.create(parsedResult);
   }
 
+  /**
+   * Create a new WlsDomainConfig object based on the parsed JSON result from WLS admin server.
+   *
+   * @param parsedResult ParsedJson object containing the parsed JSON result
+   * @return A new WlsDomainConfig object based on the provided parsed JSON result
+   */
+  private static WlsDomainConfig create(ParsedJson parsedResult) {
+    if (parsedResult == null) {
+      // return empty WlsDomainConfig if no parsedResult is provided
+      return new WlsDomainConfig(null);
+    }
+
+    final String name = parsedResult.domainName;
+    final String adminServerName = parsedResult.adminServerName;
+    Map<String, WlsClusterConfig> wlsClusterConfigs = new HashMap<>();
+    Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
+    Map<String, WlsServerConfig> wlsServerTemplates = new HashMap<>();
+    Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
+
+    // process list of server templates
+    if (parsedResult.serverTemplates != null) {
+      for (Map<String, Object> thisServerTemplate : parsedResult.serverTemplates) {
+        WlsServerConfig wlsServerTemplate = WlsServerConfig.create(thisServerTemplate);
+        wlsServerTemplates.put(wlsServerTemplate.getName(), wlsServerTemplate);
+      }
+    }
+    // process list of clusters (Note: must process server templates before processing clusters)
+    if (parsedResult.clusters != null) {
+      for (Map<String, Object> clusterConfig : parsedResult.clusters) {
+        WlsClusterConfig wlsClusterConfig =
+                WlsClusterConfig.create(clusterConfig, wlsServerTemplates, name);
+        wlsClusterConfigs.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
+      }
+    }
+    // process list of statically configured servers
+    if (parsedResult.servers != null) {
+      for (Map<String, Object> thisServer : parsedResult.servers) {
+        WlsServerConfig wlsServerConfig = WlsServerConfig.create(thisServer);
+        wlsServerConfigs.put(wlsServerConfig.getName(), wlsServerConfig);
+        String clusterName = WlsServerConfig.getClusterNameFromJsonMap(thisServer);
+        if (clusterName != null) {
+          WlsClusterConfig wlsClusterConfig =
+                  wlsClusterConfigs.computeIfAbsent(clusterName, WlsClusterConfig::new);
+          wlsClusterConfig.addServerConfig(wlsServerConfig);
+        }
+      }
+    }
+    // process list of machines
+    if (parsedResult.machines != null) {
+      for (Map<String, Object> machineConfig : parsedResult.machines) {
+        WlsMachineConfig wlsMachineConfig = WlsMachineConfig.create(machineConfig);
+        wlsMachineConfigs.put(wlsMachineConfig.getName(), wlsMachineConfig);
+      }
+    }
+    return new WlsDomainConfig(
+            name,
+            adminServerName,
+            wlsClusterConfigs,
+            wlsServerConfigs,
+            wlsServerTemplates,
+            wlsMachineConfigs);
+  }
+
   public WlsDomainConfig() {
   }
 
@@ -248,69 +311,6 @@ public class WlsDomainConfig implements WlsDomain {
     return result;
   }
 
-  /**
-   * Create a new WlsDomainConfig object based on the parsed JSON result from WLS admin server.
-   *
-   * @param parsedResult ParsedJson object containing the parsed JSON result
-   * @return A new WlsDomainConfig object based on the provided parsed JSON result
-   */
-  private static WlsDomainConfig create(ParsedJson parsedResult) {
-    if (parsedResult == null) {
-      // return empty WlsDomainConfig if no parsedResult is provided
-      return new WlsDomainConfig(null);
-    }
-
-    String name = parsedResult.domainName;
-    String adminServerName = parsedResult.adminServerName;
-    Map<String, WlsClusterConfig> wlsClusterConfigs = new HashMap<>();
-    Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
-    Map<String, WlsServerConfig> wlsServerTemplates = new HashMap<>();
-    Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
-
-    // process list of server templates
-    if (parsedResult.serverTemplates != null) {
-      for (Map<String, Object> thisServerTemplate : parsedResult.serverTemplates) {
-        WlsServerConfig wlsServerTemplate = WlsServerConfig.create(thisServerTemplate);
-        wlsServerTemplates.put(wlsServerTemplate.getName(), wlsServerTemplate);
-      }
-    }
-    // process list of clusters (Note: must process server templates before processing clusters)
-    if (parsedResult.clusters != null) {
-      for (Map<String, Object> clusterConfig : parsedResult.clusters) {
-        WlsClusterConfig wlsClusterConfig =
-            WlsClusterConfig.create(clusterConfig, wlsServerTemplates, name);
-        wlsClusterConfigs.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
-      }
-    }
-    // process list of statically configured servers
-    if (parsedResult.servers != null) {
-      for (Map<String, Object> thisServer : parsedResult.servers) {
-        WlsServerConfig wlsServerConfig = WlsServerConfig.create(thisServer);
-        wlsServerConfigs.put(wlsServerConfig.getName(), wlsServerConfig);
-        String clusterName = WlsServerConfig.getClusterNameFromJsonMap(thisServer);
-        if (clusterName != null) {
-          WlsClusterConfig wlsClusterConfig =
-              wlsClusterConfigs.computeIfAbsent(clusterName, WlsClusterConfig::new);
-          wlsClusterConfig.addServerConfig(wlsServerConfig);
-        }
-      }
-    }
-    // process list of machines
-    if (parsedResult.machines != null) {
-      for (Map<String, Object> machineConfig : parsedResult.machines) {
-        WlsMachineConfig wlsMachineConfig = WlsMachineConfig.create(machineConfig);
-        wlsMachineConfigs.put(wlsMachineConfig.getName(), wlsMachineConfig);
-      }
-    }
-    return new WlsDomainConfig(
-        name,
-        adminServerName,
-        wlsClusterConfigs,
-        wlsServerConfigs,
-        wlsServerTemplates,
-        wlsMachineConfigs);
-  }
-
   public static String getRetrieveServersSearchUrl() {
     return "/management/weblogic/latest/domainConfig/search";
   }
@@ -491,16 +491,16 @@ public class WlsDomainConfig implements WlsDomain {
     return topology;
   }
 
-  private List<Map<String, Object>> createServersList(List<WlsServerConfig> servers) {
-    return servers.stream().map(this::createTopology).collect(Collectors.toList());
-  }
-
   private Map<String, Object> createTopology(WlsServerConfig server) {
     Map<String, Object> topology = new HashMap<>();
     topology.put("name", server.getName());
     topology.put("listenAddress", server.getListenAddress());
     topology.put("listenPort", server.getListenPort());
     return topology;
+  }
+
+  private List<Map<String, Object>> createServersList(List<WlsServerConfig> servers) {
+    return servers.stream().map(this::createTopology).collect(Collectors.toList());
   }
 
   /**
