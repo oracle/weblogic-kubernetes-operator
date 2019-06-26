@@ -49,7 +49,9 @@ public class WlsMachineConfig {
         machineName, nodeManagerListenPort, nodeManagerListenAddress, nodeManagerType);
   }
 
-  /** @return Name of the machine that this WlsMachineConfig is created for */
+  /**
+   * @return Name of the machine that this WlsMachineConfig is created for
+   */
   public String getName() {
     return name;
   }

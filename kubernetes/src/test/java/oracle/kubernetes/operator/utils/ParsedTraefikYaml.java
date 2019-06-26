@@ -13,7 +13,7 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 
 /**
  * Parses a generated
- * weblogic-domain-traefik-inputs.LegalNames.toDNS1123LegalName(getClusterName()).yaml file into a
+ * weblogic-domain-traefik-inputs.LegalNames.toDns1123LegalName(getClusterName()).yaml file into a
  * set of typed k8s java objects
  */
 public class ParsedTraefikYaml extends ParsedKubernetesYaml {
@@ -59,6 +59,6 @@ public class ParsedTraefikYaml extends ParsedKubernetesYaml {
   }
 
   private String getClusterScope() {
-    return inputs.getDomainUID() + "-" + LegalNames.toDNS1123LegalName(inputs.getClusterName());
+    return inputs.getDomainUID() + "-" + LegalNames.toDns1123LegalName(inputs.getClusterName());
   }
 }

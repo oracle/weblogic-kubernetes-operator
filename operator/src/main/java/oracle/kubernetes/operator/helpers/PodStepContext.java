@@ -220,7 +220,7 @@ public abstract class PodStepContext extends StepContextBase {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
           V1ContainerPort port =
               new V1ContainerPort()
-                  .name(LegalNames.toDNS1123LegalName(nap.getName()))
+                  .name(LegalNames.toDns1123LegalName(nap.getName()))
                   .containerPort(nap.getListenPort())
                   .protocol("TCP");
           ports.add(port);

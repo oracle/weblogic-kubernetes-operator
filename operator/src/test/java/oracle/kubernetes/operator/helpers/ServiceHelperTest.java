@@ -512,7 +512,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
 
   static class ClusterServiceTestFacade extends TestFacade {
     ClusterServiceTestFacade() {
-      getExpectedNapPorts().put(LegalNames.toDNS1123LegalName(NAP_3), NAP_PORT_3);
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName(NAP_3), NAP_PORT_3);
     }
 
     @Override
@@ -696,8 +696,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   static class ExternalServiceTestFacade extends TestFacade {
     ExternalServiceTestFacade() {
       getExpectedNodePorts().put("default", TEST_NODE_PORT);
-      getExpectedNodePorts().put(LegalNames.toDNS1123LegalName(NAP_1), NAP1_NODE_PORT);
-      getExpectedNodePorts().put(LegalNames.toDNS1123LegalName(NAP_2), NAP_PORT_2);
+      getExpectedNodePorts().put(LegalNames.toDns1123LegalName(NAP_1), NAP1_NODE_PORT);
+      getExpectedNodePorts().put(LegalNames.toDns1123LegalName(NAP_2), NAP_PORT_2);
     }
 
     @Override

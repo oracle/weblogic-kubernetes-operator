@@ -18,7 +18,8 @@ class ServerKubernetesObjects {
   private final AtomicReference<V1Service> service = new AtomicReference<>(null);
   private final AtomicReference<V1Service> externalService = new AtomicReference<>();
 
-  ServerKubernetesObjects() {}
+  ServerKubernetesObjects() {
+  }
 
   /**
    * The Pod.

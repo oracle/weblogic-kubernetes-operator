@@ -4,14 +4,16 @@
 
 package oracle.kubernetes.operator.logging;
 
-/** A filter to control whether a log message should be logged */
+/**
+ * A filter to control whether a log message should be logged.
+ */
 public interface LoggingFilter {
 
   // Constant for key for storing LoggingFilter object in Packet map
   String LOGGING_FILTER_PACKET_KEY = "loggingFilter";
 
   /**
-   * Checks if the message should be logged
+   * Checks if the message should be logged.
    *
    * @param msg the message to be logged
    * @return true, if can log
@@ -19,7 +21,7 @@ public interface LoggingFilter {
   boolean canLog(String msg);
 
   /**
-   * Checks if the message should be logged according to an optional LoggingFilter
+   * Checks if the message should be logged according to an optional LoggingFilter.
    *
    * @param loggingFilter LoggingFilter that decides whether the log message should be logged, can
    *     be null

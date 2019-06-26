@@ -102,9 +102,11 @@ public enum OperatorServiceType {
     return false;
   }
 
-  void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {}
+  void addToPresence(DomainPresenceInfo presenceInfo, V1Service service) {
+  }
 
-  void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {}
+  void updateFromEvent(DomainPresenceInfo presenceInfo, V1Service service) {
+  }
 
   public V1Service withTypeLabel(V1Service service) {
     Optional.ofNullable(service)

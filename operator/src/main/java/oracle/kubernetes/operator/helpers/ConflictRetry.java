@@ -16,7 +16,7 @@ public interface ConflictRetry<T> {
 
   /**
    * @return The latest version of the kubernetes object for passing to the kubernetes API, or null
-   *     if the API should not be retried
+   *     if the API should not be retried.
    */
   T getUpdatedObject();
 }

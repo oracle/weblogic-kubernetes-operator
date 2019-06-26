@@ -50,7 +50,8 @@ public class WlsDomainConfig implements WlsDomain {
     return WlsDomainConfig.create(parsedResult);
   }
 
-  public WlsDomainConfig() {}
+  public WlsDomainConfig() {
+  }
 
   /**
    * Constructor when no JSON response is available.
@@ -502,7 +503,9 @@ public class WlsDomainConfig implements WlsDomain {
     return topology;
   }
 
-  /** Object used by the {@link #parseJson(String)} method to return multiple parsed objects. */
+  /**
+   * Object used by the {@link #parseJson(String)} method to return multiple parsed objects.
+   */
   static class ParsedJson {
     String domainName;
     String adminServerName;
