@@ -59,7 +59,7 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     if (LOGGER.isFineEnabled()) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
 
@@ -69,7 +69,7 @@ public class ManagedServerUpIteratorStep extends Step {
       }
       LOGGER.fine(
           "Starting or validating servers for domain with UID: "
-              + dom.getDomainUID()
+              + dom.getDomainUid()
               + ", server list: "
               + serverList);
     }

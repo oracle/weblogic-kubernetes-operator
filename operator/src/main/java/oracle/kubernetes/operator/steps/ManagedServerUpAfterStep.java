@@ -32,7 +32,7 @@ public class ManagedServerUpAfterStep extends Step {
         (Map<String, StepAndPacket>) packet.get(ProcessingConstants.SERVERS_TO_ROLL);
 
     if (LOGGER.isFineEnabled()) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
 
@@ -42,7 +42,7 @@ public class ManagedServerUpAfterStep extends Step {
       }
       LOGGER.fine(
           "Rolling servers for domain with UID: "
-              + dom.getDomainUID()
+              + dom.getDomainUid()
               + ", rolling list: "
               + rollingList);
     }

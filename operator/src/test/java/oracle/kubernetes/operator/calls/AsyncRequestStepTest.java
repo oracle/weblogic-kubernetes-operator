@@ -105,7 +105,7 @@ public class AsyncRequestStepTest {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
 
     assertThat(
-        testSupport.getPacketComponents().get(RESPONSE_COMPONENT_NAME).getSPI(RetryStrategy.class),
+        testSupport.getPacketComponents().get(RESPONSE_COMPONENT_NAME).getSpi(RetryStrategy.class),
         notNullValue());
   }
 

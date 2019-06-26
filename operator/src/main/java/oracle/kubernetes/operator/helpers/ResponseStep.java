@@ -65,7 +65,7 @@ public abstract class ResponseStep<T> extends Step {
     NextAction nextAction = null;
 
     @SuppressWarnings("unchecked")
-    CallResponse<T> callResponse = packet.getSPI(CallResponse.class);
+    CallResponse<T> callResponse = packet.getSpi(CallResponse.class);
     if (callResponse != null) {
       if (callResponse.getResult() != null) {
         nextAction = onSuccess(packet, callResponse);
@@ -99,7 +99,7 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for list continue
    */
   protected final NextAction doContinueList(Packet packet) {
-    RetryStrategy retryStrategy = packet.getSPI(RetryStrategy.class);
+    RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
     if (retryStrategy != null) {
       retryStrategy.reset();
     }
@@ -122,7 +122,7 @@ public abstract class ResponseStep<T> extends Step {
       ApiException e,
       int statusCode,
       Map<String, List<String>> responseHeaders) {
-    RetryStrategy retryStrategy = packet.getSPI(RetryStrategy.class);
+    RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
     if (retryStrategy != null) {
       return retryStrategy.doPotentialRetry(conflictStep, packet, e, statusCode, responseHeaders);
     }

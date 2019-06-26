@@ -50,7 +50,7 @@ public abstract class DomainTestBase {
   protected static Domain createDomain() {
     return new Domain()
         .withMetadata(new V1ObjectMeta().namespace(NS))
-        .withSpec(new DomainSpec().withWebLogicCredentialsSecret(SECRET).withDomainUID(DOMAIN_UID));
+        .withSpec(new DomainSpec().withWebLogicCredentialsSecret(SECRET).withDomainUid(DOMAIN_UID));
   }
 
   protected abstract DomainConfigurator configureDomain(Domain domain);
@@ -70,7 +70,7 @@ public abstract class DomainTestBase {
 
   @Test
   public void canGetDomainInfoFromDomain() {
-    assertThat(domain.getDomainUID(), equalTo(DOMAIN_UID));
+    assertThat(domain.getDomainUid(), equalTo(DOMAIN_UID));
   }
 
   @Test

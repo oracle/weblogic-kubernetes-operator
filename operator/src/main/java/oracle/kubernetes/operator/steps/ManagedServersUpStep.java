@@ -137,13 +137,13 @@ public class ManagedServersUpStep extends Step {
   @Override
   public NextAction apply(Packet packet) {
     LOGGER.entering();
-    DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
     ServersUpStepFactory factory = new ServersUpStepFactory(config, info.getDomain());
 
     if (LOGGER.isFineEnabled()) {
-      LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUID(), getRunningServers(info));
+      LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUid(), getRunningServers(info));
     }
 
     Set<String> clusteredServers = new HashSet<>();

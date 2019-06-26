@@ -14,16 +14,17 @@ public class Container implements ComponentRegistry, ComponentEx {
 
   /**
    * Constant that represents a "no {@link Container}", which always returns null from {@link
-   * #getSPI(Class)}.
+   * #getSpi(Class)}.
    */
   public static final Container NONE = new NoneContainer();
 
-  private static final class NoneContainer extends Container {}
+  private static final class NoneContainer extends Container {
+  }
 
   @Override
-  public <S> S getSPI(Class<S> spiType) {
+  public <S> S getSpi(Class<S> spiType) {
     for (Component c : components.values()) {
-      S s = c.getSPI(spiType);
+      S s = c.getSpi(spiType);
       if (s != null) {
         return s;
       }
@@ -37,8 +38,8 @@ public class Container implements ComponentRegistry, ComponentEx {
   }
 
   @Override
-  public <E> Iterable<E> getIterableSPI(Class<E> spiType) {
-    E item = getSPI(spiType);
+  public <E> Iterable<E> getIterableSpi(Class<E> spiType) {
+    E item = getSpi(spiType);
     if (item != null) {
       return Collections.singletonList(item);
     }

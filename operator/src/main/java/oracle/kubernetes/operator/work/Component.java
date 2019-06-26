@@ -23,7 +23,7 @@ public interface Component {
    * @param spiType SPI class
    * @return null if such an SPI is not provided by this object.
    */
-  <S> S getSPI(Class<S> spiType);
+  <S> S getSpi(Class<S> spiType);
 
   /**
    * Creates a Component that supports the given SPI instances. If an instance in objects is a Class
@@ -57,7 +57,7 @@ public interface Component {
 
     return new Component() {
       @Override
-      public <S> S getSPI(Class<S> spiType) {
+      public <S> S getSpi(Class<S> spiType) {
         Object o = comps.get(spiType);
         if (o == null) {
           return null;

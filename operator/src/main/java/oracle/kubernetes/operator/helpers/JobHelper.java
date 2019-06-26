@@ -128,7 +128,7 @@ public class JobHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       if (runIntrospector(packet, info)) {
         JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
 
@@ -285,7 +285,7 @@ public class JobHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String namespace = info.getNamespace();
 
       String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
@@ -325,8 +325,8 @@ public class JobHelper {
         }
 
         // Delete the job once we've successfully read the result
-        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-        java.lang.String domainUID = info.getDomain().getDomainUID();
+        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+        java.lang.String domainUID = info.getDomain().getDomainUid();
         java.lang.String namespace = info.getNamespace();
 
         cleanupJobArtifacts(packet);
@@ -362,8 +362,8 @@ public class JobHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      String domainUID = info.getDomain().getDomainUID();
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      String domainUID = info.getDomain().getDomainUid();
       String namespace = info.getNamespace();
 
       return doNext(readDomainIntrospectorPod(domainUID, namespace, getNext()), packet);

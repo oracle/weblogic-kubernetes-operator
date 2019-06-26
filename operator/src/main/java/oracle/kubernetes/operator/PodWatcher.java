@@ -231,7 +231,7 @@ public class PodWatcher extends Watcher<V1Pod>
 
             // Timing window -- pod may have come ready before registration for callback
             CallBuilderFactory factory =
-                ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+                ContainerResolver.getInstance().getContainer().getSpi(CallBuilderFactory.class);
             fiber
                 .createChildFiber()
                 .start(

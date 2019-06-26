@@ -42,7 +42,7 @@ import static oracle.kubernetes.operator.VersionConstants.DEFAULT_OPERATOR_VERSI
 public class CrdHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private static final CRDComparator COMPARATOR = new CRDComparatorImpl();
+  private static final CrdComparator COMPARATOR = new CrdComparatorImpl();
 
   private CrdHelper() {
   }
@@ -68,7 +68,7 @@ public class CrdHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(context.verifyCRD(getNext()), packet);
+      return doNext(context.verifyCrd(getNext()), packet);
     }
   }
 
@@ -144,10 +144,10 @@ public class CrdHelper {
     }
 
     static V1beta1CustomResourceValidation createSchemaValidation() {
-      return new V1beta1CustomResourceValidation().openAPIV3Schema(createOpenAPIV3Schema());
+      return new V1beta1CustomResourceValidation().openAPIV3Schema(createOpenApiV3Schema());
     }
 
-    static V1beta1JSONSchemaProps createOpenAPIV3Schema() {
+    static V1beta1JSONSchemaProps createOpenApiV3Schema() {
       Gson gson = new Gson();
       JsonElement jsonElementSpec =
           gson.toJsonTree(createSchemaGenerator().generate(DomainSpec.class));
@@ -170,7 +170,7 @@ public class CrdHelper {
       return generator;
     }
 
-    Step verifyCRD(Step next) {
+    Step verifyCrd(Step next) {
       return new CallBuilder()
           .readCustomResourceDefinitionAsync(
               model.getMetadata().getName(), createReadResponseStep(next));
@@ -188,20 +188,20 @@ public class CrdHelper {
       @Override
       public NextAction onSuccess(
           Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        V1beta1CustomResourceDefinition existingCRD = callResponse.getResult();
-        if (existingCRD == null) {
-          return doNext(createCRD(getNext()), packet);
-        } else if (isOutdatedCRD(existingCRD)) {
-          return doNext(updateCRD(getNext(), existingCRD), packet);
-        } else if (!existingCRDContainsVersion(existingCRD)) {
-          return doNext(updateExistingCRD(getNext(), existingCRD), packet);
+        V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
+        if (existingCrd == null) {
+          return doNext(createCrd(getNext()), packet);
+        } else if (isOutdatedCrd(existingCrd)) {
+          return doNext(updateCrd(getNext(), existingCrd), packet);
+        } else if (!existingCrdContainsVersion(existingCrd)) {
+          return doNext(updateExistingCrd(getNext(), existingCrd), packet);
         } else {
           return doNext(packet);
         }
       }
     }
 
-    Step createCRD(Step next) {
+    Step createCrd(Step next) {
       return new CallBuilder()
           .createCustomResourceDefinitionAsync(model, createCreateResponseStep(next));
     }
@@ -229,12 +229,12 @@ public class CrdHelper {
       }
     }
 
-    private boolean isOutdatedCRD(V1beta1CustomResourceDefinition existingCRD) {
-      return COMPARATOR.isOutdatedCRD(existingCRD, this.model);
+    private boolean isOutdatedCrd(V1beta1CustomResourceDefinition existingCrd) {
+      return COMPARATOR.isOutdatedCrd(existingCrd, this.model);
     }
 
-    private boolean existingCRDContainsVersion(V1beta1CustomResourceDefinition existingCRD) {
-      List<V1beta1CustomResourceDefinitionVersion> versions = existingCRD.getSpec().getVersions();
+    private boolean existingCrdContainsVersion(V1beta1CustomResourceDefinition existingCrd) {
+      List<V1beta1CustomResourceDefinitionVersion> versions = existingCrd.getSpec().getVersions();
       boolean found = false;
       if (versions != null) {
         for (V1beta1CustomResourceDefinitionVersion v : versions) {
@@ -248,8 +248,8 @@ public class CrdHelper {
       return found;
     }
 
-    Step updateExistingCRD(Step next, V1beta1CustomResourceDefinition existingCRD) {
-      existingCRD
+    Step updateExistingCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
+      existingCrd
           .getSpec()
           .addVersionsItem(
               new V1beta1CustomResourceDefinitionVersion()
@@ -258,14 +258,14 @@ public class CrdHelper {
 
       return new CallBuilder()
           .replaceCustomResourceDefinitionAsync(
-              existingCRD.getMetadata().getName(), existingCRD, createReplaceResponseStep(next));
+              existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
     }
 
-    Step updateCRD(Step next, V1beta1CustomResourceDefinition existingCRD) {
-      model.getMetadata().setResourceVersion(existingCRD.getMetadata().getResourceVersion());
+    Step updateCrd(Step next, V1beta1CustomResourceDefinition existingCrd) {
+      model.getMetadata().setResourceVersion(existingCrd.getMetadata().getResourceVersion());
 
       // preserve any stored versions
-      V1beta1CustomResourceDefinitionStatus status = existingCRD.getStatus();
+      V1beta1CustomResourceDefinitionStatus status = existingCrd.getStatus();
       if (status != null) {
         List<String> storedVersions = status.getStoredVersions();
         if (storedVersions != null) {
@@ -326,14 +326,14 @@ public class CrdHelper {
     return versions;
   }
 
-  interface CRDComparator {
-    boolean isOutdatedCRD(
+  interface CrdComparator {
+    boolean isOutdatedCrd(
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
   }
 
-  static class CRDComparatorImpl implements CRDComparator {
+  static class CrdComparatorImpl implements CrdComparator {
     @Override
-    public boolean isOutdatedCRD(
+    public boolean isOutdatedCrd(
         V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected) {
       ResourceVersion current = new ResourceVersion(KubernetesConstants.DOMAIN_VERSION);
       List<ResourceVersion> actualVersions = getVersions(actual);

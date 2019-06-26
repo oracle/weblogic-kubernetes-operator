@@ -67,7 +67,7 @@ public class ClientPool extends Pool<ApiClient> {
       ClientFactory factory = null;
       Container c = ContainerResolver.getInstance().getContainer();
       if (c != null) {
-        factory = c.getSPI(ClientFactory.class);
+        factory = c.getSpi(ClientFactory.class);
       }
       if (factory == null) {
         factory = FACTORY;

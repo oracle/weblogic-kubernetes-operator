@@ -180,7 +180,7 @@ public class ServiceHelper {
       serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
       scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
-      version = packet.getSPI(KubernetesVersion.class);
+      version = packet.getSpi(KubernetesVersion.class);
     }
 
     @Override
@@ -312,7 +312,7 @@ public class ServiceHelper {
 
     ServiceStepContext(Step conflictStep, Packet packet, OperatorServiceType serviceType) {
       this.conflictStep = conflictStep;
-      info = packet.getSPI(DomainPresenceInfo.class);
+      info = packet.getSpi(DomainPresenceInfo.class);
       domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       this.serviceType = serviceType;
     }
@@ -423,7 +423,7 @@ public class ServiceHelper {
     }
 
     String getDomainUID() {
-      return getDomain().getDomainUID();
+      return getDomain().getDomainUid();
     }
 
     String getNamespace() {
@@ -572,7 +572,7 @@ public class ServiceHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       V1Service oldService = info.removeServerService(serverName);
 
       if (oldService != null) {

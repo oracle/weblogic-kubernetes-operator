@@ -250,7 +250,7 @@ public class PodHelper {
   }
 
   static PodAwaiterStepFactory getPodAwaiterStepFactory(Packet packet) {
-    return packet.getSPI(PodAwaiterStepFactory.class);
+    return packet.getSpi(PodAwaiterStepFactory.class);
   }
 
   /**
@@ -425,7 +425,7 @@ public class PodHelper {
     @Override
     public NextAction apply(Packet packet) {
 
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       V1Pod oldPod = info.getServerPod(serverName);
 
       long gracePeriodSeconds = Shutdown.DEFAULT_TIMEOUT;
