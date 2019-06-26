@@ -54,11 +54,54 @@
   </repositories>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${maven-checkstyle-plugin-version}</version>
+          <executions>
+            <execution>
+              <id>checkstyle</id>
+              <phase>test</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+              <configuration>
+                <consoleOutput>true</consoleOutput>
+                <configLocation>${checkstyle.config.location}</configLocation>
+                <suppressionsLocation>weblogic-kubernetes-operator/checkstyle/suppressions.xml</suppressionsLocation>
+                <encoding>UTF-8</encoding>
+                <failOnViolation>true</failOnViolation>
+                <violationSeverity>warning</violationSeverity>
+              </configuration>
+            </execution>
+          </executions>
+          <dependencies>
+            <dependency>
+              <groupId>oracle.kubernetes</groupId>
+              <artifactId>build-tools</artifactId>
+              <version>1.0</version>
+            </dependency>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>8.21</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${maven-enforcer-plugin-version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>${maven-enforcer-plugin-version}</version>
         <executions>
           <execution>
             <id>enforce-maven</id>
@@ -127,40 +170,7 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${maven-checkstyle-plugin-version}</version>
-        <executions>
-          <execution>
-            <id>checkstyle</id>
-            <phase>test</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <configuration>
-              <consoleOutput>true</consoleOutput>
-              <configLocation>weblogic-kubernetes-operator/checkstyle/customized_google_checks.xml</configLocation>
-              <suppressionsLocation>weblogic-kubernetes-operator/checkstyle/suppressions.xml</suppressionsLocation>
-              <encoding>UTF-8</encoding>
-              <failOnViolation>true</failOnViolation>
-              <violationSeverity>warning</violationSeverity>
-            </configuration>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>oracle.kubernetes</groupId>
-            <artifactId>build-tools</artifactId>
-            <version>1.0</version>
-          </dependency>
-          <dependency>
-            <groupId>com.puppycrawl.tools</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>8.21</version>
-          </dependency>
-        </dependencies>
-      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
@@ -615,6 +625,7 @@
     <jacoco.itOutputDir>${project.basedir}/../target/jacoco-it</jacoco.itOutputDir>
     <jacoco.destFile>${project.basedir}/../target/jacoco.exec</jacoco.destFile>
     <jacoco.skip>false</jacoco.skip>
+    <checkstyle.config.location>weblogic-kubernetes-operator/checkstyle/customized_google_checks.xml</checkstyle.config.location>
   </properties>
 
 </project>
