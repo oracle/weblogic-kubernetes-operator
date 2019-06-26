@@ -126,6 +126,14 @@ public class WlsServerConfig {
     return this;
   }
 
+  public Integer getAdminPort() {
+    return adminPort;
+  }
+
+  public void setAdminPort(Integer adminPort) {
+    this.adminPort = adminPort;
+  }
+
   public WlsServerConfig setAdminPort(int adminPort) {
     this.adminPort = adminPort;
     return this;
@@ -137,14 +145,6 @@ public class WlsServerConfig {
 
   public void setClusterName(String clusterName) {
     this.clusterName = clusterName;
-  }
-
-  public Integer getAdminPort() {
-    return adminPort;
-  }
-
-  public void setAdminPort(Integer adminPort) {
-    this.adminPort = adminPort;
   }
 
   public void setListenPort(Integer listenPort) {

@@ -1,6 +1,6 @@
 // Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
-// http://oss.oracle.com/licenses/upl..
+// http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
@@ -58,7 +58,8 @@ public class ServiceHelper {
   public static final String NODE_PORT_TYPE = "NodePort";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private ServiceHelper() {}
+  private ServiceHelper() {
+  }
 
   /**
    * Create asynchronous step for internal cluster service.

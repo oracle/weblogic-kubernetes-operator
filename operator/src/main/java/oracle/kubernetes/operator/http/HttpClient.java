@@ -158,6 +158,28 @@ public class HttpClient {
         namespace, adminSecretName, new WithSecretDataStep(next));
   }
 
+  /**
+   * Create authenticated client specifically targeted at an admin server.
+   *
+   * @param namespace Namespace
+   * @param adminSecretName Admin secret name
+   * @return authenticated client
+   */
+  public static HttpClient createAuthenticatedClientForServer(
+          String namespace, String adminSecretName) {
+    SecretHelper secretHelper = new SecretHelper(namespace);
+    Map<String, byte[]> secretData =
+            secretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName);
+
+    byte[] username = null;
+    byte[] password = null;
+    if (secretData != null) {
+      username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
+      password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
+    }
+    return createAuthenticatedClient(username, password);
+  }
+
   private static class AuthenticatedClientForServerStep extends Step {
     private final String namespace;
     private final String adminSecretName;
@@ -208,28 +230,6 @@ public class HttpClient {
    */
   private static void clearCredential(byte[] credential) {
     if (credential != null) Arrays.fill(credential, (byte) 0);
-  }
-
-  /**
-   * Create authenticated client specifically targeted at an admin server.
-   *
-   * @param namespace Namespace
-   * @param adminSecretName Admin secret name
-   * @return authenticated client
-   */
-  public static HttpClient createAuthenticatedClientForServer(
-      String namespace, String adminSecretName) {
-    SecretHelper secretHelper = new SecretHelper(namespace);
-    Map<String, byte[]> secretData =
-        secretHelper.getSecretData(SecretHelper.SecretType.AdminCredentials, adminSecretName);
-
-    byte[] username = null;
-    byte[] password = null;
-    if (secretData != null) {
-      username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
-      password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
-    }
-    return createAuthenticatedClient(username, password);
   }
 
   /**

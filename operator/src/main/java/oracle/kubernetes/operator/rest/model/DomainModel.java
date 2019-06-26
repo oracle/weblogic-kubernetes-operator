@@ -4,6 +4,8 @@
 
 package oracle.kubernetes.operator.rest.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /** DomainModel describes a WebLogic domain that has been registered with the WebLogic operator. */
 public class DomainModel extends ItemModel {
 
@@ -21,6 +23,7 @@ public class DomainModel extends ItemModel {
     setDomainUid(domainUid);
   }
 
+  @JsonProperty("domainUID")
   private String domainUid;
 
   /**

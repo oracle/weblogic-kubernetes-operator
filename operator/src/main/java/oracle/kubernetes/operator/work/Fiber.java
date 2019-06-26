@@ -533,7 +533,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         // that it is accessible to cancel() even when the lock is held
         currentThread = Thread.currentThread();
         if (LOGGER.isFinerEnabled()) {
-          LOGGER.finer("Thread entering _doRun(): {0}", currentThread);
+          LOGGER.finer("Thread entering doRunInternal(): {0}", currentThread);
         }
 
         old = currentThread.getContextClassLoader();
@@ -541,7 +541,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
       }
 
       try {
-        return _doRun(isRequireUnlock);
+        return doRunInternal(isRequireUnlock);
       } catch (OnExitRunnableException o) {
         // catching this exception indicates onExitRunnable in suspend() threw.
         // we must still avoid double unlock
@@ -560,7 +560,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
         Thread thread = Thread.currentThread();
         thread.setContextClassLoader(old);
         if (LOGGER.isFinerEnabled()) {
-          LOGGER.finer("Thread leaving _doRun(): {0}", thread);
+          LOGGER.finer("Thread leaving doRunInternal(): {0}", thread);
         }
       }
     } finally {
@@ -588,7 +588,7 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     }
   }
 
-  private boolean _doRun(Holder<Boolean> isRequireUnlock) {
+  private boolean doRunInternal(Holder<Boolean> isRequireUnlock) {
     assert (lock.isHeldByCurrentThread());
 
     while (isReady()) {
