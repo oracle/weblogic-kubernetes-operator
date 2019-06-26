@@ -196,7 +196,7 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     try {
-      TestUtils.ExecAndPrintLog("docker images");
+      TestUtils.exec("docker images", true);
       logger.info(
           "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
@@ -213,8 +213,8 @@ public class ITPodsRestart extends BaseTest {
         // tag image with repo name
         String tag =
             "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
-        TestUtils.ExecAndPrintLog(tag);
-        TestUtils.ExecAndPrintLog("docker images");
+        TestUtils.exec(tag, true);
+        TestUtils.exec("docker images", true);
 
         // login and push image to ocir
         TestUtils.loginAndPushImageToOCIR(newImage);
