@@ -168,7 +168,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(
             hasEnvVar("item1", "value1"),
             hasEnvVar("item2", "value2"),
@@ -190,7 +190,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(
             hasEnvVar(
                 "USER_MEM_ARGS",
@@ -214,7 +214,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(hasEnvVar("USER_MEM_ARGS", "-XX:+UseContainerSupport")));
   }
 
@@ -234,7 +234,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(hasEnvVar("USER_MEM_ARGS", "")));
   }
 
@@ -254,7 +254,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(hasEnvVar("item1", END_VALUE_1)));
   }
 
@@ -279,7 +279,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(
             hasEnvVar("item1", "domain-value1"),
             hasEnvVar("item2", "admin-value2"),
@@ -300,7 +300,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
   }
 
@@ -322,7 +322,7 @@ public class JobHelperTest {
     V1JobSpec jobSpec =
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
-    getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID());
+    getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid());
 
     MatcherAssert.assertThat(
         getConfiguredDomainSpec(domainConfigurator).getEnv(),
@@ -379,7 +379,7 @@ public class JobHelperTest {
                 .withMetadata(new V1ObjectMeta().namespace(NS))
                 .withSpec(
                     new DomainSpec()
-                        .withDomainUID(DOMAIN_UID)
+                        .withDomainUid(DOMAIN_UID)
                         .withWebLogicCredentialsSecret(
                             new V1SecretReference().name("webLogicCredentialsSecretName"))));
     configureDomain(domainPresenceInfo)

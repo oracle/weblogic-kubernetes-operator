@@ -329,13 +329,13 @@ public class Domain {
    *
    * @return domain UID
    */
-  public String getDomainUID() {
-    return Optional.ofNullable(spec.getDomainUID()).orElse(getMetadata().getName());
+  public String getDomainUid() {
+    return Optional.ofNullable(spec.getDomainUid()).orElse(getMetadata().getName());
   }
 
   public String getLogHome() {
     return Optional.ofNullable(spec.getLogHome())
-        .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUID()));
+        .orElse(String.format(LOG_HOME_DEFAULT_PATTERN, getDomainUid()));
   }
 
   public boolean getLogHomeEnabled() {
@@ -364,7 +364,7 @@ public class Domain {
     if (spec.isDomainHomeInImage()) {
       return "/u01/oracle/user_projects/domains";
     }
-    return "/shared/domains/" + getDomainUID();
+    return "/shared/domains/" + getDomainUid();
   }
 
   public boolean isShuttingDown() {

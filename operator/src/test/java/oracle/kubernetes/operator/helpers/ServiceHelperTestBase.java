@@ -30,6 +30,6 @@ public class ServiceHelperTestBase {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainUID(UID);
+    return new DomainSpec().withDomainUid(UID);
   }
 }

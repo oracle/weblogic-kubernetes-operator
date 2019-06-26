@@ -56,7 +56,7 @@ public class SecretHelper {
 
     LOGGER.entering();
     CallBuilderFactory factory =
-        ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+        ContainerResolver.getInstance().getContainer().getSpi(CallBuilderFactory.class);
 
     try {
       if (secretType != SecretType.AdminCredentials) {
@@ -120,7 +120,7 @@ public class SecretHelper {
       LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
       final LoggingFilter loggingFilter = packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY);
       CallBuilderFactory factory =
-          ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+          ContainerResolver.getInstance().getContainer().getSpi(CallBuilderFactory.class);
       Step read =
           factory
               .create()

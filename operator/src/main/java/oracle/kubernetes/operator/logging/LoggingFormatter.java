@@ -154,8 +154,8 @@ public class LoggingFormatter extends Formatter {
 
     Packet packet = fiber == null ? null : fiber.getPacket();
     if (packet != null) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-      return info == null ? "" : info.getDomainUID();
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return info == null ? "" : info.getDomainUid();
     } else {
       return "";
     }

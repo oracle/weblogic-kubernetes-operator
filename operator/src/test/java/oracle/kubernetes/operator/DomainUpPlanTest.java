@@ -55,7 +55,7 @@ public class DomainUpPlanTest {
   private Domain domain =
       new Domain()
           .withMetadata(new V1ObjectMeta().namespace(NS))
-          .withSpec(new DomainSpec().withDomainUID(UID).withWebLogicCredentialsSecret(SECRET));
+          .withSpec(new DomainSpec().withDomainUid(UID).withWebLogicCredentialsSecret(SECRET));
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
   private DomainProcessorImpl processor =

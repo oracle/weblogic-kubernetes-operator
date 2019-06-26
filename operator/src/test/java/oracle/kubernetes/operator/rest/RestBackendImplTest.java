@@ -62,7 +62,7 @@ public class RestBackendImplTest {
   private static Domain createDomain(String namespace, String name) {
     return new Domain()
         .withMetadata(new V1ObjectMeta().namespace(namespace).name(name))
-        .withSpec(new DomainSpec().withDomainUID(name));
+        .withSpec(new DomainSpec().withDomainUid(name));
   }
 
   private WlsDomainConfig config;

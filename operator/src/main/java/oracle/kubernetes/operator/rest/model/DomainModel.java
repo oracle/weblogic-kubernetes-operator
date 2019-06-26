@@ -8,40 +8,41 @@ package oracle.kubernetes.operator.rest.model;
 public class DomainModel extends ItemModel {
 
   /** Construct an empty DomainModel. */
-  public DomainModel() {}
+  public DomainModel() {
+  }
 
   /**
    * Construct a populated DomainModel.
    *
-   * @param domainUID - the unique identifier assigned to the WebLogic domain that contains this
+   * @param domainUid - the unique identifier assigned to the WebLogic domain that contains this
    *     cluster.
    */
-  public DomainModel(String domainUID) {
-    setDomainUID(domainUID);
+  public DomainModel(String domainUid) {
+    setDomainUid(domainUid);
   }
 
-  private String domainUID;
+  private String domainUid;
 
   /**
    * Get the unique identifier that has been assigned to this WebLogic domain.
    *
    * @return the domain's unique identifier.
    */
-  public String getDomainUID() {
-    return domainUID;
+  public String getDomainUid() {
+    return domainUid;
   }
 
   /**
    * Set the unique identifier that has been assigned to this WebLogic domain.
    *
-   * @param domainUID - the domain's unique identifier.
+   * @param domainUid - the domain's unique identifier.
    */
-  public void setDomainUID(String domainUID) {
-    this.domainUID = domainUID;
+  public void setDomainUid(String domainUid) {
+    this.domainUid = domainUid;
   }
 
   @Override
   protected String propertiesToString() {
-    return "domainUID=" + getDomainUID() + ", " + super.propertiesToString();
+    return "domainUid=" + getDomainUid() + ", " + super.propertiesToString();
   }
 }

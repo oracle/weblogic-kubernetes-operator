@@ -141,13 +141,13 @@ public class FiberGate {
                     new ExitCallback() {
                       @Override
                       public void onExit() {
-                        current.set(o.getSPI(WaitForOldFiberStep.class));
+                        current.set(o.getSpi(WaitForOldFiberStep.class));
                         fiber.resume(packet);
                       }
                     });
 
             if (!isWillCall) {
-              current.set(o.getSPI(WaitForOldFiberStep.class));
+              current.set(o.getSpi(WaitForOldFiberStep.class));
               fiber.resume(packet);
             }
           });

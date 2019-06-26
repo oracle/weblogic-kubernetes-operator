@@ -52,7 +52,7 @@ public class ConfigMapAfterStep extends Step {
 
   private ConfigMapWatcher createConfigMapWatcher(String namespace, String initialResourceVersion) {
     ThreadFactory factory =
-        ContainerResolver.getInstance().getContainer().getSPI(ThreadFactory.class);
+        ContainerResolver.getInstance().getContainer().getSpi(ThreadFactory.class);
 
     return ConfigMapWatcher.create(
         factory, namespace, initialResourceVersion, tuning, listener, stopping);

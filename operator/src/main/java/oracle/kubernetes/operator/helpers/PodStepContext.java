@@ -77,7 +77,7 @@ public abstract class PodStepContext extends StepContextBase {
 
   PodStepContext(Step conflictStep, Packet packet) {
     this.conflictStep = conflictStep;
-    info = packet.getSPI(DomainPresenceInfo.class);
+    info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
   }
@@ -154,7 +154,7 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   String getDomainUID() {
-    return getDomain().getDomainUID();
+    return getDomain().getDomainUid();
   }
 
   Domain getDomain() {
@@ -524,7 +524,7 @@ public abstract class PodStepContext extends StepContextBase {
         setRecordedPod(newPod);
       }
 
-      PodAwaiterStepFactory pw = packet.getSPI(PodAwaiterStepFactory.class);
+      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
       return doNext(pw.waitForReady(newPod, getNext()), packet);
     }
   }

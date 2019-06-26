@@ -389,7 +389,7 @@ public class RestTest extends JerseyTest {
     }
 
     @Override
-    public Set<String> getDomainUIDs() {
+    public Set<String> getDomainUids() {
       return domainClusters.keySet();
     }
 

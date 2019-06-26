@@ -41,7 +41,7 @@ public class DomainResource extends BaseResource {
   @Produces(MediaType.APPLICATION_JSON)
   public DomainModel get() {
     LOGGER.entering(href());
-    DomainModel item = new DomainModel(getDomainUID());
+    DomainModel item = new DomainModel(getDomainUid());
     addSelfAndParentLinks(item);
     addLink(item, "clusters");
     LOGGER.exiting(item);
@@ -61,7 +61,7 @@ public class DomainResource extends BaseResource {
     return result;
   }
 
-  private String getDomainUID() {
+  private String getDomainUid() {
     return getPathSegment();
   }
 }

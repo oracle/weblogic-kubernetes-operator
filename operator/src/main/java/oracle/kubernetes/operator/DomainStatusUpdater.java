@@ -63,13 +63,14 @@ public class DomainStatusUpdater {
   private static final String TRUE = "True";
   private static final String FALSE = "False";
 
-  private DomainStatusUpdater() {}
+  private DomainStatusUpdater() {
+  }
 
   static class DomainConditionStepContext {
     private final DomainPresenceInfo info;
 
     DomainConditionStepContext(Packet packet) {
-      info = packet.getSPI(DomainPresenceInfo.class);
+      info = packet.getSpi(DomainPresenceInfo.class);
     }
 
     DomainPresenceInfo getInfo() {
@@ -107,7 +108,7 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       return doNext(
           ServerStatusReader.createDomainStatusReaderStep(
               info, timeoutSeconds, new StatusUpdateStep(getNext())),
@@ -146,7 +147,7 @@ public class DomainStatusUpdater {
       }
 
       if (status.isModified()) {
-        LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUID(), status);
+        LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUid(), status);
       }
       LOGGER.exiting();
 
@@ -290,7 +291,7 @@ public class DomainStatusUpdater {
         status.removeConditionIf(c -> c.getType() == Available);
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
       return status.isModified()
@@ -325,7 +326,7 @@ public class DomainStatusUpdater {
 
       status.removeConditionIf(c -> c.getType() == Progressing && TRUE.equals(c.getStatus()));
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
       return status.isModified()
@@ -364,7 +365,7 @@ public class DomainStatusUpdater {
       status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(reason));
       status.removeConditionIf(c -> c.getType() == Failed);
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
       return status.isModified()
           ? doDomainUpdate(
@@ -463,7 +464,7 @@ public class DomainStatusUpdater {
         status.addCondition(new DomainCondition(Progressing).withStatus(FALSE));
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
       return status.isModified()
