@@ -50,6 +50,7 @@ public class WlsMachineConfig {
   }
 
   /**
+   * Name of the machine that this WlsMachineConfig is created for.
    * @return Name of the machine that this WlsMachineConfig is created for
    */
   public String getName() {
@@ -57,24 +58,24 @@ public class WlsMachineConfig {
   }
 
   /**
-   * @return Listen port of the node manager for the machine that this WlsMachineConfig is created
-   *     for
+   * Listen port of the node manager for the machine that this WlsMachineConfig is created for.
+   * @return Listen port of the node manager for the machine that this WlsMachineConfig is created for
    */
   public Integer getNodeManagerListenPort() {
     return nodeManagerListenPort;
   }
 
   /**
-   * @return Listen address of the node manager for the machine that this WlsMachineConfig is
-   *     created for
+   * Listen address of the node manager for the machine that this WlsMachineConfig is created for.
+   * @return Listen address of the node manager for the machine that this WlsMachineConfig is created for
    */
   public String getNodeManagerListenAddress() {
     return nodeManagerListenAddress;
   }
 
   /**
-   * @return Type of node manager (Plain, SSL, etc) for the machine that this WlsMachineConfig is
-   *     created for
+   * Type of node manager (Plain, SSL, etc) for the machine that this WlsMachineConfig is created for.
+   * @return Type of node manager (Plain, SSL, etc) for the machine that this WlsMachineConfig is created for
    */
   public String getNodeManagerType() {
     return nodeManagerType;
