@@ -92,7 +92,8 @@ public class WlsDynamicServersConfig {
         serverConfigs);
   }
 
-  public WlsDynamicServersConfig() {}
+  public WlsDynamicServersConfig() {
+  }
 
   /**
    * Constructor.

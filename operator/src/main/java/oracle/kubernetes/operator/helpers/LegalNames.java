@@ -17,7 +17,7 @@ public class LegalNames {
   }
 
   private static String toServerName(String domainUid, String serverName) {
-    return toDNS1123LegalName(String.format(SERVER_PATTERN, domainUid, serverName));
+    return toDns1123LegalName(String.format(SERVER_PATTERN, domainUid, serverName));
   }
 
   public static String toEventName(String domainUid, String serverName) {
@@ -29,15 +29,15 @@ public class LegalNames {
   }
 
   public static String toClusterServiceName(String domainUid, String clusterName) {
-    return toDNS1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUid, clusterName));
+    return toDns1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUid, clusterName));
   }
 
   public static String toJobIntrospectorName(String domainUid) {
-    return toDNS1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUid));
+    return toDns1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUid));
   }
 
   public static String toExternalServiceName(String domainUid, String serverName) {
-    return toDNS1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUid, serverName));
+    return toDns1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUid, serverName));
   }
 
   /**
@@ -46,7 +46,7 @@ public class LegalNames {
    * @param value Input value
    * @return nearest DNS-1123 legal name
    */
-  public static String toDNS1123LegalName(String value) {
+  public static String toDns1123LegalName(String value) {
     return value.toLowerCase().replace('_', '-');
   }
 }

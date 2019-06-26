@@ -11,7 +11,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Collection of {@link Fiber}s. Owns an {@link Executor} to run them. */
+/**
+ * Collection of {@link Fiber}s. Owns an {@link Executor} to run them.
+ */
 public class Engine {
   private static final int DEFAULT_THREAD_COUNT = 10;
 

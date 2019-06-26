@@ -27,7 +27,8 @@ public class WlsClusterConfig {
   // owner -- don't include in toString, hashCode, equals
   private WlsDomainConfig wlsDomainConfig;
 
-  public WlsClusterConfig() {}
+  public WlsClusterConfig() {
+  }
 
   /**
    * Constructor for a static cluster when Json result is not available.

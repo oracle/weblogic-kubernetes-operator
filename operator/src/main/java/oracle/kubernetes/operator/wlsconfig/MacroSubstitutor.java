@@ -101,7 +101,7 @@ public class MacroSubstitutor {
   }
 
   /**
-   * Return value for the given macro
+   * Return value for the given macro.
    *
    * @param macro Macro to be substituted
    * @return Value for the macro

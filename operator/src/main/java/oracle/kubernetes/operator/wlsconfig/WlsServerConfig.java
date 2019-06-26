@@ -24,7 +24,8 @@ public class WlsServerConfig {
   Integer adminPort;
   List<NetworkAccessPoint> networkAccessPoints;
 
-  public WlsServerConfig() {}
+  public WlsServerConfig() {
+  }
 
   /**
    * Creates a server configuration.
@@ -163,7 +164,7 @@ public class WlsServerConfig {
     if (networkAccessPoints != null) {
       for (NetworkAccessPoint nap : networkAccessPoints) {
         if (nap.isAdminProtocol()) {
-          adminProtocolChannel = LegalNames.toDNS1123LegalName(nap.getName());
+          adminProtocolChannel = LegalNames.toDns1123LegalName(nap.getName());
           break;
         }
       }
@@ -369,7 +370,7 @@ public class WlsServerConfig {
         + "      children: { "
         + "        SSL: { "
         + "          fields: [ "
-        + getSSLSearchFields()
+        + getSslSearchFields()
         + " ], "
         + "          links: [] "
         + "        }, "
@@ -400,7 +401,7 @@ public class WlsServerConfig {
    * @return A string containing SSL fields that should be retrieved from the WLS REST request, in a
    *     format that can be used in the REST request payload
    */
-  private static String getSSLSearchFields() {
+  private static String getSslSearchFields() {
     return "'enabled', 'listenPort'";
   }
 

@@ -180,7 +180,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   public void dispatchServiceWatch(Watch.Response<V1Service> item) {
     V1Service service = item.object;
-    String domainUid = ServiceHelper.getServiceDomainUID(service);
+    String domainUid = ServiceHelper.getServiceDomainUid(service);
     if (domainUid == null) return;
 
     DomainPresenceInfo info =

@@ -201,7 +201,7 @@ abstract class Watcher<T> {
       // The kubernetes client parsing logic can mistakenly parse a status as a type
       // with similar fields, such as V1ConfigMap. In this case, the actual status is
       // not available to our layer, so respond defensively by resetting resource version.
-      resourceVersion = 0l;
+      resourceVersion = 0L;
     } else if (status.getCode() == HTTP_GONE) {
       resourceVersion = computeNextResourceVersionFromMessage(status);
     }
@@ -221,7 +221,7 @@ abstract class Watcher<T> {
         }
       }
     }
-    return 0l;
+    return 0L;
   }
 
   /**

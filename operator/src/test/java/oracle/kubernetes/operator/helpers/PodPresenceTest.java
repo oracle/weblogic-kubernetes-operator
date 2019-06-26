@@ -186,14 +186,14 @@ public class PodPresenceTest {
   @Test
   public void whenPodHasNoDomainUid_returnNull() {
     pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
-    MatcherAssert.assertThat(PodHelper.getPodDomainUID(pod), nullValue());
+    MatcherAssert.assertThat(PodHelper.getPodDomainUid(pod), nullValue());
   }
 
   @Test
   public void whenPodHasDomainUid_returnIt() {
     pod.getMetadata().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1"));
 
-    MatcherAssert.assertThat(PodHelper.getPodDomainUID(pod), equalTo("domain1"));
+    MatcherAssert.assertThat(PodHelper.getPodDomainUid(pod), equalTo("domain1"));
   }
 
   @Test

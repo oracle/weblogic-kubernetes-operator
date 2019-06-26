@@ -598,7 +598,7 @@ public class Main {
 
       if (result != null) {
         for (V1Service service : result.getItems()) {
-          String domainUid = ServiceHelper.getServiceDomainUID(service);
+          String domainUid = ServiceHelper.getServiceDomainUid(service);
           if (domainUid != null) {
             DomainPresenceInfo info =
                 dpis.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(ns, domainUid));
@@ -671,7 +671,7 @@ public class Main {
 
       if (result != null) {
         for (V1Pod pod : result.getItems()) {
-          String domainUid = PodHelper.getPodDomainUID(pod);
+          String domainUid = PodHelper.getPodDomainUid(pod);
           String serverName = PodHelper.getPodServerName(pod);
           if (domainUid != null && serverName != null) {
             DomainPresenceInfo info =

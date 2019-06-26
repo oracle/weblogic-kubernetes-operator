@@ -17,7 +17,8 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
       new ConcurrentHashMap<String, Component>();
   private final ConcurrentMap<String, Object> delegate = new ConcurrentHashMap<String, Object>();
 
-  public Packet() {}
+  public Packet() {
+  }
 
   private Packet(Packet that) {
     components.putAll(that.components);

@@ -19,12 +19,16 @@ public class Result {
     this.successful = successful;
   }
 
-  /** @return The String response received from the REST request */
+  /**
+   * @return The String response received from the REST request
+   */
   public String getResponse() {
     return response;
   }
 
-  /** @return HTTP status code from the REST request */
+  /**
+   * @return HTTP status code from the REST request
+   */
   public int getStatus() {
     return status;
   }
