@@ -151,6 +151,7 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -169,7 +170,6 @@
                   </execution>
                 </executions>
             </plugin>
-            
 
             <plugin>
                 <groupId>com.coveo</groupId>
@@ -183,6 +183,11 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
             </plugin>
 
         </plugins>
