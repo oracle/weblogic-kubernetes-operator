@@ -102,7 +102,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
         boolean explicitRecheck,
         boolean isDeleting,
         boolean isWillInterrupt) {
-      dpis.put(info.getDomainUID(), info);
+      dpis.put(info.getDomainUid(), info);
     }
   }
 
@@ -126,7 +126,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private Domain createDomain(String uid, String namespace) {
     return new Domain()
-        .withSpec(new DomainSpec().withDomainUID(uid))
+        .withSpec(new DomainSpec().withDomainUid(uid))
         .withMetadata(
             new V1ObjectMeta()
                 .namespace(namespace)

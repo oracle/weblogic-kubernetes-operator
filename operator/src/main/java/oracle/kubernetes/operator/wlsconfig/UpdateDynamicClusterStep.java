@@ -48,7 +48,7 @@ public class UpdateDynamicClusterStep extends Step {
       try {
         LOGGER.info(MessageKeys.WLS_UPDATE_CLUSTER_SIZE_STARTING, clusterName, targetClusterSize);
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
-        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         WlsDomainConfig domainTopology =
             (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
         WlsServerConfig adminConfig =

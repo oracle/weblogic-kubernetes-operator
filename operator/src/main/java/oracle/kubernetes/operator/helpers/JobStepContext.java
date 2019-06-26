@@ -44,7 +44,7 @@ public abstract class JobStepContext extends StepContextBase {
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
 
   JobStepContext(Packet packet) {
-    info = packet.getSPI(DomainPresenceInfo.class);
+    info = packet.getSpi(DomainPresenceInfo.class);
   }
 
   void init() {
@@ -67,7 +67,7 @@ public abstract class JobStepContext extends StepContextBase {
   }
 
   String getDomainUID() {
-    return getDomain().getDomainUID();
+    return getDomain().getDomainUid();
   }
 
   Domain getDomain() {

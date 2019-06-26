@@ -1493,6 +1493,19 @@ public class CallBuilder {
           wrap(readSecretAsync(usage, requestParams.name, requestParams.namespace, callback));
 
   /**
+   * Asynchronous step for reading secret.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readSecretAsync(String name, String namespace, ResponseStep<V1Secret> responseStep) {
+    return createRequestAsync(
+            responseStep, new RequestParams("readSecret", namespace, name, null), readSecret);
+  }
+
+  /**
    * Create secret.
    *
    * @param namespace Namespace
@@ -1535,19 +1548,6 @@ public class CallBuilder {
     } finally {
       helper.recycle(client);
     }
-  }
-
-  /**
-   * Asynchronous step for reading secret.
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step readSecretAsync(String name, String namespace, ResponseStep<V1Secret> responseStep) {
-    return createRequestAsync(
-        responseStep, new RequestParams("readSecret", namespace, name, null), readSecret);
   }
 
   /* Subject Access Review */

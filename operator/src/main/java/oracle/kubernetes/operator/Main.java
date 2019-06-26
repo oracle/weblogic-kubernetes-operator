@@ -530,13 +530,13 @@ public class Main {
       @SuppressWarnings("unchecked")
       Map<String, DomainPresenceInfo> dpis = (Map<String, DomainPresenceInfo>) packet.get(DPI_MAP);
 
-      DomainProcessor x = packet.getSPI(DomainProcessor.class);
+      DomainProcessor x = packet.getSpi(DomainProcessor.class);
       DomainProcessor dp = x != null ? x : processor;
 
       Set<String> domainUIDs = new HashSet<>();
       if (callResponse.getResult() != null) {
         for (Domain dom : callResponse.getResult().getItems()) {
-          String domainUID = dom.getDomainUID();
+          String domainUID = dom.getDomainUid();
           domainUIDs.add(domainUID);
           DomainPresenceInfo info =
               dpis.compute(

@@ -181,7 +181,7 @@ public class DomainIntrospectorJobTest {
     cluster.setServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
     DomainSpec spec =
         new DomainSpec()
-            .withDomainUID(UID)
+            .withDomainUid(UID)
             .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
             .withConfigOverrides(OVERRIDES_CM)
             .withCluster(cluster)

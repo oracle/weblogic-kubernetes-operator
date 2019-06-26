@@ -69,7 +69,7 @@ public class RollingHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
       Domain dom = info.getDomain();
       // These are presently Ready servers
@@ -107,7 +107,7 @@ public class RollingHelper {
       }
 
       if (!servers.isEmpty()) {
-        LOGGER.info(MessageKeys.CYCLING_SERVERS, dom.getDomainUID(), servers);
+        LOGGER.info(MessageKeys.CYCLING_SERVERS, dom.getDomainUid(), servers);
       }
 
       Collection<StepAndPacket> work = new ArrayList<>();
@@ -178,7 +178,7 @@ public class RollingHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
       // Refresh as this is constantly changing
@@ -204,7 +204,7 @@ public class RollingHelper {
         }
       }
 
-      LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUID(), servers, readyServers);
+      LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUid(), servers, readyServers);
 
       int countToRestartNow = Math.max(1, countReady - dom.getMinAvailable(clusterName));
       Collection<StepAndPacket> restarts = new ArrayList<>();

@@ -8,7 +8,8 @@ package oracle.kubernetes.operator.rest.model;
 public class ClusterModel extends ItemModel {
 
   /** Construct an empty ClusterModel. */
-  public ClusterModel() {}
+  public ClusterModel() {
+  }
 
   /**
    * Construct a populated ClusterModel.

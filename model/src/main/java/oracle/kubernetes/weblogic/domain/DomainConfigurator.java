@@ -25,7 +25,8 @@ public abstract class DomainConfigurator {
 
   private Domain domain;
 
-  public DomainConfigurator() {}
+  public DomainConfigurator() {
+  }
 
   protected DomainConfigurator(Domain domain) {
     this.domain = domain;

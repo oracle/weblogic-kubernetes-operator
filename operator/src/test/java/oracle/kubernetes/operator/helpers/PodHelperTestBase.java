@@ -224,7 +224,7 @@ public abstract class PodHelperTestBase {
 
   private DomainSpec createDomainSpec() {
     return new DomainSpec()
-        .withDomainUID(UID)
+        .withDomainUid(UID)
         .withWebLogicCredentialsSecret(new V1SecretReference().name(CREDENTIALS_SECRET_NAME))
         .withIncludeServerOutInPodLog(INCLUDE_SERVER_OUT_IN_POD_LOG)
         .withImage(LATEST_IMAGE);
@@ -579,7 +579,7 @@ public abstract class PodHelperTestBase {
   CallTestSupport.CannedResponse expectListPersistentVolume() {
     return testSupport
         .createCannedResponse("listPersistentVolume")
-        .withLabelSelectors("weblogic.domainUID=" + UID);
+        .withLabelSelectors("weblogic.domainUid=" + UID);
   }
 
   @Test

@@ -919,9 +919,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
 
   @Override
-  public <S> S getSPI(Class<S> spiType) {
+  public <S> S getSpi(Class<S> spiType) {
     for (Component c : components.values()) {
-      S spi = c.getSPI(spiType);
+      S spi = c.getSpi(spiType);
       if (spi != null) {
         return spi;
       }

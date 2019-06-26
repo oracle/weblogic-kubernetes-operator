@@ -35,7 +35,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public class DomainPresenceInfo {
   private final String namespace;
-  private final String domainUID;
+  private final String domainUid;
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
@@ -53,7 +53,7 @@ public class DomainPresenceInfo {
   public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
-    this.domainUID = domain.getDomainUID();
+    this.domainUid = domain.getDomainUid();
     this.serverStartupInfo = new AtomicReference<>(null);
   }
 
@@ -61,12 +61,12 @@ public class DomainPresenceInfo {
    * Create presence for a domain.
    *
    * @param namespace Namespace
-   * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
+   * @param domainUid The unique identifier assigned to the Weblogic domain when it was registered
    */
-  public DomainPresenceInfo(String namespace, String domainUID) {
+  public DomainPresenceInfo(String namespace, String domainUid) {
     this.domain = new AtomicReference<>(null);
     this.namespace = namespace;
-    this.domainUID = domainUID;
+    this.domainUid = domainUid;
     this.serverStartupInfo = new AtomicReference<>(null);
   }
 
@@ -409,8 +409,8 @@ public class DomainPresenceInfo {
    *
    * @return Domain UID
    */
-  public String getDomainUID() {
-    return domainUID;
+  public String getDomainUid() {
+    return domainUid;
   }
 
   /**
@@ -457,7 +457,7 @@ public class DomainPresenceInfo {
       sb.append(
           String.format(
               "uid=%s, namespace=%s",
-              getDomain().getDomainUID(), getDomain().getMetadata().getNamespace()));
+              getDomain().getDomainUid(), getDomain().getMetadata().getNamespace()));
     } else {
       sb.append(", namespace=").append(namespace);
     }

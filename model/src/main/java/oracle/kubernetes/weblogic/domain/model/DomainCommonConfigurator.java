@@ -28,7 +28,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return new DomainCommonConfigurator(domain);
   }
 
-  public DomainCommonConfigurator() {}
+  public DomainCommonConfigurator() {
+  }
 
   DomainCommonConfigurator(@Nonnull Domain domain) {
     super(domain);

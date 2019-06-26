@@ -67,7 +67,7 @@ public class ReadHealthStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
     Domain dom = info.getDomain();
     V1ObjectMeta meta = dom.getMetadata();
@@ -116,11 +116,11 @@ public class ReadHealthStep extends Step {
     public NextAction apply(Packet packet) {
       try {
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
-        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         WlsDomainConfig domainConfig =
             (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
         if (domainConfig == null) {
-          Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
+          Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
           domainConfig = scan.getWlsDomainConfig();
         }
         String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);

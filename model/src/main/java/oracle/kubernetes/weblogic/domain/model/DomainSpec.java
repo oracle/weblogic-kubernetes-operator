@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1LocalObjectReference;
 import io.kubernetes.client.models.V1SecretReference;
 import oracle.kubernetes.json.Description;
@@ -37,7 +38,8 @@ public class DomainSpec extends BaseConfiguration {
       "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
           + " Defaults to the value of metadata.name")
   @Pattern("^[a-z0-9_.]{1,253}$")
-  private String domainUID;
+  @SerializedName("domainUID")
+  private String domainUid;
 
   /**
    * Domain home.
@@ -46,7 +48,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
+          + " Defaults to /shared/domains/domains/domainUid if domainHomeInImage is false"
           + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
   private String domainHome;
 
@@ -231,28 +233,28 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @return domain UID
    */
-  public String getDomainUID() {
-    return domainUID;
+  public String getDomainUid() {
+    return domainUid;
   }
 
   /**
    * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
    * to the value of metadata.name
    *
-   * @param domainUID domain UID
+   * @param domainUid domain UID
    */
-  public void setDomainUID(String domainUID) {
-    this.domainUID = domainUID;
+  public void setDomainUid(String domainUid) {
+    this.domainUid = domainUid;
   }
 
   /**
    * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
    *
-   * @param domainUID domain UID
+   * @param domainUid domain UID
    * @return this
    */
-  public DomainSpec withDomainUID(String domainUID) {
-    this.domainUID = domainUID;
+  public DomainSpec withDomainUid(String domainUid) {
+    this.domainUid = domainUid;
     return this;
   }
 
@@ -505,7 +507,7 @@ public class DomainSpec extends BaseConfiguration {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .appendSuper(super.toString())
-            .append("domainUID", domainUID)
+            .append("domainUid", domainUid)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
             .append("serverStartPolicy", serverStartPolicy)
@@ -531,7 +533,7 @@ public class DomainSpec extends BaseConfiguration {
     HashCodeBuilder builder =
         new HashCodeBuilder()
             .appendSuper(super.hashCode())
-            .append(domainUID)
+            .append(domainUid)
             .append(domainHome)
             .append(domainHomeInImage)
             .append(serverStartPolicy)
@@ -565,7 +567,7 @@ public class DomainSpec extends BaseConfiguration {
     EqualsBuilder builder =
         new EqualsBuilder()
             .appendSuper(super.equals(other))
-            .append(domainUID, rhs.domainUID)
+            .append(domainUid, rhs.domainUid)
             .append(domainHome, rhs.domainHome)
             .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(serverStartPolicy, rhs.serverStartPolicy)
