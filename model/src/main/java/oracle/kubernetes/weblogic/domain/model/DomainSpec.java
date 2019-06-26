@@ -48,7 +48,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/domainUid if domainHomeInImage is false"
+          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
           + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
   private String domainHome;
 
@@ -507,7 +507,7 @@ public class DomainSpec extends BaseConfiguration {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .appendSuper(super.toString())
-            .append("domainUid", domainUid)
+            .append("domainUID", domainUid)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
             .append("serverStartPolicy", serverStartPolicy)
