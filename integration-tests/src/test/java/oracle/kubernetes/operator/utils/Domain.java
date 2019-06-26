@@ -1264,6 +1264,28 @@ public class Domain {
     new LoadBalancer(lbMap);
   }
 
+  public void callShellScriptByExecToPod(
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
+      throws Exception {
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" -- bash -c 'chmod +x ")
+        .append(scriptsLocInPod)
+        .append("  && ")
+        .append(scriptsLocInPod)
+        .append("/")
+        .append(shScriptName)
+        .append(" ")
+        .append(String.join(" ", args).toString())
+        .append("'");
+
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    TestUtils.exec(cmdKubectlSh.toString());
+  }
+
   private void callShellScriptByExecToPod(
       String username, String password, String webappName, String appLocationInPod)
       throws Exception {
@@ -1320,21 +1342,7 @@ public class Domain {
         .append(clusterName)
         .append("'");
     logger.info("Command to call kubectl sh file " + cmdKubectlSh);
-    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
-    String resultStr =
-        "Command= '"
-            + cmdKubectlSh
-            + "'"
-            + ", exitValue="
-            + result.exitValue()
-            + ", stdout='"
-            + result.stdout()
-            + "'"
-            + ", stderr='"
-            + result.stderr()
-            + "'";
-    if (result.exitValue() != 0 || !resultStr.contains("Deployment State : completed"))
-      throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
+    TestUtils.exec(cmdKubectlSh.toString());
   }
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
