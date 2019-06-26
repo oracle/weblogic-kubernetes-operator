@@ -47,7 +47,8 @@ public class WatchBuilder {
         throws ApiException;
   }
 
-  public WatchBuilder() {}
+  public WatchBuilder() {
+  }
 
   private static Type getType(Class<?> responseBodyType) {
     return new ParameterizedType() {

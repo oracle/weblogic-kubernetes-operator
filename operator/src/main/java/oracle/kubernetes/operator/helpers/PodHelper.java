@@ -38,10 +38,11 @@ public class PodHelper {
 
   static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
 
-  private PodHelper() {}
+  private PodHelper() {
+  }
 
   /**
-   * Creates an admin server pod resource, based on the specified packet
+   * Creates an admin server pod resource, based on the specified packet.
    *
    * @param packet a packet describing the domain model and topology.
    * @return an appropriate Kubernetes resource
@@ -51,7 +52,7 @@ public class PodHelper {
   }
 
   /**
-   * Creates a managed server pod resource, based on the specified packet
+   * Creates a managed server pod resource, based on the specified packet.
    *
    * @param packet a packet describing the domain model and topology.
    * @return an appropriate Kubernetes resource
@@ -106,7 +107,7 @@ public class PodHelper {
     return false;
   }
 
-  public static String getPodDomainUID(V1Pod pod) {
+  public static String getPodDomainUid(V1Pod pod) {
     V1ObjectMeta meta = pod.getMetadata();
     Map<String, String> labels = meta.getLabels();
     if (labels != null) {

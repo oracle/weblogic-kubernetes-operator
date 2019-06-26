@@ -87,7 +87,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
   private static final int CANCELLED = 2;
   private final AtomicInteger status = new AtomicInteger(NOT_COMPLETE);
 
-  /** Callback to be invoked when a {@link Fiber} finishes execution. */
+  /**
+   * Callback to be invoked when a {@link Fiber} finishes execution.
+   */
   public interface CompletionCallback {
     /**
      * Indicates that the fiber has finished its execution. Since the processing flow runs
@@ -109,7 +111,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     void onThrowable(Packet packet, Throwable throwable);
   }
 
-  /** Callback invoked when a Thread exits processing this fiber */
+  /**
+   * Callback invoked when a Thread exits processing this fiber.
+   */
   public interface ExitCallback {
     /**
      * Indicates that a thread has finished processing the fiber, for now. If the fiber is done or
@@ -460,7 +464,9 @@ public final class Fiber implements Runnable, Future<Void>, ComponentRegistry {
     return r;
   }
 
-  /** DO NOT CALL THIS METHOD. This is an implementation detail of {@link Fiber}. */
+  /**
+   * DO NOT CALL THIS METHOD. This is an implementation detail of {@link Fiber}.
+   */
   @Override
   public void run() {
     if (status.get() == NOT_COMPLETE) {

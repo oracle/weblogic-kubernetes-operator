@@ -37,7 +37,7 @@ public interface DomainProcessorDelegate {
   boolean isNamespaceRunning(String namespace);
 
   /**
-   * Returns the version of the Kubernetes environment in which the operator is running
+   * Returns the version of the Kubernetes environment in which the operator is running.
    *
    * @return an object that represents the Kubernetes version
    */
@@ -51,7 +51,7 @@ public interface DomainProcessorDelegate {
   FiberGate createFiberGate();
 
   /**
-   * Runs a chain of steps
+   * Runs a chain of steps.
    *
    * @param firstStep the first step to run
    */

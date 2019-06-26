@@ -164,7 +164,7 @@ public class RestServer {
     }
     boolean fullyStarted = false;
     try {
-      if (isExternalSSLConfigured()) {
+      if (isExternalSslConfigured()) {
         externalHttpsServer = createExternalHttpsServer(container);
         LOGGER.info(
             "Started the external ssl REST server on "
@@ -175,7 +175,7 @@ public class RestServer {
             "Did not start the external ssl REST server because external ssl has not been configured.");
       }
 
-      if (isInternalSSLConfigured()) {
+      if (isInternalSslConfigured()) {
         internalHttpsServer = createInternalHttpsServer(container);
         LOGGER.info(
             "Started the internal ssl REST server on "
@@ -223,7 +223,7 @@ public class RestServer {
     HttpServer result =
         createHttpsServer(
             container,
-            createSSLContext(
+            createSslContext(
                 createKeyManagers(
                     config.getOperatorExternalCertificateData(),
                     config.getOperatorExternalCertificateFile(),
@@ -239,7 +239,7 @@ public class RestServer {
     HttpServer result =
         createHttpsServer(
             container,
-            createSSLContext(
+            createSslContext(
                 createKeyManagers(
                     config.getOperatorInternalCertificateData(),
                     config.getOperatorInternalCertificateFile(),
@@ -353,7 +353,7 @@ public class RestServer {
     return rc;
   }
 
-  private SSLContext createSSLContext(KeyManager[] kms) throws Exception {
+  private SSLContext createSslContext(KeyManager[] kms) throws Exception {
     SSLContext ssl = SSLContext.getInstance(SSL_PROTOCOL);
     ssl.init(kms, null, new SecureRandom());
     return ssl;
@@ -384,28 +384,28 @@ public class RestServer {
     return Files.readAllBytes(new File(file).toPath());
   }
 
-  private boolean isExternalSSLConfigured() {
-    return isSSLConfigured(
+  private boolean isExternalSslConfigured() {
+    return isSslConfigured(
         config.getOperatorExternalCertificateData(),
         config.getOperatorExternalCertificateFile(),
         config.getOperatorExternalKeyData(),
         config.getOperatorExternalKeyFile());
   }
 
-  private boolean isInternalSSLConfigured() {
-    return isSSLConfigured(
+  private boolean isInternalSslConfigured() {
+    return isSslConfigured(
         config.getOperatorInternalCertificateData(),
         config.getOperatorInternalCertificateFile(),
         config.getOperatorInternalKeyData(),
         config.getOperatorInternalKeyFile());
   }
 
-  private boolean isSSLConfigured(
+  private boolean isSslConfigured(
       String certificateData, String certificateFile, String keyData, String keyFile) {
     // don't log keyData since it can contain sensitive data
     LOGGER.entering(certificateData, certificateFile, keyFile);
-    boolean certConfigured = isPEMConfigured(certificateData, certificateFile);
-    boolean keyConfigured = isPEMConfigured(keyData, keyFile);
+    boolean certConfigured = isPemConfigured(certificateData, certificateFile);
+    boolean keyConfigured = isPemConfigured(keyData, keyFile);
     LOGGER.finer("certConfigured=" + certConfigured);
     LOGGER.finer("keyConfigured=" + keyConfigured);
     boolean result = (certConfigured && keyConfigured);
@@ -413,7 +413,7 @@ public class RestServer {
     return result;
   }
 
-  private boolean isPEMConfigured(String data, String path) {
+  private boolean isPemConfigured(String data, String path) {
     boolean result = false;
     if (data != null && data.length() > 0) {
       result = true;

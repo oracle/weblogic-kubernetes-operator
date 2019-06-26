@@ -98,7 +98,7 @@ public class ServicePresenceTest {
   public void whenServiceHasNoDomainUid_returnNull() {
     V1Service service = new V1Service().metadata(new V1ObjectMeta());
 
-    assertThat(ServiceHelper.getServiceDomainUID(service), nullValue());
+    assertThat(ServiceHelper.getServiceDomainUid(service), nullValue());
   }
 
   @Test
@@ -107,7 +107,7 @@ public class ServicePresenceTest {
         new V1Service()
             .metadata(new V1ObjectMeta().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1")));
 
-    assertThat(ServiceHelper.getServiceDomainUID(service), equalTo("domain1"));
+    assertThat(ServiceHelper.getServiceDomainUid(service), equalTo("domain1"));
   }
 
   @Test
