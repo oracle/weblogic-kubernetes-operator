@@ -18,7 +18,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.GRACEFUL_SHUTDOWNTY
 @Description("Shutdown describes the configuration for shutting down a server instance.")
 public class Shutdown {
   // Default timeout must stay 30 seconds to match Kubernetes default
-  public static final Long DEFAULT_TIMEOUT = 30l;
+  public static final Long DEFAULT_TIMEOUT = 30L;
   public static final Boolean DEFAULT_IGNORESESSIONS = Boolean.FALSE;
 
   @Description(
@@ -28,14 +28,17 @@ public class Shutdown {
   private String shutdownType;
 
   @Description(
-      "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Not required. Defaults to 30 seconds.")
+      "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server."
+              + " Not required. Defaults to 30 seconds.")
   private Long timeoutSeconds;
 
   @Description(
-      "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling. Not required. Defaults to false.")
+      "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling."
+              + " Not required. Defaults to false.")
   private Boolean ignoreSessions;
 
-  public Shutdown() {}
+  public Shutdown() {
+  }
 
   void copyValues(Shutdown fromShutdown) {
     if (shutdownType == null) {
