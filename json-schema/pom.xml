@@ -13,24 +13,10 @@
 
     <build>
         <plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin-version}</version>
-                <configuration>
-                    <release>11</release>
-                    <compilerArgs>
-                        <arg>-Xpkginfo:always</arg>
-                    </compilerArgs>
-                </configuration>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
-
         </plugins>
     </build>
 
