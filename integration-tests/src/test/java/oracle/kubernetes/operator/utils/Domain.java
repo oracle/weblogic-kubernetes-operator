@@ -63,6 +63,7 @@ public class Domain {
   protected String userProjectsDir = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
+  private boolean pvSharing = false;
   private String imageTag;
   private String imageName;
 
@@ -873,10 +874,12 @@ public class Domain {
                     + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     pvMap = yaml.load(pv_is);
     pv_is.close();
-    pvMap.put("domainUID", domainUid);
 
-    // each domain uses its own pv for now
-    if (domainUid != null)
+    logger.info("pvSharing for this domain is: " + pvSharing);
+    if (!pvSharing) pvMap.put("domainUID", domainUid);
+
+    // Now there is only one pvSharing test case and we just use"baseName" as PVC
+    if ((domainUid != null) && !pvSharing)
       domainMap.put("persistentVolumeClaimName", domainUid + "-" + pvMap.get("baseName") + "-pvc");
     else domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
 
@@ -1473,6 +1476,10 @@ public class Domain {
     clusterName = (String) domainMap.get("clusterName");
     clusterType = (String) domainMap.getOrDefault("clusterType", "DYNAMIC");
     serverStartPolicy = ((String) domainMap.get("serverStartPolicy")).trim();
+    if (domainMap.containsKey("pvSharing")) {
+      pvSharing = ((Boolean) domainMap.get("pvSharing")).booleanValue();
+    }
+    logger.info("pvSharing for this domain is: " + pvSharing);
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
