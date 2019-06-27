@@ -4,7 +4,9 @@
 import time as systime
 
 connect(sys.argv[1],sys.argv[2],sys.argv[3])
+edit()
+startEdit()
 cd('/Servers/admin-server')
 cmo.setAcceptBacklog(4000)
-
+save()
 activate()
