@@ -23,6 +23,14 @@ public interface TuningParameters extends Map<String, String> {
     return TuningParametersImpl.getInstance();
   }
 
+  public MainTuning getMainTuning();
+
+  public CallBuilderTuning getCallBuilderTuning();
+
+  public WatchTuning getWatchTuning();
+
+  public PodTuning getPodTuning();
+
   public static class MainTuning {
     public final int domainPresenceFailureRetrySeconds;
     public final int domainPresenceFailureRetryMaxCount;
@@ -252,12 +260,4 @@ public interface TuningParameters extends Map<String, String> {
           .isEquals();
     }
   }
-
-  public MainTuning getMainTuning();
-
-  public CallBuilderTuning getCallBuilderTuning();
-
-  public WatchTuning getWatchTuning();
-
-  public PodTuning getPodTuning();
 }

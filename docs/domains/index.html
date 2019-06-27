@@ -1065,14 +1065,6 @@ window.onload = function() {
           "description": "Unique, one-word, CamelCase reason for the condition\u0027s last transition.",
           "type": "string"
         },
-        "lastTransitionTime": {
-          "description": "Last time the condition transitioned from one status to another.",
-          "$ref": "#/definitions/DateTime"
-        },
-        "message": {
-          "description": "Human-readable message indicating details about last transition.",
-          "type": "string"
-        },
         "type": {
           "description": "The type of the condition. Valid types are Progressing, Available, and Failed. Required",
           "type": "string",
@@ -1081,6 +1073,14 @@ window.onload = function() {
             "Available",
             "Failed"
           ]
+        },
+        "lastTransitionTime": {
+          "description": "Last time the condition transitioned from one status to another.",
+          "$ref": "#/definitions/DateTime"
+        },
+        "message": {
+          "description": "Human-readable message indicating details about last transition.",
+          "type": "string"
         },
         "lastProbeTime": {
           "description": "Last time we probed the condition.",
@@ -1194,18 +1194,18 @@ window.onload = function() {
           "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
           "type": "boolean"
         },
-        "managedServers": {
-          "description": "Configuration for the managed servers.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ManagedServer"
-          }
-        },
         "clusters": {
           "description": "Configuration for the clusters.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/Cluster"
+          }
+        },
+        "managedServers": {
+          "description": "Configuration for the managed servers.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManagedServer"
           }
         }
       }

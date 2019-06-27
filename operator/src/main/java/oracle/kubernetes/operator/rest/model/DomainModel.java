@@ -9,6 +9,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /** DomainModel describes a WebLogic domain that has been registered with the WebLogic operator. */
 public class DomainModel extends ItemModel {
 
+  @JsonProperty("domainUID")
+  private String domainUid;
+
   /** Construct an empty DomainModel. */
   public DomainModel() {
   }
@@ -22,9 +25,6 @@ public class DomainModel extends ItemModel {
   public DomainModel(String domainUid) {
     setDomainUid(domainUid);
   }
-
-  @JsonProperty("domainUID")
-  private String domainUid;
 
   /**
    * Get the unique identifier that has been assigned to this WebLogic domain.

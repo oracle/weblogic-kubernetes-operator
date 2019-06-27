@@ -37,6 +37,9 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
   private List<List<Watch.Response<Object>>> calls = new ArrayList<>();
   private int numCloseCalls;
 
+  private StubWatchFactory() {
+  }
+
   public static Memento install() throws NoSuchFieldException {
     factory = new StubWatchFactory();
     requestParameters = new ArrayList<>();
@@ -65,6 +68,10 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
 
   public static List<Map<String, String>> getRequestParameters() {
     return requestParameters;
+  }
+
+  public static void throwExceptionOnNext(RuntimeException e) {
+    exceptionOnNext = e;
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -111,12 +118,6 @@ public class StubWatchFactory implements WatchBuilder.WatchFactory {
       result.put("labelSelector", callParams.getLabelSelector());
 
     return result;
-  }
-
-  private StubWatchFactory() {}
-
-  public static void throwExceptionOnNext(RuntimeException e) {
-    exceptionOnNext = e;
   }
 
   public interface AllWatchesClosedListener {

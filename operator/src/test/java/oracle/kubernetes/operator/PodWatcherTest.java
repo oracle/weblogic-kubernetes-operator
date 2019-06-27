@@ -81,7 +81,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void WhenWaitForReadyAppliedToReadyPod_performNextStep() {
+  public void whenWaitForReadyAppliedToReadyPod_performNextStep() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     PodWatcher watcher =
         PodWatcher.create(

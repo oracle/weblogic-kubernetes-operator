@@ -357,14 +357,14 @@ public class RestTest extends JerseyTest {
   }
 
   abstract static class RestConfigStub implements RestConfig {
-    static RestConfig create(Supplier<RestBackend> restBackendSupplier) {
-      return createStrictStub(RestConfigStub.class, restBackendSupplier);
-    }
-
     private Supplier<RestBackend> restBackendSupplier;
 
     RestConfigStub(Supplier<RestBackend> restBackendSupplier) {
       this.restBackendSupplier = restBackendSupplier;
+    }
+
+    static RestConfig create(Supplier<RestBackend> restBackendSupplier) {
+      return createStrictStub(RestConfigStub.class, restBackendSupplier);
     }
 
     @Override
@@ -394,29 +394,29 @@ public class RestTest extends JerseyTest {
     }
 
     @Override
-    public boolean isDomainUid(String domainUID) {
-      return domainClusters.containsKey(domainUID);
+    public boolean isDomainUid(String domainUid) {
+      return domainClusters.containsKey(domainUid);
     }
 
     @Override
-    public Set<String> getClusters(String domainUID) {
-      return domainClusters.get(domainUID).stream()
+    public Set<String> getClusters(String domainUid) {
+      return domainClusters.get(domainUid).stream()
           .map(ClusterState::getClusterName)
           .collect(Collectors.toSet());
     }
 
     @Override
-    public boolean isCluster(String domainUID, String cluster) {
-      return getClusters(domainUID).contains(cluster);
+    public boolean isCluster(String domainUid, String cluster) {
+      return getClusters(domainUid).contains(cluster);
     }
 
     @Override
-    public void scaleCluster(String domainUID, String cluster, int managedServerCount) {
-      getClusterStateStream(domainUID, cluster).forEach(cs -> cs.setScale(managedServerCount));
+    public void scaleCluster(String domainUid, String cluster, int managedServerCount) {
+      getClusterStateStream(domainUid, cluster).forEach(cs -> cs.setScale(managedServerCount));
     }
 
-    Stream<ClusterState> getClusterStateStream(String domainUID, String cluster) {
-      return domainClusters.get(domainUID).stream().filter(cs -> cs.hasClusterName(cluster));
+    Stream<ClusterState> getClusterStateStream(String domainUid, String cluster) {
+      return domainClusters.get(domainUid).stream().filter(cs -> cs.hasClusterName(cluster));
     }
   }
 

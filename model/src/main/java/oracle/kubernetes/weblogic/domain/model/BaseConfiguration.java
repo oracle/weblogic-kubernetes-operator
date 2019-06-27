@@ -121,6 +121,8 @@ public abstract class BaseConfiguration {
     serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
 
+  public abstract String getServerStartPolicy();
+
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
    * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
@@ -131,8 +133,6 @@ public abstract class BaseConfiguration {
    * @param serverStartPolicy start policy
    */
   public abstract void setServerStartPolicy(String serverStartPolicy);
-
-  public abstract String getServerStartPolicy();
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
@@ -178,12 +178,12 @@ public abstract class BaseConfiguration {
     return serverPod.getPodSecurityContext();
   }
 
-  V1SecurityContext getContainerSecurityContext() {
-    return serverPod.getContainerSecurityContext();
-  }
-
   void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
     serverPod.setPodSecurityContext(podSecurityContext);
+  }
+
+  V1SecurityContext getContainerSecurityContext() {
+    return serverPod.getContainerSecurityContext();
   }
 
   void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {

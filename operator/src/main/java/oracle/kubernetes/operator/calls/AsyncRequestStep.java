@@ -44,11 +44,11 @@ public class AsyncRequestStep<T> extends Step {
   private final ClientPool helper;
   private final RequestParams requestParams;
   private final CallFactory<T> factory;
-  private int timeoutSeconds;
   private final int maxRetryCount;
   private final String fieldSelector;
   private final String labelSelector;
   private final String resourceVersion;
+  private int timeoutSeconds;
 
   /**
    * Construct async step.
@@ -83,6 +83,26 @@ public class AsyncRequestStep<T> extends Step {
     this.labelSelector = labelSelector;
     this.resourceVersion = resourceVersion;
     next.setPrevious(this);
+  }
+
+  private static String accessContinue(Object result) {
+    String cont = "";
+    if (result != null) {
+      try {
+        Method m = result.getClass().getMethod("getMetadata");
+        Object meta = m.invoke(result);
+        if (meta instanceof V1ListMeta) {
+          return ((V1ListMeta) meta).getContinue();
+        }
+      } catch (NoSuchMethodException
+          | SecurityException
+          | IllegalAccessException
+          | IllegalArgumentException
+          | InvocationTargetException e) {
+        // no-op, no-log
+      }
+    }
+    return cont;
   }
 
   @Override
@@ -235,24 +255,16 @@ public class AsyncRequestStep<T> extends Step {
         });
   }
 
-  private static String accessContinue(Object result) {
-    String cont = "";
-    if (result != null) {
-      try {
-        Method m = result.getClass().getMethod("getMetadata");
-        Object meta = m.invoke(result);
-        if (meta instanceof V1ListMeta) {
-          return ((V1ListMeta) meta).getContinue();
-        }
-      } catch (NoSuchMethodException
-          | SecurityException
-          | IllegalAccessException
-          | IllegalArgumentException
-          | InvocationTargetException e) {
-        // no-op, no-log
-      }
+  private abstract static class BaseApiCallback<T> implements ApiCallback<T> {
+    @Override
+    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
+      // no-op
     }
-    return cont;
+
+    @Override
+    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
+      // no-op
+    }
   }
 
   private final class DefaultRetryStrategy implements RetryStrategy {
@@ -316,18 +328,6 @@ public class AsyncRequestStep<T> extends Step {
     @Override
     public void reset() {
       retryCount = 0;
-    }
-  }
-
-  private abstract static class BaseApiCallback<T> implements ApiCallback<T> {
-    @Override
-    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-      // no-op
-    }
-
-    @Override
-    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-      // no-op
     }
   }
 }

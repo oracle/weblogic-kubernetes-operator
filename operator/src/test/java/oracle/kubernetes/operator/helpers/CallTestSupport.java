@@ -46,6 +46,16 @@ public class CallTestSupport {
 
   private Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
 
+  private static String toString(RequestParams requestParams, AdditionalParams additionalParams) {
+    return new ErrorFormatter(requestParams.call)
+        .addDescriptor("namespace", requestParams.namespace)
+        .addDescriptor("name", requestParams.name)
+        .addDescriptor("fieldSelector", additionalParams.getFieldSelector())
+        .addDescriptor("labelSelector", additionalParams.getLabelSelector())
+        .addDescriptor("body", requestParams.body)
+        .toString();
+  }
+
   Memento installSynchronousCallDispatcher() {
     return new Memento() {
       private SynchronousCallDispatcher originalCallDispatcher;
@@ -181,19 +191,19 @@ public class CallTestSupport {
           && matchesBody(requestParams.body, requestParamExpectations.get(BODY));
     }
 
+    private boolean matches(AdditionalParams params) {
+      return Objects.equals(params.fieldSelector, requestParamExpectations.get(FIELD_SELECTOR))
+          && Objects.equals(params.labelSelector, requestParamExpectations.get(LABEL_SELECTOR));
+    }
+
     private boolean matchesBody(Object actualBody, Object expectedBody) {
       return expectedBody instanceof BodyMatcher && ((BodyMatcher) expectedBody).matches(actualBody)
           || Objects.equals(actualBody, expectedBody)
           || function != null;
     }
 
-    private boolean matches(AdditionalParams params) {
-      return Objects.equals(params.fieldSelector, requestParamExpectations.get(FIELD_SELECTOR))
-          && Objects.equals(params.labelSelector, requestParamExpectations.get(LABEL_SELECTOR));
-    }
-
     /**
-     * Qualifies the canned response to be used only if the namespace matches the value specified
+     * Qualifies the canned response to be used only if the namespace matches the value specified.
      *
      * @param namespace the expected namespace
      * @return the updated response
@@ -204,7 +214,7 @@ public class CallTestSupport {
     }
 
     /**
-     * Qualifies the canned response to be used only if the name matches the value specified
+     * Qualifies the canned response to be used only if the name matches the value specified.
      *
      * @param name the expected name
      * @return the updated response
@@ -215,7 +225,7 @@ public class CallTestSupport {
     }
 
     /**
-     * Qualifies the canned response to be used only if the UID matches the value specified
+     * Qualifies the canned response to be used only if the UID matches the value specified.
      *
      * @param uid the expected domain uid
      * @return the updated response
@@ -231,7 +241,7 @@ public class CallTestSupport {
     }
 
     /**
-     * Qualifies the canned response to be used for any body value
+     * Qualifies the canned response to be used for any body value.
      *
      * @return the updated response
      */
@@ -241,7 +251,7 @@ public class CallTestSupport {
     }
 
     /**
-     * Qualifies the canned response to be used only if the body matches the value specified
+     * Qualifies the canned response to be used only if the body matches the value specified.
      *
      * @param body the expected body
      * @return the updated response
@@ -304,34 +314,6 @@ public class CallTestSupport {
     }
   }
 
-  private class AdditionalParams {
-    private String fieldSelector;
-    private String labelSelector;
-
-    AdditionalParams(String fieldSelector, String labelSelector) {
-      this.fieldSelector = fieldSelector;
-      this.labelSelector = labelSelector;
-    }
-
-    String getFieldSelector() {
-      return fieldSelector;
-    }
-
-    String getLabelSelector() {
-      return labelSelector;
-    }
-  }
-
-  private static String toString(RequestParams requestParams, AdditionalParams additionalParams) {
-    return new ErrorFormatter(requestParams.call)
-        .addDescriptor("namespace", requestParams.namespace)
-        .addDescriptor("name", requestParams.name)
-        .addDescriptor("fieldSelector", additionalParams.getFieldSelector())
-        .addDescriptor("labelSelector", additionalParams.getLabelSelector())
-        .addDescriptor("body", requestParams.body)
-        .toString();
-  }
-
   private static class ErrorFormatter {
     private String call;
     private List<String> descriptors = new ArrayList<>();
@@ -366,6 +348,24 @@ public class CallTestSupport {
           sb.append(" and ").append(descriptors.get(descriptors.size() - 1));
       }
       return sb.toString();
+    }
+  }
+
+  private class AdditionalParams {
+    private String fieldSelector;
+    private String labelSelector;
+
+    AdditionalParams(String fieldSelector, String labelSelector) {
+      this.fieldSelector = fieldSelector;
+      this.labelSelector = labelSelector;
+    }
+
+    String getFieldSelector() {
+      return fieldSelector;
+    }
+
+    String getLabelSelector() {
+      return labelSelector;
     }
   }
 

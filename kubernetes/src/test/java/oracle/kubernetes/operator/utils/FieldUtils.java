@@ -22,13 +22,13 @@ public class FieldUtils {
     }
   }
 
-  private static Field getField(Class<?> aClass, String fieldName) {
-    assert aClass != null : "No such field '" + fieldName + "'";
+  private static Field getField(Class<?> aaClass, String fieldName) {
+    assert aaClass != null : "No such field '" + fieldName + "'";
 
     try {
-      return aClass.getDeclaredField(fieldName);
+      return aaClass.getDeclaredField(fieldName);
     } catch (NoSuchFieldException e) {
-      return getField(aClass.getSuperclass(), fieldName);
+      return getField(aaClass.getSuperclass(), fieldName);
     }
   }
 }

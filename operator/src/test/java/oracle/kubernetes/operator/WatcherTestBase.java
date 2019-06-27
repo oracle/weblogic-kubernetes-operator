@@ -36,19 +36,23 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
   private static final String NAMESPACE = "testspace";
   private final RuntimeException hasNextException =
       new RuntimeException(Watcher.HAS_NEXT_EXCEPTION_MESSAGE);
-
+  protected WatchTuning tuning = new WatchTuning(30, 0);
   private List<Memento> mementos = new ArrayList<>();
   private List<Watch.Response<?>> callBacks = new ArrayList<>();
-
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
-
-  protected WatchTuning tuning = new WatchTuning(30, 0);
+  private AtomicBoolean stopping = new AtomicBoolean(false);
 
   private V1ObjectMeta createMetaData() {
     return createMetaData("test", NAMESPACE);
   }
 
-  private AtomicBoolean stopping = new AtomicBoolean(false);
+  @SuppressWarnings("SameParameterValue")
+  private V1ObjectMeta createMetaData(String name, String namespace) {
+    return new V1ObjectMeta()
+        .name(name)
+        .namespace(namespace)
+        .resourceVersion(getNextResourceVersion());
+  }
 
   @Override
   public void allWatchesClosed() {
@@ -213,14 +217,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase
 
   protected void scheduleDeleteResponse(Object object) {
     StubWatchFactory.addCallResponses(createDeleteResponse(object));
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private V1ObjectMeta createMetaData(String name, String namespace) {
-    return new V1ObjectMeta()
-        .name(name)
-        .namespace(namespace)
-        .resourceVersion(getNextResourceVersion());
   }
 
   private String getNextResourceVersion() {

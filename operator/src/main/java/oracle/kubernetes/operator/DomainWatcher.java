@@ -21,6 +21,16 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 public class DomainWatcher extends Watcher<Domain> {
   private final String ns;
 
+  private DomainWatcher(
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<Domain> listener,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping, listener);
+    this.ns = ns;
+  }
+
   public static DomainWatcher create(
       ThreadFactory factory,
       String ns,
@@ -32,16 +42,6 @@ public class DomainWatcher extends Watcher<Domain> {
         new DomainWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
-  }
-
-  private DomainWatcher(
-      String ns,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      WatchListener<Domain> listener,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
-    this.ns = ns;
   }
 
   @Override

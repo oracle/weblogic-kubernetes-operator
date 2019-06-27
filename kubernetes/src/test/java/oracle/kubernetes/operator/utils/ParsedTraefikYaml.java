@@ -4,11 +4,12 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.nio.file.Path;
+
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
-import java.nio.file.Path;
 import oracle.kubernetes.operator.helpers.LegalNames;
 
 /**
@@ -59,6 +60,6 @@ public class ParsedTraefikYaml extends ParsedKubernetesYaml {
   }
 
   private String getClusterScope() {
-    return inputs.getDomainUID() + "-" + LegalNames.toDns1123LegalName(inputs.getClusterName());
+    return inputs.getDomainUid() + "-" + LegalNames.toDns1123LegalName(inputs.getClusterName());
   }
 }

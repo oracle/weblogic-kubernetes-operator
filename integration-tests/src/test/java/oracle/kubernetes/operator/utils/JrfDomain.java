@@ -5,38 +5,41 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.Map;
+
 import oracle.kubernetes.operator.BaseTest;
 
-/** JRF Domain class with all the utility methods */
-public class JRFDomain extends Domain {
+/**
+ * JRF Domain class with all the utility methods.
+ */
+public class JrfDomain extends Domain {
 
   /**
-   * JRFDomain constructor
+   * JrfDomain constructor.
    *
    * @param inputYaml - jrf domain input yaml file, which should contain the properties used for jrf
    *     domain creation
    * @throws Exception - if any error occurs
    */
-  public JRFDomain(String inputYaml) throws Exception {
+  public JrfDomain(String inputYaml) throws Exception {
     // read input domain yaml to test
     this(TestUtils.loadYaml(inputYaml));
   }
 
   /**
-   * JRFDomain constructor
+   * JrfDomain constructor.
    *
    * @param inputDomainMap - jrf domain input properties map, which should contain the properties
    *     used for domain creation
    * @throws Exception - if any error occurs
    */
-  public JRFDomain(Map<String, Object> inputDomainMap) throws Exception {
+  public JrfDomain(Map<String, Object> inputDomainMap) throws Exception {
     this(inputDomainMap, false);
   }
 
-  public JRFDomain(Map<String, Object> inputDomainMap, boolean adminPortEnabled) throws Exception {
+  public JrfDomain(Map<String, Object> inputDomainMap, boolean adminPortEnabled) throws Exception {
     initialize(inputDomainMap);
-    updateDomainMapForJRF(adminPortEnabled);
-    createPV();
+    updateDomainMapForJrf(adminPortEnabled);
+    createPv();
     createSecret();
     createRcuSecret();
     generateInputYaml();
@@ -45,16 +48,16 @@ public class JRFDomain extends Domain {
   }
 
   /**
-   * update the domainMap with jrf specific information
+   * update the domainMap with jrf specific information.
    *
    * @param adminPortEnabled - whether the adminPortEnabled, value true or false
    * @throws Exception - if any error occurs
    */
-  private void updateDomainMapForJRF(boolean adminPortEnabled) throws Exception {
+  private void updateDomainMapForJrf(boolean adminPortEnabled) throws Exception {
     // jrf specific input parameter
     domainMap.put(
         "image",
-        DBUtils.DEFAULT_FMWINFRA_DOCKER_IMAGENAME + ":" + DBUtils.DEFAULT_FMWINFRA_DOCKER_IMAGETAG);
+        DbUtils.DEFAULT_FMWINFRA_DOCKER_IMAGENAME + ":" + DbUtils.DEFAULT_FMWINFRA_DOCKER_IMAGETAG);
 
     if (System.getenv("IMAGE_PULL_SECRET_FMWINFRA") != null) {
       domainMap.put("imagePullSecretName", System.getenv("IMAGE_PULL_SECRET_FMWINFRA"));
@@ -75,7 +78,7 @@ public class JRFDomain extends Domain {
   }
 
   /**
-   * create rcu secret
+   * create rcu secret.
    *
    * @throws Exception - if any error occurs
    */
@@ -84,10 +87,10 @@ public class JRFDomain extends Domain {
         new RcuSecret(
             domainNS,
             domainMap.getOrDefault("secretName", domainUid + "-rcu-credentials").toString(),
-            DBUtils.DEFAULT_RCU_SCHEMA_USERNAME,
-            DBUtils.DEFAULT_RCU_SCHEMA_PASSWORD,
-            DBUtils.DEFAULT_RCU_SYS_USERNAME,
-            DBUtils.DEFAULT_RCU_SYS_PASSWORD);
+            DbUtils.DEFAULT_RCU_SCHEMA_USERNAME,
+            DbUtils.DEFAULT_RCU_SCHEMA_PASSWORD,
+            DbUtils.DEFAULT_RCU_SYS_USERNAME,
+            DbUtils.DEFAULT_RCU_SYS_PASSWORD);
     domainMap.put("rcuCredentialsSecret", rucSecret.getSecretName());
     final String labelCmd =
         String.format(
