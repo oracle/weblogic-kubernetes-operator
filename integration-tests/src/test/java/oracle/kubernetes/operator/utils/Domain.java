@@ -487,13 +487,18 @@ public class Domain {
         adminPod,
         domainNS);
 
+    String t3Url = "t3://" + adminPod + ":";
+    if (useAdminPortToDeploy) {
+      t3Url = t3Url + domainMap.getOrDefault("adminPort", 7001);
+    } else {
+      t3Url = t3Url + t3ChannelPort;
+    }
+
     String[] args = {
       appLocationInPod + "/deploywebapp.py",
       BaseTest.getUsername(),
       BaseTest.getPassword(),
-      useAdminPortToDeploy
-          ? (domainMap.getOrDefault("adminPort", 7001)).toString()
-          : "t3://" + adminPod + ":" + t3ChannelPort,
+      t3Url,
       webappName,
       appLocationInPod + "/" + webappName + ".war",
       clusterName
