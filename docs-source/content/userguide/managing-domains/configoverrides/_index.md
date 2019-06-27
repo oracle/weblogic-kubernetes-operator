@@ -367,6 +367,9 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
            at weblogic.management.configuration.DomainMBeanImpl.setJDBCSystemResources(DomainMBeanImpl.java:11444)
            ...
          ```
+  * Look in your `DOMAIN_HOME/optconfig` directory.
+    * This directory, or a subdirectory within this directory, should contain each of your custom situational configuration files.
+    * If it doesn't, then this likely indicates your domain resource `configOverrides` was not set to match your custom override configuration map name, or that your custom override configuration map does not contain your override files.
 
 * If the Administration Server pod does start but fails to reach ready state or tries to restart:
   * Check for this message ` WebLogic server failed to start due to missing or invalid situational configuration files` in the Administration Server pod's `kubectl log`
@@ -376,10 +379,6 @@ By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in t
         * `<Jun 20, 2019 3:48:45 AM GMT> <Warning> <Management> <BEA-141323> <The situational config file has an invalid format, it is being ignored: XMLSituationalConfigFile[/shared/domains/domain1/optconfig/jdbc/testDS-0527-jdbc-situational-config.xml] because org.xml.sax.SAXParseException; lineNumber: 8; columnNumber: 3; The element type "jdbc:jdbc-driver-params" must be terminated by the matching end-tag "</jdbc:jdbc-driver-params>".`
       * The warning message suggests a syntax error is found in the provided configuration override file for the testDS JDBC datasource.
   
-* Look in your `DOMAIN_HOME/optconfig` directory.
-  * This directory, or a subdirectory within this directory, should contain each of your custom situational configuration files.
-  * If it doesn't, then this likely indicates your domain resource `configOverrides` was not set to match your custom override configuration map name, or that your custom override configuration map does not contain your override files.
-
 * If you'd like to verify that the situational configuration is taking effect in the WebLogic MBean tree, then one way to do this is to compare the `server config` and `domain config` MBean tree values.
   * The `domain config` value should reflect the original value in your domain home configuration.
   * The `server config` value should reflect the overridden value.
