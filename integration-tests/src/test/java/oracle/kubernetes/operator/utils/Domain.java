@@ -487,8 +487,20 @@ public class Domain {
         adminPod,
         domainNS);
 
-    callShellScriptByExecToPod(
-        username, password, webappName, appLocationInPod, useAdminPortToDeploy);
+    String[] args = {
+      appLocationInPod + "/deploywebapp.py",
+      BaseTest.getUsername(),
+      BaseTest.getPassword(),
+      useAdminPortToDeploy
+          ? (domainMap.getOrDefault("adminPort", 7001)).toString()
+          : "t3://" + adminPod + ":" + t3ChannelPort,
+      webappName,
+      appLocationInPod + "/" + webappName + ".war",
+      clusterName
+    };
+
+    TestUtils.callShellScriptByExecToPod(
+        adminPod, domainNS, appLocationInPod, "callpyscript.sh", args);
   }
 
   /**
@@ -1271,87 +1283,6 @@ public class Domain {
     }
     lbMap.values().removeIf(Objects::isNull);
     new LoadBalancer(lbMap);
-  }
-
-  public void callShellScriptByExecToPod(
-      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
-      throws Exception {
-    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
-    cmdKubectlSh
-        .append(domainNS)
-        .append(" exec -it ")
-        .append(podName)
-        .append(" -- bash -c 'chmod +x ")
-        .append(scriptsLocInPod)
-        .append("  && ")
-        .append(scriptsLocInPod)
-        .append("/")
-        .append(shScriptName)
-        .append(" ")
-        .append(String.join(" ", args).toString())
-        .append("'");
-
-    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
-    TestUtils.exec(cmdKubectlSh.toString());
-  }
-
-  private void callShellScriptByExecToPod(
-      String username, String password, String webappName, String appLocationInPod)
-      throws Exception {
-    callShellScriptByExecToPod(username, password, webappName, appLocationInPod, false);
-  }
-
-  private void callShellScriptByExecToPod(
-      String username,
-      String password,
-      String webappName,
-      String appLocationInPod,
-      boolean usingAdminPortToDeploy)
-      throws Exception {
-
-    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
-    cmdKubectlSh
-        .append(domainNS)
-        .append(" exec -it ")
-        .append(domainUid)
-        .append("-")
-        .append(adminServerName)
-        .append(" -- bash -c 'chmod +x -R ")
-        .append(appLocationInPod)
-        .append("  && ")
-        .append(appLocationInPod)
-        .append("/callpyscript.sh ")
-        .append(appLocationInPod)
-        .append("/deploywebapp.py ")
-        .append(username)
-        .append(" ")
-        .append(password)
-        .append(" t3://")
-        // .append(TestUtils.getHostName())
-        .append(domainUid)
-        .append("-")
-        .append(adminServerName)
-        .append(":");
-
-    if (usingAdminPortToDeploy) {
-      String adminPort = (domainMap.getOrDefault("adminPort", 7001)).toString();
-      cmdKubectlSh.append(adminPort);
-    } else {
-      cmdKubectlSh.append(t3ChannelPort);
-    }
-
-    cmdKubectlSh
-        .append(" ")
-        .append(webappName)
-        .append(" ")
-        .append(appLocationInPod)
-        .append("/")
-        .append(webappName)
-        .append(".war ")
-        .append(clusterName)
-        .append("'");
-    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
-    TestUtils.exec(cmdKubectlSh.toString());
   }
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
