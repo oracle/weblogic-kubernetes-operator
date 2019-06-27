@@ -30,6 +30,10 @@ public enum ServerStartPolicy {
     }
   };
 
+  public static ServerStartPolicy getDefaultPolicy() {
+    return IF_NEEDED;
+  }
+
   public boolean forDomain() {
     return true;
   }
@@ -40,9 +44,5 @@ public enum ServerStartPolicy {
 
   public boolean forServer() {
     return true;
-  }
-
-  public static ServerStartPolicy getDefaultPolicy() {
-    return IF_NEEDED;
   }
 }

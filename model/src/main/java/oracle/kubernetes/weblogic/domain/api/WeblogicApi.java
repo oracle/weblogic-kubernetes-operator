@@ -287,11 +287,11 @@ public class WeblogicApi {
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param ctue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
+   * @param ctue The continue option should be set when retrieving more results from the server.
+   *     Since this value is server defined, clients may only use the continue value from a previous
+   *     query result with identical query parameters (except for the value of continue) and the
+   *     server may reject a continue value it does not recognize. If the specified continue value
+   *     is no longer valid whether due to expiration (generally five to fifteen minutes) or a
    *     configuration change on the server, the server will respond with a 410 ResourceExpired
    *     error together with a continue token. If the client needs a consistent list, it must
    *     restart their list without the continue field. Otherwise, the client may send another list
@@ -369,8 +369,7 @@ public class WeblogicApi {
       localVarQueryParams.addAll(
           apiClient.parameterToPair("includeUninitialized", includeUninitialized));
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    if (ctue != null)
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", ctue));
+    if (ctue != null) localVarQueryParams.addAll(apiClient.parameterToPair("continue", ctue));
     if (fieldSelector != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
     if (labelSelector != null)
@@ -473,11 +472,11 @@ public class WeblogicApi {
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param ctue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
+   * @param ctue The continue option should be set when retrieving more results from the server.
+   *     Since this value is server defined, clients may only use the continue value from a previous
+   *     query result with identical query parameters (except for the value of continue) and the
+   *     server may reject a continue value it does not recognize. If the specified continue value
+   *     is no longer valid whether due to expiration (generally five to fifteen minutes) or a
    *     configuration change on the server, the server will respond with a 410 ResourceExpired
    *     error together with a continue token. If the client needs a consistent list, it must
    *     restart their list without the continue field. Otherwise, the client may send another list
@@ -556,11 +555,11 @@ public class WeblogicApi {
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param ctue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
+   * @param ctue The continue option should be set when retrieving more results from the server.
+   *     Since this value is server defined, clients may only use the continue value from a previous
+   *     query result with identical query parameters (except for the value of continue) and the
+   *     server may reject a continue value it does not recognize. If the specified continue value
+   *     is no longer valid whether due to expiration (generally five to fifteen minutes) or a
    *     configuration change on the server, the server will respond with a 410 ResourceExpired
    *     error together with a continue token. If the client needs a consistent list, it must
    *     restart their list without the continue field. Otherwise, the client may send another list
@@ -642,11 +641,11 @@ public class WeblogicApi {
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param ctue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
+   * @param ctue The continue option should be set when retrieving more results from the server.
+   *     Since this value is server defined, clients may only use the continue value from a previous
+   *     query result with identical query parameters (except for the value of continue) and the
+   *     server may reject a continue value it does not recognize. If the specified continue value
+   *     is no longer valid whether due to expiration (generally five to fifteen minutes) or a
    *     configuration change on the server, the server will respond with a 410 ResourceExpired
    *     error together with a continue token. If the client needs a consistent list, it must
    *     restart their list without the continue field. Otherwise, the client may send another list
@@ -1098,11 +1097,11 @@ public class WeblogicApi {
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param ctue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
+   * @param ctue The continue option should be set when retrieving more results from the server.
+   *     Since this value is server defined, clients may only use the continue value from a previous
+   *     query result with identical query parameters (except for the value of continue) and the
+   *     server may reject a continue value it does not recognize. If the specified continue value
+   *     is no longer valid whether due to expiration (generally five to fifteen minutes) or a
    *     configuration change on the server, the server will respond with a 410 ResourceExpired
    *     error together with a continue token. If the client needs a consistent list, it must
    *     restart their list without the continue field. Otherwise, the client may send another list
@@ -1180,8 +1179,7 @@ public class WeblogicApi {
       localVarQueryParams.addAll(
           apiClient.parameterToPair("includeUninitialized", includeUninitialized));
     if (pretty != null) localVarQueryParams.addAll(apiClient.parameterToPair("pretty", pretty));
-    if (ctue != null)
-      localVarQueryParams.addAll(apiClient.parameterToPair("continue", ctue));
+    if (ctue != null) localVarQueryParams.addAll(apiClient.parameterToPair("continue", ctue));
     if (fieldSelector != null)
       localVarQueryParams.addAll(apiClient.parameterToPair("fieldSelector", fieldSelector));
     if (labelSelector != null)
@@ -1288,11 +1286,11 @@ public class WeblogicApi {
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param ctue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
+   * @param ctue The continue option should be set when retrieving more results from the server.
+   *     Since this value is server defined, clients may only use the continue value from a previous
+   *     query result with identical query parameters (except for the value of continue) and the
+   *     server may reject a continue value it does not recognize. If the specified continue value
+   *     is no longer valid whether due to expiration (generally five to fifteen minutes) or a
    *     configuration change on the server, the server will respond with a 410 ResourceExpired
    *     error together with a continue token. If the client needs a consistent list, it must
    *     restart their list without the continue field. Otherwise, the client may send another list
@@ -1371,11 +1369,11 @@ public class WeblogicApi {
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param ctue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
+   * @param ctue The continue option should be set when retrieving more results from the server.
+   *     Since this value is server defined, clients may only use the continue value from a previous
+   *     query result with identical query parameters (except for the value of continue) and the
+   *     server may reject a continue value it does not recognize. If the specified continue value
+   *     is no longer valid whether due to expiration (generally five to fifteen minutes) or a
    *     configuration change on the server, the server will respond with a 410 ResourceExpired
    *     error together with a continue token. If the client needs a consistent list, it must
    *     restart their list without the continue field. Otherwise, the client may send another list
@@ -1457,11 +1455,11 @@ public class WeblogicApi {
    * @param includeUninitialized If true, partially initialized resources are included in the
    *     response. (optional)
    * @param pretty If &#39;true&#39;, then the output is pretty printed. (optional)
-   * @param ctue The continue option should be set when retrieving more results from the
-   *     server. Since this value is server defined, clients may only use the continue value from a
-   *     previous query result with identical query parameters (except for the value of continue)
-   *     and the server may reject a continue value it does not recognize. If the specified continue
-   *     value is no longer valid whether due to expiration (generally five to fifteen minutes) or a
+   * @param ctue The continue option should be set when retrieving more results from the server.
+   *     Since this value is server defined, clients may only use the continue value from a previous
+   *     query result with identical query parameters (except for the value of continue) and the
+   *     server may reject a continue value it does not recognize. If the specified continue value
+   *     is no longer valid whether due to expiration (generally five to fifteen minutes) or a
    *     configuration change on the server, the server will respond with a 410 ResourceExpired
    *     error together with a continue token. If the client needs a consistent list, it must
    *     restart their list without the continue field. Otherwise, the client may send another list

@@ -25,12 +25,11 @@ import org.apache.commons.codec.binary.Base64;
  */
 public class Helpers {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings("unused")
   private final Authenticator authenticator;
-
   private final ApiClient apiClient;
   private final CoreV1Api coreApi;
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   public Helpers(Authenticator authenticator) {
     this.authenticator = authenticator;

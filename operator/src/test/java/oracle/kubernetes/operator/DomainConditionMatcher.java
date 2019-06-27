@@ -23,12 +23,12 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   private String expectedReason;
   private String expectedMessage;
 
-  static DomainConditionMatcher hasCondition(DomainConditionType type) {
-    return new DomainConditionMatcher(type);
-  }
-
   private DomainConditionMatcher(DomainConditionType expectedType) {
     this.expectedType = expectedType;
+  }
+
+  static DomainConditionMatcher hasCondition(DomainConditionType type) {
+    return new DomainConditionMatcher(type);
   }
 
   DomainConditionMatcher withStatus(String status) {

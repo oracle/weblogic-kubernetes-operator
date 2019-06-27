@@ -41,33 +41,6 @@ class FileGroupReader {
   }
 
   /**
-   * Loads the files at the defined location within the classpath into a map.
-   *
-   * @return a map of file paths to string contents.
-   */
-  Map<String, String> loadFilesFromClasspath() {
-    synchronized (FileGroupReader.class) {
-      try {
-        try (ScriptPath scriptPath = getScriptPath()) {
-          return loadContents(scriptPath.getScriptsDir());
-        }
-      } catch (Exception e) {
-        LOGGER.warning(MessageKeys.EXCEPTION, e);
-        throw new RuntimeException(e);
-      }
-    }
-  }
-
-  private ScriptPath getScriptPath() throws URISyntaxException, IOException {
-    URI uri = getClass().getResource(pathToGroup).toURI();
-    return isJar(uri) ? new JarScriptPath(uri) : new FileScriptPath(uri);
-  }
-
-  private boolean isJar(URI uri) {
-    return "jar".equals(uri.getScheme());
-  }
-
-  /**
    * Given a file path, loads the contents of the files into a map.
    *
    * @param rootDir the path to the top-level directory
@@ -92,6 +65,33 @@ class FileGroupReader {
       LOGGER.warning(MessageKeys.EXCEPTION, io);
       return "";
     }
+  }
+
+  /**
+   * Loads the files at the defined location within the classpath into a map.
+   *
+   * @return a map of file paths to string contents.
+   */
+  Map<String, String> loadFilesFromClasspath() {
+    synchronized (FileGroupReader.class) {
+      try {
+        try (ScriptPath scriptPath = getScriptPath()) {
+          return loadContents(scriptPath.getScriptsDir());
+        }
+      } catch (Exception e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  private ScriptPath getScriptPath() throws URISyntaxException, IOException {
+    URI uri = getClass().getResource(pathToGroup).toURI();
+    return isJar(uri) ? new JarScriptPath(uri) : new FileScriptPath(uri);
+  }
+
+  private boolean isJar(URI uri) {
+    return "jar".equals(uri.getScheme());
   }
 
   interface ScriptPath extends AutoCloseable {

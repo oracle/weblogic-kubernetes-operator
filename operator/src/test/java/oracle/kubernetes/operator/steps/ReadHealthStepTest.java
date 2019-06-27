@@ -1,4 +1,4 @@
-// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -42,34 +42,40 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public class ReadHealthStepTest {
+  static final String OK_RESPONSE =
+      "{\n"
+          + "    \"overallHealthState\": {\n"
+          + "        \"state\": \"ok\",\n"
+          + "        \"subsystemName\": null,\n"
+          + "        \"partitionName\": null,\n"
+          + "        \"symptoms\": []\n"
+          + "    },\n"
+          + "    \"state\": \"RUNNING\",\n"
+          + "    \"activationTime\": 1556759105378\n"
+          + "}";
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
     WLS_HEALTH_READ_FAILED, WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT
   };
-
   private static final String NAMESPACE = "testnamespace";
   private static final String DOMAIN_UID = "domain-uid";
-
   private static final String DOMAIN_NAME = "domain";
   private static final String ADMIN_NAME = "admin-server";
   private static final int ADMIN_PORT_NUM = 3456;
-
   private static final String MANAGED_SERVER1 = "managed-server1";
   private static final int MANAGED_SERVER1_PORT_NUM = 8001;
-
-  private List<LogRecord> logRecords = new ArrayList<>();
-  private Memento consoleControl;
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
   private static final WlsDomainConfigSupport configSupport =
       new WlsDomainConfigSupport(DOMAIN_NAME)
           .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
           .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
           .withAdminServerName(ADMIN_NAME);
-
   V1Service service;
   Step next;
   HttpClientStub httpClientStub;
   ReadHealthWithHttpClientStep withHttpClientStep;
+  private List<LogRecord> logRecords = new ArrayList<>();
+  private Memento consoleControl;
 
   @Before
   public void setup() {
@@ -102,7 +108,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void withHttpClientStep_logIfMissingHTTPClient() {
+  public void withHttpClientStep_logIfMissingHttpClient() {
     Packet packet =
         Stub.createStub(PacketStub.class).withServerName(ADMIN_NAME).withGetKeyReturnValue(null);
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
@@ -141,9 +147,9 @@ public class ReadHealthStepTest {
         ProcessingConstants.SERVER_HEALTH_MAP, new ConcurrentHashMap<String, ServerHealth>());
     packet.put(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(2));
 
-    ReadHealthWithHttpClientStep withHttpClientStep1 =
+    final ReadHealthWithHttpClientStep withHttpClientStep1 =
         new ReadHealthWithHttpClientStep(service, null, next);
-    ReadHealthWithHttpClientStep withHttpClientStep2 =
+    final ReadHealthWithHttpClientStep withHttpClientStep2 =
         new ReadHealthWithHttpClientStep(service, null, next);
 
     Packet packet1 = packet.clone();
@@ -207,18 +213,6 @@ public class ReadHealthStepTest {
     Map<String, String> serverStateMap = packet.getValue(SERVER_STATE_MAP);
     assertThat(serverStateMap.get(MANAGED_SERVER1), is("UNKNOWN"));
   }
-
-  static final String OK_RESPONSE =
-      "{\n"
-          + "    \"overallHealthState\": {\n"
-          + "        \"state\": \"ok\",\n"
-          + "        \"subsystemName\": null,\n"
-          + "        \"partitionName\": null,\n"
-          + "        \"symptoms\": []\n"
-          + "    },\n"
-          + "    \"state\": \"RUNNING\",\n"
-          + "    \"activationTime\": 1556759105378\n"
-          + "}";
 
   Packet createPacketForTest() {
     Packet packet =

@@ -9,11 +9,10 @@ import java.util.concurrent.ConcurrentMap;
 
 class ScanCacheImpl implements ScanCache {
   static final ScanCache INSTANCE = new ScanCacheImpl();
+  private final ConcurrentMap<String, ConcurrentMap<String, Scan>> map = new ConcurrentHashMap<>();
 
   private ScanCacheImpl() {
   }
-
-  private final ConcurrentMap<String, ConcurrentMap<String, Scan>> map = new ConcurrentHashMap<>();
 
   @Override
   public void registerScan(String ns, String domainUid, Scan domainScan) {

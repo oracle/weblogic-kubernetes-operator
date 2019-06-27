@@ -35,13 +35,6 @@ public class EventProcessingTest {
   private static final String NS = "namespace";
   private static final String UID = "uid";
   private static final String ADMIN_NAME = "admin";
-
-  private List<Memento> mementos = new ArrayList<>();
-  private Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private Domain domain = new Domain().withMetadata(new V1ObjectMeta().name(UID).namespace(NS));
-  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private DomainProcessorImpl processor =
-      new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
   private final V1ObjectReference serverReference =
       new V1ObjectReference().name(LegalNames.toEventName(UID, ADMIN_NAME));
   private final V1Event event =
@@ -49,6 +42,12 @@ public class EventProcessingTest {
           .metadata(new V1ObjectMeta().namespace(NS))
           .involvedObject(serverReference)
           .message(createReadinessProbeMessage(WebLogicConstants.UNKNOWN_STATE));
+  private List<Memento> mementos = new ArrayList<>();
+  private Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
+  private Domain domain = new Domain().withMetadata(new V1ObjectMeta().name(UID).namespace(NS));
+  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
+  private DomainProcessorImpl processor =
+      new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
 
   @Before
   public void setUp() throws Exception {

@@ -41,6 +41,11 @@ public class JobHelperTest {
   private static final String DOMAIN_UID = "JobHelperTestDomain";
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
+  Method getDomainSpec;
+
+  static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
+    return hasItem(new V1EnvVar().name(name).value(value));
+  }
 
   @Test
   public void creatingServers_true_whenClusterReplicas_gt_0() {
@@ -92,14 +97,14 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_false_when_noCluster_and_START_NEVER_startPolicy() {
+  public void creatingServers_false_when_noCluster_and_Start_Never_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
 
   @Test
-  public void creatingServers_true_when_noCluster_and_START_IF_NEEDED_startPolicy() {
+  public void creatingServers_true_when_noCluster_and_Start_If_Needed_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo)
@@ -109,7 +114,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_true_when_noCluster_and_START_ALWAYS_startPolicy() {
+  public void creatingServers_true_when_noCluster_and_Start_Always_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo)
@@ -119,7 +124,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_false_when_server_with_START_NEVER_startPolicy() {
+  public void creatingServers_false_when_server_with_Start_Never_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureServer(domainPresenceInfo, "managed-server1")
@@ -129,7 +134,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_true_when_server_with_START_IF_NEEDED_startPolicy() {
+  public void creatingServers_true_when_server_with_Start_If_Needed_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureServer(domainPresenceInfo, "managed-server1")
@@ -139,7 +144,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_true_when_server_with_START_AWLAYS_startPolicy() {
+  public void creatingServers_true_when_server_with_Start_Always_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureServer(domainPresenceInfo, "managed-server1")
@@ -177,7 +182,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void introspectorPodStartsWithDefaultUSER_MEM_ARGS_environmentVariable() {
+  public void introspectorPodStartsWithDefaultUser_Mem_Args_environmentVariable() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     Packet packet = new Packet();
@@ -198,7 +203,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void whenDomainHasUSER_MEM_ARGS_EnvironmentItem_introspectorPodStartupWithIt() {
+  public void whenDomainHasUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo)
@@ -219,7 +224,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void whenDomainHasEmptyStringUSER_MEM_ARGS_EnvironmentItem_introspectorPodStartupWithIt() {
+  public void whenDomainHasEmptyStringUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo).withEnvironmentVariable("USER_MEM_ARGS", "");
@@ -401,23 +406,17 @@ public class JobHelperTest {
     return configureDomain(domainPresenceInfo).configureServer(serverName);
   }
 
-  private V1Container getContainerFromJobSpec(V1JobSpec jobSpec, String domainUID) {
+  private V1Container getContainerFromJobSpec(V1JobSpec jobSpec, String domainUid) {
     List<V1Container> containersList = jobSpec.getTemplate().getSpec().getContainers();
     if (containersList != null) {
       for (V1Container container : containersList) {
-        if (JobHelper.createJobName(domainUID).equals(container.getName())) {
+        if (JobHelper.createJobName(domainUid).equals(container.getName())) {
           return container;
         }
       }
     }
     return null;
   }
-
-  static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
-    return hasItem(new V1EnvVar().name(name).value(value));
-  }
-
-  Method getDomainSpec;
 
   DomainSpec getConfiguredDomainSpec(DomainConfigurator domainConfigurator)
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {

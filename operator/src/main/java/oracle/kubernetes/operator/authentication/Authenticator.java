@@ -26,15 +26,14 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
  */
 public class Authenticator {
 
-  private final ApiClient apiClient;
-  private final Helpers helper;
-  private String serviceToken;
-
   private static final String SERVICE_HOST = "KUBERNETES_SERVICE_HOST";
   private static final String SERVICE_PORT = "KUBERNETES_SERVICE_PORT";
   // private final String _TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
   // private final String _CACERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private final ApiClient apiClient;
+  private final Helpers helper;
+  private String serviceToken;
 
   /**
    * Create a new instace of the Authenticator class containing the default API client. The default

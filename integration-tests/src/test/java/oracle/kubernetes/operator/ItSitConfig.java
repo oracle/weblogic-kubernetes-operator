@@ -1,10 +1,8 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
-package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.BaseTest.initialize;
-import static oracle.kubernetes.operator.BaseTest.logger;
+package oracle.kubernetes.operator;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -14,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Level;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
@@ -25,14 +24,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /** JUnit test class used for testing configuration override use cases. */
-public class ITSitConfig extends BaseTest {
+public class ItSitConfig extends BaseTest {
 
-  private static String TEST_RES_DIR;
-  private static String ADMINPODNAME;
   private static final String DOMAINUID = "customsitconfigdomain";
   private static final String ADMINPORT = "30710";
   private static final int T3CHANNELPORT = 30091;
   private static final String MYSQL_DB_PORT = "31306";
+  private static String TEST_RES_DIR;
+  private static String ADMINPODNAME;
   private static String fqdn;
   private static String JDBC_URL;
   private static String KUBE_EXEC_CMD;
@@ -86,14 +85,14 @@ public class ITSitConfig extends BaseTest {
           TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
           "SitConfigTests.java",
           ADMINPODNAME,
-          domain.getDomainNS());
+          domain.getDomainNs());
       TestUtils.copyFileViaCat(
           TEST_RES_DIR + "sitconfig/scripts/runSitConfigTests.sh",
           "runSitConfigTests.sh",
           ADMINPODNAME,
-          domain.getDomainNS());
+          domain.getDomainNs());
       KUBE_EXEC_CMD =
-          "kubectl -n " + domain.getDomainNS() + "  exec -it " + ADMINPODNAME + "  -- bash -c";
+          "kubectl -n " + domain.getDomainNs() + "  exec -it " + ADMINPODNAME + "  -- bash -c";
     }
   }
 
@@ -109,6 +108,90 @@ public class ITSitConfig extends BaseTest {
       destroySitConfigDomain();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
     }
+  }
+
+  /**
+   * Create Domain using the custom domain script create-domain-auto-custom-sit-config20.py
+   * Customizes the following attributes of the domain map configOverrides, configOverridesFile
+   * domain uid , admin node port and t3 channel port.
+   *
+   * @return - created domain
+   * @throws Exception - if it cannot create the domain
+   */
+  private static Domain createSitConfigDomain() throws Exception {
+    String createDomainScript = TEST_RES_DIR + "/domain-home-on-pv/create-domain.py";
+    // load input yaml to map and add configOverrides
+    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+    domainMap.put("configOverrides", "sitconfigcm");
+    domainMap.put("configOverridesFile", configOverrideDir);
+    domainMap.put("domainUID", DOMAINUID);
+    domainMap.put("adminNodePort", new Integer(ADMINPORT));
+    domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
+    domainMap.put(
+        "createDomainPyScript",
+        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
+    domainMap.put(
+        "javaOptions",
+        "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
+    domain = TestUtils.createDomain(domainMap);
+    domain.verifyDomainCreated();
+    return domain;
+  }
+
+  /**
+   * Destroys the domain.
+   *
+   * @throws Exception when domain destruction fails
+   */
+  private static void destroySitConfigDomain() throws Exception {
+    if (domain != null) {
+      domain.destroy();
+    }
+  }
+
+  /**
+   * Copy the configuration override files to a staging area after replacing the JDBC_URL token in
+   * jdbc-JdbcTestDataSource-0.xml.
+   *
+   * @throws IOException when copying files from source location to staging area fails
+   */
+  private static void copySitConfigFiles() throws IOException {
+    String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
+    String dstDir = configOverrideDir;
+    String[] files = {
+      "config.xml",
+      "jdbc-JdbcTestDataSource-0.xml",
+      "diagnostics-WLDF-MODULE-0.xml",
+      "jms-ClusterJmsSystemResource.xml",
+      "version.txt"
+    };
+    for (String file : files) {
+      Path path = Paths.get(srcDir, file);
+      logger.log(Level.INFO, "Copying {0}", path.toString());
+      Charset charset = StandardCharsets.UTF_8;
+      String content = new String(Files.readAllBytes(path), charset);
+      content = content.replaceAll("JDBC_URL", JDBC_URL);
+      path = Paths.get(dstDir, file);
+      logger.log(Level.INFO, "to {0}", path.toString());
+      Files.write(path, content.getBytes(charset));
+    }
+  }
+
+  /**
+   * A utility method to copy MySQL yaml template file replacing the NAMESPACE and DOMAINUID.
+   *
+   * @throws IOException when copying files from source location to staging area fails
+   */
+  private static void copyMySqlFile() throws IOException {
+    final Path src = Paths.get(TEST_RES_DIR + "/mysql/mysql-dbservices.ymlt");
+    final Path dst = Paths.get(mysqlYamlFile);
+    logger.log(Level.INFO, "Copying {0}", src.toString());
+    Charset charset = StandardCharsets.UTF_8;
+    String content = new String(Files.readAllBytes(src), charset);
+    content = content.replaceAll("@NAMESPACE@", "default");
+    content = content.replaceAll("@DOMAIN_UID@", DOMAINUID);
+    logger.log(Level.INFO, "to {0}", dst.toString());
+    Files.write(dst, content.getBytes(charset));
   }
 
   /**
@@ -272,90 +355,6 @@ public class ITSitConfig extends BaseTest {
     assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
-  }
-
-  /**
-   * Create Domain using the custom domain script create-domain-auto-custom-sit-config20.py
-   * Customizes the following attributes of the domain map configOverrides, configOverridesFile
-   * domain uid , admin node port and t3 channel port.
-   *
-   * @return - created domain
-   * @throws Exception - if it cannot create the domain
-   */
-  private static Domain createSitConfigDomain() throws Exception {
-    String createDomainScript = TEST_RES_DIR + "/domain-home-on-pv/create-domain.py";
-    // load input yaml to map and add configOverrides
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
-    domainMap.put("configOverrides", "sitconfigcm");
-    domainMap.put("configOverridesFile", configOverrideDir);
-    domainMap.put("domainUID", DOMAINUID);
-    domainMap.put("adminNodePort", new Integer(ADMINPORT));
-    domainMap.put("t3ChannelPort", new Integer(T3CHANNELPORT));
-    domainMap.put(
-        "createDomainPyScript",
-        "integration-tests/src/test/resources/sitconfig/scripts/create-domain-auto-custom-sit-config20.py");
-    domainMap.put(
-        "javaOptions",
-        "-Dweblogic.debug.DebugSituationalConfig=true -Dweblogic.debug.DebugSituationalConfigDumpXml=true");
-    domain = TestUtils.createDomain(domainMap);
-    domain.verifyDomainCreated();
-    return domain;
-  }
-
-  /**
-   * Destroys the domain.
-   *
-   * @throws Exception when domain destruction fails
-   */
-  private static void destroySitConfigDomain() throws Exception {
-    if (domain != null) {
-      domain.destroy();
-    }
-  }
-
-  /**
-   * Copy the configuration override files to a staging area after replacing the JDBC_URL token in
-   * jdbc-JdbcTestDataSource-0.xml.
-   *
-   * @throws IOException when copying files from source location to staging area fails
-   */
-  private static void copySitConfigFiles() throws IOException {
-    String src_dir = TEST_RES_DIR + "/sitconfig/configoverrides";
-    String dst_dir = configOverrideDir;
-    String files[] = {
-      "config.xml",
-      "jdbc-JdbcTestDataSource-0.xml",
-      "diagnostics-WLDF-MODULE-0.xml",
-      "jms-ClusterJmsSystemResource.xml",
-      "version.txt"
-    };
-    for (String file : files) {
-      Path path = Paths.get(src_dir, file);
-      logger.log(Level.INFO, "Copying {0}", path.toString());
-      Charset charset = StandardCharsets.UTF_8;
-      String content = new String(Files.readAllBytes(path), charset);
-      content = content.replaceAll("JDBC_URL", JDBC_URL);
-      path = Paths.get(dst_dir, file);
-      logger.log(Level.INFO, "to {0}", path.toString());
-      Files.write(path, content.getBytes(charset));
-    }
-  }
-
-  /**
-   * A utility method to copy MySQL yaml template file replacing the NAMESPACE and DOMAINUID.
-   *
-   * @throws IOException when copying files from source location to staging area fails
-   */
-  private static void copyMySqlFile() throws IOException {
-    Path src = Paths.get(TEST_RES_DIR + "/mysql/mysql-dbservices.ymlt");
-    Path dst = Paths.get(mysqlYamlFile);
-    logger.log(Level.INFO, "Copying {0}", src.toString());
-    Charset charset = StandardCharsets.UTF_8;
-    String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll("@NAMESPACE@", "default");
-    content = content.replaceAll("@DOMAIN_UID@", DOMAINUID);
-    logger.log(Level.INFO, "to {0}", dst.toString());
-    Files.write(dst, content.getBytes(charset));
   }
 
   /**

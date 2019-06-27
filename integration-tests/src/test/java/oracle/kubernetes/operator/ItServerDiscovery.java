@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -27,7 +28,7 @@ import org.junit.runners.MethodSorters;
  * And to test WLS server discovery feature.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ITServerDiscovery extends BaseTest {
+public class ItServerDiscovery extends BaseTest {
   private static String testDomainYamlFile;
 
   private static Operator operator;
@@ -39,7 +40,7 @@ public class ITServerDiscovery extends BaseTest {
    * the resultRoot, pvRoot and projectRoot attributes. It also creates Operator, domain and a test
    * domain yaml file.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
@@ -85,7 +86,7 @@ public class ITServerDiscovery extends BaseTest {
   /**
    * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
@@ -104,10 +105,10 @@ public class ITServerDiscovery extends BaseTest {
    * Stop operator and apply the modified domain.yaml with replicas count increased. Restart
    * operator and make sure the cluster is scaled up accordingly.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
-  public void testOPConnToNewMS() throws Exception {
+  public void testOpConnToNewMS() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -137,10 +138,10 @@ public class ITServerDiscovery extends BaseTest {
    * Stop Operator. Kill admin server and all managed servers in domain cluster. Restart Operator.
    * Verify that it restarts admin server and all managed servers in domain cluster.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
-  public void testOPReconnToDomain() throws Exception {
+  public void testOpReconnToDomain() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -151,7 +152,7 @@ public class ITServerDiscovery extends BaseTest {
     String adminServerName = (String) domainMap.get("adminServerName");
     String adminServerPodName = domainUid + "-" + adminServerName;
     String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
-    String clusterName = domainMap.get("clusterName").toString();
+    final String clusterName = domainMap.get("clusterName").toString();
 
     logger.info("Stop the Operator");
     operator.stopUsingReplicas();
@@ -225,7 +226,7 @@ public class ITServerDiscovery extends BaseTest {
     String domainUid = domain.getDomainUid();
     String domainNS = domainMap.get("namespace").toString();
     String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
-    String clusterName = domainMap.get("clusterName").toString();
+    final String clusterName = domainMap.get("clusterName").toString();
 
     String podName = domainUid + "-" + managedServerNameBase + replicas;
 
