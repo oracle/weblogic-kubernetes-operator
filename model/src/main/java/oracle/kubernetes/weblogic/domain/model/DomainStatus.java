@@ -204,10 +204,10 @@ public class DomainStatus {
    * the domain and where the cluster does not explicitly configure its replicas in a cluster
    * specification.
    *
-   * @param replicas replicas
+   * @return replicas
    */
-  public void setReplicas(Integer replicas) {
-    this.replicas = replicas;
+  public Integer getReplicas() {
+    return this.replicas;
   }
 
   /**
@@ -215,10 +215,10 @@ public class DomainStatus {
    * the domain and where the cluster does not explicitly configure its replicas in a cluster
    * specification.
    *
-   * @return replicas
+   * @param replicas replicas
    */
-  public Integer getReplicas() {
-    return this.replicas;
+  public void setReplicas(Integer replicas) {
+    this.replicas = replicas;
   }
 
   /**

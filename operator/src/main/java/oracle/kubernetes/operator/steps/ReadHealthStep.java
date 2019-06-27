@@ -45,11 +45,10 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 
 public class ReadHealthStep extends Step {
 
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   public static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
   public static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
       OVERALL_HEALTH_NOT_AVAILABLE + " (possibly overloaded)";
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private ReadHealthStep(Step next) {
     super(next);
@@ -64,6 +63,16 @@ public class ReadHealthStep extends Step {
   public static Step createReadHealthStep(Step next) {
     return new ReadHealthStep(next);
   }
+
+  private static String getRetrieveHealthSearchUrl() {
+    return "/management/weblogic/latest/serverRuntime/search";
+  }
+
+  private static String getRetrieveHealthSearchPayload() {
+    return "{ fields: [ 'state', 'overallHealthState', 'activationTime' ], links: [] }";
+  }
+
+  // overallHealthState, healthState
 
   @Override
   public NextAction apply(Packet packet) {
@@ -90,16 +99,6 @@ public class ReadHealthStep extends Step {
       return doNext(getClient, packet);
     }
     return doNext(packet);
-  }
-
-  private static String getRetrieveHealthSearchUrl() {
-    return "/management/weblogic/latest/serverRuntime/search";
-  }
-
-  // overallHealthState, healthState
-
-  private static String getRetrieveHealthSearchPayload() {
-    return "{ fields: [ 'state', 'overallHealthState', 'activationTime' ], links: [] }";
   }
 
   static final class ReadHealthWithHttpClientStep extends Step {

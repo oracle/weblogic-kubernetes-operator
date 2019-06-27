@@ -10,10 +10,9 @@ import io.kubernetes.client.models.VersionInfo;
 
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion {
-  static KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(1, 10);
   private static final String[] MINIMUM_K8S_VERSIONS = {"1.11.5", "1.12.3", "1.13.0"};
-
+  static KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   private final int major;
   private final int minor;
   private final int revision;
@@ -33,18 +32,6 @@ public class KubernetesVersion {
     revision = getRevision(asDisplayString());
   }
 
-  int getMajor() {
-    return major;
-  }
-
-  int getMinor() {
-    return minor;
-  }
-
-  String asDisplayString() {
-    return version;
-  }
-
   static String getSupportedVersions() {
     return String.join("+,", MINIMUM_K8S_VERSIONS) + "+";
   }
@@ -62,11 +49,16 @@ public class KubernetesVersion {
     return numericString.length() == 0 ? 0 : Integer.parseInt(numericString);
   }
 
-  enum Compatibility {
-    REVISION_OK,
-    REVISION_TOO_LOW,
-    VERSION_HIGHER,
-    VERSION_LOWER
+  int getMajor() {
+    return major;
+  }
+
+  int getMinor() {
+    return minor;
+  }
+
+  String asDisplayString() {
+    return version;
   }
 
   boolean isCompatible() {
@@ -153,5 +145,12 @@ public class KubernetesVersion {
   @Override
   public String toString() {
     return "KubernetesVersion{" + "major=" + major + ", minor=" + minor + '}';
+  }
+
+  enum Compatibility {
+    REVISION_OK,
+    REVISION_TOO_LOW,
+    VERSION_HIGHER,
+    VERSION_LOWER
   }
 }

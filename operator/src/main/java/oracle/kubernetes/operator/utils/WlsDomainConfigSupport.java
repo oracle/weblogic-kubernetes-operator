@@ -27,6 +27,10 @@ public class WlsDomainConfigSupport {
     this.domain = domain;
   }
 
+  private static WlsServerConfig createServerConfig(String serverName, Integer listenPort) {
+    return new ServerConfigBuilder(serverName, listenPort).build();
+  }
+
   public WlsDomainConfigSupport withWlsServer(String serverName, Integer listenPort) {
     addWlsServer(serverName, listenPort);
     return this;
@@ -63,10 +67,6 @@ public class WlsDomainConfigSupport {
     WlsServerConfig serverConfig = createServerConfig(serverName, listenPort);
     wlsServers.put(serverName, serverConfig);
     return serverConfig;
-  }
-
-  private static WlsServerConfig createServerConfig(String serverName, Integer listenPort) {
-    return new ServerConfigBuilder(serverName, listenPort).build();
   }
 
   /**
@@ -166,8 +166,8 @@ public class WlsDomainConfigSupport {
   }
 
   static class ClusterConfigBuilder {
-    private String name;
     List<WlsServerConfig> serverConfigs = new ArrayList<>();
+    private String name;
 
     ClusterConfigBuilder(String name) {
       this.name = name;

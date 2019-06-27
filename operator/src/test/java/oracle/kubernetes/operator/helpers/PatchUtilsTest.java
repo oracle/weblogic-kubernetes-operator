@@ -17,6 +17,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class PatchUtilsTest {
+  private String expectedString =
+      "[{\"op\":\"add\",\"path\":\"/metadata/labels/age\",\"value\":27},{\"op\":\"replace\","
+          + "\"path\":\"/metadata/labels/run\",\"value\":\"456\"}]";
+
   @Test
   public void convertJsonPatch_toKubernetesPatch() {
     JsonPatch build =
@@ -32,7 +36,4 @@ public class PatchUtilsTest {
   private String serialize(List<JsonObject> collect) {
     return new Gson().toJson(collect);
   }
-
-  private String expectedString =
-      "[{\"op\":\"add\",\"path\":\"/metadata/labels/age\",\"value\":27},{\"op\":\"replace\",\"path\":\"/metadata/labels/run\",\"value\":\"456\"}]";
 }

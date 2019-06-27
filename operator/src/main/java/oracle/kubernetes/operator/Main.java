@@ -74,25 +74,29 @@ public class Main {
   private static final String DPI_MAP = "DPI_MAP";
 
   private static final Container container = new Container();
-
-  private static class WrappedThreadFactory implements ThreadFactory {
-    private final ThreadFactory delegate = ThreadFactorySingleton.getInstance();
-
-    @Override
-    public Thread newThread(@Nonnull Runnable r) {
-      return delegate.newThread(
-          () -> {
-            ContainerResolver.getDefault().enterContainer(container);
-            r.run();
-          });
-    }
-  }
-
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
-
   private static final TuningParameters tuningAndConfig;
+  private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
+  private static final Map<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();
+  private static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
+  private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
+  private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
+  private static final String operatorNamespace = computeOperatorNamespace();
+  private static final AtomicReference<DateTime> lastFullRecheck =
+      new AtomicReference<>(DateTime.now());
+  private static final DomainProcessorDelegateImpl delegate = new DomainProcessorDelegateImpl();
+  private static final DomainProcessor processor = new DomainProcessorImpl(delegate);
+  private static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
+      "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
+  private static final Semaphore shutdownSignal = new Semaphore(0);
+  private static Engine engine = new Engine(wrappedExecutorService);
+  private static String principal;
+  private static KubernetesVersion version = null;
 
   static {
     try {
@@ -111,8 +115,6 @@ public class Main {
     }
   }
 
-  private static final CallBuilderFactory callBuilderFactory = new CallBuilderFactory();
-
   static {
     container
         .getComponents()
@@ -127,30 +129,6 @@ public class Main {
                 threadFactory,
                 callBuilderFactory));
   }
-
-  private static Engine engine = new Engine(wrappedExecutorService);
-
-  private static final Map<String, AtomicBoolean> isNamespaceStarted = new ConcurrentHashMap<>();
-  private static final Map<String, AtomicBoolean> isNamespaceStopping = new ConcurrentHashMap<>();
-
-  private static final Map<String, ConfigMapWatcher> configMapWatchers = new ConcurrentHashMap<>();
-  private static final Map<String, DomainWatcher> domainWatchers = new ConcurrentHashMap<>();
-  private static final Map<String, EventWatcher> eventWatchers = new ConcurrentHashMap<>();
-  private static final Map<String, ServiceWatcher> serviceWatchers = new ConcurrentHashMap<>();
-  private static final Map<String, PodWatcher> podWatchers = new ConcurrentHashMap<>();
-
-  private static final String operatorNamespace = computeOperatorNamespace();
-  private static final AtomicReference<DateTime> lastFullRecheck =
-      new AtomicReference<>(DateTime.now());
-
-  private static final DomainProcessorDelegateImpl delegate = new DomainProcessorDelegateImpl();
-  private static final DomainProcessor processor = new DomainProcessorImpl(delegate);
-
-  private static String principal;
-  private static KubernetesVersion version = null;
-
-  private static final String READINESS_PROBE_FAILURE_EVENT_FILTER =
-      "reason=Unhealthy,type=Warning,involvedObject.fieldPath=spec.containers{weblogic-server}";
 
   /**
    * Entry point.
@@ -235,57 +213,6 @@ public class Main {
     }
   }
 
-  private static class StartNamespacesStep extends Step {
-    private final Collection<String> targetNamespaces;
-
-    StartNamespacesStep(Collection<String> targetNamespaces) {
-      this.targetNamespaces = targetNamespaces;
-    }
-
-    @Override
-    protected String getDetail() {
-      return String.join(",", targetNamespaces);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      // check for any existing resources and add the watches on them
-      // this would happen when the Domain was running BEFORE the Operator starts up
-      Collection<StepAndPacket> startDetails = new ArrayList<>();
-      for (String ns : targetNamespaces) {
-        startDetails.add(
-            new StepAndPacket(
-                Step.chain(
-                    new StartNamespaceBeforeStep(ns), readExistingResources(operatorNamespace, ns)),
-                packet.clone()));
-      }
-      return doForkJoin(getNext(), packet, startDetails);
-    }
-  }
-
-  private static class StartNamespaceBeforeStep extends Step {
-    private final String ns;
-
-    StartNamespaceBeforeStep(String ns) {
-      this.ns = ns;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
-      if (!a.getAndSet(true)) {
-        try {
-          HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns);
-        } catch (Throwable e) {
-          LOGGER.warning(MessageKeys.EXCEPTION, e);
-        }
-
-        return doNext(packet);
-      }
-      return doEnd(packet);
-    }
-  }
-
   private static void stopNamespaces(Collection<String> namespacesToStop) {
     for (String ns : namespacesToStop) {
       processor.stopNamespace(ns);
@@ -350,15 +277,6 @@ public class Main {
         readExistingDomains(ns));
   }
 
-  private static class ReadExistingResourcesBeforeStep extends Step {
-    @SuppressWarnings("rawtypes")
-    @Override
-    public NextAction apply(Packet packet) {
-      packet.put(DPI_MAP, new ConcurrentHashMap());
-      return doNext(packet);
-    }
-  }
-
   private static Step readExistingDomains(String ns) {
     LOGGER.fine(MessageKeys.LISTING_DOMAINS);
     return callBuilderFactory.create().listDomainAsync(ns, new DomainListStep(ns));
@@ -391,13 +309,6 @@ public class Main {
         processor::dispatchConfigMapWatch);
   }
 
-  // -----------------------------------------------------------------------------
-  //
-  // Below this point are methods that are called primarily from watch handlers,
-  // after watch events are received.
-  //
-  // -----------------------------------------------------------------------------
-
   /**
    * Obtain the list of target namespaces.
    *
@@ -424,9 +335,9 @@ public class Main {
 
   private static Collection<String> getTargetNamespaces() {
     return getTargetNamespaces(
-            Optional.ofNullable(System.getenv("OPERATOR_TARGET_NAMESPACES"))
-                    .orElse(tuningAndConfig.get("targetNamespaces")),
-            operatorNamespace);
+        Optional.ofNullable(System.getenv("OPERATOR_TARGET_NAMESPACES"))
+            .orElse(tuningAndConfig.get("targetNamespaces")),
+        operatorNamespace);
   }
 
   private static void startRestServer(String principal, Collection<String> targetNamespaces)
@@ -434,6 +345,13 @@ public class Main {
     RestServer.create(new RestConfigImpl(principal, targetNamespaces));
     RestServer.getInstance().start(container);
   }
+
+  // -----------------------------------------------------------------------------
+  //
+  // Below this point are methods that are called primarily from watch handlers,
+  // after watch events are received.
+  //
+  // -----------------------------------------------------------------------------
 
   private static void stopRestServer() {
     RestServer.getInstance().stop();
@@ -451,8 +369,6 @@ public class Main {
       LOGGER.severe(MessageKeys.EXCEPTION, io);
     }
   }
-
-  private static final Semaphore shutdownSignal = new Semaphore(0);
 
   private static void waitForDeath() {
     Runtime.getRuntime().addShutdownHook(new Thread(shutdownSignal::release));
@@ -509,6 +425,79 @@ public class Main {
 
   private static String computeOperatorNamespace() {
     return Optional.ofNullable(System.getenv("OPERATOR_NAMESPACE")).orElse("default");
+  }
+
+  private static class WrappedThreadFactory implements ThreadFactory {
+    private final ThreadFactory delegate = ThreadFactorySingleton.getInstance();
+
+    @Override
+    public Thread newThread(@Nonnull Runnable r) {
+      return delegate.newThread(
+          () -> {
+            ContainerResolver.getDefault().enterContainer(container);
+            r.run();
+          });
+    }
+  }
+
+  private static class StartNamespacesStep extends Step {
+    private final Collection<String> targetNamespaces;
+
+    StartNamespacesStep(Collection<String> targetNamespaces) {
+      this.targetNamespaces = targetNamespaces;
+    }
+
+    @Override
+    protected String getDetail() {
+      return String.join(",", targetNamespaces);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      // check for any existing resources and add the watches on them
+      // this would happen when the Domain was running BEFORE the Operator starts up
+      Collection<StepAndPacket> startDetails = new ArrayList<>();
+      for (String ns : targetNamespaces) {
+        startDetails.add(
+            new StepAndPacket(
+                Step.chain(
+                    new StartNamespaceBeforeStep(ns), readExistingResources(operatorNamespace, ns)),
+                packet.clone()));
+      }
+      return doForkJoin(getNext(), packet, startDetails);
+    }
+  }
+
+  private static class StartNamespaceBeforeStep extends Step {
+    private final String ns;
+
+    StartNamespaceBeforeStep(String ns) {
+      this.ns = ns;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      AtomicBoolean a = isNamespaceStarted.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
+      if (!a.getAndSet(true)) {
+        try {
+          HealthCheckHelper.performSecurityChecks(version, operatorNamespace, ns);
+        } catch (Throwable e) {
+          LOGGER.warning(MessageKeys.EXCEPTION, e);
+        }
+
+        return doNext(packet);
+      }
+      return doEnd(packet);
+    }
+  }
+
+  private static class ReadExistingResourcesBeforeStep extends Step {
+    @SuppressWarnings("rawtypes")
+    @Override
+    public NextAction apply(Packet packet) {
+      packet.put(DPI_MAP, new ConcurrentHashMap());
+      return doNext(packet);
+    }
   }
 
   private static class DomainListStep extends ResponseStep<DomainList> {

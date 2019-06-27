@@ -46,70 +46,6 @@ public class JobHelper {
     return LegalNames.toJobIntrospectorName(domainUid);
   }
 
-  static class DomainIntrospectorJobStepContext extends JobStepContext {
-    private final DomainPresenceInfo info;
-
-    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
-      super(packet);
-      this.info = info;
-
-      init();
-    }
-
-    /**
-     * Creates the specified new pod and performs any additional needed processing.
-     *
-     * @param next the next step to perform after the pod creation is complete.
-     * @return a step to be scheduled.
-     */
-    @Override
-    Step createNewJob(Step next) {
-      return createJob(next);
-    }
-
-    @Override
-    String getJobCreatedMessageKey() {
-      return MessageKeys.JOB_CREATED;
-    }
-
-    @Override
-    String getJobName() {
-      return LegalNames.toJobIntrospectorName(getDomainUid());
-    }
-
-    Domain getDomain() {
-      return info.getDomain();
-    }
-
-    @Override
-    protected List<V1Volume> getAdditionalVolumes() {
-      return getDomain().getSpec().getAdditionalVolumes();
-    }
-
-    @Override
-    protected List<V1VolumeMount> getAdditionalVolumeMounts() {
-      return getDomain().getSpec().getAdditionalVolumeMounts();
-    }
-
-    @Override
-    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
-      // Pod for introspector job would use same environment variables as for admin server
-      List<V1EnvVar> vars =
-          PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
-
-      addEnvVar(vars, "NAMESPACE", getNamespace());
-      addEnvVar(vars, "DOMAIN_UID", getDomainUid());
-      addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
-      addEnvVar(vars, "NODEMGR_HOME", getNodeManagerHome());
-      addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
-      addEnvVar(vars, "INTROSPECT_HOME", getIntrospectHome());
-      addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
-      addEnvVar(vars, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
-
-      return vars;
-    }
-  }
-
   /**
    * Factory for {@link Step} that creates WebLogic domain introspector job.
    *
@@ -119,31 +55,6 @@ public class JobHelper {
   public static Step createDomainIntrospectorJobStep(Step next) {
 
     return new DomainIntrospectorJobStep(next);
-  }
-
-  static class DomainIntrospectorJobStep extends Step {
-
-    DomainIntrospectorJobStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      if (runIntrospector(packet, info)) {
-        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
-
-        packet.putIfAbsent(START_TIME, System.currentTimeMillis());
-
-        return doNext(
-            context.createNewJob(
-                readDomainIntrospectorPodLogStep(
-                    ConfigMapHelper.createSitConfigMapStep(getNext()))),
-            packet);
-      }
-
-      return doNext(getNext(), packet);
-    }
   }
 
   private static boolean runIntrospector(Packet packet, DomainPresenceInfo info) {
@@ -228,6 +139,120 @@ public class JobHelper {
     return new DeleteIntrospectorJobStep(domainUid, namespace, next);
   }
 
+  private static Step createWatchDomainIntrospectorJobReadyStep(Step next) {
+    return new WatchDomainIntrospectorJobReadyStep(next);
+  }
+
+  /**
+   * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log.
+   *
+   * @param next Next processing step
+   * @return Step for reading WebLogic domain introspector pod log
+   */
+  private static Step readDomainIntrospectorPodLogStep(Step next) {
+    return createWatchDomainIntrospectorJobReadyStep(
+        readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)));
+  }
+
+  /**
+   * Factory for {@link Step} that reads WebLogic domain introspector pod.
+   *
+   * @param next Next processing step
+   * @return Step for reading WebLogic domain introspector pod
+   */
+  private static Step readDomainIntrospectorPodStep(Step next) {
+    return new ReadDomainIntrospectorPodStep(next);
+  }
+
+  static class DomainIntrospectorJobStepContext extends JobStepContext {
+    private final DomainPresenceInfo info;
+
+    DomainIntrospectorJobStepContext(DomainPresenceInfo info, Packet packet) {
+      super(packet);
+      this.info = info;
+
+      init();
+    }
+
+    /**
+     * Creates the specified new pod and performs any additional needed processing.
+     *
+     * @param next the next step to perform after the pod creation is complete.
+     * @return a step to be scheduled.
+     */
+    @Override
+    Step createNewJob(Step next) {
+      return createJob(next);
+    }
+
+    @Override
+    String getJobCreatedMessageKey() {
+      return MessageKeys.JOB_CREATED;
+    }
+
+    @Override
+    String getJobName() {
+      return LegalNames.toJobIntrospectorName(getDomainUid());
+    }
+
+    Domain getDomain() {
+      return info.getDomain();
+    }
+
+    @Override
+    protected List<V1Volume> getAdditionalVolumes() {
+      return getDomain().getSpec().getAdditionalVolumes();
+    }
+
+    @Override
+    protected List<V1VolumeMount> getAdditionalVolumeMounts() {
+      return getDomain().getSpec().getAdditionalVolumeMounts();
+    }
+
+    @Override
+    List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
+      // Pod for introspector job would use same environment variables as for admin server
+      List<V1EnvVar> vars =
+          PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
+
+      addEnvVar(vars, "NAMESPACE", getNamespace());
+      addEnvVar(vars, "DOMAIN_UID", getDomainUid());
+      addEnvVar(vars, "DOMAIN_HOME", getDomainHome());
+      addEnvVar(vars, "NODEMGR_HOME", getNodeManagerHome());
+      addEnvVar(vars, "LOG_HOME", getEffectiveLogHome());
+      addEnvVar(vars, "INTROSPECT_HOME", getIntrospectHome());
+      addEnvVar(vars, "SERVER_OUT_IN_POD_LOG", getIncludeServerOutInPodLog());
+      addEnvVar(vars, "CREDENTIALS_SECRET_NAME", getWebLogicCredentialsSecretName());
+
+      return vars;
+    }
+  }
+
+  static class DomainIntrospectorJobStep extends Step {
+
+    DomainIntrospectorJobStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      if (runIntrospector(packet, info)) {
+        JobStepContext context = new DomainIntrospectorJobStepContext(info, packet);
+
+        packet.putIfAbsent(START_TIME, System.currentTimeMillis());
+
+        return doNext(
+            context.createNewJob(
+                readDomainIntrospectorPodLogStep(
+                    ConfigMapHelper.createSitConfigMapStep(getNext()))),
+            packet);
+      }
+
+      return doNext(getNext(), packet);
+    }
+  }
+
   private static class DeleteIntrospectorJobStep extends Step {
     private String domainUid;
     private String namespace;
@@ -261,21 +286,6 @@ public class JobHelper {
               new V1DeleteOptions().propagationPolicy("Foreground"),
               new DefaultResponseStep<>(next));
     }
-  }
-
-  private static Step createWatchDomainIntrospectorJobReadyStep(Step next) {
-    return new WatchDomainIntrospectorJobReadyStep(next);
-  }
-
-  /**
-   * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log.
-   *
-   * @param next Next processing step
-   * @return Step for reading WebLogic domain introspector pod log
-   */
-  private static Step readDomainIntrospectorPodLogStep(Step next) {
-    return createWatchDomainIntrospectorJobReadyStep(
-        readDomainIntrospectorPodStep(new ReadDomainIntrospectorPodLogStep(next)));
   }
 
   private static class ReadDomainIntrospectorPodLogStep extends Step {
@@ -343,16 +353,6 @@ public class JobHelper {
       packet.remove(ProcessingConstants.JOB_POD_NAME);
       packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
     }
-  }
-
-  /**
-   * Factory for {@link Step} that reads WebLogic domain introspector pod.
-   *
-   * @param next Next processing step
-   * @return Step for reading WebLogic domain introspector pod
-   */
-  private static Step readDomainIntrospectorPodStep(Step next) {
-    return new ReadDomainIntrospectorPodStep(next);
   }
 
   private static class ReadDomainIntrospectorPodStep extends Step {

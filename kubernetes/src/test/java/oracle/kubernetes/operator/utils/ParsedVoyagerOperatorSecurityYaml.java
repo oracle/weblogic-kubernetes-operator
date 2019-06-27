@@ -4,11 +4,12 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.nio.file.Path;
+
 import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1ServiceAccount;
-import java.nio.file.Path;
 
 /** Parses a generated voyager-operator-security.yaml file into a set of typed k8s java objects */
 public class ParsedVoyagerOperatorSecurityYaml extends ParsedKubernetesYaml {

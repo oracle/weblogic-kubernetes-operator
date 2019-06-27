@@ -7,6 +7,11 @@ package oracle.kubernetes.operator.rest.model;
 /** ErrorModel describes an error response from a WebLogic operator REST resource. */
 public class ErrorModel extends BaseModel {
 
+  private int status;
+  private String detail;
+  private String type;
+  private String title;
+
   /** Construct an empty ErrorModel. */
   public ErrorModel() {
     setType("http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1");
@@ -24,8 +29,6 @@ public class ErrorModel extends BaseModel {
     setStatus(status);
     setDetail(detail);
   }
-
-  private int status;
 
   /**
    * Get the error's HTTP status code.
@@ -45,8 +48,6 @@ public class ErrorModel extends BaseModel {
     this.status = status;
   }
 
-  private String detail;
-
   /**
    * Get a detailed description of the error.
    *
@@ -65,8 +66,6 @@ public class ErrorModel extends BaseModel {
     this.detail = details;
   }
 
-  private String type;
-
   /**
    * Get the error's type.
    *
@@ -84,8 +83,6 @@ public class ErrorModel extends BaseModel {
   public void setType(String type) {
     this.type = type;
   }
-
-  private String title;
 
   /**
    * Get the error's title.

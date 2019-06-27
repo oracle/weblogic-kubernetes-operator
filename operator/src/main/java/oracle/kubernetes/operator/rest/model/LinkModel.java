@@ -7,6 +7,10 @@ package oracle.kubernetes.operator.rest.model;
 /** LinkModel describes a link to a WebLogic operator REST resource. */
 public class LinkModel extends BaseModel {
 
+  private String rel;
+  private String title;
+  private String href;
+
   /** Construct an empty LinkModel. */
   public LinkModel() {
   }
@@ -34,8 +38,6 @@ public class LinkModel extends BaseModel {
     setHref(href);
   }
 
-  private String rel;
-
   /**
    * Get the link's relationship.
    *
@@ -54,8 +56,6 @@ public class LinkModel extends BaseModel {
     this.rel = rel;
   }
 
-  private String title;
-
   /**
    * Get the link's title.
    *
@@ -73,8 +73,6 @@ public class LinkModel extends BaseModel {
   public void setTitle(String title) {
     this.title = title;
   }
-
-  private String href;
 
   /**
    * Get the link's hypertext reference.

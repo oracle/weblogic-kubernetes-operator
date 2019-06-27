@@ -46,14 +46,22 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
  */
 public class RestBackendImpl implements RestBackend {
 
-  private V1UserInfo userInfo;
-
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final String NEW_CLUSTER =
+      "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
+  private static final TopologyRetriever INSTANCE =
+      (String ns, String domainUid) -> {
+        Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUid);
+        if (s != null) {
+          return s.getWlsDomainConfig();
+        }
+        return null;
+      };
   private final AuthenticationProxy atn = new AuthenticationProxy();
   private final AuthorizationProxy atz = new AuthorizationProxy();
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   private final String principal;
   private final Collection<String> targetNamespaces;
+  private V1UserInfo userInfo;
 
   /**
    * Construct a RestBackendImpl that is used to handle one WebLogic operator REST request.
@@ -232,9 +240,6 @@ public class RestBackendImpl implements RestBackend {
     LOGGER.exiting();
   }
 
-  private static final String NEW_CLUSTER =
-      "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
-
   private void patchDomain(Domain domain, String cluster, int replicas) {
     if (replicas == domain.getReplicaCount(cluster)) return;
 
@@ -286,19 +291,6 @@ public class RestBackendImpl implements RestBackend {
   private Map<String, WlsClusterConfig> getWlsConfiguredClusters(String domainUid) {
     return getWlsDomainConfig(domainUid).getClusterConfigs();
   }
-
-  interface TopologyRetriever {
-    WlsDomainConfig getWlsDomainConfig(String ns, String domainUid);
-  }
-
-  private static final TopologyRetriever INSTANCE =
-      (String ns, String domainUid) -> {
-        Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUid);
-        if (s != null) {
-          return s.getWlsDomainConfig();
-        }
-        return null;
-      };
 
   /**
    * Find the WlsDomainConfig corresponding to the given domain UID.
@@ -369,5 +361,9 @@ public class RestBackendImpl implements RestBackend {
       }
     }
     throw new AssertionError(formatMessage(MessageKeys.RESOURCE_BUNDLE_NOT_FOUND));
+  }
+
+  interface TopologyRetriever {
+    WlsDomainConfig getWlsDomainConfig(String ns, String domainUid);
   }
 }

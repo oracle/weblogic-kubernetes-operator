@@ -64,23 +64,16 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
   private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
+  // Map from namespace to map of domainUID to Domain
+  private static final Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
+      new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, ConcurrentMap<String, ScheduledFuture<?>>>
+      statusUpdaters = new ConcurrentHashMap<>();
   private DomainProcessorDelegate delegate;
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
     this.delegate = delegate;
   }
-
-  private FiberGate getMakeRightFiberGate(String ns) {
-    return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
-  }
-
-  private FiberGate getStatusFiberGate(String ns) {
-    return statusFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
-  }
-
-  // Map from namespace to map of domainUID to Domain
-  private static final Map<String, Map<String, DomainPresenceInfo>> DOMAINS =
-      new ConcurrentHashMap<>();
 
   private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
     return DOMAINS.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
@@ -99,9 +92,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static final ConcurrentMap<String, ConcurrentMap<String, ScheduledFuture<?>>>
-      statusUpdaters = new ConcurrentHashMap<>();
-
   private static void registerStatusUpdater(
       String ns, String domainUid, ScheduledFuture<?> future) {
     ScheduledFuture<?> existing =
@@ -119,6 +109,84 @@ public class DomainProcessorImpl implements DomainProcessor {
         existing.cancel(true);
       }
     }
+  }
+
+  private static void onEvent(V1Event event) {
+    V1ObjectReference ref = event.getInvolvedObject();
+    if (ref == null) return;
+
+    String[] domainAndServer = ref.getName().split("-");
+    String domainUid = domainAndServer[0];
+    String serverName = domainAndServer[1];
+    String status = getReadinessStatus(event);
+    if (status == null) return;
+
+    Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
+        .map(m -> m.get(domainUid))
+        .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
+  }
+
+  private static String getReadinessStatus(V1Event event) {
+    return Optional.ofNullable(event.getMessage())
+        .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
+        .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
+        .orElse(null);
+  }
+
+  private static Step readExistingPods(DomainPresenceInfo info) {
+    return new CallBuilder()
+        .withLabelSelectors(
+            LabelConstants.forDomainUidSelector(info.getDomainUid()),
+            LabelConstants.CREATEDBYOPERATOR_LABEL)
+        .listPodAsync(info.getNamespace(), new PodListStep(info));
+  }
+
+  // pre-conditions: DomainPresenceInfo SPI
+  // "principal"
+  static Step bringAdminServerUp(
+      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
+    return Step.chain(bringAdminServerUpSteps(info, podAwaiterStepFactory, next));
+  }
+
+  private static Step[] domainIntrospectionSteps(DomainPresenceInfo info, Step next) {
+    Domain dom = info.getDomain();
+    List<Step> resources = new ArrayList<>();
+    resources.add(
+        JobHelper.deleteDomainIntrospectorJobStep(
+            dom.getDomainUid(), dom.getMetadata().getNamespace(), null));
+    resources.add(JobHelper.createDomainIntrospectorJobStep(next));
+    return resources.toArray(new Step[0]);
+  }
+
+  private static Step[] bringAdminServerUpSteps(
+      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
+    List<Step> resources = new ArrayList<>();
+    resources.add(new BeforeAdminServiceStep(null));
+    resources.add(PodHelper.createAdminPodStep(null));
+
+    Domain dom = info.getDomain();
+    AdminServer adminServer = dom.getSpec().getAdminServer();
+    AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
+    List<Channel> channels = adminService != null ? adminService.getChannels() : null;
+    if (channels != null && !channels.isEmpty()) {
+      resources.add(ServiceHelper.createForExternalServiceStep(null));
+    }
+
+    resources.add(ServiceHelper.createForServerStep(null));
+    resources.add(new WatchPodReadyAdminStep(podAwaiterStepFactory, next));
+    return resources.toArray(new Step[0]);
+  }
+
+  private static Step bringManagedServersUp(Step next) {
+    return new ManagedServersUpStep(next);
+  }
+
+  private FiberGate getMakeRightFiberGate(String ns) {
+    return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
+  }
+
+  private FiberGate getStatusFiberGate(String ns) {
+    return statusFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
   }
 
   public void stopNamespace(String ns) {
@@ -173,6 +241,12 @@ public class DomainProcessorImpl implements DomainProcessor {
   private V1Pod getNewerPod(V1Pod first, V1Pod second) {
     return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
   }
+
+  /* Recently, we've seen a number of intermittent bugs where K8s reports
+   * outdated watch events.  There seem to be two main cases: 1) a DELETED
+   * event for a resource that was deleted, but has since been recreated, and 2)
+   * a MODIFIED event for an object that has already had subsequent modifications.
+   */
 
   private V1ObjectMeta getMetadata(V1Pod pod) {
     return pod == null ? null : pod.getMetadata();
@@ -232,28 +306,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static void onEvent(V1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-    if (ref == null) return;
-
-    String[] domainAndServer = ref.getName().split("-");
-    String domainUid = domainAndServer[0];
-    String serverName = domainAndServer[1];
-    String status = getReadinessStatus(event);
-    if (status == null) return;
-
-    Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
-        .map(m -> m.get(domainUid))
-        .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
-  }
-
-  private static String getReadinessStatus(V1Event event) {
-    return Optional.ofNullable(event.getMessage())
-        .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
-        .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
-        .orElse(null);
-  }
-
   /**
    * Dispatch the Domain event to the appropriate handler.
    *
@@ -286,12 +338,6 @@ public class DomainProcessorImpl implements DomainProcessor {
       default:
     }
   }
-
-  /* Recently, we've seen a number of intermittent bugs where K8s reports
-   * outdated watch events.  There seem to be two main cases: 1) a DELETED
-   * event for a resource that was deleted, but has since been recreated, and 2)
-   * a MODIFIED event for an object that has already had subsequent modifications.
-   */
 
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
     final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
@@ -407,115 +453,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private class StartPlanStep extends Step {
-    private final DomainPresenceInfo info;
-
-    StartPlanStep(DomainPresenceInfo info, Step next) {
-      super(next);
-      this.info = info;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      registerDomainPresenceInfo(info);
-      Step strategy = getNext();
-      if (!info.isPopulated() && info.isNotDeleting()) {
-        strategy = Step.chain(readExistingPods(info), readExistingServices(info), strategy);
-      }
-      return doNext(strategy, packet);
-    }
-  }
-
-  private static class UnregisterStep extends Step {
-    private final DomainPresenceInfo info;
-
-    UnregisterStep(DomainPresenceInfo info) {
-      this(info, null);
-    }
-
-    UnregisterStep(DomainPresenceInfo info, Step next) {
-      super(next);
-      this.info = info;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
-      return doNext(packet);
-    }
-  }
-
-  private static Step readExistingPods(DomainPresenceInfo info) {
-    return new CallBuilder()
-        .withLabelSelectors(
-            LabelConstants.forDomainUidSelector(info.getDomainUid()),
-            LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .listPodAsync(info.getNamespace(), new PodListStep(info));
-  }
-
   private Step readExistingServices(DomainPresenceInfo info) {
     return new CallBuilder()
         .withLabelSelectors(
             LabelConstants.forDomainUidSelector(info.getDomainUid()),
             LabelConstants.CREATEDBYOPERATOR_LABEL)
         .listServiceAsync(info.getNamespace(), new ServiceListStep(info));
-  }
-
-  private static class PodListStep extends ResponseStep<V1PodList> {
-    private final DomainPresenceInfo info;
-
-    PodListStep(DomainPresenceInfo info) {
-      this.info = info;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-      V1PodList result = callResponse.getResult();
-      if (result != null) {
-        for (V1Pod pod : result.getItems()) {
-          String serverName = PodHelper.getPodServerName(pod);
-          if (serverName != null) {
-            info.setServerPod(serverName, pod);
-          }
-        }
-      }
-      return doNext(packet);
-    }
-  }
-
-  private class ServiceListStep extends ResponseStep<V1ServiceList> {
-    private final DomainPresenceInfo info;
-
-    ServiceListStep(DomainPresenceInfo info) {
-      this.info = info;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1ServiceList> callResponse) {
-      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
-          ? onSuccess(packet, callResponse)
-          : super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
-      V1ServiceList result = callResponse.getResult();
-
-      if (result != null) {
-        for (V1Service service : result.getItems()) {
-          ServiceHelper.addToPresence(info, service);
-        }
-      }
-
-      return doNext(packet);
-    }
   }
 
   private void runDomainPlan(
@@ -628,6 +571,110 @@ public class DomainProcessorImpl implements DomainProcessor {
         new UnregisterStep(info));
   }
 
+  private static class UnregisterStep extends Step {
+    private final DomainPresenceInfo info;
+
+    UnregisterStep(DomainPresenceInfo info) {
+      this(info, null);
+    }
+
+    UnregisterStep(DomainPresenceInfo info, Step next) {
+      super(next);
+      this.info = info;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
+      return doNext(packet);
+    }
+  }
+
+  private static class PodListStep extends ResponseStep<V1PodList> {
+    private final DomainPresenceInfo info;
+
+    PodListStep(DomainPresenceInfo info) {
+      this.info = info;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
+      V1PodList result = callResponse.getResult();
+      if (result != null) {
+        for (V1Pod pod : result.getItems()) {
+          String serverName = PodHelper.getPodServerName(pod);
+          if (serverName != null) {
+            info.setServerPod(serverName, pod);
+          }
+        }
+      }
+      return doNext(packet);
+    }
+  }
+
+  private static class TailStep extends Step {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      packet.getSpi(DomainPresenceInfo.class).complete();
+      return doNext(packet);
+    }
+  }
+
+  private class StartPlanStep extends Step {
+    private final DomainPresenceInfo info;
+
+    StartPlanStep(DomainPresenceInfo info, Step next) {
+      super(next);
+      this.info = info;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      registerDomainPresenceInfo(info);
+      Step strategy = getNext();
+      if (!info.isPopulated() && info.isNotDeleting()) {
+        strategy = Step.chain(readExistingPods(info), readExistingServices(info), strategy);
+      }
+      return doNext(strategy, packet);
+    }
+  }
+
+  private class ServiceListStep extends ResponseStep<V1ServiceList> {
+    private final DomainPresenceInfo info;
+
+    ServiceListStep(DomainPresenceInfo info) {
+      this.info = info;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1ServiceList> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+          ? onSuccess(packet, callResponse)
+          : super.onFailure(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ServiceList> callResponse) {
+      V1ServiceList result = callResponse.getResult();
+
+      if (result != null) {
+        for (V1Service service : result.getItems()) {
+          ServiceHelper.addToPresence(info, service);
+        }
+      }
+
+      return doNext(packet);
+    }
+  }
+
   private class UpHeadStep extends Step {
     private final DomainPresenceInfo info;
 
@@ -694,54 +741,5 @@ public class DomainProcessorImpl implements DomainProcessor {
               Component.createFor(info, delegate.getVersion(), PodAwaiterStepFactory.class, pw));
       return doNext(packet);
     }
-  }
-
-  private static class TailStep extends Step {
-
-    @Override
-    public NextAction apply(Packet packet) {
-      packet.getSpi(DomainPresenceInfo.class).complete();
-      return doNext(packet);
-    }
-  }
-
-  // pre-conditions: DomainPresenceInfo SPI
-  // "principal"
-  static Step bringAdminServerUp(
-      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
-    return Step.chain(bringAdminServerUpSteps(info, podAwaiterStepFactory, next));
-  }
-
-  private static Step[] domainIntrospectionSteps(DomainPresenceInfo info, Step next) {
-    Domain dom = info.getDomain();
-    List<Step> resources = new ArrayList<>();
-    resources.add(
-        JobHelper.deleteDomainIntrospectorJobStep(
-            dom.getDomainUid(), dom.getMetadata().getNamespace(), null));
-    resources.add(JobHelper.createDomainIntrospectorJobStep(next));
-    return resources.toArray(new Step[0]);
-  }
-
-  private static Step[] bringAdminServerUpSteps(
-      DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory, Step next) {
-    List<Step> resources = new ArrayList<>();
-    resources.add(new BeforeAdminServiceStep(null));
-    resources.add(PodHelper.createAdminPodStep(null));
-
-    Domain dom = info.getDomain();
-    AdminServer adminServer = dom.getSpec().getAdminServer();
-    AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
-    List<Channel> channels = adminService != null ? adminService.getChannels() : null;
-    if (channels != null && !channels.isEmpty()) {
-      resources.add(ServiceHelper.createForExternalServiceStep(null));
-    }
-
-    resources.add(ServiceHelper.createForServerStep(null));
-    resources.add(new WatchPodReadyAdminStep(podAwaiterStepFactory, next));
-    return resources.toArray(new Step[0]);
-  }
-
-  private static Step bringManagedServersUp(Step next) {
-    return new ManagedServersUpStep(next);
   }
 }
