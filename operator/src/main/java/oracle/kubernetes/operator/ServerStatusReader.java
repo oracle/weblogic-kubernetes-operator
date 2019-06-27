@@ -56,6 +56,21 @@ public class ServerStatusReader {
     return new DomainStatusReaderStep(info, timeoutSeconds, next);
   }
 
+  /**
+   * Creates asynchronous step to read WebLogic server state from a particular pod.
+   *
+   * @param info the domain presence
+   * @param pod The pod
+   * @param serverName Server name
+   * @param timeoutSeconds Timeout in seconds
+   * @return Created step
+   */
+  private static Step createServerStatusReaderStep(
+      DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
+    return new ServerStatusReaderStep(
+        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
+  }
+
   private static class DomainStatusReaderStep extends Step {
     private final DomainPresenceInfo info;
     private final long timeoutSeconds;
@@ -92,21 +107,6 @@ public class ServerStatusReader {
           createServerStatusReaderStep(info, pod, PodHelper.getPodServerName(pod), timeoutSeconds),
           packet.clone());
     }
-  }
-
-  /**
-   * Creates asynchronous step to read WebLogic server state from a particular pod.
-   *
-   * @param info the domain presence
-   * @param pod The pod
-   * @param serverName Server name
-   * @param timeoutSeconds Timeout in seconds
-   * @return Created step
-   */
-  private static Step createServerStatusReaderStep(
-      DomainPresenceInfo info, V1Pod pod, String serverName, long timeoutSeconds) {
-    return new ServerStatusReaderStep(
-        info, pod, serverName, timeoutSeconds, new ServerHealthStep(serverName, pod, null));
   }
 
   private static class ServerStatusReaderStep extends Step {

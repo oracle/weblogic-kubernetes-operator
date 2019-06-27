@@ -4,11 +4,20 @@
 
 package oracle.kubernetes.operator.utils;
 
-import com.google.common.io.ByteStreams;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.stream.Collectors;
 
-/** Class for executing shell commands from java */
+import com.google.common.io.ByteStreams;
+
+/**
+ * Class for executing shell commands from java.
+ */
 public class ExecCommand {
 
   public static ExecResult exec(String command) throws Exception {
@@ -29,16 +38,13 @@ public class ExecCommand {
         // this makes sense because CopyingOutputStream is an InputStreamWrapper
         in = copyOut;
         out =
-            new Thread(
-                new Runnable() {
-                  public void run() {
-                    try {
-                      ByteStreams.copy(i, copyOut);
-                    } catch (IOException ex) {
-                      ex.printStackTrace();
-                    }
-                  }
-                });
+            new Thread(() -> {
+              try {
+                ByteStreams.copy(i, copyOut);
+              } catch (IOException ex) {
+                ex.printStackTrace();
+              }
+            });
         out.start();
       }
 

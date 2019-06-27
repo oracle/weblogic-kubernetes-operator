@@ -60,15 +60,9 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 @SuppressWarnings({"ConstantConditions, unchecked", "SameParameterValue", "deprecation"})
 public class DomainIntrospectorJobTest {
   static final String NS = "namespace";
-  private static final String DOMAIN_NAME = "domain1";
-  private static final String UID = "uid1";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
-
-  private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
-  private static final String LATEST_IMAGE = "image:latest";
   static final String VERSIONED_IMAGE = "image:1.2.3";
-
   static final String SECRETS_VOLUME = "weblogic-credentials-volume";
   static final String SCRIPTS_VOLUME = "weblogic-domain-cm-volume";
   static final String SIT_CONFIG_MAP_VOLUME_SUFFIX = "-weblogic-domain-introspect-cm-volume";
@@ -77,20 +71,20 @@ public class DomainIntrospectorJobTest {
   static final String SCRIPTS_MOUNTS_PATH = "/weblogic-operator/scripts";
   static final String STORAGE_MOUNT_PATH = "/shared";
   static final String NODEMGR_HOME = "/u01/nodemanager";
-  static final String LOG_HOME = "/shared/logs/" + UID;
   static final int FAILURE_THRESHOLD = 1;
-
   static final String OVERRIDES_CM = "overrides-config-map";
   static final String OVERRIDE_SECRET_1 = "override-secret-1";
   static final String OVERRIDE_SECRET_2 = "override-secret-2";
   static final String OVERRIDE_SECRETS_MOUNT_PATH = "/weblogic-operator/config-overrides-secrets";
   static final String OVERRIDES_CM_MOUNT_PATH = "/weblogic-operator/config-overrides";
-
   static final String READ_WRITE_MANY_ACCESS = "ReadWriteMany";
-
   @SuppressWarnings("OctalInteger")
   static final int ALL_READ_AND_EXECUTE = 0555;
-
+  private static final String DOMAIN_NAME = "domain1";
+  private static final String UID = "uid1";
+  static final String LOG_HOME = "/shared/logs/" + UID;
+  private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
+  private static final String LATEST_IMAGE = "image:latest";
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
       "/weblogic-operator/scripts/introspectDomain.sh";
 
@@ -103,14 +97,16 @@ public class DomainIntrospectorJobTest {
           + "\n"
           + ">>> EOF\n"
           + "\n"
-          + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/userKeyNodeManager.secure\n"
+          + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file "
+          + "/u01/introspect/domain1/userKeyNodeManager.secure\n"
           + "\n"
           + ">>>  /u01/introspect/domain1/userKeyNodeManager.secure\n"
           + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==\n"
           + "\n"
           + ">>> EOF\n"
           + "\n"
-          + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/topology.yaml\n"
+          + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing "
+          + "file /u01/introspect/domain1/topology.yaml\n"
           + "\n"
           + ">>>  /u01/introspect/domain1/topology.yaml\n"
           + "domainValid: true\n"
@@ -141,7 +137,32 @@ public class DomainIntrospectorJobTest {
   protected List<LogRecord> logRecords = new ArrayList<>();
   RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
 
-  public DomainIntrospectorJobTest() {}
+  public DomainIntrospectorJobTest() {
+  }
+
+  private static String getJobName(V1Job actualBody) {
+    return actualBody.getMetadata().getName();
+  }
+
+  static String getJobName() {
+    return LegalNames.toJobIntrospectorName(UID);
+  }
+
+  static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
+    vars.add(new V1EnvVar().name(name).value(value));
+  }
+
+  private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
+    return volumeMount(volumeName, mountPath).readOnly(true);
+  }
+
+  private static V1VolumeMount volumeMount(String volumeName, String mountPath) {
+    return new V1VolumeMount().name(volumeName).mountPath(mountPath);
+  }
+
+  static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
+    return hasItem(new V1EnvVar().name(name).value(value));
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -289,6 +310,14 @@ public class DomainIntrospectorJobTest {
         .withBody(deleteOptions);
   }
 
+  private CallTestSupport.CannedResponse expectDeleteJob(String jobName) {
+    return testSupport
+        .createCannedResponse("deletePod")
+        .withNamespace(NS)
+        .withBody(new V1DeleteOptions())
+        .withName(jobName);
+  }
+
   CallTestSupport.CannedResponse expectReadConfigMap(String cmName, String namespace) {
     return testSupport
         .createCannedResponse("readConfigMap")
@@ -298,14 +327,6 @@ public class DomainIntrospectorJobTest {
 
   BodyMatcher jobWithName(String jobName) {
     return body -> body instanceof V1Job && getJobName((V1Job) body).equals(jobName);
-  }
-
-  private static String getJobName(V1Job actualBody) {
-    return actualBody.getMetadata().getName();
-  }
-
-  static String getJobName() {
-    return LegalNames.toJobIntrospectorName(UID);
   }
 
   FiberTestSupport.StepFactory getStepFactory() {
@@ -326,14 +347,7 @@ public class DomainIntrospectorJobTest {
                 .addConditionsItem(new V1JobCondition().type("Complete").status("True")));
   }
 
-  void expectStepsAfterCreation() {}
-
-  private CallTestSupport.CannedResponse expectDeleteJob(String jobName) {
-    return testSupport
-        .createCannedResponse("deletePod")
-        .withNamespace(NS)
-        .withBody(new V1DeleteOptions())
-        .withName(jobName);
+  void expectStepsAfterCreation() {
   }
 
   protected V1ObjectMeta createJobMetadata() {
@@ -440,10 +454,6 @@ public class DomainIntrospectorJobTest {
     return envVarList;
   }
 
-  static void addEnvVar(List<V1EnvVar> vars, String name, String value) {
-    vars.add(new V1EnvVar().name(name).value(value));
-  }
-
   protected String getDomainHome() {
     return "/shared/domains/" + UID;
   }
@@ -464,14 +474,6 @@ public class DomainIntrospectorJobTest {
 
   private String getConfigOverrides() {
     return domainPresenceInfo.getDomain().getConfigOverrides();
-  }
-
-  private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
-    return volumeMount(volumeName, mountPath).readOnly(true);
-  }
-
-  private static V1VolumeMount volumeMount(String volumeName, String mountPath) {
-    return new V1VolumeMount().name(volumeName).mountPath(mountPath);
   }
 
   protected V1PersistentVolumeClaimVolumeSource getPersistenVolumeClaimVolumeSource(
@@ -498,13 +500,9 @@ public class DomainIntrospectorJobTest {
     return jobFetcher.getCreatedJob();
   }
 
-  static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
-    return hasItem(new V1EnvVar().name(name).value(value));
-  }
-
   static class JobFetcher implements BodyMatcher {
-    private String jobName;
     V1Job createdJob;
+    private String jobName;
 
     JobFetcher(String jobName) {
       this.jobName = jobName;

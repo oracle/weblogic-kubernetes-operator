@@ -34,9 +34,8 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 public class PodHelper {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private PodHelper() {
   }
@@ -123,6 +122,59 @@ public class PodHelper {
       return labels.get(LabelConstants.SERVERNAME_LABEL);
     }
     return null;
+  }
+
+  /**
+   * Factory for {@link Step} that creates admin server pod.
+   *
+   * @param next Next processing step
+   * @return Step for creating admin server pod
+   */
+  public static Step createAdminPodStep(Step next) {
+    return new AdminPodStep(next);
+  }
+
+  static void addToPacket(Packet packet, PodAwaiterStepFactory pw) {
+    packet
+        .getComponents()
+        .put(
+            ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+            Component.createFor(PodAwaiterStepFactory.class, pw));
+  }
+
+  static PodAwaiterStepFactory getPodAwaiterStepFactory(Packet packet) {
+    return packet.getSpi(PodAwaiterStepFactory.class);
+  }
+
+  /**
+   * Factory for {@link Step} that creates managed server pod.
+   *
+   * @param next Next processing step
+   * @return Step for creating managed server pod
+   */
+  public static Step createManagedPodStep(Step next) {
+    return new ManagedPodStep(next);
+  }
+
+  /**
+   * Factory for {@link Step} that deletes server pod.
+   *
+   * @param serverName the name of the server whose pod is to be deleted
+   * @param next Next processing step
+   * @return Step for deleting server pod
+   */
+  public static Step deletePodStep(String serverName, Step next) {
+    return new DeletePodStep(serverName, next);
+  }
+
+  static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
+    ArrayList<V1EnvVar> copy = new ArrayList<>();
+    if (envVars != null) {
+      for (V1EnvVar envVar : envVars) {
+        copy.add(new V1EnvVar().name(envVar.getName()).value(envVar.getValue()));
+      }
+    }
+    return copy;
   }
 
   static class AdminPodStepContext extends PodStepContext {
@@ -218,16 +270,6 @@ public class PodHelper {
     }
   }
 
-  /**
-   * Factory for {@link Step} that creates admin server pod.
-   *
-   * @param next Next processing step
-   * @return Step for creating admin server pod
-   */
-  public static Step createAdminPodStep(Step next) {
-    return new AdminPodStep(next);
-  }
-
   static class AdminPodStep extends Step {
 
     AdminPodStep(Step next) {
@@ -240,28 +282,6 @@ public class PodHelper {
 
       return doNext(context.verifyPersistentVolume(context.verifyPod(getNext())), packet);
     }
-  }
-
-  static void addToPacket(Packet packet, PodAwaiterStepFactory pw) {
-    packet
-        .getComponents()
-        .put(
-            ProcessingConstants.PODWATCHER_COMPONENT_NAME,
-            Component.createFor(PodAwaiterStepFactory.class, pw));
-  }
-
-  static PodAwaiterStepFactory getPodAwaiterStepFactory(Packet packet) {
-    return packet.getSpi(PodAwaiterStepFactory.class);
-  }
-
-  /**
-   * Factory for {@link Step} that creates managed server pod.
-   *
-   * @param next Next processing step
-   * @return Step for creating managed server pod
-   */
-  public static Step createManagedPodStep(Step next) {
-    return new ManagedPodStep(next);
   }
 
   static class ManagedPodStepContext extends PodStepContext {
@@ -404,17 +424,6 @@ public class PodHelper {
     }
   }
 
-  /**
-   * Factory for {@link Step} that deletes server pod.
-   *
-   * @param serverName the name of the server whose pod is to be deleted
-   * @param next Next processing step
-   * @return Step for deleting server pod
-   */
-  public static Step deletePodStep(String serverName, Step next) {
-    return new DeletePodStep(serverName, next);
-  }
-
   private static class DeletePodStep extends Step {
     private final String serverName;
 
@@ -482,15 +491,5 @@ public class PodHelper {
           .deletePodAsync(
               name, namespace, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
     }
-  }
-
-  static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
-    ArrayList<V1EnvVar> copy = new ArrayList<>();
-    if (envVars != null) {
-      for (V1EnvVar envVar : envVars) {
-        copy.add(new V1EnvVar().name(envVar.getName()).value(envVar.getValue()));
-      }
-    }
-    return copy;
   }
 }

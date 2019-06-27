@@ -18,16 +18,16 @@ public class LoggingFactory {
 
   private static JSON json = new JSON();
 
-  public static void setJson(JSON json) {
-    LoggingFactory.json = json;
+  private LoggingFactory() {
+    // hide implicit public constructor
   }
 
   static JSON getJson() {
     return json;
   }
 
-  private LoggingFactory() {
-    // hide implicit public constructor
+  public static void setJson(JSON json) {
+    LoggingFactory.json = json;
   }
 
   /**

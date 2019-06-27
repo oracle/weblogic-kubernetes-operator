@@ -24,80 +24,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 public class AuthorizationProxy {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  public enum Operation {
-    get,
-    list,
-    create,
-    update,
-    patch,
-    replace,
-    watch,
-    proxy,
-    redirect,
-    delete,
-    deletecollection
-  }
-
-  public enum Resource {
-    CONFIGMAPS("configmaps", ""),
-    PODS("pods", ""),
-    LOGS("pods", "log", ""),
-    EXEC("pods", "exec", ""),
-    PODTEMPLATES("podtemplates", ""),
-    EVENTS("events", ""),
-    SERVICES("services", ""),
-    NAMESPACES("namespaces", ""),
-    JOBS("jobs", "batch"),
-    CRONJOBS("cronjobs", "batch"),
-    CRDS("customresourcedefinitions", "apiextensions.k8s.io"),
-    DOMAINS("domains", "weblogic.oracle"),
-    DOMAINSTATUSS("domains", "status", "weblogic.oracle"),
-    SUBJECTACCESSREVIEWS("subjectaccessreviews", "authorization.k8s.io"),
-    SELFSUBJECTACCESSREVIEWS("selfsubjectaccessreviews", "authorization.k8s.io"),
-    LOCALSUBJECTACCESSREVIEWS("localsubjectaccessreviews", "authorization.k8s.io"),
-    SELFSUBJECTRULESREVIEWS("selfsubjectrulesreviews", "authorization.k8s.io"),
-    TOKENREVIEWS("tokenreviews", "authentication.k8s.io"),
-    SECRETS("secrets", ""),
-    PERSISTENTVOLUMES("persistentvolumes", ""),
-    PERSISTENTVOLUMECLAIMS("persistentvolumeclaims", ""),
-    STORAGECLASSES("storageclasses", "storage.k8s.io"),
-    PODPRESETS("podpresets", "settings.k8s.io"),
-    INGRESSES("ingresses", "extensions"),
-    NETWORKPOLICIES("networkpolicies", "extensions"),
-    PODSECURITYPOLICIES("podsecuritypolicies", "extensions");
-
-    private final String resource;
-    private final String subResource;
-    private final String apiGroup;
-
-    Resource(String resource, String apiGroup) {
-      this(resource, "", apiGroup);
-    }
-
-    Resource(String resource, String subResource, String apiGroup) {
-      this.resource = resource;
-      this.subResource = subResource;
-      this.apiGroup = apiGroup;
-    }
-
-    public String getResource() {
-      return resource;
-    }
-
-    public String getSubResource() {
-      return subResource;
-    }
-
-    public String getApiGroup() {
-      return apiGroup;
-    }
-  }
-
-  public enum Scope {
-    namespace,
-    cluster
-  }
-
   /**
    * Check if the specified principal is allowed to perform the specified operation on the specified
    * resource in the specified scope. Call this version of the method when you know that the
@@ -308,5 +234,79 @@ public class AuthorizationProxy {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return null;
     }
+  }
+
+  public enum Operation {
+    get,
+    list,
+    create,
+    update,
+    patch,
+    replace,
+    watch,
+    proxy,
+    redirect,
+    delete,
+    deletecollection
+  }
+
+  public enum Resource {
+    CONFIGMAPS("configmaps", ""),
+    PODS("pods", ""),
+    LOGS("pods", "log", ""),
+    EXEC("pods", "exec", ""),
+    PODTEMPLATES("podtemplates", ""),
+    EVENTS("events", ""),
+    SERVICES("services", ""),
+    NAMESPACES("namespaces", ""),
+    JOBS("jobs", "batch"),
+    CRONJOBS("cronjobs", "batch"),
+    CRDS("customresourcedefinitions", "apiextensions.k8s.io"),
+    DOMAINS("domains", "weblogic.oracle"),
+    DOMAINSTATUSS("domains", "status", "weblogic.oracle"),
+    SUBJECTACCESSREVIEWS("subjectaccessreviews", "authorization.k8s.io"),
+    SELFSUBJECTACCESSREVIEWS("selfsubjectaccessreviews", "authorization.k8s.io"),
+    LOCALSUBJECTACCESSREVIEWS("localsubjectaccessreviews", "authorization.k8s.io"),
+    SELFSUBJECTRULESREVIEWS("selfsubjectrulesreviews", "authorization.k8s.io"),
+    TOKENREVIEWS("tokenreviews", "authentication.k8s.io"),
+    SECRETS("secrets", ""),
+    PERSISTENTVOLUMES("persistentvolumes", ""),
+    PERSISTENTVOLUMECLAIMS("persistentvolumeclaims", ""),
+    STORAGECLASSES("storageclasses", "storage.k8s.io"),
+    PODPRESETS("podpresets", "settings.k8s.io"),
+    INGRESSES("ingresses", "extensions"),
+    NETWORKPOLICIES("networkpolicies", "extensions"),
+    PODSECURITYPOLICIES("podsecuritypolicies", "extensions");
+
+    private final String resource;
+    private final String subResource;
+    private final String apiGroup;
+
+    Resource(String resource, String apiGroup) {
+      this(resource, "", apiGroup);
+    }
+
+    Resource(String resource, String subResource, String apiGroup) {
+      this.resource = resource;
+      this.subResource = subResource;
+      this.apiGroup = apiGroup;
+    }
+
+    public String getResource() {
+      return resource;
+    }
+
+    public String getSubResource() {
+      return subResource;
+    }
+
+    public String getApiGroup() {
+      return apiGroup;
+    }
+  }
+
+  public enum Scope {
+    namespace,
+    cluster
   }
 }

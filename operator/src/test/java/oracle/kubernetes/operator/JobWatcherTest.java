@@ -35,10 +35,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private static final int INITIAL_RESOURCE_VERSION = 234;
-  private Packet packet;
-  private V1Job job = new V1Job().metadata(new V1ObjectMeta().name("test"));
   private static final String NS = "ns1";
   private static final String VERSION = "123";
+  private Packet packet;
+  private V1Job job = new V1Job().metadata(new V1ObjectMeta().name("test"));
 
   public void setUp() throws Exception {
     super.setUp();
@@ -137,7 +137,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void WhenWaitForReadyAppliedToReadyJob_performNextStep() {
+  public void whenWaitForReadyAppliedToReadyJob_performNextStep() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     JobWatcher watcher =
         JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);

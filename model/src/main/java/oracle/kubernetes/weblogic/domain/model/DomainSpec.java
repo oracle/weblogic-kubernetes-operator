@@ -33,6 +33,13 @@ import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.STA
 @Description("DomainSpec is a description of a domain.")
 public class DomainSpec extends BaseConfiguration {
 
+  /**
+   * The configured clusters.
+   *
+   * @since 2.0
+   */
+  @Description("Configuration for the clusters.")
+  protected List<Cluster> clusters = new ArrayList<>();
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
       "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
@@ -40,7 +47,6 @@ public class DomainSpec extends BaseConfiguration {
   @Pattern("^[a-z0-9_.]{1,253}$")
   @SerializedName("domainUID")
   private String domainUid;
-
   /**
    * Domain home.
    *
@@ -51,7 +57,6 @@ public class DomainSpec extends BaseConfiguration {
           + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
           + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
   private String domainHome;
-
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
    * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
@@ -65,7 +70,6 @@ public class DomainSpec extends BaseConfiguration {
       "The strategy for deciding whether to start a server. "
           + "Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.")
   private String serverStartPolicy;
-
   /**
    * Reference to secret containing WebLogic startup credentials username and password. Secret must
    * contain keys names 'username' and 'password' (Required)
@@ -77,7 +81,6 @@ public class DomainSpec extends BaseConfiguration {
   @Valid
   @NotNull
   private V1SecretReference webLogicCredentialsSecret;
-
   /**
    * The in-pod name of the directory to store the domain, node manager, server logs, and server
    * .out files in.
@@ -86,7 +89,6 @@ public class DomainSpec extends BaseConfiguration {
       "The in-pod name of the directory in which to store the domain, node manager, server logs, "
           + "and server  *.out files")
   private String logHome;
-
   /**
    * Whether the log home is enabled.
    *
@@ -97,11 +99,9 @@ public class DomainSpec extends BaseConfiguration {
           + "Defaults to true if domainHomeInImage is false. "
           + "Defaults to false if domainHomeInImage is true. ")
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
-
   /** Whether to include the server .out file to the pod's stdout. Default is true. */
   @Description("If true (the default), the server .out file will be included in the pod's stdout.")
   private Boolean includeServerOutInPodLog;
-
   /**
    * The WebLogic Docker image.
    *
@@ -111,7 +111,6 @@ public class DomainSpec extends BaseConfiguration {
       "The WebLogic Docker image; required when domainHomeInImage is true; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3.")
   private String image;
-
   /**
    * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and
    * IfNotPresent.
@@ -126,7 +125,6 @@ public class DomainSpec extends BaseConfiguration {
           + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
-
   /**
    * The image pull secrets for the WebLogic Docker image.
    *
@@ -137,7 +135,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("A list of image pull secrets for the WebLogic Docker image.")
   private List<V1LocalObjectReference> imagePullSecrets;
-
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in a cluster specification.
@@ -146,7 +143,6 @@ public class DomainSpec extends BaseConfiguration {
       "The number of managed servers to run in any cluster that does not specify a replica count.")
   @Range(minimum = 0)
   private Integer replicas;
-
   /**
    * Whether the domain home is part of the image.
    *
@@ -155,7 +151,6 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
       "True if this domain's home is defined in the docker image for the domain. Defaults to true.")
   private Boolean domainHomeInImage;
-
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
    *
@@ -163,7 +158,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("The name of the config map for optional WebLogic configuration overrides.")
   private String configOverrides;
-
   /**
    * A list of names of the Kubernetes secrets used in the WebLogic Configuration overrides.
    *
@@ -171,7 +165,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("A list of names of the secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
-
   /**
    * The configuration for the admin server.
    *
@@ -179,7 +172,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("Configuration for the admin server.")
   private AdminServer adminServer;
-
   /**
    * The configured managed servers.
    *
@@ -187,14 +179,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("Configuration for the managed servers.")
   private List<ManagedServer> managedServers = new ArrayList<>();
-
-  /**
-   * The configured clusters.
-   *
-   * @since 2.0
-   */
-  @Description("Configuration for the clusters.")
-  protected List<Cluster> clusters = new ArrayList<>();
 
   /**
    * Adds a Cluster to the DomainSpec.
@@ -278,15 +262,15 @@ public class DomainSpec extends BaseConfiguration {
     this.domainHome = domainHome;
   }
 
-  @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
-
   @Nullable
   @Override
   public String getServerStartPolicy() {
     return Optional.ofNullable(serverStartPolicy).orElse(START_IF_NEEDED);
+  }
+
+  @Override
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
   }
 
   /*
@@ -357,12 +341,12 @@ public class DomainSpec extends BaseConfiguration {
     }
   }
 
-  public void setImagePullSecret(@Nullable V1LocalObjectReference imagePullSecret) {
-    imagePullSecrets = Collections.singletonList(imagePullSecret);
-  }
-
   public void setImagePullSecrets(@Nullable List<V1LocalObjectReference> imagePullSecrets) {
     this.imagePullSecrets = imagePullSecrets;
+  }
+
+  public void setImagePullSecret(@Nullable V1LocalObjectReference imagePullSecret) {
+    imagePullSecrets = Collections.singletonList(imagePullSecret);
   }
 
   /**

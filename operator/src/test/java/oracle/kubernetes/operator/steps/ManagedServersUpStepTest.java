@@ -83,6 +83,20 @@ public class ManagedServersUpStepTest {
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private Memento factoryMemento;
 
+  private static void addServer(DomainPresenceInfo domainPresenceInfo, String serverName) {
+    domainPresenceInfo.setServerPod(serverName, createPod(serverName));
+  }
+
+  private static V1Pod createPod(String serverName) {
+    return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName));
+  }
+
+  private static V1ObjectMeta withNames(V1ObjectMeta objectMeta, String serverName) {
+    return objectMeta
+        .name(LegalNames.toPodName(UID, serverName))
+        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, serverName);
+  }
+
   private DomainPresenceInfo createDomainPresenceInfo() {
     return new DomainPresenceInfo(domain);
   }
@@ -435,20 +449,6 @@ public class ManagedServersUpStepTest {
     assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
   }
 
-  private static void addServer(DomainPresenceInfo domainPresenceInfo, String serverName) {
-    domainPresenceInfo.setServerPod(serverName, createPod(serverName));
-  }
-
-  private static V1Pod createPod(String serverName) {
-    return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName));
-  }
-
-  private static V1ObjectMeta withNames(V1ObjectMeta objectMeta, String serverName) {
-    return objectMeta
-        .name(LegalNames.toPodName(UID, serverName))
-        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, serverName);
-  }
-
   @Test
   public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(domainPresenceInfo, "server1");
@@ -482,12 +482,12 @@ public class ManagedServersUpStepTest {
     assertThat(((ServerDownIteratorStep) step).getServersToStop(), containsInAnyOrder(servers));
   }
 
-  private Step createNextStep() {
-    return createNextStep(Collections.emptyList());
-  }
-
   private Step createNextStepWithout(String... serverNames) {
     return createNextStep(Arrays.asList(serverNames));
+  }
+
+  private Step createNextStep() {
+    return createNextStep(Collections.emptyList());
   }
 
   private Step createNextStep(List<String> servers) {

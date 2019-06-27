@@ -28,13 +28,13 @@ public class Shutdown {
   private String shutdownType;
 
   @Description(
-          "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down"
-                  + " the server. Not required. Defaults to 30 seconds.")
+      "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down"
+          + " the server. Not required. Defaults to 30 seconds.")
   private Long timeoutSeconds;
 
   @Description(
       "For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling."
-              + " Not required. Defaults to false.")
+          + " Not required. Defaults to false.")
   private Boolean ignoreSessions;
 
   public Shutdown() {

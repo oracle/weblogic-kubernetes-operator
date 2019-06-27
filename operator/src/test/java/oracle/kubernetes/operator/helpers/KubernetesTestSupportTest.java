@@ -53,8 +53,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class KubernetesTestSupportTest {
   private static final String NS = "namespace1";
   private static final String POD_LOG_CONTENTS = "asdfghjkl";
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   List<Memento> mementos = new ArrayList<>();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   @Before
   public void setUp() throws Exception {
@@ -72,7 +72,7 @@ public class KubernetesTestSupportTest {
   // tests for non-namespaced resources
 
   @Test
-  public void afterCreateCRD_crdExists() {
+  public void afterCreateCrd_crdExists() {
     V1beta1CustomResourceDefinition crd = createCrd("mycrd");
 
     TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
@@ -87,7 +87,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterCreateCRD_crdReturnedInCallResponse() {
+  public void afterCreateCrd_crdReturnedInCallResponse() {
     V1beta1CustomResourceDefinition crd = createCrd("mycrd");
 
     TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
@@ -97,7 +97,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void whenCRDWithSameNameExists_createFails() {
+  public void whenCrdWithSameNameExists_createFails() {
     testSupport.defineResources(createCrd("mycrd"));
 
     TestResponseStep<V1beta1CustomResourceDefinition> responseStep = new TestResponseStep<>();
@@ -109,7 +109,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterReplaceExistingCRD_crdExists() {
+  public void afterReplaceExistingCrd_crdExists() {
     V1beta1CustomResourceDefinition oldCrd = createCrd("mycrd");
     testSupport.defineResources(oldCrd);
 

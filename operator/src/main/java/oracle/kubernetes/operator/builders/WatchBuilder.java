@@ -38,15 +38,6 @@ public class WatchBuilder {
 
   private CallParamsImpl callParams = new CallParamsImpl();
 
-  public interface WatchFactory {
-    <T> WatchI<T> createWatch(
-        Pool<ApiClient> pool,
-        CallParams callParams,
-        Class<?> responseBodyType,
-        BiFunction<ApiClient, CallParams, Call> function)
-        throws ApiException;
-  }
-
   public WatchBuilder() {
   }
 
@@ -84,39 +75,6 @@ public class WatchBuilder {
         new ListNamespacedServiceCall(namespace));
   }
 
-  private class ListNamespacedServiceCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
-
-    ListNamespacedServiceCall(String namespace) {
-      this.namespace = namespace;
-    }
-
-    @Override
-    public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
-
-      try {
-        return new CoreV1Api(client)
-            .listNamespacedServiceCall(
-                namespace,
-                callParams.getIncludeUninitialized(),
-                callParams.getPretty(),
-                START_LIST,
-                callParams.getFieldSelector(),
-                callParams.getLabelSelector(),
-                callParams.getLimit(),
-                callParams.getResourceVersion(),
-                callParams.getTimeoutSeconds(),
-                WATCH,
-                null,
-                null);
-      } catch (ApiException e) {
-        throw new UncheckedApiException(e);
-      }
-    }
-  }
-
   /**
    * Creates a web hook object to track pods.
    *
@@ -127,39 +85,6 @@ public class WatchBuilder {
   public WatchI<V1Pod> createPodWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
         ClientPool.getInstance(), callParams, V1Pod.class, new ListPodCall(namespace));
-  }
-
-  private class ListPodCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
-
-    ListPodCall(String namespace) {
-      this.namespace = namespace;
-    }
-
-    @Override
-    public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
-
-      try {
-        return new CoreV1Api(client)
-            .listNamespacedPodCall(
-                namespace,
-                callParams.getIncludeUninitialized(),
-                callParams.getPretty(),
-                START_LIST,
-                callParams.getFieldSelector(),
-                callParams.getLabelSelector(),
-                callParams.getLimit(),
-                callParams.getResourceVersion(),
-                callParams.getTimeoutSeconds(),
-                WATCH,
-                null,
-                null);
-      } catch (ApiException e) {
-        throw new UncheckedApiException(e);
-      }
-    }
   }
 
   /**
@@ -174,39 +99,6 @@ public class WatchBuilder {
         ClientPool.getInstance(), callParams, V1Job.class, new ListJobCall(namespace));
   }
 
-  private class ListJobCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
-
-    ListJobCall(String namespace) {
-      this.namespace = namespace;
-    }
-
-    @Override
-    public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
-
-      try {
-        return new BatchV1Api(client)
-            .listNamespacedJobCall(
-                namespace,
-                callParams.getIncludeUninitialized(),
-                callParams.getPretty(),
-                START_LIST,
-                callParams.getFieldSelector(),
-                callParams.getLabelSelector(),
-                callParams.getLimit(),
-                callParams.getResourceVersion(),
-                callParams.getTimeoutSeconds(),
-                WATCH,
-                null,
-                null);
-      } catch (ApiException e) {
-        throw new UncheckedApiException(e);
-      }
-    }
-  }
-
   /**
    * Creates a web hook object to track events.
    *
@@ -219,39 +111,6 @@ public class WatchBuilder {
         ClientPool.getInstance(), callParams, V1Event.class, new ListEventCall(namespace));
   }
 
-  private class ListEventCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
-
-    ListEventCall(String namespace) {
-      this.namespace = namespace;
-    }
-
-    @Override
-    public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
-
-      try {
-        return new CoreV1Api(client)
-            .listNamespacedEventCall(
-                namespace,
-                callParams.getIncludeUninitialized(),
-                callParams.getPretty(),
-                START_LIST,
-                callParams.getFieldSelector(),
-                callParams.getLabelSelector(),
-                callParams.getLimit(),
-                callParams.getResourceVersion(),
-                callParams.getTimeoutSeconds(),
-                WATCH,
-                null,
-                null);
-      } catch (ApiException e) {
-        throw new UncheckedApiException(e);
-      }
-    }
-  }
-
   /**
    * Creates a web hook object to track changes to weblogic domains in one namespaces.
    *
@@ -262,39 +121,6 @@ public class WatchBuilder {
   public WatchI<Domain> createDomainWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
         ClientPool.getInstance(), callParams, Domain.class, new ListDomainsCall(namespace));
-  }
-
-  private class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
-
-    ListDomainsCall(String namespace) {
-      this.namespace = namespace;
-    }
-
-    @Override
-    public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
-
-      try {
-        return new WeblogicApi(client)
-            .listNamespacedDomainCall(
-                namespace,
-                callParams.getIncludeUninitialized(),
-                callParams.getPretty(),
-                START_LIST,
-                callParams.getFieldSelector(),
-                callParams.getLabelSelector(),
-                callParams.getLimit(),
-                callParams.getResourceVersion(),
-                callParams.getTimeoutSeconds(),
-                WATCH,
-                null,
-                null);
-      } catch (ApiException e) {
-        throw new UncheckedApiException(e);
-      }
-    }
   }
 
   /**
@@ -310,39 +136,6 @@ public class WatchBuilder {
         callParams,
         V1ConfigMap.class,
         new ListNamespacedConfigMapCall(namespace));
-  }
-
-  private class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
-    private String namespace;
-
-    ListNamespacedConfigMapCall(String namespace) {
-      this.namespace = namespace;
-    }
-
-    @Override
-    public Call apply(ApiClient client, CallParams callParams) {
-      // Ensure that client doesn't time out before call or watch
-      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
-
-      try {
-        return new CoreV1Api(client)
-            .listNamespacedConfigMapCall(
-                namespace,
-                callParams.getIncludeUninitialized(),
-                callParams.getPretty(),
-                START_LIST,
-                callParams.getFieldSelector(),
-                callParams.getLabelSelector(),
-                callParams.getLimit(),
-                callParams.getResourceVersion(),
-                callParams.getTimeoutSeconds(),
-                WATCH,
-                null,
-                null);
-      } catch (ApiException e) {
-        throw new UncheckedApiException(e);
-      }
-    }
   }
 
   private Integer getSocketTimeout(CallParams callParams) {
@@ -393,6 +186,15 @@ public class WatchBuilder {
     return this;
   }
 
+  public interface WatchFactory {
+    <T> WatchI<T> createWatch(
+        Pool<ApiClient> pool,
+        CallParams callParams,
+        Class<?> responseBodyType,
+        BiFunction<ApiClient, CallParams, Call> function)
+        throws ApiException;
+  }
+
   static class WatchFactoryImpl implements WatchFactory {
     @Override
     public <T> WatchI<T> createWatch(
@@ -410,6 +212,204 @@ public class WatchBuilder {
                 client, function.apply(client, callParams), getType(responseBodyType)));
       } catch (UncheckedApiException e) {
         throw e.getCause();
+      }
+    }
+  }
+
+  private class ListNamespacedServiceCall implements BiFunction<ApiClient, CallParams, Call> {
+    private String namespace;
+
+    ListNamespacedServiceCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
+      try {
+        return new CoreV1Api(client)
+            .listNamespacedServiceCall(
+                namespace,
+                callParams.getIncludeUninitialized(),
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
+  private class ListPodCall implements BiFunction<ApiClient, CallParams, Call> {
+    private String namespace;
+
+    ListPodCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
+      try {
+        return new CoreV1Api(client)
+            .listNamespacedPodCall(
+                namespace,
+                callParams.getIncludeUninitialized(),
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
+  private class ListJobCall implements BiFunction<ApiClient, CallParams, Call> {
+    private String namespace;
+
+    ListJobCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
+      try {
+        return new BatchV1Api(client)
+            .listNamespacedJobCall(
+                namespace,
+                callParams.getIncludeUninitialized(),
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
+  private class ListEventCall implements BiFunction<ApiClient, CallParams, Call> {
+    private String namespace;
+
+    ListEventCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
+      try {
+        return new CoreV1Api(client)
+            .listNamespacedEventCall(
+                namespace,
+                callParams.getIncludeUninitialized(),
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
+  private class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
+    private String namespace;
+
+    ListDomainsCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
+      try {
+        return new WeblogicApi(client)
+            .listNamespacedDomainCall(
+                namespace,
+                callParams.getIncludeUninitialized(),
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
+  private class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
+    private String namespace;
+
+    ListNamespacedConfigMapCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      // Ensure that client doesn't time out before call or watch
+      client.getHttpClient().setReadTimeout(getSocketTimeout(callParams), TimeUnit.SECONDS);
+
+      try {
+        return new CoreV1Api(client)
+            .listNamespacedConfigMapCall(
+                namespace,
+                callParams.getIncludeUninitialized(),
+                callParams.getPretty(),
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null,
+                null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
       }
     }
   }

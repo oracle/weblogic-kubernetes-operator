@@ -7,6 +7,7 @@ package oracle.kubernetes.operator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
@@ -24,14 +25,14 @@ import org.junit.runners.MethodSorters;
  * <p>This test is used for testing operator working with Elastic Stack
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ITElasticLogging extends BaseTest {
+public class ItElasticLogging extends BaseTest {
+  private static final String elasticStackYamlLoc =
+      "kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml";
   private static Operator operator;
   private static Domain domain;
   private static String k8sExecCmdPrefix;
   private static String elasticSearchURL;
   private static Map<String, Object> testVarMap;
-  private static final String elasticStackYamlLoc =
-      "kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -39,7 +40,7 @@ public class ITElasticLogging extends BaseTest {
    * the resultRoot, pvRoot and projectRoot attributes. It installs Elastic Stack, verifies Elastic
    * Stack is ready to use, creates an operator and a Weblogic domain
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
@@ -72,12 +73,12 @@ public class ITElasticLogging extends BaseTest {
       // Get Elasticsearch host and port from yaml file and build Elasticsearch URL
       testVarMap = TestUtils.loadYaml(OPERATOR1_ELK_YAML);
       String operatorPodName = operator.getOperatorPodName();
-      StringBuffer elasticSearchURLBuff =
+      StringBuffer elasticSearchUrlBuff =
           new StringBuffer("http://")
               .append(testVarMap.get("elasticSearchHost"))
               .append(":")
               .append(testVarMap.get("elasticSearchPort"));
-      elasticSearchURL = elasticSearchURLBuff.toString();
+      elasticSearchURL = elasticSearchUrlBuff.toString();
       Assume.assumeFalse(
           "Got null when building Elasticsearch URL", elasticSearchURL.contains("null"));
 
@@ -98,9 +99,9 @@ public class ITElasticLogging extends BaseTest {
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories and uninstall Elastic Stack
+   * Releases k8s cluster lease, archives result, pv directories and uninstall Elastic Stack.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
@@ -124,11 +125,61 @@ public class ITElasticLogging extends BaseTest {
     }
   }
 
+  private static void verifyElasticStackReady() throws Exception {
+    // Get Logstash info
+    String healthStatus = execElasticStackStatusCheck("*logstash*", "$1");
+    String indexStatus = execElasticStackStatusCheck("*logstash*", "$2");
+    String indexName = execElasticStackStatusCheck("*logstash*", "$3");
+
+    // Verify that the health status of Logstash
+    Assume.assumeNotNull(healthStatus);
+    Assume.assumeTrue(
+        "Logstash is not ready!",
+        healthStatus.equalsIgnoreCase("yellow") || healthStatus.equalsIgnoreCase("green"));
+    // Verify that the index is open for use
+    Assume.assumeNotNull(indexStatus);
+    Assume.assumeTrue("Logstash index is not open!", indexStatus.equalsIgnoreCase("open"));
+    // Add the index name to a Map
+    Assume.assumeNotNull(indexName);
+    testVarMap.put("indexName", indexName);
+
+    // Get Kibana info
+    healthStatus = execElasticStackStatusCheck("*kibana*", "$1");
+    indexStatus = execElasticStackStatusCheck("*kibana*", "$2");
+
+    // Verify that the health status of Kibana
+    Assume.assumeNotNull(healthStatus);
+    Assume.assumeTrue(
+        "Kibana is not ready!",
+        healthStatus.equalsIgnoreCase("yellow") || healthStatus.equalsIgnoreCase("green"));
+    // Verify that the index is open for use
+    Assume.assumeNotNull(indexStatus);
+    Assume.assumeTrue("Kibana index is not open!", indexStatus.equalsIgnoreCase("open"));
+  }
+
+  private static String execElasticStackStatusCheck(String indexName, String varLoc)
+      throws Exception {
+    StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
+    String cmd =
+        k8sExecCmdPrefixBuff
+            .append("/_cat/indices/")
+            .append(indexName)
+            .append(" | awk '\\''{ print ")
+            .append(varLoc)
+            .append(" }'\\'")
+            .toString();
+    logger.info("Command to exec Elastic Stack status check: " + cmd);
+    ExecResult result = TestUtils.exec(cmd);
+    logger.info("Results: " + result.stdout());
+
+    return result.stdout();
+  }
+
   /**
    * Use Elasticsearch Count API to query logs of level=INFO. Verify that total number of logs for
    * level=INFO is not zero and failed count is zero
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testLogLevelSearch() throws Exception {
@@ -148,7 +199,7 @@ public class ITElasticLogging extends BaseTest {
    * Use Elasticsearch Search APIs to query Operator log info. Verify that log hits for
    * type=weblogic-operator are not empty
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testOperatorLogSearch() throws Exception {
@@ -168,7 +219,7 @@ public class ITElasticLogging extends BaseTest {
    * Use Elasticsearch Search APIs to query Weblogic log info. Verify that log hits for Weblogic
    * servers are not empty
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testWeblogicLogSearch() throws Exception {
@@ -237,56 +288,6 @@ public class ITElasticLogging extends BaseTest {
             .toString();
     logger.info("Command to search: " + cmd);
     ExecResult result = TestUtils.exec(cmd);
-
-    return result.stdout();
-  }
-
-  private static void verifyElasticStackReady() throws Exception {
-    // Get Logstash info
-    String healthStatus = execElasticStackStatusCheck("*logstash*", "$1");
-    String indexStatus = execElasticStackStatusCheck("*logstash*", "$2");
-    String indexName = execElasticStackStatusCheck("*logstash*", "$3");
-
-    // Verify that the health status of Logstash
-    Assume.assumeNotNull(healthStatus);
-    Assume.assumeTrue(
-        "Logstash is not ready!",
-        healthStatus.equalsIgnoreCase("yellow") || healthStatus.equalsIgnoreCase("green"));
-    // Verify that the index is open for use
-    Assume.assumeNotNull(indexStatus);
-    Assume.assumeTrue("Logstash index is not open!", indexStatus.equalsIgnoreCase("open"));
-    // Add the index name to a Map
-    Assume.assumeNotNull(indexName);
-    testVarMap.put("indexName", indexName);
-
-    // Get Kibana info
-    healthStatus = execElasticStackStatusCheck("*kibana*", "$1");
-    indexStatus = execElasticStackStatusCheck("*kibana*", "$2");
-
-    // Verify that the health status of Kibana
-    Assume.assumeNotNull(healthStatus);
-    Assume.assumeTrue(
-        "Kibana is not ready!",
-        healthStatus.equalsIgnoreCase("yellow") || healthStatus.equalsIgnoreCase("green"));
-    // Verify that the index is open for use
-    Assume.assumeNotNull(indexStatus);
-    Assume.assumeTrue("Kibana index is not open!", indexStatus.equalsIgnoreCase("open"));
-  }
-
-  private static String execElasticStackStatusCheck(String indexName, String varLoc)
-      throws Exception {
-    StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
-    String cmd =
-        k8sExecCmdPrefixBuff
-            .append("/_cat/indices/")
-            .append(indexName)
-            .append(" | awk '\\''{ print ")
-            .append(varLoc)
-            .append(" }'\\'")
-            .toString();
-    logger.info("Command to exec Elastic Stack status check: " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
-    logger.info("Results: " + result.stdout());
 
     return result.stdout();
   }

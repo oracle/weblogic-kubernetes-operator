@@ -32,6 +32,18 @@ public class ManagedServerUpIteratorStep extends Step {
     this.cols = cols;
   }
 
+  // pre-conditions: DomainPresenceInfo SPI
+  // "principal"
+  // "serverScan"
+  // "clusterScan"
+  // "envVars"
+  private static Step bringManagedServerUp(ServerStartupInfo ssi, Step next) {
+    return ssi.isServiceOnly()
+        ? ServiceHelper.createForServerStep(
+            true, new ServerDownStep(ssi.getServerName(), true, next))
+        : ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(next));
+  }
+
   @Override
   protected String getDetail() {
     List<String> serversToStart = new ArrayList<>();
@@ -78,17 +90,5 @@ public class ManagedServerUpIteratorStep extends Step {
       return doNext(packet);
     }
     return doForkJoin(new ManagedServerUpAfterStep(getNext()), packet, startDetails);
-  }
-
-  // pre-conditions: DomainPresenceInfo SPI
-  // "principal"
-  // "serverScan"
-  // "clusterScan"
-  // "envVars"
-  private static Step bringManagedServerUp(ServerStartupInfo ssi, Step next) {
-    return ssi.isServiceOnly()
-        ? ServiceHelper.createForServerStep(
-            true, new ServerDownStep(ssi.getServerName(), true, next))
-        : ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(next));
   }
 }

@@ -6,9 +6,12 @@ package oracle.kubernetes.operator.helm;
 
 import java.util.Map;
 import java.util.Objects;
+
 import org.apache.commons.lang3.StringUtils;
 
-/** The arguments needed to install a helm chart */
+/**
+ * The arguments needed to install a helm chart.
+ */
 @SuppressWarnings({"unchecked", "SameParameterValue"})
 public class InstallArgs {
   private final String chartName;

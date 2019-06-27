@@ -46,6 +46,16 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   private final ConcurrentMap<String, Complete> completeCallbackRegistrations =
       new ConcurrentHashMap<>();
 
+  private JobWatcher(
+      String namespace,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping);
+    setListener(this);
+    this.namespace = namespace;
+  }
+
   /**
    * Returns a cached JobWatcher, if present; otherwise, creates a new one.
    *
@@ -81,21 +91,42 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return watcher;
   }
 
-  private JobWatcher(
-      String namespace,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping);
-    setListener(this);
-    this.namespace = namespace;
-  }
-
   static void defineFactory(
       ThreadFactory threadFactory,
       WatchTuning tuning,
       Function<String, AtomicBoolean> isNamespaceStopping) {
     factory = new JobWatcherFactory(threadFactory, tuning, isNamespaceStopping);
+  }
+
+  public static boolean isComplete(V1Job job) {
+    V1JobStatus status = job.getStatus();
+    LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
+    if (status != null) {
+      List<V1JobCondition> conds = status.getConditions();
+      if (conds != null) {
+        for (V1JobCondition cond : conds) {
+          if ("Complete".equals(cond.getType())) {
+            if ("True".equals(cond.getStatus())) { // TODO: Verify V1JobStatus.succeeded count?
+              // Job is complete!
+              LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName());
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  public static boolean isFailed(V1Job job) {
+    V1JobStatus status = job.getStatus();
+    if (status != null) {
+      if (status.getFailed() != null && status.getFailed() > 0) {
+        LOGGER.severe(MessageKeys.JOB_IS_FAILED, job.getMetadata().getName());
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
@@ -131,37 +162,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     LOGGER.exiting();
   }
 
-  public static boolean isComplete(V1Job job) {
-    V1JobStatus status = job.getStatus();
-    LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
-    if (status != null) {
-      List<V1JobCondition> conds = status.getConditions();
-      if (conds != null) {
-        for (V1JobCondition cond : conds) {
-          if ("Complete".equals(cond.getType())) {
-            if ("True".equals(cond.getStatus())) { // TODO: Verify V1JobStatus.succeeded count?
-              // Job is complete!
-              LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName());
-              return true;
-            }
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  public static boolean isFailed(V1Job job) {
-    V1JobStatus status = job.getStatus();
-    if (status != null) {
-      if (status.getFailed() != null && status.getFailed() > 0) {
-        LOGGER.severe(MessageKeys.JOB_IS_FAILED, job.getMetadata().getName());
-        return true;
-      }
-    }
-    return false;
-  }
-
   /**
    * Waits until the Job is Ready.
    *
@@ -171,6 +171,37 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
    */
   public Step waitForReady(V1Job job, Step next) {
     return new WaitForJobReadyStep(job, next);
+  }
+
+  @FunctionalInterface
+  private interface Complete {
+    void isComplete(V1Job job);
+  }
+
+  static class JobWatcherFactory {
+    private ThreadFactory threadFactory;
+    private WatchTuning watchTuning;
+
+    private Function<String, AtomicBoolean> isNamespaceStopping;
+
+    JobWatcherFactory(
+        ThreadFactory threadFactory,
+        WatchTuning watchTuning,
+        Function<String, AtomicBoolean> isNamespaceStopping) {
+      this.threadFactory = threadFactory;
+      this.watchTuning = watchTuning;
+      this.isNamespaceStopping = isNamespaceStopping;
+    }
+
+    JobWatcher createFor(Domain domain) {
+      String namespace = getNamespace(domain);
+      return create(
+          threadFactory,
+          namespace,
+          domain.getMetadata().getResourceVersion(),
+          watchTuning,
+          isNamespaceStopping.apply(namespace));
+    }
   }
 
   private class WaitForJobReadyStep extends Step {
@@ -251,36 +282,5 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                     null);
           });
     }
-  }
-
-  static class JobWatcherFactory {
-    private ThreadFactory threadFactory;
-    private WatchTuning watchTuning;
-
-    private Function<String, AtomicBoolean> isNamespaceStopping;
-
-    JobWatcherFactory(
-        ThreadFactory threadFactory,
-        WatchTuning watchTuning,
-        Function<String, AtomicBoolean> isNamespaceStopping) {
-      this.threadFactory = threadFactory;
-      this.watchTuning = watchTuning;
-      this.isNamespaceStopping = isNamespaceStopping;
-    }
-
-    JobWatcher createFor(Domain domain) {
-      String namespace = getNamespace(domain);
-      return create(
-          threadFactory,
-          namespace,
-          domain.getMetadata().getResourceVersion(),
-          watchTuning,
-          isNamespaceStopping.apply(namespace));
-    }
-  }
-
-  @FunctionalInterface
-  private interface Complete {
-    void isComplete(V1Job job);
   }
 }

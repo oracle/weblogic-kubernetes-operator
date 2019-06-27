@@ -86,23 +86,23 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.replicas = replicas;
   }
 
-  @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
-
   @Nullable
   @Override
   public String getServerStartPolicy() {
     return serverStartPolicy;
   }
 
-  public void setClusterService(KubernetesResource clusterService) {
-    this.clusterService = clusterService;
+  @Override
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
   }
 
   public KubernetesResource getClusterService() {
     return clusterService;
+  }
+
+  public void setClusterService(KubernetesResource clusterService) {
+    this.clusterService = clusterService;
   }
 
   public Map<String, String> getClusterLabels() {

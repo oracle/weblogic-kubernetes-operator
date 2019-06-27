@@ -23,17 +23,17 @@ import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.STA
 
 public class DomainCommonConfigurator extends DomainConfigurator {
 
-  @Override
-  public DomainConfigurator createFor(Domain domain) {
-    return new DomainCommonConfigurator(domain);
-  }
-
   public DomainCommonConfigurator() {
   }
 
   DomainCommonConfigurator(@Nonnull Domain domain) {
     super(domain);
     setApiVersion(domain);
+  }
+
+  @Override
+  public DomainConfigurator createFor(Domain domain) {
+    return new DomainCommonConfigurator(domain);
   }
 
   private void setApiVersion(Domain domain) {
@@ -132,21 +132,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
-  class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
-      implements AdminServerConfigurator {
-    private AdminServer adminServer;
-
-    AdminServerConfiguratorImpl(AdminServer adminServer) {
-      super(adminServer);
-      this.adminServer = adminServer;
-    }
-
-    @Override
-    public AdminService configureAdminService() {
-      return adminServer.getAdminService();
-    }
-  }
-
   private AdminServer getOrCreateAdminServer() {
     return getDomainSpec().getOrCreateAdminServer();
   }
@@ -206,6 +191,46 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   public DomainConfigurator withRestartVersion(String restartVersion) {
     ((BaseConfiguration) getDomainSpec()).setRestartVersion(restartVersion);
     return this;
+  }
+
+  @Override
+  public ClusterConfigurator configureCluster(@Nonnull String clusterName) {
+    return new ClusterConfiguratorImpl(getOrCreateCluster(clusterName));
+  }
+
+  private Cluster getOrCreateCluster(@Nonnull String clusterName) {
+    Cluster cluster = getDomainSpec().getCluster(clusterName);
+    if (cluster != null) {
+      return cluster;
+    }
+
+    return createCluster(clusterName);
+  }
+
+  private Cluster createCluster(@Nonnull String clusterName) {
+    Cluster cluster = new Cluster().withClusterName(clusterName);
+    getDomainSpec().getClusters().add(cluster);
+    return cluster;
+  }
+
+  @Override
+  public void setShuttingDown(boolean shuttingDown) {
+    configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
+  }
+
+  class AdminServerConfiguratorImpl extends ServerConfiguratorImpl
+      implements AdminServerConfigurator {
+    private AdminServer adminServer;
+
+    AdminServerConfiguratorImpl(AdminServer adminServer) {
+      super(adminServer);
+      this.adminServer = adminServer;
+    }
+
+    @Override
+    public AdminService configureAdminService() {
+      return adminServer.getAdminService();
+    }
   }
 
   class ServerConfiguratorImpl implements ServerConfigurator {
@@ -336,31 +361,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       server.setRestartVersion(restartVersion);
       return this;
     }
-  }
-
-  @Override
-  public ClusterConfigurator configureCluster(@Nonnull String clusterName) {
-    return new ClusterConfiguratorImpl(getOrCreateCluster(clusterName));
-  }
-
-  private Cluster getOrCreateCluster(@Nonnull String clusterName) {
-    Cluster cluster = getDomainSpec().getCluster(clusterName);
-    if (cluster != null) {
-      return cluster;
-    }
-
-    return createCluster(clusterName);
-  }
-
-  private Cluster createCluster(@Nonnull String clusterName) {
-    Cluster cluster = new Cluster().withClusterName(clusterName);
-    getDomainSpec().getClusters().add(cluster);
-    return cluster;
-  }
-
-  @Override
-  public void setShuttingDown(boolean shuttingDown) {
-    configureAdminServer().withServerStartPolicy(shuttingDown ? START_NEVER : START_ALWAYS);
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
