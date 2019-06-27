@@ -213,6 +213,7 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private static void pullImages() throws Exception {
     TestUtils.ExecAndPrintLog("docker pull oracle/weblogic-kubernetes-operator:" + OP_BASE_REL);
+    TestUtils.ExecAndPrintLog("docker pull oracle/weblogic-kubernetes-operator:2.2.1");
     TestUtils.ExecAndPrintLog("docker images");
   }
 
