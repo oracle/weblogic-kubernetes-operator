@@ -251,16 +251,18 @@ public class ITOperator extends BaseTest {
     try {
       domain = TestUtils.createDomain(DOMAIN_ADMINONLY_YAML);
       domain.verifyDomainCreated();
+      // change domain config by modifying accept backlog on adminserver tuning
       modifyDomainConfig(domain);
-
+      domain.shutdownUsingServerStartPolicy();
+      domain.restartUsingServerStartPolicy();
     } finally {
       if (domain != null) {
         // create domain on existing dir
-        // domain.destroy();
+        domain.destroy();
       }
     }
 
-    // domain.createDomainOnExistingDirectory();
+    domain.createDomainOnExistingDirectory();
 
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -515,24 +517,25 @@ public class ITOperator extends BaseTest {
 
   private void modifyDomainConfig(Domain domain) throws Exception {
     String adminPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String scriptsLocInPod = "/u01/oracle";
     TestUtils.copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/modifyAcceptBacklog.py",
-        appLocationInPod + "/modifyAcceptBacklog.py",
+        scriptsLocInPod + "/modifyAcceptBacklog.py",
         adminPod,
         domain.getDomainNS());
 
     TestUtils.copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
-        appLocationInPod + "/callpyscript.sh",
+        scriptsLocInPod + "/callpyscript.sh",
         adminPod,
         domain.getDomainNS());
     String[] args = {
-      appLocationInPod + "/modifyAcceptBacklog.py",
+      scriptsLocInPod + "/modifyAcceptBacklog.py",
       BaseTest.getUsername(),
       BaseTest.getPassword(),
       "t3://" + adminPod + ":" + domain.getDomainMap().get("t3ChannelPort")
     };
-    domain.callShellScriptByExecToPod(
-        adminPod, domain.getDomainNS(), appLocationInPod, "callpyscript.sh", args);
+    TestUtils.callShellScriptByExecToPod(
+        adminPod, domain.getDomainNS(), scriptsLocInPod, "callpyscript.sh", args);
   }
 }
