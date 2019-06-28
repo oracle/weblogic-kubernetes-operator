@@ -86,9 +86,9 @@ public class ITOperator extends BaseTest {
     try {
       domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
       domain.verifyDomainCreated();
-      // testBasicUseCases(domain);
-      // TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-      // testAdvancedUseCasesForADomain(operator1, domain);
+      testBasicUseCases(domain);
+      TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+      testAdvancedUseCasesForADomain(operator1, domain);
 
       if (!SMOKETEST) domain.testWlsLivenessProbe();
 
