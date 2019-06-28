@@ -104,6 +104,19 @@ function checkEnv() {
   return 0
 }
 
+#
+# getAdminUrl
+#   purpose: Get the ADMIN_URL used to connect to the admin server internally.
+#   sample:
+#     ADMIN_URL=$(getAdminUrl)
+#
+function getAdminUrl() {
+  admin_protocol="http"
+  if [ "${ADMIN_SERVER_PORT_SECURE}" = "true" ]; then
+    admin_protocol="https"
+  fi
+  echo ${admin_protocol}://${AS_SERVICE_NAME}:${ADMIN_PORT}
+}
 
 #
 # exportEffectiveDomainHome

@@ -177,7 +177,25 @@ public abstract class PodStepContext extends StepContextBase {
         .getLocalAdminProtocolChannelPort();
   }
 
+  /**
+   * Check if the server is listening on a secure port. NOTE: If the targetted server is a managed
+   * server, this methd is overriden to check if the managed server has a secure listen port rather
+   * than the admin server. See PodHelper.ManagedPodStepContext
+   *
+   * @return true if server is listening on a secure port
+   */
   boolean isLocalAdminProtocolChannelSecure() {
+    return domainTopology
+        .getServerConfig(domainTopology.getAdminServerName())
+        .isLocalAdminProtocolChannelSecure();
+  }
+
+  /**
+   * Check if the admin server is listening on a secure port.
+   *
+   * @return true if admin server is listening on a secure port
+   */
+  private boolean isAdminServerProtocolChannelSecure() {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .isLocalAdminProtocolChannelSecure();
@@ -805,6 +823,9 @@ public abstract class PodStepContext extends StepContextBase {
     addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
     if (isLocalAdminProtocolChannelSecure()) {
       addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+    }
+    if (isAdminServerProtocolChannelSecure()) {
+      addEnvVar(vars, "ADMIN_SERVER_PORT_SECURE", "true");
     }
     addEnvVar(vars, "SERVER_NAME", getServerName());
     addEnvVar(vars, "DOMAIN_UID", getDomainUID());

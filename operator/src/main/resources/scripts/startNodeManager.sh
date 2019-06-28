@@ -246,14 +246,11 @@ EOF
   [ ! $? -eq 0 ] && trace "Failed to create '${wl_props_file}'." && exit 1
 
   if [ ! "${ADMIN_NAME}" = "${SERVER_NAME}" ]; then
-    admin_protocol="http"
-    if [ "${ADMIN_PORT_SECURE}" = "true" ]; then
-      admin_protocol="https"
-    fi  
-    echo "AdminURL=$admin_protocol\\://${AS_SERVICE_NAME}\\:${ADMIN_PORT}" >> ${wl_props_file}
+    ADMIN_URL=$(getAdminUrl)
+    export ADMIN_URL
+    trace "ADMIN_URL"=$ADMIN_URL >> ${wl_props_file}
   fi
 fi
-
 
 
 ###############################################################################
