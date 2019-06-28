@@ -318,11 +318,11 @@ mvn clean verify -P jrf-integration-tests 2>&1 | tee log.txt
 
 # How to run a single test
 
-mvn -Dit.test="ITOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P java-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P java-integration-tests
 
 # How to run multiple tests
 
-mvn -Dit.test="ITOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P java-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P java-integration-tests
 
 # How to run cleanup script
 
