@@ -244,17 +244,23 @@ public class TestUtils {
   }
 
   public static ExecResult exec(String cmd) throws Exception {
+    return exec(cmd, false);
+  }
+
+  public static ExecResult exec(String cmd, boolean debug) throws Exception {
     ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
+    if (result.exitValue() != 0 || debug) {
       logger.info(
-          "Command "
+          "\nCommand "
               + cmd
-              + " return value "
+              + "\nreturn value: "
               + result.exitValue()
-              + " \n failed with stderr = "
+              + "\nstderr = "
               + result.stderr()
-              + " \n stdout = "
+              + "\nstdout = "
               + result.stdout());
+    }
+    if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: Command "
               + cmd
@@ -263,6 +269,7 @@ public class TestUtils {
               + " \n stdout = "
               + result.stdout());
     }
+
     return result;
   }
 
@@ -1415,16 +1422,16 @@ public class TestUtils {
     return result;
   }
 
-  public static void execAndPrintLog(String command) throws Exception {
-    ExecResult result = ExecCommand.exec(command);
-    logger.info(
-        "\nCommand "
-            + command
-            + "\nreturn value: "
-            + result.exitValue()
-            + "\nstderr = "
-            + result.stderr()
-            + "\nstdout = "
-            + result.stdout());
+  public static ExecResult kubectlpatch(String domainUid, String domainNS, String patchStr)
+      throws Exception {
+    String cmd =
+        "kubectl patch domain "
+            + domainUid
+            + " -n "
+            + domainNS
+            + " -p "
+            + patchStr
+            + " --type merge";
+    return exec(cmd, true);
   }
 }
