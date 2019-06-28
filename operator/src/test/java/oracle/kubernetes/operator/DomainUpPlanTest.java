@@ -48,10 +48,10 @@ public class DomainUpPlanTest {
   private static final String NS = "namespace";
   private static final String UID = "test-uid";
   private static final V1SecretReference SECRET = new V1SecretReference().name("secret");
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
   private final TerminalStep adminStep = new TerminalStep();
   private final TerminalStep managedServersStep = new TerminalStep();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private List<Memento> mementos = new ArrayList<>();
   private Domain domain =
       new Domain()
           .withMetadata(new V1ObjectMeta().namespace(NS))

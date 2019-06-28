@@ -61,6 +61,10 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private CallBuilder callBuilder = new CallBuilder();
   private Object requestBody;
 
+  private static String toJson(Object object) {
+    return new GsonBuilder().create().toJson(object);
+  }
+
   @Before
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
@@ -148,7 +152,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void createPVC_returnsClaimAsJson() throws ApiException {
+  public void createPvc_returnsClaimAsJson() throws ApiException {
     V1PersistentVolumeClaim claim = createPersistentVolumeClaim();
     defineHttpPostResponse(PVC_RESOURCE, claim);
 
@@ -160,7 +164,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void createPVC_sendsClaimAsJson() throws ApiException {
+  public void createPvc_sendsClaimAsJson() throws ApiException {
     V1PersistentVolumeClaim claim = createPersistentVolumeClaim();
     defineHttpPostResponse(
         PVC_RESOURCE, claim, (json) -> requestBody = fromJson(json, V1PersistentVolumeClaim.class));
@@ -171,7 +175,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void deletePVC_returnsStatus() throws ApiException {
+  public void deletePvc_returnsStatus() throws ApiException {
     defineHttpDeleteResponse(PVC_RESOURCE, NAME, new V1Status());
 
     assertThat(
@@ -183,8 +187,8 @@ public class CallBuilderTest extends HttpUserAgentTest {
     return new V1PersistentVolumeClaimSpec().volumeName("TEST_VOL");
   }
 
-  private Object fromJson(String json, Class<?> aClass) {
-    return new GsonBuilder().create().fromJson(json, aClass);
+  private Object fromJson(String json, Class<?> aaClass) {
+    return new GsonBuilder().create().fromJson(json, aaClass);
   }
 
   private V1ObjectMeta createMetadata() {
@@ -222,12 +226,9 @@ public class CallBuilderTest extends HttpUserAgentTest {
     defineResource(resourceName + "/" + name, new JsonDeleteServlet(response));
   }
 
-  private static String toJson(Object object) {
-    return new GsonBuilder().create().toJson(object);
-  }
-
   static class PseudoServletCallDispatcher implements SynchronousCallDispatcher {
     private static String basePath;
+    private SynchronousCallDispatcher underlyingDispatcher;
 
     static Memento install(String basePath) throws NoSuchFieldException {
       PseudoServletCallDispatcher.basePath = basePath;
@@ -236,8 +237,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
       dispatcher.setUnderlyingDispatcher(memento.getOriginalValue());
       return memento;
     }
-
-    private SynchronousCallDispatcher underlyingDispatcher;
 
     void setUnderlyingDispatcher(SynchronousCallDispatcher underlyingDispatcher) {
       this.underlyingDispatcher = underlyingDispatcher;
@@ -264,8 +263,8 @@ public class CallBuilderTest extends HttpUserAgentTest {
 
   static class ErrorCodePutServlet extends PseudoServlet {
 
-    int numGetPutResponseCalled = 0;
     final int errorCode;
+    int numGetPutResponseCalled = 0;
 
     ErrorCodePutServlet(int errorCode) {
       this.errorCode = errorCode;

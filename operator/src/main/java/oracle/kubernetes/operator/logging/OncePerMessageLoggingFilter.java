@@ -7,9 +7,7 @@ package oracle.kubernetes.operator.logging;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * A LoggingFilter that logs each log message, which are typically message keys, at most once.
- */
+/** A LoggingFilter that logs each log message, which are typically message keys, at most once. */
 public class OncePerMessageLoggingFilter implements LoggingFilter {
 
   // allow all messages to be logged when filtering is off

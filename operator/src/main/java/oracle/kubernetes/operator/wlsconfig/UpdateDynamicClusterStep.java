@@ -37,6 +37,39 @@ public class UpdateDynamicClusterStep extends Step {
     this.targetClusterSize = targetClusterSize;
   }
 
+  /**
+   * Static method to update the WebLogic dynamic cluster size configuration.
+   *
+   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs
+   *     to be updated. The caller should make sure that the cluster is a dynamic cluster.
+   * @param targetClusterSize The target dynamic cluster size
+   * @param httpClient HttpClient object for issuing the REST request
+   * @param serviceUrl service URL of the WebLogic admin server
+   * @return true if the request to update the cluster size is successful, false if it was not
+   *     successful
+   */
+  private static boolean updateDynamicClusterSizeWithServiceUrl(
+      final WlsClusterConfig wlsClusterConfig,
+      final int targetClusterSize,
+      final HttpClient httpClient,
+      final String serviceUrl) {
+    LOGGER.entering();
+
+    boolean result = false;
+    // Update the dynamic cluster size of the WebLogic cluster
+    String jsonResult =
+        httpClient
+            .executePostUrlOnServiceClusterIP(
+                wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
+                serviceUrl,
+                wlsClusterConfig.getUpdateDynamicClusterSizePayload(targetClusterSize))
+            .getResponse();
+
+    result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
+    LOGGER.exiting(result);
+    return result;
+  }
+
   @Override
   public NextAction apply(Packet packet) {
 
@@ -81,38 +114,5 @@ public class UpdateDynamicClusterStep extends Step {
       }
     }
     return doNext(packet);
-  }
-
-  /**
-   * Static method to update the WebLogic dynamic cluster size configuration.
-   *
-   * @param wlsClusterConfig The WlsClusterConfig object of the WLS cluster whose cluster size needs
-   *     to be updated. The caller should make sure that the cluster is a dynamic cluster.
-   * @param targetClusterSize The target dynamic cluster size
-   * @param httpClient HttpClient object for issuing the REST request
-   * @param serviceUrl service URL of the WebLogic admin server
-   * @return true if the request to update the cluster size is successful, false if it was not
-   *     successful
-   */
-  private static boolean updateDynamicClusterSizeWithServiceUrl(
-      final WlsClusterConfig wlsClusterConfig,
-      final int targetClusterSize,
-      final HttpClient httpClient,
-      final String serviceUrl) {
-    LOGGER.entering();
-
-    boolean result = false;
-    // Update the dynamic cluster size of the WebLogic cluster
-    String jsonResult =
-        httpClient
-            .executePostUrlOnServiceClusterIP(
-                wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
-                serviceUrl,
-                wlsClusterConfig.getUpdateDynamicClusterSizePayload(targetClusterSize))
-            .getResponse();
-
-    result = wlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(jsonResult);
-    LOGGER.exiting(result);
-    return result;
   }
 }

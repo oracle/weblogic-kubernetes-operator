@@ -231,22 +231,6 @@ public class HealthCheckHelperTest {
     private boolean mayAccessNamespace = true;
     private boolean mayAccessCluster = true;
 
-    private void expectAccessCheck(String namespace, String resource, Operation operation) {
-      this.expectedAccessChecks.add(createResourceAttributes(namespace, resource, operation));
-    }
-
-    void setMayAccessNamespace(boolean mayAccessNamespace) {
-      this.mayAccessNamespace = mayAccessNamespace;
-    }
-
-    void setMayAccessCluster(boolean mayAccessCluster) {
-      this.mayAccessCluster = mayAccessCluster;
-    }
-
-    List<V1ResourceAttributes> getExpectedAccessChecks() {
-      return Collections.unmodifiableList(expectedAccessChecks);
-    }
-
     private static V1ResourceAttributes createResourceAttributes(
         String namespace, String resource, Operation operation) {
       return new V1ResourceAttributes()
@@ -269,6 +253,22 @@ public class HealthCheckHelperTest {
     private static String getApiGroup(String resourceString) {
       String[] split = resourceString.split("/");
       return split.length <= 2 ? "" : split[2];
+    }
+
+    private void expectAccessCheck(String namespace, String resource, Operation operation) {
+      this.expectedAccessChecks.add(createResourceAttributes(namespace, resource, operation));
+    }
+
+    void setMayAccessNamespace(boolean mayAccessNamespace) {
+      this.mayAccessNamespace = mayAccessNamespace;
+    }
+
+    void setMayAccessCluster(boolean mayAccessCluster) {
+      this.mayAccessCluster = mayAccessCluster;
+    }
+
+    List<V1ResourceAttributes> getExpectedAccessChecks() {
+      return Collections.unmodifiableList(expectedAccessChecks);
     }
 
     private boolean isAllowedByDefault(V1ResourceAttributes resourceAttributes) {

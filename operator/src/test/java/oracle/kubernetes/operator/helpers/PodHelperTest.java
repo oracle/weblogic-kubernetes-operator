@@ -34,9 +34,8 @@ public class PodHelperTest {
   private static final String SERVER_NAME = "server1";
   private static final String POD_NAME = LegalNames.toPodName(UID, SERVER_NAME);
   private static final String NS = "ns1";
-
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private List<Memento> mementos = new ArrayList<>();
   private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
   private V1Pod pod =

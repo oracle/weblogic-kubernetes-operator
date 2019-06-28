@@ -4,13 +4,6 @@
 
 package oracle.kubernetes.operator.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -21,21 +14,31 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Logger;
 
-/** A Domain CRD utility class to manipulate domain yaml files */
-public class DomainCRD {
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
+/**
+ * A Domain CRD utility class to manipulate domain yaml files.
+ */
+public class DomainCrd {
+
+  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   private final ObjectMapper objectMapper;
   private final JsonNode root;
-  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   /**
    * Constructor to read the yaml file and initialize the root JsonNode with yaml equivalent of JSON
-   * tree
+   * tree.
    *
-   * @param yamlFile - Name of the yaml file containing the Domain CRD
-   * @throws IOException
+   * @param yamlFile - Name of the yaml file containing the Domain CRD.
+   * @throws IOException exception
    */
-  public DomainCRD(String yamlFile) throws IOException {
+  public DomainCrd(String yamlFile) throws IOException {
     this.objectMapper = new ObjectMapper();
 
     ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
@@ -47,7 +50,7 @@ public class DomainCRD {
   }
 
   /**
-   * To convert the JSON tree back into Yaml and return it as a String
+   * To convert the JSON tree back into Yaml and return it as a String.
    *
    * @return - Domain CRD in Yaml format
    * @throws JsonProcessingException when JSON tree cannot be converted as a Yaml string
@@ -58,7 +61,7 @@ public class DomainCRD {
   }
 
   /**
-   * A utility method to add attributes to domain in domain.yaml
+   * A utility method to add attributes to domain in domain.yaml.
    *
    * @param attributes - A HashMap of key value pairs
    */
@@ -70,7 +73,7 @@ public class DomainCRD {
   }
 
   /**
-   * A utility method to add attributes to domain in domain.yaml
+   * A utility method to add attributes to domain in domain.yaml.
    *
    * @param attributes - A HashMap of key value pairs
    */
@@ -80,7 +83,7 @@ public class DomainCRD {
   }
 
   /**
-   * A utility method to add attributes to domain in domain.yaml
+   * A utility method to add attributes to domain in domain.yaml.
    *
    * @param attributes - A HashMap of key value pairs
    */
@@ -129,7 +132,7 @@ public class DomainCRD {
   }
 
   /**
-   * A utility method to add attributes to adminServer node in domain.yaml
+   * A utility method to add attributes to adminServer node in domain.yaml.
    *
    * @param attributes - A HashMap of key value pairs
    */
@@ -142,14 +145,14 @@ public class DomainCRD {
   }
 
   /**
-   * A utility method to add attributes to cluster node in domain.yaml
+   * A utility method to add attributes to cluster node in domain.yaml.
    *
-   * @param ClusterName - Name of the cluster to which the attributes to be added
+   * @param clusterName - Name of the cluster to which the attributes to be added
    * @param attributes - A HashMap of key value pairs
    */
-  public void addObjectNodeToCluster(String ClusterName, Map<String, Object> attributes) {
+  public void addObjectNodeToCluster(String clusterName, Map<String, Object> attributes) {
 
-    JsonNode clusterNode = getClusterNode(ClusterName);
+    JsonNode clusterNode = getClusterNode(clusterName);
     for (Map.Entry<String, Object> entry : attributes.entrySet()) {
       Object entryValue = entry.getValue();
       if (entryValue instanceof String) {
@@ -161,20 +164,20 @@ public class DomainCRD {
   }
 
   /**
-   * A utility method to add shutdown element and attributes to cluster node in domain.yaml
+   * A utility method to add shutdown element and attributes to cluster node in domain.yaml.
    *
-   * @param ClusterName - Name of the cluster to which the attributes to be added
+   * @param clusterName - Name of the cluster to which the attributes to be added
    * @param attributes - A HashMap of key value pairs
    */
-  public void addShutdownOptionsToCluster(String ClusterName, Map<String, Object> attributes)
+  public void addShutdownOptionsToCluster(String clusterName, Map<String, Object> attributes)
       throws Exception {
 
-    JsonNode clusterNode = getClusterNode(ClusterName);
+    JsonNode clusterNode = getClusterNode(clusterName);
     addShutdownOptionToObjectNode(clusterNode, attributes);
   }
 
   /**
-   * A utility method to add attributes to managed server node in domain.yaml
+   * A utility method to add attributes to managed server node in domain.yaml.
    *
    * @param managedServerName - Name of the managed server to which the attributes to be added
    * @param attributes - A HashMap of key value pairs
@@ -189,11 +192,12 @@ public class DomainCRD {
           objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(managedServerNode);
       System.out.println(jsonString);
     } catch (Exception ex) {
+      // no-op
     }
   }
 
   /**
-   * A utility method to add attributes to managed server node in domain.yaml
+   * A utility method to add attributes to managed server node in domain.yaml.
    *
    * @param managedServerName - Name of the managed server to which the attributes to be added
    * @param attributes - A HashMap of key value pairs
@@ -205,7 +209,7 @@ public class DomainCRD {
   }
 
   /**
-   * A utility method to add attributes to managed server node in domain.yaml
+   * A utility method to add attributes to managed server node in domain.yaml.
    *
    * @param jsonNode - the json node (domain,cluster,or manserver to which the attributes to be
    *     added
@@ -252,29 +256,31 @@ public class DomainCRD {
     System.out.println(jsonString);
   }
 
-  /** Gets the spec node entry from Domain CRD JSON tree */
+  /**
+   * Gets the spec node entry from Domain CRD JSON tree.
+   */
   private JsonNode getSpecNode() {
     return root.path("spec");
   }
 
   /**
-   * Gets the administration server node entry from Domain CRD JSON tree
+   * Gets the administration server node entry from Domain CRD JSON tree.
    *
-   * @return
+   * @return admin server node
    */
   private JsonNode getAdminServerNode() {
     return root.path("spec").path("adminServer");
   }
 
   /**
-   * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name
+   * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name.
    *
    * @param root - Root JSON node of the Domain CRD JSON tree
    * @param clusterName - Name of the cluster
    * @return - cluster node entry from Domain CRD JSON tree
    */
   /**
-   * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name
+   * Gets the cluster node entry from Domain CRD JSON tree for the given cluster name.
    *
    * @param clusterName - Name of the cluster
    * @return - JsonNode of named cluster
@@ -292,7 +298,7 @@ public class DomainCRD {
   }
 
   /**
-   * Gets the managed server node entry from Domain CRD JSON tree
+   * Gets the managed server node entry from Domain CRD JSON tree.
    *
    * @param managedServerName Name of the managed server for which to get the JSON node
    * @return managed server node entry from Domain CRD JSON tree

@@ -18,12 +18,12 @@ public class UserProjects {
 
   private Path path;
 
-  public static UserProjects createUserProjectsDirectory() throws Exception {
-    return new UserProjects();
-  }
-
   private UserProjects() throws Exception {
     path = Files.createTempDirectory("test-user-projects");
+  }
+
+  public static UserProjects createUserProjectsDirectory() throws Exception {
+    return new UserProjects();
   }
 
   public Path getPath() {

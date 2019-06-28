@@ -165,39 +165,6 @@ public class PodCompatibilityTest {
     return new ObjectWithName(name, value);
   }
 
-  static class ObjectWithName {
-    private String name;
-    private int value;
-
-    ObjectWithName(String name, int value) {
-      this.name = name;
-      this.value = value;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      return (o instanceof ObjectWithName) && equals((ObjectWithName) o);
-    }
-
-    private boolean equals(ObjectWithName that) {
-      return value == that.value && Objects.equals(name, that.name);
-    }
-
-    @Override
-    public int hashCode() {
-      return new HashCodeBuilder(17, 37).append(name).append(value).toHashCode();
-    }
-
-    @Override
-    public String toString() {
-      return String.format("<%s = %d>", name, value);
-    }
-  }
-
   @Test
   public void whenExpectedSubmapOfActual_reportCompatible() {
     CompatibilityCheck check =
@@ -251,5 +218,38 @@ public class PodCompatibilityTest {
     assertThat(check.getIncompatibility(), both(containsString("beta")).and(containsString("5")));
     assertThat(check.getIncompatibility(), not(containsString("alpha")));
     assertThat(check.getIncompatibility(), not(containsString("gamma")));
+  }
+
+  static class ObjectWithName {
+    private String name;
+    private int value;
+
+    ObjectWithName(String name, int value) {
+      this.name = name;
+      this.value = value;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return (o instanceof ObjectWithName) && equals((ObjectWithName) o);
+    }
+
+    private boolean equals(ObjectWithName that) {
+      return value == that.value && Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder(17, 37).append(name).append(value).toHashCode();
+    }
+
+    @Override
+    public String toString() {
+      return String.format("<%s = %d>", name, value);
+    }
   }
 }
