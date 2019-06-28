@@ -1422,7 +1422,16 @@ public class TestUtils {
             + " --type merge";
     return exec(cmd, true);
   }
-
+  /**
+   * exec into the pod and call the shell script with given arguments
+   *
+   * @param podName
+   * @param domainNS
+   * @param scriptsLocInPod
+   * @param shScriptName
+   * @param args
+   * @throws Exception
+   */
   public static void callShellScriptByExecToPod(
       String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
       throws Exception {
