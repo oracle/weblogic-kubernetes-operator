@@ -282,7 +282,7 @@
             <id>java-integration-tests</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/IT*</includes-failsafe>
+                <includes-failsafe>**/It*</includes-failsafe>
                 <jrf_enabled>false</jrf_enabled>
             </properties>
         </profile>
