@@ -877,11 +877,13 @@ public class Domain {
 
     logger.info("pvSharing for this domain is: " + pvSharing);
     if (!pvSharing) pvMap.put("domainUID", domainUid);
+    else pvMap.put("baseName", "weblogic-shaing");
+    logger.info("baseName of PVPVC for this domain is: " + (String) pvMap.get("baseName"));
 
-    // Now there is only one pvSharing test case and we just use"baseName" as PVC
-    if ((domainUid != null) && !pvSharing)
+    // Now there is only one pvSharing test case and we just use parameter "baseName"+"-pvc" as PVC
+    if ((domainUid != null) && !pvSharing) {
       domainMap.put("persistentVolumeClaimName", domainUid + "-" + pvMap.get("baseName") + "-pvc");
-    else domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
+    } else domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
 
     if (domainMap.get("weblogicDomainStorageReclaimPolicy") != null) {
       pvMap.put(
