@@ -18,8 +18,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class FileGroupReaderTest {
 
-  private final FileGroupReader scriptReader = ConfigMapHelper.getScriptReader();
   private static InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
+  private final FileGroupReader scriptReader = ConfigMapHelper.getScriptReader();
 
   @Test
   public void afterLoadScriptsFromClasspath_haveScriptNamesAsKeys() {

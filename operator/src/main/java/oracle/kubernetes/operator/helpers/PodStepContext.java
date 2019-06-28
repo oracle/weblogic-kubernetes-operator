@@ -68,10 +68,9 @@ public abstract class PodStepContext extends StepContextBase {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
-
+  final WlsServerConfig scan;
   private final DomainPresenceInfo info;
   private final WlsDomainConfig domainTopology;
-  final WlsServerConfig scan;
   private final Step conflictStep;
   private V1Pod podModel;
 
@@ -80,6 +79,10 @@ public abstract class PodStepContext extends StepContextBase {
     info = packet.getSpi(DomainPresenceInfo.class);
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
+  }
+
+  private static boolean isCustomerItem(Map.Entry<String, String> entry) {
+    return !entry.getKey().startsWith("weblogic.");
   }
 
   void init() {
@@ -109,49 +112,11 @@ public abstract class PodStepContext extends StepContextBase {
 
   abstract Map<String, String> getPodAnnotations();
 
-  private abstract class BaseStep extends Step {
-    BaseStep() {
-      this(null);
-    }
-
-    BaseStep(Step next) {
-      super(next);
-    }
-
-    protected String getDetail() {
-      return getServerName();
-    }
-  }
-
-  private class ConflictStep extends BaseStep {
-
-    @Override
-    public NextAction apply(Packet packet) {
-      return doNext(getConflictStep(), packet);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-      if (other == this) {
-        return true;
-      }
-      if (!(other instanceof ConflictStep)) {
-        return false;
-      }
-      ConflictStep rhs = ((ConflictStep) other);
-      return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
-    }
-
-    private Step getConflictStep() {
-      return conflictStep;
-    }
-  }
-
-  // ------------------------ data methods ----------------------------
-
   String getNamespace() {
     return info.getNamespace();
   }
+
+  // ------------------------ data methods ----------------------------
 
   String getDomainUid() {
     return getDomain().getDomainUid();
@@ -256,12 +221,12 @@ public abstract class PodStepContext extends StepContextBase {
 
   abstract String getServerName();
 
-  // ----------------------- step methods ------------------------------
-
   // Prevent the watcher from recreating pod with old spec
   private void markBeingDeleted() {
     info.setServerPodBeingDeleted(getServerName(), Boolean.TRUE);
   }
+
+  // ----------------------- step methods ------------------------------
 
   private void clearBeingDeleted() {
     info.setServerPodBeingDeleted(getServerName(), Boolean.FALSE);
@@ -376,19 +341,6 @@ public abstract class PodStepContext extends StepContextBase {
     return new CyclePodStep(next);
   }
 
-  private class CyclePodStep extends BaseStep {
-
-    CyclePodStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      markBeingDeleted();
-      return doNext(deletePod(getNext()), packet);
-    }
-  }
-
   private boolean mustPatchPod(V1Pod currentPod) {
     return KubernetesUtils.isMissingValues(currentPod.getMetadata().getLabels(), getPodLabels())
         || KubernetesUtils.isMissingValues(
@@ -412,213 +364,25 @@ public abstract class PodStepContext extends StepContextBase {
     return compatibility.getIncompatibility();
   }
 
-  private class VerifyPodStep extends BaseStep {
-
-    VerifyPodStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      V1Pod currentPod = info.getServerPod(getServerName());
-      if (currentPod == null) {
-        return doNext(createNewPod(getNext()), packet);
-      } else if (!canUseCurrentPod(currentPod)) {
-        LOGGER.info(
-            MessageKeys.CYCLING_POD,
-            currentPod.getMetadata().getName(),
-            getReasonToRecycle(currentPod));
-        return doNext(replaceCurrentPod(getNext()), packet);
-      } else if (mustPatchPod(currentPod)) {
-        return doNext(patchCurrentPod(currentPod, getNext()), packet);
-      } else {
-        logPodExists();
-        return doNext(packet);
-      }
-    }
-  }
-
-  private abstract class BaseResponseStep extends ResponseStep<V1Pod> {
-    BaseResponseStep(Step next) {
-      super(next);
-    }
-
-    protected String getDetail() {
-      return getServerName();
-    }
-  }
-
   private ResponseStep<V1Pod> createResponse(Step next) {
     return new CreateResponseStep(next);
-  }
-
-  private class CreateResponseStep extends BaseResponseStep {
-    CreateResponseStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-      logPodCreated();
-      if (callResponse.getResult() != null) {
-        info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
-        setRecordedPod(callResponse.getResult());
-      }
-      return doNext(packet);
-    }
   }
 
   private ResponseStep<V1Status> deleteResponse(Step next) {
     return new DeleteResponseStep(next);
   }
 
-  private class DeleteResponseStep extends ResponseStep<V1Status> {
-    DeleteResponseStep(Step next) {
-      super(next);
-    }
-
-    protected String getDetail() {
-      return getServerName();
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponses) {
-      if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
-        return onSuccess(packet, callResponses);
-      }
-      return super.onFailure(getConflictStep(), packet, callResponses);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponses) {
-      return doNext(replacePod(getNext()), packet);
-    }
-  }
-
   private ResponseStep<V1Pod> replaceResponse(Step next) {
     return new ReplacePodResponseStep(next);
-  }
-
-  private class ReplacePodResponseStep extends BaseResponseStep {
-
-    ReplacePodResponseStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-
-      V1Pod newPod = callResponse.getResult();
-      logPodReplaced();
-      if (newPod != null) {
-        setRecordedPod(newPod);
-      }
-
-      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
-      return doNext(pw.waitForReady(newPod, getNext()), packet);
-    }
   }
 
   private ResponseStep<V1Pod> patchResponse(Step next) {
     return new PatchPodResponseStep(next);
   }
 
-  private class PatchPodResponseStep extends BaseResponseStep {
-    private final Step next;
-
-    PatchPodResponseStep(Step next) {
-      super(next);
-      this.next = next;
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      return super.onFailure(getConflictStep(), packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-
-      V1Pod newPod = callResponse.getResult();
-      logPodPatched();
-      if (newPod != null) {
-        setRecordedPod(newPod);
-      }
-
-      return doNext(next, packet);
-    }
-  }
-
   Step verifyPersistentVolume(Step next) {
     return new VerifyPersistentVolumeStep(next);
   }
-
-  private class VerifyPersistentVolumeStep extends Step {
-
-    VerifyPersistentVolumeStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      String domainUid = getDomainUid();
-      Step list =
-          new CallBuilder()
-              .withLabelSelectors(forDomainUidSelector(domainUid))
-              .listPersistentVolumeAsync(
-                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
-                    @Override
-                    public NextAction onSuccess(
-                        Packet packet,
-                        V1PersistentVolumeList result,
-                        int statusCode,
-                        Map<String, List<String>> responseHeaders) {
-                      if (result != null) {
-                        for (V1PersistentVolume pv : result.getItems()) {
-                          List<String> accessModes = pv.getSpec().getAccessModes();
-                          boolean foundAccessMode = false;
-                          for (String accessMode : accessModes) {
-                            if (accessMode.equals(READ_WRITE_MANY_ACCESS)) {
-                              foundAccessMode = true;
-                              break;
-                            }
-                          }
-
-                          // Persistent volume does not have ReadWriteMany access mode,
-                          if (!foundAccessMode) {
-                            LOGGER.warning(
-                                MessageKeys.PV_ACCESS_MODE_FAILED,
-                                pv.getMetadata().getName(),
-                                getDomainResourceName(),
-                                domainUid,
-                                READ_WRITE_MANY_ACCESS);
-                          }
-                        }
-                      } else {
-                        LOGGER.warning(
-                            MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID,
-                            getDomainResourceName(),
-                            domainUid);
-                      }
-                      return doNext(packet);
-                    }
-                  });
-
-      return doNext(list, packet);
-    }
-  }
-
-  // ---------------------- model methods ------------------------------
 
   V1Pod createPodModel() {
     return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
@@ -706,10 +470,6 @@ public abstract class PodStepContext extends StepContextBase {
     pod.getSpec().terminationGracePeriodSeconds(timeout + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME);
   }
 
-  private static boolean isCustomerItem(Map.Entry<String, String> entry) {
-    return !entry.getKey().startsWith("weblogic.");
-  }
-
   // Creates a pod model containing elements which are not patchable.
   private V1Pod createPodRecipe() {
     return new V1Pod().metadata(createMetadata()).spec(createSpec(TuningParameters.getInstance()));
@@ -755,6 +515,8 @@ public abstract class PodStepContext extends StepContextBase {
 
     return podSpec;
   }
+
+  // ---------------------- model methods ------------------------------
 
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
@@ -907,5 +669,242 @@ public abstract class PodStepContext extends StepContextBase {
 
   private boolean mockWls() {
     return Boolean.getBoolean("mockWLS");
+  }
+
+  private abstract class BaseStep extends Step {
+    BaseStep() {
+      this(null);
+    }
+
+    BaseStep(Step next) {
+      super(next);
+    }
+
+    protected String getDetail() {
+      return getServerName();
+    }
+  }
+
+  private class ConflictStep extends BaseStep {
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(getConflictStep(), packet);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other == this) {
+        return true;
+      }
+      if (!(other instanceof ConflictStep)) {
+        return false;
+      }
+      ConflictStep rhs = ((ConflictStep) other);
+      return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
+    }
+
+    private Step getConflictStep() {
+      return conflictStep;
+    }
+  }
+
+  private class CyclePodStep extends BaseStep {
+
+    CyclePodStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      markBeingDeleted();
+      return doNext(deletePod(getNext()), packet);
+    }
+  }
+
+  private class VerifyPodStep extends BaseStep {
+
+    VerifyPodStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      V1Pod currentPod = info.getServerPod(getServerName());
+      if (currentPod == null) {
+        return doNext(createNewPod(getNext()), packet);
+      } else if (!canUseCurrentPod(currentPod)) {
+        LOGGER.info(
+            MessageKeys.CYCLING_POD,
+            currentPod.getMetadata().getName(),
+            getReasonToRecycle(currentPod));
+        return doNext(replaceCurrentPod(getNext()), packet);
+      } else if (mustPatchPod(currentPod)) {
+        return doNext(patchCurrentPod(currentPod, getNext()), packet);
+      } else {
+        logPodExists();
+        return doNext(packet);
+      }
+    }
+  }
+
+  private abstract class BaseResponseStep extends ResponseStep<V1Pod> {
+    BaseResponseStep(Step next) {
+      super(next);
+    }
+
+    protected String getDetail() {
+      return getServerName();
+    }
+  }
+
+  private class CreateResponseStep extends BaseResponseStep {
+    CreateResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+      return super.onFailure(getConflictStep(), packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+      logPodCreated();
+      if (callResponse.getResult() != null) {
+        info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
+        setRecordedPod(callResponse.getResult());
+      }
+      return doNext(packet);
+    }
+  }
+
+  private class DeleteResponseStep extends ResponseStep<V1Status> {
+    DeleteResponseStep(Step next) {
+      super(next);
+    }
+
+    protected String getDetail() {
+      return getServerName();
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponses) {
+      if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
+        return onSuccess(packet, callResponses);
+      }
+      return super.onFailure(getConflictStep(), packet, callResponses);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponses) {
+      return doNext(replacePod(getNext()), packet);
+    }
+  }
+
+  private class ReplacePodResponseStep extends BaseResponseStep {
+
+    ReplacePodResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+      return super.onFailure(getConflictStep(), packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+
+      V1Pod newPod = callResponse.getResult();
+      logPodReplaced();
+      if (newPod != null) {
+        setRecordedPod(newPod);
+      }
+
+      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
+      return doNext(pw.waitForReady(newPod, getNext()), packet);
+    }
+  }
+
+  private class PatchPodResponseStep extends BaseResponseStep {
+    private final Step next;
+
+    PatchPodResponseStep(Step next) {
+      super(next);
+      this.next = next;
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+      return super.onFailure(getConflictStep(), packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+
+      V1Pod newPod = callResponse.getResult();
+      logPodPatched();
+      if (newPod != null) {
+        setRecordedPod(newPod);
+      }
+
+      return doNext(next, packet);
+    }
+  }
+
+  private class VerifyPersistentVolumeStep extends Step {
+
+    VerifyPersistentVolumeStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      String domainUid = getDomainUid();
+      Step list =
+          new CallBuilder()
+              .withLabelSelectors(forDomainUidSelector(domainUid))
+              .listPersistentVolumeAsync(
+                  new DefaultResponseStep<V1PersistentVolumeList>(getNext()) {
+                    @Override
+                    public NextAction onSuccess(
+                        Packet packet,
+                        V1PersistentVolumeList result,
+                        int statusCode,
+                        Map<String, List<String>> responseHeaders) {
+                      if (result != null) {
+                        for (V1PersistentVolume pv : result.getItems()) {
+                          List<String> accessModes = pv.getSpec().getAccessModes();
+                          boolean foundAccessMode = false;
+                          for (String accessMode : accessModes) {
+                            if (accessMode.equals(READ_WRITE_MANY_ACCESS)) {
+                              foundAccessMode = true;
+                              break;
+                            }
+                          }
+
+                          // Persistent volume does not have ReadWriteMany access mode,
+                          if (!foundAccessMode) {
+                            LOGGER.warning(
+                                MessageKeys.PV_ACCESS_MODE_FAILED,
+                                pv.getMetadata().getName(),
+                                getDomainResourceName(),
+                                domainUid,
+                                READ_WRITE_MANY_ACCESS);
+                          }
+                        }
+                      } else {
+                        LOGGER.warning(
+                            MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID,
+                            getDomainResourceName(),
+                            domainUid);
+                      }
+                      return doNext(packet);
+                    }
+                  });
+
+      return doNext(list, packet);
+    }
   }
 }

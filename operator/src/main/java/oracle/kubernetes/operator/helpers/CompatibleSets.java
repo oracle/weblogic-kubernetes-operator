@@ -10,9 +10,9 @@ import static oracle.kubernetes.operator.helpers.PodCompatibility.asSet;
 import static oracle.kubernetes.operator.helpers.PodCompatibility.getMissingElements;
 
 class CompatibleSets<T> implements CompatibilityCheck {
-  private String description;
   private final Collection<T> expected;
   private final Collection<T> actual;
+  private String description;
 
   CompatibleSets(String description, Collection<T> expected, Collection<T> actual) {
     this.description = description;

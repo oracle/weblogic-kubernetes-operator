@@ -4,13 +4,14 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.Arrays;
+
+import io.kubernetes.client.models.V1EnvVar;
+import org.junit.Test;
+
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import io.kubernetes.client.models.V1EnvVar;
-import java.util.Arrays;
-import org.junit.Test;
 
 public abstract class BaseConfigurationTestBase {
   private BaseConfiguration instance1;

@@ -14,18 +14,6 @@ import java.util.Map;
  */
 public interface Component {
   /**
-   * Gets the specified SPI.
-   *
-   * <p>This method works as a kind of directory service for SPIs, allowing various components to
-   * define private contract and talk to each other.
-   *
-   * @param <S> SPI type
-   * @param spiType SPI class
-   * @return null if such an SPI is not provided by this object.
-   */
-  <S> S getSpi(Class<S> spiType);
-
-  /**
    * Creates a Component that supports the given SPI instances. If an instance in objects is a Class
    * then this class is the key for the next object instance. Otherwise, the instance's own class is
    * used.
@@ -66,4 +54,16 @@ public interface Component {
       }
     };
   }
+
+  /**
+   * Gets the specified SPI.
+   *
+   * <p>This method works as a kind of directory service for SPIs, allowing various components to
+   * define private contract and talk to each other.
+   *
+   * @param <S> SPI type
+   * @param spiType SPI class
+   * @return null if such an SPI is not provided by this object.
+   */
+  <S> S getSpi(Class<S> spiType);
 }

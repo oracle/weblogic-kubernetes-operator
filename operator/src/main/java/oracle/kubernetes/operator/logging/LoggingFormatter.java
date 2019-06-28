@@ -133,7 +133,7 @@ public class LoggingFormatter extends Formatter {
     } catch (JsonProcessingException e) {
       String tmp =
           "{\"@timestamp\":%1$s,\"level\":%2$s, \"class\":%3$s, \"method\":\"format\", \"timeInMillis\":%4$d, "
-                  + "\"@message\":\"Exception while preparing json object\",\"exception\":%5$s}\n";
+              + "\"@message\":\"Exception while preparing json object\",\"exception\":%5$s}\n";
       return String.format(
           tmp,
           dateString,

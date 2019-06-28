@@ -41,8 +41,6 @@ public class AsyncRequestStepTest {
   private CallFactoryStub callFactory = new CallFactoryStub();
   private TestStep nextStep = new TestStep();
   private ClientPool helper = ClientPool.getInstance();
-  private List<Memento> mementos = new ArrayList<>();
-
   private final AsyncRequestStep<Integer> asyncRequestStep =
       new AsyncRequestStep<>(
           nextStep,
@@ -54,6 +52,7 @@ public class AsyncRequestStepTest {
           null,
           null,
           null);
+  private List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setUp() {
@@ -181,6 +180,7 @@ public class AsyncRequestStepTest {
   static class CancellableCallStub implements CancellableCall {
 
     @Override
-    public void cancel() {}
+    public void cancel() {
+    }
   }
 }

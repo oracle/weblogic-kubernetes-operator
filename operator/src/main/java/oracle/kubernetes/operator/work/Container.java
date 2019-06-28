@@ -10,16 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Root of the SPI implemented by the container. */
 public class Container implements ComponentRegistry, ComponentEx {
-  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
-
   /**
    * Constant that represents a "no {@link Container}", which always returns null from {@link
    * #getSpi(Class)}.
    */
   public static final Container NONE = new NoneContainer();
-
-  private static final class NoneContainer extends Container {
-  }
+  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
 
   @Override
   public <S> S getSpi(Class<S> spiType) {
@@ -44,5 +40,8 @@ public class Container implements ComponentRegistry, ComponentEx {
       return Collections.singletonList(item);
     }
     return Collections.emptySet();
+  }
+
+  private static final class NoneContainer extends Container {
   }
 }

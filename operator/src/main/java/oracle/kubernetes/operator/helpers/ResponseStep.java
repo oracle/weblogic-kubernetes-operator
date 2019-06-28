@@ -27,9 +27,8 @@ import oracle.kubernetes.operator.work.Step;
  */
 public abstract class ResponseStep<T> extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  private Step previousStep = null;
   private final Step conflictStep;
+  private Step previousStep = null;
 
   /** Constructor specifying no next step. */
   public ResponseStep() {

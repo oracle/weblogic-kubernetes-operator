@@ -35,6 +35,18 @@ import static java.util.Collections.emptyList;
 @Description("ServerPod describes the configuration for a Kubernetes pod for a server.")
 class ServerPod extends KubernetesResource {
 
+  private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
+      (a, b) -> {
+        return a.getName().compareTo(b.getName());
+      };
+  private static final Comparator<V1Volume> VOLUME_COMPARATOR =
+      (a, b) -> {
+        return a.getName().compareTo(b.getName());
+      };
+  private static final Comparator<V1VolumeMount> VOLUME_MOUNT_COMPARATOR =
+      (a, b) -> {
+        return a.getName().compareTo(b.getName());
+      };
   /**
    * Environment variables to pass while starting a server.
    *
@@ -43,7 +55,6 @@ class ServerPod extends KubernetesResource {
   @Valid
   @Description("A list of environment variables to add to a server")
   private List<V1EnvVar> env = new ArrayList<>();
-
   /**
    * Defines the settings for the liveness probe. Any that are not specified will default to the
    * runtime liveness probe tuning settings.
@@ -52,7 +63,6 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Settings for the liveness probe associated with a server.")
   private ProbeTuning livenessProbe = new ProbeTuning();
-
   /**
    * Defines the settings for the readiness probe. Any that are not specified will default to the
    * runtime readiness probe tuning settings.
@@ -61,7 +71,6 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Settings for the readiness probe associated with a server.")
   private ProbeTuning readinessProbe = new ProbeTuning();
-
   /**
    * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
    * indicated key-value pairs as labels.
@@ -71,7 +80,6 @@ class ServerPod extends KubernetesResource {
   @Description(
       "Selector which must match a node's labels for the pod to be scheduled on that node.")
   private Map<String, String> nodeSelector = new HashMap<>();
-
   /**
    * Defines the requirements and limits for the pod server.
    *
@@ -80,7 +88,6 @@ class ServerPod extends KubernetesResource {
   @Description("Memory and cpu minimum requirements and limits for the server.")
   private V1ResourceRequirements resources =
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
-
   /**
    * PodSecurityContext holds pod-level security attributes and common container settings. Some
    * fields are also present in container.securityContext. Field values of container.securityContext
@@ -90,7 +97,6 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Pod-level security attributes.")
   private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
-
   /**
    * InitContainers holds a list of initialization containers that should be run before starting the
    * main containers in this pod.
@@ -99,7 +105,6 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Initialization containers")
   private List<V1Container> initContainers = new ArrayList<>();
-
   /**
    * The additional containers.
    *
@@ -107,7 +112,6 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Additional containers to be included in the server pod.")
   private List<V1Container> containers = new ArrayList<>();
-
   /**
    * Configures how the operator should shutdown the server instance.
    *
@@ -115,7 +119,6 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Configures how the operator should shutdown the server instance.")
   private Shutdown shutdown = new Shutdown();
-
   /**
    * SecurityContext holds security configuration that will be applied to a container. Some fields
    * are present in both SecurityContext and PodSecurityContext. When both are set, the values in
@@ -126,7 +129,6 @@ class ServerPod extends KubernetesResource {
   @Description(
       "Container-level security attributes. Will override any matching pod-level attributes.")
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
-
   /**
    * The additional volumes.
    *
@@ -134,7 +136,6 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Additional volumes to be created in the server pod.")
   private List<V1Volume> volumes = new ArrayList<>();
-
   /**
    * The additional volume mounts.
    *
@@ -143,63 +144,15 @@ class ServerPod extends KubernetesResource {
   @Description("Additional volume mounts for the server pod.")
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
-  Shutdown getShutdown() {
-    return this.shutdown;
-  }
-
-  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions) {
-    this.shutdown
-        .shutdownType(shutdownType)
-        .timeoutSeconds(timeoutSeconds)
-        .ignoreSessions(ignoreSessions);
-  }
-
-  ProbeTuning getReadinessProbeTuning() {
-    return this.readinessProbe;
-  }
-
-  void setReadinessProbeTuning(Integer initialDelay, Integer timeout, Integer period) {
-    this.readinessProbe
-        .initialDelaySeconds(initialDelay)
-        .timeoutSeconds(timeout)
-        .periodSeconds(period);
-  }
-
-  ProbeTuning getLivenessProbeTuning() {
-    return this.livenessProbe;
-  }
-
-  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    this.livenessProbe
-        .initialDelaySeconds(initialDelay)
-        .timeoutSeconds(timeout)
-        .periodSeconds(period);
-  }
-
-  void fillInFrom(ServerPod serverPod1) {
-    for (V1EnvVar var : serverPod1.getV1EnvVars()) {
-      addIfMissing(var);
+  private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
+    if (from != null) {
+      if (from.getRequests() != null) {
+        from.getRequests().forEach(to.getRequests()::putIfAbsent);
+      }
+      if (from.getLimits() != null) {
+        from.getLimits().forEach(to.getLimits()::putIfAbsent);
+      }
     }
-    livenessProbe.copyValues(serverPod1.livenessProbe);
-    readinessProbe.copyValues(serverPod1.readinessProbe);
-    shutdown.copyValues(serverPod1.shutdown);
-    for (V1Volume var : serverPod1.getAdditionalVolumes()) {
-      addIfMissing(var);
-    }
-    for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) {
-      addIfMissing(var);
-    }
-    for (V1Container c : serverPod1.getInitContainers()) {
-      addInitContainerIfMissing(c);
-    }
-    for (V1Container c : serverPod1.getContainers()) {
-      addContainerIfMissing(c);
-    }
-    fillInFrom((KubernetesResource) serverPod1);
-    serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
-    copyValues(resources, serverPod1.resources);
-    copyValues(podSecurityContext, serverPod1.podSecurityContext);
-    copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
   }
 
   @SuppressWarnings("Duplicates")
@@ -281,15 +234,63 @@ class ServerPod extends KubernetesResource {
     }
   }
 
-  private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
-    if (from != null) {
-      if (from.getRequests() != null) {
-        from.getRequests().forEach(to.getRequests()::putIfAbsent);
-      }
-      if (from.getLimits() != null) {
-        from.getLimits().forEach(to.getLimits()::putIfAbsent);
-      }
+  Shutdown getShutdown() {
+    return this.shutdown;
+  }
+
+  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions) {
+    this.shutdown
+        .shutdownType(shutdownType)
+        .timeoutSeconds(timeoutSeconds)
+        .ignoreSessions(ignoreSessions);
+  }
+
+  ProbeTuning getReadinessProbeTuning() {
+    return this.readinessProbe;
+  }
+
+  void setReadinessProbeTuning(Integer initialDelay, Integer timeout, Integer period) {
+    this.readinessProbe
+        .initialDelaySeconds(initialDelay)
+        .timeoutSeconds(timeout)
+        .periodSeconds(period);
+  }
+
+  ProbeTuning getLivenessProbeTuning() {
+    return this.livenessProbe;
+  }
+
+  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
+    this.livenessProbe
+        .initialDelaySeconds(initialDelay)
+        .timeoutSeconds(timeout)
+        .periodSeconds(period);
+  }
+
+  void fillInFrom(ServerPod serverPod1) {
+    for (V1EnvVar var : serverPod1.getV1EnvVars()) {
+      addIfMissing(var);
     }
+    livenessProbe.copyValues(serverPod1.livenessProbe);
+    readinessProbe.copyValues(serverPod1.readinessProbe);
+    shutdown.copyValues(serverPod1.shutdown);
+    for (V1Volume var : serverPod1.getAdditionalVolumes()) {
+      addIfMissing(var);
+    }
+    for (V1VolumeMount var : serverPod1.getAdditionalVolumeMounts()) {
+      addIfMissing(var);
+    }
+    for (V1Container c : serverPod1.getInitContainers()) {
+      addInitContainerIfMissing(c);
+    }
+    for (V1Container c : serverPod1.getContainers()) {
+      addContainerIfMissing(c);
+    }
+    fillInFrom((KubernetesResource) serverPod1);
+    serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
+    copyValues(resources, serverPod1.resources);
+    copyValues(podSecurityContext, serverPod1.podSecurityContext);
+    copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
   }
 
   private void addIfMissing(V1Volume var) {
@@ -378,15 +379,15 @@ class ServerPod extends KubernetesResource {
     return this.env;
   }
 
+  void setEnv(@Nullable List<V1EnvVar> env) {
+    this.env = env;
+  }
+
   void addEnvVar(V1EnvVar var) {
     if (this.env == null) {
       setEnv(new ArrayList<>());
     }
     this.env.add(var);
-  }
-
-  void setEnv(@Nullable List<V1EnvVar> env) {
-    this.env = env;
   }
 
   Map<String, String> getNodeSelector() {
@@ -546,19 +547,4 @@ class ServerPod extends KubernetesResource {
         .append(shutdown)
         .toHashCode();
   }
-
-  private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
-      (a, b) -> {
-        return a.getName().compareTo(b.getName());
-      };
-
-  private static final Comparator<V1Volume> VOLUME_COMPARATOR =
-      (a, b) -> {
-        return a.getName().compareTo(b.getName());
-      };
-
-  private static final Comparator<V1VolumeMount> VOLUME_MOUNT_COMPARATOR =
-      (a, b) -> {
-        return a.getName().compareTo(b.getName());
-      };
 }

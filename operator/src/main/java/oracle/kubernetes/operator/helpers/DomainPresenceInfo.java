@@ -70,6 +70,16 @@ public class DomainPresenceInfo {
     this.serverStartupInfo = new AtomicReference<>(null);
   }
 
+  private static <K, V> boolean removeIfPresentAnd(
+      ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
+    Objects.requireNonNull(predicateFunction);
+    for (V oldValue; (oldValue = map.get(key)) != null; ) {
+      if (!predicateFunction.test(oldValue)) return false;
+      else if (map.remove(key, oldValue)) return true;
+    }
+    return false;
+  }
+
   void setServerService(String serverName, V1Service service) {
     getSko(serverName).getService().set(service);
   }
@@ -191,7 +201,7 @@ public class DomainPresenceInfo {
   private V1ObjectMeta getMetadata(V1Service service) {
     return service == null ? null : service.getMetadata();
   }
-  
+
   /**
    * Computes the result of a delete attempt. If the current pod is newer than the one associated
    * with the delete event, returns it; otherwise returns null, thus deleting the value.
@@ -316,16 +326,6 @@ public class DomainPresenceInfo {
         clusters,
         clusterName,
         s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
-  }
-
-  private static <K, V> boolean removeIfPresentAnd(
-      ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
-    Objects.requireNonNull(predicateFunction);
-    for (V oldValue; (oldValue = map.get(key)) != null; ) {
-      if (!predicateFunction.test(oldValue)) return false;
-      else if (map.remove(key, oldValue)) return true;
-    }
-    return false;
   }
 
   private V1Service getNewerService(V1Service first, V1Service second) {

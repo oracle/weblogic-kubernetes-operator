@@ -54,9 +54,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 public class ConfigMapHelperTest {
-  private static final String DOMAIN_NS = "namespace";
-  private static final String OPERATOR_NS = "operator";
-  private static final String DOMAIN_UID = "domainUID1";
   static final String[] SCRIPT_NAMES = {
     "livenessProbe.sh",
     "readState.sh",
@@ -72,7 +69,9 @@ public class ConfigMapHelperTest {
     "wlst.sh",
     "tailLog.sh"
   };
-
+  private static final String DOMAIN_NS = "namespace";
+  private static final String OPERATOR_NS = "operator";
+  private static final String DOMAIN_UID = "domainUID1";
   private static final String introspectResult =
       ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
           + "#WebLogic User Configuration File; 2\n"
@@ -82,14 +81,16 @@ public class ConfigMapHelperTest {
           + "\n"
           + ">>> EOF\n"
           + "\n"
-          + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/userKeyNodeManager.secure\n"
+          + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file "
+          + "/u01/introspect/domain1/userKeyNodeManager.secure\n"
           + "\n"
           + ">>>  /u01/introspect/domain1/userKeyNodeManager.secure\n"
           + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==\n"
           + "\n"
           + ">>> EOF\n"
           + "\n"
-          + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/topology.yaml\n"
+          + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file "
+          + "/u01/introspect/domain1/topology.yaml\n"
           + "\n"
           + ">>>  /u01/introspect/domain1/topology.yaml\n"
           + "domainValid: true\n"
@@ -111,13 +112,134 @@ public class ConfigMapHelperTest {
 
   private static final String[] PARTIAL_SCRIPT_NAMES = {"livenessProbe.sh", "additional.sh"};
   private static final String[] COMBINED_SCRIPT_NAMES = combine(SCRIPT_NAMES, PARTIAL_SCRIPT_NAMES);
-
+  private static final String DOMAIN_TOPOLOGY =
+      "domainValid: true\n"
+          + "domain:\n"
+          + "  name: \"base_domain\"\n"
+          + "  adminServerName: \"admin-server\"\n"
+          + "  configuredClusters:\n"
+          + "  - name: \"cluster-1\"\n"
+          + "    servers:\n"
+          + "      - name: \"managed-server1\"\n"
+          + "        listenPort: 7003\n"
+          + "        listenAddress: \"domain1-managed-server1\"\n"
+          + "        sslListenPort: 7103\n"
+          + "        machineName: \"machine-managed-server1\"\n"
+          + "      - name: \"managed-server2\"\n"
+          + "        listenPort: 7004\n"
+          + "        listenAddress: \"domain1-managed-server2\"\n"
+          + "        sslListenPort: 7104\n"
+          + "        networkAccessPoints:\n"
+          + "          - name: \"nap2\"\n"
+          + "            protocol: \"t3\"\n"
+          + "            listenPort: 7105\n"
+          + "            publicPort: 7105\n"
+          + "  servers:\n"
+          + "    - name: \"admin-server\"\n"
+          + "      listenPort: 7001\n"
+          + "      listenAddress: \"domain1-admin-server\"\n"
+          + "      adminPort: 7099\n"
+          + "    - name: \"server1\"\n"
+          + "      listenPort: 9003\n"
+          + "      listenAddress: \"domain1-managed-server1\"\n"
+          + "      sslListenPort: 8003\n"
+          + "      machineName: \"machine-managed-server1\"\n"
+          + "    - name: \"server2\"\n"
+          + "      listenPort: 9004\n"
+          + "      listenAddress: \"domain1-managed-server2\"\n"
+          + "      sslListenPort: 8004\n"
+          + "      networkAccessPoints:\n"
+          + "        - name: \"nap2\"\n"
+          + "          protocol: \"t3\"\n"
+          + "          listenPort: 8005\n"
+          + "          publicPort: 8005\n";
+  private static final String DYNAMIC_SERVER_TOPOLOGY =
+      "domainValid: true\n"
+          + "domain:\n"
+          + "  name: \"base_domain\"\n"
+          + "  adminServerName: \"admin-server\"\n"
+          + "  configuredClusters:\n"
+          + "  - name: \"cluster-1\"\n"
+          + "    dynamicServersConfig:\n"
+          + "        name: \"cluster-1\"\n"
+          + "        serverTemplateName: \"cluster-1-template\"\n"
+          + "        calculatedListenPorts: false\n"
+          + "        serverNamePrefix: \"managed-server\"\n"
+          + "        dynamicClusterSize: 4\n"
+          + "        maxDynamicClusterSize: 8\n"
+          + "  serverTemplates:\n"
+          + "    - name: \"cluster-1-template\"\n"
+          + "      listenPort: 8001\n"
+          + "      clusterName: \"cluster-1\"\n"
+          + "      listenAddress: \"domain1-managed-server${id}\"\n"
+          + "  servers:\n"
+          + "    - name: \"admin-server\"\n"
+          + "      listenPort: 7001\n"
+          + "      listenAddress: \"domain1-admin-server\"\n";
+  private static final String MIXED_CLUSTER_TOPOLOGY =
+      "domainValid: true\n"
+          + "domain:\n"
+          + "  name: \"base_domain\"\n"
+          + "  adminServerName: \"admin-server\"\n"
+          + "  configuredClusters:\n"
+          + "  - name: \"cluster-1\"\n"
+          + "    dynamicServersConfig:\n"
+          + "        name: \"cluster-1\"\n"
+          + "        serverTemplateName: \"cluster-1-template\"\n"
+          + "        calculatedListenPorts: false\n"
+          + "        serverNamePrefix: \"managed-server\"\n"
+          + "        dynamicClusterSize: 3\n"
+          + "        maxDynamicClusterSize: 8\n"
+          + "    servers:\n"
+          + "      - name: \"ms1\"\n"
+          + "        listenPort: 7003\n"
+          + "        listenAddress: \"domain1-managed-server1\"\n"
+          + "        sslListenPort: 7103\n"
+          + "        machineName: \"machine-managed-server1\"\n"
+          + "      - name: \"ms2\"\n"
+          + "        listenPort: 7004\n"
+          + "        listenAddress: \"domain1-managed-server2\"\n"
+          + "        sslListenPort: 7104\n"
+          + "        networkAccessPoints:\n"
+          + "          - name: \"nap2\"\n"
+          + "            protocol: \"t3\"\n"
+          + "            listenPort: 7105\n"
+          + "            publicPort: 7105\n"
+          + "  serverTemplates:\n"
+          + "    - name: \"cluster-1-template\"\n"
+          + "      listenPort: 8001\n"
+          + "      clusterName: \"cluster-1\"\n"
+          + "      listenAddress: \"domain1-managed-server${id}\"\n"
+          + "      sslListenPort: 7204\n"
+          + "      networkAccessPoints:\n"
+          + "        - name: \"nap3\"\n"
+          + "          protocol: \"t3\"\n"
+          + "          listenPort: 7205\n"
+          + "          publicPort: 7205\n"
+          + "  servers:\n"
+          + "    - name: \"admin-server\"\n"
+          + "      listenPort: 7001\n"
+          + "      listenAddress: \"domain1-admin-server\"\n";
+  private static final String INVALID_TOPOLOGY =
+      "domainValid: false\n"
+          + "validationErrors:\n"
+          + "  - \"The dynamic cluster \\\"mycluster\\\"'s dynamic servers use calculated listen ports.\"";
+  private static final String DOMAIN_INVALID_NO_ERRORS =
+      "domainValid: false\n" + "validationErrors:\n";
   private final V1ConfigMap defaultConfigMap = defineDefaultConfigMap();
   private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
-
   private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
   private List<Memento> mementos = new ArrayList<>();
   private List<LogRecord> logRecords = new ArrayList<>();
+
+  @SuppressWarnings("SameParameterValue")
+  private static String[] combine(String[] first, String[] second) {
+    return Stream.of(first, second).flatMap(Stream::of).distinct().toArray(String[]::new);
+  }
+
+  private static Map<String, String> nameOnlyScriptMap(String... scriptNames) {
+    return Stream.of(scriptNames).collect(Collectors.toMap(s -> s, s -> ""));
+  }
 
   private V1ConfigMap defineDefaultConfigMap() {
     return defineConfigMap(SCRIPT_NAMES);
@@ -129,15 +251,6 @@ public class ConfigMapHelperTest {
         .kind("ConfigMap")
         .metadata(createMetadata())
         .data(nameOnlyScriptMap(scriptNames));
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private static String[] combine(String[] first, String[] second) {
-    return Stream.of(first, second).flatMap(Stream::of).distinct().toArray(String[]::new);
-  }
-
-  private static Map<String, String> nameOnlyScriptMap(String... scriptNames) {
-    return Stream.of(scriptNames).collect(Collectors.toMap(s -> s, s -> ""));
   }
 
   private V1ObjectMeta createMetadata() {
@@ -260,7 +373,7 @@ public class ConfigMapHelperTest {
   // @Test
   @Ignore
   public void readSingleFile() throws IOException {
-    Map<String, String> map = new HashMap<>();
+    final Map<String, String> map = new HashMap<>();
     String text =
         ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
             + "#WebLogic User Configuration File; 2\n"
@@ -270,7 +383,8 @@ public class ConfigMapHelperTest {
             + "\n"
             + ">>> EOF\n"
             + "\n"
-            + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/userKeyNodeManager.secure\n"
+            + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file "
+            + "/u01/introspect/domain1/userKeyNodeManager.secure\n"
             + "\n";
 
     BufferedReader reader = new BufferedReader(new StringReader(text));
@@ -317,166 +431,6 @@ public class ConfigMapHelperTest {
         .withBody(new V1ConfigMapMatcher(expectedConfig));
   }
 
-  class V1ConfigMapMatcher implements BodyMatcher {
-    private V1ConfigMap expected;
-
-    V1ConfigMapMatcher(V1ConfigMap expected) {
-      this.expected = expected;
-    }
-
-    @Override
-    public boolean matches(Object actualBody) {
-      return actualBody instanceof V1ConfigMap && matches((V1ConfigMap) actualBody);
-    }
-
-    private boolean matches(V1ConfigMap actualBody) {
-      return hasExpectedKeys(actualBody) && adjustedBody(actualBody).equals(actualBody);
-    }
-
-    private boolean hasExpectedKeys(V1ConfigMap actualBody) {
-      return expected.getData().keySet().equals(actualBody.getData().keySet());
-    }
-
-    private V1ConfigMap adjustedBody(V1ConfigMap actualBody) {
-      return new V1ConfigMap()
-          .apiVersion(expected.getApiVersion())
-          .kind(expected.getKind())
-          .metadata(expected.getMetadata())
-          .data(actualBody.getData());
-    }
-  }
-
-  // An implementation of the comparator that tests only the keys in the maps
-  static class TestComparator implements ConfigMapHelper.ConfigMapComparator {
-    static Memento install() throws NoSuchFieldException {
-      return StaticStubSupport.install(ConfigMapHelper.class, "COMPARATOR", new TestComparator());
-    }
-
-    @Override
-    public boolean containsAll(V1ConfigMap actual, V1ConfigMap expected) {
-      return actual.getData().keySet().containsAll(expected.getData().keySet());
-    }
-  }
-
-  private static final String DOMAIN_TOPOLOGY =
-      "domainValid: true\n"
-          + "domain:\n"
-          + "  name: \"base_domain\"\n"
-          + "  adminServerName: \"admin-server\"\n"
-          + "  configuredClusters:\n"
-          + "  - name: \"cluster-1\"\n"
-          + "    servers:\n"
-          + "      - name: \"managed-server1\"\n"
-          + "        listenPort: 7003\n"
-          + "        listenAddress: \"domain1-managed-server1\"\n"
-          + "        sslListenPort: 7103\n"
-          + "        machineName: \"machine-managed-server1\"\n"
-          + "      - name: \"managed-server2\"\n"
-          + "        listenPort: 7004\n"
-          + "        listenAddress: \"domain1-managed-server2\"\n"
-          + "        sslListenPort: 7104\n"
-          + "        networkAccessPoints:\n"
-          + "          - name: \"nap2\"\n"
-          + "            protocol: \"t3\"\n"
-          + "            listenPort: 7105\n"
-          + "            publicPort: 7105\n"
-          + "  servers:\n"
-          + "    - name: \"admin-server\"\n"
-          + "      listenPort: 7001\n"
-          + "      listenAddress: \"domain1-admin-server\"\n"
-          + "      adminPort: 7099\n"
-          + "    - name: \"server1\"\n"
-          + "      listenPort: 9003\n"
-          + "      listenAddress: \"domain1-managed-server1\"\n"
-          + "      sslListenPort: 8003\n"
-          + "      machineName: \"machine-managed-server1\"\n"
-          + "    - name: \"server2\"\n"
-          + "      listenPort: 9004\n"
-          + "      listenAddress: \"domain1-managed-server2\"\n"
-          + "      sslListenPort: 8004\n"
-          + "      networkAccessPoints:\n"
-          + "        - name: \"nap2\"\n"
-          + "          protocol: \"t3\"\n"
-          + "          listenPort: 8005\n"
-          + "          publicPort: 8005\n";
-
-  private static final String DYNAMIC_SERVER_TOPOLOGY =
-      "domainValid: true\n"
-          + "domain:\n"
-          + "  name: \"base_domain\"\n"
-          + "  adminServerName: \"admin-server\"\n"
-          + "  configuredClusters:\n"
-          + "  - name: \"cluster-1\"\n"
-          + "    dynamicServersConfig:\n"
-          + "        name: \"cluster-1\"\n"
-          + "        serverTemplateName: \"cluster-1-template\"\n"
-          + "        calculatedListenPorts: false\n"
-          + "        serverNamePrefix: \"managed-server\"\n"
-          + "        dynamicClusterSize: 4\n"
-          + "        maxDynamicClusterSize: 8\n"
-          + "  serverTemplates:\n"
-          + "    - name: \"cluster-1-template\"\n"
-          + "      listenPort: 8001\n"
-          + "      clusterName: \"cluster-1\"\n"
-          + "      listenAddress: \"domain1-managed-server${id}\"\n"
-          + "  servers:\n"
-          + "    - name: \"admin-server\"\n"
-          + "      listenPort: 7001\n"
-          + "      listenAddress: \"domain1-admin-server\"\n";
-
-  private static final String MIXED_CLUSTER_TOPOLOGY =
-      "domainValid: true\n"
-          + "domain:\n"
-          + "  name: \"base_domain\"\n"
-          + "  adminServerName: \"admin-server\"\n"
-          + "  configuredClusters:\n"
-          + "  - name: \"cluster-1\"\n"
-          + "    dynamicServersConfig:\n"
-          + "        name: \"cluster-1\"\n"
-          + "        serverTemplateName: \"cluster-1-template\"\n"
-          + "        calculatedListenPorts: false\n"
-          + "        serverNamePrefix: \"managed-server\"\n"
-          + "        dynamicClusterSize: 3\n"
-          + "        maxDynamicClusterSize: 8\n"
-          + "    servers:\n"
-          + "      - name: \"ms1\"\n"
-          + "        listenPort: 7003\n"
-          + "        listenAddress: \"domain1-managed-server1\"\n"
-          + "        sslListenPort: 7103\n"
-          + "        machineName: \"machine-managed-server1\"\n"
-          + "      - name: \"ms2\"\n"
-          + "        listenPort: 7004\n"
-          + "        listenAddress: \"domain1-managed-server2\"\n"
-          + "        sslListenPort: 7104\n"
-          + "        networkAccessPoints:\n"
-          + "          - name: \"nap2\"\n"
-          + "            protocol: \"t3\"\n"
-          + "            listenPort: 7105\n"
-          + "            publicPort: 7105\n"
-          + "  serverTemplates:\n"
-          + "    - name: \"cluster-1-template\"\n"
-          + "      listenPort: 8001\n"
-          + "      clusterName: \"cluster-1\"\n"
-          + "      listenAddress: \"domain1-managed-server${id}\"\n"
-          + "      sslListenPort: 7204\n"
-          + "      networkAccessPoints:\n"
-          + "        - name: \"nap3\"\n"
-          + "          protocol: \"t3\"\n"
-          + "          listenPort: 7205\n"
-          + "          publicPort: 7205\n"
-          + "  servers:\n"
-          + "    - name: \"admin-server\"\n"
-          + "      listenPort: 7001\n"
-          + "      listenAddress: \"domain1-admin-server\"\n";
-
-  private static final String INVALID_TOPOLOGY =
-      "domainValid: false\n"
-          + "validationErrors:\n"
-          + "  - \"The dynamic cluster \\\"mycluster\\\"'s dynamic servers use calculated listen ports.\"";
-
-  private static final String DOMAIN_INVALID_NO_ERRORS =
-      "domainValid: false\n" + "validationErrors:\n";
-
   @Test
   public void parseDomainTopologyYaml() {
     ConfigMapHelper.DomainTopology domainTopology =
@@ -515,14 +469,14 @@ public class ConfigMapHelperTest {
     assertEquals(9004, server2Config.getListenPort().intValue());
     assertEquals(8004, server2Config.getSslListenPort().intValue());
     assertTrue(server2Config.isSslPortEnabled());
-    List<NetworkAccessPoint> server2ConfigNAPs = server2Config.getNetworkAccessPoints();
-    assertEquals(1, server2ConfigNAPs.size());
+    List<NetworkAccessPoint> server2ConfigNaps = server2Config.getNetworkAccessPoints();
+    assertEquals(1, server2ConfigNaps.size());
 
-    NetworkAccessPoint server2ConfigNAP = server2ConfigNAPs.get(0);
-    assertEquals("nap2", server2ConfigNAP.getName());
-    assertEquals("t3", server2ConfigNAP.getProtocol());
-    assertEquals(8005, server2ConfigNAP.getListenPort().intValue());
-    assertEquals(8005, server2ConfigNAP.getPublicPort().intValue());
+    NetworkAccessPoint server2ConfigNap = server2ConfigNaps.get(0);
+    assertEquals("nap2", server2ConfigNap.getName());
+    assertEquals("t3", server2ConfigNap.getProtocol());
+    assertEquals(8005, server2ConfigNap.getListenPort().intValue());
+    assertEquals(8005, server2ConfigNap.getPublicPort().intValue());
   }
 
   @Test
@@ -667,5 +621,46 @@ public class ConfigMapHelperTest {
 
     assertFalse(domainTopology.getValidationErrors().isEmpty());
     assertFalse(domainTopology.getDomainValid());
+  }
+
+  // An implementation of the comparator that tests only the keys in the maps
+  static class TestComparator implements ConfigMapHelper.ConfigMapComparator {
+    static Memento install() throws NoSuchFieldException {
+      return StaticStubSupport.install(ConfigMapHelper.class, "COMPARATOR", new TestComparator());
+    }
+
+    @Override
+    public boolean containsAll(V1ConfigMap actual, V1ConfigMap expected) {
+      return actual.getData().keySet().containsAll(expected.getData().keySet());
+    }
+  }
+
+  class V1ConfigMapMatcher implements BodyMatcher {
+    private V1ConfigMap expected;
+
+    V1ConfigMapMatcher(V1ConfigMap expected) {
+      this.expected = expected;
+    }
+
+    @Override
+    public boolean matches(Object actualBody) {
+      return actualBody instanceof V1ConfigMap && matches((V1ConfigMap) actualBody);
+    }
+
+    private boolean matches(V1ConfigMap actualBody) {
+      return hasExpectedKeys(actualBody) && adjustedBody(actualBody).equals(actualBody);
+    }
+
+    private boolean hasExpectedKeys(V1ConfigMap actualBody) {
+      return expected.getData().keySet().equals(actualBody.getData().keySet());
+    }
+
+    private V1ConfigMap adjustedBody(V1ConfigMap actualBody) {
+      return new V1ConfigMap()
+          .apiVersion(expected.getApiVersion())
+          .kind(expected.getKind())
+          .metadata(expected.getMetadata())
+          .data(actualBody.getData());
+    }
   }
 }

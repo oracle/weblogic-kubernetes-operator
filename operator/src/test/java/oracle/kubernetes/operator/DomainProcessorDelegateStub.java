@@ -20,12 +20,12 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 public abstract class DomainProcessorDelegateStub implements DomainProcessorDelegate {
   private FiberTestSupport testSupport;
 
-  public static DomainProcessorDelegate createDelegate(KubernetesTestSupport testSupport) {
-    return createStrictStub(DomainProcessorDelegateStub.class, testSupport);
-  }
-
   public DomainProcessorDelegateStub(FiberTestSupport testSupport) {
     this.testSupport = testSupport;
+  }
+
+  public static DomainProcessorDelegate createDelegate(KubernetesTestSupport testSupport) {
+    return createStrictStub(DomainProcessorDelegateStub.class, testSupport);
   }
 
   @Override

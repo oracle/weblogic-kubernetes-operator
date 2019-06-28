@@ -115,13 +115,26 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private static final int NAP_PORT_1 = 7100;
   private static final int NAP_PORT_2 = 37100;
   private static final int NAP_PORT_3 = 37200;
-
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
+  @Parameter public String testType;
+  @Parameter(1)
+  public TestFacade testFacade;
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private List<LogRecord> logRecords = new ArrayList<>();
   private WlsServerConfig serverConfig;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+
+  @Parameters(name = "{index} : {0} service test")
+  public static Collection<Object[]> data() {
+    return Arrays.asList(
+        new Object[][] {
+          {"cluster", CLUSTER_SERVICE_TEST_FACADE},
+          {"managed server", MANAGED_SERVER_TEST_FACADE},
+          {"admin server", ADMIN_SERVER_TEST_FACADE},
+          {"external", EXTERNAL_SERVICE_TEST_FACADE}
+        });
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -175,22 +188,6 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   private DomainConfigurator configureDomain() {
     return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
-
-  @Parameters(name = "{index} : {0} service test")
-  public static Collection<Object[]> data() {
-    return Arrays.asList(
-        new Object[][] {
-          {"cluster", CLUSTER_SERVICE_TEST_FACADE},
-          {"managed server", MANAGED_SERVER_TEST_FACADE},
-          {"admin server", ADMIN_SERVER_TEST_FACADE},
-          {"external", EXTERNAL_SERVICE_TEST_FACADE}
-        });
-  }
-
-  @Parameter public String testType;
-
-  @Parameter(1)
-  public TestFacade testFacade;
 
   @Test
   public void whenCreated_modelHasServiceType() {
@@ -874,20 +871,20 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
       return new NodePortMatcher(name, nodePort);
     }
 
-    @Override
-    protected boolean matchesSafely(V1ServicePort item, Description mismatchDescription) {
-      if (name.equals(item.getName()) && nodePort == item.getNodePort()) return true;
-
-      describe(mismatchDescription, item.getName(), item.getNodePort());
-      return false;
-    }
-
     private static void describe(Description description, String name, Integer nodePort) {
       description
           .appendText("service port with name ")
           .appendValue(name)
           .appendText(" and node port ")
           .appendValue(nodePort);
+    }
+
+    @Override
+    protected boolean matchesSafely(V1ServicePort item, Description mismatchDescription) {
+      if (name.equals(item.getName()) && nodePort == item.getNodePort()) return true;
+
+      describe(mismatchDescription, item.getName(), item.getNodePort());
+      return false;
     }
 
     @Override

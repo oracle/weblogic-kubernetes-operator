@@ -24,10 +24,10 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final ClientFactory FACTORY = new DefaultClientFactory();
   private static ClientPool SINGLETON = new ClientPool();
   private static ThreadFactory threadFactory;
-
-  private static final ClientFactory FACTORY = new DefaultClientFactory();
+  private final AtomicBoolean isFirst = new AtomicBoolean(true);
 
   public static void initialize(ThreadFactory threadFactory) {
     ClientPool.threadFactory = threadFactory;
@@ -50,8 +50,6 @@ public class ClientPool extends Pool<ApiClient> {
   public static ClientPool getInstance() {
     return SINGLETON;
   }
-
-  private final AtomicBoolean isFirst = new AtomicBoolean(true);
 
   @Override
   protected ApiClient create() {

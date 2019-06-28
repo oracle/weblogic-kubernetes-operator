@@ -55,10 +55,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainStatusUpdaterTest {
   private static final String NS = "namespace";
   private static final String NAME = "name";
+  private final TerminalStep endStep = new TerminalStep();
+  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
   private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
   private List<Memento> mementos = new ArrayList<>();
-  private final TerminalStep endStep = new TerminalStep();
-
   private Domain domain =
       new Domain()
           .withMetadata(new V1ObjectMeta().namespace(NS).name(NAME))
@@ -66,9 +66,8 @@ public class DomainStatusUpdaterTest {
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private Domain recordedDomain;
   private RandomStringGenerator generator = new RandomStringGenerator();
-  private String reason = generator.getUniqueString();
-  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
   private final String message = generator.getUniqueString();
+  private String reason = generator.getUniqueString();
   private RuntimeException failure = new RuntimeException(message);
 
   @Before
@@ -96,13 +95,6 @@ public class DomainStatusUpdaterTest {
 
     this.recordedDomain = (Domain) domain;
     return true;
-  }
-
-  class RecordBody implements BodyMatcher {
-    @Override
-    public boolean matches(Object actualBody) {
-      return recordBody(actualBody);
-    }
   }
 
   private V1ObjectMeta createPodMetadata(String serverName) {
@@ -693,8 +685,6 @@ public class DomainStatusUpdaterTest {
     assertThat(recordedDomain, not(hasCondition(Failed)));
   }
 
-  // ---
-
   @Test
   public void whenDomainLacksStatus_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
@@ -705,6 +695,8 @@ public class DomainStatusUpdaterTest {
         recordedDomain,
         hasCondition(Failed).withStatus("True").withReason("Exception").withMessage(message));
   }
+
+  // ---
 
   @Test
   public void whenDomainLacksFailedCondition_failedStepUpdatesDomainWithFailedTrueAndException() {
@@ -743,5 +735,12 @@ public class DomainStatusUpdaterTest {
     testSupport.runSteps(DomainStatusUpdater.createFailedStep(failure, endStep));
 
     assertThat(recordedDomain, hasCondition(Available));
+  }
+
+  class RecordBody implements BodyMatcher {
+    @Override
+    public boolean matches(Object actualBody) {
+      return recordBody(actualBody);
+    }
   }
 }

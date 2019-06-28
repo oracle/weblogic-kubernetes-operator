@@ -52,12 +52,11 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class ServerStatusReaderTest extends HttpUserAgentTest {
   private static final String NS = "namespace";
   private static final String UID = "uid";
-  private FiberTestSupport testSupport = new FiberTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
   private final TerminalStep endStep = new TerminalStep();
   private final KubernetesExecFactoryFake execFactory = new KubernetesExecFactoryFake();
   private final ReadServerHealthStepFactoryFake stepFactory = new ReadServerHealthStepFactoryFake();
-
+  private FiberTestSupport testSupport = new FiberTestSupport();
+  private List<Memento> mementos = new ArrayList<>();
   private Domain domain =
       new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec());
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -228,6 +227,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
     }
 
     @Override
-    public void destroy() {}
+    public void destroy() {
+    }
   }
 }

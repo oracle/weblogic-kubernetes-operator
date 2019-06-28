@@ -93,6 +93,11 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     return configureServer(getConfigurator(), SERVER_NAME);
   }
 
+  @Override
+  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
+    return configurator.configureServer(serverName);
+  }
+
   private void expectReplaceDomainStatus() {
     testSupport
         .createCannedResponse("replaceDomainStatus")
@@ -163,12 +168,12 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenPacketHasEnvironmentItemsWithVariable_createManagedPodShouldNotChangeItsValue() {
-    V1EnvVar ENVVAR = toEnvVar(ITEM1, RAW_VALUE_1);
-    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(ENVVAR));
+    V1EnvVar envVar = toEnvVar(ITEM1, RAW_VALUE_1);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(envVar));
 
     getCreatedPodSpecContainer();
 
-    assertThat(ENVVAR.getValue(), is(RAW_VALUE_1));
+    assertThat(envVar.getValue(), is(RAW_VALUE_1));
   }
 
   @Test
@@ -732,10 +737,5 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Override
   V1Pod createPod(Packet packet) {
     return new PodHelper.ManagedPodStepContext(null, packet).getPodModel();
-  }
-
-  @Override
-  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
-    return configurator.configureServer(serverName);
   }
 }

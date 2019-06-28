@@ -73,6 +73,10 @@ abstract class Watcher<T> {
     this.listener = listener;
   }
 
+  private static boolean isNullOrEmptyString(String s) {
+    return s == null || s.equals("");
+  }
+
   /** Waits for this watcher's thread to exit. For unit testing only. */
   void waitForExit() {
     try {
@@ -263,9 +267,5 @@ abstract class Watcher<T> {
     } else if (newResourceVersion > resourceVersion) {
       resourceVersion = newResourceVersion;
     }
-  }
-
-  private static boolean isNullOrEmptyString(String s) {
-    return s == null || s.equals("");
   }
 }
