@@ -27,10 +27,10 @@
         <property name="eachLine" value="true"/>
     </module>
 
-    <!--<module name="RegexpHeader">-->
-        <!--<property name="headerFile" value="build-tools/src/main/resources/weblogic-kubernetes-operator/checkstyle/java.header"/>-->
-        <!--<property name="fileExtensions" value="java"/>-->
-    <!--</module>-->
+    <module name="RegexpHeader">
+        <property name="headerFile" value="build-tools/src/main/resources/weblogic-kubernetes-operator/checkstyle/java.header"/>
+        <property name="fileExtensions" value="java"/>
+    </module>
 
     <module name="TreeWalker">
         <module name="OuterTypeFilename"/>
