@@ -86,9 +86,9 @@ public class ITOperator extends BaseTest {
     try {
       domain = TestUtils.createDomain(DOMAINONPV_WLST_YAML);
       domain.verifyDomainCreated();
-      testBasicUseCases(domain);
-      TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
-      testAdvancedUseCasesForADomain(operator1, domain);
+      // testBasicUseCases(domain);
+      // TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
+      // testAdvancedUseCasesForADomain(operator1, domain);
 
       if (!SMOKETEST) domain.testWlsLivenessProbe();
 
@@ -232,7 +232,7 @@ public class ITOperator extends BaseTest {
 
   /**
    * Create one operator if it is not running. Create domain domain1 and domain2 dynamic cluster in
-   * default namespace, managed by operator. Both domains sharre one PV. Verify scaling for domain2
+   * default namespace, managed by operator1. Both domains share one PV. Verify scaling for domain2
    * cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1. Cycle domain1 down
    * and back up, plus verify no impact on domain2. shutdown by the domains using the delete
    * resource script from samples.
