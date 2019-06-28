@@ -152,11 +152,11 @@ When the tests are run with mvn command,
 - archive logs and results
 - cleanup the tmp files, PV dir and k8s artifacts created for the test
 	
-All the tests that start with IT*.java in integration-tests/src/test/java are run. 
+All the tests that start with It*.java in integration-tests/src/test/java are run. 
 
 **Integration test classes:**
 
-When the integration test class ITOperator is executed, staticPrepare() method is called once before any of the test methods in the class and staticUnPrepare() method once at the end.
+When the integration test class ItOperator is executed, staticPrepare() method is called once before any of the test methods in the class and staticUnPrepare() method once at the end.
 
 staticPrepare() - initializes the application properties from OperatorIT.properties and creates resultRoot, pvRoot, userprojectsDir directories by calling initialize() method from the base class BaseTest.
 
@@ -266,7 +266,7 @@ Failed run will have the output like
 [INFO] Results:
 [INFO]
 [ERROR] Errors:
-[ERROR]   ITOperator.testDomainOnPVUsingWLST:145 ? Runtime FAILURE: Couldn't create serv...
+[ERROR]   ItOperator.testDomainOnPVUsingWLST:145 ? Runtime FAILURE: Couldn't create serv...
 [INFO]
 [ERROR] Tests run: 9, Failures: 0, Errors: 1, Skipped: 0
 [INFO]
@@ -343,9 +343,9 @@ $PV_ROOT/acceptance_test_pv is archived under $PV_ROOT/acceptance_test_pv_archiv
 
 Add a new JUnit test under integration-tests/src/test/java/oracle/kubernetes/operator.
 
-class name must start with IT(Integration Test), IT*.java
+class name must start with It(Integration Test), It*.java
 
-ITOperator.java - take a look at this test for reference
+ItOperator.java - take a look at this test for reference
 
 # Future enhancement
 
