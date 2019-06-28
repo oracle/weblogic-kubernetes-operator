@@ -9,7 +9,9 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.kubernetes.client.models.V1ObjectMeta;
 
-/** Example Custom Resource class */
+/**
+ * Example Custom Resource class.
+ */
 public class TestDomain {
 
   @JsonProperty("apiVersion")

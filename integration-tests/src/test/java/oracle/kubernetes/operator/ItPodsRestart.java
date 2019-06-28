@@ -12,8 +12,9 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
+
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.DomainCRD;
+import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
@@ -32,7 +33,7 @@ import org.junit.runners.MethodSorters;
  * <p>This test is used for testing pods being restarted by some properties change.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ITPodsRestart extends BaseTest {
+public class ItPodsRestart extends BaseTest {
 
   private static Domain domain = null;
   private static Operator operator1;
@@ -46,7 +47,7 @@ public class ITPodsRestart extends BaseTest {
    * the resultRoot, pvRoot and projectRoot attributes. Create Operator1 and domainOnPVUsingWLST
    * with admin server and 1 managed server if they are not running
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
@@ -72,9 +73,9 @@ public class ITPodsRestart extends BaseTest {
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories
+   * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
@@ -90,12 +91,33 @@ public class ITPodsRestart extends BaseTest {
     }
   }
 
+  private static Domain createPodsRestartdomain() throws Exception {
+
+    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
+    domainMap.put("domainUID", "domainpodsrestart");
+    domainMap.put("initialManagedServerReplicas", new Integer("1"));
+
+    domainUid = (String) domainMap.get("domainUID");
+    logger.info("Creating and verifying the domain creation with domainUid: " + domainUid);
+
+    domain = TestUtils.createDomain(domainMap);
+    domain.verifyDomainCreated();
+
+    return domain;
+  }
+
+  private static void destroyPodsRestartdomain() throws Exception {
+    if (domain != null) {
+      domain.destroy();
+    }
+  }
+
   /**
    * Modify the domain scope env property on the domain resource using kubectl apply -f domain.yaml
    * Verify that all the server pods in the domain got re-started. The property tested is: env:
    * "-Dweblogic.StdoutDebugEnabled=false"--> "-Dweblogic.StdoutDebugEnabled=true"
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
@@ -118,7 +140,7 @@ public class ITPodsRestart extends BaseTest {
    * Verify that all the server pods in the domain got re-started. The property tested is:
    * logHomeEnabled: true --> logHomeEnabled: false
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
@@ -140,7 +162,7 @@ public class ITPodsRestart extends BaseTest {
    * Verify that all the server pods in the domain got re-started. The property tested is:
    * imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
@@ -163,7 +185,7 @@ public class ITPodsRestart extends BaseTest {
    * Verify that all the server pods in the domain got re-started. The property tested is:
    * includeServerOutInPodLog: true --> includeServerOutInPodLog: false
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
@@ -187,7 +209,7 @@ public class ITPodsRestart extends BaseTest {
    * "container-registry.oracle.com/middleware/weblogic:12.2.1.3" --> image:
    * "container-registry.oracle.com/middleware/weblogic:duplicate"
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
@@ -196,7 +218,7 @@ public class ITPodsRestart extends BaseTest {
     logTestBegin(testMethodName);
 
     try {
-      TestUtils.ExecAndPrintLog("docker images");
+      TestUtils.execAndPrintLog("docker images");
       logger.info(
           "About to verifyDomainServerPodRestart for Domain: "
               + domain.getDomainUid()
@@ -213,11 +235,11 @@ public class ITPodsRestart extends BaseTest {
         // tag image with repo name
         String tag =
             "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
-        TestUtils.ExecAndPrintLog(tag);
-        TestUtils.ExecAndPrintLog("docker images");
+        TestUtils.execAndPrintLog(tag);
+        TestUtils.execAndPrintLog("docker images");
 
         // login and push image to ocir
-        TestUtils.loginAndPushImageToOCIR(newImage);
+        TestUtils.loginAndPushImageToOcir(newImage);
 
         // create ocir registry secret in the same ns as domain which is used while pulling the
         // image
@@ -227,7 +249,7 @@ public class ITPodsRestart extends BaseTest {
             System.getenv("REPO_USERNAME"),
             System.getenv("REPO_PASSWORD"),
             System.getenv("REPO_EMAIL"),
-            domain.getDomainNS());
+            domain.getDomainNs());
 
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
@@ -384,7 +406,7 @@ public class ITPodsRestart extends BaseTest {
 
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
-      DomainCRD crd = new DomainCRD(originalYaml);
+      DomainCrd crd = new DomainCrd(originalYaml);
       Map<String, String> admin = new HashMap();
       admin.put("restartVersion", "v1.1");
       crd.addObjectNodeToAdminServer(admin);
@@ -430,7 +452,7 @@ public class ITPodsRestart extends BaseTest {
 
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
-      DomainCRD crd = new DomainCRD(originalYaml);
+      DomainCrd crd = new DomainCrd(originalYaml);
       Map<String, Object> cluster = new HashMap();
       cluster.put("restartVersion", "v1.1");
       crd.addObjectNodeToCluster("cluster-1", cluster);
@@ -469,7 +491,7 @@ public class ITPodsRestart extends BaseTest {
    *     restartVersion:v1.1
    */
   // @Test
-  public void testMSRestartVersion() throws Exception {
+  public void testMsRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -477,7 +499,7 @@ public class ITPodsRestart extends BaseTest {
 
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
-      DomainCRD crd = new DomainCRD(originalYaml);
+      final DomainCrd crd = new DomainCrd(originalYaml);
       Map<String, String> ms = new HashMap();
       ms.put("restartVersion", "v1.1");
       ms.put("serverStartPolicy", "IF_NEEDED");
@@ -525,7 +547,7 @@ public class ITPodsRestart extends BaseTest {
 
     try {
       // Modify the original domain yaml to include restartVersion in admin server node
-      DomainCRD crd = new DomainCRD(originalYaml);
+      DomainCrd crd = new DomainCrd(originalYaml);
       Map<String, String> domain = new HashMap();
       domain.put("restartVersion", "v1.1");
       crd.addObjectNodeToDomain(domain);
@@ -556,29 +578,8 @@ public class ITPodsRestart extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
-  private static Domain createPodsRestartdomain() throws Exception {
-
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAINONPV_WLST_YAML);
-    domainMap.put("domainUID", "domainpodsrestart");
-    domainMap.put("initialManagedServerReplicas", new Integer("1"));
-
-    domainUid = (String) domainMap.get("domainUID");
-    logger.info("Creating and verifying the domain creation with domainUid: " + domainUid);
-
-    domain = TestUtils.createDomain(domainMap);
-    domain.verifyDomainCreated();
-
-    return domain;
-  }
-
-  private static void destroyPodsRestartdomain() throws Exception {
-    if (domain != null) {
-      domain.destroy();
-    }
-  }
-
   /**
-   * Utility method to check if a pod is in Terminating or Running status
+   * Utility method to check if a pod is in Terminating or Running status.
    *
    * @param podName - String name of the pod to check the status for
    * @param podStatusExpected - String the expected status of Terminating || RUnning
@@ -588,7 +589,7 @@ public class ITPodsRestart extends BaseTest {
       throws InterruptedException {
     K8sTestUtils testUtil = new K8sTestUtils();
     String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    String namespace = domain.getDomainNS();
+    String namespace = domain.getDomainNs();
     boolean gotExpected = false;
     for (int i = 0; i < BaseTest.getMaxIterationsPod(); i++) {
       if (podStatusExpected.equals("Terminating")) {

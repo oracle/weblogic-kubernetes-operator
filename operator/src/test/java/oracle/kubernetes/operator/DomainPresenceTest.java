@@ -55,6 +55,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private Map<String, AtomicBoolean> isNamespaceStopping;
 
+  private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
+      throws NoSuchFieldException {
+    return StaticStubSupport.install(containingClass, fieldName, newValue);
+  }
+
   @Before
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
@@ -67,11 +72,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
     isNamespaceStopping = getStoppingVariable();
     isNamespaceStopping.computeIfAbsent(NS, k -> new AtomicBoolean(true)).set(true);
-  }
-
-  private static Memento installStub(Class<?> containingClass, String fieldName, Object newValue)
-      throws NoSuchFieldException {
-    return StaticStubSupport.install(containingClass, fieldName, newValue);
   }
 
   private Map<String, AtomicBoolean> getStoppingVariable() throws NoSuchFieldException {
@@ -87,23 +87,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     for (Memento memento : mementos) memento.revert();
 
     testSupport.throwOnCompletionFailure();
-  }
-
-  public abstract static class DomainProcessorStub implements DomainProcessor {
-    private final Map<String, DomainPresenceInfo> dpis = new HashMap<>();
-
-    Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
-      return dpis;
-    }
-
-    @Override
-    public void makeRightDomainPresence(
-        DomainPresenceInfo info,
-        boolean explicitRecheck,
-        boolean isDeleting,
-        boolean isWillInterrupt) {
-      dpis.put(info.getDomainUid(), info);
-    }
   }
 
   @Test
@@ -248,5 +231,22 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     assertThat(testSupport.getResources(KubernetesTestSupport.SERVICE), empty());
     assertThat(testSupport.getResources(KubernetesTestSupport.PV), empty());
     assertThat(testSupport.getResources(KubernetesTestSupport.PVC), empty());
+  }
+
+  public abstract static class DomainProcessorStub implements DomainProcessor {
+    private final Map<String, DomainPresenceInfo> dpis = new HashMap<>();
+
+    Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
+      return dpis;
+    }
+
+    @Override
+    public void makeRightDomainPresence(
+        DomainPresenceInfo info,
+        boolean explicitRecheck,
+        boolean isDeleting,
+        boolean isWillInterrupt) {
+      dpis.put(info.getDomainUid(), info);
+    }
   }
 }

@@ -36,6 +36,14 @@ public class NetworkAccessPoint {
     this.publicPort = publicPort;
   }
 
+  /**
+   * Return the list of configuration attributes to be retrieved from the REST search request to the
+   * WLS admin server. The value would be used for constructing the REST POST request.
+   */
+  static String getSearchFields() {
+    return "'name', 'protocol', 'listenPort', 'publicPort'";
+  }
+
   public String getName() {
     return name;
   }
@@ -54,14 +62,6 @@ public class NetworkAccessPoint {
 
   public Integer getPublicPort() {
     return publicPort;
-  }
-
-  /**
-   * Return the list of configuration attributes to be retrieved from the REST search request to the
-   * WLS admin server. The value would be used for constructing the REST POST request.
-   */
-  static String getSearchFields() {
-    return "'name', 'protocol', 'listenPort', 'publicPort'";
   }
 
   @Override

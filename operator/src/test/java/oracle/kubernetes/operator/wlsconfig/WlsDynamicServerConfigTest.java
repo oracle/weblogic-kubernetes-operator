@@ -90,7 +90,7 @@ public class WlsDynamicServerConfigTest {
 
   @Test
   public void verifyAdminPortIsSetOnServerConfigs() {
-    final int ADMIN_PORT = 9002;
+    final int adminPort = 9002;
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     WlsServerConfig template =
         new WlsServerConfig("template1", null, null, null, null, 9002, networkAccessPointList);
@@ -98,6 +98,6 @@ public class WlsDynamicServerConfigTest {
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", true, template);
 
-    assertThat(wlsServerConfig.getAdminPort(), is(ADMIN_PORT));
+    assertThat(wlsServerConfig.getAdminPort(), is(adminPort));
   }
 }

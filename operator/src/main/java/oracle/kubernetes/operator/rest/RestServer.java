@@ -49,22 +49,32 @@ import org.glassfish.jersey.server.filter.CsrfProtectionFilter;
 public class RestServer {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int CORE_POOL_SIZE = 3;
-
-  private static RestServer INSTANCE = null;
-
-  private RestConfig config;
-
-  // private String baseHttpUri;
-  private String baseExternalHttpsUri;
-  private String baseInternalHttpsUri;
-
-  private HttpServer externalHttpsServer;
-  private HttpServer internalHttpsServer;
-
   private static final String SSL_PROTOCOL = "TLSv1.2";
   private static final String[] SSL_PROTOCOLS = {
     SSL_PROTOCOL
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
+  private static RestServer INSTANCE = null;
+  private RestConfig config;
+  // private String baseHttpUri;
+  private String baseExternalHttpsUri;
+  private String baseInternalHttpsUri;
+  private HttpServer externalHttpsServer;
+  private HttpServer internalHttpsServer;
+
+  /**
+   * Constructs the WebLogic Operator REST server.
+   *
+   * @param config - contains the REST server's configuration, which includes the hostnames and port
+   *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
+   *     implementation that does the real work behind the REST api.
+   */
+  private RestServer(RestConfig config) {
+    LOGGER.entering();
+    this.config = config;
+    baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
+    baseInternalHttpsUri = "https://" + config.getHost() + ":" + config.getInternalHttpsPort();
+    LOGGER.exiting();
+  }
 
   /**
    * Create singleton instance of the WebLogic Operator's RestServer. Should only be called once.
@@ -114,18 +124,41 @@ public class RestServer {
   }
 
   /**
-   * Constructs the WebLogic Operator REST server.
+   * Defines a resource configuration that scans for JAX-RS resources and providers in the REST
+   * package.
    *
-   * @param config - contains the REST server's configuration, which includes the hostnames and port
-   *     numbers that the ports run on, the certificates and private keys for ssl, and the backend
-   *     implementation that does the real work behind the REST api.
+   * @param restConfig the operator REST configuration
+   * @return a resource configuration
    */
-  private RestServer(RestConfig config) {
+  static ResourceConfig createResourceConfig(RestConfig restConfig) {
+    ResourceConfig rc =
+        new ResourceConfig()
+            .register(JacksonFeature.class)
+            .register(CsrfProtectionFilter.class)
+            .register(ErrorFilter.class)
+            .register(AuthenticationFilter.class)
+            .register(RequestDebugLoggingFilter.class)
+            .register(ResponseDebugLoggingFilter.class)
+            .register(ExceptionMapper.class)
+            .packages(VersionsResource.class.getPackageName());
+    rc.setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
+    return rc;
+  }
+
+  private ResourceConfig createResourceConfig() {
     LOGGER.entering();
-    this.config = config;
-    baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
-    baseInternalHttpsUri = "https://" + config.getHost() + ":" + config.getInternalHttpsPort();
+
+    ResourceConfig rc = createResourceConfig(config);
+
     LOGGER.exiting();
+    return rc;
+  }
+
+  private static byte[] readFromDataOrFile(String data, String file) throws IOException {
+    if (data != null && data.length() > 0) {
+      return Base64.decodeBase64(data);
+    }
+    return Files.readAllBytes(new File(file).toPath());
   }
 
   /**
@@ -322,37 +355,6 @@ public class RestServer {
     return h;
   }
 
-  private ResourceConfig createResourceConfig() {
-    LOGGER.entering();
-
-    ResourceConfig rc = createResourceConfig(config);
-
-    LOGGER.exiting();
-    return rc;
-  }
-
-  /**
-   * Defines a resource configuration that scans for JAX-RS resources and providers in the REST
-   * package.
-   *
-   * @param restConfig the operator REST configuration
-   * @return a resource configuration
-   */
-  static ResourceConfig createResourceConfig(RestConfig restConfig) {
-    ResourceConfig rc =
-        new ResourceConfig()
-            .register(JacksonFeature.class)
-            .register(CsrfProtectionFilter.class)
-            .register(ErrorFilter.class)
-            .register(AuthenticationFilter.class)
-            .register(RequestDebugLoggingFilter.class)
-            .register(ResponseDebugLoggingFilter.class)
-            .register(ExceptionMapper.class)
-            .packages(VersionsResource.class.getPackageName());
-    rc.setProperties(Map.of(RestConfig.REST_CONFIG_PROPERTY, restConfig));
-    return rc;
-  }
-
   private SSLContext createSslContext(KeyManager[] kms) throws Exception {
     SSLContext ssl = SSLContext.getInstance(SSL_PROTOCOL);
     ssl.init(kms, null, new SecureRandom());
@@ -375,13 +377,6 @@ public class RestServer {
             );
     LOGGER.exiting(result);
     return result;
-  }
-
-  private static byte[] readFromDataOrFile(String data, String file) throws IOException {
-    if (data != null && data.length() > 0) {
-      return Base64.decodeBase64(data);
-    }
-    return Files.readAllBytes(new File(file).toPath());
   }
 
   private boolean isExternalSslConfigured() {

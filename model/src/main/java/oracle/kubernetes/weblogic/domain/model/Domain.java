@@ -80,6 +80,21 @@ public class Domain {
   @Description("The current status of the domain. Updated by the operator.")
   private DomainStatus status;
 
+  @SuppressWarnings({"rawtypes"})
+  static List sortOrNull(List list) {
+    return sortOrNull(list, null);
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  static List sortOrNull(List list, Comparator c) {
+    if (list != null) {
+      Object[] a = list.toArray(new Object[0]);
+      Arrays.sort(a, c);
+      return Arrays.asList(a);
+    }
+    return null;
+  }
+
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
    * convert recognized schemas to the latest internal value, and may reject unrecognized values.
@@ -296,6 +311,16 @@ public class Domain {
    * DomainStatus represents information about the status of a domain. Status may trail the actual
    * state of a system.
    *
+   * @param status Status
+   */
+  public void setStatus(DomainStatus status) {
+    this.status = status;
+  }
+
+  /**
+   * DomainStatus represents information about the status of a domain. Status may trail the actual
+   * state of a system.
+   *
    * @return Status
    */
   public DomainStatus getOrCreateStatus() {
@@ -303,16 +328,6 @@ public class Domain {
       status = new DomainStatus();
     }
     return status;
-  }
-
-  /**
-   * DomainStatus represents information about the status of a domain. Status may trail the actual
-   * state of a system.
-   *
-   * @param status Status
-   */
-  public void setStatus(DomainStatus status) {
-    this.status = status;
   }
 
   /**
@@ -436,20 +451,5 @@ public class Domain {
         .append(spec, rhs.spec)
         .append(status, rhs.status)
         .isEquals();
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  static List sortOrNull(List list) {
-    return sortOrNull(list, null);
-  }
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  static List sortOrNull(List list, Comparator c) {
-    if (list != null) {
-      Object[] a = list.toArray(new Object[0]);
-      Arrays.sort(a, c);
-      return Arrays.asList(a);
-    }
-    return null;
   }
 }

@@ -1,6 +1,7 @@
 // Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator.http;
 
 import java.util.ArrayList;
@@ -33,11 +34,10 @@ import static org.junit.Assert.assertEquals;
 
 public class HttpClientTest {
 
+  static final String FAKE_URL = "fake/url";
+  private static final String CHANNEL_NAME = "default";
   private List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
-  static final String FAKE_URL = "fake/url";
-
-  private static final String CHANNEL_NAME = "default";
 
   @Before
   public void setup() {
@@ -80,35 +80,35 @@ public class HttpClientTest {
   }
 
   @Test
-  public void getServiceURL_returnsUrlUsingClusterIP() {
-    final String CLUSTER_IP = "123.123.123.133";
-    final int PORT = 7101;
+  public void getServiceUrl_returnsUrlUsingClusterIP() {
+    final String clusterIp = "123.123.123.133";
+    final int port = 7101;
 
     List<V1ServicePort> ports = new ArrayList<>();
-    ports.add(new V1ServicePort().port(PORT).name(CHANNEL_NAME));
+    ports.add(new V1ServicePort().port(port).name(CHANNEL_NAME));
     V1Service service =
-        new V1Service().spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports));
-    String url = HttpClient.getServiceUrl(service, null, CHANNEL_NAME, PORT);
-    assertEquals("http://" + CLUSTER_IP + ":" + PORT, url);
+        new V1Service().spec(new V1ServiceSpec().clusterIP(clusterIp).ports(ports));
+    String url = HttpClient.getServiceUrl(service, null, CHANNEL_NAME, port);
+    assertEquals("http://" + clusterIp + ":" + port, url);
   }
 
   @Test
-  public void getServiceURL_returnsUrlUsingDNS_ifNoneClusterIP() {
-    final String CLUSTER_IP = "None";
-    final int PORT = 7101;
-    final String NAMESPACE = "domain1";
-    final String SERVICE_NAME = "admin-server";
+  public void getServiceUrl_returnsUrlUsingDns_ifNoneClusterIP() {
+    final String clusterIp = "None";
+    final int port = 7101;
+    final String namespace = "domain1";
+    final String serviceName = "admin-server";
 
     List<V1ServicePort> ports = new ArrayList<>();
-    ports.add(new V1ServicePort().port(PORT).name(CHANNEL_NAME));
+    ports.add(new V1ServicePort().port(port).name(CHANNEL_NAME));
 
     V1Service service =
         new V1Service()
-            .spec(new V1ServiceSpec().clusterIP(CLUSTER_IP).ports(ports))
-            .metadata(new V1ObjectMeta().namespace(NAMESPACE).name(SERVICE_NAME));
+            .spec(new V1ServiceSpec().clusterIP(clusterIp).ports(ports))
+            .metadata(new V1ObjectMeta().namespace(namespace).name(serviceName));
 
-    String url = HttpClient.getServiceUrl(service, null, CHANNEL_NAME, PORT);
-    assertEquals("http://" + SERVICE_NAME + "." + NAMESPACE + ".pod.cluster.local:" + PORT, url);
+    String url = HttpClient.getServiceUrl(service, null, CHANNEL_NAME, port);
+    assertEquals("http://" + serviceName + "." + namespace + ".pod.cluster.local:" + port, url);
   }
 
   abstract static class ClientStub implements Client {

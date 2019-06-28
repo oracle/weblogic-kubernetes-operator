@@ -21,6 +21,7 @@ public class Result {
 
   /**
    * The String response received from the REST request.
+   *
    * @return The String response received from the REST request
    */
   public String getResponse() {
@@ -29,6 +30,7 @@ public class Result {
 
   /**
    * HTTP status code from the REST request.
+   *
    * @return HTTP status code from the REST request
    */
   public int getStatus() {
@@ -47,8 +49,7 @@ public class Result {
   }
 
   /**
-   * True if the HTTP status code from the REST request indicates that the server may be
-   * overloaded.
+   * True if the HTTP status code from the REST request indicates that the server may be overloaded.
    *
    * @return True if the HTTP status code from the REST request indicates that the server may be
    *     overloaded

@@ -4,6 +4,23 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import java.io.IOException;
+import java.net.URL;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1SecretReference;
+import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import org.junit.Test;
+
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
@@ -15,23 +32,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1SecretReference;
-import java.io.IOException;
-import java.net.URL;
-import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
-import org.junit.Test;
-
 public abstract class DomainTestBase {
+  protected static final String CLUSTER_NAME = "cluster1";
+  protected static final String SERVER1 = "ms1";
+  protected static final String SERVER2 = "ms2";
   private static final String NAME1 = "name1";
   private static final String NAME2 = "name2";
   private static final String VALUE1 = "value1";
@@ -42,9 +46,6 @@ public abstract class DomainTestBase {
   private static final String DOMAIN_V2_SAMPLE_YAML = "model/domain-sample.yaml";
   private static final String IMAGE = "myimage";
   private static final String PULL_SECRET_NAME = "pull-secret";
-  protected static final String CLUSTER_NAME = "cluster1";
-  protected static final String SERVER1 = "ms1";
-  protected static final String SERVER2 = "ms2";
   protected final Domain domain = createDomain();
 
   protected static Domain createDomain() {
@@ -53,8 +54,6 @@ public abstract class DomainTestBase {
         .withSpec(new DomainSpec().withWebLogicCredentialsSecret(SECRET).withDomainUid(DOMAIN_UID));
   }
 
-  protected abstract DomainConfigurator configureDomain(Domain domain);
-
   protected static String getDomainUid() {
     return DOMAIN_UID;
   }
@@ -62,6 +61,8 @@ public abstract class DomainTestBase {
   protected static String getNamespace() {
     return NS;
   }
+
+  protected abstract DomainConfigurator configureDomain(Domain domain);
 
   @Test
   public void canGetAdminServerInfoFromDomain() {
