@@ -58,20 +58,12 @@ public class RestBackendImplTest {
   private Domain updatedDomain;
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private WlsDomainConfig config;
 
   private static Domain createDomain(String namespace, String name) {
     return new Domain()
         .withMetadata(new V1ObjectMeta().namespace(namespace).name(name))
         .withSpec(new DomainSpec().withDomainUid(name));
-  }
-
-  private WlsDomainConfig config;
-
-  private class TopologyRetrieverStub implements TopologyRetriever {
-    @Override
-    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUid) {
-      return config;
-    }
   }
 
   @Before
@@ -169,7 +161,7 @@ public class RestBackendImplTest {
   }
 
   @Test
-  public void verify_getWlsDomainConfig_doesNotReturnNull_whenNoSuchDomainUID() {
+  public void verify_getWlsDomainConfig_doesNotReturnNull_whenNoSuchDomainUid() {
     WlsDomainConfig wlsDomainConfig =
         ((RestBackendImpl) restBackend).getWlsDomainConfig("NoSuchDomainUID");
 
@@ -191,5 +183,12 @@ public class RestBackendImplTest {
 
   private void setupScanCache() {
     config = configSupport.createDomainConfig();
+  }
+
+  private class TopologyRetrieverStub implements TopologyRetriever {
+    @Override
+    public WlsDomainConfig getWlsDomainConfig(String ns, String domainUid) {
+      return config;
+    }
   }
 }

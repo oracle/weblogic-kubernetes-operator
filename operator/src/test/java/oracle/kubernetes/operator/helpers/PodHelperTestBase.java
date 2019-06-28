@@ -103,10 +103,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
 public abstract class PodHelperTestBase {
   static final String NS = "namespace";
-  private static final String DOMAIN_NAME = "domain1";
-  private static final String UID = "uid1";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
+  private static final String DOMAIN_NAME = "domain1";
+  private static final String UID = "uid1";
   private static final boolean INCLUDE_SERVER_OUT_IN_POD_LOG = true;
 
   private static final String CREDENTIALS_SECRET_NAME = "webLogicCredentialsSecretName";
@@ -125,12 +125,12 @@ public abstract class PodHelperTestBase {
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
-  private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   protected AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
   protected List<Memento> mementos = new ArrayList<>();
   protected List<LogRecord> logRecords = new ArrayList<>();
   RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
-
+  Method getDomainSpec;
+  private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private String serverName;
   private int listenPort;
   private WlsDomainConfig domainTopology;
@@ -144,6 +144,31 @@ public abstract class PodHelperTestBase {
     return actualBody.getMetadata().getName();
   }
 
+  String getPodName() {
+    return LegalNames.toPodName(UID, getServerName());
+  }
+
+  static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
+    return hasItem(new V1EnvVar().name(name).value(value));
+  }
+
+  static Matcher<Iterable<? super V1VolumeMount>> hasVolumeMount(String name, String path) {
+    return hasItem(new V1VolumeMount().name(name).mountPath(path));
+  }
+
+  static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
+    return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
+  }
+
+  static V1Container createContainer(String name, String image, String... command) {
+    return new V1Container().name(name).image(image).command(Arrays.asList(command));
+  }
+
+  static Matcher<Iterable<? super V1Container>> hasContainer(
+      String name, String image, String... command) {
+    return hasItem(createContainer(name, image, command));
+  }
+
   private String getServerName() {
     return serverName;
   }
@@ -151,8 +176,6 @@ public abstract class PodHelperTestBase {
   DomainConfigurator getConfigurator() {
     return configurator;
   }
-
-  Method getDomainSpec;
 
   DomainSpec getConfiguredDomainSpec()
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -250,10 +273,6 @@ public abstract class PodHelperTestBase {
     return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
 
-  String getPodName() {
-    return LegalNames.toPodName(UID, getServerName());
-  }
-
   V1Container getCreatedPodSpecContainer() {
     return getCreatedPod().getSpec().getContainers().get(0);
   }
@@ -321,7 +340,7 @@ public abstract class PodHelperTestBase {
   }
 
   @Test
-  public void whenPodCreated_withNoPVC_containerHasExpectedVolumeMounts() {
+  public void whenPodCreated_withNoPvc_containerHasExpectedVolumeMounts() {
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
         containsInAnyOrder(
@@ -368,18 +387,18 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreatedWithAdminPortEnabled_readinessProbeHasReadinessCommand() {
-    final Integer ADMIN_PORT = 9002;
-    domainTopology.getServerConfig(serverName).setAdminPort(ADMIN_PORT);
+    final Integer adminPort = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(adminPort);
     V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
     assertThat(getAction.getPath(), equalTo("/weblogic/ready"));
-    assertThat(getAction.getPort().getIntValue(), equalTo(ADMIN_PORT));
+    assertThat(getAction.getPort().getIntValue(), equalTo(adminPort));
     assertThat(getAction.getScheme(), equalTo("HTTPS"));
   }
 
   @Test
   public void whenPodCreatedWithAdminPortEnabled_adminPortSecureEnvVarIsTrue() {
-    final Integer ADMIN_PORT = 9002;
-    domainTopology.getServerConfig(serverName).setAdminPort(ADMIN_PORT);
+    final Integer adminPort = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(adminPort);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_PORT_SECURE", "true"));
   }
 
@@ -434,6 +453,8 @@ public abstract class PodHelperTestBase {
   protected abstract ServerConfigurator configureServer(
       DomainConfigurator configurator, String serverName);
 
+  abstract ServerConfigurator configureServer();
+
   @SuppressWarnings("unchecked")
   @Test
   public void whenPodCreated_hasPredefinedEnvVariables() {
@@ -460,10 +481,10 @@ public abstract class PodHelperTestBase {
 
   @Test
   public void whenPodCreated_withLogHomeSpecified_hasLogHomeEnvVariable() {
-    final String MY_LOG_HOME = "/shared/mylogs";
+    final String myLogHome = "/shared/mylogs";
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs");
-    assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", MY_LOG_HOME)));
+    assertThat(getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", myLogHome)));
   }
 
   @Test
@@ -472,27 +493,6 @@ public abstract class PodHelperTestBase {
     domainPresenceInfo.getDomain().getSpec().setLogHome(null);
     assertThat(
         getCreatedPodSpecContainer().getEnv(), allOf(hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID)));
-  }
-
-  static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
-    return hasItem(new V1EnvVar().name(name).value(value));
-  }
-
-  static Matcher<Iterable<? super V1VolumeMount>> hasVolumeMount(String name, String path) {
-    return hasItem(new V1VolumeMount().name(name).mountPath(path));
-  }
-
-  static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
-    return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
-  }
-
-  static V1Container createContainer(String name, String image, String... command) {
-    return new V1Container().name(name).image(image).command(Arrays.asList(command));
-  }
-
-  static Matcher<Iterable<? super V1Container>> hasContainer(
-      String name, String image, String... command) {
-    return hasItem(createContainer(name, image, command));
   }
 
   @Test
@@ -618,6 +618,10 @@ public abstract class PodHelperTestBase {
 
   void initializeExistingPod() {
     initializeExistingPod(createPodModel());
+  }
+
+  void initializeExistingPod(V1Pod pod) {
+    domainPresenceInfo.setServerPod(getServerName(), pod);
   }
 
   private V1Pod createPodModel() {
@@ -763,8 +767,6 @@ public abstract class PodHelperTestBase {
     verifyPodReplaced();
   }
 
-  abstract ServerConfigurator configureServer();
-
   @Test
   public void whenPodConfigurationAddsImagePullSecret_replacePod() {
     initializeExistingPod();
@@ -861,10 +863,6 @@ public abstract class PodHelperTestBase {
 
     assertThat(logRecords, containsFine(getExistsMessageKey()));
     assertThat(domainPresenceInfo.getServerPod(serverName), equalTo(createPodModel()));
-  }
-
-  void initializeExistingPod(V1Pod pod) {
-    domainPresenceInfo.setServerPod(getServerName(), pod);
   }
 
   abstract String getExistsMessageKey();
@@ -975,8 +973,8 @@ public abstract class PodHelperTestBase {
   }
 
   static class PodFetcher implements BodyMatcher {
-    private String podName;
     V1Pod createdPod;
+    private String podName;
 
     PodFetcher(String podName) {
       this.podName = podName;
@@ -1131,20 +1129,20 @@ public abstract class PodHelperTestBase {
   }
 
   protected static class NullPodAwaiterStepFactory implements PodAwaiterStepFactory {
-    private final Step n;
+    private final Step ne;
 
     NullPodAwaiterStepFactory(Step next) {
-      this.n = next;
+      this.ne = next;
     }
 
     @Override
     public Step waitForReady(V1Pod pod, Step next) {
-      return n;
+      return ne;
     }
 
     @Override
     public Step waitForDelete(V1Pod pod, Step next) {
-      return n;
+      return ne;
     }
   }
 

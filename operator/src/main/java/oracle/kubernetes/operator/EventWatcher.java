@@ -22,6 +22,18 @@ public class EventWatcher extends Watcher<V1Event> {
   private final String ns;
   private final String fieldSelector;
 
+  private EventWatcher(
+      String ns,
+      String fieldSelector,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<V1Event> listener,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping, listener);
+    this.ns = ns;
+    this.fieldSelector = fieldSelector;
+  }
+
   public static EventWatcher create(
       ThreadFactory factory,
       String ns,
@@ -34,18 +46,6 @@ public class EventWatcher extends Watcher<V1Event> {
         new EventWatcher(ns, fieldSelector, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
-  }
-
-  private EventWatcher(
-      String ns,
-      String fieldSelector,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      WatchListener<V1Event> listener,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
-    this.ns = ns;
-    this.fieldSelector = fieldSelector;
   }
 
   @Override

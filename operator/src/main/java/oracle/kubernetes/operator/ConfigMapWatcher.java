@@ -21,6 +21,16 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
   private final String ns;
 
+  private ConfigMapWatcher(
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<V1ConfigMap> listener,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping, listener);
+    this.ns = ns;
+  }
+
   public static ConfigMapWatcher create(
       ThreadFactory factory,
       String ns,
@@ -32,16 +42,6 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
         new ConfigMapWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
-  }
-
-  private ConfigMapWatcher(
-      String ns,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      WatchListener<V1ConfigMap> listener,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
-    this.ns = ns;
   }
 
   @Override

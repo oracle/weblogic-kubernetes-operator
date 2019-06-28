@@ -18,37 +18,32 @@ import org.joda.time.DateTime;
 /** DomainCondition contains details for the current condition of this domain. */
 public class DomainCondition implements Comparable<DomainCondition> {
 
-  @Description("Last time we probed the condition.")
-  @SerializedName("lastProbeTime")
-  @Expose
-  private DateTime lastProbeTime;
-
-  @Description("Last time the condition transitioned from one status to another.")
-  @SerializedName("lastTransitionTime")
-  @Expose
-  private DateTime lastTransitionTime;
-
-  @Description("Human-readable message indicating details about last transition.")
-  @SerializedName("message")
-  @Expose
-  private String message;
-
-  @Description("Unique, one-word, CamelCase reason for the condition's last transition.")
-  @SerializedName("reason")
-  @Expose
-  private String reason;
-
-  @Description("Status is the status of the condition. Can be True, False, Unknown. Required")
-  @SerializedName("status")
-  @Expose
-  @NotNull
-  private String status;
-
   @Description(
       "The type of the condition. Valid types are Progressing, "
           + "Available, and Failed. Required")
   @NotNull
   private final DomainConditionType type;
+  @Description("Last time we probed the condition.")
+  @SerializedName("lastProbeTime")
+  @Expose
+  private DateTime lastProbeTime;
+  @Description("Last time the condition transitioned from one status to another.")
+  @SerializedName("lastTransitionTime")
+  @Expose
+  private DateTime lastTransitionTime;
+  @Description("Human-readable message indicating details about last transition.")
+  @SerializedName("message")
+  @Expose
+  private String message;
+  @Description("Unique, one-word, CamelCase reason for the condition's last transition.")
+  @SerializedName("reason")
+  @Expose
+  private String reason;
+  @Description("Status is the status of the condition. Can be True, False, Unknown. Required")
+  @SerializedName("status")
+  @Expose
+  @NotNull
+  private String status;
 
   public DomainCondition(DomainConditionType conditionType) {
     lastTransitionTime = SystemClock.now();

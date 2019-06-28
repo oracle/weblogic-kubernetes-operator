@@ -16,6 +16,10 @@ public class VersionHelperTest {
 
   private static final String V1 = "v1";
 
+  private static V1ObjectMeta newObjectMeta() {
+    return new V1ObjectMeta();
+  }
+
   @Test
   public void null_metadata_returns_false() throws Exception {
     assertThat(matchesResourceVersion(null, V1), equalTo(false));
@@ -31,10 +35,6 @@ public class VersionHelperTest {
     assertThat(
         matchesResourceVersion(newObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, null), V1),
         equalTo(false));
-  }
-
-  private static V1ObjectMeta newObjectMeta() {
-    return new V1ObjectMeta();
   }
 
   @Test

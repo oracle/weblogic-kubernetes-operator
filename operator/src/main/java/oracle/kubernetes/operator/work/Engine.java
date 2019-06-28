@@ -16,24 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class Engine {
   private static final int DEFAULT_THREAD_COUNT = 10;
-
-  public static ScheduledExecutorService wrappedExecutorService(String id, Container container) {
-    ScheduledThreadPoolExecutor threadPool =
-        new ScheduledThreadPoolExecutor(DEFAULT_THREAD_COUNT, new DaemonThreadFactory(id));
-    threadPool.setRemoveOnCancelPolicy(true);
-    return wrap(container, threadPool);
-  }
-
   private final AtomicReference<ScheduledExecutorService> threadPool = new AtomicReference();
-
-  /**
-   * Returns the executor.
-   *
-   * @return executor
-   */
-  public ScheduledExecutorService getExecutor() {
-    return threadPool.get();
-  }
 
   /**
    * Creates engine with the specified executor.
@@ -53,12 +36,28 @@ public class Engine {
     this(wrappedExecutorService(id, ContainerResolver.getDefault().getContainer()));
   }
 
-  void addRunnable(Fiber fiber) {
-    getExecutor().execute(fiber);
+  public static ScheduledExecutorService wrappedExecutorService(String id, Container container) {
+    ScheduledThreadPoolExecutor threadPool =
+        new ScheduledThreadPoolExecutor(DEFAULT_THREAD_COUNT, new DaemonThreadFactory(id));
+    threadPool.setRemoveOnCancelPolicy(true);
+    return wrap(container, threadPool);
   }
 
   private static ScheduledExecutorService wrap(Container container, ScheduledExecutorService ex) {
     return container != null ? ContainerResolver.getDefault().wrapExecutor(container, ex) : ex;
+  }
+
+  /**
+   * Returns the executor.
+   *
+   * @return executor
+   */
+  public ScheduledExecutorService getExecutor() {
+    return threadPool.get();
+  }
+
+  void addRunnable(Fiber fiber) {
+    getExecutor().execute(fiber);
   }
 
   /**

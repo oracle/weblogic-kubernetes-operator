@@ -58,6 +58,27 @@ public class CrdHelper {
     return new CrdStep(version, next);
   }
 
+  private static List<ResourceVersion> getVersions(V1beta1CustomResourceDefinition crd) {
+    List<ResourceVersion> versions = new ArrayList<>();
+    String v = crd.getSpec().getVersion();
+    if (v != null) {
+      versions.add(new ResourceVersion(v));
+    }
+    List<V1beta1CustomResourceDefinitionVersion> vs = crd.getSpec().getVersions();
+    if (vs != null) {
+      for (V1beta1CustomResourceDefinitionVersion vi : vs) {
+        versions.add(new ResourceVersion(vi.getName()));
+      }
+    }
+
+    return versions;
+  }
+
+  interface CrdComparator {
+    boolean isOutdatedCrd(
+        V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
+  }
+
   static class CrdStep extends Step {
     CrdContext context;
 
@@ -180,27 +201,6 @@ public class CrdHelper {
       return new ReadResponseStep(next);
     }
 
-    class ReadResponseStep extends DefaultResponseStep<V1beta1CustomResourceDefinition> {
-      ReadResponseStep(Step next) {
-        super(next);
-      }
-
-      @Override
-      public NextAction onSuccess(
-          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
-        if (existingCrd == null) {
-          return doNext(createCrd(getNext()), packet);
-        } else if (isOutdatedCrd(existingCrd)) {
-          return doNext(updateCrd(getNext(), existingCrd), packet);
-        } else if (!existingCrdContainsVersion(existingCrd)) {
-          return doNext(updateExistingCrd(getNext(), existingCrd), packet);
-        } else {
-          return doNext(packet);
-        }
-      }
-    }
-
     Step createCrd(Step next) {
       return new CallBuilder()
           .createCustomResourceDefinitionAsync(model, createCreateResponseStep(next));
@@ -208,25 +208,6 @@ public class CrdHelper {
 
     ResponseStep<V1beta1CustomResourceDefinition> createCreateResponseStep(Step next) {
       return new CreateResponseStep(next);
-    }
-
-    private class CreateResponseStep extends ResponseStep<V1beta1CustomResourceDefinition> {
-      CreateResponseStep(Step next) {
-        super(next);
-      }
-
-      @Override
-      public NextAction onFailure(
-          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        return super.onFailure(conflictStep, packet, callResponse);
-      }
-
-      @Override
-      public NextAction onSuccess(
-          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
-        LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
-        return doNext(packet);
-      }
     }
 
     private boolean isOutdatedCrd(V1beta1CustomResourceDefinition existingCrd) {
@@ -290,6 +271,46 @@ public class CrdHelper {
       return new ReplaceResponseStep(next);
     }
 
+    class ReadResponseStep extends DefaultResponseStep<V1beta1CustomResourceDefinition> {
+      ReadResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onSuccess(
+          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        V1beta1CustomResourceDefinition existingCrd = callResponse.getResult();
+        if (existingCrd == null) {
+          return doNext(createCrd(getNext()), packet);
+        } else if (isOutdatedCrd(existingCrd)) {
+          return doNext(updateCrd(getNext(), existingCrd), packet);
+        } else if (!existingCrdContainsVersion(existingCrd)) {
+          return doNext(updateExistingCrd(getNext(), existingCrd), packet);
+        } else {
+          return doNext(packet);
+        }
+      }
+    }
+
+    private class CreateResponseStep extends ResponseStep<V1beta1CustomResourceDefinition> {
+      CreateResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(
+          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        return super.onFailure(conflictStep, packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(
+          Packet packet, CallResponse<V1beta1CustomResourceDefinition> callResponse) {
+        LOGGER.info(MessageKeys.CREATING_CRD, callResponse);
+        return doNext(packet);
+      }
+    }
+
     private class ReplaceResponseStep extends ResponseStep<V1beta1CustomResourceDefinition> {
       ReplaceResponseStep(Step next) {
         super(next);
@@ -308,27 +329,6 @@ public class CrdHelper {
         return doNext(packet);
       }
     }
-  }
-
-  private static List<ResourceVersion> getVersions(V1beta1CustomResourceDefinition crd) {
-    List<ResourceVersion> versions = new ArrayList<>();
-    String v = crd.getSpec().getVersion();
-    if (v != null) {
-      versions.add(new ResourceVersion(v));
-    }
-    List<V1beta1CustomResourceDefinitionVersion> vs = crd.getSpec().getVersions();
-    if (vs != null) {
-      for (V1beta1CustomResourceDefinitionVersion vi : vs) {
-        versions.add(new ResourceVersion(vi.getName()));
-      }
-    }
-
-    return versions;
-  }
-
-  interface CrdComparator {
-    boolean isOutdatedCrd(
-        V1beta1CustomResourceDefinition actual, V1beta1CustomResourceDefinition expected);
   }
 
   static class CrdComparatorImpl implements CrdComparator {

@@ -292,7 +292,7 @@ Failed run will have the output like
 [INFO] Finished at: 2019-02-11T09:42:08-08:00
 [INFO] Final Memory: 124M/1534M
 ```
-JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ITOperator.xml". This file shows how much time each test case took to run and the failed test results if any.
+JUnit test results can be seen at "integration-tests/target/failsafe-reports/TEST-oracle.kubernetes.operator.ItOperator.xml". This file shows how much time each test case took to run and the failed test results if any.
 
 # How to run JRF domain In Operator related tests
 * Setup docker access to FMW Infrastructure 12c Image and Oracle Database 12c Image
@@ -318,11 +318,11 @@ mvn clean verify -P jrf-integration-tests 2>&1 | tee log.txt
 
 # How to run a single test
 
-mvn -Dit.test="ITOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P java-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST" -DfailIfNoTests=false integration-test -P java-integration-tests
 
 # How to run multiple tests
 
-mvn -Dit.test="ITOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P java-integration-tests
+mvn -Dit.test="ItOperator#testDomainOnPVUsingWLST+testDomainOnPVUsingWDT" -DfailIfNoTests=false integration-test -P java-integration-tests
 
 # How to run cleanup script
 

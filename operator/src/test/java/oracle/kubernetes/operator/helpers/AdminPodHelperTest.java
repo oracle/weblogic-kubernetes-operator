@@ -67,7 +67,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  void expectStepsAfterCreation() {}
+  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
+    return configurator.configureAdminServer();
+  }
+
+  @Override
+  void expectStepsAfterCreation() {
+  }
 
   @Override
   String getExistsMessageKey() {
@@ -248,15 +254,15 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenDomainHasEnvironmentItemsWithVariable_createPodShouldNotChangeItsValue()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    final String ITEM_RAW_VALUE = "find uid1 at $(DOMAIN_HOME)";
-    configureAdminServer().withEnvironmentVariable("item1", ITEM_RAW_VALUE);
+    final String itemRawValue = "find uid1 at $(DOMAIN_HOME)";
+    configureAdminServer().withEnvironmentVariable("item1", itemRawValue);
 
     getCreatedPod();
 
     getConfiguredDomainSpec().getAdminServer().getEnv();
     assertThat(
         getConfiguredDomainSpec().getAdminServer().getEnv(),
-        allOf(hasEnvVar("item1", ITEM_RAW_VALUE)));
+        allOf(hasEnvVar("item1", itemRawValue)));
   }
 
   @Test
@@ -592,11 +598,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   List<String> createStartCommand() {
     return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
-  }
-
-  @Override
-  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
-    return configurator.configureAdminServer();
   }
 
   // todo test that changing the cert in tuning parameters does not change the hash

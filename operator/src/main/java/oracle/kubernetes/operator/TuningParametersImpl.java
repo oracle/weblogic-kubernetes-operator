@@ -24,6 +24,12 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   private WatchTuning watch = null;
   private PodTuning pod = null;
 
+  private TuningParametersImpl(ScheduledExecutorService executorService, String mountPoint)
+      throws IOException {
+    super(executorService, mountPoint, TuningParametersImpl::updateTuningParameters);
+    update();
+  }
+
   static synchronized TuningParameters initializeInstance(
       ScheduledExecutorService executorService, String mountPoint) throws IOException {
     if (INSTANCE == null) {
@@ -35,12 +41,6 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
 
   public static synchronized TuningParameters getInstance() {
     return INSTANCE;
-  }
-
-  private TuningParametersImpl(ScheduledExecutorService executorService, String mountPoint)
-      throws IOException {
-    super(executorService, mountPoint, TuningParametersImpl::updateTuningParameters);
-    update();
   }
 
   private static void updateTuningParameters() {

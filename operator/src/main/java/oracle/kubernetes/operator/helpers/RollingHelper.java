@@ -55,6 +55,18 @@ public class RollingHelper {
     return new RollingStep(rolling, next);
   }
 
+  private static List<String> getReadyServers(DomainPresenceInfo info) {
+    // These are presently Ready servers
+    List<String> availableServers = new ArrayList<>();
+    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
+      V1Pod pod = entry.getValue().getPod().get();
+      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
+        availableServers.add(entry.getKey());
+      }
+    }
+    return availableServers;
+  }
+
   private static class RollingStep extends Step {
     private final Map<String, StepAndPacket> rolling;
 
@@ -147,18 +159,6 @@ public class RollingHelper {
     public NextAction apply(Packet packet) {
       return doForkJoin(getNext(), packet, serversThatCanRestartNow);
     }
-  }
-
-  private static List<String> getReadyServers(DomainPresenceInfo info) {
-    // These are presently Ready servers
-    List<String> availableServers = new ArrayList<>();
-    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-      V1Pod pod = entry.getValue().getPod().get();
-      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
-        availableServers.add(entry.getKey());
-      }
-    }
-    return availableServers;
   }
 
   private static class RollSpecificClusterStep extends Step {

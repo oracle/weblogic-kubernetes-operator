@@ -89,6 +89,11 @@ public class StepChainTest {
       this.name = name;
     }
 
+    @SuppressWarnings("unchecked")
+    private static List<String> getNames(Packet p) {
+      return (List<String>) p.get(NAMES);
+    }
+
     @Override
     public NextAction apply(Packet packet) {
       getStepNames(packet).add(name);
@@ -101,11 +106,6 @@ public class StepChainTest {
         packet.put(NAMES, new ArrayList<String>());
       }
       return (List<String>) packet.get(NAMES);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<String> getNames(Packet p) {
-      return (List<String>) p.get(NAMES);
     }
   }
 }
