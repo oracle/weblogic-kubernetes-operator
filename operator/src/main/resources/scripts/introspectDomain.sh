@@ -36,6 +36,25 @@
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
 #
 
+function sort_files() {
+    shopt -s nullglob
+    root_dir=$1
+    ext=$2
+    declare -A sequence_array
+    for file in ${root_dir}/*${ext} ; 
+      do 
+        actual_filename=$(basename $file)
+        base_filename=$(basename ${file%.*})
+        sequence="${base_filename##*.}"
+        sequence_array[${actual_filename}]=${sequence}
+      done
+    for k in "${!sequence_array[@]}"
+    do
+        echo $k ' - ' ${sequence_array["$k"]}
+    done |
+    sort -n -k3  | cut -d' ' -f 1  
+    shopt -u nullglob
+}
 
 function createWLDomain() {
     wdt_config_root="/weblogic-operator/wdt-config-map"
@@ -45,39 +64,58 @@ function createWLDomain() {
     variable_root="${model_home}/variables"
     model_list=""
     archive_list=""
-    variable_list=""
+    variable_list="${model_home}/variables/_k8s_generated_props.properties"
 
+    # in case retry
+    if [ -f ${variable_list} ] ; then
+        cat /dev/null > ${variable_list}
+    fi
 
-    ls ${wdt_config_root}/
-    cp ${wdt_config_root}/*.properties ${variable_root}
-    cp ${wdt_config_root}/*.yaml ${model_root}
-
-
-    for file in $(ls ${model_root}/*.yaml | sort)
+    for file in $(sort_files $model_root ".yaml")
         do
             if [ "$model_list" != "" ]; then
                 model_list="${model_list},"
             fi
-            model_list="${model_list}${file}"
+            model_list="${model_list}${model_root}/${file}"
         done
+    
+    for file in $(sort_files $wdt_config_root ".yaml")
+        do
+            echo "file="$file
+            if [ "$model_list" != "" ]; then
+                model_list="${model_list},"
+            fi
+            model_list="${model_list}${wdt_config_root}/${file}"
+        done
+
+    # Should only have one !!
+
     for file in $(ls ${archive_root}/*.zip | sort)
         do
             if [ "$archive_list" != "" ]; then
                 archive_list="${archive_list},"
+                echo "More than one archive file"
+                exit 1
             fi
             archive_list="${archive_list}${file}"
         done
 
-    for file in $(ls ${variable_root}/*.properties | sort)
+    # Merge all properties together
+
+    for file in $(sort_files ${variable_root} ".properties")
         do
-            if [ "$variable_list" != "" ]; then
-                variable_list="${variable_list},"
-            fi
-            variable_list="${variable_list}${file}"
+            cat ${variable_root}/${file} >> ${variable_list}
         done
 
-    if [ "$variable_list" != "" ]; then
+    for file in $(sort_files ${wdt_config_root} ".properties")
+        do
+            cat ${wdt_config_root}/${file} >> ${variable_list}
+        done
+
+    if [ -f ${variable_list} ]; then
         variable_list="-variable_file ${variable_list}"
+    else
+        variable_list=""
     fi
 
     if [ "$archive_list" != "" ]; then
@@ -94,8 +132,6 @@ function createWLDomain() {
        echo "Create Domain Failed"
        exit 1
     fi
-
-    #cp ${wdt_config_root}/* ${DOMAIN_HOME}/
 }
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
