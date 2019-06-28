@@ -231,8 +231,9 @@ public class ITOperator extends BaseTest {
   }
   /**
    * Create operator if its not running and create domain with serverStartPolicy="ADMIN_ONLY".
-   * Verify only admin server is created. shutdown by deleting domain CRD. Create domain on existing
-   * PV dir, pv is already populated by a shutdown domain.
+   * Verify only admin server is created. Make domain configuration change and restart the domain.
+   * shutdown by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a
+   * shutdown domain.
    *
    * @throws Exception
    */
