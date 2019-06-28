@@ -32,7 +32,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>${exec-maven-plugin-version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -49,13 +48,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin-version}</version>
-                <configuration>
-                    <release>11</release>
-                    <compilerArgs>
-                        <arg>-Xpkginfo:always</arg>
-                    </compilerArgs>
-                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -83,7 +75,6 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${guava-version}</version>
         </dependency>
     </dependencies>
 
