@@ -388,6 +388,10 @@ public class Domain {
     return spec.getConfigOverrides();
   }
 
+  public String getWdtConfigMap() {
+    return spec.getWdtConfigMap();
+  }
+
   /**
    * Returns a list of Kubernetes secret names used in optional configuration overrides.
    *

@@ -38,6 +38,7 @@
 
 
 function createWLDomain() {
+    wdt_config_root="/weblogic-operator/wdt-config-map"
     model_home="/u01/model_home"
     model_root="${model_home}/models"
     archive_root="${model_home}/archives"
@@ -45,6 +46,12 @@ function createWLDomain() {
     model_list=""
     archive_list=""
     variable_list=""
+
+
+    ls ${wdt_config_root}/
+    cp ${wdt_config_root}/*.properties ${variable_root}
+    cp ${wdt_config_root}/*.yaml ${model_root}
+
 
     for file in $(ls ${model_root}/*.yaml | sort)
         do
@@ -87,6 +94,8 @@ function createWLDomain() {
        echo "Create Domain Failed"
        exit 1
     fi
+
+    #cp ${wdt_config_root}/* ${DOMAIN_HOME}/
 }
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"

@@ -193,12 +193,10 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
 
-  /**
-   * Adds a Cluster to the DomainSpec.
-   *
-   * @param cluster The cluster to be added to this DomainSpec
-   * @return this object
-   */
+  /** The name of the wdt config map used for optional wdt tool. */
+  @Description("The name of the wdt config map used for optional wdt tool.")
+  private String wdtConfigMap;
+
   public DomainSpec withCluster(Cluster cluster) {
     clusters.add(cluster);
     return this;
@@ -468,6 +466,30 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  /**
+   * Get wdt config map.
+   *
+   * @return wdt config map
+   */
+  @Nullable
+  String getWdtConfigMap() {
+    return wdtConfigMap;
+  }
+
+  /**
+   * Set wdt config map.
+   *
+   * @param wdtConfigMap wdt configmap name
+   */
+  void settWdtConfigMap(@Nullable String wdtConfigMap) {
+    this.wdtConfigMap = wdtConfigMap;
+  }
+
+  public DomainSpec withWdtConfigMap(@Nullable String wdtConfigMap) {
+    this.wdtConfigMap = wdtConfigMap;
+    return this;
+  }
+
   @Nullable
   String getConfigOverrides() {
     return configOverrides;
@@ -520,7 +542,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHomeEnabled", logHomeEnabled)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets);
+            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("wdtConfigMap", wdtConfigMap);
 
     return builder.toString();
   }
@@ -546,7 +569,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled)
             .append(includeServerOutInPodLog)
             .append(configOverrides)
-            .append(configOverrideSecrets);
+            .append(configOverrideSecrets)
+            .append(wdtConfigMap);
 
     return builder.toHashCode();
   }
@@ -580,7 +604,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets);
+            .append(configOverrideSecrets, rhs.configOverrideSecrets)
+            .append(wdtConfigMap, rhs.wdtConfigMap);
 
     return builder.isEquals();
   }

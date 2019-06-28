@@ -149,6 +149,10 @@ public abstract class JobStepContext extends StepContextBase {
     return getDomain().getConfigOverrides();
   }
 
+  String getWdtConfigMap() {
+    return getDomain().getWdtConfigMap();
+  }
+
   private ResponseStep<V1Job> createResponse(Step next) {
     return new CreateResponseStep(next);
   }
@@ -249,6 +253,13 @@ public abstract class JobStepContext extends StepContextBase {
               .name(getConfigOverrides() + "-volume")
               .configMap(getOverridesVolumeSource(getConfigOverrides())));
     }
+    // For WDT
+    if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+      podSpec.addVolumesItem(
+          new V1Volume()
+              .name(getWdtConfigMap() + "-volume")
+              .configMap(getWdtConfigMapVolumeSource(getWdtConfigMap())));
+    }
 
     return podSpec;
   }
@@ -279,6 +290,12 @@ public abstract class JobStepContext extends StepContextBase {
           readOnlyVolumeMount(
               secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
+
+    if (getWdtConfigMap() != null && getWdtConfigMap().length() > 0) {
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
+    }
+
     return container;
   }
 
@@ -340,6 +357,10 @@ public abstract class JobStepContext extends StepContextBase {
   }
 
   protected V1ConfigMapVolumeSource getOverridesVolumeSource(String name) {
+    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
+  }
+
+  protected V1ConfigMapVolumeSource getWdtConfigMapVolumeSource(String name) {
     return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 }
