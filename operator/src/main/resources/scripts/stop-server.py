@@ -2,10 +2,10 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at
 # http://oss.oracle.com/licenses/upl.
 
-# This the the preStop hook script (stopServer.sh) that is specified by the domain resource.
-# This script will be called by Kubernetes before it kills a pod.  Kuberentes will kill
-# the pod once this script returns OR when the grace period timeout expires
-# (see Operator shutdown.timeoutSeconds)
+# This is called by the preStop hook script (stopServer.sh) that is specified
+# by the WL operator for WL pod resource.  Before killing a pod, Kubernetes calls
+# the preStop hook script.  Kubernetes will then kill the pod once the script returns
+# or when the grace period timeout expires(see Operator shutdown.timeoutSeconds)
 #
 # This script shuts down the local server running in the container (admin or managed).
 # There are 2 main scenarios, a domain with a Coherence cluster and one without.
@@ -26,6 +26,7 @@ import sys
 import traceback
 import base64
 import time as systime
+import re
 
 # Get an ENV var
 def getEnvVar(var):
@@ -56,41 +57,37 @@ def shutdownUsingNodeManager(domainName, domainDir):
     raise
 
 
-# Check if Coherence exists using wlst offline
+# Return True if Coherence exists
 def doesCoherenceExist():
   try:
-    readDomain(domain_path)
-    exists = checkCoherenceClusterExist()
+    f = open(domain_path+'/config/config.xml', 'r')
+    configData = f.read()
+    f.close()
+    return checkCoherenceClusterExist(configData)
   except:
-    print('Shutdown: Exception reading domain offline, assume Coherence exists')
+    print('Shutdown: Exception reading config.xml, assume Coherence exists')
     return True
-  try:
-    closeDomain()
-  except:
-    pass
-  return exists
 
-# Check if there is a CoherenceClusterSystemResource. This will indicate that the domain is
+
+# Return True if there is a CoherenceClusterSystemResource. This will indicate that the domain is
 # using Coherence
-def checkCoherenceClusterExist():
+def checkCoherenceClusterExist(configData):
   try:
-    cd('/')
-    if  ls().find('CoherenceClusterSystemResource') == -1:
-      return False
-    cd('CoherenceClusterSystemResource')
-    val = ls()
-    if (val is None) or len(val.strip()) == 0:
-      print('Shutdown: This domain does not have a CoherenceClusterSystemResource')
+    # remove all whitespace include CR
+    spacelessData = ''.join(configData.split())
+
+    ELEMENT_NAME =  "coherence-cluster-system-resource"
+    x =  re.search('<coherence-cluster-system-resource>[\s\S]*?<\/coherence-cluster-system-resource>',spacelessData)
+    if (x is None):
       return False
     else:
-      print('Shutdown: This domain has CoherenceClusterSystemResource ' + val)
-      return True
+      first, last = x.span()
+      # check if the element value is empty (add 5 for the XML slash and 4 angle brackets)
+      return (last-first-5) > (2 * len(ELEMENT_NAME))
   except:
-    # Exception will occur if CoherenceClusterSystemResource is missing
     traceback.print_exc(file=sys.stdout)
-    dumpStack()
-    print('Shutdown: Exception getting CoherenceClusterSystemResource')
-    return False
+    print('Shutdown: Exception processing config data, assume Coherence exists')
+    return True
 
 
 # Coherence exists and we cannot connect to the admin server.  To be on
@@ -271,7 +268,6 @@ while (stayInConnectLoop):
         exit()
       except:
         exit(2)
-
 
 # Exit WLST
 exit()
