@@ -127,9 +127,8 @@ function createWLDomain() {
         model_list="-model_file ${model_list}"
     fi
 
-
     use_encryption=""
-    found_wdt_pwd=$(find ${wdt_secret_path} -name wdtpassword)
+    found_wdt_pwd=$(find ${wdt_secret_path} -name wdtpassword -type f)
     if [ -f "${found_wdt_pwd}" ] ; then
         wdt_passphrase=$(cat ${found_wdt_pwd})
         yes ${wdt_passphrase} | /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption
