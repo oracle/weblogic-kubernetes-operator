@@ -58,6 +58,7 @@ function sort_files() {
 
 function createWLDomain() {
     wdt_config_root="/weblogic-operator/wdt-config-map"
+    wdt_secret_path="/weblogic-operator/wdt-config-map-secrets"
     model_home="/u01/model_home"
     model_root="${model_home}/models"
     archive_root="${model_home}/archives"
@@ -126,7 +127,15 @@ function createWLDomain() {
         model_list="-model_file ${model_list}"
     fi
 
-    /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list $archive_list $variable_list
+
+    use_encryption=""
+    found_wdt_pwd=$(find ${wdt_secret_path} -name wdtpassword)
+    if [ -f "${found_wdt_pwd}" ] ; then
+        wdt_passphrase=$(cat ${found_wdt_pwd})
+        yes ${wdt_passphrase} | /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption
+    else
+        /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list $archive_list $variable_list
+    fi
     ret=$?
     if [ $ret -ne 0 ]; then
        echo "Create Domain Failed"

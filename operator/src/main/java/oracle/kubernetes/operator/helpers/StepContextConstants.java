@@ -17,6 +17,7 @@ public interface StepContextConstants {
   static final String OVERRIDE_SECRETS_MOUNT_PATH = "/weblogic-operator/config-overrides-secrets";
   static final String OVERRIDES_CM_MOUNT_PATH = "/weblogic-operator/config-overrides";
   static final String WDTCONFIGMAP_MOUNT_PATH = "/weblogic-operator/wdt-config-map";
+  static final String WDTCONFIGMAP_SECRETS_MOUNT_PATH = "/weblogic-operator/wdt-config-map-secrets";
   static final String DEBUG_CM_MOUNTS_PATH = "/weblogic-operator/debug";
   static final String STORAGE_MOUNT_PATH = "/shared";
   static final String NODEMGR_HOME = "/u01/nodemanager";

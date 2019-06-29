@@ -49,6 +49,23 @@ public interface ServerSpec {
    */
   List<String> getConfigOverrideSecrets();
 
+  ////
+  /**
+   * The Kubernetes config map name for wdt model.
+   *
+   * @return configMapName. May be empty.
+   */
+  String getWdtConfigMap();
+
+  /**
+   * The secret name for wdt model encryption passphrase.
+   *
+   * @return name of the secret. May be empty.
+   */
+  String getWdtConfigMapSecrets();
+
+  ////
+
   /**
    * Desired startup state. Legal values are RUNNING or ADMIN.
    *

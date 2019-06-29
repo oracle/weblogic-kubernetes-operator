@@ -401,6 +401,15 @@ public class Domain {
     return spec.getConfigOverrideSecrets();
   }
 
+  /**
+   * Returns the wdt model encryption passphrase secret name.
+   *
+   * @return wdt model encryption passphrase secret name.
+   */
+  public String getWdtConfigMapSecret() {
+    return spec.getWdtConfigMapSecret();
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)

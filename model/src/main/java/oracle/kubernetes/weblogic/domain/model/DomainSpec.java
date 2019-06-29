@@ -197,6 +197,10 @@ public class DomainSpec extends BaseConfiguration {
   @Description("The name of the wdt config map used for optional wdt tool.")
   private String wdtConfigMap;
 
+  /** The name of the wdt model encryption passphrase used for optional wdt tool. */
+  @Description("The name of the wdt model encryption passphrase  used for optional wdt tool.")
+  private String wdtConfigMapSecret;
+
   public DomainSpec withCluster(Cluster cluster) {
     clusters.add(cluster);
     return this;
@@ -490,6 +494,29 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  /**
+   * Get wdt model encryption passphrase secret name.
+   *
+   * @return wdt model encryption passphrase secret name
+   */
+  @Nullable
+  String getWdtConfigMapSecret() {
+    return wdtConfigMapSecret;
+  }
+
+  /**
+   * Set wdt model encryption passphrase secret name.
+   *
+   * @param wdtConfigMapSecret wdt model encryption passphrase secret name
+   */
+  void setWdtConfigMapSecret(@Nullable String wdtConfigMapSecret) {
+    this.wdtConfigMapSecret = wdtConfigMapSecret;
+  }
+
+  private boolean hasWdtConfigMapSecret() {
+    return wdtConfigMapSecret != null;
+  }
+
   @Nullable
   String getConfigOverrides() {
     return configOverrides;
@@ -543,6 +570,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets)
+            .append("wdtConfigMapSecret", wdtConfigMapSecret)
             .append("wdtConfigMap", wdtConfigMap);
 
     return builder.toString();
@@ -570,6 +598,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets)
+            .append(wdtConfigMapSecret)
             .append(wdtConfigMap);
 
     return builder.toHashCode();
@@ -605,6 +634,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
+            .append(wdtConfigMapSecret, rhs.wdtConfigMapSecret)
             .append(wdtConfigMap, rhs.wdtConfigMap);
 
     return builder.isEquals();
