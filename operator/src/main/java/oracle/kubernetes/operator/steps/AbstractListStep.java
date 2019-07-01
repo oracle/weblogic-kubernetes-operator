@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.steps;
 
 import java.util.Collection;
 import java.util.Iterator;
+
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
