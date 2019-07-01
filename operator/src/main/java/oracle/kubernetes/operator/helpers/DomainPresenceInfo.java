@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +16,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -34,7 +35,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  */
 public class DomainPresenceInfo {
   private final String namespace;
-  private final String domainUID;
+  private final String domainUid;
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
@@ -52,7 +53,7 @@ public class DomainPresenceInfo {
   public DomainPresenceInfo(Domain domain) {
     this.domain = new AtomicReference<>(domain);
     this.namespace = domain.getMetadata().getNamespace();
-    this.domainUID = domain.getDomainUID();
+    this.domainUid = domain.getDomainUid();
     this.serverStartupInfo = new AtomicReference<>(null);
   }
 
@@ -60,13 +61,23 @@ public class DomainPresenceInfo {
    * Create presence for a domain.
    *
    * @param namespace Namespace
-   * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
+   * @param domainUid The unique identifier assigned to the Weblogic domain when it was registered
    */
-  public DomainPresenceInfo(String namespace, String domainUID) {
+  public DomainPresenceInfo(String namespace, String domainUid) {
     this.domain = new AtomicReference<>(null);
     this.namespace = namespace;
-    this.domainUID = domainUID;
+    this.domainUid = domainUid;
     this.serverStartupInfo = new AtomicReference<>(null);
+  }
+
+  private static <K, V> boolean removeIfPresentAnd(
+      ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
+    Objects.requireNonNull(predicateFunction);
+    for (V oldValue; (oldValue = map.get(key)) != null; ) {
+      if (!predicateFunction.test(oldValue)) return false;
+      else if (map.remove(key, oldValue)) return true;
+    }
+    return false;
   }
 
   void setServerService(String serverName, V1Service service) {
@@ -187,6 +198,10 @@ public class DomainPresenceInfo {
     return pod == null ? null : pod.getMetadata();
   }
 
+  private V1ObjectMeta getMetadata(V1Service service) {
+    return service == null ? null : service.getMetadata();
+  }
+
   /**
    * Computes the result of a delete attempt. If the current pod is newer than the one associated
    * with the delete event, returns it; otherwise returns null, thus deleting the value.
@@ -206,6 +221,18 @@ public class DomainPresenceInfo {
 
   private V1Pod getNewerCurrentOrNull(V1Pod pod, V1Pod event) {
     return KubernetesUtils.isFirstNewer(getMetadata(pod), getMetadata(event)) ? pod : null;
+  }
+
+  /**
+   * Computes the result of a delete attempt. If the current service is newer than the one
+   * associated with the delete event, returns it; otherwise returns null, thus deleting the value.
+   *
+   * @param service the current service
+   * @param event the service associated with the delete event
+   * @return the new value for the service.
+   */
+  private V1Service getNewerCurrentOrNull(V1Service service, V1Service event) {
+    return KubernetesUtils.isFirstNewer(getMetadata(service), getMetadata(event)) ? service : null;
   }
 
   /**
@@ -276,18 +303,6 @@ public class DomainPresenceInfo {
     return deletedService != null;
   }
 
-  /**
-   * Computes the result of a delete attempt. If the current service is newer than the one
-   * associated with the delete event, returns it; otherwise returns null, thus deleting the value.
-   *
-   * @param service the current service
-   * @param event the service associated with the delete event
-   * @return the new value for the service.
-   */
-  private V1Service getNewerCurrentOrNull(V1Service service, V1Service event) {
-    return KubernetesUtils.isFirstNewer(getMetadata(service), getMetadata(event)) ? service : null;
-  }
-
   void removeClusterService(String clusterName) {
     clusters.remove(clusterName);
   }
@@ -313,22 +328,8 @@ public class DomainPresenceInfo {
         s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
   }
 
-  private static <K, V> boolean removeIfPresentAnd(
-      ConcurrentMap<K, V> map, K key, Predicate<? super V> predicateFunction) {
-    Objects.requireNonNull(predicateFunction);
-    for (V oldValue; (oldValue = map.get(key)) != null; ) {
-      if (!predicateFunction.test(oldValue)) return false;
-      else if (map.remove(key, oldValue)) return true;
-    }
-    return false;
-  }
-
   private V1Service getNewerService(V1Service first, V1Service second) {
     return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
-  }
-
-  private V1ObjectMeta getMetadata(V1Service service) {
-    return service == null ? null : service.getMetadata();
   }
 
   public V1Service getExternalService(String serverName) {
@@ -408,8 +409,8 @@ public class DomainPresenceInfo {
    *
    * @return Domain UID
    */
-  public String getDomainUID() {
-    return domainUID;
+  public String getDomainUid() {
+    return domainUid;
   }
 
   /**
@@ -456,7 +457,7 @@ public class DomainPresenceInfo {
       sb.append(
           String.format(
               "uid=%s, namespace=%s",
-              getDomain().getDomainUID(), getDomain().getMetadata().getNamespace()));
+              getDomain().getDomainUid(), getDomain().getMetadata().getNamespace()));
     } else {
       sb.append(", namespace=").append(namespace);
     }

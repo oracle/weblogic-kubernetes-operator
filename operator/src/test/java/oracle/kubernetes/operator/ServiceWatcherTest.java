@@ -4,19 +4,20 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.watcher.WatchListener;
+import org.junit.Test;
+
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.util.Watch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import oracle.kubernetes.operator.builders.StubWatchFactory;
-import oracle.kubernetes.operator.watcher.WatchListener;
-import org.junit.Test;
 
 /** This test class verifies the behavior of the ServiceWatcher. */
 public class ServiceWatcherTest extends WatcherTestBase implements WatchListener<V1Service> {

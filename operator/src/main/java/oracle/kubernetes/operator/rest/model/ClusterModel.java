@@ -7,8 +7,11 @@ package oracle.kubernetes.operator.rest.model;
 /** ClusterModel describes a WebLogic cluster. */
 public class ClusterModel extends ItemModel {
 
+  private String cluster;
+
   /** Construct an empty ClusterModel. */
-  public ClusterModel() {}
+  public ClusterModel() {
+  }
 
   /**
    * Construct a populated ClusterModel.
@@ -18,8 +21,6 @@ public class ClusterModel extends ItemModel {
   public ClusterModel(String cluster) {
     setCluster(cluster);
   }
-
-  private String cluster;
 
   /**
    * Get the cluster's name.

@@ -4,10 +4,10 @@
 
 package oracle.kubernetes.operator.wlsconfig;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
-
 import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 public class WlsServerConfigTest {
 
@@ -39,15 +39,15 @@ public class WlsServerConfigTest {
   }
 
   @Test
-  public void verify_getLocalAdminProtocolChannelPort_withAdminNAP_returnsNapAdminPort() {
-    WlsServerConfig wlsServerConfig = createConfigWithAdminNAP();
+  public void verify_getLocalAdminProtocolChannelPort_withAdminNap_returnsNapAdminPort() {
+    WlsServerConfig wlsServerConfig = createConfigWithAdminNap();
     assertThat(wlsServerConfig.getLocalAdminProtocolChannelPort(), is(NAP_ADMIN_PORT));
     assertThat(wlsServerConfig.isLocalAdminProtocolChannelSecure(), is(true));
   }
 
   @Test
-  public void verify_getLocalAdminProtocolChannelPort_withNonAdminNAP_returnsAdminPort() {
-    WlsServerConfig wlsServerConfig = createConfigWithNonAdminNAP();
+  public void verify_getLocalAdminProtocolChannelPort_withNonAdminNap_returnsAdminPort() {
+    WlsServerConfig wlsServerConfig = createConfigWithNonAdminNap();
     assertThat(wlsServerConfig.getLocalAdminProtocolChannelPort(), is(ADMIN_PORT));
     assertThat(wlsServerConfig.isLocalAdminProtocolChannelSecure(), is(true));
   }
@@ -70,14 +70,14 @@ public class WlsServerConfigTest {
     return wlsServerConfig;
   }
 
-  WlsServerConfig createConfigWithAdminNAP() {
+  WlsServerConfig createConfigWithAdminNap() {
     WlsServerConfig wlsServerConfig = createConfigWithAllListenPorts();
     wlsServerConfig.addNetworkAccessPoint(
         new NetworkAccessPoint("admin-channel", "admin", NAP_ADMIN_PORT, null));
     return wlsServerConfig;
   }
 
-  WlsServerConfig createConfigWithNonAdminNAP() {
+  WlsServerConfig createConfigWithNonAdminNap() {
     WlsServerConfig wlsServerConfig = createConfigWithAllListenPorts();
     wlsServerConfig.addNetworkAccessPoint(
         new NetworkAccessPoint("non-admin-channel", "t3", NAP_NON_ADMIN_PORT, null));

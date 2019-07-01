@@ -19,6 +19,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.Provider;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -41,12 +42,10 @@ import org.glassfish.jersey.server.ResourceConfig;
 @Priority(FilterPriorities.AUTHENTICATION_FILTER_PRIORITY)
 public class AuthenticationFilter extends BaseDebugLoggingFilter implements ContainerRequestFilter {
 
-  @Context private Application application; // TBD - does this work?
-
   public static final String REST_BACKEND_PROPERTY = "RestBackend";
   public static final String ACCESS_TOKEN_PREFIX = "Bearer ";
-
   private static LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  @Context private Application application; // TBD - does this work?
 
   /** Construct an AuthenticationFilter. */
   public AuthenticationFilter() {
