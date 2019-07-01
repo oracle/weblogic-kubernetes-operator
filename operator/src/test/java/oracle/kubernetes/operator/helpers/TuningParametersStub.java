@@ -4,14 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import java.util.HashMap;
-import java.util.Map;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.TuningParametersImpl;
+
+import static com.meterware.simplestub.Stub.createStrictStub;
 
 public abstract class TuningParametersStub implements TuningParameters {
   static final int READINESS_INITIAL_DELAY = 1;

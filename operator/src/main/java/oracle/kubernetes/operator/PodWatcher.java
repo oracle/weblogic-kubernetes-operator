@@ -4,10 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.util.Watch;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,6 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -42,6 +43,41 @@ public class PodWatcher extends Watcher<V1Pod>
   // Map of Pod name to callback
   private final Map<String, Collection<Runnable>> readyCallbackRegistrations = new HashMap<>();
   private final Map<String, Collection<Runnable>> deletedCallbackRegistrations = new HashMap<>();
+
+  private PodWatcher(
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<V1Pod> listener,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping);
+    setListener(this);
+    this.ns = ns;
+    this.listener = listener;
+  }
+
+  /**
+   * Factory for PodWatcher.
+   *
+   * @param factory thread factory
+   * @param ns Namespace
+   * @param initialResourceVersion Initial resource version or empty string
+   * @param tuning Watch tuning parameters
+   * @param listener Callback for watch events
+   * @param isStopping Stop signal
+   * @return Pod watcher for the namespace
+   */
+  public static PodWatcher create(
+      ThreadFactory factory,
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<V1Pod> listener,
+      AtomicBoolean isStopping) {
+    PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
+    watcher.start(factory);
+    return watcher;
+  }
 
   private void registerOnReady(String podName, Runnable onReady) {
     synchronized (readyCallbackRegistrations) {
@@ -93,41 +129,6 @@ public class PodWatcher extends Watcher<V1Pod>
         col.remove(onReady);
       }
     }
-  }
-
-  /**
-   * Factory for PodWatcher.
-   *
-   * @param factory thread factory
-   * @param ns Namespace
-   * @param initialResourceVersion Initial resource version or empty string
-   * @param tuning Watch tuning parameters
-   * @param listener Callback for watch events
-   * @param isStopping Stop signal
-   * @return Pod watcher for the namespace
-   */
-  public static PodWatcher create(
-      ThreadFactory factory,
-      String ns,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      WatchListener<V1Pod> listener,
-      AtomicBoolean isStopping) {
-    PodWatcher watcher = new PodWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
-    watcher.start(factory);
-    return watcher;
-  }
-
-  private PodWatcher(
-      String ns,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      WatchListener<V1Pod> listener,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping);
-    setListener(this);
-    this.ns = ns;
-    this.listener = listener;
   }
 
   @Override
@@ -230,7 +231,7 @@ public class PodWatcher extends Watcher<V1Pod>
 
             // Timing window -- pod may have come ready before registration for callback
             CallBuilderFactory factory =
-                ContainerResolver.getInstance().getContainer().getSPI(CallBuilderFactory.class);
+                ContainerResolver.getInstance().getContainer().getSpi(CallBuilderFactory.class);
             fiber
                 .createChildFiber()
                 .start(

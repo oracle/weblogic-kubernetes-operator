@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import io.kubernetes.client.models.V1Container;
 import java.util.List;
 import java.util.Map;
+
+import io.kubernetes.client.models.V1Container;
 
 public class ClusterSpecCommonImpl extends ClusterSpec {
   private final Cluster cluster;

@@ -4,8 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -22,6 +20,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
+
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 
 /**
  * Setup for tests that will involve running the main domain processor functionality. Such tests
@@ -42,14 +42,16 @@ public class DomainProcessorTestSetup {
           + "\n"
           + ">>> EOF\n"
           + "\n"
-          + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/userKeyNodeManager.secure\n"
+          + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file "
+          + "/u01/introspect/domain1/userKeyNodeManager.secure\n"
           + "\n"
           + ">>>  /u01/introspect/domain1/userKeyNodeManager.secure\n"
           + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==\n"
           + "\n"
           + ">>> EOF\n"
           + "\n"
-          + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file /u01/introspect/domain1/topology.yaml\n"
+          + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file "
+          + "/u01/introspect/domain1/topology.yaml\n"
           + "\n"
           + ">>>  /u01/introspect/domain1/topology.yaml\n"
           + "%s\n"
@@ -57,6 +59,10 @@ public class DomainProcessorTestSetup {
 
   private WlsDomainConfig domainConfig;
   private KubernetesTestSupport testSupport;
+
+  public DomainProcessorTestSetup(KubernetesTestSupport testSupport) {
+    this.testSupport = testSupport;
+  }
 
   /**
    * Update the specified object metadata with usable time stamp and resource version data.
@@ -66,10 +72,6 @@ public class DomainProcessorTestSetup {
    */
   private static V1ObjectMeta withTimestamps(V1ObjectMeta meta) {
     return meta.creationTimestamp(DateTime.now()).resourceVersion("1");
-  }
-
-  public DomainProcessorTestSetup(KubernetesTestSupport testSupport) {
-    this.testSupport = testSupport;
   }
 
   /**

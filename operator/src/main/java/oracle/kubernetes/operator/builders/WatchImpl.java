@@ -4,11 +4,12 @@
 
 package oracle.kubernetes.operator.builders;
 
-import io.kubernetes.client.ApiClient;
-import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.util.Iterator;
 import javax.annotation.Nonnull;
+
+import io.kubernetes.client.ApiClient;
+import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.helpers.Pool;
 
 /**

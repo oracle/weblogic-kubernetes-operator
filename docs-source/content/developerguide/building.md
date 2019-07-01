@@ -16,11 +16,7 @@ $ mvn clean install
 
 This will compile the source files, build JAR files containing the compiled classes and libraries needed to run the operator, and will also execute all of the unit tests.
 
-Contributions must conform to [coding and formatting standards]({{< relref "/developerguide/coding-standards.md" >}}).  To automatically update local code to conform to formatting standards, issue the following command:
-
-```
-$ mvn fmt:format
-```
+Contributions must conform to [coding and formatting standards]({{< relref "/developerguide/coding-standards.md" >}}).
 
 #### Building Javadoc
 
