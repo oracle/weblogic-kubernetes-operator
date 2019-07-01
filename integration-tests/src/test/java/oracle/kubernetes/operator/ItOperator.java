@@ -529,13 +529,13 @@ public class ItOperator extends BaseTest {
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/modifyAcceptBacklog.py",
         scriptsLocInPod + "/modifyAcceptBacklog.py",
         adminPod,
-        domain.getDomainNS());
+        domain.getDomainNs());
 
     TestUtils.copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
         scriptsLocInPod + "/callpyscript.sh",
         adminPod,
-        domain.getDomainNS());
+        domain.getDomainNs());
     String[] args = {
       scriptsLocInPod + "/modifyAcceptBacklog.py",
       BaseTest.getUsername(),
@@ -543,6 +543,6 @@ public class ItOperator extends BaseTest {
       "t3://" + adminPod + ":" + domain.getDomainMap().get("t3ChannelPort")
     };
     TestUtils.callShellScriptByExecToPod(
-        adminPod, domain.getDomainNS(), scriptsLocInPod, "callpyscript.sh", args);
+        adminPod, domain.getDomainNs(), scriptsLocInPod, "callpyscript.sh", args);
   }
 }
