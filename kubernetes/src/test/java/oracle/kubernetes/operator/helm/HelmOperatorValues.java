@@ -1,8 +1,16 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import oracle.kubernetes.operator.utils.OperatorValues;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Collections.singletonList;
@@ -13,15 +21,9 @@ import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadIntegerFromMap;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import oracle.kubernetes.operator.utils.OperatorValues;
-
 class HelmOperatorValues extends OperatorValues {
-  HelmOperatorValues() {}
+  HelmOperatorValues() {
+  }
 
   HelmOperatorValues(Map<String, Object> map) {
     loadFromMap(map, this::setServiceAccount, "serviceAccount");

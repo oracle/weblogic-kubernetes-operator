@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
@@ -26,7 +27,7 @@ import org.junit.runners.MethodSorters;
  * duration of a HTTP session created by Voyager load balancer.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ITStickySession extends BaseTest {
+public class ItStickySession extends BaseTest {
   private static final String testAppName = "stickysessionapp";
   private static final String testAppPath = testAppName + "/StickySessionCounterServlet";
   private static final String scriptName = "buildDeployAppInPod.sh";
@@ -44,7 +45,7 @@ public class ITStickySession extends BaseTest {
    * the resultRoot, pvRoot and projectRoot attributes. It creates an operator, a Weblogic domain
    * and deploy a web application with persistent-store-type configured to replicated_if_clustered.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
@@ -87,9 +88,9 @@ public class ITStickySession extends BaseTest {
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories
+   * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
@@ -108,7 +109,7 @@ public class ITStickySession extends BaseTest {
    * by Voyager load balancer based on HTTP session information. This test sends two HTTP requests
    * to Weblogic and verify that all requests are directed to same Weblogic server.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testSameSessionStickiness() throws Exception {
@@ -122,18 +123,18 @@ public class ITStickySession extends BaseTest {
 
     int counterNum = 4;
     String webServiceSetUrl = testAppPath + "?setCounter=" + counterNum;
-    String webServiceGetUrl = testAppPath + "?getCounter";
+    final String webServiceGetUrl = testAppPath + "?getCounter";
 
     String serverNameAttr = "servername";
-    String sessionIDAttr = "sessionid";
-    String countAttr = "count";
+    String sessionIdAttr = "sessionid";
+    final String countAttr = "count";
 
     // Send the first HTTP request to the cluster to establish a connection
-    ExecResult result = getHTTPResponse(webServiceSetUrl, " -D ");
+    ExecResult result = getHttpResponse(webServiceSetUrl, " -D ");
 
     // Retrieve the session id and connected server name from the first HTTP response
     String serverName1 = getHttpResponseAttribute(result.stdout(), serverNameAttr);
-    String serverID1 = getHttpResponseAttribute(result.stdout(), sessionIDAttr);
+    String serverID1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
 
     Assume.assumeNotNull(serverName1);
     Assume.assumeNotNull(serverID1);
@@ -146,11 +147,11 @@ public class ITStickySession extends BaseTest {
             + ">");
 
     // Send the second HTTP request to the cluster to get the count number
-    result = getHTTPResponse(webServiceGetUrl, " -b ");
+    result = getHttpResponse(webServiceGetUrl, " -b ");
 
     // Retrieve the session id and connected server name from the second HTTP response
     String serverName2 = getHttpResponseAttribute(result.stdout(), serverNameAttr);
-    String serverID2 = getHttpResponseAttribute(result.stdout(), sessionIDAttr);
+    String serverID2 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
     String count = getHttpResponseAttribute(result.stdout(), countAttr);
 
     Assume.assumeNotNull(serverName2);
@@ -191,7 +192,7 @@ public class ITStickySession extends BaseTest {
    * by Voyager load balancer based on HTTP session information. This test sends two HTTP requests
    * from two different clients to Weblogic and verify that HTTP sessions are isolated.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testDiffSessionsNoSharing() throws Exception {
@@ -207,42 +208,42 @@ public class ITStickySession extends BaseTest {
     String webServiceSetUrl = testAppPath + "?setCounter=" + counterNum;
     String webServiceGetUrl = testAppPath + "?getCounter";
 
-    String sessionIDAttr = "sessionid";
-    String countAttr = "count";
+    String sessionIdAttr = "sessionid";
+    final String countAttr = "count";
 
     // Client1 sends a HTTP request to set a count number
-    ExecResult result = getHTTPResponse(webServiceSetUrl);
+    ExecResult result = getHttpResponse(webServiceSetUrl);
 
     // Retrieve the session id from HTTP response
-    String serverIDClient1 = getHttpResponseAttribute(result.stdout(), sessionIDAttr);
-    Assume.assumeNotNull(serverIDClient1);
+    String serverIdClient1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
+    Assume.assumeNotNull(serverIdClient1);
 
     logger.info(
         "Client1 created a connection with HTTP session id <"
-            + serverIDClient1
+            + serverIdClient1
             + "> and set a count number to <"
             + counterNum
             + ">");
 
     // Client2 sends a HTTP request to get a count number
-    result = getHTTPResponse(webServiceGetUrl);
+    result = getHttpResponse(webServiceGetUrl);
 
     // Retrieve the session id and count number from HTTP response
-    String serverIDClient2 = getHttpResponseAttribute(result.stdout(), sessionIDAttr);
+    String serverIdClient2 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
     String count = getHttpResponseAttribute(result.stdout(), countAttr);
 
-    Assume.assumeNotNull(serverIDClient2);
+    Assume.assumeNotNull(serverIdClient2);
     Assume.assumeNotNull(count);
 
     logger.info(
         "Client2 created a connection with HTTP session id <"
-            + serverIDClient2
+            + serverIdClient2
             + "> and retrieved a count number <"
             + count
             + ">");
 
     // Verify that each client session has its own session ID
-    Assume.assumeFalse("HTTP session should NOT be same!", serverIDClient1.equals(serverIDClient2));
+    Assume.assumeFalse("HTTP session should NOT be same!", serverIdClient1.equals(serverIdClient2));
 
     // Verify that count number retrieved from session state is not shared between two clients
     Assume.assumeTrue(
@@ -269,18 +270,18 @@ public class ITStickySession extends BaseTest {
     return httpAttribute;
   }
 
-  private ExecResult getHTTPResponse(String webServiceURL, String... args) throws Exception {
+  private ExecResult getHttpResponse(String webServiceUrl, String... args) throws Exception {
     String headerOption = (args.length == 0) ? "" : args[0] + httpHeaderFile;
 
     // Send a HTTP request
-    String curlCmd = buildWebServiceUrl(webServiceURL, headerOption);
+    String curlCmd = buildWebServiceUrl(webServiceUrl, headerOption);
     logger.info("Send a HTTP request: " + curlCmd);
     ExecResult result = TestUtils.exec(curlCmd);
 
     return result;
   }
 
-  private String buildWebServiceUrl(String curlURLPath, String paramToAppend) throws Exception {
+  private String buildWebServiceUrl(String curlUrlPath, String paramToAppend) throws Exception {
     String nodePortHost = domain.getHostNameForCurl();
     int nodePort = domain.getLoadBalancerWebPort();
 
@@ -294,7 +295,7 @@ public class ITStickySession extends BaseTest {
         .append(":")
         .append(nodePort)
         .append("/")
-        .append(curlURLPath)
+        .append(curlUrlPath)
         .append(paramToAppend);
 
     return webServiceUrl.toString();

@@ -1,8 +1,14 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import com.squareup.okhttp.OkHttpClient;
 import io.kubernetes.client.ApiClient;
@@ -11,11 +17,6 @@ import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.util.Config;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
@@ -25,15 +26,14 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
  */
 public class Authenticator {
 
-  private final ApiClient apiClient;
-  private final Helpers helper;
-  private String serviceToken;
-
   private static final String SERVICE_HOST = "KUBERNETES_SERVICE_HOST";
   private static final String SERVICE_PORT = "KUBERNETES_SERVICE_PORT";
   // private final String _TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
   // private final String _CACERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private final ApiClient apiClient;
+  private final Helpers helper;
+  private String serviceToken;
 
   /**
    * Create a new instace of the Authenticator class containing the default API client. The default

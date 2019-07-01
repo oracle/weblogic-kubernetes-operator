@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -9,14 +9,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Logger;
+
 import oracle.kubernetes.operator.BaseTest;
 
 public class PersistentVolume {
 
+  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   private Map<String, Object> pvMap;
   private String dirPath;
-
-  private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   public PersistentVolume(String dirPath, Map pvMap) throws Exception {
     this.dirPath = dirPath;

@@ -1,14 +1,15 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
+import java.nio.file.Path;
+
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1Service;
-import java.nio.file.Path;
 
 /** Parses a generated weblogic-operator.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {

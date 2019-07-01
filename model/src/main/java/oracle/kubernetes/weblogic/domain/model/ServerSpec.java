@@ -4,6 +4,10 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.List;
+import java.util.Map;
+import javax.annotation.Nonnull;
+
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1LocalObjectReference;
@@ -12,9 +16,6 @@ import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1SecurityContext;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.util.List;
-import java.util.Map;
-import javax.annotation.Nonnull;
 
 public interface ServerSpec {
   String getImage();

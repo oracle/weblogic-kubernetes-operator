@@ -4,11 +4,12 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.io.IOException;
+
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Exec;
 import io.kubernetes.client.models.V1Pod;
-import java.io.IOException;
 
 /** The live implementation of this factory, which uses the 'kubectl exec' command. */
 public class KubernetesExecFactoryImpl implements KubernetesExecFactory {

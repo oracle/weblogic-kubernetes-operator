@@ -4,105 +4,105 @@
 
 package oracle.kubernetes.operator.logging;
 
+import org.junit.Test;
+
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-
-import org.junit.Test;
 
 public class OncePerMessageLoggingFilterTest {
 
   @Test
   public void verifyCanLogReturnsFalseForRepeatedMessage() {
-    final String MESSAGE = "some log message";
+    final String message = "some log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     loggingFilter.setFiltering(true);
 
-    loggingFilter.canLog(MESSAGE);
-    assertThat(loggingFilter.canLog(MESSAGE), is(false));
+    loggingFilter.canLog(message);
+    assertThat(loggingFilter.canLog(message), is(false));
   }
 
   @Test
   public void verifyCanLogReturnsFalseForRepeatedNullMessage() {
-    final String MESSAGE = null;
+    final String message = null;
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     loggingFilter.setFiltering(true);
 
-    loggingFilter.canLog(MESSAGE);
-    assertThat(loggingFilter.canLog(MESSAGE), is(false));
+    loggingFilter.canLog(message);
+    assertThat(loggingFilter.canLog(message), is(false));
   }
 
   @Test
   public void verifyCanLogReturnsTrueForRepeatedMessageWithoutFiltering() {
-    final String MESSAGE = "some log message";
+    final String message = "some log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
 
-    assertThat(loggingFilter.canLog(MESSAGE), is(true));
-    assertThat(loggingFilter.canLog(MESSAGE), is(true));
+    assertThat(loggingFilter.canLog(message), is(true));
+    assertThat(loggingFilter.canLog(message), is(true));
   }
 
   @Test
   public void verifyCanLogReturnsTrueForDifferentMessage() {
-    final String MESSAGE = "some log message";
-    final String MESSAGE2 = "another log message";
+    final String message = "some log message";
+    final String message2 = "another log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     loggingFilter.setFiltering(true);
 
-    loggingFilter.canLog(MESSAGE);
-    assertThat(loggingFilter.canLog(MESSAGE2), is(true));
+    loggingFilter.canLog(message);
+    assertThat(loggingFilter.canLog(message2), is(true));
   }
 
   @Test
   public void verifyMessageHistoryKeptBeforeFilteringIsOn() {
-    final String MESSAGE = "some log message";
+    final String message = "some log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
 
-    loggingFilter.canLog(MESSAGE);
+    loggingFilter.canLog(message);
 
     loggingFilter.setFiltering(true);
 
-    assertThat(loggingFilter.canLog(MESSAGE), is(false));
+    assertThat(loggingFilter.canLog(message), is(false));
   }
 
   @Test
   public void verifyResetHistoryClearsLogHistory() {
-    final String MESSAGE = "some log message";
+    final String message = "some log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
 
-    loggingFilter.canLog(MESSAGE);
+    loggingFilter.canLog(message);
 
     loggingFilter.resetLogHistory();
 
-    assertThat(loggingFilter.messagesLogged.contains(MESSAGE), is(false));
+    assertThat(loggingFilter.messagesLogged.contains(message), is(false));
   }
 
   @Test
   public void verifyCanLogReturnsTrueOnceAfterReenablingFilteringAfterOffAndReset() {
-    final String MESSAGE = "some log message";
+    final String message = "some log message";
 
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     loggingFilter.setFiltering(true);
 
-    loggingFilter.canLog(MESSAGE);
+    loggingFilter.canLog(message);
 
     loggingFilter.setFiltering(false).resetLogHistory();
 
     loggingFilter.setFiltering(true);
-    assertThat(loggingFilter.canLog(MESSAGE), is(true));
-    assertThat(loggingFilter.canLog(MESSAGE), is(false));
+    assertThat(loggingFilter.canLog(message), is(true));
+    assertThat(loggingFilter.canLog(message), is(false));
   }
 
   @Test
   public void verifyCanLogReturnsFalseAfterReenablingFilteringAfterOffWithoutReset() {
-    final String MESSAGE = "some log message";
+    final String message = "some log message";
 
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     loggingFilter.setFiltering(true);
 
-    loggingFilter.canLog(MESSAGE);
+    loggingFilter.canLog(message);
 
     loggingFilter.setFiltering(false);
 
     loggingFilter.setFiltering(true);
-    assertThat(loggingFilter.canLog(MESSAGE), is(false));
+    assertThat(loggingFilter.canLog(message), is(false));
   }
 }

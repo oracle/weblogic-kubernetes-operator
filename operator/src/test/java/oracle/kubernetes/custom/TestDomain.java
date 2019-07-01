@@ -1,14 +1,17 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.custom;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.Map;
 
-/** Example Custom Resource class */
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.kubernetes.client.models.V1ObjectMeta;
+
+/**
+ * Example Custom Resource class.
+ */
 public class TestDomain {
 
   @JsonProperty("apiVersion")

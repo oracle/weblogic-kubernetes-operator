@@ -1,8 +1,10 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
+
+import java.nio.file.Path;
 
 import io.kubernetes.client.models.V1ClusterRole;
 import io.kubernetes.client.models.V1ClusterRoleBinding;
@@ -10,7 +12,6 @@ import io.kubernetes.client.models.V1Namespace;
 import io.kubernetes.client.models.V1Role;
 import io.kubernetes.client.models.V1RoleBinding;
 import io.kubernetes.client.models.V1ServiceAccount;
-import java.nio.file.Path;
 
 /** Parses a generated weblogic-operator-security.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
@@ -74,19 +75,18 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
     return getRoleBindings().find("weblogic-operator-rolebinding-namespace", namespace);
   }
 
-  public V1Role getWeblogicOperatorRole() {
-    return getRoles().find("weblogic-operator-role");
-  }
-
   public V1RoleBinding getWeblogicOperatorRoleBinding() {
     return getRoleBindings().find("weblogic-operator-rolebinding");
+  }
+
+  public V1Role getWeblogicOperatorRole() {
+    return getRoles().find("weblogic-operator-role");
   }
 
   public int getExpectedObjectCount() {
     int rtn = 9;
     // add one role binding for each namespace
-    for (@SuppressWarnings("unused")
-    String targetNamespace : inputs.getTargetNamespaces().split(",")) {
+    for (String targetNamespace : inputs.getTargetNamespaces().split(",")) {
       rtn++;
     }
     return rtn;
