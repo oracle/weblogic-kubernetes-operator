@@ -22,7 +22,7 @@ class ExternalSchema {
     return new URL(url);
   }
 
-  URL getCacheURL(String baseDir) throws MalformedURLException {
+  URL getCacheUrl(String baseDir) throws MalformedURLException {
     return new File(new File(baseDir), cache).toURI().toURL();
   }
 }

@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsMachineConfig;
@@ -24,6 +25,10 @@ public class WlsDomainConfigSupport {
 
   public WlsDomainConfigSupport(String domain) {
     this.domain = domain;
+  }
+
+  private static WlsServerConfig createServerConfig(String serverName, Integer listenPort) {
+    return new ServerConfigBuilder(serverName, listenPort).build();
   }
 
   public WlsDomainConfigSupport withWlsServer(String serverName, Integer listenPort) {
@@ -64,10 +69,6 @@ public class WlsDomainConfigSupport {
     return serverConfig;
   }
 
-  private static WlsServerConfig createServerConfig(String serverName, Integer listenPort) {
-    return new ServerConfigBuilder(serverName, listenPort).build();
-  }
-
   /**
    * Returns the configuration for the named server, if any has been defined.
    *
@@ -76,6 +77,28 @@ public class WlsDomainConfigSupport {
    */
   public WlsServerConfig getWlsServer(String serverName) {
     return wlsServers.get(serverName);
+  }
+
+  /**
+   * Returns the configuration for the named clustered server.
+   *
+   * @param clusterName the name of the cluster containing the server
+   * @param serverName the name of the server
+   * @return a server configuration, or null
+   */
+  public WlsServerConfig getWlsServer(String clusterName, String serverName) {
+    WlsClusterConfig wlsClusterConfig = this.wlsClusters.get(clusterName);
+    if (wlsClusterConfig == null) {
+      return null;
+    }
+
+    for (WlsServerConfig serverConfig : wlsClusterConfig.getServerConfigs()) {
+      if (serverConfig.getName().equals(serverName)) {
+        return serverConfig;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -100,28 +123,6 @@ public class WlsDomainConfigSupport {
    */
   public WlsClusterConfig getWlsCluster(String clusterName) {
     return wlsClusters.get(clusterName);
-  }
-
-  /**
-   * Returns the configuration for the named clustered server.
-   *
-   * @param clusterName the name of the cluster containing the server
-   * @param serverName the name of the server
-   * @return a server configuration, or null
-   */
-  public WlsServerConfig getWlsServer(String clusterName, String serverName) {
-    WlsClusterConfig wlsClusterConfig = this.wlsClusters.get(clusterName);
-    if (wlsClusterConfig == null) {
-      return null;
-    }
-
-    for (WlsServerConfig serverConfig : wlsClusterConfig.getServerConfigs()) {
-      if (serverConfig.getName().equals(serverName)) {
-        return serverConfig;
-      }
-    }
-
-    return null;
   }
 
   /**
@@ -165,8 +166,8 @@ public class WlsDomainConfigSupport {
   }
 
   static class ClusterConfigBuilder {
-    private String name;
     List<WlsServerConfig> serverConfigs = new ArrayList<>();
+    private String name;
 
     ClusterConfigBuilder(String name) {
       this.name = name;

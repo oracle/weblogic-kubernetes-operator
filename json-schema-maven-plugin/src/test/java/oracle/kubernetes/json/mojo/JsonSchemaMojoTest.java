@@ -4,16 +4,6 @@
 
 package oracle.kubernetes.json.mojo;
 
-import static com.meterware.simplestub.Stub.createNiceStub;
-import static java.util.Collections.singletonList;
-import static org.apache.maven.plugins.annotations.LifecyclePhase.PROCESS_CLASSES;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.objectweb.asm.Opcodes.ASM7;
-
-import com.google.common.collect.ImmutableMap;
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -26,6 +16,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -40,16 +34,30 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.TypePath;
 
+import static com.meterware.simplestub.Stub.createNiceStub;
+import static java.util.Collections.singletonList;
+import static org.apache.maven.plugins.annotations.LifecyclePhase.PROCESS_CLASSES;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.objectweb.asm.Opcodes.ASM7;
+
 @SuppressWarnings("SameParameterValue")
 public class JsonSchemaMojoTest {
 
   private static final List<String> EMPTY_CLASSPATH = new ArrayList<>();
   private static final String TARGET_DIR = "/target/dir";
   private static final String TEST_ROOT_CLASS = "a.b.c.D";
+  private static final String DOT = "\\.";
   private static final File SCHEMA_FILE = createFile(TARGET_DIR, TEST_ROOT_CLASS, ".json");
   private static final File MARKDOWN_FILE = createFile(TARGET_DIR, TEST_ROOT_CLASS, ".md");
   private static final File CLASS_FILE = createFile("/classes", TEST_ROOT_CLASS, ".class");
-  private static final String DOT = "\\.";
   private static final String SPECIFIED_FILE_NAME = "specifiedFile.json";
   private static final File SPECIFIED_FILE = new File(TARGET_DIR + "/" + SPECIFIED_FILE_NAME);
 
@@ -69,6 +77,19 @@ public class JsonSchemaMojoTest {
 
   private static String classNameToPath(String className) {
     return className.replaceAll(DOT, File.separator);
+  }
+
+  private static File getTargetDir(Class<?> aaClass) throws URISyntaxException {
+    File dir = getPackageDir(aaClass);
+    while (dir.getParent() != null && !dir.getName().equals("target")) {
+      dir = dir.getParentFile();
+    }
+    return dir;
+  }
+
+  private static File getPackageDir(Class<?> aaClass) throws URISyntaxException {
+    URL url = aaClass.getResource(aaClass.getSimpleName() + ".class");
+    return Paths.get(url.toURI()).toFile().getParentFile();
   }
 
   @Before
@@ -281,7 +302,7 @@ public class JsonSchemaMojoTest {
     setMojoParameter("compileClasspathElements", Arrays.asList(classpathElements));
     URL[] classPathUrls = new URL[] {new URL("file:abc"), new URL("file:bcd"), new URL("file:cde")};
     for (int i = 0; i < classpathElements.length; i++)
-      fileSystem.defineURL(new File(classpathElements[i]), classPathUrls[i]);
+      fileSystem.defineUrl(new File(classpathElements[i]), classPathUrls[i]);
 
     mojo.execute();
 
@@ -389,6 +410,41 @@ public class JsonSchemaMojoTest {
     return fieldAnnotations.get(field).get(toDescription(annotation));
   }
 
+  private Map<String, AnnotationInfo> getOrCreateAnnotationMap(Field field) {
+    Map<String, AnnotationInfo> map = fieldAnnotations.get(field);
+    return map != null ? map : createAnnotationMap(field);
+  }
+
+  private Map<String, AnnotationInfo> createAnnotationMap(Field field) {
+    Map<String, AnnotationInfo> map = new HashMap<>();
+    fieldAnnotations.put(field, map);
+    return map;
+  }
+
+  private String toDescription(Class<? extends Annotation> aaClass) {
+    return "L" + aaClass.getName().replaceAll(DOT, "/") + ';';
+  }
+
+  private AnnotationInfo getOrCreateAnnotationInfo(
+      String description, Map<String, AnnotationInfo> map) {
+    AnnotationInfo info = map.get(description);
+    return info != null ? info : createAnnotationInfo(map, description);
+  }
+
+  private AnnotationInfo createAnnotationInfo(Map<String, AnnotationInfo> map, String description) {
+    AnnotationInfo info = new AnnotationInfo();
+    map.put(description, info);
+    return info;
+  }
+
+  private URL toModuleUrl(String path) throws URISyntaxException, MalformedURLException {
+    return new File(getModuleDir(), path).toURI().toURL();
+  }
+
+  private File getModuleDir() throws URISyntaxException {
+    return getTargetDir(getClass()).getParentFile();
+  }
+
   private class Visitor extends ClassVisitor {
     private Class<?> theClass;
 
@@ -420,17 +476,6 @@ public class JsonSchemaMojoTest {
     private Field getField(String fieldName) throws NoSuchFieldException {
       return theClass.getDeclaredField(fieldName);
     }
-  }
-
-  private Map<String, AnnotationInfo> getOrCreateAnnotationMap(Field field) {
-    Map<String, AnnotationInfo> map = fieldAnnotations.get(field);
-    return map != null ? map : createAnnotationMap(field);
-  }
-
-  private Map<String, AnnotationInfo> createAnnotationMap(Field field) {
-    Map<String, AnnotationInfo> map = new HashMap<>();
-    fieldAnnotations.put(field, map);
-    return map;
   }
 
   private abstract class MojoAnnotationVisitor extends AnnotationVisitor {
@@ -500,44 +545,7 @@ public class JsonSchemaMojoTest {
     }
   }
 
-  private String toDescription(Class<? extends Annotation> aClass) {
-    return "L" + aClass.getName().replaceAll(DOT, "/") + ';';
-  }
-
-  private AnnotationInfo getOrCreateAnnotationInfo(
-      String description, Map<String, AnnotationInfo> map) {
-    AnnotationInfo info = map.get(description);
-    return info != null ? info : createAnnotationInfo(map, description);
-  }
-
-  private AnnotationInfo createAnnotationInfo(Map<String, AnnotationInfo> map, String description) {
-    AnnotationInfo info = new AnnotationInfo();
-    map.put(description, info);
-    return info;
-  }
-
   private class AnnotationInfo {
     private Map<String, Object> fields = new HashMap<>();
-  }
-
-  private URL toModuleUrl(String path) throws URISyntaxException, MalformedURLException {
-    return new File(getModuleDir(), path).toURI().toURL();
-  }
-
-  private File getModuleDir() throws URISyntaxException {
-    return getTargetDir(getClass()).getParentFile();
-  }
-
-  private static File getTargetDir(Class<?> aClass) throws URISyntaxException {
-    File dir = getPackageDir(aClass);
-    while (dir.getParent() != null && !dir.getName().equals("target")) {
-      dir = dir.getParentFile();
-    }
-    return dir;
-  }
-
-  private static File getPackageDir(Class<?> aClass) throws URISyntaxException {
-    URL url = aClass.getResource(aClass.getSimpleName() + ".class");
-    return Paths.get(url.toURI()).toFile().getParentFile();
   }
 }

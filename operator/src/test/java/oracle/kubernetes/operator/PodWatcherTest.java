@@ -4,21 +4,15 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodCondition;
 import io.kubernetes.client.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
@@ -26,6 +20,13 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** This test class verifies the behavior of the PodWatcher. */
 public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
@@ -80,7 +81,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void WhenWaitForReadyAppliedToReadyPod_performNextStep() {
+  public void whenWaitForReadyAppliedToReadyPod_performNextStep() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     PodWatcher watcher =
         PodWatcher.create(
