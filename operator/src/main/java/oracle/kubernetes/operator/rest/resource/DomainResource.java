@@ -8,6 +8,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.model.DomainModel;
@@ -40,7 +41,7 @@ public class DomainResource extends BaseResource {
   @Produces(MediaType.APPLICATION_JSON)
   public DomainModel get() {
     LOGGER.entering(href());
-    DomainModel item = new DomainModel(getDomainUID());
+    DomainModel item = new DomainModel(getDomainUid());
     addSelfAndParentLinks(item);
     addLink(item, "clusters");
     LOGGER.exiting(item);
@@ -60,7 +61,7 @@ public class DomainResource extends BaseResource {
     return result;
   }
 
-  private String getDomainUID() {
+  private String getDomainUid() {
     return getPathSegment();
   }
 }
