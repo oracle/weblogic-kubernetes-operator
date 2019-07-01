@@ -72,12 +72,12 @@ public class Server extends BaseConfiguration {
   }
 
   @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
+  public String getServerStartPolicy() {
+    return serverStartPolicy;
   }
 
   @Override
-  public String getServerStartPolicy() {
-    return serverStartPolicy;
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
   }
 }

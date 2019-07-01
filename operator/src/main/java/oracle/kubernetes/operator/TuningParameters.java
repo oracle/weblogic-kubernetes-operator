@@ -7,6 +7,7 @@ package oracle.kubernetes.operator;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -21,6 +22,14 @@ public interface TuningParameters extends Map<String, String> {
   public static TuningParameters getInstance() {
     return TuningParametersImpl.getInstance();
   }
+
+  public MainTuning getMainTuning();
+
+  public CallBuilderTuning getCallBuilderTuning();
+
+  public WatchTuning getWatchTuning();
+
+  public PodTuning getPodTuning();
 
   public static class MainTuning {
     public final int domainPresenceFailureRetrySeconds;
@@ -251,12 +260,4 @@ public interface TuningParameters extends Map<String, String> {
           .isEquals();
     }
   }
-
-  public MainTuning getMainTuning();
-
-  public CallBuilderTuning getCallBuilderTuning();
-
-  public WatchTuning getWatchTuning();
-
-  public PodTuning getPodTuning();
 }
