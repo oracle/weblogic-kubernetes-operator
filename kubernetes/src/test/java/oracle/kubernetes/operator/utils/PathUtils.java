@@ -10,20 +10,20 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 public class PathUtils {
-  public static File getModuleDir(Class<?> aClass) throws URISyntaxException {
-    return getTargetDir(aClass).getParentFile();
+  public static File getModuleDir(Class<?> aaClass) throws URISyntaxException {
+    return getTargetDir(aaClass).getParentFile();
   }
 
-  private static File getTargetDir(Class<?> aClass) throws URISyntaxException {
-    File dir = getPackageDir(aClass);
+  private static File getTargetDir(Class<?> aaClass) throws URISyntaxException {
+    File dir = getPackageDir(aaClass);
     while (dir.getParent() != null && !dir.getName().equals("target")) {
       dir = dir.getParentFile();
     }
     return dir;
   }
 
-  private static File getPackageDir(Class<?> aClass) throws URISyntaxException {
-    URL url = aClass.getResource(aClass.getSimpleName() + ".class");
+  private static File getPackageDir(Class<?> aaClass) throws URISyntaxException {
+    URL url = aaClass.getResource(aaClass.getSimpleName() + ".class");
     return Paths.get(url.toURI()).toFile().getParentFile();
   }
 }

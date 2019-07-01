@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1EnvVar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.kubernetes.client.models.V1EnvVar;
 import oracle.kubernetes.operator.TuningParameters;
 
 public abstract class StepContextBase implements StepContextConstants {

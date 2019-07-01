@@ -29,6 +29,7 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+
 import oracle.kubernetes.operator.BaseTest;
 import org.yaml.snakeyaml.Yaml;
 
@@ -38,15 +39,21 @@ public class Domain {
       "Domain base_domain was created and will be started by the WebLogic Kubernetes Operator";
 
   protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
-
+  private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
+  private static int waitTime = BaseTest.getWaitTimePod();
+  // LB_TYPE is an evn var. Set to "VOYAGER" to use it as loadBalancer
+  private static String LB_TYPE;
+  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
+  private static boolean INGRESSPERDOMAIN = true;
   protected Map<String, Object> domainMap;
   protected Map<String, Object> pvMap;
-
   // attributes from domain properties
   protected String domainUid = "";
   // default values as in create-weblogic-domain-inputs.yaml, generated yaml file will have the
   // customized property values
   protected String domainNS;
+  protected String userProjectsDir = "";
+  protected String generatedInputYamlFile;
   private String adminServerName;
   private String managedServerNameBase;
   private int initialManagedServerReplicas;
@@ -60,22 +67,11 @@ public class Domain {
   private String loadBalancer = "TRAEFIK";
   private int loadBalancerWebPort = 30305;
   private String domainHomeImageBuildPath = "";
-  protected String userProjectsDir = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
   private String imageTag;
   private String imageName;
-
-  protected String generatedInputYamlFile;
-
-  private static int maxIterations = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
-  private static int waitTime = BaseTest.getWaitTimePod();
-
   private boolean voyager;
-  // LB_TYPE is an evn var. Set to "VOYAGER" to use it as loadBalancer
-  private static String LB_TYPE;
-  // set INGRESSPERDOMAIN to false to create LB's ingress by kubectl yaml file
-  private static boolean INGRESSPERDOMAIN = true;
 
   public Domain() throws Exception {
     domainMap = new HashMap<>();
@@ -88,7 +84,7 @@ public class Domain {
 
   public Domain(Map<String, Object> inputDomainMap) throws Exception {
     initialize(inputDomainMap);
-    createPV();
+    createPv();
     createSecret();
     generateInputYaml();
     callCreateDomainScript(userProjectsDir);
@@ -98,7 +94,7 @@ public class Domain {
   /**
    * Verifies the required pods are created, services are created and the servers are ready.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyDomainCreated() throws Exception {
     StringBuffer command = new StringBuffer();
@@ -113,9 +109,9 @@ public class Domain {
   }
 
   /**
-   * verify pods are created
+   * verify pods are created.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyPodsCreated() throws Exception {
     // check admin pod
@@ -138,20 +134,20 @@ public class Domain {
   }
 
   /**
-   * verify services are created
+   * verify services are created.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyServicesCreated() throws Exception {
     verifyServicesCreated(false);
   }
 
   /**
-   * verify services are created
+   * verify services are created.
    *
    * @param precreateService - if true check services are created for configuredManagedServerCount
    *     number of servers else check for initialManagedServerReplicas number of servers
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyServicesCreated(boolean precreateService) throws Exception {
     // check admin service
@@ -186,9 +182,9 @@ public class Domain {
   }
 
   /**
-   * verify servers are ready
+   * verify servers are ready.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyServersReady() throws Exception {
     // check admin pod
@@ -254,11 +250,11 @@ public class Domain {
   }
 
   /**
-   * verify nodeport by accessing admin REST endpoint
+   * verify nodeport by accessing admin REST endpoint.
    *
-   * @param username
-   * @param password
-   * @throws Exception
+   * @param username username
+   * @param password password
+   * @throws Exception exception
    */
   public void verifyAdminServerExternalService(String username, String password) throws Exception {
 
@@ -296,12 +292,12 @@ public class Domain {
   }
 
   /**
-   * Verify that we have the channel set for the cluster
+   * Verify that we have the channel set for the cluster.
    *
-   * @param protocol
-   * @param port
-   * @param path
-   * @throws Exception
+   * @param protocol protocol
+   * @param port port
+   * @param path path
+   * @throws Exception exception
    */
   public void verifyHasClusterServiceChannelPort(String protocol, int port, String path)
       throws Exception {
@@ -369,11 +365,11 @@ public class Domain {
   }
 
   /**
-   * deploy webapp using nodehost and nodeport
+   * deploy webapp using nodehost and nodeport.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
-  public void deployWebAppViaREST(
+  public void deployWebAppViaRest(
       String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("curl --noproxy '*' --silent  --user ")
@@ -403,11 +399,11 @@ public class Domain {
   }
 
   /**
-   * undeploy webapp using nodehost and nodeport
+   * undeploy webapp using nodehost and nodeport.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
-  public void undeployWebAppViaREST(
+  public void undeployWebAppViaRest(
       String webappName, String webappLocation, String username, String password) throws Exception {
     StringBuffer cmd = new StringBuffer();
     cmd.append("curl --noproxy '*' --silent  --user ")
@@ -433,36 +429,36 @@ public class Domain {
   }
 
   /**
-   * deploy webapp using t3 channel port for wlst
+   * deploy webapp using t3 channel port for wlst.
    *
-   * @param webappName
-   * @param webappLocation
-   * @param username
-   * @param password
-   * @throws Exception
+   * @param webappName webappName
+   * @param webappLocation webappLocation
+   * @param username username
+   * @param password password
+   * @throws Exception exception
    */
-  public void deployWebAppViaWLST(
+  public void deployWebAppViaWlst(
       String webappName,
       String webappLocation,
       String appLocationInPod,
       String username,
       String password)
       throws Exception {
-    deployWebAppViaWLST(webappName, webappLocation, appLocationInPod, username, password, false);
+    deployWebAppViaWlst(webappName, webappLocation, appLocationInPod, username, password, false);
   }
 
   /**
-   * deploy webapp using adminPort or t3 channel port
+   * deploy webapp using adminPort or t3 channel port.
    *
-   * @param webappName
-   * @param webappLocation
-   * @param appLocationInPod
-   * @param username
-   * @param password
-   * @param useAdminPortToDeploy
-   * @throws Exception
+   * @param webappName webappName
+   * @param webappLocation webappLocation
+   * @param appLocationInPod appLocationInPod
+   * @param username username
+   * @param password password
+   * @param useAdminPortToDeploy useAdminPortToDeploy
+   * @throws Exception exception
    */
-  public void deployWebAppViaWLST(
+  public void deployWebAppViaWlst(
       String webappName,
       String webappLocation,
       String appLocationInPod,
@@ -494,10 +490,10 @@ public class Domain {
   /**
    * Creates a Connection Factory using JMS.
    *
-   * @return connection facotry.
-   * @throws Exception
+   * @return connection factory.
+   * @throws Exception exception
    */
-  public ConnectionFactory createJMSConnectionFactory() throws Exception {
+  public ConnectionFactory createJmsConnectionFactory() throws Exception {
     Hashtable<String, String> env = new Hashtable<>();
     env.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
     env.put(Context.PROVIDER_URL, "t3://" + TestUtils.getHostName() + ":" + t3ChannelPort);
@@ -512,10 +508,10 @@ public class Domain {
   }
 
   /**
-   * Test http load balancing using loadBalancerWebPort
+   * Test http load balancing using loadBalancerWebPort.
    *
-   * @param webappName
-   * @throws Exception
+   * @param webappName webappName
+   * @throws Exception exception
    */
   public void verifyWebAppLoadBalancing(String webappName) throws Exception {
     // webapp is deployed with t3channelport, so check if that is true
@@ -526,12 +522,13 @@ public class Domain {
           "webapp is not deployed as exposeAdminT3Channel is false, can not verify loadbalancing");
     }
   }
+
   /**
-   * call webapp and verify load balancing by checking server name in the response
+   * call webapp and verify load balancing by checking server name in the response.
    *
-   * @param webappName
-   * @param verifyLoadBalance
-   * @throws Exception
+   * @param webappName webappName
+   * @param verifyLoadBalance verifyLoadBalance
+   * @throws Exception exception
    */
   public void callWebAppAndVerifyLoadBalancing(String webappName, boolean verifyLoadBalance)
       throws Exception {
@@ -567,9 +564,9 @@ public class Domain {
   }
 
   /**
-   * create domain crd
+   * create domain crd.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void create() throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl create -f ");
@@ -586,9 +583,9 @@ public class Domain {
   }
 
   /**
-   * delete domain crd using yaml
+   * delete domain crd using yaml.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void destroy() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -604,9 +601,9 @@ public class Domain {
   }
 
   /**
-   * delete domain using domain name
+   * delete domain using domain name.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void shutdown() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -616,9 +613,9 @@ public class Domain {
   }
 
   /**
-   * shutdown domain by setting serverStartPolicy to NEVER
+   * shutdown domain by setting serverStartPolicy to NEVER.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void shutdownUsingServerStartPolicy() throws Exception {
     int replicas = TestUtils.getClusterReplicas(domainUid, clusterName, domainNS);
@@ -628,9 +625,9 @@ public class Domain {
   }
 
   /**
-   * restart domain by setting serverStartPolicy to IF_NEEDED
+   * restart domain by setting serverStartPolicy to IF_NEEDED.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void restartUsingServerStartPolicy() throws Exception {
     String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
@@ -640,9 +637,9 @@ public class Domain {
   }
 
   /**
-   * add precreateService true in domain.yaml
+   * add precreateService true in domain.yaml.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void enablePrecreateService() throws Exception {
     String patchStr = "'{\"spec\":{\"serverService\":{\"precreateService\":true}}}'";
@@ -651,10 +648,10 @@ public class Domain {
   }
 
   /**
-   * verify domain is deleted
+   * verify domain is deleted.
    *
-   * @param replicas
-   * @throws Exception
+   * @param replicas replicas
+   * @throws Exception exception
    */
   public void verifyDomainDeleted(int replicas) throws Exception {
     logger.info("Inside verifyDomainDeleted, replicas " + replicas);
@@ -663,10 +660,10 @@ public class Domain {
   }
 
   /**
-   * verify server pods are deleted
+   * verify server pods are deleted.
    *
-   * @param replicas
-   * @throws Exception
+   * @param replicas replicas
+   * @throws Exception exception
    */
   public void verifyServerPodsDeleted(int replicas) throws Exception {
     TestUtils.checkPodDeleted(domainUid + "-" + adminServerName, domainNS);
@@ -680,15 +677,15 @@ public class Domain {
   }
 
   /**
-   * delete PVC and check PV status released when weblogicDomainStorageReclaimPolicy is Recycle
+   * delete PVC and check PV status released when weblogicDomainStorageReclaimPolicy is Recycle.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
-  public void deletePVCAndCheckPVReleased() throws Exception {
-    deletePVCAndCheckPVReleased("create-weblogic-sample-domain-job");
+  public void deletePvcAndCheckPvReleased() throws Exception {
+    deletePvcAndCheckPvReleased("create-weblogic-sample-domain-job");
   }
 
-  public void deletePVCAndCheckPVReleased(String jobName) throws Exception {
+  public void deletePvcAndCheckPvReleased(String jobName) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     String pvBaseName = (String) pvMap.get("baseName");
     if (domainUid != null) pvBaseName = domainUid + "-" + pvBaseName;
@@ -698,9 +695,9 @@ public class Domain {
     if (result.exitValue() == 0) {
       logger.info("Status of PV before deleting PVC " + result.stdout());
     }
-    TestUtils.deletePVC(pvBaseName + "-pvc", domainNS, domainUid, jobName);
+    TestUtils.deletePvc(pvBaseName + "-pvc", domainNS, domainUid, jobName);
     String reclaimPolicy = (String) domainMap.get("weblogicDomainStorageReclaimPolicy");
-    boolean pvReleased = TestUtils.checkPVReleased(pvBaseName, domainNS);
+    boolean pvReleased = TestUtils.checkPvReleased(pvBaseName, domainNS);
     if (reclaimPolicy != null && reclaimPolicy.equals("Recycle") && !pvReleased) {
       throw new RuntimeException(
           "ERROR: pv for " + domainUid + " still exists after the pvc is deleted, exiting!");
@@ -710,9 +707,9 @@ public class Domain {
   }
 
   /**
-   * create domain on existing directory
+   * create domain on existing directory.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void createDomainOnExistingDirectory() throws Exception {
 
@@ -744,10 +741,11 @@ public class Domain {
     }
     throw new RuntimeException("FAIL: unexpected result, create domain job did not report error");
   }
+
   /**
-   * access admin console using load balancer web port for Apache load balancer
+   * access admin console using load balancer web port for Apache load balancer.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyAdminConsoleViaLB() throws Exception {
     if (!loadBalancer.equals("APACHE")) {
@@ -755,7 +753,7 @@ public class Domain {
       return;
     }
     String nodePortHost = getHostNameForCurl();
-    int nodePort = getAdminSericeLBNodePort();
+    int nodePort = getAdminSericeLbNodePort();
     String responseBodyFile =
         userProjectsDir + "/weblogic-domains/" + domainUid + "/testconsole.response.body";
     logger.info("nodePortHost " + nodePortHost + " nodePort " + nodePort);
@@ -788,7 +786,7 @@ public class Domain {
   }
 
   /**
-   * Get the name of the administration server in the domain
+   * Get the name of the administration server in the domain.
    *
    * @return the name of the admin server
    */
@@ -797,7 +795,7 @@ public class Domain {
   }
 
   /**
-   * Get the name of the cluster in the domain
+   * Get the name of the cluster in the domain.
    *
    * @return the name of the cluster
    */
@@ -806,17 +804,18 @@ public class Domain {
   }
 
   /**
-   * Get the namespace in which the domain is running
+   * Get the namespace in which the domain is running.
    *
    * @return the name of the domain name space
    */
-  public String getDomainNS() {
+  public String getDomainNs() {
     return domainNS;
   }
+
   /**
-   * test liveness probe for managed server 1
+   * test liveness probe for managed server 1.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void testWlsLivenessProbe() throws Exception {
 
@@ -826,11 +825,11 @@ public class Domain {
   }
 
   /**
-   * Get number of server addresses in cluster service endpoint
+   * Get number of server addresses in cluster service endpoint.
    *
-   * @param clusterName
-   * @return
-   * @throws Exception
+   * @param clusterName cluster name
+   * @return number of server addresses
+   * @throws Exception exception
    */
   public int getNumberOfServersInClusterServiceEndpoint(String clusterName) throws Exception {
     StringBuffer cmd = new StringBuffer();
@@ -847,14 +846,14 @@ public class Domain {
     return new StringTokenizer(result.stdout(), ",").countTokens();
   }
 
-  private int getAdminSericeLBNodePort() throws Exception {
+  private int getAdminSericeLbNodePort() throws Exception {
 
-    String adminServerLBNodePortService = domainUid + "-apache-webtier";
+    String adminServerLbNodePortService = domainUid + "-apache-webtier";
 
     StringBuffer cmd = new StringBuffer("kubectl get services -n ");
     cmd.append(domainNS)
         .append(" -o jsonpath='{.items[?(@.metadata.name == \"")
-        .append(adminServerLBNodePortService)
+        .append(adminServerLbNodePortService)
         .append("\")].spec.ports[0].nodePort}'");
 
     logger.info("Cmd to get the admins service node port " + cmd);
@@ -872,16 +871,16 @@ public class Domain {
    *     error occurs or any errors while creating PV dir or generating PV/PVC input file or any
    *     errors while executing sample create-pv-pvc.sh script
    */
-  protected void createPV() throws Exception {
+  protected void createPv() throws Exception {
 
     Yaml yaml = new Yaml();
-    InputStream pv_is =
+    InputStream pvis =
         new FileInputStream(
             new File(
                 BaseTest.getResultDir()
                     + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
-    pvMap = yaml.load(pv_is);
-    pv_is.close();
+    pvMap = yaml.load(pvis);
+    pvis.close();
     pvMap.put("domainUID", domainUid);
 
     // each domain uses its own pv for now
@@ -987,46 +986,6 @@ public class Domain {
   }
 
   /**
-   * Get runtime server yaml file and verify the changed property is in that file.
-   *
-   * @param changedProperty - the changed/added property
-   * @param serverName - server name that is being tested
-   * @throws Exception - test FAILURE Exception if the changed property is not found in the server
-   *     yaml file
-   */
-  public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
-    logger.info("Inside findServerPropertyChange");
-    // get runtime server pod yaml file
-    String outDir = BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/";
-    StringBuffer command = new StringBuffer();
-    command
-        .append("kubectl get po/")
-        .append(
-            domainUid
-                + "-"
-                + serverName
-                + " -o yaml -n "
-                + domainNS
-                + "|"
-                + "grep "
-                + "\""
-                + changedProperty
-                + "\"");
-    logger.info("kubectl execut with command: " + command.toString());
-    TestUtils.exec(command.toString());
-
-    String result = ((TestUtils.exec(command.toString())).stdout());
-    logger.info(
-        "in the method findServerPropertyChange, " + command.toString() + " return " + result);
-    if (!result.contains(changedProperty)) {
-      throw new Exception(
-          "FAILURE: didn't find the property: " + changedProperty + " for the server" + serverName);
-    }
-
-    logger.info("Done - findServerPropertyChange");
-  }
-
-  /**
    * Verify domain server pods get restarted after the property change by kubectl apply -f new
    * domain yaml file with added/changed property.
    *
@@ -1072,9 +1031,49 @@ public class Domain {
   }
 
   /**
+   * Get runtime server yaml file and verify the changed property is in that file.
+   *
+   * @param changedProperty - the changed/added property
+   * @param serverName - server name that is being tested
+   * @throws Exception - test FAILURE Exception if the changed property is not found in the server
+   *     yaml file
+   */
+  public void findServerPropertyChange(String changedProperty, String serverName) throws Exception {
+    logger.info("Inside findServerPropertyChange");
+    // get runtime server pod yaml file
+    String outDir = BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/";
+    StringBuffer command = new StringBuffer();
+    command
+        .append("kubectl get po/")
+        .append(
+            domainUid
+                + "-"
+                + serverName
+                + " -o yaml -n "
+                + domainNS
+                + "|"
+                + "grep "
+                + "\""
+                + changedProperty
+                + "\"");
+    logger.info("kubectl execut with command: " + command.toString());
+    TestUtils.exec(command.toString());
+
+    String result = ((TestUtils.exec(command.toString())).stdout());
+    logger.info(
+        "in the method findServerPropertyChange, " + command.toString() + " return " + result);
+    if (!result.contains(changedProperty)) {
+      throw new Exception(
+          "FAILURE: didn't find the property: " + changedProperty + " for the server" + serverName);
+    }
+
+    logger.info("Done - findServerPropertyChange");
+  }
+
+  /**
    * verify that admin server pod gets restarted.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyAdminServerRestarted() throws Exception {
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
@@ -1087,7 +1086,7 @@ public class Domain {
   /**
    * verify that managed server pods get restarted.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void verifyManagedServersRestarted() throws Exception {
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
@@ -1161,7 +1160,7 @@ public class Domain {
   protected void callCreateDomainScript(String outputDir) throws Exception {
 
     // call different create domain script based on the domain type
-    String createDomainScriptCmd = prepareCmdToCallCreateDomainScript(outputDir);
+    final String createDomainScriptCmd = prepareCmdToCallCreateDomainScript(outputDir);
 
     // clone docker sample from github and copy create domain py script for domain in image case
     if (domainMap.containsKey("domainHomeImageBase")) {
@@ -1196,7 +1195,7 @@ public class Domain {
     if (domainMap.containsKey("domainHomeImageBase") && BaseTest.SHARED_CLUSTER) {
       String image =
           System.getenv("REPO_REGISTRY") + "/weblogick8s/domain-home-in-image:" + imageTag;
-      TestUtils.loginAndPushImageToOCIR(image);
+      TestUtils.loginAndPushImageToOcir(image);
 
       // create ocir registry secret in the same ns as domain which is used while pulling the domain
       // image
@@ -1365,6 +1364,7 @@ public class Domain {
         try {
           Thread.sleep(waitTime * 1000);
         } catch (InterruptedException ignore) {
+          // no-op
         }
       } else {
         logger.info("callWebApp returned 200 response code, iteration " + i);
@@ -1795,9 +1795,9 @@ public class Domain {
   }
 
   /**
-   * Shut down a ms by setting serverStartPolicy to NEVER
+   * Shut down a ms by setting serverStartPolicy to NEVER.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void shutdownManagedServerUsingServerStartPolicy(String msName) throws Exception {
     logger.info("About to shutdown managed server <" + msName + ">");
@@ -1811,9 +1811,9 @@ public class Domain {
   }
 
   /**
-   * Restart a ms by setting serverStartPolicy to IF_NEEDED
+   * Restart a ms by setting serverStartPolicy to IF_NEEDED.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   public void restartManagedServerUsingServerStartPolicy(String msName) throws Exception {
     logger.info("About to restart managed server <" + msName + "> ");
@@ -1828,7 +1828,7 @@ public class Domain {
   }
 
   /**
-   * Run the shell script to build WAR, EAR or JAR file and deploy the App in the admin pod
+   * Run the shell script to build WAR, EAR or JAR file and deploy the App in the admin pod.
    *
    * @param webappName - Web App Name to be deployed
    * @param scriptName - a shell script to build WAR, EAR or JAR file and deploy the App in the
@@ -1836,7 +1836,7 @@ public class Domain {
    * @param username - weblogic user name
    * @param password - weblogc password
    * @param args - optional args to add for script if needed
-   * @throws Exception
+   * @throws Exception exception
    */
   public void callShellScriptToBuildDeployAppInPod(
       String webappName, String scriptName, String username, String password, String... args)
@@ -1902,7 +1902,7 @@ public class Domain {
 
   /**
    * create config map and label with domainUid and create secret used in custom situational
-   * configuration which contains hostname, db user, db password
+   * configuration which contains hostname, db user, db password.
    *
    * @throws Exception when any of the kubectl commands to create config map, label, secret fails or
    *     if could not run them
@@ -1956,7 +1956,7 @@ public class Domain {
 
   /**
    * Create dir to save Web App files Copy the shell script file and all App files over to the admin
-   * pod Run the shell script to build WAR, EAR or JAR file and deploy the App in the admin pod
+   * pod Run the shell script to build WAR, EAR or JAR file and deploy the App in the admin pod.
    *
    * @param appName - Java App name to be deployed
    * @param scriptName - a shell script to build WAR, EAR or JAR file and deploy the App in the
@@ -1965,17 +1965,17 @@ public class Domain {
    * @param password - weblogc password
    * @param args - by default, a WAR file is created for a Web App and a EAR file is created for EJB
    *     App. this varargs gives a client a chance to change EJB's archive extenyion to JAR
-   * @throws Exception
+   * @throws Exception exception
    */
   public void buildDeployJavaAppInPod(
       String appName, String scriptName, String username, String password, String... args)
       throws Exception {
-    String adminServerPod = domainUid + "-" + adminServerName;
+    final String adminServerPod = domainUid + "-" + adminServerName;
 
     String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + appName;
     String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + appName;
-    String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
-    String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
+    final String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
+    final String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
 
     // Default values to build archive file
     final String initInfoDirName = "WEB-INF";
