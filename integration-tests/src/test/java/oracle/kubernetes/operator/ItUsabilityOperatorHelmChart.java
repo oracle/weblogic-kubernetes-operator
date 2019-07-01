@@ -17,6 +17,7 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -183,6 +184,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception exception
    */
   @Test
+  @Ignore
   public void testNotPreCreatedOpNsCreateOperatorNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -219,6 +221,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception exception
    */
   @Test
+  @Ignore
   public void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -276,6 +279,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception exception
    */
   @Test
+  @Ignore
   public void testSecondOpSharingSameTargetDomainsNsNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -338,6 +342,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception exception
    */
   @Test
+  @Ignore
   public void testTargetNsIsNotPreexistedNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
