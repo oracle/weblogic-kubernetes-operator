@@ -12,32 +12,32 @@ public class LegalNames {
   private static final String DOMAIN_INTROSPECTOR_JOB_PATTERN = "%s-introspect-domain-job";
   private static final String EXTERNAL_SERVICE_PATTERN = "%s-%s-external";
 
-  public static String toServerServiceName(String domainUID, String serverName) {
-    return toServerName(domainUID, serverName);
+  public static String toServerServiceName(String domainUid, String serverName) {
+    return toServerName(domainUid, serverName);
   }
 
-  private static String toServerName(String domainUID, String serverName) {
-    return toDNS1123LegalName(String.format(SERVER_PATTERN, domainUID, serverName));
+  private static String toServerName(String domainUid, String serverName) {
+    return toDns1123LegalName(String.format(SERVER_PATTERN, domainUid, serverName));
   }
 
-  public static String toEventName(String domainUID, String serverName) {
-    return toServerName(domainUID, serverName);
+  public static String toEventName(String domainUid, String serverName) {
+    return toServerName(domainUid, serverName);
   }
 
-  public static String toPodName(String domainUID, String serverName) {
-    return toServerName(domainUID, serverName);
+  public static String toPodName(String domainUid, String serverName) {
+    return toServerName(domainUid, serverName);
   }
 
-  public static String toClusterServiceName(String domainUID, String clusterName) {
-    return toDNS1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUID, clusterName));
+  public static String toClusterServiceName(String domainUid, String clusterName) {
+    return toDns1123LegalName(String.format(CLUSTER_SERVICE_PATTERN, domainUid, clusterName));
   }
 
-  public static String toJobIntrospectorName(String domainUID) {
-    return toDNS1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUID));
+  public static String toJobIntrospectorName(String domainUid) {
+    return toDns1123LegalName(String.format(DOMAIN_INTROSPECTOR_JOB_PATTERN, domainUid));
   }
 
-  public static String toExternalServiceName(String domainUID, String serverName) {
-    return toDNS1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUID, serverName));
+  public static String toExternalServiceName(String domainUid, String serverName) {
+    return toDns1123LegalName(String.format(EXTERNAL_SERVICE_PATTERN, domainUid, serverName));
   }
 
   /**
@@ -46,7 +46,7 @@ public class LegalNames {
    * @param value Input value
    * @return nearest DNS-1123 legal name
    */
-  public static String toDNS1123LegalName(String value) {
+  public static String toDns1123LegalName(String value) {
     return value.toLowerCase().replace('_', '-');
   }
 }
