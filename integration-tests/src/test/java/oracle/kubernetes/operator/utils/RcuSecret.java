@@ -31,7 +31,7 @@ public class RcuSecret extends Secret {
     String command =
         "kubectl -n "
             + this.namespace
-            + "	create secret generic "
+            + " create secret generic "
             + this.secretName
             + " --from-literal=username="
             + this.username

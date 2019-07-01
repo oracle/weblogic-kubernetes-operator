@@ -5,6 +5,7 @@
 package oracle.kubernetes.weblogic.domain;
 
 import javax.annotation.Nonnull;
+
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;

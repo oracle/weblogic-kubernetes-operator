@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Event;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Event;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -21,6 +22,18 @@ public class EventWatcher extends Watcher<V1Event> {
   private final String ns;
   private final String fieldSelector;
 
+  private EventWatcher(
+      String ns,
+      String fieldSelector,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<V1Event> listener,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping, listener);
+    this.ns = ns;
+    this.fieldSelector = fieldSelector;
+  }
+
   public static EventWatcher create(
       ThreadFactory factory,
       String ns,
@@ -33,18 +46,6 @@ public class EventWatcher extends Watcher<V1Event> {
         new EventWatcher(ns, fieldSelector, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
-  }
-
-  private EventWatcher(
-      String ns,
-      String fieldSelector,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      WatchListener<V1Event> listener,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
-    this.ns = ns;
-    this.fieldSelector = fieldSelector;
   }
 
   @Override

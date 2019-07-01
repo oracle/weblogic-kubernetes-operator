@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.nio.file.Path;
+
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServiceAccount;
-import java.nio.file.Path;
 
 /** Parses a generated weblogic-domain-apache.yaml file into a set of typed k8s java objects */
 public class ParsedApacheYaml extends ParsedKubernetesYaml {
@@ -41,6 +42,6 @@ public class ParsedApacheYaml extends ParsedKubernetesYaml {
   }
 
   private String getApacheName() {
-    return inputs.getDomainUID() + "-apache-webtier";
+    return inputs.getDomainUid() + "-apache-webtier";
   }
 }
