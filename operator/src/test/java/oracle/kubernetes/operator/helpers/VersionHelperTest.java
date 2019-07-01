@@ -1,20 +1,24 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.LabelConstants.*;
-import static oracle.kubernetes.operator.helpers.VersionHelper.*;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-
 import io.kubernetes.client.models.V1ObjectMeta;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.helpers.VersionHelper.matchesResourceVersion;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 public class VersionHelperTest {
 
   private static final String V1 = "v1";
+
+  private static V1ObjectMeta newObjectMeta() {
+    return new V1ObjectMeta();
+  }
 
   @Test
   public void null_metadata_returns_false() throws Exception {
@@ -31,10 +35,6 @@ public class VersionHelperTest {
     assertThat(
         matchesResourceVersion(newObjectMeta().putLabelsItem(RESOURCE_VERSION_LABEL, null), V1),
         equalTo(false));
-  }
-
-  private static V1ObjectMeta newObjectMeta() {
-    return new V1ObjectMeta();
   }
 
   @Test

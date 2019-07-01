@@ -4,24 +4,14 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
-import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
-import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1Pod;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.VersionConstants;
@@ -32,6 +22,23 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.Test;
+
+import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
+import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_CREATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_PATCHED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ManagedPodHelperTest extends PodHelperTestBase {
 
@@ -84,6 +91,11 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Override
   ServerConfigurator configureServer() {
     return configureServer(getConfigurator(), SERVER_NAME);
+  }
+
+  @Override
+  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
+    return configurator.configureServer(serverName);
   }
 
   private void expectReplaceDomainStatus() {
@@ -171,12 +183,12 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenPacketHasEnvironmentItemsWithVariable_createManagedPodShouldNotChangeItsValue() {
-    V1EnvVar ENVVAR = toEnvVar(ITEM1, RAW_VALUE_1);
-    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(ENVVAR));
+    V1EnvVar envVar = toEnvVar(ITEM1, RAW_VALUE_1);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(envVar));
 
     getCreatedPodSpecContainer();
 
-    assertThat(ENVVAR.getValue(), is(RAW_VALUE_1));
+    assertThat(envVar.getValue(), is(RAW_VALUE_1));
   }
 
   @Test
@@ -740,10 +752,5 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   @Override
   V1Pod createPod(Packet packet) {
     return new PodHelper.ManagedPodStepContext(null, packet).getPodModel();
-  }
-
-  @Override
-  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
-    return configurator.configureServer(serverName);
   }
 }

@@ -1,14 +1,15 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.custom.Quantity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+
+import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.Quantity;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.yaml.snakeyaml.DumperOptions;
@@ -21,7 +22,9 @@ import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Represent;
 import org.yaml.snakeyaml.representer.Representer;
 
-/** Yaml utilities for the create script tests */
+/**
+ * Yaml utilities for the create script tests.
+ */
 public class YamlUtils {
 
   public static Yaml newYaml() {
@@ -32,6 +35,13 @@ public class YamlUtils {
     options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
     options.setPrettyFlow(true);
     return new Yaml(new MyConstructor(), new MyRepresenter(), options);
+  }
+
+  // Note: don't name it 'equalTo' since it conflicts with static importing
+  // all the standard matchers, which would force callers to individually import
+  // the standard matchers.
+  public static YamlMatcher yamlEqualTo(Object expectedObject) {
+    return new YamlMatcher(expectedObject);
   }
 
   // We want to be able to test that yamls are identical by doing string compares
@@ -92,13 +102,6 @@ public class YamlUtils {
         return super.construct(node);
       }
     }
-  }
-
-  // Note: don't name it 'equalTo' since it conflicts with static importing
-  // all the standard matchers, which would force callers to individually import
-  // the standard matchers.
-  public static YamlMatcher yamlEqualTo(Object expectedObject) {
-    return new YamlMatcher(expectedObject);
   }
 
   // Most k8s objects have an 'equals' implementation that works well across instances.

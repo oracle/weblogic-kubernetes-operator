@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -8,13 +8,16 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-/** Tests for the create domain kubernetes job */
+/**
+ * Tests for the create domain kubernetes job.
+ */
 @Ignore
 public class CreateDomainTest {
 
@@ -32,21 +35,21 @@ public class CreateDomainTest {
       final Path dstDir = folder.getRoot().toPath();
       Path createJobScript = dstDir.resolve(srcFile1.getFileName());
       final Path createJobTemplate = dstDir.resolve(srcFile2.getFileName());
-      final Path createPVTemplate = dstDir.resolve(srcFile3.getFileName());
-      final Path createPVTCemplate = dstDir.resolve(srcFile4.getFileName());
+      final Path createPvTemplate = dstDir.resolve(srcFile3.getFileName());
+      final Path createPvcTemplate = dstDir.resolve(srcFile4.getFileName());
 
       Files.copy(srcFile1, createJobScript);
       Files.copy(srcFile2, createJobTemplate);
-      Files.copy(srcFile3, createPVTemplate);
-      Files.copy(srcFile4, createPVTCemplate);
+      Files.copy(srcFile3, createPvTemplate);
+      Files.copy(srcFile4, createPvcTemplate);
 
       // Generate a domain UID
-      final String domainUID = "domain" + "9999";
+      final String domainUid = "domain" + "9999";
 
       // Edit the script to generate a domain for this test
       String content = new String(Files.readAllBytes(createJobScript));
       content = content.replace("pv001-claim", "pv9999-claim");
-      content = content.replace("domain1", domainUID);
+      content = content.replace("domain1", domainUid);
       Files.write(createJobScript, content.getBytes());
 
       // Generate the create domain job for kubernetes

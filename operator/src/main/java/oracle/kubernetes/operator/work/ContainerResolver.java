@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -21,6 +21,15 @@ public abstract class ContainerResolver {
       new AtomicReference(DEFAULT);
 
   /**
+   * Returns the container resolver which can be used to get client's {@link Container}.
+   *
+   * @return container resolver instance
+   */
+  public static ContainerResolver getInstance() {
+    return theResolver.get();
+  }
+
+  /**
    * Sets the custom container resolver which can be used to get client's {@link Container}.
    *
    * @param resolver container resolver
@@ -30,15 +39,6 @@ public abstract class ContainerResolver {
       resolver = DEFAULT;
     }
     theResolver.set(resolver);
-  }
-
-  /**
-   * Returns the container resolver which can be used to get client's {@link Container}.
-   *
-   * @return container resolver instance
-   */
-  public static ContainerResolver getInstance() {
-    return theResolver.get();
   }
 
   /**

@@ -1,8 +1,14 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
+
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -12,23 +18,17 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import java.util.List;
-import org.junit.Test;
-
 public class HelmOperatorValuesTest {
 
   private static final String OPERATOR_CHART = "weblogic-operator";
 
   private final int intValue = getRandomInt();
   private final String stringValue = Integer.toString(intValue);
+  private final HelmOperatorValues operatorValues = new HelmOperatorValues();
 
   private static int getRandomInt() {
     return (int) (1000000 * Math.random());
   }
-
-  private final HelmOperatorValues operatorValues = new HelmOperatorValues();
 
   @Test
   public void whenServiceAccountSet_createdMapContainsValue() {
@@ -67,7 +67,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void WeblogicOperatorImageIsGettableStringValue() {
+  public void weblogicOperatorImageIsGettableStringValue() {
     operatorValues.weblogicOperatorImage(stringValue);
 
     assertThat(operatorValues.getWeblogicOperatorImage(), equalTo(stringValue));
@@ -102,7 +102,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void JavaLoggingLevelIsGettableStringValue() {
+  public void javaLoggingLevelIsGettableStringValue() {
     operatorValues.javaLoggingLevel(stringValue);
 
     assertThat(operatorValues.getJavaLoggingLevel(), equalTo(stringValue));
@@ -133,7 +133,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void WeblogicOperatorNamespaceIsGettableStringValue() {
+  public void weblogicOperatorNamespaceIsGettableStringValue() {
     operatorValues.namespace(stringValue);
 
     assertThat(operatorValues.getNamespace(), equalTo(stringValue));
@@ -162,7 +162,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void WeblogicOperatorImagePullPolicyIsGettableStringValue() {
+  public void weblogicOperatorImagePullPolicyIsGettableStringValue() {
     operatorValues.weblogicOperatorImagePullPolicy(stringValue);
 
     assertThat(operatorValues.getWeblogicOperatorImagePullPolicy(), equalTo(stringValue));
@@ -337,7 +337,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void InternalDebugHttpPortIsGettableStringValue() {
+  public void internalDebugHttpPortIsGettableStringValue() {
     operatorValues.internalDebugHttpPort(stringValue);
 
     assertThat(operatorValues.getInternalDebugHttpPort(), equalTo(stringValue));
@@ -423,7 +423,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void ExternalDebugHttpPortIsGettableStringValue() {
+  public void externalDebugHttpPortIsGettableStringValue() {
     operatorValues.externalDebugHttpPort(stringValue);
 
     assertThat(operatorValues.getExternalDebugHttpPort(), equalTo(stringValue));

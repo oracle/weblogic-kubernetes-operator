@@ -1,19 +1,20 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-
-import com.meterware.simplestub.Memento;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.meterware.simplestub.Memento;
 import oracle.kubernetes.TestUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 
 public class StepChainTest {
   private FiberTestSupport testSupport = new FiberTestSupport();
@@ -88,6 +89,11 @@ public class StepChainTest {
       this.name = name;
     }
 
+    @SuppressWarnings("unchecked")
+    private static List<String> getNames(Packet p) {
+      return (List<String>) p.get(NAMES);
+    }
+
     @Override
     public NextAction apply(Packet packet) {
       getStepNames(packet).add(name);
@@ -100,11 +106,6 @@ public class StepChainTest {
         packet.put(NAMES, new ArrayList<String>());
       }
       return (List<String>) packet.get(NAMES);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<String> getNames(Packet p) {
-      return (List<String>) p.get(NAMES);
     }
   }
 }

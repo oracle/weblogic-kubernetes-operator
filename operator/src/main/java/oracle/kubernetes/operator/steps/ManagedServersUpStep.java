@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -33,12 +34,97 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public class ManagedServersUpStep extends Step {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   static final String SERVERS_UP_MSG =
       "Running servers for domain with UID: {0}, running list: {1}";
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, config, servers, next) ->
           scaleDownIfNecessary(info, config, servers, new ClusterServicesStep(next));
+
+  public ManagedServersUpStep(Step next) {
+    super(next);
+  }
+
+  public static Collection<String> getRunningServers(DomainPresenceInfo info) {
+    return info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList());
+  }
+
+  private static Step scaleDownIfNecessary(
+      DomainPresenceInfo info,
+      WlsDomainConfig domainTopology,
+      Collection<String> servers,
+      Step next) {
+
+    List<Step> steps = new ArrayList<>(Collections.singletonList(next));
+
+    List<String> serversToIgnore = new ArrayList<>(servers);
+    if (info.getDomain().isShuttingDown()) {
+      insert(steps, createAvailableHookStep());
+    } else {
+      serversToIgnore.add(domainTopology.getAdminServerName());
+    }
+
+    List<String> serversToStop = getServersToStop(info, serversToIgnore);
+
+    if (!serversToStop.isEmpty()) {
+      insert(steps, new ServerDownIteratorStep(serversToStop, null));
+    }
+
+    return Step.chain(steps.toArray(new Step[0]));
+  }
+
+  private static List<String> getServersToStop(
+      DomainPresenceInfo info, List<String> serversToIgnore) {
+    return info.getServerNames().stream()
+        .filter(n -> !serversToIgnore.contains(n))
+        .collect(Collectors.toList());
+  }
+
+  private static Step createAvailableHookStep() {
+    return DomainStatusUpdater.createAvailableStep(
+        DomainStatusUpdater.ALL_STOPPED_AVAILABLE_REASON, null);
+  }
+
+  private static void insert(List<Step> steps, Step step) {
+    steps.add(0, step);
+  }
+
+  @Override
+  public NextAction apply(Packet packet) {
+    LOGGER.entering();
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+
+    ServersUpStepFactory factory = new ServersUpStepFactory(config, info.getDomain());
+
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUid(), getRunningServers(info));
+    }
+
+    Set<String> clusteredServers = new HashSet<>();
+
+    for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
+      factory.logIfReplicasExceedsClusterServersMax(clusterConfig);
+      for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
+        factory.addServerIfNeeded(serverConfig, clusterConfig);
+        clusteredServers.add(serverConfig.getName());
+      }
+    }
+
+    for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
+      if (!clusteredServers.contains(serverConfig.getName())) {
+        factory.addServerIfNeeded(serverConfig, null);
+      }
+    }
+
+    info.setServerStartupInfo(factory.getStartupInfos());
+    LOGGER.exiting();
+
+    return doNext(
+        NEXT_STEP_FACTORY.createServerStep(
+            info, config, factory.servers, factory.createNextStep(getNext())),
+        packet);
+  }
 
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
@@ -127,90 +213,5 @@ public class ManagedServersUpStep extends Step {
             clusterName);
       }
     }
-  }
-
-  public ManagedServersUpStep(Step next) {
-    super(next);
-  }
-
-  @Override
-  public NextAction apply(Packet packet) {
-    LOGGER.entering();
-    DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
-    WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-
-    ServersUpStepFactory factory = new ServersUpStepFactory(config, info.getDomain());
-
-    if (LOGGER.isFineEnabled()) {
-      LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUID(), getRunningServers(info));
-    }
-
-    Set<String> clusteredServers = new HashSet<>();
-
-    for (WlsClusterConfig clusterConfig : config.getClusterConfigs().values()) {
-      factory.logIfReplicasExceedsClusterServersMax(clusterConfig);
-      for (WlsServerConfig serverConfig : clusterConfig.getServerConfigs()) {
-        factory.addServerIfNeeded(serverConfig, clusterConfig);
-        clusteredServers.add(serverConfig.getName());
-      }
-    }
-
-    for (WlsServerConfig serverConfig : config.getServerConfigs().values()) {
-      if (!clusteredServers.contains(serverConfig.getName())) {
-        factory.addServerIfNeeded(serverConfig, null);
-      }
-    }
-
-    info.setServerStartupInfo(factory.getStartupInfos());
-    LOGGER.exiting();
-
-    return doNext(
-        NEXT_STEP_FACTORY.createServerStep(
-            info, config, factory.servers, factory.createNextStep(getNext())),
-        packet);
-  }
-
-  public static Collection<String> getRunningServers(DomainPresenceInfo info) {
-    return info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList());
-  }
-
-  private static Step scaleDownIfNecessary(
-      DomainPresenceInfo info,
-      WlsDomainConfig domainTopology,
-      Collection<String> servers,
-      Step next) {
-
-    List<Step> steps = new ArrayList<>(Collections.singletonList(next));
-
-    List<String> serversToIgnore = new ArrayList<>(servers);
-    if (info.getDomain().isShuttingDown()) {
-      insert(steps, createAvailableHookStep());
-    } else {
-      serversToIgnore.add(domainTopology.getAdminServerName());
-    }
-
-    List<String> serversToStop = getServersToStop(info, serversToIgnore);
-
-    if (!serversToStop.isEmpty()) {
-      insert(steps, new ServerDownIteratorStep(serversToStop, null));
-    }
-
-    return Step.chain(steps.toArray(new Step[0]));
-  }
-
-  private static List<String> getServersToStop(
-      DomainPresenceInfo info, List<String> serversToIgnore) {
-    return info.getServerNames().stream()
-        .filter(n -> !serversToIgnore.contains(n))
-        .collect(Collectors.toList());
-  }
-
-  private static Step createAvailableHookStep() {
-    return DomainStatusUpdater.createAvailableStep(
-        DomainStatusUpdater.ALL_STOPPED_AVAILABLE_REASON, null);
-  }
-
-  private static void insert(List<Step> steps, Step step) {
-    steps.add(0, step);
   }
 }

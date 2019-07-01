@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -18,7 +18,7 @@ abstract class FileSystem {
 
   static final FileSystem LIVE_FILE_SYSTEM = new LiveFileSystem();
 
-  abstract URL toURL(File file) throws MalformedURLException;
+  abstract URL toUrl(File file) throws MalformedURLException;
 
   abstract File[] listFiles(File directory);
 
@@ -41,7 +41,7 @@ abstract class FileSystem {
   private static class LiveFileSystem extends FileSystem {
 
     @Override
-    URL toURL(File file) throws MalformedURLException {
+    URL toUrl(File file) throws MalformedURLException {
       return file.toURI().toURL();
     }
 

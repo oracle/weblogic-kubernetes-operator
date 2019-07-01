@@ -4,12 +4,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
+import java.net.HttpURLConnection;
+import java.util.Collections;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
-import java.net.HttpURLConnection;
-import java.util.Collections;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -18,6 +17,8 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
 /**
  * Support for writing unit tests that use CallBuilder to send requests that expect asynchronous
@@ -54,43 +55,6 @@ public class AsyncCallTestSupport extends FiberTestSupport {
     return new StepFactoryMemento(new RequestStepFactory());
   }
 
-  private static class StepFactoryMemento implements Memento {
-    private AsyncRequestStepFactory oldFactory;
-
-    StepFactoryMemento(AsyncRequestStepFactory newFactory) {
-      oldFactory = CallBuilder.setStepFactory(newFactory);
-    }
-
-    @Override
-    public void revert() {
-      CallBuilder.resetStepFactory();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T getOriginalValue() {
-      return (T) oldFactory;
-    }
-  }
-
-  private class RequestStepFactory implements AsyncRequestStepFactory {
-
-    @Override
-    public <T> Step createRequestAsync(
-        ResponseStep<T> next,
-        RequestParams requestParams,
-        CallFactory<T> factory,
-        ClientPool helper,
-        int timeoutSeconds,
-        int maxRetryCount,
-        String fieldSelector,
-        String labelSelector,
-        String resourceVersion) {
-      return new CannedResponseStep(
-          next, callTestSupport.getMatchingResponse(requestParams, fieldSelector, labelSelector));
-    }
-  }
-
   /**
    * Primes CallBuilder to expect a request for the specified method.
    *
@@ -120,6 +84,25 @@ public class AsyncCallTestSupport extends FiberTestSupport {
    */
   public void verifyAllDefinedResponsesInvoked() {
     callTestSupport.verifyAllDefinedResponsesInvoked();
+  }
+
+  private static class StepFactoryMemento implements Memento {
+    private AsyncRequestStepFactory oldFactory;
+
+    StepFactoryMemento(AsyncRequestStepFactory newFactory) {
+      oldFactory = CallBuilder.setStepFactory(newFactory);
+    }
+
+    @Override
+    public void revert() {
+      CallBuilder.resetStepFactory();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getOriginalValue() {
+      return (T) oldFactory;
+    }
   }
 
   private static class CannedResponseStep extends Step {
@@ -181,6 +164,24 @@ public class AsyncCallTestSupport extends FiberTestSupport {
                   new CallResponse(null, new ApiException(), status, Collections.emptyMap())));
 
       return doNext(packet);
+    }
+  }
+
+  private class RequestStepFactory implements AsyncRequestStepFactory {
+
+    @Override
+    public <T> Step createRequestAsync(
+        ResponseStep<T> next,
+        RequestParams requestParams,
+        CallFactory<T> factory,
+        ClientPool helper,
+        int timeoutSeconds,
+        int maxRetryCount,
+        String fieldSelector,
+        String labelSelector,
+        String resourceVersion) {
+      return new CannedResponseStep(
+          next, callTestSupport.getMatchingResponse(requestParams, fieldSelector, labelSelector));
     }
   }
 }

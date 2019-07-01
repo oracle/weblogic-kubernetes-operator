@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -22,7 +22,7 @@ class ExternalSchema {
     return new URL(url);
   }
 
-  URL getCacheURL(String baseDir) throws MalformedURLException {
+  URL getCacheUrl(String baseDir) throws MalformedURLException {
     return new File(new File(baseDir), cache).toURI().toURL();
   }
 }

@@ -1,8 +1,12 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import io.kubernetes.client.ApiClient;
 import io.kubernetes.client.ApiException;
@@ -11,9 +15,6 @@ import io.kubernetes.client.models.V1ObjectReference;
 import io.kubernetes.client.models.V1Secret;
 import io.kubernetes.client.models.V1ServiceAccount;
 import io.kubernetes.client.models.V1ServiceAccountList;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Map.Entry;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.codec.binary.Base64;
@@ -24,12 +25,11 @@ import org.apache.commons.codec.binary.Base64;
  */
 public class Helpers {
 
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings("unused")
   private final Authenticator authenticator;
-
   private final ApiClient apiClient;
   private final CoreV1Api coreApi;
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   public Helpers(Authenticator authenticator) {
     this.authenticator = authenticator;
