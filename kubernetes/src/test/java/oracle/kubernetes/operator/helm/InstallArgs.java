@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -6,9 +6,12 @@ package oracle.kubernetes.operator.helm;
 
 import java.util.Map;
 import java.util.Objects;
+
 import org.apache.commons.lang3.StringUtils;
 
-/** The arguments needed to install a helm chart */
+/**
+ * The arguments needed to install a helm chart.
+ */
 @SuppressWarnings({"unchecked", "SameParameterValue"})
 public class InstallArgs {
   private final String chartName;

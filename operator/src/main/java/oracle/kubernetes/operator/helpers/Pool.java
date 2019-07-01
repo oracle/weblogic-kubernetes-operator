@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 

@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.operator.utils;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import java.io.IOException;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.Configuration;
@@ -36,12 +37,14 @@ import io.kubernetes.client.models.V1ServiceList;
 import io.kubernetes.client.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.models.V1beta1IngressList;
 import io.kubernetes.client.util.ClientBuilder;
-import java.io.IOException;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class K8sTestUtils {
+  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+
   static {
     try {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
@@ -57,7 +60,6 @@ public class K8sTestUtils {
   private ExtensionsV1beta1Api extensionsV1beta1Api = new ExtensionsV1beta1Api();
   private RbacAuthorizationV1Api rbacAuthorizationV1Api = new RbacAuthorizationV1Api();
   private ApiextensionsV1beta1Api apiextensionsV1beta1Api = new ApiextensionsV1beta1Api();
-  public static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   public void verifyDomainCrd() throws Exception {
     try {
@@ -348,7 +350,7 @@ public class K8sTestUtils {
   }
 
   /**
-   * Utility method to get the pods in a namespace filtered by given label
+   * Utility method to get the pods in a namespace filtered by given label.
    *
    * @param namespace - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space
@@ -381,7 +383,7 @@ public class K8sTestUtils {
   }
 
   /**
-   * Utility method to get a pod matching the given name
+   * Utility method to get a pod matching the given name.
    *
    * @param namespace - String namespace in which to look for the pods
    * @param labelSelectors - String selector to filter the pods in the name space

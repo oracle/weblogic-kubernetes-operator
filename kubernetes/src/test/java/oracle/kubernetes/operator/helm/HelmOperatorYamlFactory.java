@@ -1,18 +1,19 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyOrNullString;
-
 import java.util.Map;
+
 import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
 import oracle.kubernetes.operator.utils.OperatorValues;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 import oracle.kubernetes.operator.utils.ParsedWeblogicOperatorSecurityYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicOperatorYaml;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyOrNullString;
 
 public class HelmOperatorYamlFactory extends OperatorYamlFactory {
 

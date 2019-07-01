@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -23,7 +23,7 @@ public abstract class DomainValues {
   private String adminNodePort = "";
   private String adminServerName = "";
   private String domainName = "";
-  private String domainUID = "";
+  private String domainUid = "";
   private String serverStartPolicy = "";
   private String clusterName = "";
   private String clusterType = "";
@@ -32,7 +32,7 @@ public abstract class DomainValues {
   private String managedServerNameBase = "";
   private String managedServerPort = "";
   private String weblogicDomainStorageReclaimPolicy = "";
-  private String weblogicDomainStorageNFSServer = "";
+  private String weblogicDomainStorageNfsServer = "";
   private String weblogicDomainStoragePath = "";
   private String weblogicDomainStorageSize = "";
   private String weblogicDomainStorageType = "";
@@ -92,7 +92,7 @@ public abstract class DomainValues {
         .clusterType(CLUSTER_TYPE_DYNAMIC)
         .domainName("TestDomain")
         .weblogicImage("container-registry.oracle.com/middleware/weblogic:19.1.0.0")
-        .domainUID("test-domain-uid")
+        .domainUid("test-domain-uid")
         .javaOptions("TestJavaOptions")
         .loadBalancerDashboardPort("31315")
         .loadBalancerWebPort("31305")
@@ -100,7 +100,7 @@ public abstract class DomainValues {
         .managedServerNameBase("test-managed-server")
         .managedServerPort("8002")
         .initialManagedServerReplicas("3")
-        .weblogicDomainStorageNFSServer("TestDomainStorageNFSServer")
+        .weblogicDomainStorageNfsServer("TestDomainStorageNFSServer")
         .namespace("test-domain-namespace")
         .weblogicDomainStoragePath("TestDomainStoragePath")
         .weblogicDomainStorageSize("20Gi")
@@ -112,23 +112,23 @@ public abstract class DomainValues {
   }
 
   public String getWeblogicDomainStorageClass() {
-    return getDomainUID() + "-weblogic-domain-storage-class";
+    return getDomainUid() + "-weblogic-domain-storage-class";
   }
 
   public String getWeblogicDomainPersistentVolumeName() {
-    return getDomainUID() + "-weblogic-domain-pv";
+    return getDomainUid() + "-weblogic-domain-pv";
   }
 
   public String getWeblogicDomainPersistentVolumeClaimName() {
-    return getDomainUID() + "-weblogic-domain-pvc";
+    return getDomainUid() + "-weblogic-domain-pvc";
   }
 
   public String getWeblogicDomainJobPersistentVolumeName() {
-    return getDomainUID() + "-weblogic-domain-job-pv";
+    return getDomainUid() + "-weblogic-domain-job-pv";
   }
 
   public String getWeblogicDomainJobPersistentVolumeClaimName() {
-    return getDomainUID() + "-weblogic-domain-job-pvc";
+    return getDomainUid() + "-weblogic-domain-job-pvc";
   }
 
   public String getAdminServerName() {
@@ -170,16 +170,16 @@ public abstract class DomainValues {
     return this;
   }
 
-  public String getDomainUID() {
-    return domainUID;
+  public String getDomainUid() {
+    return domainUid;
   }
 
-  public void setDomainUID(String domainUID) {
-    this.domainUID = convertNullToEmptyString(domainUID);
+  public void setDomainUid(String domainUid) {
+    this.domainUid = convertNullToEmptyString(domainUid);
   }
 
-  public DomainValues domainUID(String domainUID) {
-    setDomainUID(domainUID);
+  public DomainValues domainUid(String domainUid) {
+    setDomainUid(domainUid);
     return this;
   }
 
@@ -274,16 +274,16 @@ public abstract class DomainValues {
     return this;
   }
 
-  public String getWeblogicDomainStorageNFSServer() {
-    return weblogicDomainStorageNFSServer;
+  public String getWeblogicDomainStorageNfsServer() {
+    return weblogicDomainStorageNfsServer;
   }
 
-  public void setWeblogicDomainStorageNFSServer(String weblogicDomainStorageNFSServer) {
-    this.weblogicDomainStorageNFSServer = convertNullToEmptyString(weblogicDomainStorageNFSServer);
+  public void setWeblogicDomainStorageNfsServer(String weblogicDomainStorageNfsServer) {
+    this.weblogicDomainStorageNfsServer = convertNullToEmptyString(weblogicDomainStorageNfsServer);
   }
 
-  public DomainValues weblogicDomainStorageNFSServer(String weblogicDomainStorageNFSServer) {
-    setWeblogicDomainStorageNFSServer(weblogicDomainStorageNFSServer);
+  public DomainValues weblogicDomainStorageNfsServer(String weblogicDomainStorageNfsServer) {
+    setWeblogicDomainStorageNfsServer(weblogicDomainStorageNfsServer);
     return this;
   }
 

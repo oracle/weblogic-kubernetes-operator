@@ -12,10 +12,11 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import oracle.kubernetes.operator.utils.DBUtils;
-import oracle.kubernetes.operator.utils.DomainCRD;
+
+import oracle.kubernetes.operator.utils.DbUtils;
+import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
-import oracle.kubernetes.operator.utils.JRFDomain;
+import oracle.kubernetes.operator.utils.JrfDomain;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -52,12 +53,12 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
     initialize(APP_PROPS_FILE);
 
     // create DB used for jrf domain
-    DBUtils.createOracleDB(DB_PROP_FILE);
+    DbUtils.createOracleDB(DB_PROP_FILE);
 
     // run RCU first
-    DBUtils.deleteNamespace(DBUtils.DEFAULT_RCU_NAMESPACE);
-    DBUtils.createNamespace(DBUtils.DEFAULT_RCU_NAMESPACE);
-    rcuPodName = DBUtils.createRCUPod(DBUtils.DEFAULT_RCU_NAMESPACE);
+    DbUtils.deleteNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+    DbUtils.createNamespace(DbUtils.DEFAULT_RCU_NAMESPACE);
+    rcuPodName = DbUtils.createRcuPod(DbUtils.DEFAULT_RCU_NAMESPACE);
 
     // TODO: reconsider the logic to check the db readiness
     // The jrfdomain can not find the db pod even the db pod shows ready, sleep more time
@@ -90,7 +91,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testJRFDomainClusterRestartVersion() throws Exception {
+  public void testJrfDomainClusterRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -99,7 +100,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain domain1 = null;
+    JrfDomain domain1 = null;
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
@@ -111,11 +112,11 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1Map.put("initialManagedServerReplicas", 4);
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain1Map);
+      DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
       logger.info("Creating Domain & verifying the domain creation");
-      domain1 = new JRFDomain(domain1Map);
+      domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
       String originalYaml =
@@ -123,7 +124,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
 
       // Rolling restart the cluster by setting restartVersion at the cluster level
       // Modify the original domain yaml to include restartVersion in cluster level
-      DomainCRD crd = new DomainCRD(originalYaml);
+      DomainCrd crd = new DomainCrd(originalYaml);
       Map<String, Object> clusterRestartVersion = new HashMap();
       clusterRestartVersion.put("restartVersion", "clusterV1");
       clusterRestartVersion.put("maxUnavailable", new Integer(2));
@@ -148,16 +149,16 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
           (Integer) domain1.getDomainMap().get("initialManagedServerReplicas");
       // TODO: this verification will fail due to bug 29678557
       logger.info("Verifying the number of not ready MS pods can not exceed maxUnavailable value");
-      verifyMSPodsNotReadyCountNotExceedMaxUnAvailable(domain1, expectedMsPodsCount, 2);
+      verifyMsPodsNotReadyCountNotExceedMaxUnAvailable(domain1, expectedMsPodsCount, 2);
 
       // TODO: this verification will fail due to bug 29720185
       logger.info("Verifying the number of MS pods");
-      if (getMSPodsCount(domain1) != expectedMsPodsCount) {
+      if (getMsPodsCount(domain1) != expectedMsPodsCount) {
         throw new Exception(
             "The number of MS pods is not right, expect: "
                 + expectedMsPodsCount
                 + ", got: "
-                + getMSPodsCount(domain1));
+                + getMsPodsCount(domain1));
       }
 
       testCompletedSuccessfully = true;
@@ -178,7 +179,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testJRFDomainMSPodCreated() throws Exception {
+  public void testJrfDomainMsPodCreated() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -187,7 +188,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain domain1 = null;
+    JrfDomain domain1 = null;
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
@@ -200,11 +201,11 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1Map.put("exposeAdminNodePort", false);
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain1Map);
+      DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
       logger.info("Creating Domain & verifying the domain creation");
-      domain1 = new JRFDomain(domain1Map);
+      domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
       testCompletedSuccessfully = true;
@@ -225,7 +226,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testJRFDomainCreateDomainScriptsMountPath() throws Exception {
+  public void testJrfDomainCreateDomainScriptsMountPath() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -234,7 +235,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain domain1 = null;
+    JrfDomain domain1 = null;
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
@@ -247,11 +248,11 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1Map.put("createDomainScriptsMountPath", "/u01/weblogic1");
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain1Map);
+      DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
       logger.info("Creating Domain & verifying the domain creation");
-      domain1 = new JRFDomain(domain1Map);
+      domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
       testCompletedSuccessfully = true;
@@ -272,7 +273,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testJRFDomainAdminPortEnabled() throws Exception {
+  public void testJrfDomainAdminPortEnabled() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -281,7 +282,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain domain1 = null;
+    JrfDomain domain1 = null;
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
@@ -302,11 +303,11 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
           "-Dweblogic.StdoutDebugEnabled=false -Dweblogic.ssl.AcceptKSSDemoCertsEnabled=true");
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain1Map);
+      DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
       logger.info("Creating Domain & verifying the domain creation");
-      domain1 = new JRFDomain(domain1Map, true);
+      domain1 = new JrfDomain(domain1Map, true);
       domain1.verifyDomainCreated();
 
       testCompletedSuccessfully = true;
@@ -326,7 +327,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
    * @throws Exception - if any error occurs
    */
   @Test
-  public void testJRFDomainAdminT3Channel() throws Exception {
+  public void testJrfDomainAdminT3Channel() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
@@ -335,7 +336,7 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       operator1 = TestUtils.createOperator(JRF_OPERATOR_FILE_1);
     }
 
-    JRFDomain domain1 = null;
+    JrfDomain domain1 = null;
     boolean testCompletedSuccessfully = false;
     try {
       Map<String, Object> domain1Map = TestUtils.loadYaml(JRF_DOMAIN_ON_PV_WLST_FILE);
@@ -346,11 +347,11 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       domain1Map.put("rcuSchemaPrefix", "jrft3");
 
       // run RCU script to load db schema
-      DBUtils.runRCU(rcuPodName, domain1Map);
+      DbUtils.runRcu(rcuPodName, domain1Map);
 
       // create domain
       logger.info("Creating Domain & verifying the domain creation");
-      domain1 = new JRFDomain(domain1Map);
+      domain1 = new JrfDomain(domain1Map);
       domain1.verifyDomainCreated();
 
       // verify the Admin T3Channel is exposed
@@ -368,30 +369,30 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
 
   /**
    * verify that during the rolling restart, the number of managed server pods which are not ready
-   * can not exceed the maxUnAvailable value
+   * can not exceed the maxUnAvailable value.
    *
    * @param domain - jrfdomain
-   * @param expectedMSPodsCount - total number of managed server pods expected
+   * @param expectedMsPodsCount - total number of managed server pods expected
    * @param maxUnavailable - maxUnAvailable value of the managed server pods
    * @throws Exception - if any error occurs
    */
-  private void verifyMSPodsNotReadyCountNotExceedMaxUnAvailable(
-      JRFDomain domain, int expectedMSPodsCount, int maxUnavailable) throws Exception {
+  private void verifyMsPodsNotReadyCountNotExceedMaxUnAvailable(
+      JrfDomain domain, int expectedMsPodsCount, int maxUnavailable) throws Exception {
     int i = 0;
     // first wait for the ms pods to be in terminating state
-    while (i < getMaxIterationsPod() && getMSPodsNotReadyCount(domain) < 1) {
+    while (i < getMaxIterationsPod() && getMsPodsNotReadyCount(domain) < 1) {
       Thread.sleep(2000);
       i++;
     }
-    if (getMSPodsNotReadyCount(domain) == 0) {
+    if (getMsPodsNotReadyCount(domain) == 0) {
       throw new Exception("hit timeout while waiting for the first MS pod to be restarted");
     }
 
     // check the not ready MS pod count should not exceed maxUnavailable value
     i = 0;
-    int msPodRunningAndReadyCount = getMSPodsRunningAndReadyCount(domain);
-    while (i < getMaxIterationsPod() * 8 && msPodRunningAndReadyCount != expectedMSPodsCount) {
-      int msPodsNotReadyCount = getMSPodsNotReadyCount(domain);
+    int msPodRunningAndReadyCount = getMsPodsRunningAndReadyCount(domain);
+    while (i < getMaxIterationsPod() * 8 && msPodRunningAndReadyCount != expectedMsPodsCount) {
+      int msPodsNotReadyCount = getMsPodsNotReadyCount(domain);
       logger.info(
           "Iter ["
               + i
@@ -406,24 +407,24 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
       }
       Thread.sleep(2000);
       i++;
-      msPodRunningAndReadyCount = getMSPodsRunningAndReadyCount(domain);
+      msPodRunningAndReadyCount = getMsPodsRunningAndReadyCount(domain);
     }
   }
 
   /**
-   * get the number of managed server pods which are not ready
+   * get the number of managed server pods which are not ready.
    *
    * @param domain - jrfdomain
    * @return - returns the number of managed server pods which are not ready
    * @throws Exception - if any error occurs
    */
-  private int getMSPodsNotReadyCount(JRFDomain domain) throws Exception {
+  private int getMsPodsNotReadyCount(JrfDomain domain) throws Exception {
 
     String domainuid = (String) domain.getDomainMap().get("domainUID");
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pods -n ")
-        .append(domain.getDomainNS())
+        .append(domain.getDomainNs())
         .append(" | grep ")
         .append(domainuid + "-" + managedServerNameBase)
         .append(" | grep 0/1 | wc -l");
@@ -433,19 +434,19 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
   }
 
   /**
-   * get the number of managed server pods which are running and ready
+   * get the number of managed server pods which are running and ready.
    *
    * @param domain - jrfdomain
    * @return - returns the number of managed server pods which are running and ready
    * @throws Exception - if any error occurs
    */
-  private int getMSPodsRunningAndReadyCount(JRFDomain domain) throws Exception {
+  private int getMsPodsRunningAndReadyCount(JrfDomain domain) throws Exception {
 
     String domainuid = (String) domain.getDomainMap().get("domainUID");
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pods -n ")
-        .append(domain.getDomainNS())
+        .append(domain.getDomainNs())
         .append(" | grep ")
         .append(domainuid + "-" + managedServerNameBase)
         .append(" | grep 1/1 | grep Running | wc -l");
@@ -455,18 +456,18 @@ public class JrfInOperatorAdvancedTest extends BaseTest {
   }
 
   /**
-   * get the number of managed server pods created
+   * get the number of managed server pods created.
    *
    * @param domain - jrfdomain
    * @return - returns the number of managed server pods created
    * @throws Exception - if any error occurs
    */
-  private int getMSPodsCount(JRFDomain domain) throws Exception {
+  private int getMsPodsCount(JrfDomain domain) throws Exception {
     String domainuid = (String) domain.getDomainMap().get("domainUID");
     String managedServerNameBase = (String) domain.getDomainMap().get("managedServerNameBase");
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pods -n ")
-        .append(domain.getDomainNS())
+        .append(domain.getDomainNs())
         .append(" | grep ")
         .append(domainuid + "-" + managedServerNameBase)
         .append(" | wc -l");

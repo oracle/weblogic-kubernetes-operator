@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -7,11 +7,11 @@ package oracle.kubernetes.operator.utils;
 import java.util.logging.Logger;
 
 public class Secret {
+  protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   protected String secretName;
   protected String namespace;
   protected String username;
   protected String password;
-  protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   public Secret() throws Exception {
     secretName = "";
@@ -31,7 +31,7 @@ public class Secret {
         "kubectl -n "
             + this.namespace
             + ""
-            + "	create secret generic "
+            + " create secret generic "
             + this.secretName
             + " --from-literal=username="
             + this.username

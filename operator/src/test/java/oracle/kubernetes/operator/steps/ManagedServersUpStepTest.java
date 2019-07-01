@@ -4,29 +4,6 @@
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.LogMatcher.containsFine;
-import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
-import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
-import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,6 +11,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -56,6 +39,24 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
+import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
+import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
+import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /**
  * Tests the code to bring up managed servers. "Wls Servers" and "WLS Clusters" are those defined in
@@ -82,6 +83,20 @@ public class ManagedServersUpStepTest {
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private Memento factoryMemento;
 
+  private static void addServer(DomainPresenceInfo domainPresenceInfo, String serverName) {
+    domainPresenceInfo.setServerPod(serverName, createPod(serverName));
+  }
+
+  private static V1Pod createPod(String serverName) {
+    return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName));
+  }
+
+  private static V1ObjectMeta withNames(V1ObjectMeta objectMeta, String serverName) {
+    return objectMeta
+        .name(LegalNames.toPodName(UID, serverName))
+        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, serverName);
+  }
+
   private DomainPresenceInfo createDomainPresenceInfo() {
     return new DomainPresenceInfo(domain);
   }
@@ -95,7 +110,7 @@ public class ManagedServersUpStepTest {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainUID(UID).withReplicas(1);
+    return new DomainSpec().withDomainUid(UID).withReplicas(1);
   }
 
   @Before
@@ -434,20 +449,6 @@ public class ManagedServersUpStepTest {
     assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
   }
 
-  private static void addServer(DomainPresenceInfo domainPresenceInfo, String serverName) {
-    domainPresenceInfo.setServerPod(serverName, createPod(serverName));
-  }
-
-  private static V1Pod createPod(String serverName) {
-    return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName));
-  }
-
-  private static V1ObjectMeta withNames(V1ObjectMeta objectMeta, String serverName) {
-    return objectMeta
-        .name(LegalNames.toPodName(UID, serverName))
-        .putLabelsItem(LabelConstants.SERVERNAME_LABEL, serverName);
-  }
-
   @Test
   public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(domainPresenceInfo, "server1");
@@ -481,12 +482,12 @@ public class ManagedServersUpStepTest {
     assertThat(((ServerDownIteratorStep) step).getServersToStop(), containsInAnyOrder(servers));
   }
 
-  private Step createNextStep() {
-    return createNextStep(Collections.emptyList());
-  }
-
   private Step createNextStepWithout(String... serverNames) {
     return createNextStep(Arrays.asList(serverNames));
+  }
+
+  private Step createNextStep() {
+    return createNextStep(Collections.emptyList());
   }
 
   private Step createNextStep(List<String> servers) {

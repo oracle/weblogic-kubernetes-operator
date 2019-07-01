@@ -1,12 +1,13 @@
-// Copyright 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.kubernetes.client.ApiException;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -20,6 +21,16 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 public class DomainWatcher extends Watcher<Domain> {
   private final String ns;
 
+  private DomainWatcher(
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<Domain> listener,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping, listener);
+    this.ns = ns;
+  }
+
   public static DomainWatcher create(
       ThreadFactory factory,
       String ns,
@@ -31,16 +42,6 @@ public class DomainWatcher extends Watcher<Domain> {
         new DomainWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
-  }
-
-  private DomainWatcher(
-      String ns,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      WatchListener<Domain> listener,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
-    this.ns = ns;
   }
 
   @Override

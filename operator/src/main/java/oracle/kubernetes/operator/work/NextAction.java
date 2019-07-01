@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -19,12 +19,6 @@ public final class NextAction {
   Packet packet;
   Consumer<Fiber> onExit;
   Throwable throwable;
-
-  public enum Kind {
-    INVOKE,
-    SUSPEND,
-    THROW
-  }
 
   private void set(Kind k, Step v, Packet p) {
     this.kind = k;
@@ -148,5 +142,11 @@ public final class NextAction {
     buf.append("next=").append(next).append(',');
     buf.append("packet=").append(packet != null ? packet.toString() : null).append(']');
     return buf.toString();
+  }
+
+  public enum Kind {
+    INVOKE,
+    SUSPEND,
+    THROW
   }
 }

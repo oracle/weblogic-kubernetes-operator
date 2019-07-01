@@ -4,10 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1EnvVar;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+
+import io.kubernetes.client.models.V1EnvVar;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -132,6 +137,7 @@ public abstract class StepContextBase implements StepContextConstants {
               results.add(new Pair<>(m, set));
             }
           } catch (NoSuchMethodException nsme) {
+            // no-op
           }
         }
       }
