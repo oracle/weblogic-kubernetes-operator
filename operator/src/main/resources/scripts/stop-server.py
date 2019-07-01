@@ -23,6 +23,7 @@
 #
 
 import sys
+import os
 import traceback
 import base64
 import time as systime
@@ -88,16 +89,6 @@ def checkCoherenceClusterExist(configData):
     traceback.print_exc(file=sys.stdout)
     print('Shutdown: Exception processing config data, assume Coherence exists')
     return True
-
-
-# Coherence exists and we cannot connect to the admin server.  To be on
-# the safe side, loop forever until the Operator kills the pod otherwise
-# there is a risk to lose data
-def waitForeverBecauseCoherence():
-  print('Shutdown: Waiting until Operator kills the pod since this domain has Coherence')
-  while (True):
-    print('Shutdown: Sleeping 60 seconds ...')
-    systime.sleep(60)
 
 
 # If there is a Coherence cluster then we wait until it is safe to shutdown
