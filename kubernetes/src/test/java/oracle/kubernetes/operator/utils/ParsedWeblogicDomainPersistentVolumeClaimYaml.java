@@ -4,8 +4,9 @@
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.models.V1PersistentVolumeClaim;
 import java.nio.file.Path;
+
+import io.kubernetes.client.models.V1PersistentVolumeClaim;
 
 /** Parses a generated weblogic-domain-pvc.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicDomainPersistentVolumeClaimYaml extends ParsedKubernetesYaml {

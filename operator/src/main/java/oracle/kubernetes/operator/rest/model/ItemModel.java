@@ -5,4 +5,5 @@
 package oracle.kubernetes.operator.rest.model;
 
 /** ItemModel is the base class for all singular resources (singletons and collection children). */
-public class ItemModel extends LinkContainerModel {}
+public class ItemModel extends LinkContainerModel {
+}
