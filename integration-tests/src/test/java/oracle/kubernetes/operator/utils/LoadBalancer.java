@@ -13,13 +13,13 @@ import java.nio.file.StandardCopyOption;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
+
 import oracle.kubernetes.operator.BaseTest;
 
 public class LoadBalancer {
 
-  private Map<String, Object> lbMap;
-
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+  private Map<String, Object> lbMap;
 
   public LoadBalancer(Map lbMap) throws Exception {
     this.lbMap = lbMap;
@@ -261,7 +261,7 @@ public class LoadBalancer {
         + result.stderr();
   }
 
-  public Map<String, Object> getLBMap() {
+  public Map<String, Object> getLbMap() {
     return lbMap;
   }
 

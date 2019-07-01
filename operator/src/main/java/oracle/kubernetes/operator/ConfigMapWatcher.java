@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1ConfigMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1ConfigMap;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -20,6 +21,16 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
   private final String ns;
 
+  private ConfigMapWatcher(
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<V1ConfigMap> listener,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping, listener);
+    this.ns = ns;
+  }
+
   public static ConfigMapWatcher create(
       ThreadFactory factory,
       String ns,
@@ -31,16 +42,6 @@ public class ConfigMapWatcher extends Watcher<V1ConfigMap> {
         new ConfigMapWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
-  }
-
-  private ConfigMapWatcher(
-      String ns,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      WatchListener<V1ConfigMap> listener,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
-    this.ns = ns;
   }
 
   @Override

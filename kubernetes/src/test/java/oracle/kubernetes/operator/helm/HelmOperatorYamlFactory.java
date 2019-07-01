@@ -4,15 +4,16 @@
 
 package oracle.kubernetes.operator.helm;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyOrNullString;
-
 import java.util.Map;
+
 import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
 import oracle.kubernetes.operator.utils.OperatorValues;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 import oracle.kubernetes.operator.utils.ParsedWeblogicOperatorSecurityYaml;
 import oracle.kubernetes.operator.utils.ParsedWeblogicOperatorYaml;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyOrNullString;
 
 public class HelmOperatorYamlFactory extends OperatorYamlFactory {
 

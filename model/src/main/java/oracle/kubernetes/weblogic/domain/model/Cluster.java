@@ -4,11 +4,12 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
@@ -85,23 +86,23 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.replicas = replicas;
   }
 
-  @Override
-  public void setServerStartPolicy(String serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
-  }
-
   @Nullable
   @Override
   public String getServerStartPolicy() {
     return serverStartPolicy;
   }
 
-  public void setClusterService(KubernetesResource clusterService) {
-    this.clusterService = clusterService;
+  @Override
+  public void setServerStartPolicy(String serverStartPolicy) {
+    this.serverStartPolicy = serverStartPolicy;
   }
 
   public KubernetesResource getClusterService() {
     return clusterService;
+  }
+
+  public void setClusterService(KubernetesResource clusterService) {
+    this.clusterService = clusterService;
   }
 
   public Map<String, String> getClusterLabels() {
