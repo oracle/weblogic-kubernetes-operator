@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
+
 import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.json.YamlDocGenerator;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -51,8 +52,8 @@ public class MainImpl implements Main {
   }
 
   @Override
-  public void defineSchemaUrlAndContents(URL schemaURL, URL cacheUrl) throws IOException {
-    generator.addExternalSchema(schemaURL, cacheUrl);
+  public void defineSchemaUrlAndContents(URL schemaUrl, URL cacheUrl) throws IOException {
+    generator.addExternalSchema(schemaUrl, cacheUrl);
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")

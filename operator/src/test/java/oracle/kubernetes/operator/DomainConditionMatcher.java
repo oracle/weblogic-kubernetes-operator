@@ -7,6 +7,7 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -22,12 +23,12 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   private String expectedReason;
   private String expectedMessage;
 
-  static DomainConditionMatcher hasCondition(DomainConditionType type) {
-    return new DomainConditionMatcher(type);
-  }
-
   private DomainConditionMatcher(DomainConditionType expectedType) {
     this.expectedType = expectedType;
+  }
+
+  static DomainConditionMatcher hasCondition(DomainConditionType type) {
+    return new DomainConditionMatcher(type);
   }
 
   DomainConditionMatcher withStatus(String status) {

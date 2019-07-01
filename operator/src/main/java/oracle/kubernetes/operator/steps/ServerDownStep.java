@@ -29,7 +29,7 @@ public class ServerDownStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     V1Pod oldPod = info.getServerPod(serverName);
 
     Step next;
@@ -38,7 +38,7 @@ public class ServerDownStep extends Step {
     } else {
       next = ServiceHelper.deleteServicesStep(serverName, getNext());
       if (oldPod != null) {
-        PodAwaiterStepFactory pw = packet.getSPI(PodAwaiterStepFactory.class);
+        PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
         next = pw.waitForDelete(oldPod, next);
       }
     }

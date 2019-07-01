@@ -4,6 +4,10 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import org.junit.Test;
+
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -11,10 +15,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import org.junit.Test;
 
 public class AdminServerTest extends BaseConfigurationTestBase {
   private static final String CHANNEL1 = "default";

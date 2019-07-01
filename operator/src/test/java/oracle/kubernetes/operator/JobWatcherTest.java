@@ -4,23 +4,15 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.sameInstance;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.models.V1Job;
 import io.kubernetes.client.models.V1JobCondition;
 import io.kubernetes.client.models.V1JobStatus;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
@@ -30,14 +22,23 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
+
 /** This test class verifies the behavior of the JobWatcher. */
 public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private static final int INITIAL_RESOURCE_VERSION = 234;
-  private Packet packet;
-  private V1Job job = new V1Job().metadata(new V1ObjectMeta().name("test"));
   private static final String NS = "ns1";
   private static final String VERSION = "123";
+  private Packet packet;
+  private V1Job job = new V1Job().metadata(new V1ObjectMeta().name("test"));
 
   public void setUp() throws Exception {
     super.setUp();
@@ -136,7 +137,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void WhenWaitForReadyAppliedToReadyJob_performNextStep() {
+  public void whenWaitForReadyAppliedToReadyJob_performNextStep() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     JobWatcher watcher =
         JobWatcher.create(this, "ns", Integer.toString(INITIAL_RESOURCE_VERSION), tuning, stopping);
