@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.nio.file.Path;
+
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Job;
-import java.nio.file.Path;
 
 /** Parses a generated create-weblogic-domain-job.yaml file into a set of typed k8s java objects */
 public class ParsedCreateWeblogicDomainJobYaml extends ParsedKubernetesYaml {
@@ -25,11 +26,11 @@ public class ParsedCreateWeblogicDomainJobYaml extends ParsedKubernetesYaml {
   }
 
   public V1ConfigMap getCreateWeblogicDomainConfigMap() {
-    return getConfigMaps().find(inputs.getDomainUID() + "-create-weblogic-domain-job-cm");
+    return getConfigMaps().find(inputs.getDomainUid() + "-create-weblogic-domain-job-cm");
   }
 
   public V1Job getCreateWeblogicDomainJob() {
-    return getJobs().find(inputs.getDomainUID() + "-create-weblogic-domain-job");
+    return getJobs().find(inputs.getDomainUid() + "-create-weblogic-domain-job");
   }
 
   public int getExpectedObjectCount() {

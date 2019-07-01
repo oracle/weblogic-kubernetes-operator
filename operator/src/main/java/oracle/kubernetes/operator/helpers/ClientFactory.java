@@ -4,7 +4,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.ApiClient;
 import java.util.function.Supplier;
+
+import io.kubernetes.client.ApiClient;
 
 public interface ClientFactory extends Supplier<ApiClient> {}

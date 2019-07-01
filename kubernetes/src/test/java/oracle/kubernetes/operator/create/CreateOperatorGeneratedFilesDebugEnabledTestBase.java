@@ -4,12 +4,12 @@
 
 package oracle.kubernetes.operator.create;
 
-import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVar;
-
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1Service;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
+
+import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVar;
 
 public abstract class CreateOperatorGeneratedFilesDebugEnabledTestBase
     extends CreateOperatorGeneratedFilesTestBase {
