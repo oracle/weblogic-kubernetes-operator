@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * Registry for component delegates. It is expected that implementations of ComponentRegistry will
  * delegate to registered {@link Component}s in its own implementation of {@link
- * Component#getSPI(java.lang.Class)}, either before or after it considers its own SPI
+ * Component#getSpi(java.lang.Class)}, either before or after it considers its own SPI
  * implementations.
  */
 public interface ComponentRegistry extends Component {
