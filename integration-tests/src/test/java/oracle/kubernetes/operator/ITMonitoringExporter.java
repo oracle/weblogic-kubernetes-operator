@@ -75,7 +75,6 @@ public class ITMonitoringExporter extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    QUICKTEST = true;
     if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
       logger.info("Checking if operator and domain are running, if not creating");
@@ -571,6 +570,9 @@ public class ITMonitoringExporter extends BaseTest {
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
     try {
+      if (domain != null) {
+        domain.destroy();
+      }
       setupPVMYSQL();
       createWLSImageAndDeploy();
       installPrometheusGrafanaViaChart();
