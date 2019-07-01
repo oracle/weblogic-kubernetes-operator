@@ -116,7 +116,7 @@ def waitUntilCoherenceSafe():
   print ('Shutdown: getting all service Coherence MBeans')
 
   domainRuntime()
-  query='Coherence:type=Service,name=*,*'
+  query='Coherence:type=PartitionAssignment,service=*,*'
 
   # Wait forever until we get positive ack that it is ok to shutdown this server.
   done = False
@@ -133,7 +133,7 @@ def waitUntilCoherenceSafe():
       print ('Shutdown: It is safe to shutdown Coherence')
 
     except:
-      print ("Shutdown: Exception checking a service Coherence statusHA, retrying...")
+      print ("Shutdown: Exception checking a service Coherence HAStatus, retrying...")
       traceback.print_exc(file=sys.stdout)
       dumpStack()
       systime.sleep(30)
@@ -144,36 +144,21 @@ def waitUntilCoherenceSafe():
 # If the cluster is a single node cluster then the service will always
 # be ENDANGERED, therefore it is the responsibility of the user to
 # set Coherence backup count to 0, or to set the terminate grace period
-# to a low number since this method will just wait until the oeprator kills the
+# to a low number since this method will just wait until the kubernetes kills the
 # pod.
 def waitUntilServiceSafeToShutdown(objectName):
 
-  print ("Shutdown: checking Coherence service " + str(objectName) )
+  print ("Shutdown: checking Coherence service " + str(objectName))
 
   # NOTE: break loop when it safe to shutdown else stay in loop forever
   while (True):
     try:
-      # If the BackupCount is > 0 then the user intention is to have
-      # HA with backed up partitions, otherwise if value is < 1 then the user
-      # doesn't care about HA so no need to wait.
-      # NOTE: if this is NOT a partitioned service we will get exception, ignore and exit loop
-      try:
-        val = mbs.getAttribute(objectName,"BackupCount")
-      except:
-        print ("Shutdown: Coherence BackupCount attribute missing")
-        val = None
-        pass
-
-      if (val is None) or int(val) < 1:
-        print ("Shutdown: Coherence skipping status check for this service since BackupCount < 1.  Value is " + str(val))
-        break
-
-      status = mbs.getAttribute(objectName,"StatusHA")
+      status = mbs.getAttribute(objectName,"HAStatus")
       if (status is None):
-        print ("Shutdown: None returned for Coherence StatusHA")
+        print ("Shutdown: None returned for Coherence HAStatus")
         break
 
-      print ('Shutdown: Coherence StatusHA is ' + status)
+      print ('Shutdown: Coherence HAStatus is ' + status)
       if status != "ENDANGERED":
         break
 
