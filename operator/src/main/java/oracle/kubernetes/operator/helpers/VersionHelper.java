@@ -4,8 +4,9 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.Map;
+
+import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
 
 /** Helper methods for managing versions. */

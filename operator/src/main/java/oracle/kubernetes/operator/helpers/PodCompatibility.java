@@ -4,25 +4,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.LabelConstants.CLUSTERRESTARTVERSION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINRESTARTVERSION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-import static oracle.kubernetes.operator.helpers.PodCompatibility.asSet;
-import static oracle.kubernetes.operator.helpers.PodCompatibility.getMissingElements;
-import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.INTERNAL_OPERATOR_CERT_ENV;
-
-import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +14,21 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Probe;
+import io.kubernetes.client.models.V1ResourceRequirements;
 import oracle.kubernetes.operator.LabelConstants;
+
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERRESTARTVERSION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINRESTARTVERSION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.SERVERRESTARTVERSION_LABEL;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.INTERNAL_OPERATOR_CERT_ENV;
 
 /** A class which defines the compatability rules for existing vs. specified pods. */
 class PodCompatibility extends CollectiveCompatibility {
@@ -40,6 +36,16 @@ class PodCompatibility extends CollectiveCompatibility {
     add("sha256Hash", AnnotationHelper.getHash(expected), AnnotationHelper.getHash(actual));
     add(new PodMetadataCompatibility(expected.getMetadata(), actual.getMetadata()));
     add(new PodSpecCompatibility(expected.getSpec(), actual.getSpec()));
+  }
+
+  static <T> Set<T> asSet(Collection<T> collection) {
+    return (collection == null) ? Collections.emptySet() : new HashSet<>(collection);
+  }
+
+  static <T> Set<T> getMissingElements(Collection<T> expected, Collection<T> actual) {
+    Set<T> missing = asSet(expected);
+    if (actual != null) missing.removeAll(actual);
+    return missing;
   }
 
   static class PodMetadataCompatibility extends CollectiveCompatibility {
@@ -240,18 +246,18 @@ class PodCompatibility extends CollectiveCompatibility {
       this.actual = actual;
     }
 
-    @Override
-    public boolean isCompatible() {
-      return KubernetesUtils.mapEquals(getLimits(expected), getLimits(actual))
-          && KubernetesUtils.mapEquals(getRequests(expected), getRequests(actual));
-    }
-
     private static Map<String, Quantity> getLimits(V1ResourceRequirements requirements) {
       return requirements == null ? Collections.emptyMap() : requirements.getLimits();
     }
 
     private static Map<String, Quantity> getRequests(V1ResourceRequirements requirements) {
       return requirements == null ? Collections.emptyMap() : requirements.getRequests();
+    }
+
+    @Override
+    public boolean isCompatible() {
+      return KubernetesUtils.mapEquals(getLimits(expected), getLimits(actual))
+          && KubernetesUtils.mapEquals(getRequests(expected), getRequests(actual));
     }
 
     @Override
@@ -269,207 +275,5 @@ class PodCompatibility extends CollectiveCompatibility {
                 getRequests(expected), getRequests(actual)));
       return sb.toString();
     }
-  }
-
-  static <T> Set<T> asSet(Collection<T> collection) {
-    return (collection == null) ? Collections.emptySet() : new HashSet<>(collection);
-  }
-
-  static <T> Set<T> getMissingElements(Collection<T> expected, Collection<T> actual) {
-    Set<T> missing = asSet(expected);
-    if (actual != null) missing.removeAll(actual);
-    return missing;
-  }
-}
-
-interface CompatibilityCheck {
-  boolean isCompatible();
-
-  String getIncompatibility();
-
-  default CompatibilityCheck ignoring(String... keys) {
-    return this;
-  }
-}
-
-abstract class CollectiveCompatibility implements CompatibilityCheck {
-  protected List<CompatibilityCheck> checks = new ArrayList<>();
-
-  void add(CompatibilityCheck check) {
-    checks.add(check);
-  }
-
-  void addAll(Collection<CompatibilityCheck> checks) {
-    this.checks.addAll(checks);
-  }
-
-  @Override
-  public boolean isCompatible() {
-    for (CompatibilityCheck check : checks) if (!check.isCompatible()) return false;
-
-    return true;
-  }
-
-  @Override
-  public String getIncompatibility() {
-    final List<String> reasons = new ArrayList<>();
-    for (CompatibilityCheck check : checks)
-      if (!check.isCompatible()) reasons.add(getIndent() + check.getIncompatibility());
-    return reasons.isEmpty() ? null : getHeader() + String.join("\n", reasons);
-  }
-
-  <T> void addSets(String description, List<T> expected, List<T> actual) {
-    add(CheckFactory.create(description, expected, actual));
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  <T> void addSetsIgnoring(String description, List<T> expected, List<T> actual, String... keys) {
-    add(CheckFactory.create(description, expected, actual).ignoring(keys));
-  }
-
-  protected <T> void add(String description, T expected, T actual) {
-    add(new Equality(description, expected, actual));
-  }
-
-  String getHeader() {
-    return "";
-  }
-
-  String getIndent() {
-    return "";
-  }
-}
-
-class Equality implements CompatibilityCheck {
-  private final String description;
-  private final Object expected;
-  private final Object actual;
-
-  Equality(String description, Object expected, Object actual) {
-    this.description = description;
-    this.expected = expected;
-    this.actual = actual;
-  }
-
-  @Override
-  public boolean isCompatible() {
-    return Objects.equals(expected, actual);
-  }
-
-  @Override
-  public String getIncompatibility() {
-    return description + " expected: " + expected + " but was: " + actual;
-  }
-}
-
-class CheckFactory {
-  static <T> CompatibilityCheck create(String description, List<T> expected, List<T> actual) {
-    if (canBeMap(expected) && canBeMap(actual))
-      return new CompatibleMaps<>(description, asMap(expected), asMap(actual));
-    else return new CompatibleSets<>(description, expected, actual);
-  }
-
-  private static <T> boolean canBeMap(List<T> list) {
-    return asMap(list) != null;
-  }
-
-  private static <T> Map<String, T> asMap(List<T> values) {
-    if (values == null) return Collections.emptyMap();
-    Map<String, T> result = new HashMap<>();
-    for (T value : values) {
-      String key = getKey(value);
-      if (key == null) return null;
-      result.put(key, value);
-    }
-
-    return result;
-  }
-
-  private static <T> String getKey(T value) {
-    try {
-      Method getKey = value.getClass().getDeclaredMethod("getName");
-      return (String) getKey.invoke(value);
-    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-      return null;
-    }
-  }
-}
-
-class CompatibleSets<T> implements CompatibilityCheck {
-  private String description;
-  private final Collection<T> expected;
-  private final Collection<T> actual;
-
-  CompatibleSets(String description, Collection<T> expected, Collection<T> actual) {
-    this.description = description;
-    this.expected = expected;
-    this.actual = actual;
-  }
-
-  @Override
-  public boolean isCompatible() {
-    if (expected == actual) return true;
-    return asSet(actual).containsAll(asSet(expected));
-  }
-
-  @Override
-  public String getIncompatibility() {
-    return String.format(
-        "actual %s does not have %s", description, getMissingElements(expected, actual));
-  }
-}
-
-class CompatibleMaps<K, V> implements CompatibilityCheck {
-  private final String description;
-  private final Map<K, V> expected;
-  private final Map<K, V> actual;
-  private List<String> ignoredKeys = new ArrayList<>();
-
-  CompatibleMaps(String description, Map<K, V> expected, Map<K, V> actual) {
-    this.description = description;
-    this.expected = expected;
-    this.actual = actual;
-  }
-
-  @Override
-  public boolean isCompatible() {
-    for (K key : expected.keySet()) if (isKeyToCheck(key) && isIncompatible(key)) return false;
-    return true;
-  }
-
-  private boolean isKeyToCheck(K key) {
-    return !ignoredKeys.contains(key.toString());
-  }
-
-  private boolean isIncompatible(K key) {
-    return !actual.containsKey(key) || valuesDiffer(key);
-  }
-
-  private boolean valuesDiffer(K key) {
-    return !Objects.equals(expected.get(key), actual.get(key));
-  }
-
-  @Override
-  public String getIncompatibility() {
-    StringBuilder sb = new StringBuilder();
-
-    Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
-    if (!missingKeys.isEmpty())
-      sb.append(String.format("actual %s has no entry for '%s'%n", description, missingKeys));
-
-    for (K key : expected.keySet())
-      if (isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key))
-        sb.append(
-            String.format(
-                "actual %s has entry '%s' with value '%s' rather than '%s'%n",
-                description, key, actual.get(key), expected.get(key)));
-
-    return sb.toString();
-  }
-
-  @Override
-  public CompatibilityCheck ignoring(String... keys) {
-    ignoredKeys.addAll(Arrays.asList(keys));
-    return this;
   }
 }

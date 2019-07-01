@@ -4,11 +4,11 @@
 
 package oracle.kubernetes.json;
 
-import static java.lang.annotation.ElementType.FIELD;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
 
 /** Supplies an ECMA 262 regular expression that the field must match. */
 @Retention(RetentionPolicy.RUNTIME)
