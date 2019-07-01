@@ -10,5 +10,5 @@
 # running this script.
 #
 
-echo $$ > /weblogic-operator/pid
+echo $$ > /tmp/tailLog-pid
 tail -F -n +0 $1
