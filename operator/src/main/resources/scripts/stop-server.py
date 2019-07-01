@@ -123,9 +123,15 @@ def waitUntilCoherenceSafe():
   while (not done):
     try:
       beans = list(mbs.queryMBeans(ObjectName(query), None))
-      print("Shutdown: Coherence service bean count " + str(len(beans)))
+      if beans is None or len(beans) == 0:
+        # during rolling restart the beans might not be available right away
+        # we need to wait since we know Coherence is enabled
+        print('Shutdown: Waiting until Coherence MBeans available... ')
+        systime.sleep(5)
+        continue
 
       # Loop waiting for each service to be safe
+      print('Shutdown: Coherence service bean count ' + str(len(beans)))
       for serviceBean in beans:
         objectName = serviceBean.getObjectName()
         waitUntilServiceSafeToShutdown(objectName)
@@ -231,12 +237,12 @@ while (stayInConnectLoop):
             domainDir=domain_path,
             nmType='plain')
 
-    print('Shutdown: Successfully connected to server. Calling server shutdown')
-
+    print('Shutdown: Successfully connected to server')
     if (cohExists):
       waitUntilCoherenceSafe()
       cohSafe = True
 
+    print('Shutdown: Calling server shutdown')
     shutdown(server_name, 'Server', ignoreSessions=ignore_sessions, timeOut=int(timeout), block='true', force=force)
     print('Shutdown: Successfully shutdown the server')
 
