@@ -7,7 +7,7 @@ package oracle.kubernetes.operator.utils;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class DBUtils {
+public class DbUtils {
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGENAME =
       "container-registry.oracle.com/middleware/fmw-infrastructure";
   public static final String DEFAULT_FMWINFRA_DOCKER_IMAGETAG = "12.2.1.3";
@@ -19,7 +19,7 @@ public class DBUtils {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   /**
-   * create oracle db pod in the k8s cluster
+   * create oracle db pod in the k8s cluster.
    *
    * @param dbPropsFile - db properties file
    * @return - OracleDB instance
@@ -47,39 +47,39 @@ public class DBUtils {
   }
 
   /**
-   * run RCU script to load database schema
+   * run RCU script to load database schema.
    *
    * @param rcuPodName - rcu pod name
    * @param inputYaml - create domain input file
    * @throws Exception - if any error occurs
    */
-  public static void runRCU(String rcuPodName, String inputYaml) throws Exception {
+  public static void runRcu(String rcuPodName, String inputYaml) throws Exception {
     Map<String, Object> inputMap = TestUtils.loadYaml(inputYaml);
-    runRCU(rcuPodName, inputMap);
+    runRcu(rcuPodName, inputMap);
   }
 
   /**
-   * run RCU script to load database schema
+   * run RCU script to load database schema.
    *
    * @param rcuPodName - rcu pod name
    * @param inputMap - domain input map
    * @throws Exception - if any error occurs
    */
-  public static void runRCU(String rcuPodName, Map<String, Object> inputMap) throws Exception {
+  public static void runRcu(String rcuPodName, Map<String, Object> inputMap) throws Exception {
     String dbConnectString = (String) inputMap.get("rcuDatabaseURL");
     String rcuPrefix = (String) inputMap.get("rcuSchemaPrefix");
-    runRCU(rcuPodName, DEFAULT_RCU_NAMESPACE, dbConnectString, rcuPrefix);
+    runRcu(rcuPodName, DEFAULT_RCU_NAMESPACE, dbConnectString, rcuPrefix);
   }
 
   /**
-   * run RCU script to load database schema
+   * run RCU script to load database schema.
    *
    * @param rcuNamespace - namespace for rcu pod
    * @param dbConnectString - db connect string to load the database schema
    * @param rcuPrefix - rcu prefix for the db schema name
    * @throws Exception - if any error occurs
    */
-  private static void runRCU(
+  private static void runRcu(
       String rcuPodName, String rcuNamespace, String dbConnectString, String rcuPrefix)
       throws Exception {
 
@@ -104,13 +104,13 @@ public class DBUtils {
   }
 
   /**
-   * create a rcu pod to run rcu script
+   * create a rcu pod to run rcu script.
    *
    * @param rcuNamespace - namespace for rcu pod
    * @return - rcu pod name
    * @throws Exception - if any error occurs
    */
-  public static String createRCUPod(String rcuNamespace) throws Exception {
+  public static String createRcuPod(String rcuNamespace) throws Exception {
     // create a rcu deployment
     String cmd =
         "kubectl run rcu -n "
@@ -137,7 +137,7 @@ public class DBUtils {
   }
 
   /**
-   * delete a namespace
+   * delete a namespace.
    *
    * @param namespace - namespace to delete
    * @throws Exception - if any error occurs
@@ -154,7 +154,7 @@ public class DBUtils {
   }
 
   /**
-   * create a namespace
+   * create a namespace.
    *
    * @param namespace - namespace to create
    * @throws Exception - if any error occurs

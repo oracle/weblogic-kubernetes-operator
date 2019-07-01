@@ -4,13 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1DeleteOptions;
-import io.kubernetes.client.models.V1ObjectMeta;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -19,6 +12,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1DeleteOptions;
+import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -37,6 +36,8 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.joda.time.DateTime;
 
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+
 public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -45,7 +46,8 @@ public class ConfigMapHelper {
 
   private static final FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
 
-  private ConfigMapHelper() {}
+  private ConfigMapHelper() {
+  }
 
   /**
    * Factory for {@link Step} that creates config map containing scripts.
@@ -56,6 +58,107 @@ public class ConfigMapHelper {
    */
   public static Step createScriptConfigMapStep(String operatorNamespace, String domainNamespace) {
     return new ScriptConfigMapStep(operatorNamespace, domainNamespace);
+  }
+
+  static FileGroupReader getScriptReader() {
+    return scriptReader;
+  }
+
+  /**
+   * Factory for {@link Step} that creates config map containing sit config.
+   *
+   * @param next Next step
+   * @return Step for creating config map containing sit config
+   */
+  public static Step createSitConfigMapStep(Step next) {
+    return new SitConfigMapStep(next);
+  }
+
+  /**
+   * Factory for {@link Step} that deletes introspector config map.
+   *
+   * @param domainUid The unique identifier assigned to the Weblogic domain when it was registered
+   * @param namespace Namespace
+   * @param next Next processing step
+   * @return Step for deleting introspector config map
+   */
+  public static Step deleteDomainIntrospectorConfigMapStep(
+      String domainUid, String namespace, Step next) {
+    return new DeleteIntrospectorConfigMapStep(domainUid, namespace, next);
+  }
+
+  public static Step readExistingSituConfigMap(String ns, String domainUid) {
+    String situConfigMapName = ConfigMapHelper.SitConfigMapContext.getConfigMapName(domainUid);
+    return new CallBuilder().readConfigMapAsync(situConfigMapName, ns, new ReadSituConfigMapStep());
+  }
+
+  static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
+    Map<String, String> map = new HashMap<>();
+    try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
+      String line = reader.readLine();
+      while (line != null) {
+        if (line.startsWith(">>>") && !line.endsWith("EOF")) {
+          // Beginning of file, extract file name
+          String filename = extractFilename(line);
+          readFile(reader, filename, map, domainUid);
+        }
+        line = reader.readLine();
+      }
+    } catch (IOException exc) {
+      LOGGER.warning(MessageKeys.CANNOT_PARSE_INTROSPECTOR_RESULT, domainUid, exc);
+    }
+
+    return map;
+  }
+
+  static void readFile(
+      BufferedReader reader, String fileName, Map<String, String> map, String domainUid) {
+    StringBuilder stringBuilder = new StringBuilder();
+    try {
+      String line = reader.readLine();
+      while (line != null) {
+        if (line.startsWith(">>>") && line.endsWith("EOF")) {
+          map.put(fileName, stringBuilder.toString());
+          return;
+        } else {
+          // add line to StringBuilder
+          stringBuilder.append(line);
+          stringBuilder.append(System.getProperty("line.separator"));
+        }
+        line = reader.readLine();
+      }
+    } catch (IOException ioe) {
+      LOGGER.warning(MessageKeys.CANNOT_PARSE_INTROSPECTOR_FILE, fileName, domainUid, ioe);
+    }
+  }
+
+  static String extractFilename(String line) {
+    int lastSlash = line.lastIndexOf('/');
+    String fname = line.substring(lastSlash + 1, line.length());
+    return fname;
+  }
+
+  public static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+
+    try {
+      DomainTopology domainTopology = mapper.readValue(topologyYaml, DomainTopology.class);
+
+      LOGGER.fine(
+          ReflectionToStringBuilder.toString(domainTopology, ToStringStyle.MULTI_LINE_STYLE));
+
+      return domainTopology;
+
+    } catch (Exception e) {
+      LOGGER.warning(MessageKeys.CANNOT_PARSE_TOPOLOGY, e);
+    }
+
+    return null;
+  }
+
+  interface ConfigMapComparator {
+    /** Returns true if the actual map contains all of the entries from the expected map. */
+    boolean containsAll(V1ConfigMap actual, V1ConfigMap expected);
   }
 
   static class ScriptConfigMapStep extends Step {
@@ -99,6 +202,29 @@ public class ConfigMapHelper {
       return new ReadResponseStep(next);
     }
 
+    ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
+      return new CreateResponseStep(next);
+    }
+
+    ResponseStep<V1ConfigMap> createReplaceResponseStep(Step next) {
+      return new ReplaceResponseStep(next);
+    }
+
+    Step updateConfigMap(Step next, V1ConfigMap existingConfigMap) {
+      return new CallBuilder()
+          .replaceConfigMapAsync(
+              model.getMetadata().getName(),
+              domainNamespace,
+              createModel(getCombinedData(existingConfigMap)),
+              createReplaceResponseStep(next));
+    }
+
+    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
+      Map<String, String> updated = existingConfigMap.getData();
+      updated.putAll(this.classpathScripts);
+      return updated;
+    }
+
     class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {
       ReadResponseStep(Step next) {
         super(next);
@@ -119,10 +245,6 @@ public class ConfigMapHelper {
       }
     }
 
-    ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
-      return new CreateResponseStep(next);
-    }
-
     private class CreateResponseStep extends ResponseStep<V1ConfigMap> {
       CreateResponseStep(Step next) {
         super(next);
@@ -141,10 +263,6 @@ public class ConfigMapHelper {
       }
     }
 
-    ResponseStep<V1ConfigMap> createReplaceResponseStep(Step next) {
-      return new ReplaceResponseStep(next);
-    }
-
     private class ReplaceResponseStep extends ResponseStep<V1ConfigMap> {
       ReplaceResponseStep(Step next) {
         super(next);
@@ -161,21 +279,6 @@ public class ConfigMapHelper {
         packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
-    }
-
-    Step updateConfigMap(Step next, V1ConfigMap existingConfigMap) {
-      return new CallBuilder()
-          .replaceConfigMapAsync(
-              model.getMetadata().getName(),
-              domainNamespace,
-              createModel(getCombinedData(existingConfigMap)),
-              createReplaceResponseStep(next));
-    }
-
-    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
-      Map<String, String> updated = existingConfigMap.getData();
-      updated.putAll(this.classpathScripts);
-      return updated;
     }
   }
 
@@ -224,30 +327,11 @@ public class ConfigMapHelper {
     }
   }
 
-  static FileGroupReader getScriptReader() {
-    return scriptReader;
-  }
-
-  interface ConfigMapComparator {
-    /** Returns true if the actual map contains all of the entries from the expected map. */
-    boolean containsAll(V1ConfigMap actual, V1ConfigMap expected);
-  }
-
   static class ConfigMapComparatorImpl implements ConfigMapComparator {
     @Override
     public boolean containsAll(V1ConfigMap actual, V1ConfigMap expected) {
       return actual.getData().entrySet().containsAll(expected.getData().entrySet());
     }
-  }
-
-  /**
-   * Factory for {@link Step} that creates config map containing sit config.
-   *
-   * @param next Next step
-   * @return Step for creating config map containing sit config
-   */
-  public static Step createSitConfigMapStep(Step next) {
-    return new SitConfigMapStep(next);
   }
 
   static class SitConfigMapStep extends Step {
@@ -256,13 +340,21 @@ public class ConfigMapHelper {
       super(next);
     }
 
+    private static String getOperatorNamespace() {
+      String namespace = System.getenv("OPERATOR_NAMESPACE");
+      if (namespace == null) {
+        namespace = "default";
+      }
+      return namespace;
+    }
+
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
       // Parse results into separate data files
-      Map<String, String> data = parseIntrospectorResult(result, info.getDomainUID());
+      Map<String, String> data = parseIntrospectorResult(result, info.getDomainUid());
       LOGGER.fine("================");
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
@@ -279,7 +371,7 @@ public class ConfigMapHelper {
         }
         WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
         ScanCache.INSTANCE.registerScan(
-            info.getNamespace(), info.getDomainUID(), new Scan(wlsDomainConfig, new DateTime()));
+            info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
         packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
         LOGGER.info(
             MessageKeys.WLS_CONFIGURATION_READ,
@@ -287,7 +379,7 @@ public class ConfigMapHelper {
             wlsDomainConfig);
         SitConfigMapContext context =
             new SitConfigMapContext(
-                this, info.getDomainUID(), getOperatorNamespace(), info.getNamespace(), data);
+                this, info.getDomainUid(), getOperatorNamespace(), info.getNamespace(), data);
 
         return doNext(context.verifyConfigMap(getNext()), packet);
       }
@@ -303,33 +395,29 @@ public class ConfigMapHelper {
         }
       }
     }
-
-    private static String getOperatorNamespace() {
-      String namespace = System.getenv("OPERATOR_NAMESPACE");
-      if (namespace == null) {
-        namespace = "default";
-      }
-      return namespace;
-    }
   }
 
   public static class SitConfigMapContext extends ConfigMapContext {
     Map<String, String> data;
-    String domainUID;
+    String domainUid;
     String cmName;
 
     SitConfigMapContext(
         Step conflictStep,
-        String domainUID,
+        String domainUid,
         String operatorNamespace,
         String domainNamespace,
         Map<String, String> data) {
       super(conflictStep, operatorNamespace, domainNamespace);
 
-      this.domainUID = domainUID;
-      this.cmName = getConfigMapName(domainUID);
+      this.domainUid = domainUid;
+      this.cmName = getConfigMapName(domainUid);
       this.data = data;
       this.model = createModel(data);
+    }
+
+    public static String getConfigMapName(String domainUid) {
+      return domainUid + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
     }
 
     private V1ConfigMap createModel(Map<String, String> data) {
@@ -340,16 +428,35 @@ public class ConfigMapHelper {
           .data(data);
     }
 
-    public static String getConfigMapName(String domainUID) {
-      return domainUID + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
-    }
-
     ResponseStep<V1ConfigMap> createReadResponseStep(Step next) {
       return new ReadResponseStep(next);
     }
 
     private V1ObjectMeta createMetadata() {
-      return super.createMetadata(cmName).putLabelsItem(LabelConstants.DOMAINUID_LABEL, domainUID);
+      return super.createMetadata(cmName).putLabelsItem(LabelConstants.DOMAINUID_LABEL, domainUid);
+    }
+
+    ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
+      return new CreateResponseStep(next);
+    }
+
+    ResponseStep<V1ConfigMap> createReplaceResponseStep(Step next) {
+      return new ReplaceResponseStep(next);
+    }
+
+    Step updateConfigMap(Step next, V1ConfigMap existingConfigMap) {
+      return new CallBuilder()
+          .replaceConfigMapAsync(
+              model.getMetadata().getName(),
+              domainNamespace,
+              createModel(getCombinedData(existingConfigMap)),
+              createReplaceResponseStep(next));
+    }
+
+    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
+      Map<String, String> updated = existingConfigMap.getData();
+      updated.putAll(this.data);
+      return updated;
     }
 
     class ReadResponseStep extends DefaultResponseStep<V1ConfigMap> {
@@ -372,10 +479,6 @@ public class ConfigMapHelper {
       }
     }
 
-    ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
-      return new CreateResponseStep(next);
-    }
-
     private class CreateResponseStep extends ResponseStep<V1ConfigMap> {
       CreateResponseStep(Step next) {
         super(next);
@@ -392,10 +495,6 @@ public class ConfigMapHelper {
         packet.put(ProcessingConstants.SIT_CONFIG_MAP, callResponse.getResult());
         return doNext(packet);
       }
-    }
-
-    ResponseStep<V1ConfigMap> createReplaceResponseStep(Step next) {
-      return new ReplaceResponseStep(next);
     }
 
     private class ReplaceResponseStep extends ResponseStep<V1ConfigMap> {
@@ -415,43 +514,15 @@ public class ConfigMapHelper {
         return doNext(packet);
       }
     }
-
-    Step updateConfigMap(Step next, V1ConfigMap existingConfigMap) {
-      return new CallBuilder()
-          .replaceConfigMapAsync(
-              model.getMetadata().getName(),
-              domainNamespace,
-              createModel(getCombinedData(existingConfigMap)),
-              createReplaceResponseStep(next));
-    }
-
-    Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
-      Map<String, String> updated = existingConfigMap.getData();
-      updated.putAll(this.data);
-      return updated;
-    }
-  }
-
-  /**
-   * Factory for {@link Step} that deletes introspector config map.
-   *
-   * @param domainUID The unique identifier assigned to the Weblogic domain when it was registered
-   * @param namespace Namespace
-   * @param next Next processing step
-   * @return Step for deleting introspector config map
-   */
-  public static Step deleteDomainIntrospectorConfigMapStep(
-      String domainUID, String namespace, Step next) {
-    return new DeleteIntrospectorConfigMapStep(domainUID, namespace, next);
   }
 
   private static class DeleteIntrospectorConfigMapStep extends Step {
-    private String domainUID;
+    private String domainUid;
     private String namespace;
 
-    DeleteIntrospectorConfigMapStep(String domainUID, String namespace, Step next) {
+    DeleteIntrospectorConfigMapStep(String domainUid, String namespace, Step next) {
       super(next);
-      this.domainUID = domainUID;
+      this.domainUid = domainUid;
       this.namespace = namespace;
     }
 
@@ -462,7 +533,7 @@ public class ConfigMapHelper {
 
     String getConfigMapDeletedMessageKey() {
       return "Domain Introspector config map "
-          + SitConfigMapContext.getConfigMapName(this.domainUID)
+          + SitConfigMapContext.getConfigMapName(this.domainUid)
           + " deleted";
     }
 
@@ -472,7 +543,7 @@ public class ConfigMapHelper {
 
     private Step deleteSitConfigMap(Step next) {
       logConfigMapDeleted();
-      String configMapName = SitConfigMapContext.getConfigMapName(this.domainUID);
+      String configMapName = SitConfigMapContext.getConfigMapName(this.domainUid);
       Step step =
           new CallBuilder()
               .deleteConfigMapAsync(
@@ -484,14 +555,10 @@ public class ConfigMapHelper {
     }
   }
 
-  public static Step readExistingSituConfigMap(String ns, String domainUID) {
-    String situConfigMapName = ConfigMapHelper.SitConfigMapContext.getConfigMapName(domainUID);
-    return new CallBuilder().readConfigMapAsync(situConfigMapName, ns, new ReadSituConfigMapStep());
-  }
-
   private static class ReadSituConfigMapStep extends ResponseStep<V1ConfigMap> {
 
-    ReadSituConfigMapStep() {}
+    ReadSituConfigMapStep() {
+    }
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1ConfigMap> callResponse) {
@@ -502,7 +569,7 @@ public class ConfigMapHelper {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
       V1ConfigMap result = callResponse.getResult();
       if (result != null) {
@@ -515,7 +582,7 @@ public class ConfigMapHelper {
             WlsDomainConfig wlsDomainConfig = domainTopology.getDomain();
             ScanCache.INSTANCE.registerScan(
                 info.getNamespace(),
-                info.getDomainUID(),
+                info.getDomainUid(),
                 new Scan(wlsDomainConfig, new DateTime()));
             packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
           }
@@ -524,70 +591,6 @@ public class ConfigMapHelper {
 
       return doNext(packet);
     }
-  }
-
-  static Map<String, String> parseIntrospectorResult(String text, String domainUID) {
-    Map<String, String> map = new HashMap<>();
-    try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
-      String line = reader.readLine();
-      while (line != null) {
-        if (line.startsWith(">>>") && !line.endsWith("EOF")) {
-          // Beginning of file, extract file name
-          String filename = extractFilename(line);
-          readFile(reader, filename, map, domainUID);
-        }
-        line = reader.readLine();
-      }
-    } catch (IOException exc) {
-      LOGGER.warning(MessageKeys.CANNOT_PARSE_INTROSPECTOR_RESULT, domainUID, exc);
-    }
-
-    return map;
-  }
-
-  static void readFile(
-      BufferedReader reader, String fileName, Map<String, String> map, String domainUID) {
-    StringBuilder stringBuilder = new StringBuilder();
-    try {
-      String line = reader.readLine();
-      while (line != null) {
-        if (line.startsWith(">>>") && line.endsWith("EOF")) {
-          map.put(fileName, stringBuilder.toString());
-          return;
-        } else {
-          // add line to StringBuilder
-          stringBuilder.append(line);
-          stringBuilder.append(System.getProperty("line.separator"));
-        }
-        line = reader.readLine();
-      }
-    } catch (IOException ioe) {
-      LOGGER.warning(MessageKeys.CANNOT_PARSE_INTROSPECTOR_FILE, fileName, domainUID, ioe);
-    }
-  }
-
-  static String extractFilename(String line) {
-    int lastSlash = line.lastIndexOf('/');
-    String fname = line.substring(lastSlash + 1, line.length());
-    return fname;
-  }
-
-  public static DomainTopology parseDomainTopologyYaml(String topologyYaml) {
-    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-
-    try {
-      DomainTopology domainTopology = mapper.readValue(topologyYaml, DomainTopology.class);
-
-      LOGGER.fine(
-          ReflectionToStringBuilder.toString(domainTopology, ToStringStyle.MULTI_LINE_STYLE));
-
-      return domainTopology;
-
-    } catch (Exception e) {
-      LOGGER.warning(MessageKeys.CANNOT_PARSE_TOPOLOGY, e);
-    }
-
-    return null;
   }
 
   public static class DomainTopology {
