@@ -574,6 +574,7 @@ public class ITMonitoringExporter extends BaseTest {
       createWLSImageAndDeploy();
       installPrometheusGrafanaViaChart();
     } finally {
+
       uninstallMySQL();
       uninstallPrometheusGrafanaViaChart();
       String crdCmd =
@@ -581,7 +582,9 @@ public class ITMonitoringExporter extends BaseTest {
       ExecCommand.exec(crdCmd);
       crdCmd = "kubectl delete secret domain1-weblogic-credentials";
       ExecCommand.exec(crdCmd);
-      operator1.destroy();
+      if (operator1 != null) {
+        operator1.destroy();
+      }
       crdCmd =
           "cd "
               + monitoringExporterEndToEndDir
@@ -872,8 +875,7 @@ public class ITMonitoringExporter extends BaseTest {
             + "  -X POST http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/"
             + "  --data-binary @grafana/dashboard.json";
     TestUtils.exec(crdCmd);
-
-    assertTrue(checkMetricsViaPrometheus("wls_servlet_execution_time_average", "testwebapp"));
+    assertTrue(checkMetricsViaPrometheus("wls_servlet_execution_time_average", "test-webapp"));
   }
 
   /**
