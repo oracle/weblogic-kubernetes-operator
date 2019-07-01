@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -19,12 +20,12 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<DomainStatus> {
   private String expectedReason;
   private String expectedMessage;
 
-  static DomainConditionMatcher hasCondition(DomainConditionType type) {
-    return new DomainConditionMatcher(type);
-  }
-
   private DomainConditionMatcher(DomainConditionType expectedType) {
     this.expectedType = expectedType;
+  }
+
+  static DomainConditionMatcher hasCondition(DomainConditionType type) {
+    return new DomainConditionMatcher(type);
   }
 
   DomainConditionMatcher withStatus(String status) {
