@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.function.Function;
+
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import java.util.function.Function;
 
 public class UnitTestHash implements Function<Object, String> {
   public static Memento install() throws NoSuchFieldException {

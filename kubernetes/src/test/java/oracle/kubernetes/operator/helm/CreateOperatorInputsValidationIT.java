@@ -4,16 +4,17 @@
 
 package oracle.kubernetes.operator.helm;
 
+import java.util.Map;
+
+import org.hamcrest.Matcher;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyString;
-
-import java.util.Map;
-import org.hamcrest.Matcher;
-import org.junit.Before;
-import org.junit.Test;
 
 public class CreateOperatorInputsValidationIT extends OperatorChartITBase {
 

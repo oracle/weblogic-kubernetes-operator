@@ -4,28 +4,29 @@
 
 package oracle.kubernetes.operator.utils;
 
-import io.kubernetes.client.ApiException;
 import java.io.IOException;
+
+import io.kubernetes.client.ApiException;
 
 /** A base class for an object which can execute a command in an Kubertenes containers. */
 public abstract class KubernetesExec {
   private boolean stdin = true;
   private boolean tty = true;
 
-  public void setStdin(boolean stdin) {
-    this.stdin = stdin;
-  }
-
-  public void setTty(boolean tty) {
-    this.tty = tty;
-  }
-
   boolean isStdin() {
     return stdin;
   }
 
+  public void setStdin(boolean stdin) {
+    this.stdin = stdin;
+  }
+
   boolean isTty() {
     return tty;
+  }
+
+  public void setTty(boolean tty) {
+    this.tty = tty;
   }
 
   /**

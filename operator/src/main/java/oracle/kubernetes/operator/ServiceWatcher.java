@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Service;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Service;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -20,6 +21,16 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 public class ServiceWatcher extends Watcher<V1Service> {
   private final String ns;
 
+  private ServiceWatcher(
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<V1Service> listener,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping, listener);
+    this.ns = ns;
+  }
+
   public static ServiceWatcher create(
       ThreadFactory factory,
       String ns,
@@ -31,16 +42,6 @@ public class ServiceWatcher extends Watcher<V1Service> {
         new ServiceWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
-  }
-
-  private ServiceWatcher(
-      String ns,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      WatchListener<V1Service> listener,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
-    this.ns = ns;
   }
 
   @Override
