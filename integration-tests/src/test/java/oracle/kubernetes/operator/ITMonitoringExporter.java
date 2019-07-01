@@ -47,6 +47,7 @@ public class ITMonitoringExporter extends BaseTest {
 
   private static int number = 5;
   private static Operator operator = null;
+  private static Operator operator1 = null;
   private static Domain domain = null;
   private static String myhost = "";
   private static String monitoringExporterDir = "";
@@ -54,6 +55,7 @@ public class ITMonitoringExporter extends BaseTest {
   private static String exporterUrl = "";
   private static String configPath = "";
   private static String metricsUrl = "";
+  private static String prometheusPort = "32000";
   // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
   private static String prometheusSearchKey1 =
       "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
@@ -93,6 +95,7 @@ public class ITMonitoringExporter extends BaseTest {
       resourceExporterDir =
           BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
       configPath = resourceExporterDir;
+
       upgradeTraefikHostName();
       deployRunMonitoringExporter(domain, operator);
       buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
@@ -116,7 +119,7 @@ public class ITMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      deletePrometheusGrafana();
+      // deletePrometheusGrafana();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
     }
@@ -553,6 +556,44 @@ public class ITMonitoringExporter extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
+  /**
+   * Test End to End example from MonitoringExporter github project
+   *
+   * @throws Exception
+   */
+  @Test
+  public void test19_EndToEndViaChart() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String monitoringExporterEndToEndDir =
+        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    try {
+      setupPVMYSQL();
+      createWLSImageAndDeploy();
+      installPrometheusGrafanaViaChart();
+    } finally {
+      uninstallMySQL();
+      uninstallPrometheusGrafanaViaChart();
+      String crdCmd =
+          " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+      ExecCommand.exec(crdCmd);
+      crdCmd = "kubectl delete secret domain1-weblogic-credentials";
+      ExecCommand.exec(crdCmd);
+      operator1.destroy();
+      crdCmd =
+          "cd "
+              + monitoringExporterEndToEndDir
+              + " && docker run --rm -v "
+              + monitoringExporterEndToEndDir
+              + "pvDir:/tt -v $PWD/util:/util  nginx  /util/clean-pv.sh";
+      ExecCommand.exec(crdCmd);
+    }
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
       throws Exception {
     final WebClient webClient = new WebClient();
@@ -627,6 +668,262 @@ public class ITMonitoringExporter extends BaseTest {
     // wait time for coordinator to update both managed configuration
     Thread.sleep(15 * 1000);
     return page2;
+  }
+
+  /**
+   * Remove monitoring exporter directory if exists and clone latest from github for monitoring
+   * exporter code
+   *
+   * @throws Exception if could not run the command successfully to clone from github
+   */
+  private static void setupPVMYSQL() throws Exception {
+
+    String monitoringExporterEndToEndDir =
+        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    String pvDir = monitoringExporterEndToEndDir + "pvDir";
+    if (new File(pvDir).exists()) {
+      logger.info(" PV dir already exists , cleaning ");
+      if (!pvDir.isEmpty()) {
+        StringBuffer removeDir = new StringBuffer();
+        logger.info("Cleaning PV dir " + pvDir);
+
+        removeDir.append("rm -rf ").append(pvDir).append(" && ");
+      }
+    } else {
+      Files.createDirectories(Paths.get(pvDir));
+    }
+    replaceStringInFile(
+        monitoringExporterEndToEndDir + "/mysql/persistence.yaml", "%PV_ROOT%", pvDir);
+    replaceStringInFile(
+        monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "%PV_ROOT%", pvDir);
+    replaceStringInFile(
+        monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
+    // deploy PV and PVC
+    String crdCmd =
+        " kubectl apply -f " + monitoringExporterEndToEndDir + "/mysql/persistence.yaml";
+    TestUtils.exec(crdCmd);
+    crdCmd = " kubectl apply -f " + monitoringExporterEndToEndDir + "/mysql/mysql.yaml";
+    TestUtils.exec(crdCmd);
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod -l app=mysql -o jsonpath=\"{.items[0].metadata.name} \"");
+    logger.fine("getSQL pod name cmd =" + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String sqlPod = null;
+    if (result.exitValue() == 0) {
+      sqlPod = result.stdout().trim();
+    }
+    assertNotNull("DataBase was not created, can't find running pod", sqlPod);
+    TestUtils.checkPodReady(sqlPod, "default");
+    result =
+        TestUtils.kubectlexecNoCheck(
+            sqlPod, "default", " -- mysql -p123456 -e \"CREATE DATABASE domain1;\"");
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to create database domain1 "
+              + sqlPod
+              + " in the pod failed, returned "
+              + result.stderr()
+              + " "
+              + result.stdout());
+    }
+    result =
+        TestUtils.kubectlexecNoCheck(
+            sqlPod,
+            "default",
+            " -- mysql -p123456 -e \"CREATE USER 'wluser1' IDENTIFIED BY 'wlpwd123';\"");
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to create user wluser1 "
+              + sqlPod
+              + " in the pod failed, returned "
+              + result.stderr()
+              + " "
+              + result.stdout());
+    }
+    result =
+        TestUtils.kubectlexecNoCheck(
+            sqlPod, "default", " -- mysql -p123456 -e \"GRANT ALL ON domain1.* TO 'wluser1';\"");
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: command to grant all to user wluser1 "
+              + sqlPod
+              + " in the pod failed, returned "
+              + result.stderr()
+              + " "
+              + result.stdout());
+    }
+    // verify all
+    result =
+        TestUtils.kubectlexecNoCheck(
+            sqlPod, "default", " -- mysql -u wluser1 -pwlpwd123 -D domain1 -e \"show tables;\"");
+    if (result.exitValue() != 0) {
+      throw new RuntimeException(
+          "FAILURE: failed to setup user and database "
+              + " in the pod failed, returned "
+              + result.stderr()
+              + " "
+              + result.stdout());
+    }
+  }
+  /**
+   * Install wls image tool and update wls pods
+   *
+   * @throws Exception if could not run the command successfully to clone from github
+   */
+  private static void createWLSImageAndDeploy() throws Exception {
+    // monitoringExporterDir = "/scratch/opc/wl_k8s_test_results/acceptance_test_tmp/monitoring/";
+    String monitoringExporterEndToEndDir =
+        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+
+    String command =
+        "cd "
+            + monitoringExporterEndToEndDir
+            + "/demo-domains/domainBuilder/ && ./build.sh domain1 weblogic welcome1  wluser1 wlpwd123";
+    TestUtils.exec(command);
+    String newImage = "domain1-image:1.0";
+    command =
+        "kubectl -n default create secret generic domain1-weblogic-credentials "
+            + "  --from-literal=username=weblogic "
+            + "  --from-literal=password=welcome1";
+    TestUtils.exec(command);
+    // apply new domain yaml and verify pod restart
+    String crdCmd =
+        " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+    TestUtils.exec(crdCmd);
+
+    TestUtils.checkPodReady("domain1-admin-server", "default");
+    TestUtils.checkPodReady("domain1-managed-server-1", "default");
+    TestUtils.checkPodReady("domain1-managed-server-2", "default");
+    /*
+       domain.verifyDomainServerPodRestart(
+               "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\""
+               "\"" + newImage + "\"");
+
+    */
+    // apply curl to the pod
+    crdCmd = " kubectl apply -f " + monitoringExporterEndToEndDir + "/util/curl.yaml";
+    TestUtils.exec(crdCmd);
+
+    TestUtils.checkPodReady("curl", "default");
+    // access metrics
+    crdCmd =
+        "kubectl exec curl -- curl http://weblogic:welcome1@domain1-managed-server-1:8001/wls-exporter/metrics";
+    ExecResult result = TestUtils.exec(crdCmd);
+    assertTrue((result.stdout().contains("wls_servlet_execution_time_average")));
+    crdCmd =
+        "kubectl exec curl -- curl http://weblogic:welcome1@domain1-managed-server-2:8001/wls-exporter/metrics";
+    result = TestUtils.exec(crdCmd);
+    assertTrue((result.stdout().contains("wls_servlet_execution_time_average")));
+  }
+
+  /**
+   * Install Prometheus and Grafana using helm chart
+   *
+   * @throws Exception if could not run the command successfully to clone from github
+   */
+  private static void installPrometheusGrafanaViaChart() throws Exception {
+    String monitoringExporterEndToEndDir =
+        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    // delete any running pods
+    deletePrometheusGrafana();
+    prometheusPort = "30000";
+    String crdCmd = "kubectl create ns monitoring";
+    TestUtils.exec(crdCmd);
+    crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
+    TestUtils.exec(crdCmd);
+    // install prometheus
+    crdCmd =
+        "helm install --wait --name prometheus --namespace monitoring --values  "
+            + monitoringExporterEndToEndDir
+            + "/prometheus/values.yaml stable/prometheus";
+    TestUtils.exec(crdCmd);
+
+    // install grafana
+    crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
+    TestUtils.exec(crdCmd);
+    crdCmd =
+        "kubectl --namespace monitoring create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678";
+    TestUtils.exec(crdCmd);
+    logger.info("calling helm install for grafana");
+    crdCmd =
+        "helm install --wait --name grafana --namespace monitoring --values  "
+            + monitoringExporterEndToEndDir
+            + "/grafana/values.yaml stable/grafana";
+    // TestUtils.exec(crdCmd);
+    ExecResult result = ExecCommand.exec(crdCmd);
+    Thread.sleep(10000);
+
+    logger.info("installing grafana dashboard");
+
+    crdCmd =
+        " cd "
+            + monitoringExporterEndToEndDir
+            + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
+            + "  -X POST http://admin:12345678@$HOSTNAME:31000/api/datasources/"
+            + "  --data-binary @grafana/datasource.json";
+    TestUtils.exec(crdCmd);
+
+    crdCmd =
+        " cd "
+            + monitoringExporterEndToEndDir
+            + " && curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
+            + "  -X POST http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/"
+            + "  --data-binary @grafana/dashboard.json";
+    TestUtils.exec(crdCmd);
+
+    assertTrue(checkMetricsViaPrometheus("wls_servlet_execution_time_average", "testwebapp"));
+  }
+
+  /**
+   * Uninstall Prometheus and Grafana using helm chart
+   *
+   * @throws Exception if could not run the command successfully to clone from github
+   */
+  private static void uninstallPrometheusGrafanaViaChart() throws Exception {
+    String monitoringExporterEndToEndDir =
+        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    // uninstall grafana
+    String crdCmd = "helm delete --purge grafana";
+    ExecCommand.exec(crdCmd);
+    crdCmd = "kubectl -n monitoring delete secret grafana-secret";
+    ExecCommand.exec(crdCmd);
+    crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
+    ExecCommand.exec(crdCmd);
+
+    // uninstall prometheus
+    crdCmd = "helm delete --purge prometheus";
+    ExecCommand.exec(crdCmd);
+    crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
+    ExecCommand.exec(crdCmd);
+
+    crdCmd = "kubectl delete namespace monitoring";
+    TestUtils.exec(crdCmd);
+  }
+
+  /**
+   * Unnstall MYSQL
+   *
+   * @throws Exception if could not run the command successfully to clone from github
+   */
+  private static void uninstallMySQL() throws Exception {
+    String monitoringExporterEndToEndDir =
+        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    // unnstall mysql
+
+    String crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/mysql.yaml";
+    ExecCommand.exec(crdCmd);
+
+    crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/persistence.yaml";
+    ExecCommand.exec(crdCmd);
+    crdCmd =
+        "cd "
+            + monitoringExporterEndToEndDir
+            + " && docker run --rm -v "
+            + monitoringExporterEndToEndDir
+            + "pvDir:/tt -v $PWD/util:/util  nginx  /util/clean-pv.sh";
+    ExecCommand.exec(crdCmd);
   }
 
   /**
@@ -794,6 +1091,22 @@ public class ITMonitoringExporter extends BaseTest {
   }
 
   /**
+   * A utility method to sed files
+   *
+   * @throws IOException when copying files from source location to staging area fails
+   */
+  private static void replaceStringInFile(String filePath, String oldValue, String newValue)
+      throws IOException {
+    Path src = Paths.get(filePath);
+    logger.log(Level.INFO, "Copying {0}", src.toString());
+    Charset charset = StandardCharsets.UTF_8;
+    String content = new String(Files.readAllBytes(src), charset);
+    content = content.replaceAll(oldValue, newValue);
+    logger.log(Level.INFO, "to {0}", src.toString());
+    Files.write(src, content.getBytes(charset));
+  }
+
+  /**
    * A utility method to copy Cross Namespaces RBAC yaml template file replacing the DOMAIN_NS,
    * OPERATOR_NS
    *
@@ -901,12 +1214,14 @@ public class ITMonitoringExporter extends BaseTest {
    * @param expectedVal - expected metrics to search
    * @throws Exception
    */
-  private boolean checkMetricsViaPrometheus(String searchKey, String expectedVal) throws Exception {
+  private static boolean checkMetricsViaPrometheus(String searchKey, String expectedVal)
+      throws Exception {
     // sleep 20 secs to allow to scrap new metrics
     Thread.sleep(20 * 1000);
     // url
     StringBuffer testAppUrl = new StringBuffer("http://");
-    testAppUrl.append(myhost).append(":").append("32000").append("/api/v1/query?query=");
+    // testAppUrl.append(myhost).append(":").append(prometheusPort).append("/api/v1/query?query=");
+    testAppUrl.append(myhost).append(":").append(prometheusPort).append("/api/v1/query?query=");
 
     testAppUrl.append(searchKey);
     // curl cmd to call webapp
