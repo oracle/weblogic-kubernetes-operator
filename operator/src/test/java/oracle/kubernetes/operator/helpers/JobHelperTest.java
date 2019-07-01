@@ -4,20 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.assertThat;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.List;
 
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1JobSpec;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1SecretReference;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.JobHelper.DomainIntrospectorJobStepContext;
@@ -34,12 +29,23 @@ import org.hamcrest.Matcher;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasItem;
+import static org.junit.Assert.assertThat;
+
 public class JobHelperTest {
 
   private static final String NS = "ns1";
   private static final String DOMAIN_UID = "JobHelperTestDomain";
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
+  Method getDomainSpec;
+
+  static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
+    return hasItem(new V1EnvVar().name(name).value(value));
+  }
 
   @Test
   public void creatingServers_true_whenClusterReplicas_gt_0() {
@@ -91,14 +97,14 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_false_when_noCluster_and_START_NEVER_startPolicy() {
+  public void creatingServers_false_when_noCluster_and_Start_Never_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
 
   @Test
-  public void creatingServers_true_when_noCluster_and_START_IF_NEEDED_startPolicy() {
+  public void creatingServers_true_when_noCluster_and_Start_If_Needed_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo)
@@ -108,7 +114,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_true_when_noCluster_and_START_ALWAYS_startPolicy() {
+  public void creatingServers_true_when_noCluster_and_Start_Always_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo)
@@ -118,7 +124,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_false_when_server_with_START_NEVER_startPolicy() {
+  public void creatingServers_false_when_server_with_Start_Never_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureServer(domainPresenceInfo, "managed-server1")
@@ -128,7 +134,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_true_when_server_with_START_IF_NEEDED_startPolicy() {
+  public void creatingServers_true_when_server_with_Start_If_Needed_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureServer(domainPresenceInfo, "managed-server1")
@@ -138,7 +144,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void creatingServers_true_when_server_with_START_AWLAYS_startPolicy() {
+  public void creatingServers_true_when_server_with_Start_Always_startPolicy() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureServer(domainPresenceInfo, "managed-server1")
@@ -167,7 +173,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(
             hasEnvVar("item1", "value1"),
             hasEnvVar("item2", "value2"),
@@ -176,7 +182,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void introspectorPodStartsWithDefaultUSER_MEM_ARGS_environmentVariable() {
+  public void introspectorPodStartsWithDefaultUser_Mem_Args_environmentVariable() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     Packet packet = new Packet();
@@ -189,7 +195,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(
             hasEnvVar(
                 "USER_MEM_ARGS",
@@ -197,7 +203,7 @@ public class JobHelperTest {
   }
 
   @Test
-  public void whenDomainHasUSER_MEM_ARGS_EnvironmentItem_introspectorPodStartupWithIt() {
+  public void whenDomainHasUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo)
@@ -213,12 +219,12 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(hasEnvVar("USER_MEM_ARGS", "-XX:+UseContainerSupport")));
   }
 
   @Test
-  public void whenDomainHasEmptyStringUSER_MEM_ARGS_EnvironmentItem_introspectorPodStartupWithIt() {
+  public void whenDomainHasEmptyStringUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
     DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
 
     configureDomain(domainPresenceInfo).withEnvironmentVariable("USER_MEM_ARGS", "");
@@ -233,7 +239,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(hasEnvVar("USER_MEM_ARGS", "")));
   }
 
@@ -253,7 +259,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(hasEnvVar("item1", END_VALUE_1)));
   }
 
@@ -278,7 +284,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(
             hasEnvVar("item1", "domain-value1"),
             hasEnvVar("item2", "admin-value2"),
@@ -299,7 +305,7 @@ public class JobHelperTest {
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
     MatcherAssert.assertThat(
-        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID()).getEnv(),
+        getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid()).getEnv(),
         allOf(hasEnvVar("ADMIN_USERNAME", null), hasEnvVar("ADMIN_PASSWORD", null)));
   }
 
@@ -321,7 +327,7 @@ public class JobHelperTest {
     V1JobSpec jobSpec =
         domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
 
-    getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUID());
+    getContainerFromJobSpec(jobSpec, domainPresenceInfo.getDomainUid());
 
     MatcherAssert.assertThat(
         getConfiguredDomainSpec(domainConfigurator).getEnv(),
@@ -378,7 +384,7 @@ public class JobHelperTest {
                 .withMetadata(new V1ObjectMeta().namespace(NS))
                 .withSpec(
                     new DomainSpec()
-                        .withDomainUID(DOMAIN_UID)
+                        .withDomainUid(DOMAIN_UID)
                         .withWebLogicCredentialsSecret(
                             new V1SecretReference().name("webLogicCredentialsSecretName"))));
     configureDomain(domainPresenceInfo)
@@ -400,23 +406,17 @@ public class JobHelperTest {
     return configureDomain(domainPresenceInfo).configureServer(serverName);
   }
 
-  private V1Container getContainerFromJobSpec(V1JobSpec jobSpec, String domainUID) {
+  private V1Container getContainerFromJobSpec(V1JobSpec jobSpec, String domainUid) {
     List<V1Container> containersList = jobSpec.getTemplate().getSpec().getContainers();
     if (containersList != null) {
       for (V1Container container : containersList) {
-        if (JobHelper.createJobName(domainUID).equals(container.getName())) {
+        if (JobHelper.createJobName(domainUid).equals(container.getName())) {
           return container;
         }
       }
     }
     return null;
   }
-
-  static Matcher<Iterable<? super V1EnvVar>> hasEnvVar(String name, String value) {
-    return hasItem(new V1EnvVar().name(name).value(value));
-  }
-
-  Method getDomainSpec;
 
   DomainSpec getConfiguredDomainSpec(DomainConfigurator domainConfigurator)
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {

@@ -4,11 +4,11 @@
 
 package oracle.kubernetes.json;
 
-import static java.lang.annotation.ElementType.FIELD;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
 
 /** Specifies an enum class whose values match the permitted values for the field. */
 @Retention(RetentionPolicy.RUNTIME)

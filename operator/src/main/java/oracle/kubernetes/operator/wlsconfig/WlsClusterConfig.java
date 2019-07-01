@@ -7,6 +7,7 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -26,7 +27,8 @@ public class WlsClusterConfig {
   // owner -- don't include in toString, hashCode, equals
   private WlsDomainConfig wlsDomainConfig;
 
-  public WlsClusterConfig() {}
+  public WlsClusterConfig() {
+  }
 
   /**
    * Constructor for a static cluster when Json result is not available.
@@ -80,6 +82,56 @@ public class WlsClusterConfig {
       dynamicServersConfig = null;
     }
     return new WlsClusterConfig(clusterName, dynamicServersConfig);
+  }
+
+  /**
+   * Return the list of configuration attributes to be retrieved from the REST search request to the
+   * WLS admin server. The value would be used for constructing the REST POST request.
+   *
+   * @return The list of configuration attributes to be retrieved from the REST search request to
+   *     the WLS admin server. The value would be used for constructing the REST POST request.
+   */
+  static String getSearchPayload() {
+    return "   fields: [ "
+        + getSearchFields()
+        + " ], "
+        + "   links: [], "
+        + "   children: { "
+        + "      dynamicServers: { "
+        + "      fields: [ "
+        + WlsDynamicServersConfig.getSearchFields()
+        + " ], "
+        + "      links: [] "
+        + "        }"
+        + "    } ";
+  }
+
+  /**
+   * Return the fields from cluster WLS configuration that should be retrieved from the WLS REST
+   * request.
+   *
+   * @return A string containing cluster configuration fields that should be retrieved from the WLS
+   *     REST request, in a format that can be used in the REST request payload
+   */
+  private static String getSearchFields() {
+    return "'name' ";
+  }
+
+  /**
+   * Checks the JSON result from the dynamic cluster size update REST request.
+   *
+   * @param jsonResult The JSON String result from the dynamic server cluster size update REST
+   *     request
+   * @return true if the result means the update was successful, false otherwise
+   */
+  static boolean checkUpdateDynamicClusterSizeJsonResult(String jsonResult) {
+    final String expectedResult = "{}";
+
+    boolean result = false;
+    if (expectedResult.equals(jsonResult)) {
+      result = true;
+    }
+    return result;
   }
 
   /**
@@ -148,6 +200,15 @@ public class WlsClusterConfig {
   }
 
   /**
+   * Returns the WlsDomainConfig object for the WLS domain that this cluster belongs to.
+   *
+   * @return the WlsDomainConfig object for the WLS domain that this cluster belongs to
+   */
+  public WlsDomainConfig getWlsDomainConfig() {
+    return wlsDomainConfig;
+  }
+
+  /**
    * Associate this cluster to the WlsDomainConfig object for the WLS domain that this cluster
    * belongs to.
    *
@@ -156,15 +217,6 @@ public class WlsClusterConfig {
    */
   public void setWlsDomainConfig(WlsDomainConfig wlsDomainConfig) {
     this.wlsDomainConfig = wlsDomainConfig;
-  }
-
-  /**
-   * Returns the WlsDomainConfig object for the WLS domain that this cluster belongs to.
-   *
-   * @return the WlsDomainConfig object for the WLS domain that this cluster belongs to
-   */
-  public WlsDomainConfig getWlsDomainConfig() {
-    return wlsDomainConfig;
   }
 
   /**
@@ -327,39 +379,6 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Return the list of configuration attributes to be retrieved from the REST search request to the
-   * WLS admin server. The value would be used for constructing the REST POST request.
-   *
-   * @return The list of configuration attributes to be retrieved from the REST search request to
-   *     the WLS admin server. The value would be used for constructing the REST POST request.
-   */
-  static String getSearchPayload() {
-    return "   fields: [ "
-        + getSearchFields()
-        + " ], "
-        + "   links: [], "
-        + "   children: { "
-        + "      dynamicServers: { "
-        + "      fields: [ "
-        + WlsDynamicServersConfig.getSearchFields()
-        + " ], "
-        + "      links: [] "
-        + "        }"
-        + "    } ";
-  }
-
-  /**
-   * Return the fields from cluster WLS configuration that should be retrieved from the WLS REST
-   * request.
-   *
-   * @return A string containing cluster configuration fields that should be retrieved from the WLS
-   *     REST request, in a format that can be used in the REST request payload
-   */
-  private static String getSearchFields() {
-    return "'name' ";
-  }
-
-  /**
    * Return the URL path of REST request for updating dynamic cluster size.
    *
    * @return The REST URL path for updating cluster size of dynamic servers for this cluster
@@ -412,23 +431,6 @@ public class WlsClusterConfig {
             .append(servers, rhs.servers)
             .append(dynamicServersConfig, rhs.dynamicServersConfig);
     return builder.isEquals();
-  }
-
-  /**
-   * Checks the JSON result from the dynamic cluster size update REST request.
-   *
-   * @param jsonResult The JSON String result from the dynamic server cluster size update REST
-   *     request
-   * @return true if the result means the update was successful, false otherwise
-   */
-  static boolean checkUpdateDynamicClusterSizeJsonResult(String jsonResult) {
-    final String EXPECTED_RESULT = "{}";
-
-    boolean result = false;
-    if (EXPECTED_RESULT.equals(jsonResult)) {
-      result = true;
-    }
-    return result;
   }
 
   /** ConfigUpdate implementation for updating a dynamic cluster size. */
