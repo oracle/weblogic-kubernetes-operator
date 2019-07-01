@@ -1,24 +1,23 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.util.Collections.singletonList;
-import static oracle.kubernetes.LogMatcher.containsWarning;
-import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.*;
-import static oracle.kubernetes.operator.logging.MessageKeys.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
-
-import com.meterware.simplestub.Memento;
-import io.kubernetes.client.models.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
+
+import com.meterware.simplestub.Memento;
+import io.kubernetes.client.models.V1ResourceAttributes;
+import io.kubernetes.client.models.V1ResourceRule;
+import io.kubernetes.client.models.V1SelfSubjectAccessReview;
+import io.kubernetes.client.models.V1SelfSubjectRulesReview;
+import io.kubernetes.client.models.V1SubjectAccessReviewStatus;
+import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -27,6 +26,23 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static java.util.Collections.singletonList;
+import static oracle.kubernetes.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.create;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.delete;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.deletecollection;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.get;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.list;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.patch;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.update;
+import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.watch;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_UID_UNIQUENESS_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.PV_ACCESS_MODE_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.PV_NOT_FOUND_FOR_DOMAIN_UID;
+import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIED;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 
 public class HealthCheckHelperTest {
 
@@ -215,22 +231,6 @@ public class HealthCheckHelperTest {
     private boolean mayAccessNamespace = true;
     private boolean mayAccessCluster = true;
 
-    private void expectAccessCheck(String namespace, String resource, Operation operation) {
-      this.expectedAccessChecks.add(createResourceAttributes(namespace, resource, operation));
-    }
-
-    void setMayAccessNamespace(boolean mayAccessNamespace) {
-      this.mayAccessNamespace = mayAccessNamespace;
-    }
-
-    void setMayAccessCluster(boolean mayAccessCluster) {
-      this.mayAccessCluster = mayAccessCluster;
-    }
-
-    List<V1ResourceAttributes> getExpectedAccessChecks() {
-      return Collections.unmodifiableList(expectedAccessChecks);
-    }
-
     private static V1ResourceAttributes createResourceAttributes(
         String namespace, String resource, Operation operation) {
       return new V1ResourceAttributes()
@@ -253,6 +253,22 @@ public class HealthCheckHelperTest {
     private static String getApiGroup(String resourceString) {
       String[] split = resourceString.split("/");
       return split.length <= 2 ? "" : split[2];
+    }
+
+    private void expectAccessCheck(String namespace, String resource, Operation operation) {
+      this.expectedAccessChecks.add(createResourceAttributes(namespace, resource, operation));
+    }
+
+    void setMayAccessNamespace(boolean mayAccessNamespace) {
+      this.mayAccessNamespace = mayAccessNamespace;
+    }
+
+    void setMayAccessCluster(boolean mayAccessCluster) {
+      this.mayAccessCluster = mayAccessCluster;
+    }
+
+    List<V1ResourceAttributes> getExpectedAccessChecks() {
+      return Collections.unmodifiableList(expectedAccessChecks);
     }
 
     private boolean isAllowedByDefault(V1ResourceAttributes resourceAttributes) {

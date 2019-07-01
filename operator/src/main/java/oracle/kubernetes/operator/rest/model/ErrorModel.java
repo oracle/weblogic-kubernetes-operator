@@ -1,4 +1,4 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -6,6 +6,11 @@ package oracle.kubernetes.operator.rest.model;
 
 /** ErrorModel describes an error response from a WebLogic operator REST resource. */
 public class ErrorModel extends BaseModel {
+
+  private int status;
+  private String detail;
+  private String type;
+  private String title;
 
   /** Construct an empty ErrorModel. */
   public ErrorModel() {
@@ -25,8 +30,6 @@ public class ErrorModel extends BaseModel {
     setDetail(detail);
   }
 
-  private int status;
-
   /**
    * Get the error's HTTP status code.
    *
@@ -44,8 +47,6 @@ public class ErrorModel extends BaseModel {
   public void setStatus(int status) {
     this.status = status;
   }
-
-  private String detail;
 
   /**
    * Get a detailed description of the error.
@@ -65,8 +66,6 @@ public class ErrorModel extends BaseModel {
     this.detail = details;
   }
 
-  private String type;
-
   /**
    * Get the error's type.
    *
@@ -84,8 +83,6 @@ public class ErrorModel extends BaseModel {
   public void setType(String type) {
     this.type = type;
   }
-
-  private String title;
 
   /**
    * Get the error's title.

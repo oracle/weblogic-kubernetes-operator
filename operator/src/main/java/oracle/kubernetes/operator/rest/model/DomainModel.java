@@ -1,47 +1,51 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /** DomainModel describes a WebLogic domain that has been registered with the WebLogic operator. */
 public class DomainModel extends ItemModel {
 
+  @JsonProperty("domainUID")
+  private String domainUid;
+
   /** Construct an empty DomainModel. */
-  public DomainModel() {}
+  public DomainModel() {
+  }
 
   /**
    * Construct a populated DomainModel.
    *
-   * @param domainUID - the unique identifier assigned to the WebLogic domain that contains this
+   * @param domainUid - the unique identifier assigned to the WebLogic domain that contains this
    *     cluster.
    */
-  public DomainModel(String domainUID) {
-    setDomainUID(domainUID);
+  public DomainModel(String domainUid) {
+    setDomainUid(domainUid);
   }
-
-  private String domainUID;
 
   /**
    * Get the unique identifier that has been assigned to this WebLogic domain.
    *
    * @return the domain's unique identifier.
    */
-  public String getDomainUID() {
-    return domainUID;
+  public String getDomainUid() {
+    return domainUid;
   }
 
   /**
    * Set the unique identifier that has been assigned to this WebLogic domain.
    *
-   * @param domainUID - the domain's unique identifier.
+   * @param domainUid - the domain's unique identifier.
    */
-  public void setDomainUID(String domainUID) {
-    this.domainUID = domainUID;
+  public void setDomainUid(String domainUid) {
+    this.domainUid = domainUid;
   }
 
   @Override
   protected String propertiesToString() {
-    return "domainUID=" + getDomainUID() + ", " + super.propertiesToString();
+    return "domainUID=" + getDomainUid() + ", " + super.propertiesToString();
   }
 }

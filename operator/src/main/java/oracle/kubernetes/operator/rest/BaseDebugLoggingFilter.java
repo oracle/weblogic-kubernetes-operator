@@ -1,4 +1,4 @@
-// Copyright 2017, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2017, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -12,6 +12,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
@@ -22,12 +23,10 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 public abstract class BaseDebugLoggingFilter {
 
   protected static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  private static final String DATE_FORMAT =
-      "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"; // ISO 8610, includes time zone
-
   protected static final String FILTER_REQUEST_START_TIME = "FILTER_REQUEST_START_TIME";
   protected static final String FILTER_REQUEST_ENTITY = "FILTER_REQUEST_ENTITY";
+  private static final String DATE_FORMAT =
+      "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"; // ISO 8610, includes time zone
 
   protected static String formatTime(long time) {
     // construct a new SimpleDataFormat each time since it is not thread safe:

@@ -4,22 +4,9 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.operator.DomainStatusUpdater.SERVERS_READY_REASON;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
@@ -27,9 +14,6 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1PodStatus;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.AsyncCallTestSupport;
 import oracle.kubernetes.operator.helpers.BodyMatcher;
@@ -51,13 +35,30 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.operator.DomainStatusUpdater.SERVERS_READY_REASON;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
+
 public class DomainStatusUpdaterTest {
   private static final String NS = "namespace";
   private static final String NAME = "name";
+  private final TerminalStep endStep = new TerminalStep();
+  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
   private AsyncCallTestSupport testSupport = new AsyncCallTestSupport();
   private List<Memento> mementos = new ArrayList<>();
-  private final TerminalStep endStep = new TerminalStep();
-
   private Domain domain =
       new Domain()
           .withMetadata(new V1ObjectMeta().namespace(NS).name(NAME))
@@ -65,9 +66,8 @@ public class DomainStatusUpdaterTest {
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private Domain recordedDomain;
   private RandomStringGenerator generator = new RandomStringGenerator();
-  private String reason = generator.getUniqueString();
-  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
   private final String message = generator.getUniqueString();
+  private String reason = generator.getUniqueString();
   private RuntimeException failure = new RuntimeException(message);
 
   @Before
@@ -95,13 +95,6 @@ public class DomainStatusUpdaterTest {
 
     this.recordedDomain = (Domain) domain;
     return true;
-  }
-
-  class RecordBody implements BodyMatcher {
-    @Override
-    public boolean matches(Object actualBody) {
-      return recordBody(actualBody);
-    }
   }
 
   private V1ObjectMeta createPodMetadata(String serverName) {
@@ -692,8 +685,6 @@ public class DomainStatusUpdaterTest {
     assertThat(recordedDomain, not(hasCondition(Failed)));
   }
 
-  // ---
-
   @Test
   public void whenDomainLacksStatus_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
@@ -704,6 +695,8 @@ public class DomainStatusUpdaterTest {
         recordedDomain,
         hasCondition(Failed).withStatus("True").withReason("Exception").withMessage(message));
   }
+
+  // ---
 
   @Test
   public void whenDomainLacksFailedCondition_failedStepUpdatesDomainWithFailedTrueAndException() {
@@ -742,5 +735,12 @@ public class DomainStatusUpdaterTest {
     testSupport.runSteps(DomainStatusUpdater.createFailedStep(failure, endStep));
 
     assertThat(recordedDomain, hasCondition(Available));
+  }
+
+  class RecordBody implements BodyMatcher {
+    @Override
+    public boolean matches(Object actualBody) {
+      return recordBody(actualBody);
+    }
   }
 }

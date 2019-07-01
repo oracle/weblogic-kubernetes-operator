@@ -1,12 +1,13 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
 
+import java.nio.file.Path;
+
 import io.kubernetes.client.models.V1ConfigMap;
 import io.kubernetes.client.models.V1Job;
-import java.nio.file.Path;
 
 /** Parses a generated create-weblogic-domain-job.yaml file into a set of typed k8s java objects */
 public class ParsedCreateWeblogicDomainJobYaml extends ParsedKubernetesYaml {
@@ -25,11 +26,11 @@ public class ParsedCreateWeblogicDomainJobYaml extends ParsedKubernetesYaml {
   }
 
   public V1ConfigMap getCreateWeblogicDomainConfigMap() {
-    return getConfigMaps().find(inputs.getDomainUID() + "-create-weblogic-domain-job-cm");
+    return getConfigMaps().find(inputs.getDomainUid() + "-create-weblogic-domain-job-cm");
   }
 
   public V1Job getCreateWeblogicDomainJob() {
-    return getJobs().find(inputs.getDomainUID() + "-create-weblogic-domain-job");
+    return getJobs().find(inputs.getDomainUid() + "-create-weblogic-domain-job");
   }
 
   public int getExpectedObjectCount() {

@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -9,9 +9,12 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
+
 import oracle.kubernetes.operator.utils.PathUtils;
 
-/** Gets a helm chart's default values */
+/**
+ * Gets a helm chart's default values.
+ */
 @SuppressWarnings({"unchecked", "SameParameterValue"})
 public class ChartDefaultValues {
 
@@ -32,20 +35,20 @@ public class ChartDefaultValues {
   }
 
   private String getDefaultValuesFromDebugProcessStdout(String stdout) throws Exception {
-    String BEGIN_MARKER = "\nCOMPUTED VALUES:\n";
-    int begin = stdout.indexOf(BEGIN_MARKER);
+    String beginMarker = "\nCOMPUTED VALUES:\n";
+    int begin = stdout.indexOf(beginMarker);
     if (begin == -1) {
-      reportProcessError("stdout does not contain " + BEGIN_MARKER + "\nstdout:\n" + stdout);
+      reportProcessError("stdout does not contain " + beginMarker + "\nstdout:\n" + stdout);
     }
-    begin = begin + BEGIN_MARKER.length();
-    String END_MARKER = "\nHOOKS:\n";
-    int end = stdout.indexOf(END_MARKER, begin);
+    begin = begin + beginMarker.length();
+    String endMarker = "\nHOOKS:\n";
+    int end = stdout.indexOf(endMarker, begin);
     if (end == -1) {
       reportProcessError(
           "stdout does not contain \""
-              + END_MARKER
+              + endMarker
               + " after "
-              + BEGIN_MARKER
+              + beginMarker
               + ".\nstdout:\n"
               + stdout);
     }

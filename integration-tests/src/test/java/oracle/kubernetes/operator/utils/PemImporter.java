@@ -1,4 +1,4 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
@@ -26,14 +26,14 @@ import java.util.List;
 import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
 
-public class PEMImporter {
+public class PemImporter {
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
+
   /**
-   * Create a KeyStore from standard PEM files
+   * Create a KeyStore from standard PEM files.
    *
-   * @param privateKeyPem the private key PEM file
    * @param certificatePem the certificate(s) PEM file
-   * @param the password to set to protect the private key
+   * @param password the password to set to protect the private key
    */
   public static KeyStore createKeyStore(File certificatePem, final String password)
       throws Exception, KeyStoreException, IOException, NoSuchAlgorithmException,
@@ -93,7 +93,7 @@ public class PEMImporter {
     final String hexString = stringBuilder.toString();
     final byte[] bytes = DatatypeConverter.parseBase64Binary(hexString);
 
-    return generatePrivateKeyFromDER(bytes);
+    return generatePrivateKeyFromDer(bytes);
   }
 
   private static X509Certificate[] createCertificates(File certificatePem) throws Exception {
@@ -113,7 +113,7 @@ public class PEMImporter {
       if (line.contains("END CERTIFICATE")) {
         String hexString = stringBuilder.toString();
         final byte[] bytes = DatatypeConverter.parseBase64Binary(hexString);
-        X509Certificate cert = generateCertificateFromDER(bytes);
+        X509Certificate cert = generateCertificateFromDer(bytes);
         result.add(cert);
         stringBuilder = new StringBuilder();
       } else {
@@ -130,14 +130,14 @@ public class PEMImporter {
     return result.toArray(new X509Certificate[result.size()]);
   }
 
-  private static RSAPrivateKey generatePrivateKeyFromDER(byte[] keyBytes)
+  private static RSAPrivateKey generatePrivateKeyFromDer(byte[] keyBytes)
       throws InvalidKeySpecException, NoSuchAlgorithmException {
     final PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
     final KeyFactory factory = KeyFactory.getInstance("RSA");
     return (RSAPrivateKey) factory.generatePrivate(spec);
   }
 
-  private static X509Certificate generateCertificateFromDER(byte[] certBytes)
+  private static X509Certificate generateCertificateFromDer(byte[] certBytes)
       throws CertificateException {
     final CertificateFactory factory = CertificateFactory.getInstance("X.509");
     return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(certBytes));

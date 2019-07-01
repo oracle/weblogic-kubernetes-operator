@@ -1,20 +1,21 @@
-// Copyright 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
 
 /** This test class verifies the behavior of the DomainWatcher. */
 public class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain> {
@@ -25,7 +26,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
   private Domain domain = createDomain();
 
   private static Domain createDomain() {
-    return new Domain().withSpec(new DomainSpec().withDomainUID(UID));
+    return new Domain().withSpec(new DomainSpec().withDomainUid(UID));
   }
 
   @Override
