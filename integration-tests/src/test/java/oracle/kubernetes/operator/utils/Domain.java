@@ -1797,6 +1797,7 @@ public class Domain {
   /**
    * Shut down a ms by setting serverStartPolicy to NEVER.
    *
+   * @param msName - a managed server name to be stopped
    * @throws Exception exception
    */
   public void shutdownManagedServerUsingServerStartPolicy(String msName) throws Exception {
@@ -1813,6 +1814,7 @@ public class Domain {
   /**
    * Restart a ms by setting serverStartPolicy to IF_NEEDED.
    *
+   * @param msName - a managed server name to be started
    * @throws Exception exception
    */
   public void restartManagedServerUsingServerStartPolicy(String msName) throws Exception {
