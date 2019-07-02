@@ -191,27 +191,20 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     operator =
         new Operator(
             (TestUtils.createOperatorMap(number, false)),
-            false,
+            true,
             false,
             true,
             RestCertType.SELF_SIGNED);
+    String command = " kubectl delete namespace weblogic-operator" + number;
+    TestUtils.exec(command);
     try {
       operator.callHelmInstall();
       throw new RuntimeException("FAILURE: Helm install operator with not preexisted namespace ");
 
     } catch (Exception ex) {
-      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      logger.info("Executing cmd " + cmdLb);
-      ExecResult result = ExecCommand.exec(cmdLb);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: Helm installs operator with not preexisted namespace ");
-      }
+      logger.info("Helm install operator with not preexisted ns failed as expected");
     } finally {
       number++;
-      if (operator != null) {
-        operator.destroy();
-      }
     }
     logger.info("SUCCESS - " + testMethodName);
   }
