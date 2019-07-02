@@ -131,7 +131,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Operator firstoperator = null;
     Operator secondoperator = null;
 
-    logger.info("Creating firs toperator");
+    logger.info("Creating first operator");
     firstoperator =
         new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
     firstoperator.callHelmInstall();
