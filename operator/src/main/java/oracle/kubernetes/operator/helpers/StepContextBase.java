@@ -13,18 +13,16 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public abstract class StepContextBase implements StepContextConstants {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  // Map of <token, substitution string> to be used in the translate method
-  // Subclass should populate this map prior to calling translate().
-  protected Map<String, String> substitutionVariables = new HashMap<>();
 
   /**
    * Abstract method to be implemented by subclasses to return a list of configured and additional
@@ -52,30 +50,41 @@ public abstract class StepContextBase implements StepContextConstants {
         vars, "USER_MEM_ARGS", "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom");
 
     hideAdminUserCredentials(vars);
-    doSubstitution(vars);
+    doSubstitution(varsToSubVariables(vars), vars);
 
     return vars;
   }
 
-  protected void doSubstitution(List<V1EnvVar> vars) {
+  protected Map<String, String> varsToSubVariables(List<V1EnvVar> vars) {
+    Map<String, String> substitutionVariables = new HashMap<>();
+    if (vars != null) {
+      for (V1EnvVar envVar : vars) {
+        substitutionVariables.put(envVar.getName(), envVar.getValue());
+      }
+    }
+
+    return substitutionVariables;
+  }
+
+  protected void doSubstitution(final Map<String, String> substitutionVariables, List<V1EnvVar> vars) {
     for (V1EnvVar var : vars) {
-      var.setValue(translate(var.getValue()));
+      var.setValue(translate(substitutionVariables, var.getValue()));
     }
   }
 
-  protected void doDeepSubstitution(Object obj) {
+  protected void doDeepSubstitution(final Map<String, String> substitutionVariables, Object obj) {
     if (obj != null) {
       if (obj instanceof List) {
         ListIterator<Object> it = ((List) obj).listIterator();
         while (it.hasNext()) {
           Object member = it.next();
           if (member instanceof String) {
-            String trans = translate((String) member);
+            String trans = translate(substitutionVariables, (String) member);
             if (!member.equals(trans)) {
               it.set(trans);
             }
           } else if (member != null && isModelClass(member.getClass())) {
-            doDeepSubstitution(member);
+            doDeepSubstitution(substitutionVariables, member);
           }
         }
       } else {
@@ -84,12 +93,12 @@ public abstract class StepContextBase implements StepContextConstants {
           if (isModelClass(cls)) {
             List<Method> modelOrListBeans = modelOrListBeans(cls);
             for (Method item : modelOrListBeans) {
-              doDeepSubstitution(item.invoke(obj));
+              doDeepSubstitution(substitutionVariables, item.invoke(obj));
             }
 
             List<Pair<Method, Method>> stringBeans = stringBeans(cls);
             for (Pair<Method, Method> item : stringBeans) {
-              item.getRight().invoke(obj, translate((String) item.getLeft().invoke(obj)));
+              item.getRight().invoke(obj, translate(substitutionVariables, (String) item.getLeft().invoke(obj)));
             }
           }
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -103,9 +112,12 @@ public abstract class StepContextBase implements StepContextConstants {
     return isModelClass(cls) || List.class.isAssignableFrom(cls);
   }
 
+  private static final String MODELS_PACKAGE = V1Pod.class.getPackageName();
+  private static final String DOMAIN_MODEL_PACKAGE = Domain.class.getPackageName();
+
   private boolean isModelClass(Class cls) {
-    return cls.getPackageName().startsWith("io.kubernetes.client.models")
-        || cls.getPackageName().startsWith("oracle.kubernetes.weblogic.domain.model");
+    return cls.getPackageName().startsWith(MODELS_PACKAGE)
+        || cls.getPackageName().startsWith(DOMAIN_MODEL_PACKAGE);
   }
 
   private List<Method> modelOrListBeans(Class cls) {
@@ -145,7 +157,7 @@ public abstract class StepContextBase implements StepContextConstants {
     return results;
   }
 
-  private String translate(String rawValue) {
+  private String translate(final Map<String, String> substitutionVariables, String rawValue) {
     String result = rawValue;
     for (Map.Entry<String, String> entry : substitutionVariables.entrySet()) {
       if (result != null && entry.getValue() != null) {

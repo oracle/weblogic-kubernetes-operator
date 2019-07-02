@@ -86,16 +86,7 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   void init() {
-    createSubstitutionMap();
     podModel = createPodModel();
-  }
-
-  private void createSubstitutionMap() {
-    substitutionVariables.put("DOMAIN_NAME", getDomainName());
-    substitutionVariables.put("DOMAIN_HOME", getDomainHome());
-    substitutionVariables.put("SERVER_NAME", getServerName());
-    substitutionVariables.put("ADMIN_NAME", getAsName());
-    substitutionVariables.put("ADMIN_PORT", getAsPort().toString());
   }
 
   V1Pod getPodModel() {
@@ -220,6 +211,10 @@ public abstract class PodStepContext extends StepContextBase {
   abstract Integer getDefaultPort();
 
   abstract String getServerName();
+
+  String getClusterName() {
+    return null;
+  }
 
   // Prevent the watcher from recreating pod with old spec
   private void markBeingDeleted() {
@@ -406,12 +401,32 @@ public abstract class PodStepContext extends StepContextBase {
         .filter(PodStepContext::isCustomerItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
 
-    updateForStarupMode(pod);
+    updateForStartupMode(pod);
     updateForShutdown(pod);
+    updateForDeepSubstitution(pod);
+
     return pod;
   }
 
-  final void updateForStarupMode(V1Pod pod) {
+  final void updateForDeepSubstitution(V1Pod pod) {
+    getContainer(pod)
+        .ifPresent(
+            c -> {
+              doDeepSubstitution(deepSubVars(c.getEnv()), pod.getSpec());
+            }
+        );
+  }
+
+  final Map<String, String> deepSubVars(List<V1EnvVar> envVars) {
+    Map<String, String> vars = varsToSubVariables(envVars);
+    String clusterName = getClusterName();
+    if (clusterName != null) {
+      vars.put("CLUSTER_NAME", clusterName);
+    }
+    return vars;
+  }
+
+  final void updateForStartupMode(V1Pod pod) {
     ServerSpec serverSpec = getServerSpec();
     if (serverSpec != null) {
       String desiredState = serverSpec.getDesiredState();
@@ -496,13 +511,14 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
+    V1Container container =
+        createContainer(tuningParameters)
+            .resources(getServerSpec().getResources())
+            .securityContext(getServerSpec().getContainerSecurityContext());
     V1PodSpec podSpec =
         new V1PodSpec()
             .containers(getServerSpec().getContainers())
-            .addContainersItem(
-                createContainer(tuningParameters)
-                    .resources(getServerSpec().getResources())
-                    .securityContext(getServerSpec().getContainerSecurityContext()))
+            .addContainersItem(container)
             .nodeSelector(getServerSpec().getNodeSelectors())
             .securityContext(getServerSpec().getPodSecurityContext())
             .initContainers(getServerSpec().getInitContainers());
@@ -512,8 +528,6 @@ public abstract class PodStepContext extends StepContextBase {
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
-
-    doDeepSubstitution(podSpec);
 
     return podSpec;
   }
