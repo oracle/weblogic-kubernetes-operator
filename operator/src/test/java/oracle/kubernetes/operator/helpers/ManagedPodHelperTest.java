@@ -173,6 +173,21 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenClusterHasLabelsWithVariables_createManagedPodWithSubstitutions() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withPodLabel("myCluster", "my-$(CLUSTER_NAME)")
+        .withPodLabel("logHome", "$(LOG_HOME)");
+
+    assertThat(
+        getCreatedPod().getMetadata().getLabels(),
+        allOf(
+            hasEntry("myCluster", "my" + CLUSTER_NAME),
+            hasEntry("logHome", "/shared/logs/" +  UID)));
+  }
+
+  @Test
   public void createManagedPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList());
 
