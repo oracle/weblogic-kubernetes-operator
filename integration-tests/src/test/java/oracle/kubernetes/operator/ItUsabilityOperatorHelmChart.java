@@ -12,6 +12,7 @@ import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
+import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -51,7 +52,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    *
    * @throws Exception exception
    */
-  // @AfterClass
+  @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
