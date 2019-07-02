@@ -307,7 +307,7 @@ You must configure your database to store its DB files on persistent storage. Re
       <description>Get these images and put them into your local registry.  If you don&amp;rsquo;t already have one, obtain a Docker store account, log in to the Docker store and accept the license agreement for the WebLogic Server image.
  Log in to the Docker store from your Docker client:
 $ docker login  Pull the operator image:
-$ docker pull oracle/weblogic-kubernetes-operator:2.2.0  Pull the Traefik load balancer image:
+$ docker pull oracle/weblogic-kubernetes-operator:2.2.1  Pull the Traefik load balancer image:
 $ docker pull traefik:1.</description>
     </item>
     
