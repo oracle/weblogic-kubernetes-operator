@@ -129,7 +129,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if could not run the command successfully to clone from github
    */
-  private static void gitCloneBuildMonitoringExporter() throws Exception {
+  private static void gitCloneMonitoringExporter() throws Exception {
     String monitoringExporterSrcDir = monitoringExporterDir + "/src";
     // target dir for monitoring exporter webapp
     String monitoringExporterWar =
@@ -159,44 +159,56 @@ public class ItMonitoringExporter extends BaseTest {
             .append(monitoringExporterSrcDir);
         TestUtils.exec(removeAndClone.toString());
       }
-
-      // build monitoring exporter project
-      StringBuffer buildExporter = new StringBuffer();
-      buildExporter
-          .append("cd " + monitoringExporterSrcDir)
-          .append(" && ")
-          .append(" mvn clean install --log-file output.txt");
-      TestUtils.exec(buildExporter.toString());
-
-      // build monitoring monitoring exporter webapp
-      StringBuffer buildExporterWar = new StringBuffer();
-      buildExporterWar
-          .append("cd " + monitoringExporterSrcDir + "/webapp")
-          .append(" && ")
-          .append("mvn package -Dconfiguration=")
-          .append(resourceExporterDir + "/rest_webapp.yml")
-          .append(" --log-file output1.txt");
-      TestUtils.exec(buildExporterWar.toString());
-
-      // build coordinator image
-      StringBuffer buildCoordinatorImage = new StringBuffer();
-      buildCoordinatorImage
-          .append("cd " + monitoringExporterSrcDir + "/config_coordinator")
-          .append(" && ")
-          .append(" docker build -t config_coordinator . ");
-      TestUtils.exec(buildCoordinatorImage.toString());
-
-      // copy created war file to desired destination
-      buildExporterWar = new StringBuffer();
-      buildExporterWar
-          .append(" mkdir " + monitoringExporterDir + "/apps")
-          .append(" && mkdir " + monitoringExporterDir + "/apps/monitoringexporter")
-          .append(" && ")
-          .append(" cp " + monitoringExporterSrcDir)
-          .append("/webapp/target/wls-exporter.war ")
-          .append(monitoringExporterWar);
-      TestUtils.exec(buildExporterWar.toString());
     }
+  }
+
+  /**
+   * Build monitoring exporter app
+   *
+   * @throws Exception if could not run the command successfully to clone from github
+   */
+  private static void buildMonitoringExporter() throws Exception {
+    String monitoringExporterSrcDir = monitoringExporterDir + "/src";
+    // target dir for monitoring exporter webapp
+    String monitoringExporterWar =
+        monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
+
+    // build monitoring exporter project
+    StringBuffer buildExporter = new StringBuffer();
+    buildExporter
+        .append("cd " + monitoringExporterSrcDir)
+        .append(" && ")
+        .append(" mvn clean install --log-file output.txt");
+    TestUtils.exec(buildExporter.toString());
+
+    // build monitoring monitoring exporter webapp
+    StringBuffer buildExporterWar = new StringBuffer();
+    buildExporterWar
+        .append("cd " + monitoringExporterSrcDir + "/webapp")
+        .append(" && ")
+        .append("mvn package -Dconfiguration=")
+        .append(resourceExporterDir + "/rest_webapp.yml")
+        .append(" --log-file output1.txt");
+    TestUtils.exec(buildExporterWar.toString());
+
+    // build coordinator image
+    StringBuffer buildCoordinatorImage = new StringBuffer();
+    buildCoordinatorImage
+        .append("cd " + monitoringExporterSrcDir + "/config_coordinator")
+        .append(" && ")
+        .append(" docker build -t config_coordinator . ");
+    TestUtils.exec(buildCoordinatorImage.toString());
+
+    // copy created war file to desired destination
+    buildExporterWar = new StringBuffer();
+    buildExporterWar
+        .append(" mkdir " + monitoringExporterDir + "/apps")
+        .append(" && mkdir " + monitoringExporterDir + "/apps/monitoringexporter")
+        .append(" && ")
+        .append(" cp " + monitoringExporterSrcDir)
+        .append("/webapp/target/wls-exporter.war ")
+        .append(monitoringExporterWar);
+    TestUtils.exec(buildExporterWar.toString());
   }
 
   private static void deployMonitoringExporterPrometethusGrafana(
@@ -315,7 +327,8 @@ public class ItMonitoringExporter extends BaseTest {
    */
   private static void deployRunMonitoringExporter(Domain domain, Operator operator)
       throws Exception {
-    gitCloneBuildMonitoringExporter();
+    gitCloneMonitoringExporter();
+    buildMonitoringExporter();
     logger.info("Creating Operator & waiting for the script to complete execution");
     boolean testCompletedSuccessfully = false;
     startExporterPrometheusGrafana(domain, operator);
@@ -797,6 +810,7 @@ public class ItMonitoringExporter extends BaseTest {
         domain = null;
       }
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      gitCloneMonitoringExporter();
       setupPVMYSQL();
       createWLSImageAndDeploy();
       installPrometheusGrafanaViaChart();
