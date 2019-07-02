@@ -13,7 +13,7 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/traceUtils.sh
 [ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1
 
-trace "Stop server ${SERVER_NAME}" &>> ${SERVER_OUT_FILE}
+trace "Stop server ${SERVER_NAME}" &>> ${STOP_OUT_FILE}
 
 checkEnv SERVER_NAME || exit 1
 
@@ -28,31 +28,31 @@ function check_for_shutdown() {
   state=`${SCRIPTPATH}/readState.sh`
   exit_status=$?
   if [ $exit_status -ne 0 ]; then
-    trace "Node manager not running or server instance not found; assuming shutdown" &>> ${SERVER_OUT_FILE}
+    trace "Node manager not running or server instance not found; assuming shutdown" &>> ${STOP_OUT_FILE}
     return 0
   fi
 
   if [ "$state" = "SHUTDOWN" ]; then
-    trace "Server is shutdown" &>> ${SERVER_OUT_FILE}
+    trace "Server is shutdown" &>> ${STOP_OUT_FILE}
     return 0
   fi
 
   if [[ "$state" =~ ^FAILED ]]; then
-    trace "Server in failed state" &>> ${SERVER_OUT_FILE}
+    trace "Server in failed state" &>> ${STOP_OUT_FILE}
     return 0
   fi
 
-  trace "Server is currently in state $state" &>> ${SERVER_OUT_FILE}
+  trace "Server is currently in state $state" &>> ${STOP_OUT_FILE}
   return 1
 }
 
 # setup ".out" location for a WL server
 serverLogHome="${LOG_HOME:-${DOMAIN_HOME}/servers/${SERVER_NAME}/logs}"
-SERVER_OUT_FILE="${serverLogHome}/stop-${SERVER_NAME}.out"
+STOP_OUT_FILE="${serverLogHome}/${SERVER_NAME}.stop.out"
 
 # Check if the server is already shutdown
 check_for_shutdown
-[ $? -eq 0 ] && trace "Server already shutdown or failed" &>>  ${SERVER_OUT_FILE} && exit 0
+[ $? -eq 0 ] && trace "Server already shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
 
 # Otherwise, connect to the node manager and stop the server instance
 [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace "Error: missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
@@ -64,9 +64,9 @@ export SHUTDOWN_TIMEOUT_ARG=${SHUTDOWN_TIMEOUT:-30}
 export SHUTDOWN_IGNORE_SESSIONS_ARG=${SHUTDOWN_IGNORE_SESSIONS:-false}
 export SHUTDOWN_TYPE_ARG=${SHUTDOWN_TYPE:-Graceful}
 
-trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> ${SERVER_OUT_FILE}
-${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py &>> ${SERVER_OUT_FILE}
-trace "After stop-server.py" &>> ${SERVER_OUT_FILE}
+trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> ${STOP_OUT_FILE}
+${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py &>> ${STOP_OUT_FILE}
+trace "After stop-server.py" &>> ${STOP_OUT_FILE}
 
 # at this point node manager should have terminated the server
 # but let's try looking for the server process and
@@ -74,7 +74,7 @@ trace "After stop-server.py" &>> ${SERVER_OUT_FILE}
 # just in case we failed to stop it via wlst
 pid=$(jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{print $1}')
 if [ ! -z $pid ]; then
-  echo "Killing the server process $pid" &>> ${SERVER_OUT_FILE}
+  echo "Killing the server process $pid" &>> ${STOP_OUT_FILE}
   kill -15 $pid
 fi
 
@@ -83,4 +83,4 @@ if [ -f /weblogic-operator/pid ]; then
   kill -2 $(</weblogic-operator/pid)
 fi
 
-trace "Exit script"  &>> ${SERVER_OUT_FILE}
+trace "Exit script"  &>> ${STOP_OUT_FILE}
