@@ -809,9 +809,13 @@ public class ItMonitoringExporter extends BaseTest {
         domain.destroy();
         domain = null;
       }
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       gitCloneMonitoringExporter();
-      setupPVMYSQL();
+      try {
+        setupPVMYSQL();
+      } catch (Exception ex) {
+        deletePvDir();
+        throw new RuntimeException("FAILURE: failed to install database ");
+      }
       createWLSImageAndDeploy();
       installPrometheusGrafanaViaChart();
     } finally {
@@ -928,10 +932,7 @@ public class ItMonitoringExporter extends BaseTest {
     if (new File(pvDir).exists()) {
       logger.info(" PV dir already exists , cleaning ");
       if (!pvDir.isEmpty()) {
-        StringBuffer removeDir = new StringBuffer();
-        logger.info("Cleaning PV dir " + pvDir);
-
-        removeDir.append("rm -rf ").append(pvDir).append(" && ");
+        deletePvDir();
       }
     } else {
       Files.createDirectories(Paths.get(pvDir));
@@ -943,8 +944,12 @@ public class ItMonitoringExporter extends BaseTest {
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
     // deploy PV and PVC
-    String crdCmd =
-        " kubectl apply -f " + monitoringExporterEndToEndDir + "/mysql/persistence.yaml";
+    // clean mysql processes
+    String crdCmd = "sudo pkill mysql";
+    ExecCommand.exec("crdCmd");
+    crdCmd = "sudo pkill mysqlp";
+    ExecCommand.exec("crdCmd");
+    crdCmd = " kubectl apply -f " + monitoringExporterEndToEndDir + "/mysql/persistence.yaml";
     TestUtils.exec(crdCmd);
     crdCmd = " kubectl apply -f " + monitoringExporterEndToEndDir + "/mysql/mysql.yaml";
     TestUtils.exec(crdCmd);
@@ -1010,6 +1015,7 @@ public class ItMonitoringExporter extends BaseTest {
               + result.stdout());
     }
   }
+
   /**
    * Install wls image tool and update wls pods
    *
@@ -1040,12 +1046,7 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.checkPodReady("domain1-admin-server", "default");
     TestUtils.checkPodReady("domain1-managed-server-1", "default");
     TestUtils.checkPodReady("domain1-managed-server-2", "default");
-    /*
-       domain.verifyDomainServerPodRestart(
-               "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\""
-               "\"" + newImage + "\"");
 
-    */
     // apply curl to the pod
     crdCmd = " kubectl apply -f " + monitoringExporterEndToEndDir + "/util/curl.yaml";
     TestUtils.exec(crdCmd);
@@ -1160,13 +1161,29 @@ public class ItMonitoringExporter extends BaseTest {
 
     crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/persistence.yaml";
     ExecCommand.exec(crdCmd);
-    crdCmd =
+    deletePvDir();
+  }
+
+  /**
+   * Delete PvDir via docker
+   *
+   * @throws Exception if could not run the command successfully to clone from github
+   */
+  private static void deletePvDir() throws Exception {
+    String monitoringExporterEndToEndDir =
+        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    String pvDir = monitoringExporterEndToEndDir + "pvDir";
+    String crdCmd =
         "cd "
             + monitoringExporterEndToEndDir
             + " && docker run --rm -v "
             + monitoringExporterEndToEndDir
             + "pvDir:/tt -v $PWD/util:/util  nginx  /util/clean-pv.sh";
     ExecCommand.exec(crdCmd);
+    StringBuffer removeDir = new StringBuffer();
+    logger.info("Cleaning PV dir " + pvDir);
+
+    removeDir.append("rm -rf ").append(pvDir).append(" && ");
   }
 
   /**
