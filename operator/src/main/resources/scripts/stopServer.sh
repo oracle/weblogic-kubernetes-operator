@@ -74,7 +74,7 @@ if [ ! -z $pid ]; then
   kill -15 $pid
 fi
 
-touch /weblogic-operator/doShutdown
+touch ${DOMAIN_HOME}/doShutdown
 if [ -f /weblogic-operator/pid ]; then
   kill -2 $(</weblogic-operator/pid)
 fi
