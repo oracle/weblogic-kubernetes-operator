@@ -111,7 +111,7 @@ function waitForShutdownMarker() {
   #
   trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
   while true; do
-    if [ -e /weblogic-operator/doShutdown ] ; then
+    if [ -e ${DOMAIN_HOME}/doShutdown ] ; then
       exit 0
     fi
     sleep 3
