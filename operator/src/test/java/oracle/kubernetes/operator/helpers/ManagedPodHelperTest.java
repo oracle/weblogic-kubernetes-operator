@@ -9,7 +9,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.LabelConstants;
@@ -35,6 +37,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -174,17 +177,33 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenClusterHasLabelsWithVariables_createManagedPodWithSubstitutions() {
+    V1EnvVar envVar = toEnvVar("TEST_ENV", "test-value");
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(envVar));
+
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
+        .withLogHomeEnabled(true)
+        .withContainer(new V1Container()
+            .name("test")
+            .addCommandItem("/bin/bash")
+            .addArgsItem("echo")
+            .addArgsItem("This server is $(SERVER_NAME) and has $(TEST_ENV)"))
         .configureCluster(CLUSTER_NAME)
         .withPodLabel("myCluster", "my-$(CLUSTER_NAME)")
         .withPodLabel("logHome", "$(LOG_HOME)");
 
+    V1Pod pod = getCreatedPod();
     assertThat(
-        getCreatedPod().getMetadata().getLabels(),
+        pod.getMetadata().getLabels(),
         allOf(
-            hasEntry("myCluster", "my" + CLUSTER_NAME),
+            hasEntry("myCluster", "my-" + CLUSTER_NAME),
             hasEntry("logHome", "/shared/logs/" +  UID)));
+    Optional<V1Container> o = pod.getSpec().getContainers()
+        .stream().filter(c -> "test".equals(c.getName())).findFirst();
+    assertThat(
+        o.orElseThrow().getArgs(),
+        allOf(
+            hasItem("This server is " +  SERVER_NAME + " and has test-value")));
   }
 
   @Test
