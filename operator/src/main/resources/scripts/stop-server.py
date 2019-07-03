@@ -105,20 +105,22 @@ def checkCoherenceClusterExist(configData):
 # The user must set that timeout to a large enough value to give Coherence time to get safe.
 def waitUntilCoherenceSafe():
   print ('Shutdown: getting all service Coherence MBeans')
-
-  domainRuntime()
   query='Coherence:type=PartitionAssignment,service=*,*'
 
   # Wait forever until we get positive ack that it is ok to shutdown this server.
   done = False
+  warnSleep = True
   while (not done):
     try:
+      domainRuntime()
       beans = list(mbs.queryMBeans(ObjectName(query), None))
       if beans is None or len(beans) == 0:
         # during rolling restart the beans might not be available right away
         # we need to wait since we know Coherence is enabled
-        print('Shutdown: Waiting until Coherence MBeans available... ')
-        systime.sleep(5)
+        if warnSleep:
+          print('Shutdown: Waiting until Coherence MBeans available... ')
+          warnSleep = False
+        systime.sleep(1)
         continue
 
       # Loop waiting for each service to be safe
@@ -133,7 +135,7 @@ def waitUntilCoherenceSafe():
       print ("Shutdown: Exception checking a service Coherence HAStatus, retrying...")
       traceback.print_exc(file=sys.stdout)
       dumpStack()
-      systime.sleep(30)
+      systime.sleep(10)
       pass
 
 
@@ -167,7 +169,7 @@ def waitUntilServiceSafeToShutdown(objectName):
       print ('Shutdown: An exception occurred getting Coherence MBeans, staying in loop checking for safe')
       traceback.print_exc(file=sys.stdout)
       dumpStack()
-      systime.sleep(30)
+      systime.sleep(10)
       pass
 
 
@@ -176,6 +178,7 @@ def waitUntilServiceSafeToShutdown(objectName):
 #----------------------------------
 print ("Shutdown: main script")
 domain_uid = getEnvVar('DOMAIN_UID')
+admin_name = getEnvVar('ADMIN_NAME')
 server_name = getEnvVar('SERVER_NAME')
 domain_name = getEnvVar('DOMAIN_NAME')
 domain_path = getEnvVar('DOMAIN_HOME')
@@ -209,6 +212,12 @@ cohExists = doesCoherenceExist()
 if (cohExists):
   print ('Shutdown: Coherence cluster exists')
   connect_url = local_admin_protocol + '://' + admin_host + ':' + admin_port
+
+  # must use force shutdown for admin server since Coherence MBeans cannot be found after
+  # a graceful admin server restart
+  if admin_name == server_name:
+    force = 'true'
+
 else:
   print ('Shutdown: Coherence cluster does not exist')
   connect_url = local_admin_protocol + '://' + service_name + ':' + local_admin_port
@@ -233,7 +242,7 @@ while (stayInConnectLoop):
       waitUntilCoherenceSafe()
       cohSafe = True
 
-    print('Shutdown: Calling server shutdown')
+    print('Shutdown: Calling server shutdown with force = ' + force)
     shutdown(server_name, 'Server', ignoreSessions=ignore_sessions, timeOut=int(timeout), block='true', force=force)
     print('Shutdown: Successfully shutdown the server')
 
@@ -243,7 +252,7 @@ while (stayInConnectLoop):
     if (cohExists and not cohSafe):
       print('Shutdown: Coherence not safe to shutdown. Sleeping before connect retry ...')
       stayInConnectLoop = True
-      systime.sleep(30)
+      systime.sleep(10)
     else:
       try:
         shutdownUsingNodeManager(domain_name, domain_path)
