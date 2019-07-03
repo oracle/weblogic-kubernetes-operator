@@ -8,9 +8,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
@@ -100,6 +102,11 @@ public abstract class StepContextBase implements StepContextConstants {
             for (Pair<Method, Method> item : stringBeans) {
               item.getRight().invoke(obj, translate(substitutionVariables, (String) item.getLeft().invoke(obj)));
             }
+
+            List<Pair<Method, Method>> mapBeans = mapBeans(cls);
+            for (Pair<Method, Method> item : mapBeans) {
+              item.getRight().invoke(obj, translate(substitutionVariables, (Map) item.getLeft().invoke(obj)));
+            }
           }
         } catch (IllegalAccessException | InvocationTargetException e) {
           LOGGER.severe(MessageKeys.EXCEPTION, e);
@@ -136,15 +143,23 @@ public abstract class StepContextBase implements StepContextConstants {
   }
 
   private List<Pair<Method, Method>> stringBeans(Class cls) {
+    return typeBeans(cls, String.class);
+  }
+
+  private List<Pair<Method, Method>> mapBeans(Class cls) {
+    return typeBeans(cls, Map.class);
+  }
+
+  private List<Pair<Method, Method>> typeBeans(Class cls, Class type) {
     List<Pair<Method, Method>> results = new ArrayList<>();
     Method[] methods = cls.getMethods();
     if (methods != null) {
       for (Method m : methods) {
         if (m.getName().startsWith("get")
-            && m.getReturnType().equals(String.class)
+            && m.getReturnType().equals(type)
             && m.getParameterCount() == 0) {
           try {
-            Method set = cls.getMethod("set" + m.getName().substring(3), String.class);
+            Method set = cls.getMethod("set" + m.getName().substring(3), type);
             if (set != null) {
               results.add(new Pair<>(m, set));
             }
@@ -165,6 +180,26 @@ public abstract class StepContextBase implements StepContextConstants {
       }
     }
     return result;
+  }
+
+  private Map<String, Object> translate(final Map<String, String> substitutionVariables, Map<String, Object> rawValue) {
+    if (rawValue == null)
+      return null;
+
+    Map<String, Object> trans = new HashMap<>();
+    for (Map.Entry<String, ?> entry : rawValue.entrySet()) {
+      Object value = entry.getValue();
+      if (value instanceof String) {
+        value = translate(substitutionVariables, (String) value);
+      } else if (value instanceof Map) {
+        value = translate(substitutionVariables, (Map) value);
+      } else {
+        doDeepSubstitution(substitutionVariables, value);
+      }
+      trans.put(translate(substitutionVariables, entry.getKey()), value);
+    }
+
+    return trans;
   }
 
   protected void addEnvVar(List<V1EnvVar> vars, String name, String value) {
