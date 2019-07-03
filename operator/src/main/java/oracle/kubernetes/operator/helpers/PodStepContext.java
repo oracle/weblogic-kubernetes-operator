@@ -412,9 +412,8 @@ public abstract class PodStepContext extends StepContextBase {
     getContainer(pod)
         .ifPresent(
             c -> {
-              doDeepSubstitution(deepSubVars(c.getEnv()), pod.getSpec());
-            }
-        );
+              doDeepSubstitution(deepSubVars(c.getEnv()), pod);
+            });
   }
 
   final Map<String, String> deepSubVars(List<V1EnvVar> envVars) {
