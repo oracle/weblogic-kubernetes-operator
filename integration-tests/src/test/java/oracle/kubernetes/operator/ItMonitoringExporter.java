@@ -73,7 +73,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-    if (QUICKTEST) {
+    if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
       logger.info("Checking if operator and domain are running, if not creating");
       if (operator == null) {
@@ -798,7 +798,7 @@ public class ItMonitoringExporter extends BaseTest {
    */
   @Test
   public void test19_EndToEndViaChart() throws Exception {
-    //Assume.assumeFalse(QUICKTEST);
+    Assume.assumeFalse(QUICKTEST);
     String monitoringExporterEndToEndDir =
         monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
