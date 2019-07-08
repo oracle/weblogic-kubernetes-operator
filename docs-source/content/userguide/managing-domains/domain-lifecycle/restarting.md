@@ -161,7 +161,7 @@ d. Update the `image` property of the domain resource specifying the new image n
      ```
         domain:
               spec:
-                   image: oracle/weblogic-updated:2.2
+                   image: oracle/weblogic-updated:2.2.1
      ```
 e. The operator will now initiate a rolling restart, which will apply the updated image, for all the server pods in the domain.
 
