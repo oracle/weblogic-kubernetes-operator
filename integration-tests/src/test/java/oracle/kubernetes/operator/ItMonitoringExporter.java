@@ -964,6 +964,7 @@ public class ItMonitoringExporter extends BaseTest {
     }
     assertNotNull("DataBase was not created, can't find running pod", sqlPod);
     TestUtils.checkPodReady(sqlPod, "default");
+    Thread.sleep(15000);
     result =
         TestUtils.kubectlexecNoCheck(
             sqlPod, "default", " -- mysql -p123456 -e \"CREATE DATABASE domain1;\"");
