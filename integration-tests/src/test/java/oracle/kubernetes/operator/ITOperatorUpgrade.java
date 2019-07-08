@@ -235,13 +235,14 @@ public class ITOperatorUpgrade extends BaseTest {
     //            + " -t weblogic-kubernetes-operator:develop --build-arg VERSION=2.3.0
     // --no-cache=true .");
     // upgradeRelease = "weblogic-kubernetes-operator:develop";
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$HELM VALUES BEFORE UPGRADE$$$$$$$$$$$$$$$$");
-    operator20.getHelmValues();
-    logger.log(
-        Level.INFO, "$$$$$$$$$$$$$$$$$$$ BEGIN OPERATOR LOG BEFORE UPGRADE $$$$$$$$$$$$$$$$");
-    String operatorPodName = operator20.getOperatorPodName();
-    ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG BEFORE UPGRADE $$$$$$$$$$$$$$$$");
+    //    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$HELM VALUES BEFORE UPGRADE$$$$$$$$$$$$$$$$");
+    //    operator20.getHelmValues();
+    //    logger.log(
+    //        Level.INFO, "$$$$$$$$$$$$$$$$$$$ BEGIN OPERATOR LOG BEFORE UPGRADE $$$$$$$$$$$$$$$$");
+    //    String operatorPodName = operator20.getOperatorPodName();
+    //    ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
+    //    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG BEFORE UPGRADE
+    // $$$$$$$$$$$$$$$$");
     operator20.callHelmUpgrade("image=" + upgradeRelease);
     //    TestUtils.ExecAndPrintLog(
     //        "cd "
@@ -253,12 +254,12 @@ public class ITOperatorUpgrade extends BaseTest {
     //            + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
     logger.log(Level.INFO, "Sleeping for 20 secs");
     Thread.sleep(1000 * 20);
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$HELM VALUES AFTER UPGRADE$$$$$$$$$$$$$$$$");
-    operator20.getHelmValues();
-    operatorPodName = operator20.getOperatorPodName();
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ BEGIN OPERATOR LOG $$$$$$$$$$$$$$$$");
-    ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG $$$$$$$$$$$$$$$$");
+    //    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$HELM VALUES AFTER UPGRADE$$$$$$$$$$$$$$$$");
+    //    operator20.getHelmValues();
+    //    operatorPodName = operator20.getOperatorPodName();
+    //    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ BEGIN OPERATOR LOG $$$$$$$$$$$$$$$$");
+    //    ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
+    //    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG $$$$$$$$$$$$$$$$");
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
     // TestUtils.ExecAndPrintLog("kubectl logs -n weblogic-operator " + operatorPodName);
   }
