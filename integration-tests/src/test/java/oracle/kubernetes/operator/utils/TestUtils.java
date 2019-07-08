@@ -972,6 +972,38 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
+  /**
+   * exec into the pod and call the shell script with given arguments.
+   *
+   * @param podName pod name
+   * @param domainNS namespace
+   * @param scriptsLocInPod script location
+   * @param shScriptName script name
+   * @param args script arguments
+   * @throws Exception exception
+   */
+  public static void callShellScriptByExecToPod(
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
+      throws Exception {
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" -- bash -c 'chmod +x -R ")
+        .append(scriptsLocInPod)
+        .append("  && ")
+        .append(scriptsLocInPod)
+        .append("/")
+        .append(shScriptName)
+        .append(" ")
+        .append(String.join(" ", args).toString())
+        .append("'");
+
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    TestUtils.exec(cmdKubectlSh.toString());
+  }
+
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
 
     String crdCmd =

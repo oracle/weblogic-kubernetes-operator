@@ -234,6 +234,10 @@ public class ItElasticLogging extends BaseTest {
     String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
     String managedServerPodName = domainUid + "-" + managedServerNameBase + "1";
 
+    // Wait 30 seconds for WLS log to be pushed to ELK Stack
+    logger.info("Wait 30 seconds for WLS log to be pushed to ELK Stack");
+    Thread.sleep(30 * 1000);
+
     // Verify that log hits for admin server are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=log:" + adminServerPodName + " | grep RUNNING";

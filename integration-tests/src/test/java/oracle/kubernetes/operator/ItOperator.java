@@ -235,8 +235,9 @@ public class ItOperator extends BaseTest {
 
   /**
    * Create operator if its not running and create domain with serverStartPolicy="ADMIN_ONLY".
-   * Verify only admin server is created. shutdown by deleting domain CRD. Create domain on existing
-   * PV dir, pv is already populated by a shutdown domain.
+   * Verify only admin server is created. Make domain configuration change and restart the domain.
+   * shutdown by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a
+   * shutdown domain.
    *
    * @throws Exception exception
    */
@@ -255,6 +256,10 @@ public class ItOperator extends BaseTest {
     try {
       domain = TestUtils.createDomain(DOMAIN_ADMINONLY_YAML);
       domain.verifyDomainCreated();
+      // change domain config by modifying accept backlog on adminserver tuning
+      modifyDomainConfig(domain);
+      domain.shutdownUsingServerStartPolicy();
+      domain.restartUsingServerStartPolicy();
     } finally {
       if (domain != null) {
         // create domain on existing dir
@@ -515,5 +520,29 @@ public class ItOperator extends BaseTest {
       testOperatorLifecycle(operator, domain);
     }
     return domain;
+  }
+
+  private void modifyDomainConfig(Domain domain) throws Exception {
+    String adminPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String scriptsLocInPod = "/u01/oracle";
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/modifyAcceptBacklog.py",
+        scriptsLocInPod + "/modifyAcceptBacklog.py",
+        adminPod,
+        domain.getDomainNs());
+
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
+        scriptsLocInPod + "/callpyscript.sh",
+        adminPod,
+        domain.getDomainNs());
+    String[] args = {
+      scriptsLocInPod + "/modifyAcceptBacklog.py",
+      BaseTest.getUsername(),
+      BaseTest.getPassword(),
+      "t3://" + adminPod + ":" + domain.getDomainMap().get("t3ChannelPort")
+    };
+    TestUtils.callShellScriptByExecToPod(
+        adminPod, domain.getDomainNs(), scriptsLocInPod, "callpyscript.sh", args);
   }
 }
