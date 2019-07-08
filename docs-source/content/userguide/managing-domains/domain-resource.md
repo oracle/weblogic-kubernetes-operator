@@ -94,3 +94,15 @@ Sub-sections related to the administration server, specific clusters or specific
 * `managedServers`: Configuration for specific managed servers.
 
 The elements `serverStartPolicy`, `serverStartState`, `serverPod` and `serverService` are repeated under `adminServer` and under each entry of `clusters` or `managedServers`.  The values directly under `spec` set the defaults for the entire domain.  The values under a specific entry under `clusters` set the defaults for cluster members of that cluster.  The values under `adminServer` or an entry under `managedServers` set the values for that specific server.  Values from the domain scope and values from the cluster (for cluster members) are merged with or overridden by the setting for the specific server depending on the element.  See the [startup and lifecycle](domain-lifecycle/startup.md) documentation for details about `serverStartPolicy` combination.
+
+### Pod generation
+
+The operator creates a pod for each running WebLogic server instance.  This pod will have a container based on the Docker image specified by the `image` field.  Additional pod or container content can be specified using the elements under `serverPod`.  This includes Kubernetes labels and annotations, additional volumes on the pod or volume mounts on the container, [resource requirements](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/) or [security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+
+Prior to creating a pod, the operator replaces variable references allowing the pod content to be templates.  The format of these variable references is `$(VARIABLE_NAME)` where *VARIABLE_NAME* is one of the variable names available in the container for the WebLogic server instance.  The default set of environment variables includes:
+* DOMAIN_NAME: The WebLogic domain name
+* DOMAIN_UID: The domain unique identifier
+* DOMAIN_HOME: The domain home location as a file system path within the container
+* SERVER_NAME: The WebLogic server name
+* CLUSTER_NAME: The WebLogic cluster name, if this is a cluster member
+* LOG_HOME: The WebLogic log location as a file system path within the container
