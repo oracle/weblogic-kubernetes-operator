@@ -10,7 +10,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -31,11 +30,8 @@ import org.junit.runners.MethodSorters;
 public class ItSessionMigration extends BaseTest {
   private static final String testAppName = "httpsessionreptestapp";
   private static final String scriptName = "buildDeployAppInPod.sh";
-
   private static Map<String, String> httpAttrMap;
-
   private static String httpHeaderFile;
-
   private static Operator operator;
   private static Domain domain;
 
@@ -71,7 +67,6 @@ public class ItSessionMigration extends BaseTest {
       }
 
       httpHeaderFile = BaseTest.getResultDir() + "/headers";
-
       httpAttrMap = new HashMap<String, String>();
       httpAttrMap.put("sessioncreatetime", "(.*)sessioncreatetime>(.*)</sessioncreatetime(.*)");
       httpAttrMap.put("sessionid", "(.*)sessionid>(.*)</sessionid(.*)");
@@ -134,7 +129,7 @@ public class ItSessionMigration extends BaseTest {
     String sessCreateTime1 = getHttpResponseAttribute(result.stdout(), sessCreateTime);
 
     // Stop primary server
-    stopPrimaryServer(primaryServName1);
+    domain.shutdownManagedServerUsingServerStartPolicy(primaryServName1);
 
     // Send the second HTTP request using HTTP header/sessionID info save before
     result = getHttpResponse(testAppPath, " -b ");
@@ -152,6 +147,7 @@ public class ItSessionMigration extends BaseTest {
         primaryServName1.trim().equals(primaryServName2.trim()));
 
     // Restore test env
+    domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
     logger.info(
@@ -190,7 +186,7 @@ public class ItSessionMigration extends BaseTest {
     final String countattribute1 = getHttpResponseAttribute(result.stdout(), count);
 
     // Stop primary server
-    stopPrimaryServer(primaryServName1);
+    domain.shutdownManagedServerUsingServerStartPolicy(primaryServName1);
 
     // Send the second HTTP request using HTTP header/sessionID info save before
     result = getHttpResponse(webServiceGetUrl, " -b ");
@@ -210,6 +206,7 @@ public class ItSessionMigration extends BaseTest {
         "HTTP session state is NOT migrated!", countattribute1.equals(countattribute2));
 
     // Restore test env
+    domain.restartManagedServerUsingServerStartPolicy(primaryServName1);
     TestUtils.checkPodReady(domainUid + "-" + primaryServName1, domainNS);
 
     logger.info("SUCCESS - " + testMethodName + ". HTTP session state is migrated!");
@@ -227,59 +224,22 @@ public class ItSessionMigration extends BaseTest {
     String curlCmd = buildWebServiceUrl(webServiceUrl, headerOption + httpHeaderFile);
     logger.info("Send a HTTP request: " + curlCmd);
 
-    ExecResult result = ExecCommand.exec(curlCmd);
-
-    if (result.exitValue() != 0) {
-      throw new Exception(
-          "FAILURE: command "
-              + curlCmd
-              + " failed, returned "
-              + result.stderr()
-              + "\n "
-              + result.stdout());
-    }
+    ExecResult result = TestUtils.exec(curlCmd);
 
     return result;
-  }
-
-  /**
-   * Stop the primary server.
-   *
-   * @param primaryServerName - weblogic primary server name
-   * @throws Exception exception
-   */
-  private void stopPrimaryServer(String primaryServerName) throws Exception {
-    Map<String, Object> domainMap = domain.getDomainMap();
-    String domainNS = domainMap.get("namespace").toString();
-    String domainUid = domain.getDomainUid();
-
-    // stop primary server
-    String msPodName = domainUid + "-" + primaryServerName;
-    String cmd = "kubectl delete po/" + msPodName + " -n " + domainNS;
-    logger.info("Stop managed server <" + msPodName + "> using command:\n" + cmd);
-
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new Exception("FAILURE: command " + cmd + " failed, returned " + result.stderr());
-    }
-
-    logger.info(result.stdout());
   }
 
   /**
    * Get the value of a HTTP attribute.
    *
    * @param httpResponseString - HTTP response
-   * @param attribute - attrubute name to find in the HTTP response
+   * @param attribute - attribute name to find in the HTTP response
    * @throws Exception exception
    */
   private String getHttpResponseAttribute(String httpResponseString, String attribute)
       throws Exception {
-
     String attrPatn = httpAttrMap.get(attribute);
-
     Assume.assumeNotNull(attrPatn);
-
     String httpAttribute = null;
 
     Pattern pattern = Pattern.compile(attrPatn);
@@ -316,29 +276,5 @@ public class ItSessionMigration extends BaseTest {
         .append(paramToAppend);
 
     return webServiceUrl.toString();
-  }
-
-  /**
-   * Execute a given curl command and verify the results.
-   *
-   * @param curlCmd - a curl command to execute
-   * @throws Exception exception
-   */
-  private ExecResult execCurlCmd(String curlCmd) throws Exception {
-    logger.info("curl command to exec is:\n" + curlCmd);
-
-    ExecResult result = ExecCommand.exec(curlCmd);
-
-    if (result.exitValue() != 0) {
-      throw new Exception(
-          "FAILURE: command "
-              + curlCmd
-              + " failed, returned "
-              + result.stderr()
-              + "\n "
-              + result.stdout());
-    }
-
-    return result;
   }
 }
