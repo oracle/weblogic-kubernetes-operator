@@ -192,10 +192,10 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperator(boolean restart) throws Exception {
     upgradeOperatorHelm(OP_TARGET_RELEASE);
-    printCompVersions();
-    if (restart) {
-      checkDomainRollingRestarted();
-    }
+    // printCompVersions();
+    // if (restart) {
+    //  checkDomainRollingRestarted();
+    // }
     printCompVersions();
     checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
     // testBasicUseCases(domain);
@@ -209,7 +209,7 @@ public class ITOperatorUpgrade extends BaseTest {
   private void upgradeOperatorHelm(String upgradeRelease) throws Exception {
     operator20.callHelmUpgrade("image=" + upgradeRelease);
     logger.log(Level.INFO, "Sleeping for 10 secs");
-    Thread.sleep(1000 * 10);
+    Thread.sleep(1000 * 300);
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
   }
 
