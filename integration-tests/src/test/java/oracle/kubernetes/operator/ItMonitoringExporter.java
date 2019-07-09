@@ -829,13 +829,7 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator1 != null) {
         operator1.destroy();
       }
-      crdCmd =
-          "cd "
-              + monitoringExporterEndToEndDir
-              + " && docker run --rm -v "
-              + monitoringExporterEndToEndDir
-              + "pvDir:/tt -v $PWD/util:/util  nginx  /util/clean-pv.sh";
-      ExecCommand.exec(crdCmd);
+      deletePvDir();
     }
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
@@ -1183,8 +1177,8 @@ public class ItMonitoringExporter extends BaseTest {
     ExecCommand.exec(crdCmd);
     StringBuffer removeDir = new StringBuffer();
     logger.info("Cleaning PV dir " + pvDir);
-
     removeDir.append("rm -rf ").append(pvDir).append(" && ");
+    ExecCommand.exec(removeDir.toString());
   }
 
   /**
