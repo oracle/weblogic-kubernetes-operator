@@ -819,9 +819,8 @@ public class ItMonitoringExporter extends BaseTest {
       createWLSImageAndDeploy();
       installPrometheusGrafanaViaChart();
     } finally {
-
-      uninstallMySQL();
       uninstallPrometheusGrafanaViaChart();
+      uninstallMySQL();
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
       ExecCommand.exec(crdCmd);
@@ -1118,6 +1117,7 @@ public class ItMonitoringExporter extends BaseTest {
             + "  -X POST http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/"
             + "  --data-binary @grafana/dashboard.json";
     TestUtils.exec(crdCmd);
+    Thread.sleep(15000);
     assertTrue(checkMetricsViaPrometheus("wls_servlet_execution_time_average", "test-webapp"));
   }
 
