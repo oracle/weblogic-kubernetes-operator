@@ -1177,7 +1177,7 @@ public class ItMonitoringExporter extends BaseTest {
     ExecCommand.exec(crdCmd);
     StringBuffer removeDir = new StringBuffer();
     logger.info("Cleaning PV dir " + pvDir);
-    removeDir.append("rm -rf ").append(pvDir).append(" && ");
+    removeDir.append("rm -rf ").append(pvDir);
     ExecCommand.exec(removeDir.toString());
   }
 
