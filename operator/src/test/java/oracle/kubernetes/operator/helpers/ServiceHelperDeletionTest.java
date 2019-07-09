@@ -4,13 +4,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Service;
@@ -18,6 +11,13 @@ import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.work.TerminalStep;
 import org.junit.Before;
 import org.junit.Test;
+
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   private static final String UID = "uid1";

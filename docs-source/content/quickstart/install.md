@@ -57,7 +57,7 @@ $ helm install stable/traefik \
     $ helm install kubernetes/charts/weblogic-operator \
       --name sample-weblogic-operator \
       --namespace sample-weblogic-operator-ns \
-      --set image=oracle/weblogic-kubernetes-operator:2.2.0 \
+      --set image=oracle/weblogic-kubernetes-operator:2.2.1 \
       --set serviceAccount=sample-weblogic-operator-sa \
       --set "domainNamespaces={}" \
       --wait

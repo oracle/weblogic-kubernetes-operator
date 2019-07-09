@@ -4,17 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
-
-import io.kubernetes.client.models.V1ObjectMeta;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -26,6 +15,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+
+import io.kubernetes.client.models.V1ObjectMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -45,30 +36,149 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
+
 /**
  * Updates for status of Domain. This class has two modes: 1) Watching for Pod state changes by
  * listening to events from {@link PodWatcher} and 2) Factory for {@link Step}s that the main
  * processing flow can use to explicitly set the condition to Progressing or Failed.
  */
 public class DomainStatusUpdater {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
   public static final String INSPECTING_DOMAIN_PROGRESS_REASON = "InspectingDomainPrescence";
   public static final String MANAGED_SERVERS_STARTING_PROGRESS_REASON = "ManagedServersStarting";
-
   public static final String SERVERS_READY_REASON = "ServersReady";
   public static final String ALL_STOPPED_AVAILABLE_REASON = "AllServersStopped";
-
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String TRUE = "True";
   private static final String FALSE = "False";
 
-  private DomainStatusUpdater() {}
+  private DomainStatusUpdater() {
+  }
+
+  /**
+   * Asynchronous step to set Domain status to indicate WebLogic server status.
+   *
+   * @param timeoutSeconds Timeout in seconds
+   * @param next Next step
+   * @return Step
+   */
+  @SuppressWarnings("SameParameterValue")
+  static Step createStatusStep(int timeoutSeconds, Step next) {
+    return new StatusUpdateHookStep(timeoutSeconds, next);
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Progressing.
+   *
+   * @param reason Progressing reason
+   * @param isPreserveAvailable true, if existing Available=True condition should be preserved
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
+    return new ProgressingStep(reason, isPreserveAvailable, next);
+  }
+
+  /**
+   * Asynchronous step to set Domain condition end Progressing and set Available, if needed.
+   *
+   * @param next Next step
+   * @return Step
+   */
+  static Step createEndProgressingStep(Step next) {
+    return new EndProgressingStep(next);
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Available.
+   *
+   * @param reason Available reason
+   * @param next Next step
+   * @return Step
+   */
+  public static Step createAvailableStep(String reason, Step next) {
+    return new AvailableStep(reason, next);
+  }
+
+  private static NextAction doDomainUpdate(
+      Domain dom, DomainPresenceInfo info, Packet packet, Step conflictStep, Step next) {
+    V1ObjectMeta meta = dom.getMetadata();
+    NextAction na = new NextAction();
+
+    // *NOTE* See the note in KubernetesVersion
+    // If we update the CrdHelper to include the status subresource, then this code
+    // needs to be modified to use replaceDomainStatusAsync.  Then, validate if onSuccess
+    // should update info.
+
+    na.invoke(
+        new CallBuilder()
+            .replaceDomainAsync(
+                meta.getName(),
+                meta.getNamespace(),
+                dom,
+                new DefaultResponseStep<Domain>(next) {
+                  @Override
+                  public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
+                    if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+                      return doNext(packet); // Just ignore update
+                    }
+                    return super.onFailure(
+                        getRereadDomainConflictStep(info, meta, conflictStep),
+                        packet,
+                        callResponse);
+                  }
+
+                  @Override
+                  public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+                    // Update info only if using replaceDomain
+                    // Skip, if we switch to using replaceDomainStatus
+                    info.setDomain(callResponse.getResult());
+                    return doNext(packet);
+                  }
+                }),
+        packet);
+    return na;
+  }
+
+  private static Step getRereadDomainConflictStep(
+      DomainPresenceInfo info, V1ObjectMeta meta, Step next) {
+    return new CallBuilder()
+        .readDomainAsync(
+            meta.getName(),
+            meta.getNamespace(),
+            new DefaultResponseStep<Domain>(next) {
+              @Override
+              public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
+                info.setDomain(callResponse.getResult());
+                return doNext(packet);
+              }
+            });
+  }
+
+  /**
+   * Asynchronous step to set Domain condition to Failed.
+   *
+   * @param throwable Throwable that caused failure
+   * @param next Next step
+   * @return Step
+   */
+  static Step createFailedStep(Throwable throwable, Step next) {
+    return new FailedStep(throwable, next);
+  }
 
   static class DomainConditionStepContext {
     private final DomainPresenceInfo info;
 
     DomainConditionStepContext(Packet packet) {
-      info = packet.getSPI(DomainPresenceInfo.class);
+      info = packet.getSpi(DomainPresenceInfo.class);
     }
 
     DomainPresenceInfo getInfo() {
@@ -84,18 +194,6 @@ public class DomainStatusUpdater {
     }
   }
 
-  /**
-   * Asynchronous step to set Domain status to indicate WebLogic server status.
-   *
-   * @param timeoutSeconds Timeout in seconds
-   * @param next Next step
-   * @return Step
-   */
-  @SuppressWarnings("SameParameterValue")
-  static Step createStatusStep(int timeoutSeconds, Step next) {
-    return new StatusUpdateHookStep(timeoutSeconds, next);
-  }
-
   private static class StatusUpdateHookStep extends Step {
     private final int timeoutSeconds;
 
@@ -106,7 +204,7 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       return doNext(
           ServerStatusReader.createDomainStatusReaderStep(
               info, timeoutSeconds, new StatusUpdateStep(getNext())),
@@ -145,7 +243,7 @@ public class DomainStatusUpdater {
       }
 
       if (status.isModified()) {
-        LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUID(), status);
+        LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUid(), status);
       }
       LOGGER.exiting();
 
@@ -254,18 +352,6 @@ public class DomainStatusUpdater {
     }
   }
 
-  /**
-   * Asynchronous step to set Domain condition to Progressing.
-   *
-   * @param reason Progressing reason
-   * @param isPreserveAvailable true, if existing Available=True condition should be preserved
-   * @param next Next step
-   * @return Step
-   */
-  public static Step createProgressingStep(String reason, boolean isPreserveAvailable, Step next) {
-    return new ProgressingStep(reason, isPreserveAvailable, next);
-  }
-
   private static class ProgressingStep extends Step {
     private final String reason;
     private final boolean isPreserveAvailable;
@@ -289,7 +375,7 @@ public class DomainStatusUpdater {
         status.removeConditionIf(c -> c.getType() == Available);
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
       return status.isModified()
@@ -297,16 +383,6 @@ public class DomainStatusUpdater {
               context.getDomain(), context.getInfo(), packet, ProgressingStep.this, getNext())
           : doNext(packet);
     }
-  }
-
-  /**
-   * Asynchronous step to set Domain condition end Progressing and set Available, if needed.
-   *
-   * @param next Next step
-   * @return Step
-   */
-  static Step createEndProgressingStep(Step next) {
-    return new EndProgressingStep(next);
   }
 
   private static class EndProgressingStep extends Step {
@@ -324,7 +400,7 @@ public class DomainStatusUpdater {
 
       status.removeConditionIf(c -> c.getType() == Progressing && TRUE.equals(c.getStatus()));
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
       return status.isModified()
@@ -332,17 +408,6 @@ public class DomainStatusUpdater {
               context.getDomain(), context.getInfo(), packet, EndProgressingStep.this, getNext())
           : doNext(packet);
     }
-  }
-
-  /**
-   * Asynchronous step to set Domain condition to Available.
-   *
-   * @param reason Available reason
-   * @param next Next step
-   * @return Step
-   */
-  public static Step createAvailableStep(String reason, Step next) {
-    return new AvailableStep(reason, next);
   }
 
   private static class AvailableStep extends Step {
@@ -363,79 +428,13 @@ public class DomainStatusUpdater {
       status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(reason));
       status.removeConditionIf(c -> c.getType() == Failed);
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
       return status.isModified()
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, AvailableStep.this, getNext())
           : doNext(packet);
     }
-  }
-
-  private static NextAction doDomainUpdate(
-      Domain dom, DomainPresenceInfo info, Packet packet, Step conflictStep, Step next) {
-    V1ObjectMeta meta = dom.getMetadata();
-    NextAction na = new NextAction();
-
-    // *NOTE* See the note in KubernetesVersion
-    // If we update the CRDHelper to include the status subresource, then this code
-    // needs to be modified to use replaceDomainStatusAsync.  Then, validate if onSuccess
-    // should update info.
-
-    na.invoke(
-        new CallBuilder()
-            .replaceDomainAsync(
-                meta.getName(),
-                meta.getNamespace(),
-                dom,
-                new DefaultResponseStep<Domain>(next) {
-                  @Override
-                  public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
-                    if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
-                      return doNext(packet); // Just ignore update
-                    }
-                    return super.onFailure(
-                        getRereadDomainConflictStep(info, meta, conflictStep),
-                        packet,
-                        callResponse);
-                  }
-
-                  @Override
-                  public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
-                    // Update info only if using replaceDomain
-                    // Skip, if we switch to using replaceDomainStatus
-                    info.setDomain(callResponse.getResult());
-                    return doNext(packet);
-                  }
-                }),
-        packet);
-    return na;
-  }
-
-  private static Step getRereadDomainConflictStep(
-      DomainPresenceInfo info, V1ObjectMeta meta, Step next) {
-    return new CallBuilder()
-        .readDomainAsync(
-            meta.getName(),
-            meta.getNamespace(),
-            new DefaultResponseStep<Domain>(next) {
-              @Override
-              public NextAction onSuccess(Packet packet, CallResponse<Domain> callResponse) {
-                info.setDomain(callResponse.getResult());
-                return doNext(packet);
-              }
-            });
-  }
-
-  /**
-   * Asynchronous step to set Domain condition to Failed.
-   *
-   * @param throwable Throwable that caused failure
-   * @param next Next step
-   * @return Step
-   */
-  static Step createFailedStep(Throwable throwable, Step next) {
-    return new FailedStep(throwable, next);
   }
 
   private static class FailedStep extends Step {
@@ -462,7 +461,7 @@ public class DomainStatusUpdater {
         status.addCondition(new DomainCondition(Progressing).withStatus(FALSE));
       }
 
-      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUID(), status);
+      LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
       return status.isModified()

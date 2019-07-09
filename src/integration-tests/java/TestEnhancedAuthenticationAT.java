@@ -11,16 +11,14 @@ import io.kubernetes.client.models.V1APIResourceList;
 import oracle.kubernetes.operator.authentication.Authenticator;
 import org.junit.Test;
 
-/**
- * Test CustomResourceDefinitions and custom objects
- */
+/** Test CustomResourceDefinitions and custom objects */
 public class TestEnhancedAuthenticationAT {
 
   private ApiClient client;
   private ApiextensionsV1beta1Api apiExtensions;
   private CustomObjectsApi customObjects;
 
-  static public void main(String[] args) throws Exception {
+  public static void main(String[] args) throws Exception {
     new TestEnhancedAuthenticationAT().testCreateClientByServiceAccount();
   }
 

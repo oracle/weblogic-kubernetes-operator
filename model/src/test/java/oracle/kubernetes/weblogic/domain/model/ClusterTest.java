@@ -4,11 +4,11 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import org.junit.Test;
+
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import org.junit.Test;
 
 public class ClusterTest extends BaseConfigurationTestBase {
   private final Cluster cluster1;
