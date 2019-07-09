@@ -1122,6 +1122,7 @@ public class ItMonitoringExporter extends BaseTest {
   private static void uninstallPrometheusGrafanaViaChart() throws Exception {
     String monitoringExporterEndToEndDir =
         monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    logger.info("Uninstalling grafana");
     // uninstall grafana
     String crdCmd = "helm delete --purge grafana";
     ExecCommand.exec(crdCmd);
@@ -1131,6 +1132,7 @@ public class ItMonitoringExporter extends BaseTest {
     ExecCommand.exec(crdCmd);
 
     // uninstall prometheus
+    logger.info("Uninstalling prometheus");
     crdCmd = "helm delete --purge prometheus";
     ExecCommand.exec(crdCmd);
     crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
@@ -1149,7 +1151,7 @@ public class ItMonitoringExporter extends BaseTest {
     String monitoringExporterEndToEndDir =
         monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     // unnstall mysql
-
+    logger.info("Uninstalling mysql");
     String crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/mysql.yaml";
     ExecCommand.exec(crdCmd);
 
