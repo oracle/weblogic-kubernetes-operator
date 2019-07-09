@@ -4,11 +4,11 @@
 
 package oracle.kubernetes.operator.utils;
 
-import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import static oracle.kubernetes.operator.utils.YamlUtils.newYaml;
 
 public class ScriptGeneratedYamlReader implements YamlReader {
   Path path;
