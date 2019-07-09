@@ -58,9 +58,9 @@ public class ITOperatorUpgrade extends BaseTest {
   public static void staticPrepare() throws Exception {
     if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
-      pullImages();
+      // pullImages();
       opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
-      findOperatorJar();
+      // findOperatorJar();
     }
   }
 
@@ -95,7 +95,7 @@ public class ITOperatorUpgrade extends BaseTest {
     // testBasicUseCases(domain);
     // testClusterScaling(operator20, domain);
     printCompVersions();
-    findOperatorJar();
+    // findOperatorJar();
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
 
@@ -108,7 +108,7 @@ public class ITOperatorUpgrade extends BaseTest {
     }
     if (operator20 != null) {
       operator20.destroy();
-      operator20 = null;
+      // operator20 = null;
     }
     TestUtils.ExecAndPrintLog(
         "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --grace-period=0 --force --ignore-not-found -n "
@@ -146,23 +146,12 @@ public class ITOperatorUpgrade extends BaseTest {
   public void testOperatorUpgradeFrom2_0ToDevelop() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    // checkout weblogic operator image 2.0
-    // pull traefik , wls and operator images
-    // create service account, etc.,
-    // create traefik loadbalancer
-    // create operator
-    // create domain
-
-    // pull operator 2.1 image
-    // helm upgrade to operator 2.1
-    // verify the domain is not restarted but the operator image running is 2.1
-    // createOperator();
-    // verifyDomainCreated();
     setupOperatorAndDomain("2.0", "2.0");
     // setEnv("IMAGE_NAME_OPERATOR", "weblogic-kubernetes-operator");
     // setEnv("IMAGE_TAG_OPERATOR", "latest");
     upgradeOperator(true);
-    logger.info("SUCCESS - " + testMethod);
+    logger.info(
+        "+++++++++++++++++++++++++++++++++-SUCCESS--------------------------------+" + testMethod);
   }
 
   @Test
@@ -218,49 +207,10 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void upgradeOperatorHelm(String upgradeRelease) throws Exception {
-    //    TestUtils.ExecAndPrintLog(
-    //        "cd "
-    //            + Paths.get(opUpgradeTmpDir, "develop").toString()
-    //            + " && git clone -b develop "
-    //            + " https://github.com/oracle/weblogic-kubernetes-operator");
-    //    TestUtils.ExecAndPrintLog(
-    //        "cd "
-    //            + Paths.get(opUpgradeTmpDir, "develop", "weblogic-kubernetes-operator").toString()
-    //            + " && docker build --build-arg http_proxy="
-    //            + System.getenv("http_proxy")
-    //            + " --build-arg https_proxy="
-    //            + System.getenv("https_proxy")
-    //            + " --build-arg no_proxy="
-    //            + System.getenv("no_proxy")
-    //            + " -t weblogic-kubernetes-operator:develop --build-arg VERSION=2.3.0
-    // --no-cache=true .");
-    // upgradeRelease = "weblogic-kubernetes-operator:develop";
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$HELM VALUES BEFORE UPGRADE$$$$$$$$$$$$$$$$");
-    operator20.getHelmValues();
-    logger.log(
-        Level.INFO, "$$$$$$$$$$$$$$$$$$$ BEGIN OPERATOR LOG BEFORE UPGRADE $$$$$$$$$$$$$$$$");
-    String operatorPodName = operator20.getOperatorPodName();
-    ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG BEFORE UPGRADE $$$$$$$$$$$$$$$$");
     operator20.callHelmUpgrade("image=" + upgradeRelease);
-    //    TestUtils.ExecAndPrintLog(
-    //        "cd "
-    //            + opUpgradeTmpDir
-    //            + " && helm upgrade --reuse-values --set 'image="
-    //            + upgradeRelease
-    //            + "' --wait --timeout 60 "
-    //            + OP_DEP_NAME
-    //            + " weblogic-kubernetes-operator/kubernetes/charts/weblogic-operator");
-    logger.log(Level.INFO, "Sleeping for 20 secs");
-    Thread.sleep(1000 * 20);
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$HELM VALUES AFTER UPGRADE$$$$$$$$$$$$$$$$");
-    operator20.getHelmValues();
-    operatorPodName = operator20.getOperatorPodName();
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ BEGIN OPERATOR LOG $$$$$$$$$$$$$$$$");
-    ExecCommand.exec("kubectl logs -n weblogic-operator " + operatorPodName, true);
-    logger.log(Level.INFO, "$$$$$$$$$$$$$$$$$$$ END OPERATOR LOG $$$$$$$$$$$$$$$$");
+    logger.log(Level.INFO, "Sleeping for 10 secs");
+    Thread.sleep(1000 * 10);
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
-    // TestUtils.ExecAndPrintLog("kubectl logs -n weblogic-operator " + operatorPodName);
   }
 
   private void checkOperatorVersion(String version) throws Exception {
