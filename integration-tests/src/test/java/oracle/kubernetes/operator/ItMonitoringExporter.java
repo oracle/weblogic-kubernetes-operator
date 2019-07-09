@@ -1144,7 +1144,7 @@ public class ItMonitoringExporter extends BaseTest {
 
     logger.info("Uninstalling namespace monitoring ");
     crdCmd = "kubectl delete namespace monitoring";
-    TestUtils.exec(crdCmd);
+    //TestUtils.exec(crdCmd);
   }
 
   /**
