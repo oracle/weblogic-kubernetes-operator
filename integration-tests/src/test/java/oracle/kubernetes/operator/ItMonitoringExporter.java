@@ -829,7 +829,6 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator1 != null) {
         operator1.destroy();
       }
-      deletePvDir();
     }
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
