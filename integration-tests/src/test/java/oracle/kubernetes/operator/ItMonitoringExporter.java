@@ -1130,14 +1130,19 @@ public class ItMonitoringExporter extends BaseTest {
     ExecCommand.exec(crdCmd);
     crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
     ExecCommand.exec(crdCmd);
+    Thread.sleep(15000);
 
     // uninstall prometheus
     logger.info("Uninstalling prometheus");
     crdCmd = "helm delete --purge prometheus";
     ExecCommand.exec(crdCmd);
+    Thread.sleep(15000);
+    logger.info("Uninstalling prometheus persistence ");
     crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
     ExecCommand.exec(crdCmd);
+    Thread.sleep(15000);
 
+    logger.info("Uninstalling namespace monitoring ");
     crdCmd = "kubectl delete namespace monitoring";
     TestUtils.exec(crdCmd);
   }
@@ -1154,9 +1159,10 @@ public class ItMonitoringExporter extends BaseTest {
     logger.info("Uninstalling mysql");
     String crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/mysql.yaml";
     ExecCommand.exec(crdCmd);
-
+    Thread.sleep(15000);
     crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/persistence.yaml";
     ExecCommand.exec(crdCmd);
+    Thread.sleep(15000);
     deletePvDir();
   }
 
