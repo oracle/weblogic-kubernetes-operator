@@ -1,13 +1,14 @@
-// Copyright 2018, 2019 Oracle Corporation and/or its affiliates.  All rights reserved.
+// Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.util.Map;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.Operator;
-import oracle.kubernetes.operator.utils.Operator.RESTCertType;
+import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assume;
@@ -23,9 +24,10 @@ import org.junit.runners.MethodSorters;
  * Operator(s).
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ITOperator extends BaseTest {
+public class ItOperator extends BaseTest {
 
-  private static Operator operator1, operator2;
+  private static Operator operator1;
+  private static Operator operator2;
 
   private static Operator operatorForBackwardCompatibility;
   private static Operator operatorForRESTCertChain;
@@ -35,7 +37,7 @@ public class ITOperator extends BaseTest {
    * initialization of the integration test properties defined in OperatorIT.properties and setting
    * the resultRoot, pvRoot and projectRoot attributes.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
@@ -44,9 +46,9 @@ public class ITOperator extends BaseTest {
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories
+   * Releases k8s cluster lease, archives result, pv directories.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
@@ -70,10 +72,10 @@ public class ITOperator extends BaseTest {
    * killing managed server 1 process 3 times to kick pod auto-restart shutdown the domain by
    * changing domain serverStartPolicy to NEVER
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
-  public void testDomainOnPVUsingWLST() throws Exception {
+  public void testDomainOnPvUsingWlst() throws Exception {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Creating Operator & waiting for the script to complete execution");
@@ -109,10 +111,10 @@ public class ITOperator extends BaseTest {
    * <p>TODO: Create domain using APACHE load balancer and verify domain is started successfully and
    * access admin console via LB port
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
-  public void testDomainOnPVUsingWDT() throws Exception {
+  public void testDomainOnPvUsingWdt() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -128,7 +130,7 @@ public class ITOperator extends BaseTest {
       domain = TestUtils.createDomain(DOMAINONPV_WDT_YAML);
       domain.verifyDomainCreated();
       testBasicUseCases(domain);
-      testWLDFScaling(operator2, domain);
+      testWldfScaling(operator2, domain);
       // TODO: Test Apache LB
       // domain.verifyAdminConsoleViaLB();
       testCompletedSuccessfully = true;
@@ -153,7 +155,7 @@ public class ITOperator extends BaseTest {
    *
    * <p>ToDo: configured cluster support is removed from samples, modify the test to create
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testTwoDomainsManagedByTwoOperators() throws Exception {
@@ -167,7 +169,8 @@ public class ITOperator extends BaseTest {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
 
-    Domain domain1 = null, domain2 = null;
+    Domain domain1 = null;
+    Domain domain2 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
@@ -230,6 +233,7 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
+
   /**
    * Create one operator if it is not running. Create domain domain1 and domain2 dynamic cluster in
    * default namespace, managed by operator1. Both domains share one PV. Verify scaling for domain2
@@ -239,7 +243,7 @@ public class ITOperator extends BaseTest {
    *
    * <p>ToDo: configured cluster support is removed from samples, modify the test to create
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testTwoDomainsManagedByOneOperatorSharingPV() throws Exception {
@@ -310,12 +314,14 @@ public class ITOperator extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
+
   /**
    * Create operator if its not running and create domain with serverStartPolicy="ADMIN_ONLY".
-   * Verify only admin server is created. shutdown by deleting domain CRD. Create domain on existing
-   * PV dir, pv is already populated by a shutdown domain.
+   * Verify only admin server is created. Make domain configuration change and restart the domain.
+   * shutdown by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a
+   * shutdown domain.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testCreateDomainWithStartPolicyAdminOnly() throws Exception {
@@ -332,6 +338,10 @@ public class ITOperator extends BaseTest {
     try {
       domain = TestUtils.createDomain(DOMAIN_ADMINONLY_YAML);
       domain.verifyDomainCreated();
+      // change domain config by modifying accept backlog on adminserver tuning
+      modifyDomainConfig(domain);
+      domain.shutdownUsingServerStartPolicy();
+      domain.restartUsingServerStartPolicy();
     } finally {
       if (domain != null) {
         // create domain on existing dir
@@ -343,14 +353,15 @@ public class ITOperator extends BaseTest {
 
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
    * Create operator and create domain with pvReclaimPolicy="Recycle" Verify that the PV is deleted
-   * once the domain and PVC are deleted
+   * once the domain and PVC are deleted.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
-  public void testCreateDomainPVReclaimPolicyRecycle() throws Exception {
+  public void testCreateDomainPvReclaimPolicyRecycle() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -368,7 +379,7 @@ public class ITOperator extends BaseTest {
     } finally {
       if (domain != null) domain.shutdown();
     }
-    domain.deletePVCAndCheckPVReleased();
+    domain.deletePvcAndCheckPvReleased();
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -380,7 +391,7 @@ public class ITOperator extends BaseTest {
    * <p>Also test samples/scripts/delete-domain/delete-weblogic-domain-resources.sh to delete domain
    * resources
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testCreateDomainWithDefaultValuesInSampleInputs() throws Exception {
@@ -419,7 +430,7 @@ public class ITOperator extends BaseTest {
    * Verify the domain is started successfully and web application can be deployed and accessed.
    * Verify that the JMS client can actually use the overridden values. Use NFS storage on Jenkins
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
   public void testAutoAndCustomSitConfigOverrides() throws Exception {
@@ -456,7 +467,7 @@ public class ITOperator extends BaseTest {
       domain11 = TestUtils.createDomain(domainMap);
       domain11.verifyDomainCreated();
       testBasicUseCases(domain11);
-      testAdminT3ChannelWithJMS(domain11);
+      testAdminT3ChannelWithJms(domain11);
       testCompletedSuccessfully = true;
 
     } finally {
@@ -472,19 +483,19 @@ public class ITOperator extends BaseTest {
    * externalOperatorKey defined in the helm chart values instead of the tls secret. This test is
    * for backward compatibility
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
-  public void testOperatorRESTIdentityBackwardCompatibility() throws Exception {
+  public void testOperatorRestIdentityBackwardCompatibility() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
     if (operatorForBackwardCompatibility == null) {
       operatorForBackwardCompatibility =
-          TestUtils.createOperator(OPERATORBC_YAML, RESTCertType.LEGACY);
+          TestUtils.createOperator(OPERATORBC_YAML, RestCertType.LEGACY);
     }
-    operatorForBackwardCompatibility.verifyOperatorExternalRESTEndpoint();
+    operatorForBackwardCompatibility.verifyOperatorExternalRestEndpoint();
     logger.info("Operator using legacy REST identity created successfully");
     operatorForBackwardCompatibility.destroy();
     logger.info("SUCCESS - " + testMethodName);
@@ -494,30 +505,30 @@ public class ITOperator extends BaseTest {
    * Create operator and enable external rest endpoint using a certificate chain. This test uses the
    * operator backward compatibility operator because that operator is destroyed.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
-  public void testOperatorRESTUsingCertificateChain() throws Exception {
+  public void testOperatorRestUsingCertificateChain() throws Exception {
     Assume.assumeFalse(QUICKTEST);
 
-    logTestBegin("testOperatorRESTUsingCertificateChain");
+    logTestBegin("testOperatorRestUsingCertificateChain");
     logger.info("Checking if operatorForBackwardCompatibility is running, if not creating");
     if (operatorForRESTCertChain == null) {
-      operatorForRESTCertChain = TestUtils.createOperator(OPERATOR_CHAIN_YAML, RESTCertType.CHAIN);
+      operatorForRESTCertChain = TestUtils.createOperator(OPERATOR_CHAIN_YAML, RestCertType.CHAIN);
     }
-    operatorForRESTCertChain.verifyOperatorExternalRESTEndpoint();
+    operatorForRESTCertChain.verifyOperatorExternalRestEndpoint();
     logger.info("Operator using legacy REST identity created successfully");
-    logger.info("SUCCESS - testOperatorRESTUsingCertificateChain");
+    logger.info("SUCCESS - testOperatorRestUsingCertificateChain");
   }
 
   /**
    * Create Operator and create domain using domain-in-image option. Verify the domain is started
    * successfully and web application can be deployed and accessed.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
-  public void testDomainInImageUsingWLST() throws Exception {
+  public void testDomainInImageUsingWlst() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -542,14 +553,15 @@ public class ITOperator extends BaseTest {
     }
     logger.info("SUCCESS - " + testMethodName);
   }
+
   /**
    * Create Operator and create domain using domain-in-image option. Verify the domain is started
    * successfully and web application can be deployed and accessed.
    *
-   * @throws Exception
+   * @throws Exception exception
    */
   @Test
-  public void testDomainInImageUsingWDT() throws Exception {
+  public void testDomainInImageUsingWdt() throws Exception {
     Assume.assumeFalse(QUICKTEST);
 
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -583,10 +595,36 @@ public class ITOperator extends BaseTest {
 
   private Domain testAdvancedUseCasesForADomain(Operator operator, Domain domain) throws Exception {
     if (!SMOKETEST) {
+      domain.enablePrecreateService();
       testClusterScaling(operator, domain);
+      domain.verifyServicesCreated(true);
       testDomainLifecyle(operator, domain);
       testOperatorLifecycle(operator, domain);
     }
     return domain;
+  }
+
+  private void modifyDomainConfig(Domain domain) throws Exception {
+    String adminPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String scriptsLocInPod = "/u01/oracle";
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/modifyAcceptBacklog.py",
+        scriptsLocInPod + "/modifyAcceptBacklog.py",
+        adminPod,
+        domain.getDomainNs());
+
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
+        scriptsLocInPod + "/callpyscript.sh",
+        adminPod,
+        domain.getDomainNs());
+    String[] args = {
+      scriptsLocInPod + "/modifyAcceptBacklog.py",
+      BaseTest.getUsername(),
+      BaseTest.getPassword(),
+      "t3://" + adminPod + ":" + domain.getDomainMap().get("t3ChannelPort")
+    };
+    TestUtils.callShellScriptByExecToPod(
+        adminPod, domain.getDomainNs(), scriptsLocInPod, "callpyscript.sh", args);
   }
 }

@@ -4,17 +4,17 @@
 
 package oracle.kubernetes.operator.create;
 
+import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1Service;
+import oracle.kubernetes.operator.utils.OperatorYamlFactory;
+
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newContainer;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEmptyDirVolumeSource;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newEnvVar;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newLocalObjectReference;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume;
 import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolumeMount;
-
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1Service;
-import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 
 /**
  * Tests that the artifacts in the yaml files that create-weblogic-operator.sh creates are correct

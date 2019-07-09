@@ -4,6 +4,28 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1Status;
+import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.VersionConstants;
+import oracle.kubernetes.operator.utils.InMemoryCertificates;
+import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import org.junit.Test;
+
 import static oracle.kubernetes.LogMatcher.containsFine;
 import static oracle.kubernetes.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
@@ -20,27 +42,6 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1PodSpec;
-import io.kubernetes.client.models.V1Status;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.VersionConstants;
-import oracle.kubernetes.operator.utils.InMemoryCertificates;
-import oracle.kubernetes.operator.work.FiberTestSupport;
-import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import org.junit.Test;
 
 @SuppressWarnings("SameParameterValue")
 public class AdminPodHelperTest extends PodHelperTestBase {
@@ -66,7 +67,13 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  void expectStepsAfterCreation() {}
+  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
+    return configurator.configureAdminServer();
+  }
+
+  @Override
+  void expectStepsAfterCreation() {
+  }
 
   @Override
   String getExistsMessageKey() {
@@ -247,15 +254,15 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   public void whenDomainHasEnvironmentItemsWithVariable_createPodShouldNotChangeItsValue()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    final String ITEM_RAW_VALUE = "find uid1 at $(DOMAIN_HOME)";
-    configureAdminServer().withEnvironmentVariable("item1", ITEM_RAW_VALUE);
+    final String itemRawValue = "find uid1 at $(DOMAIN_HOME)";
+    configureAdminServer().withEnvironmentVariable("item1", itemRawValue);
 
     getCreatedPod();
 
     getConfiguredDomainSpec().getAdminServer().getEnv();
     assertThat(
         getConfiguredDomainSpec().getAdminServer().getEnv(),
-        allOf(hasEnvVar("item1", ITEM_RAW_VALUE)));
+        allOf(hasEnvVar("item1", itemRawValue)));
   }
 
   @Test
@@ -591,11 +598,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   List<String> createStartCommand() {
     return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
-  }
-
-  @Override
-  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
-    return configurator.configureAdminServer();
   }
 
   // todo test that changing the cert in tuning parameters does not change the hash
