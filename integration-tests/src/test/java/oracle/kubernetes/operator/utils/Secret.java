@@ -7,11 +7,11 @@ package oracle.kubernetes.operator.utils;
 import java.util.logging.Logger;
 
 public class Secret {
+  protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   protected String secretName;
   protected String namespace;
   protected String username;
   protected String password;
-  protected static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
 
   public Secret() throws Exception {
     secretName = "";
@@ -31,7 +31,7 @@ public class Secret {
         "kubectl -n "
             + this.namespace
             + ""
-            + "	create secret generic "
+            + " create secret generic "
             + this.secretName
             + " --from-literal=username="
             + this.username

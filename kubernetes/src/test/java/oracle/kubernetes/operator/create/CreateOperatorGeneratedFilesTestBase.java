@@ -4,6 +4,26 @@
 
 package oracle.kubernetes.operator.create;
 
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1Role;
+import io.kubernetes.client.models.V1RoleBinding;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceAccount;
+import io.kubernetes.client.models.V1ServiceSpec;
+import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
+import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
+import oracle.kubernetes.operator.utils.OperatorValues;
+import oracle.kubernetes.operator.utils.OperatorYamlFactory;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.Test;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static oracle.kubernetes.operator.LabelConstants.APP_LABEL;
@@ -43,26 +63,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
-
-import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1ClusterRole;
-import io.kubernetes.client.models.V1ClusterRoleBinding;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1Role;
-import io.kubernetes.client.models.V1RoleBinding;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1ServiceSpec;
-import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
-import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
-import oracle.kubernetes.operator.utils.OperatorValues;
-import oracle.kubernetes.operator.utils.OperatorYamlFactory;
-import org.apache.commons.codec.binary.Base64;
-import org.junit.Test;
 
 /**
  * Base class for testing that the all artifacts in the yaml files that create-weblogic-operator.sh
@@ -279,6 +279,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
         getGeneratedFiles().getExternalOperatorService();
         fail("Should not have found an external operator service yaml");
       } catch (AssertionError ignored) {
+        // no-op
       }
     }
   }
@@ -728,6 +729,26 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                 .apiGroup(KubernetesArtifactUtils.API_GROUP_RBAC));
   }
 
+  private V1RoleBinding getExpectedWeblogicOperatorRoleBinding() {
+    return newRoleBinding()
+        .metadata(
+            newObjectMeta()
+                .name("weblogic-operator-rolebinding")
+                .namespace(getInputs().getNamespace())
+                .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V2)
+                .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
+        .addSubjectsItem(
+            newSubject()
+                .kind("ServiceAccount")
+                .name(getInputs().getServiceAccount())
+                .namespace(getInputs().getNamespace())
+                .apiGroup(""))
+        .roleRef(
+            newRoleRef()
+                .name("weblogic-operator-role")
+                .apiGroup(KubernetesArtifactUtils.API_GROUP_RBAC));
+  }
+
   @Test
   public void generatesCorrect_weblogicOperatorRole() {
     assertThat(
@@ -764,26 +785,6 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     assertThat(
         getGeneratedFiles().getWeblogicOperatorRoleBinding(),
         yamlEqualTo(getExpectedWeblogicOperatorRoleBinding()));
-  }
-
-  private V1RoleBinding getExpectedWeblogicOperatorRoleBinding() {
-    return newRoleBinding()
-        .metadata(
-            newObjectMeta()
-                .name("weblogic-operator-rolebinding")
-                .namespace(getInputs().getNamespace())
-                .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V2)
-                .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-        .addSubjectsItem(
-            newSubject()
-                .kind("ServiceAccount")
-                .name(getInputs().getServiceAccount())
-                .namespace(getInputs().getNamespace())
-                .apiGroup(""))
-        .roleRef(
-            newRoleRef()
-                .name("weblogic-operator-role")
-                .apiGroup(KubernetesArtifactUtils.API_GROUP_RBAC));
   }
 
   @SuppressWarnings("unused")

@@ -4,17 +4,13 @@
 
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
-import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -24,13 +20,6 @@ import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.models.V1ServiceSpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -50,6 +39,18 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.RESOURCE_VERSION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.VersionConstants.DEFAULT_DOMAIN_VERSION;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
