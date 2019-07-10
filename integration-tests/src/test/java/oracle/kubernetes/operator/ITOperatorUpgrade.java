@@ -213,6 +213,13 @@ public class ITOperatorUpgrade extends BaseTest {
       Thread.sleep(1000 * 10);
       TestUtils.ExecAndPrintLog(
           "kubectl get domain -n weblogic-domain  operator20domain -o jsonpath={.apiVersion}");
+      ExecResult exec =
+          TestUtils.exec(
+              "kubectl get domain -n weblogic-domain  operator20domain -o jsonpath={.apiVersion}");
+      if (exec.stdout().contains("weblogic.oracle/v4")) {
+        logger.log(Level.INFO, "Got the expected apiVersion");
+        break;
+      }
     }
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
   }
