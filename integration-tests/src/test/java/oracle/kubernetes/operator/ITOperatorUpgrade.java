@@ -125,7 +125,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void test1OperatorUpgradeFrom2_0() throws Exception {
+  public void testOperatorUpgradeFrom2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator20";
@@ -139,7 +139,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void test5OperatorUpgradeFrom2_0_1() throws Exception {
+  public void testOperatorUpgradeFrom2_0_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator201";
@@ -153,7 +153,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void test3OperatorUpgradeFrom2_1() throws Exception {
+  public void testOperatorUpgradeFrom2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator21";
@@ -167,7 +167,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void test4OperatorUpgradeFrom2_2_0() throws Exception {
+  public void testOperatorUpgradeFrom2_2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator220";
@@ -181,7 +181,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void test2OperatorUpgradeFrom2_2_1() throws Exception {
+  public void testOperatorUpgradeFrom2_2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator221";
@@ -196,12 +196,12 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperator(boolean restart) throws Exception {
     operator20.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
-    //    if (restart) {
-    //      checkDomainRollingRestarted();
-    //    }
+    if (restart) {
+      checkDomainRollingRestarted();
+    }
     checkOperatorVersion(DOM_TARGET_RELEASE_VERSION);
-    // testBasicUseCases(domain);
-    // testClusterScaling(operator20, domain);
+    testBasicUseCases(domain);
+    testClusterScaling(operator20, domain);
   }
 
   private void checkOperatorVersion(String version) throws Exception {
