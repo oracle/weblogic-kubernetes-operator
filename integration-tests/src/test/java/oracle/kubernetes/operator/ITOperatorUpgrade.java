@@ -65,12 +65,14 @@ public class ITOperatorUpgrade extends BaseTest {
     dom_ns.add(DOM_NS);
     operatorMap.put("domainNamespaces", dom_ns);
     operator20 = TestUtils.createOperator(operatorMap, Operator.RESTCertType.LEGACY);
+    TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
 
     Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
     wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
+    TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
     domain.verifyDomainCreated();
     // testBasicUseCases(domain);
     // testClusterScaling(operator20, domain);
@@ -91,6 +93,7 @@ public class ITOperatorUpgrade extends BaseTest {
     ExecResult result = cleanup();
     logger.log(Level.INFO, "cleanup stdout\n" + result.stdout());
     logger.log(Level.INFO, "cleanup stderr\n" + result.stderr());
+    TestUtils.ExecAndPrintLog("helm del --purge operator-upgrade");
     TestUtils.ExecAndPrintLog(
         "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --grace-period=0 --force --ignore-not-found -n "
             + OP_NS);
@@ -101,6 +104,7 @@ public class ITOperatorUpgrade extends BaseTest {
         "kubectl delete crd --all --grace-period=0 --ignore-not-found  --force");
     TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-operator --ignore-not-found  --force");
     TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-domain --ignore-not-found  --force");
+    TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
     logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
   }
 
