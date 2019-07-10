@@ -20,7 +20,6 @@ import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -45,24 +44,13 @@ public class ITOperatorUpgrade extends BaseTest {
   private Domain domain = null;
   private static Operator operator20;
 
-  /**
-   * This method gets called only once before any of the test methods are executed. It does the
-   * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes.
-   *
-   * @throws Exception
-   */
-  @BeforeClass
-  public static void staticPrepare() throws Exception {
+  private void setupOperatorAndDomain(String operatorGitRelease, String operatorRelease)
+      throws Exception {
+    logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
       opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
     }
-  }
-
-  private void setupOperatorAndDomain(String operatorGitRelease, String operatorRelease)
-      throws Exception {
-    logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
