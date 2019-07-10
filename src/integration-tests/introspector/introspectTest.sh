@@ -598,6 +598,54 @@ function checkOverrides() {
 
 #############################################################################
 #
+# Check if wl version checks are working on the admin pod
+#
+
+function checkWLVersionChecks() {
+
+  trace "Info: Checking pod log for 'error' strings."
+
+  # Check for exactly 0 occurances of 'Error:' lines.
+  #   a version issue is reported as an 'error:' to the log
+  #   the awk expression below gets the tail of the log, everything after the last occurance of 'Starting WebLogic...'
+
+  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'error:'`"
+  logstatus=0
+
+  if [ ! "$linecount" == "0" ]; then
+    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' contains lines with the keyword 'error'."
+    logstatus=1
+  fi
+
+  # Copy version test file up to admin server and run it
+
+  local testscript="util_testwlversion.sh"
+  local outfile="$test_home/${testscript}.out"
+
+  trace "Info: Running version checks on admin-server, output file '$outfile'."
+
+  kubectl -n ${NAMESPACE} \
+    cp ${SCRIPTPATH}/${testscript} \
+       ${DOMAIN_UID}-${ADMIN_NAME}:/shared/${testscript} \
+    || exit 1
+
+  rm -f ${outfile}
+  kubectl exec -it ${DOMAIN_UID}-${ADMIN_NAME} \
+      /shared/${testscript} \
+      > ${outfile} 2>&1
+  status=$?
+
+  if [ $status -ne 0 ]; then
+    trace "Error: The version checks failed, see '${outfile}'."
+  fi
+
+  if [ $status -ne 0 ] || [ $logstatus -ne 0 ]; then
+    exit 1
+  fi
+}
+
+#############################################################################
+#
 # Check if datasource is working
 #
 
@@ -674,6 +722,11 @@ waitForPod ${DOMAIN_UID}-${ADMIN_NAME?}
 deployPod ${MANAGED_SERVER_NAME_BASE?}1
 deploySinglePodService ${MANAGED_SERVER_NAME_BASE?}1 ${MANAGED_SERVER_PORT?} 30801
 waitForPod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1
+
+# Check admin-server pod log for wl version errors and run some
+# tests on the life-cycle WL version checking code.
+
+checkWLVersionChecks
 
 # Check admin-server pod log and also call on-line WLST to check if
 # automatic and custom overrides are taking effect in the bean tree:
