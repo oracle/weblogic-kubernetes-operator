@@ -231,7 +231,8 @@ getWebLogicVersion()
 
   [ ! -f $reg_file ] && echo "9999.9999.9999.9999" && return
 
-  local wlver="`grep 'name="WebLogic Server".*version=' $reg_file \
+  # The following grep captures both "WebLogic Server" and "WebLogic Server for FMW"
+  local wlver="`grep 'name="WebLogic Server.*version=' $reg_file \
                | sed 's/.*version="\([0-9.]*\)".*/\1/g'`"
 
   echo ${wlver:-"9999.9999.9999.9999"}
