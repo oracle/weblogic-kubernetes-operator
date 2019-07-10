@@ -29,7 +29,6 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-
 import oracle.kubernetes.operator.BaseTest;
 import org.yaml.snakeyaml.Yaml;
 
@@ -1381,20 +1380,16 @@ public class Domain {
 
     // copy samples to RESULT_DIR
     if (domainMap.containsKey("projectRoot")) {
-      logger.log(
-          Level.INFO,
-          "Copying "
-              + domainMap.get("projectRoot")
-              + "/kubernetes/samples to "
-              + BaseTest.getResultDir());
       TestUtils.exec(
           "cp -rf "
               + domainMap.get("projectRoot")
               + "/kubernetes/samples "
-              + BaseTest.getResultDir());
+              + BaseTest.getResultDir(),
+          true);
     } else {
       TestUtils.exec(
-          "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
+          "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir(),
+          true);
     }
 
     this.voyager =

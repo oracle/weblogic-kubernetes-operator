@@ -28,7 +28,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -42,6 +41,7 @@ public class TestUtils {
 
   /**
    * Checks if pod is ready.
+   *
    * @param podName pod name
    * @param domainNS namespace
    * @throws Exception exception
@@ -73,6 +73,7 @@ public class TestUtils {
 
   /**
    * Checks that pod is created.
+   *
    * @param podName - pod name
    * @param domainNS - domain namespace name
    */
@@ -103,6 +104,7 @@ public class TestUtils {
 
   /**
    * Checks that service is created.
+   *
    * @param serviceName service name
    * @param domainNS namespace
    * @throws Exception exception
@@ -144,6 +146,7 @@ public class TestUtils {
 
   /**
    * Creates input file.
+   *
    * @param map - map with attributes
    * @param generatedInputYamlFile - output file with replaced values
    * @throws Exception exception
@@ -742,7 +745,7 @@ public class TestUtils {
     return operator;
   }
 
-  public static Operator createOperator(Map<String, Object> inputMap, RESTCertType restCertType)
+  public static Operator createOperator(Map<String, Object> inputMap, RestCertType restCertType)
       throws Exception {
     // create op
     Operator operator = new Operator(inputMap, restCertType);
@@ -751,7 +754,7 @@ public class TestUtils {
     logger.info("Check Operator status");
     operator.verifyPodCreated();
     operator.verifyOperatorReady();
-    operator.verifyExternalRESTService();
+    operator.verifyExternalRestService();
 
     return operator;
   }
