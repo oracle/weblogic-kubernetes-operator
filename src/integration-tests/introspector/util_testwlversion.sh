@@ -35,7 +35,7 @@ test_checkWebLogicVersion()
     versionGE "$WLVER" "11.9.9.9" || echo "ERROR not GE 11.9.9.9"
     versionEQ "$WLVER" "12.2.1.3" || echo "ERROR not EQ 12.2.1.3"
     versionGE "$WLVER" "12.2.1.4" && echo "ERROR GE 12.2.1.4"
-    versionEQ "$WLVER" "12.2.1"   || echo "ERROR EQ 12.2.1"
+    versionEQ "$WLVER" "12.2.1"   || echo "ERROR not EQ 12.2.1"
     versionEQ "$WLVER" "12.2.1.4" && echo "ERROR EQ 12.2.1.4"
     versionEQ "$WLVER" "12.2.1.2" && echo "ERROR EQ 12.2.1.2"
     # hasWebLogicPatches returns success if entire inventory file is missing
