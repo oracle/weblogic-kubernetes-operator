@@ -20,6 +20,7 @@ import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -89,25 +90,27 @@ public class ITOperatorUpgrade extends BaseTest {
    */
   @After
   public void cleanupOperatorAndDomain() throws Exception {
-    logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
-    if (domain != null) {
-      domain.destroy();
+    if (!QUICKTEST) {
+      logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
+      if (domain != null) {
+        domain.destroy();
+      }
+      if (operator != null) {
+        operator.destroy();
+      }
+      ExecResult result = cleanup();
+      TestUtils.exec(
+          "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
+              + OP_NS);
+      TestUtils.exec(
+          "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
+              + DOM_NS);
+      TestUtils.exec("kubectl delete crd --all --ignore-not-found");
+      TestUtils.exec("kubectl delete ns " + OP_NS + " --ignore-not-found");
+      TestUtils.exec("kubectl delete ns " + DOM_NS + " --ignore-not-found");
+      TestUtils.exec("kubectl get all --all-namespaces");
+      logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
     }
-    if (operator != null) {
-      operator.destroy();
-    }
-    ExecResult result = cleanup();
-    TestUtils.exec(
-        "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
-            + OP_NS);
-    TestUtils.exec(
-        "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
-            + DOM_NS);
-    TestUtils.exec("kubectl delete crd --all --ignore-not-found");
-    TestUtils.exec("kubectl delete ns " + OP_NS + " --ignore-not-found");
-    TestUtils.exec("kubectl delete ns " + DOM_NS + " --ignore-not-found");
-    TestUtils.exec("kubectl get all --all-namespaces");
-    logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
   }
 
   /**
@@ -133,6 +136,7 @@ public class ITOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator20";
@@ -152,6 +156,7 @@ public class ITOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_0_1() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator201";
@@ -171,6 +176,7 @@ public class ITOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_1() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator21";
@@ -190,6 +196,7 @@ public class ITOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_0() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator220";
@@ -209,6 +216,7 @@ public class ITOperatorUpgrade extends BaseTest {
    */
   @Test
   public void testOperatorUpgradeFrom2_2_1() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     OP_NS = "weblogic-operator221";
