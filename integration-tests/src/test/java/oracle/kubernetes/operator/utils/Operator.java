@@ -10,14 +10,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Logger;
-
 import oracle.kubernetes.operator.BaseTest;
 
 /** Operator class with all the utility methods for Operator. */
 public class Operator {
 
-  public static final String CREATE_OPERATOR_SCRIPT_MESSAGE
-      = "The Oracle WebLogic Server Kubernetes Operator is deployed";
+  public static final String CREATE_OPERATOR_SCRIPT_MESSAGE =
+      "The Oracle WebLogic Server Kubernetes Operator is deployed";
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTimeOp = BaseTest.getWaitTimePod();
@@ -303,7 +302,7 @@ public class Operator {
     StringBuffer cmd = new StringBuffer("");
     if (operatorMap.containsKey("operatorGitVersion")
         && operatorMap.containsKey("operatorGitVersionDir")) {
-      TestUtils.ExecAndPrintLog(
+      TestUtils.exec(
           "cd "
               + operatorMap.get("operatorGitVersionDir")
               + " && git clone -b "
@@ -328,7 +327,6 @@ public class Operator {
         .append(imagePullPolicy)
         .append("\" --wait --timeout 60");
     logger.info("Running " + cmd);
-    TestUtils.ExecAndPrintLog("cat " + generatedInputYamlFile);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
       reportHelmFailure(cmd.toString(), result);
