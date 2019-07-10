@@ -58,6 +58,7 @@ export MW_HOME=${MW_HOME:-/u01/oracle}
 checkEnv DOMAIN_UID \
          NAMESPACE \
          DOMAIN_HOME \
+         ORACLE_HOME \
          JAVA_HOME \
          NODEMGR_HOME \
          WL_HOME \
@@ -70,13 +71,18 @@ for script_file in "${SCRIPTPATH}/wlst.sh" \
   [ ! -f "$script_file" ] && trace "Error: missing file '${script_file}'." && exit 1 
 done 
 
-for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME; do
+for dir_var in DOMAIN_HOME JAVA_HOME WL_HOME MW_HOME ORACLE_HOME; do
   [ ! -d "${!dir_var}" ] && trace "Error: missing ${dir_var} directory '${!dir_var}'." && exit 1
 done
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed
 
 exportEffectiveDomainHome || exit 1
+
+# check if we're using a supported WebLogic version
+# (the check  will log a message if it fails)
+
+checkWebLogicVersion || exit 1
 
 # start node manager
 
