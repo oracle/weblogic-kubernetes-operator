@@ -11,11 +11,6 @@
 # It's intended to be run on an image with an oracle install
 # and assumes the ORACLE_HOME env var has been set.
 #
-# Usage:
-# ------
-#
-# ./util_testwlversion.sh input_file_name output_dir
-#
 
 traceFile=/weblogic-operator/scripts/traceUtils.sh
 source ${traceFile}
@@ -53,7 +48,6 @@ test_checkWebLogicVersion()
   return 0
 }
 
-# TBD move this to the unit test script
 test_checkWebLogicVersion || exit 1
 trace Test passed.
 exit 0
