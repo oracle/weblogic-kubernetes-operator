@@ -130,7 +130,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_0() throws Exception {
+  public void test1OperatorUpgradeFrom2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("2.0", "2.0");
@@ -139,7 +139,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_0_1() throws Exception {
+  public void test5OperatorUpgradeFrom2_0_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("release/2.0.1", "2.0.1");
@@ -148,7 +148,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_1() throws Exception {
+  public void test3OperatorUpgradeFrom2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("release/2.1", "2.1");
@@ -157,7 +157,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_2_0() throws Exception {
+  public void test4OperatorUpgradeFrom2_2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("release/2.2", "2.2.0");
@@ -166,7 +166,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_2_1() throws Exception {
+  public void test2OperatorUpgradeFrom2_2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("release/2.2.1", "2.2.1");
