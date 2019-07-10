@@ -35,11 +35,11 @@ public class ITOperatorUpgrade extends BaseTest {
   private static final String OP_BASE_REL = "2.0";
   private static final String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
   private static final String DOM_TARGET_RELEASE_VERSION = "weblogic.oracle/v4";
-  private static final String OP_NS = "weblogic-operator";
-  private static final String OP_DEP_NAME = "operator-upgrade";
-  private static final String OP_SA = "operator-sa";
-  private static final String DOM_NS = "weblogic-domain";
-  private static final String DUID = "operator20domain";
+  private static String OP_NS = "weblogic-operator";
+  private static String OP_DEP_NAME = "operator-upgrade";
+  private static String OP_SA = "operator-sa";
+  private static String DOM_NS = "weblogic-domain";
+  private static String DUID = "operator20domain";
   private static String opUpgradeTmpDir;
   private Domain domain = null;
   private static Operator operator20;
@@ -88,7 +88,6 @@ public class ITOperatorUpgrade extends BaseTest {
   @After
   public void cleanupOperatorAndDomain() throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
-    TestUtils.ExecAndPrintLog("docker images");
     if (domain != null) {
       domain.destroy();
     }
@@ -96,9 +95,7 @@ public class ITOperatorUpgrade extends BaseTest {
       operator20.destroy();
     }
     ExecResult result = cleanup();
-    logger.log(Level.INFO, "cleanup stdout\n" + result.stdout());
-    logger.log(Level.INFO, "cleanup stderr\n" + result.stderr());
-    TestUtils.ExecAndPrintLog("helm del --purge operator-upgrade");
+    TestUtils.ExecAndPrintLog("helm del --purge " + OP_DEP_NAME);
     TestUtils.ExecAndPrintLog(
         "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --grace-period=0 --force --ignore-not-found -n "
             + OP_NS);
@@ -107,8 +104,8 @@ public class ITOperatorUpgrade extends BaseTest {
             + DOM_NS);
     TestUtils.ExecAndPrintLog(
         "kubectl delete crd --all --grace-period=0 --ignore-not-found  --force");
-    TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-operator --ignore-not-found  --force");
-    TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-domain --ignore-not-found  --force");
+    TestUtils.ExecAndPrintLog("kubectl delete ns " + OP_NS + " --ignore-not-found  --force");
+    TestUtils.ExecAndPrintLog("kubectl delete ns " + DOM_NS + " --ignore-not-found  --force");
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
     logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
   }
@@ -133,6 +130,11 @@ public class ITOperatorUpgrade extends BaseTest {
   public void test1OperatorUpgradeFrom2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    OP_NS = "weblogic-operator20";
+    OP_DEP_NAME = "operator-upgrade20";
+    OP_SA = "operator-sa20";
+    DOM_NS = "weblogic-domain20";
+    DUID = "operatordomain20";
     setupOperatorAndDomain("2.0", "2.0");
     upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
@@ -142,6 +144,11 @@ public class ITOperatorUpgrade extends BaseTest {
   public void test5OperatorUpgradeFrom2_0_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    OP_NS = "weblogic-operator201";
+    OP_DEP_NAME = "operator-upgrade201";
+    OP_SA = "operator-sa201";
+    DOM_NS = "weblogic-domain201";
+    DUID = "operatordomain201";
     setupOperatorAndDomain("release/2.0.1", "2.0.1");
     upgradeOperator(true);
     logger.info("SUCCESS - " + testMethod);
@@ -151,6 +158,11 @@ public class ITOperatorUpgrade extends BaseTest {
   public void test3OperatorUpgradeFrom2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    OP_NS = "weblogic-operator21";
+    OP_DEP_NAME = "operator-upgrade21";
+    OP_SA = "operator-sa21";
+    DOM_NS = "weblogic-domain21";
+    DUID = "operatordomain21";
     setupOperatorAndDomain("release/2.1", "2.1");
     upgradeOperator(false);
     logger.info("SUCCESS - " + testMethod);
@@ -160,6 +172,11 @@ public class ITOperatorUpgrade extends BaseTest {
   public void test4OperatorUpgradeFrom2_2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    OP_NS = "weblogic-operator220";
+    OP_DEP_NAME = "operator-upgrade220";
+    OP_SA = "operator-sa220";
+    DOM_NS = "weblogic-domain220";
+    DUID = "operatordomain220";
     setupOperatorAndDomain("release/2.2", "2.2.0");
     upgradeOperator(false);
     logger.info("SUCCESS - " + testMethod);
@@ -169,6 +186,11 @@ public class ITOperatorUpgrade extends BaseTest {
   public void test2OperatorUpgradeFrom2_2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    OP_NS = "weblogic-operator221";
+    OP_DEP_NAME = "operator-upgrade221";
+    OP_SA = "operator-sa221";
+    DOM_NS = "weblogic-domain221";
+    DUID = "operatordomain221";
     setupOperatorAndDomain("release/2.2.1", "2.2.1");
     upgradeOperator(false);
     logger.info("SUCCESS - " + testMethod);
