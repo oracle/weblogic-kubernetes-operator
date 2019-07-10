@@ -155,7 +155,7 @@ public class ItMonitoringExporter extends BaseTest {
         logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
         // git clone exporter project
         removeAndClone
-            .append(" git clone   https://github.com/oracle/weblogic-monitoring-exporter.git ")
+            .append(" git clone  -b alert https://github.com/oracle/weblogic-monitoring-exporter.git ")
             .append(monitoringExporterSrcDir);
         TestUtils.exec(removeAndClone.toString());
       }
