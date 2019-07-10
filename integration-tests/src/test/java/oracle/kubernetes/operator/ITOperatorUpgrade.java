@@ -208,9 +208,9 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperatorHelm(String upgradeRelease) throws Exception {
     operator20.callHelmUpgrade("image=" + upgradeRelease);
-    logger.log(Level.INFO, "Sleeping for 5 minutes");
-    for (int i = 10; i < 300; i = i + 10) {
-      Thread.sleep(1000 * i);
+    logger.log(Level.INFO, "Sleeping for 10 minutes");
+    for (int i = 0; i < 600; i = i + 10) {
+      Thread.sleep(1000 * 10);
       TestUtils.ExecAndPrintLog(
           "kubectl get domain -n weblogic-domain  operator20domain -o jsonpath={.apiVersion}");
     }
