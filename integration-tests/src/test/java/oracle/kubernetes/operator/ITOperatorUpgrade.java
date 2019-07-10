@@ -24,11 +24,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-/**
- * Simple JUnit test file used for testing Operator.
- *
- * <p>This test is used for testing Helm install for Operator(s)
- */
+/** Operator upgrade JUnit test file testing the operator upgrade from older releases to develop. */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITOperatorUpgrade extends BaseTest {
 
@@ -44,6 +40,15 @@ public class ITOperatorUpgrade extends BaseTest {
   private Domain domain = null;
   private static Operator operator;
 
+  /**
+   * Creates operator based on operatorRelease passed to it and then creates a Weblogic domain
+   * controlled by that operator
+   *
+   * @param operatorGitRelease Git branch name of the operator release version
+   * @param operatorRelease Operator release version from the
+   *     https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/tags
+   * @throws Exception when operator or domain creation fails
+   */
   private void setupOperatorAndDomain(String operatorGitRelease, String operatorRelease)
       throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
@@ -62,21 +67,26 @@ public class ITOperatorUpgrade extends BaseTest {
     List<String> dom_ns = new ArrayList<String>();
     dom_ns.add(DOM_NS);
     operatorMap.put("domainNamespaces", dom_ns);
-    operator = TestUtils.createOperator(operatorMap, Operator.RESTCertType.LEGACY);
-    TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
+    operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
+    TestUtils.exec("kubectl get all --all-namespaces", true);
 
     Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
     wlstDomainMap.put("domainUID", DUID);
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
-    TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
+    TestUtils.exec("kubectl get all --all-namespaces", true);
     domain.verifyPodsCreated();
     domain.verifyServicesCreated();
     domain.verifyServersReady();
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
 
+  /**
+   * cleanup the domain and operator after every test
+   *
+   * @throws Exception when domain and operator cleanup fails
+   */
   @After
   public void cleanupOperatorAndDomain() throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning AfterTest cleanup+++++++++++++++++++++");
@@ -87,23 +97,23 @@ public class ITOperatorUpgrade extends BaseTest {
       operator.destroy();
     }
     ExecResult result = cleanup();
-    TestUtils.ExecAndPrintLog(
+    TestUtils.exec(
         "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
             + OP_NS);
-    TestUtils.ExecAndPrintLog(
+    TestUtils.exec(
         "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
             + DOM_NS);
-    TestUtils.ExecAndPrintLog("kubectl delete crd --all --ignore-not-found");
-    TestUtils.ExecAndPrintLog("kubectl delete ns " + OP_NS + " --ignore-not-found");
-    TestUtils.ExecAndPrintLog("kubectl delete ns " + DOM_NS + " --ignore-not-found");
-    TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
+    TestUtils.exec("kubectl delete crd --all --ignore-not-found");
+    TestUtils.exec("kubectl delete ns " + OP_NS + " --ignore-not-found");
+    TestUtils.exec("kubectl delete ns " + DOM_NS + " --ignore-not-found");
+    TestUtils.exec("kubectl get all --all-namespaces");
     logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
   }
 
   /**
    * Releases k8s cluster lease, archives result, pv directories
    *
-   * @throws Exception
+   * @throws Exception when deleting pv directories or other tearDown tasks fail.
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
@@ -116,6 +126,11 @@ public class ITOperatorUpgrade extends BaseTest {
     }
   }
 
+  /**
+   * Test for upgrading Operator from release 2.0 to develop branch
+   *
+   * @throws Exception when upgrade fails
+   */
   @Test
   public void testOperatorUpgradeFrom2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -130,6 +145,11 @@ public class ITOperatorUpgrade extends BaseTest {
     logger.info("SUCCESS - " + testMethod);
   }
 
+  /**
+   * Test for upgrading Operator from release 2.0.1 to develop branch
+   *
+   * @throws Exception when upgrade fails
+   */
   @Test
   public void testOperatorUpgradeFrom2_0_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -144,6 +164,11 @@ public class ITOperatorUpgrade extends BaseTest {
     logger.info("SUCCESS - " + testMethod);
   }
 
+  /**
+   * Test for upgrading Operator from release 2.1 to develop branch
+   *
+   * @throws Exception when upgrade fails
+   */
   @Test
   public void testOperatorUpgradeFrom2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -158,6 +183,11 @@ public class ITOperatorUpgrade extends BaseTest {
     logger.info("SUCCESS - " + testMethod);
   }
 
+  /**
+   * Test for upgrading Operator from release 2.2.0 to develop branch
+   *
+   * @throws Exception when upgrade fails
+   */
   @Test
   public void testOperatorUpgradeFrom2_2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -172,6 +202,11 @@ public class ITOperatorUpgrade extends BaseTest {
     logger.info("SUCCESS - " + testMethod);
   }
 
+  /**
+   * Test for upgrading Operator from release 2.2.1 to develop branch
+   *
+   * @throws Exception when upgrade fails
+   */
   @Test
   public void testOperatorUpgradeFrom2_2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -186,25 +221,35 @@ public class ITOperatorUpgrade extends BaseTest {
     logger.info("SUCCESS - " + testMethod);
   }
 
+  /**
+   * Upgrades operator to develop branch by using the helm upgrade
+   *
+   * @param restart boolean parameter used to determine if a restart of domain is checked
+   * @throws Exception when upgrade fails or basic usecase testing or scaling fails.
+   */
   private void upgradeOperator(boolean restart) throws Exception {
     operator.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
     if (restart) {
       checkDomainRollingRestarted();
     }
-    checkOperatorVersion(DOM_TARGET_RELEASE_VERSION);
+    checkOperatorVersion();
     testBasicUseCases(domain);
     testClusterScaling(operator, domain);
   }
 
-  private void checkOperatorVersion(String version) throws Exception {
+  /**
+   * checks the expected version of the upgraded operator in a loop. In Jenkins it takes nearly 8
+   * minutes to show the updated value of the domain CRD
+   *
+   * @throws Exception when version does not match
+   */
+  private void checkOperatorVersion() throws Exception {
     boolean result = false;
     logger.log(Level.INFO, "Checking for the domain apiVersion in a loop for up to 15 minutes");
     for (int i = 0; i < 900; i = i + 10) {
-      TestUtils.ExecAndPrintLog(
-          "kubectl get domain -n " + DOM_NS + "  " + DUID + " -o jsonpath={.apiVersion}");
       ExecResult exec =
           TestUtils.exec(
-              "kubectl get domain -n " + DOM_NS + "  " + DUID + " -o jsonpath={.apiVersion}");
+              "kubectl get domain -n " + DOM_NS + "  " + DUID + " -o jsonpath={.apiVersion}", true);
       if (exec.stdout().contains(DOM_TARGET_RELEASE_VERSION)) {
         logger.log(Level.INFO, "Got the expected apiVersion");
         result = true;
@@ -217,6 +262,11 @@ public class ITOperatorUpgrade extends BaseTest {
     }
   }
 
+  /**
+   * Check whether the weblogic server instances are rolling restarted
+   *
+   * @throws Exception If restart fails or not restarted
+   */
   private void checkDomainRollingRestarted() throws Exception {
     domain.verifyAdminServerRestarted();
     TestUtils.checkPodReady(DUID + "-" + domain.getAdminServerName(), DOM_NS);
@@ -227,11 +277,5 @@ public class ITOperatorUpgrade extends BaseTest {
       TestUtils.checkPodCreated(DUID + "-managed-server" + i, DOM_NS);
       TestUtils.checkPodReady(DUID + "-managed-server" + i, DOM_NS);
     }
-  }
-
-  private void printCompVersions() throws Exception {
-    TestUtils.ExecAndPrintLog("docker images");
-    TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS + " -o yaml");
-    TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
   }
 }
