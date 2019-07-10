@@ -41,7 +41,7 @@ test_checkWebLogicVersion()
     versionGE "$WLVER" "12.2.1.3" || echo "ERROR wl version too low, got $WLVER"
     checkWebLogicVersion
 
-  ) 2<&1 > $testout 2>&1
+  ) 2>&1 > $testout 2>&1
   cat $testout
   grep --silent -i ERROR $testout && return 1
   rm -f $testout
