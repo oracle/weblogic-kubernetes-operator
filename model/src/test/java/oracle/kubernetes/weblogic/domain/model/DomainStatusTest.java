@@ -4,6 +4,16 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import com.meterware.simplestub.Memento;
+import oracle.kubernetes.utils.SystemClockTestSupport;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import static oracle.kubernetes.utils.SystemClockTestSupport.isDuringTest;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
@@ -11,15 +21,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progre
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-
-import com.meterware.simplestub.Memento;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import oracle.kubernetes.utils.SystemClockTestSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class DomainStatusTest {
 

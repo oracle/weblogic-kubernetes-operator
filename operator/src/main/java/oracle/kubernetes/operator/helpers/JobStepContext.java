@@ -4,6 +4,10 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+
 import io.kubernetes.client.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1Job;
@@ -15,9 +19,6 @@ import io.kubernetes.client.models.V1PodTemplateSpec;
 import io.kubernetes.client.models.V1SecretVolumeSource;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -32,24 +33,32 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public abstract class JobStepContext extends StepContextBase {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-
-  private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
-      "/weblogic-operator/scripts/introspectDomain.sh";
-
-  private final DomainPresenceInfo info;
-  private V1Job jobModel;
   static final long DEFAULT_ACTIVE_DEADLINE_SECONDS = 120L;
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
+      "/weblogic-operator/scripts/introspectDomain.sh";
+  private final DomainPresenceInfo info;
+  private V1Job jobModel;
 
   JobStepContext(Packet packet) {
-    info = packet.getSPI(DomainPresenceInfo.class);
+    info = packet.getSpi(DomainPresenceInfo.class);
+  }
+
+  private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
+    return volumeMount(volumeName, mountPath).readOnly(true);
+  }
+
+  private static V1VolumeMount volumeMount(String volumeName, String mountPath) {
+    return new V1VolumeMount().name(volumeName).mountPath(mountPath);
   }
 
   void init() {
     jobModel = createJobModel();
     createSubstitutionMap();
   }
+
+  // ------------------------ data methods ----------------------------
 
   private void createSubstitutionMap() {
     substitutionVariables.put("DOMAIN_HOME", getDomainHome());
@@ -59,14 +68,12 @@ public abstract class JobStepContext extends StepContextBase {
     return jobModel;
   }
 
-  // ------------------------ data methods ----------------------------
-
   String getNamespace() {
     return info.getNamespace();
   }
 
-  String getDomainUID() {
-    return getDomain().getDomainUID();
+  String getDomainUid() {
+    return getDomain().getDomainUid();
   }
 
   Domain getDomain() {
@@ -79,11 +86,11 @@ public abstract class JobStepContext extends StepContextBase {
     return getDomain().getWebLogicCredentialsSecret().getName();
   }
 
+  // ----------------------- step methods ------------------------------
+
   abstract List<V1Volume> getAdditionalVolumes();
 
   abstract List<V1VolumeMount> getAdditionalVolumeMounts();
-
-  // ----------------------- step methods ------------------------------
 
   /**
    * Creates the specified new pod and performs any additional needed processing.
@@ -128,7 +135,7 @@ public abstract class JobStepContext extends StepContextBase {
     String logHome = getLogHome();
     if (logHome == null || "".equals(logHome.trim())) {
       // logHome not specified, use default value
-      return DEFAULT_LOG_HOME + File.separator + getDomainUID();
+      return DEFAULT_LOG_HOME + File.separator + getDomainUid();
     }
     return logHome;
   }
@@ -149,32 +156,11 @@ public abstract class JobStepContext extends StepContextBase {
     return getDomain().getConfigOverrides();
   }
 
+  // ---------------------- model methods ------------------------------
+
   private ResponseStep<V1Job> createResponse(Step next) {
     return new CreateResponseStep(next);
   }
-
-  private class CreateResponseStep extends ResponseStep<V1Job> {
-    CreateResponseStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      return super.onFailure(packet, callResponse);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
-      logJobCreated();
-      V1Job job = callResponse.getResult();
-      if (job != null) {
-        packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
-      }
-      return doNext(packet);
-    }
-  }
-
-  // ---------------------- model methods ------------------------------
 
   private V1Job createJobModel() {
     return new V1Job()
@@ -188,7 +174,7 @@ public abstract class JobStepContext extends StepContextBase {
             .name(getJobName())
             .namespace(getNamespace())
             .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, VersionConstants.DOMAIN_V1)
-            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUID())
+            .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
             .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     return metadata;
   }
@@ -306,14 +292,6 @@ public abstract class JobStepContext extends StepContextBase {
     return getDomain().getDomainHome();
   }
 
-  private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
-    return volumeMount(volumeName, mountPath).readOnly(true);
-  }
-
-  private static V1VolumeMount volumeMount(String volumeName, String mountPath) {
-    return new V1VolumeMount().name(volumeName).mountPath(mountPath);
-  }
-
   protected V1SecretVolumeSource getSecretsVolume() {
     return new V1SecretVolumeSource()
         .secretName(getWebLogicCredentialsSecretName())
@@ -341,5 +319,26 @@ public abstract class JobStepContext extends StepContextBase {
 
   protected V1ConfigMapVolumeSource getOverridesVolumeSource(String name) {
     return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
+  }
+
+  private class CreateResponseStep extends ResponseStep<V1Job> {
+    CreateResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
+      return super.onFailure(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
+      logJobCreated();
+      V1Job job = callResponse.getResult();
+      if (job != null) {
+        packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
+      }
+      return doNext(packet);
+    }
   }
 }

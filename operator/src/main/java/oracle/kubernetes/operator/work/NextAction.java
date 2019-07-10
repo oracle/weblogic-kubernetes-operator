@@ -20,12 +20,6 @@ public final class NextAction {
   Consumer<Fiber> onExit;
   Throwable throwable;
 
-  public enum Kind {
-    INVOKE,
-    SUSPEND,
-    THROW
-  }
-
   private void set(Kind k, Step v, Packet p) {
     this.kind = k;
     this.next = v;
@@ -148,5 +142,11 @@ public final class NextAction {
     buf.append("next=").append(next).append(',');
     buf.append("packet=").append(packet != null ? packet.toString() : null).append(']');
     return buf.toString();
+  }
+
+  public enum Kind {
+    INVOKE,
+    SUSPEND,
+    THROW
   }
 }

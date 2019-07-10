@@ -4,20 +4,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static com.meterware.simplestub.Stub.createStub;
-import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
-import java.util.ArrayList;
-import java.util.List;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.work.Packet;
@@ -28,14 +21,21 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.meterware.simplestub.Stub.createStub;
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
+
 public class PodHelperTest {
   private static final String UID = "uid1";
   private static final String SERVER_NAME = "server1";
   private static final String POD_NAME = LegalNames.toPodName(UID, SERVER_NAME);
   private static final String NS = "ns1";
-
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private List<Memento> mementos = new ArrayList<>();
   private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
   private V1Pod pod =
