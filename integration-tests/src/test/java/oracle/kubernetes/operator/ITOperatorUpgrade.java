@@ -8,7 +8,6 @@ import static oracle.kubernetes.operator.BaseTest.OPERATOR1_YAML;
 import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
 import static oracle.kubernetes.operator.BaseTest.logger;
 
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -16,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -36,8 +34,8 @@ import org.junit.runners.MethodSorters;
 public class ITOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
-  private static final String OP_TARGET_RELEASE_VERSION = "apiVersion: weblogic.oracle/v4";
   private static final String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
+  private static final String DOM_TARGET_RELEASE_VERSION = "weblogic.oracle/v4";
   private static final String OP_NS = "weblogic-operator";
   private static final String OP_DEP_NAME = "operator-upgrade";
   private static final String OP_SA = "operator-sa";
@@ -58,9 +56,7 @@ public class ITOperatorUpgrade extends BaseTest {
   public static void staticPrepare() throws Exception {
     if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
-      // pullImages();
       opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
-      // findOperatorJar();
     }
   }
 
@@ -68,11 +64,7 @@ public class ITOperatorUpgrade extends BaseTest {
       throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
-    // TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir, "develop").toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
-    // Files.createDirectories(Paths.get(opUpgradeTmpDir, "develop"));
-    // setEnv("IMAGE_NAME_OPERATOR", "oracle/weblogic-kubernetes-operator");
-    // setEnv("IMAGE_TAG_OPERATOR", operatorRelease);
     Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
     operatorMap.put("operatorImageName", "oracle/weblogic-kubernetes-operator");
     operatorMap.put("operatorImageTag", operatorRelease);
@@ -95,7 +87,6 @@ public class ITOperatorUpgrade extends BaseTest {
     // testBasicUseCases(domain);
     // testClusterScaling(operator20, domain);
     printCompVersions();
-    // findOperatorJar();
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
 
@@ -108,8 +99,10 @@ public class ITOperatorUpgrade extends BaseTest {
     }
     if (operator20 != null) {
       operator20.destroy();
-      // operator20 = null;
     }
+    ExecResult result = cleanup();
+    logger.log(Level.INFO, "cleanup stdout\n" + result.stdout());
+    logger.log(Level.INFO, "cleanup stderr\n" + result.stderr());
     TestUtils.ExecAndPrintLog(
         "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --grace-period=0 --force --ignore-not-found -n "
             + OP_NS);
@@ -120,9 +113,6 @@ public class ITOperatorUpgrade extends BaseTest {
         "kubectl delete crd --all --grace-period=0 --ignore-not-found  --force");
     TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-operator --ignore-not-found  --force");
     TestUtils.ExecAndPrintLog("kubectl delete ns weblogic-domain --ignore-not-found  --force");
-    ExecResult result = cleanup();
-    logger.log(Level.INFO, "cleanup stdout\n" + result.stdout());
-    logger.log(Level.INFO, "cleanup stderr\n" + result.stderr());
     logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
   }
 
@@ -143,19 +133,16 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_0ToDevelop() throws Exception {
+  public void testOperatorUpgradeFrom2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("2.0", "2.0");
-    // setEnv("IMAGE_NAME_OPERATOR", "weblogic-kubernetes-operator");
-    // setEnv("IMAGE_TAG_OPERATOR", "latest");
     upgradeOperator(true);
-    logger.info(
-        "+++++++++++++++++++++++++++++++++-SUCCESS--------------------------------+" + testMethod);
+    logger.info("SUCCESS - " + testMethod);
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_0_1ToDevelop() throws Exception {
+  public void testOperatorUpgradeFrom2_0_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("release/2.0.1", "2.0.1");
@@ -164,7 +151,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_1ToDevelop() throws Exception {
+  public void testOperatorUpgradeFrom2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("release/2.1", "2.1");
@@ -173,7 +160,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_2_0ToDevelop() throws Exception {
+  public void testOperatorUpgradeFrom2_2_0() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("release/2.2", "2.2.0");
@@ -182,7 +169,7 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   @Test
-  public void testOperatorUpgradeFrom2_2_1ToDevelop() throws Exception {
+  public void testOperatorUpgradeFrom2_2_1() throws Exception {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     setupOperatorAndDomain("release/2.2.1", "2.2.1");
@@ -191,57 +178,33 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void upgradeOperator(boolean restart) throws Exception {
-    upgradeOperatorHelm(OP_TARGET_RELEASE);
-    // printCompVersions();
-    // if (restart) {
-    //  checkDomainRollingRestarted();
-    // }
-    printCompVersions();
-    checkOperatorVersion(OP_TARGET_RELEASE_VERSION);
+    operator20.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
+    if (restart) {
+      checkDomainRollingRestarted();
+    }
+    checkOperatorVersion(DOM_TARGET_RELEASE_VERSION);
     // testBasicUseCases(domain);
     // testClusterScaling(operator20, domain);
   }
 
-  private static void pullImages() throws Exception {
-    TestUtils.ExecAndPrintLog("docker pull oracle/weblogic-kubernetes-operator:" + OP_BASE_REL);
-  }
-
-  private void upgradeOperatorHelm(String upgradeRelease) throws Exception {
-    operator20.callHelmUpgrade("image=" + upgradeRelease);
-    logger.log(Level.INFO, "Sleeping for up to 15 minutes");
+  private void checkOperatorVersion(String version) throws Exception {
+    boolean result = false;
+    logger.log(Level.INFO, "Checking for the domain apiVersion in a loop for up to 15 minutes");
     for (int i = 0; i < 900; i = i + 10) {
-      Thread.sleep(1000 * 10);
       TestUtils.ExecAndPrintLog(
-          "kubectl get domain -n weblogic-domain  operator20domain -o jsonpath={.apiVersion}");
+          "kubectl get domain -n " + DOM_NS + "  " + DUID + " -o jsonpath={.apiVersion}");
       ExecResult exec =
           TestUtils.exec(
-              "kubectl get domain -n weblogic-domain  operator20domain -o jsonpath={.apiVersion}");
-      if (exec.stdout().contains("weblogic.oracle/v4")) {
+              "kubectl get domain -n " + DOM_NS + "  " + DUID + " -o jsonpath={.apiVersion}");
+      if (exec.stdout().contains(DOM_TARGET_RELEASE_VERSION)) {
         logger.log(Level.INFO, "Got the expected apiVersion");
+        result = true;
         break;
       }
+      Thread.sleep(1000 * 10);
     }
-    TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
-  }
-
-  private void checkOperatorVersion(String version) throws Exception {
-    ExecResult result = ExecCommand.exec("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
-    if (!result.stdout().contains(version)) {
-      logger.log(Level.INFO, result.stdout());
+    if (!result) {
       throw new RuntimeException("FAILURE: Didn't get the expected operator version");
-    }
-  }
-
-  public static void setEnv(String key, String value) {
-    try {
-      Map<String, String> env = System.getenv();
-      Class<?> cl = env.getClass();
-      Field field = cl.getDeclaredField("m");
-      field.setAccessible(true);
-      Map<String, String> writableEnv = (Map<String, String>) field.get(env);
-      writableEnv.put(key, value);
-    } catch (Exception e) {
-      throw new IllegalStateException("Failed to set environment variable", e);
     }
   }
 
@@ -258,12 +221,8 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void printCompVersions() throws Exception {
-    TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
     TestUtils.ExecAndPrintLog("docker images");
     TestUtils.ExecAndPrintLog("kubectl get pods -n " + OP_NS + " -o yaml");
-  }
-
-  private static void findOperatorJar() throws Exception {
-    TestUtils.ExecAndPrintLog("find /scratch -name weblogic-kubernetes-operator-2.3.0.jar");
+    TestUtils.ExecAndPrintLog("kubectl get domain " + DUID + " -o yaml -n " + DOM_NS);
   }
 }
