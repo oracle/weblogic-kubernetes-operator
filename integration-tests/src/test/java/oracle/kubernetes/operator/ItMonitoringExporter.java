@@ -817,9 +817,35 @@ public class ItMonitoringExporter extends BaseTest {
         throw new RuntimeException("FAILURE: failed to install database ");
       }
       createWLSImageAndDeploy();
+      installWebHookAndAlertManager();
       installPrometheusGrafanaViaChart();
+      //fire alert by changing replicas
+      replaceStringInFile(
+              monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "replicas: 2", "replicas: 1");
+      // apply new domain yaml and verify pod restart
+      String crdCmd =
+              " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+      TestUtils.exec(crdCmd);
+
+      TestUtils.checkPodReady("domain1-admin-server", "default");
+      TestUtils.checkPodReady("domain1-managed-server-1", "default");
+      StringBuffer cmd = new StringBuffer();
+      cmd.append("kubectl get pod -l app=webhook -o jsonpath=\"{.items[0].metadata.name} \"");
+      logger.info("webhook pod name cmd =" + cmd);
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      String webhookPod = null;
+      if (result.exitValue() == 0) {
+        webhookPod = result.stdout().trim();
+      }
+      String command = "kubectl -n webhook logs -f " + webhookPod;
+      ExecResult webhookResult = ExecCommand.exec(command);
+      if (webhookResult.exitValue() == 0) {
+        assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
+      }
+
+
     } finally {
-      uninstallPrometheusGrafanaViaChart();
+      uninstallWebHookPrometheusGrafanaViaChart();
       uninstallMySQL();
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
@@ -933,6 +959,8 @@ public class ItMonitoringExporter extends BaseTest {
         monitoringExporterEndToEndDir + "/mysql/persistence.yaml", "%PV_ROOT%", pvDir);
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/prometheus/persistence.yaml", "%PV_ROOT%", pvDir);
+    replaceStringInFile(
+            monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml", "%PV_ROOT%", pvDir);
     replaceStringInFile(
         monitoringExporterEndToEndDir + "/grafana/persistence.yaml", "%PV_ROOT%", pvDir);
     // deploy PV and PVC
@@ -1071,6 +1099,9 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.exec(crdCmd);
     crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
     TestUtils.exec(crdCmd);
+
+    crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
+    TestUtils.exec(crdCmd);
     // install prometheus
     crdCmd =
         "helm install --wait --name prometheus --namespace monitoring --values  "
@@ -1115,16 +1146,58 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
+   * Install Prometheus and Grafana using helm chart
+   *
+   * @throws Exception if could not run the command successfully to clone from github
+   */
+  private static void installWebHookAndAlertManager() throws Exception {
+    String monitoringExporterEndToEndDir =
+            monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    // delete any running pods
+    deletePrometheusGrafana();
+    prometheusPort = "30000";
+    String crdCmd = "kubectl create ns monitoring";
+    TestUtils.exec(crdCmd);
+    crdCmd = "cd " + monitoringExporterEndToEndDir + " && docker build ./webhook -t webhook-log:1.0";
+    TestUtils.exec(crdCmd);
+
+    // install webhook
+    crdCmd = "create ns webhook ";
+    TestUtils.exec(crdCmd);
+
+    crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
+    TestUtils.exec(crdCmd);
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod -l app=webhook -o jsonpath=\"{.items[0].metadata.name} \"");
+    logger.info("webhook pod name cmd =" + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String webhookPod = null;
+    if (result.exitValue() == 0) {
+      webhookPod = result.stdout().trim();
+    }
+    assertNotNull("Webhook was not created, can't find running pod", webhookPod);
+    TestUtils.checkPodReady(webhookPod, "webhook");
+
+  }
+
+  /**
    * Uninstall Prometheus and Grafana using helm chart
    *
    * @throws Exception if could not run the command successfully to clone from github
    */
-  private static void uninstallPrometheusGrafanaViaChart() throws Exception {
+  private static void uninstallWebHookPrometheusGrafanaViaChart() throws Exception {
     String monitoringExporterEndToEndDir =
         monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+    logger.info("Uninstalling webhook");
+    String crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
+    ExecCommand.exec(crdCmd);
+    Thread.sleep(15000);
+    crdCmd = "kubectl delete ns webhook ";
+    ExecCommand.exec(crdCmd);
     logger.info("Uninstalling grafana");
     // uninstall grafana
-    String crdCmd = "helm delete --purge grafana";
+    crdCmd = "helm delete --purge grafana";
     ExecCommand.exec(crdCmd);
     crdCmd = "kubectl -n monitoring delete secret grafana-secret";
     ExecCommand.exec(crdCmd);
@@ -1142,7 +1215,11 @@ public class ItMonitoringExporter extends BaseTest {
     ExecCommand.exec(crdCmd);
     Thread.sleep(15000);
 
-    logger.info("Uninstalling namespace monitoring ");
+    crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
+    ExecCommand.exec(crdCmd);
+    Thread.sleep(15000);
+
+    //logger.info("Uninstalling namespace monitoring ");
     crdCmd = "kubectl delete namespace monitoring";
     //TestUtils.exec(crdCmd);
   }
