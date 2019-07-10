@@ -27,7 +27,7 @@ import org.junit.runners.MethodSorters;
 
 /** Operator upgrade JUnit test file testing the operator upgrade from older releases to develop. */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ITOperatorUpgrade extends BaseTest {
+public class ItOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
   private static final String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
