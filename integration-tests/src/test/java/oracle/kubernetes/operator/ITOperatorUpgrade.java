@@ -35,22 +35,20 @@ public class ITOperatorUpgrade extends BaseTest {
   private static final String OP_BASE_REL = "2.0";
   private static final String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
   private static final String DOM_TARGET_RELEASE_VERSION = "weblogic.oracle/v4";
-  private static String OP_NS = "weblogic-operator";
-  private static String OP_DEP_NAME = "operator-upgrade";
-  private static String OP_SA = "operator-sa";
-  private static String DOM_NS = "weblogic-domain";
-  private static String DUID = "operator20domain";
+  private static String OP_NS = "";
+  private static String OP_DEP_NAME = "";
+  private static String OP_SA = "";
+  private static String DOM_NS = "";
+  private static String DUID = "";
   private static String opUpgradeTmpDir;
   private Domain domain = null;
-  private static Operator operator20;
+  private static Operator operator;
 
   private void setupOperatorAndDomain(String operatorGitRelease, String operatorRelease)
       throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
-    if (!QUICKTEST) {
-      initialize(APP_PROPS_FILE);
-      opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
-    }
+    initialize(APP_PROPS_FILE);
+    opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
     Map<String, Object> operatorMap = TestUtils.loadYaml(OPERATOR1_YAML);
@@ -64,7 +62,7 @@ public class ITOperatorUpgrade extends BaseTest {
     List<String> dom_ns = new ArrayList<String>();
     dom_ns.add(DOM_NS);
     operatorMap.put("domainNamespaces", dom_ns);
-    operator20 = TestUtils.createOperator(operatorMap, Operator.RESTCertType.LEGACY);
+    operator = TestUtils.createOperator(operatorMap, Operator.RESTCertType.LEGACY);
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
 
     Map<String, Object> wlstDomainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
@@ -72,16 +70,10 @@ public class ITOperatorUpgrade extends BaseTest {
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
-    Thread.sleep(1000 * 60);
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
-    TestUtils.ExecAndPrintLog("kubectl get domain -n " + DOM_NS);
-    // domain.verifyDomainCreated();
     domain.verifyPodsCreated();
     domain.verifyServicesCreated();
     domain.verifyServersReady();
-    // testBasicUseCases(domain);
-    // testClusterScaling(operator20, domain);
-    printCompVersions();
     logger.log(Level.INFO, "+++++++++++++++Ending Test Setup+++++++++++++++++++++");
   }
 
@@ -91,8 +83,8 @@ public class ITOperatorUpgrade extends BaseTest {
     if (domain != null) {
       domain.destroy();
     }
-    if (operator20 != null) {
-      operator20.destroy();
+    if (operator != null) {
+      operator.destroy();
     }
     ExecResult result = cleanup();
     TestUtils.ExecAndPrintLog(
@@ -195,13 +187,13 @@ public class ITOperatorUpgrade extends BaseTest {
   }
 
   private void upgradeOperator(boolean restart) throws Exception {
-    operator20.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
+    operator.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
     if (restart) {
       checkDomainRollingRestarted();
     }
     checkOperatorVersion(DOM_TARGET_RELEASE_VERSION);
     testBasicUseCases(domain);
-    testClusterScaling(operator20, domain);
+    testClusterScaling(operator, domain);
   }
 
   private void checkOperatorVersion(String version) throws Exception {
