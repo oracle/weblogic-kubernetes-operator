@@ -5,20 +5,21 @@
 package oracle.kubernetes.operator;
 
 import javax.annotation.Nonnull;
+
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresenceInfo> {
-  private String expectedUID;
+  private String expectedUid;
   private String expectedNamespace;
 
-  private DomainPresenceInfoMatcher(String expectedUID) {
-    this.expectedUID = expectedUID;
+  private DomainPresenceInfoMatcher(String expectedUid) {
+    this.expectedUid = expectedUid;
   }
 
-  static DomainPresenceInfoMatcher domain(@Nonnull String expectedUID) {
-    return new DomainPresenceInfoMatcher(expectedUID);
+  static DomainPresenceInfoMatcher domain(@Nonnull String expectedUid) {
+    return new DomainPresenceInfoMatcher(expectedUid);
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -29,20 +30,20 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
 
   @Override
   protected boolean matchesSafely(DomainPresenceInfo item, Description mismatchDescription) {
-    if (!expectedUID.equals(getDomainUID(item))) {
-      return mismatchedUID(mismatchDescription, getDomainUID(item));
+    if (!expectedUid.equals(getDomainUid(item))) {
+      return mismatchedUid(mismatchDescription, getDomainUid(item));
     } else if (expectedNamespace != null && !expectedNamespace.equals(getNamespace(item))) {
       return mismatchedNamespace(mismatchDescription, getNamespace(item));
     }
     return true;
   }
 
-  private String getDomainUID(DomainPresenceInfo item) {
-    return item.getDomainUID();
+  private String getDomainUid(DomainPresenceInfo item) {
+    return item.getDomainUid();
   }
 
-  private boolean mismatchedUID(Description description, String actualDomainUID) {
-    description.appendText("domain with UID ").appendValue(actualDomainUID);
+  private boolean mismatchedUid(Description description, String actualDomainUid) {
+    description.appendText("domain with UID ").appendValue(actualDomainUid);
     return false;
   }
 
@@ -59,7 +60,7 @@ class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresence
   public void describeTo(Description description) {
     description
         .appendText("DomainPresenceInfo with UID ")
-        .appendValue(expectedUID)
+        .appendValue(expectedUid)
         .appendText(" and namespace ")
         .appendValue(expectedNamespace);
   }

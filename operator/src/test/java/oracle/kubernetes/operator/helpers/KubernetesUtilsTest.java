@@ -4,12 +4,12 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
-
 import io.kubernetes.client.models.V1ObjectMeta;
 import org.joda.time.DateTime;
 import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class KubernetesUtilsTest {
 

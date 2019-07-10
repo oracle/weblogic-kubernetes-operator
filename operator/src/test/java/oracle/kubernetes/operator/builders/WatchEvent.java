@@ -4,12 +4,13 @@
 
 package oracle.kubernetes.operator.builders;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.models.V1Status;
 import io.kubernetes.client.util.Watch;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * This class is the test equivalent of the Watch.Response type which is returned by a Watch object.

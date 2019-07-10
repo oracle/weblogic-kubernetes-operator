@@ -4,20 +4,18 @@
 
 package oracle.kubernetes.operator.steps;
 
-import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.models.V1Pod;
-import io.kubernetes.client.models.V1Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1Service;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
@@ -42,13 +40,15 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.joda.time.DateTime;
 
-public class ReadHealthStep extends Step {
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+public class ReadHealthStep extends Step {
 
   public static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
   public static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
       OVERALL_HEALTH_NOT_AVAILABLE + " (possibly overloaded)";
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private ReadHealthStep(Step next) {
     super(next);
@@ -64,9 +64,19 @@ public class ReadHealthStep extends Step {
     return new ReadHealthStep(next);
   }
 
+  private static String getRetrieveHealthSearchUrl() {
+    return "/management/weblogic/latest/serverRuntime/search";
+  }
+
+  private static String getRetrieveHealthSearchPayload() {
+    return "{ fields: [ 'state', 'overallHealthState', 'activationTime' ], links: [] }";
+  }
+
+  // overallHealthState, healthState
+
   @Override
   public NextAction apply(Packet packet) {
-    DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
     Domain dom = info.getDomain();
     V1ObjectMeta meta = dom.getMetadata();
@@ -91,16 +101,6 @@ public class ReadHealthStep extends Step {
     return doNext(packet);
   }
 
-  private static String getRetrieveHealthSearchUrl() {
-    return "/management/weblogic/latest/serverRuntime/search";
-  }
-
-  // overallHealthState, healthState
-
-  private static String getRetrieveHealthSearchPayload() {
-    return "{ fields: [ 'state', 'overallHealthState', 'activationTime' ], links: [] }";
-  }
-
   static final class ReadHealthWithHttpClientStep extends Step {
     private final V1Service service;
     private final V1Pod pod;
@@ -115,11 +115,11 @@ public class ReadHealthStep extends Step {
     public NextAction apply(Packet packet) {
       try {
         HttpClient httpClient = (HttpClient) packet.get(HttpClient.KEY);
-        DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         WlsDomainConfig domainConfig =
             (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
         if (domainConfig == null) {
-          Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUID());
+          Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
           domainConfig = scan.getWlsDomainConfig();
         }
         String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
@@ -139,17 +139,17 @@ public class ReadHealthStep extends Step {
               packet.get(ProcessingConstants.SERVER_NAME));
         } else {
 
-          String serviceURL =
-              HttpClient.getServiceURL(
+          String serviceUrl =
+              HttpClient.getServiceUrl(
                   service,
                   pod,
                   serverConfig.getAdminProtocolChannelName(),
                   serverConfig.getListenPort());
-          if (serviceURL != null) {
+          if (serviceUrl != null) {
             Result result =
                 httpClient.executePostUrlOnServiceClusterIP(
                     getRetrieveHealthSearchUrl(),
-                    serviceURL,
+                    serviceUrl,
                     getRetrieveHealthSearchPayload(),
                     false);
 

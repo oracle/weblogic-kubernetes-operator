@@ -102,6 +102,11 @@ function waitUntilShutdown() {
     trace "Showing the server out file from ${SERVER_OUT_FILE}"
     ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} &
   fi
+  FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true} 
+  SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-3}
+  if [ ${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} == 'true' ] ; then
+    ${SCRIPTPATH}/monitorLog.sh ${SERVER_OUT_FILE} ${SERVER_OUT_MONITOR_INTERVAL} &
+  fi
   waitForShutdownMarker
 }
 
@@ -137,6 +142,8 @@ function copySitCfg() {
   if [ $? = 0 ]; then
     for local_fname in ${src_dir}/${fil_prefix}*.xml ; do
       copyIfChanged $local_fname $tgt_dir/`basename ${local_fname/${fil_prefix}//}`
+      trace "Printing contents of situational configuration file $local_fname:"
+      cat $local_fname
     done
   fi
 

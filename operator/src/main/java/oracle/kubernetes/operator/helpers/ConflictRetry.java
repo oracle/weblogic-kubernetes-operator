@@ -15,8 +15,11 @@ package oracle.kubernetes.operator.helpers;
 public interface ConflictRetry<T> {
 
   /**
+   * The latest version of the kubernetes object for passing to the kubernetes API, or null if the
+   * API should not be retried.
+   *
    * @return The latest version of the kubernetes object for passing to the kubernetes API, or null
-   *     if the API should not be retried
+   *     if the API should not be retried.
    */
   T getUpdatedObject();
 }

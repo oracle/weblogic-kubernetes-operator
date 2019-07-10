@@ -4,11 +4,12 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
