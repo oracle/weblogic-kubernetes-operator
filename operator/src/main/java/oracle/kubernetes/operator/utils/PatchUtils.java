@@ -4,13 +4,14 @@
 
 package oracle.kubernetes.operator.utils;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.json.JsonPatch;
 import javax.json.JsonValue;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 public class PatchUtils {
   public static List<JsonObject> toKubernetesPatch(JsonPatch jsonPatch) {

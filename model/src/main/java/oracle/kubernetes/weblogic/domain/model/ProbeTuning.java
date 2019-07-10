@@ -22,7 +22,8 @@ public class ProbeTuning {
   @SerializedName("timeoutSeconds")
   private Integer timeoutSeconds = null;
 
-  public ProbeTuning() {}
+  public ProbeTuning() {
+  }
 
   void copyValues(ProbeTuning fromProbe) {
     if (initialDelaySeconds == null) {

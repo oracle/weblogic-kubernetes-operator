@@ -20,7 +20,7 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    DomainPresenceInfo info = packet.getSPI(DomainPresenceInfo.class);
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
 
     V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 
