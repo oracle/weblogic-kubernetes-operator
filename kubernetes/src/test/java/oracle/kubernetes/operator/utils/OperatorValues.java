@@ -5,6 +5,7 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.Objects;
+
 import org.apache.commons.codec.binary.Base64;
 
 public class OperatorValues {

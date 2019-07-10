@@ -4,14 +4,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.models.V1ResourceRule;
 import io.kubernetes.client.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.models.VersionInfo;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -97,7 +98,8 @@ public final class HealthCheckHelper {
     namespaceAccessChecks.put(AuthorizationProxy.Resource.TOKENREVIEWS, cOperations);
   }
 
-  private HealthCheckHelper() {}
+  private HealthCheckHelper() {
+  }
 
   /**
    * Verify Access.
@@ -166,7 +168,7 @@ public final class HealthCheckHelper {
   private static void check(
       List<V1ResourceRule> rules, AuthorizationProxy.Resource r, AuthorizationProxy.Operation op) {
     String verb = op.name();
-    String apiGroup = r.getAPIGroup();
+    String apiGroup = r.getApiGroup();
     String resource = r.getResource();
     String sub = r.getSubResource();
     if (sub != null && !sub.isEmpty()) {

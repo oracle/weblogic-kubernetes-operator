@@ -19,14 +19,16 @@ Java integration tests cover the below use cases:
 
 **Advanced Use Cases**
 
-6. Verify domain life cycle (destroy and create) should not have any impact on operator managing the domain and web app load balancing and admin external service.
+6. set precreateService true and verify that the services are created for the managed servers that are not started
 7. Cluster scale up/down using operator REST endpoint, webapp load balancing should adjust accordingly.
-8. Operator life cycle (destroy and create) should not impact the running domain.
+8. Verify that the services are created for the managed servers that are not started
+9. Verify domain life cycle (destroy and create) should not have any impact on operator managing the domain and web app load balancing and admin external service.
+10. Operator life cycle (destroy and create) should not impact the running domain.
 
 Also the below use cases are covered for Quick test:
 
-9. Verify the liveness probe by killing managed server 1 process 3 times to kick pod auto-restart.
-10. Shutdown the domain by changing domain `serverStartPolicy` to `NEVER`.
+11. Verify the liveness probe by killing managed server 1 process 3 times to kick pod auto-restart.
+12. Shutdown the domain by changing domain `serverStartPolicy` to `NEVER`.
 
 
 ## Full test Configuration & Use Cases - Runs Quick test Configuration & Use cases and the below
@@ -41,7 +43,7 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Domain | Use Case |
 | --- | --- |
 | Domain on PV using WDT | WLDF scaling |
-| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
+| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Make some changes in domain configuration by changing admin server tuning backlog configuration and restart domain. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
 | Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage |	
 | Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
 | Domain with Recycle policy | create domain with pvReclaimPolicy="Recycle" and using Configured cluster. Verify that the PV is deleted once the domain and PVC are deleted |

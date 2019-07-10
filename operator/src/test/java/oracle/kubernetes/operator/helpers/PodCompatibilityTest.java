@@ -4,14 +4,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.INTERNAL_OPERATOR_CERT_ENV;
-import static org.hamcrest.Matchers.blankOrNullString;
-import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.emptyOrNullString;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import java.util.Arrays;
+import java.util.Objects;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -21,10 +15,17 @@ import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1ResourceRequirements;
-import java.util.Arrays;
-import java.util.Objects;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.junit.Test;
+
+import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.INTERNAL_OPERATOR_CERT_ENV;
+import static org.hamcrest.Matchers.blankOrNullString;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertThat;
 
 public class PodCompatibilityTest {
   @Test
@@ -164,39 +165,6 @@ public class PodCompatibilityTest {
     return new ObjectWithName(name, value);
   }
 
-  static class ObjectWithName {
-    private String name;
-    private int value;
-
-    ObjectWithName(String name, int value) {
-      this.name = name;
-      this.value = value;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      return (o instanceof ObjectWithName) && equals((ObjectWithName) o);
-    }
-
-    private boolean equals(ObjectWithName that) {
-      return value == that.value && Objects.equals(name, that.name);
-    }
-
-    @Override
-    public int hashCode() {
-      return new HashCodeBuilder(17, 37).append(name).append(value).toHashCode();
-    }
-
-    @Override
-    public String toString() {
-      return String.format("<%s = %d>", name, value);
-    }
-  }
-
   @Test
   public void whenExpectedSubmapOfActual_reportCompatible() {
     CompatibilityCheck check =
@@ -250,5 +218,38 @@ public class PodCompatibilityTest {
     assertThat(check.getIncompatibility(), both(containsString("beta")).and(containsString("5")));
     assertThat(check.getIncompatibility(), not(containsString("alpha")));
     assertThat(check.getIncompatibility(), not(containsString("gamma")));
+  }
+
+  static class ObjectWithName {
+    private String name;
+    private int value;
+
+    ObjectWithName(String name, int value) {
+      this.name = name;
+      this.value = value;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      return (o instanceof ObjectWithName) && equals((ObjectWithName) o);
+    }
+
+    private boolean equals(ObjectWithName that) {
+      return value == that.value && Objects.equals(name, that.name);
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder(17, 37).append(name).append(value).toHashCode();
+    }
+
+    @Override
+    public String toString() {
+      return String.format("<%s = %d>", name, value);
+    }
   }
 }

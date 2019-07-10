@@ -4,13 +4,14 @@
 
 package oracle.kubernetes.operator.logging;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
 
 public class LoggingFacadeTest {
 
@@ -32,12 +33,12 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifyInfoMessageLoggedIfLoggingFilterAllows() {
-    final String MESSAGE = "info message";
-    loggingFacade.info(MockLoggingFilter.createWithReturnValue(true), MESSAGE);
+    final String message = "info message";
+    loggingFacade.info(MockLoggingFilter.createWithReturnValue(true), message);
 
     assertThat(mockLogger.isLogpCalled(), is(true));
     assertThat(mockLogger.getMessageLevel(), is(Level.INFO));
-    assertThat(mockLogger.getMessage(), is(MESSAGE));
+    assertThat(mockLogger.getMessage(), is(message));
   }
 
   @Test
@@ -56,12 +57,12 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifyWarningMessageLoggedIfLoggingFilterAllows() {
-    final String MESSAGE = "warning message";
-    loggingFacade.warning(MockLoggingFilter.createWithReturnValue(true), MESSAGE);
+    final String message = "warning message";
+    loggingFacade.warning(MockLoggingFilter.createWithReturnValue(true), message);
 
     assertThat(mockLogger.isLogpCalled(), is(true));
     assertThat(mockLogger.getMessageLevel(), is(Level.WARNING));
-    assertThat(mockLogger.getMessage(), is(MESSAGE));
+    assertThat(mockLogger.getMessage(), is(message));
   }
 
   @Test
@@ -80,12 +81,12 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifySevereMessageLoggedIfLoggingFilterAllows() {
-    final String MESSAGE = "severe message";
-    loggingFacade.severe(MockLoggingFilter.createWithReturnValue(true), MESSAGE);
+    final String message = "severe message";
+    loggingFacade.severe(MockLoggingFilter.createWithReturnValue(true), message);
 
     assertThat(mockLogger.isLogpCalled(), is(true));
     assertThat(mockLogger.getMessageLevel(), is(Level.SEVERE));
-    assertThat(mockLogger.getMessage(), is(MESSAGE));
+    assertThat(mockLogger.getMessage(), is(message));
   }
 
   @Test
@@ -104,14 +105,14 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifySevereMessageWithThrowableLoggedIfLoggingFilterAllows() {
-    final String MESSAGE = "severe message";
-    final Throwable THROWABLE = new Throwable("throwable");
-    loggingFacade.severe(MockLoggingFilter.createWithReturnValue(true), MESSAGE, THROWABLE);
+    final String message = "severe message";
+    final Throwable throwable = new Throwable("throwable");
+    loggingFacade.severe(MockLoggingFilter.createWithReturnValue(true), message, throwable);
 
     assertThat(mockLogger.isLogpCalled(), is(true));
     assertThat(mockLogger.getMessageLevel(), is(Level.SEVERE));
-    assertThat(mockLogger.getMessage(), is(MESSAGE));
-    assertThat(mockLogger.getMessageThrowable(), is(THROWABLE));
+    assertThat(mockLogger.getMessage(), is(message));
+    assertThat(mockLogger.getMessageThrowable(), is(throwable));
   }
 
   @Test
@@ -134,7 +135,7 @@ public class LoggingFacadeTest {
 
     @Override
     public void logp(
-        Level level, String sourceClass, String sourceMethod, String msg, Object params[]) {
+        Level level, String sourceClass, String sourceMethod, String msg, Object[] params) {
       logpCalled = true;
       message = msg;
       messageLevel = level;
