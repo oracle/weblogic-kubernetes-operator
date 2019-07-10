@@ -95,17 +95,15 @@ public class ITOperatorUpgrade extends BaseTest {
       operator20.destroy();
     }
     ExecResult result = cleanup();
-    TestUtils.ExecAndPrintLog("helm del --purge " + OP_DEP_NAME);
     TestUtils.ExecAndPrintLog(
-        "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --grace-period=0 --force --ignore-not-found -n "
+        "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
             + OP_NS);
     TestUtils.ExecAndPrintLog(
-        "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --grace-period=0 --force --ignore-not-found -n "
+        "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
             + DOM_NS);
-    TestUtils.ExecAndPrintLog(
-        "kubectl delete crd --all --grace-period=0 --ignore-not-found  --force");
-    TestUtils.ExecAndPrintLog("kubectl delete ns " + OP_NS + " --ignore-not-found  --force");
-    TestUtils.ExecAndPrintLog("kubectl delete ns " + DOM_NS + " --ignore-not-found  --force");
+    TestUtils.ExecAndPrintLog("kubectl delete crd --all --ignore-not-found");
+    TestUtils.ExecAndPrintLog("kubectl delete ns " + OP_NS + " --ignore-not-found");
+    TestUtils.ExecAndPrintLog("kubectl delete ns " + DOM_NS + " --ignore-not-found");
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
     logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
   }
