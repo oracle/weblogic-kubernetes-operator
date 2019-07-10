@@ -74,6 +74,7 @@ public class ITOperatorUpgrade extends BaseTest {
     domain = TestUtils.createDomain(wlstDomainMap);
     Thread.sleep(1000 * 60);
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
+    TestUtils.ExecAndPrintLog("kubectl get domain -n " + DOM_NS);
     // domain.verifyDomainCreated();
     domain.verifyPodsCreated();
     domain.verifyServicesCreated();
