@@ -72,6 +72,7 @@ public class ITOperatorUpgrade extends BaseTest {
     wlstDomainMap.put("namespace", DOM_NS);
     wlstDomainMap.put("projectRoot", opUpgradeTmpDir + "/weblogic-kubernetes-operator");
     domain = TestUtils.createDomain(wlstDomainMap);
+    Thread.sleep(1000 * 60);
     TestUtils.ExecAndPrintLog("kubectl get all --all-namespaces");
     domain.verifyDomainCreated();
     // testBasicUseCases(domain);
