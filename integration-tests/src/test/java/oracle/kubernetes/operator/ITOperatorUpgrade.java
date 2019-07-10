@@ -172,9 +172,9 @@ public class ITOperatorUpgrade extends BaseTest {
 
   private void upgradeOperator(boolean restart) throws Exception {
     operator20.callHelmUpgrade("image=" + OP_TARGET_RELEASE);
-    if (restart) {
-      checkDomainRollingRestarted();
-    }
+    //    if (restart) {
+    //      checkDomainRollingRestarted();
+    //    }
     checkOperatorVersion(DOM_TARGET_RELEASE_VERSION);
     // testBasicUseCases(domain);
     // testClusterScaling(operator20, domain);
