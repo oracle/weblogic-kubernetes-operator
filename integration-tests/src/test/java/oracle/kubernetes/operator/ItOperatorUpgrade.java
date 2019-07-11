@@ -31,7 +31,6 @@ public class ItOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
   private static final String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
-  private static String DOM_TARGET_RELEASE_VERSION = "";
   private static String OP_NS = "";
   private static String OP_DEP_NAME = "";
   private static String OP_SA = "";
@@ -244,12 +243,16 @@ public class ItOperatorUpgrade extends BaseTest {
    */
   private void checkOperatorVersion() throws Exception {
     boolean result = false;
-    logger.log(Level.INFO, "Checking for the domain apiVersion in a loop for up to 15 minutes");
+    logger.log(
+        Level.INFO,
+        "Checking for the domain apiVersion "
+            + getDomainApiVersion()
+            + " in a loop for up to 15 minutes");
     for (int i = 0; i < 900; i = i + 10) {
       ExecResult exec =
           TestUtils.exec(
               "kubectl get domain -n " + DOM_NS + "  " + DUID + " -o jsonpath={.apiVersion}", true);
-      if (exec.stdout().contains(DOM_TARGET_RELEASE_VERSION)) {
+      if (exec.stdout().contains(getDomainApiVersion())) {
         logger.log(Level.INFO, "Got the expected apiVersion");
         result = true;
         break;
