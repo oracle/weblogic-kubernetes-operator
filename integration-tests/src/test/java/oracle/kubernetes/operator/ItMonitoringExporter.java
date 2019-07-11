@@ -48,11 +48,12 @@ public class ItMonitoringExporter extends BaseTest {
   private static Operator operator1 = null;
   private static Domain domain = null;
   private static String myhost = "";
+  private static String metricsUrl = "";
   private static String monitoringExporterDir = "";
+  private static String monitoringExporterEndToEndDir = "";
   private static String resourceExporterDir = "";
   private static String exporterUrl = "";
   private static String configPath = "";
-  private static String metricsUrl = "";
   private static String prometheusPort = "32000";
   // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
   private static String prometheusSearchKey1 =
@@ -93,7 +94,8 @@ public class ItMonitoringExporter extends BaseTest {
       resourceExporterDir =
           BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
       configPath = resourceExporterDir;
-
+      monitoringExporterEndToEndDir =
+              monitoringExporterDir + "/src/samples/kubernetes/end2end/";
       upgradeTraefikHostName();
       deployRunMonitoringExporter(domain, operator);
       buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
@@ -799,8 +801,6 @@ public class ItMonitoringExporter extends BaseTest {
   @Test
   public void test19_EndToEndViaChart() throws Exception {
     Assume.assumeFalse(QUICKTEST);
-    String monitoringExporterEndToEndDir =
-        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
@@ -819,31 +819,7 @@ public class ItMonitoringExporter extends BaseTest {
       createWLSImageAndDeploy();
       installWebHookAndAlertManager();
       installPrometheusGrafanaViaChart();
-      //fire alert by changing replicas
-      replaceStringInFile(
-              monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "replicas: 2", "replicas: 1");
-      // apply new domain yaml and verify pod restart
-      String crdCmd =
-              " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
-      TestUtils.exec(crdCmd);
-
-      TestUtils.checkPodReady("domain1-admin-server", "default");
-      TestUtils.checkPodReady("domain1-managed-server-1", "default");
-      StringBuffer cmd = new StringBuffer();
-      cmd.append("kubectl get pod -l app=webhook -o jsonpath=\"{.items[0].metadata.name} \"");
-      logger.info("webhook pod name cmd =" + cmd);
-      ExecResult result = ExecCommand.exec(cmd.toString());
-      String webhookPod = null;
-      if (result.exitValue() == 0) {
-        webhookPod = result.stdout().trim();
-      }
-      String command = "kubectl -n webhook logs -f " + webhookPod;
-      ExecResult webhookResult = ExecCommand.exec(command);
-      if (webhookResult.exitValue() == 0) {
-        assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
-      }
-
-
+      fireAlert();
     } finally {
       uninstallWebHookPrometheusGrafanaViaChart();
       uninstallMySQL();
@@ -858,6 +834,32 @@ public class ItMonitoringExporter extends BaseTest {
     }
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
+  }
+
+  private void fireAlert() throws Exception {
+    logger.info("Fire Alert by changing replca count");
+    replaceStringInFile(
+            monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml", "replicas: 2", "replicas: 1");
+    // apply new domain yaml and verify pod restart
+    String crdCmd =
+            " kubectl apply -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
+    TestUtils.exec(crdCmd);
+
+    TestUtils.checkPodReady("domain1-admin-server", "default");
+    TestUtils.checkPodReady("domain1-managed-server-1", "default");
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod -l app=webhook -o jsonpath=\"{.items[0].metadata.name} \"");
+    logger.info("webhook pod name cmd =" + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String webhookPod = null;
+    if (result.exitValue() == 0) {
+      webhookPod = result.stdout().trim();
+    }
+    String command = "kubectl -n webhook logs -f " + webhookPod;
+    ExecResult webhookResult = ExecCommand.exec(command);
+    if (webhookResult.exitValue() == 0) {
+      assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
+    }
   }
 
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
@@ -943,9 +945,6 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void setupPVMYSQL() throws Exception {
-
-    String monitoringExporterEndToEndDir =
-        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     String pvDir = monitoringExporterEndToEndDir + "pvDir";
     if (new File(pvDir).exists()) {
       logger.info(" PV dir already exists , cleaning ");
@@ -1043,9 +1042,6 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void createWLSImageAndDeploy() throws Exception {
-    // monitoringExporterDir = "/scratch/opc/wl_k8s_test_results/acceptance_test_tmp/monitoring/";
-    String monitoringExporterEndToEndDir =
-        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     operator1 = TestUtils.createOperator(OPERATOR1_YAML);
 
     String command =
@@ -1090,8 +1086,6 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void installPrometheusGrafanaViaChart() throws Exception {
-    String monitoringExporterEndToEndDir =
-        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     // delete any running pods
     deletePrometheusGrafana();
     prometheusPort = "30000";
@@ -1151,9 +1145,6 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void installWebHookAndAlertManager() throws Exception {
-    String monitoringExporterEndToEndDir =
-            monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-
     String crdCmd = "cd " + monitoringExporterEndToEndDir + " && docker build ./webhook -t webhook-log:1.0";
     TestUtils.exec(crdCmd);
 
@@ -1183,8 +1174,6 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void uninstallWebHookPrometheusGrafanaViaChart() throws Exception {
-    String monitoringExporterEndToEndDir =
-        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     logger.info("Uninstalling webhook");
     String crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
     ExecCommand.exec(crdCmd);
@@ -1214,10 +1203,6 @@ public class ItMonitoringExporter extends BaseTest {
     crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
     ExecCommand.exec(crdCmd);
     Thread.sleep(15000);
-
-    //logger.info("Uninstalling namespace monitoring ");
-    crdCmd = "kubectl delete namespace monitoring";
-    //TestUtils.exec(crdCmd);
   }
 
   /**
@@ -1245,8 +1230,6 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void deletePvDir() throws Exception {
-    String monitoringExporterEndToEndDir =
-        monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     String pvDir = monitoringExporterEndToEndDir + "pvDir";
     String crdCmd =
         "cd "
