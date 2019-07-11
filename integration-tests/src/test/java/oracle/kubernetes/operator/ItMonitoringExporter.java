@@ -847,19 +847,23 @@ public class ItMonitoringExporter extends BaseTest {
 
     TestUtils.checkPodReady("domain1-admin-server", "default");
     TestUtils.checkPodReady("domain1-managed-server-1", "default");
+    String webhookPod = getPodName("webhook", "webhook");
+    String command = "kubectl -n webhook logs " + webhookPod;
+    ExecResult webhookResult = TestUtils.exec(command);
+    assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
+  }
+
+  private static String getPodName(String app, String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod -l app=webhook -o jsonpath=\"{.items[0].metadata.name} \"");
-    logger.info("webhook pod name cmd =" + cmd);
+    cmd.append("kubectl get pod -l app=" + app + " -n " + namespace + " -o jsonpath=\"{.items[0].metadata.name}\"");
+    logger.info(" pod name cmd =" + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
-    String webhookPod = null;
+    String podName = null;
     if (result.exitValue() == 0) {
-      webhookPod = result.stdout().trim();
+      podName = result.stdout().trim();
     }
-    String command = "kubectl -n webhook logs -f " + webhookPod;
-    ExecResult webhookResult = ExecCommand.exec(command);
-    if (webhookResult.exitValue() == 0) {
-      assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
-    }
+    assertNotNull(app + " was not created, can't find running pod ", podName);
+    return podName;
   }
 
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)
@@ -973,18 +977,11 @@ public class ItMonitoringExporter extends BaseTest {
     crdCmd = " kubectl apply -f " + monitoringExporterEndToEndDir + "/mysql/mysql.yaml";
     TestUtils.exec(crdCmd);
 
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod -l app=mysql -o jsonpath=\"{.items[0].metadata.name} \"");
-    logger.fine("getSQL pod name cmd =" + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    String sqlPod = null;
-    if (result.exitValue() == 0) {
-      sqlPod = result.stdout().trim();
-    }
-    assertNotNull("DataBase was not created, can't find running pod", sqlPod);
+    logger.fine("getSQL pod name ");
+    String sqlPod = getPodName("mysql", "default");
     TestUtils.checkPodReady(sqlPod, "default");
     Thread.sleep(15000);
-    result =
+    ExecResult result =
         TestUtils.kubectlexecNoCheck(
             sqlPod, "default", " -- mysql -p123456 -e \"CREATE DATABASE domain1;\"");
     if (result.exitValue() != 0) {
@@ -1145,25 +1142,19 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void installWebHookAndAlertManager() throws Exception {
+
+    logger.info("building webhook image");
     String crdCmd = "cd " + monitoringExporterEndToEndDir + " && docker build ./webhook -t webhook-log:1.0";
     TestUtils.exec(crdCmd);
 
     // install webhook
+    logger.info("installing webhook ");
     crdCmd = "kubectl create ns webhook ";
-    TestUtils.exec(crdCmd);
+    ExecCommand.exec(crdCmd);
 
     crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
     TestUtils.exec(crdCmd);
-
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod -n webhook -l app=webhook -o jsonpath=\"{.items[0].metadata.name} \"");
-    logger.info("webhook pod name cmd =" + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    String webhookPod = null;
-    if (result.exitValue() == 0) {
-      webhookPod = result.stdout().trim();
-    }
-    assertNotNull("Webhook was not created, can't find running pod", webhookPod);
+    String webhookPod = getPodName("webhook", "webhook");
     TestUtils.checkPodReady(webhookPod, "webhook");
 
   }
