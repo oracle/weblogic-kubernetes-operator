@@ -325,7 +325,7 @@ public class Operator {
         .append(operatorNS)
         .append(" --set \"imagePullPolicy=")
         .append(imagePullPolicy)
-        .append("\" --wait --timeout 60");
+        .append("\" --wait --timeout 120");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
