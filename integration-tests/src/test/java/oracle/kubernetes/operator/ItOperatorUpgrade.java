@@ -53,7 +53,6 @@ public class ItOperatorUpgrade extends BaseTest {
       throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     initialize(APP_PROPS_FILE);
-    DOM_TARGET_RELEASE_VERSION = getDomainApiVersion();
     opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
