@@ -1153,12 +1153,8 @@ public class ItMonitoringExporter extends BaseTest {
   private static void installWebHookAndAlertManager() throws Exception {
     String monitoringExporterEndToEndDir =
             monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-    // delete any running pods
-    deletePrometheusGrafana();
-    prometheusPort = "30000";
-    String crdCmd = "kubectl create ns monitoring";
-    TestUtils.exec(crdCmd);
-    crdCmd = "cd " + monitoringExporterEndToEndDir + " && docker build ./webhook -t webhook-log:1.0";
+
+    String crdCmd = "cd " + monitoringExporterEndToEndDir + " && docker build ./webhook -t webhook-log:1.0";
     TestUtils.exec(crdCmd);
 
     // install webhook
@@ -1169,7 +1165,7 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.exec(crdCmd);
 
     StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod -l app=webhook -o jsonpath=\"{.items[0].metadata.name} \"");
+    cmd.append("kubectl get pod -n webhook -l app=webhook -o jsonpath=\"{.items[0].metadata.name} \"");
     logger.info("webhook pod name cmd =" + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     String webhookPod = null;
