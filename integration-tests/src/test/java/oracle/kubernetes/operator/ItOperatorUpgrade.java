@@ -54,7 +54,7 @@ public class ItOperatorUpgrade extends BaseTest {
       throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     initialize(APP_PROPS_FILE);
-    DOM_TARGET_RELEASE_VERSION = domainApiVersion;
+    DOM_TARGET_RELEASE_VERSION = getDomainApiVersion();
     opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
@@ -100,17 +100,6 @@ public class ItOperatorUpgrade extends BaseTest {
         operator.destroy();
       }
       ExecResult result = cleanup();
-      TestUtils.exec(
-          "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
-              + OP_NS);
-      TestUtils.exec(
-          "kubectl delete pods,services,deployments,replicasets,configmaps,services --all  --ignore-not-found -n "
-              + DOM_NS);
-      TestUtils.exec("kubectl delete crd --all --ignore-not-found");
-      TestUtils.exec("kubectl delete ns " + OP_NS + " --ignore-not-found");
-      TestUtils.exec("kubectl delete ns " + DOM_NS + " --ignore-not-found");
-      TestUtils.exec("kubectl get all --all-namespaces");
-      TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
       logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
     }
   }

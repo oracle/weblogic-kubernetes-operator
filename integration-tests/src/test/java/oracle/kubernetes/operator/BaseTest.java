@@ -274,6 +274,10 @@ public class BaseTest {
     return weblogicImageServer;
   }
 
+  public static String getDomainApiVersion() {
+    return domainApiVersion;
+  }
+
   public static ExecResult cleanup() throws Exception {
     String cmd =
         "export RESULT_ROOT="
