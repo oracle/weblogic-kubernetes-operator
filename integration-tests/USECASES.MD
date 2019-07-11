@@ -137,8 +137,8 @@ Configuration Overrides Usecases
 
 | Operator Upgrade | Use Case |
 | --- | --- |
-| Upgrade 2.0 operator to develop | Upgrade the 2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows v4 |
-| Upgrade 2.0.1 operator to develop | Upgrade the 2.0.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows v4 |
-| Upgrade 2.1 operator to develop | Upgrade the 2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows v4 |
-| Upgrade 2.2.0 operator to develop | Upgrade the 2.2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows v4 |
-| Upgrade 2.2.1 operator to develop | Upgrade the 2.2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows v4 |
+| Upgrade 2.0 operator to develop | Upgrade the 2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.0.1 operator to develop | Upgrade the 2.0.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.1 operator to develop | Upgrade the 2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.2.0 operator to develop | Upgrade the 2.2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.2.1 operator to develop | Upgrade the 2.2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |

@@ -31,7 +31,7 @@ public class ItOperatorUpgrade extends BaseTest {
 
   private static final String OP_BASE_REL = "2.0";
   private static final String OP_TARGET_RELEASE = "weblogic-kubernetes-operator:latest";
-  private static final String DOM_TARGET_RELEASE_VERSION = "weblogic.oracle/v4";
+  private static String DOM_TARGET_RELEASE_VERSION = "";
   private static String OP_NS = "";
   private static String OP_DEP_NAME = "";
   private static String OP_SA = "";
@@ -54,6 +54,7 @@ public class ItOperatorUpgrade extends BaseTest {
       throws Exception {
     logger.log(Level.INFO, "+++++++++++++++Beginning Test Setup+++++++++++++++++++++");
     initialize(APP_PROPS_FILE);
+    DOM_TARGET_RELEASE_VERSION = domainApiVersion;
     opUpgradeTmpDir = BaseTest.getResultDir() + "/operatorupgrade";
     TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
     Files.createDirectories(Paths.get(opUpgradeTmpDir));
