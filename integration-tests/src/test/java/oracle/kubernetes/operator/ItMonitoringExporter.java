@@ -1162,7 +1162,7 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.exec(crdCmd);
 
     // install webhook
-    crdCmd = "create ns webhook ";
+    crdCmd = "kubectl create ns webhook ";
     TestUtils.exec(crdCmd);
 
     crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
