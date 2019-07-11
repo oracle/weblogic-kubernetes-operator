@@ -109,6 +109,7 @@ public class ItOperatorUpgrade extends BaseTest {
       TestUtils.exec("kubectl delete ns " + OP_NS + " --ignore-not-found");
       TestUtils.exec("kubectl delete ns " + DOM_NS + " --ignore-not-found");
       TestUtils.exec("kubectl get all --all-namespaces");
+      TestUtils.exec("rm -rf " + Paths.get(opUpgradeTmpDir).toString());
       logger.log(Level.INFO, "+++++++++++++++Done AfterTest cleanup+++++++++++++++++++++");
     }
   }
