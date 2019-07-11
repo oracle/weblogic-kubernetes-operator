@@ -119,7 +119,6 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      // deletePrometheusGrafana();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
     }
@@ -396,7 +395,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Check that configuration can be reviewed via Prometheus.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test01_CheckMetricsViaPrometheus() throws Exception {
@@ -412,7 +411,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Replace monitoring exporter configuration and verify it was applied to both managed servers.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test02_ReplaceConfiguration() throws Exception {
@@ -459,7 +458,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Add additional monitoring exporter configuration and verify it was applied.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test03_AppendConfiguration() throws Exception {
@@ -492,7 +491,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Replace monitoring exporter configuration with only one attribute and verify it was applied.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test04_ReplaceOneAttributeValueAsArrayConfiguration() throws Exception {
@@ -513,7 +512,7 @@ public class ItMonitoringExporter extends BaseTest {
    * Append monitoring exporter configuration with one more attribute and verify it was applied
    * append to [a] new config [a,b].
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test05_AppendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration()
@@ -533,7 +532,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Replace monitoring exporter configuration with empty configuration.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test06_ReplaceWithEmptyConfiguration() throws Exception {
@@ -568,7 +567,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to append monitoring exporter configuration with configuration file not in the yaml format.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test08_1AppendWithNotYmlConfiguration() throws Exception {
@@ -601,7 +600,7 @@ public class ItMonitoringExporter extends BaseTest {
    * Try to append monitoring exporter configuration with configuration file in the corrupted yaml
    * format.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   public void test09_AppendWithCorruptedYmlConfiguration() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -637,7 +636,7 @@ public class ItMonitoringExporter extends BaseTest {
    * Try to replace monitoring exporter configuration with configuration file with dublicated
    * values.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test11_ReplaceWithDublicatedValuesConfiguration() throws Exception {
@@ -655,7 +654,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to append monitoring exporter configuration with configuration file with duplicated values.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test12_AppendWithDuplicatedValuesConfiguration() throws Exception {
@@ -758,7 +757,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to change monitoring exporter configuration with empty username.
    *
-   * @throws Exception excpetion
+   * @throws Exception if test fails
    */
   @Test
   public void test17_ChangeConfigEmptyUser() throws Exception {
@@ -777,7 +776,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Try to change monitoring exporter configuration with empty pass.
    *
-   * @throws Exception exception
+   * @throws Exception if test fails
    */
   @Test
   public void test18_ChangeConfigEmptyPass() throws Exception {
@@ -796,7 +795,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Test End to End example from MonitoringExporter github project
    *
-   * @throws Exception
+   * @throws Exception if test fails
    */
   @Test
   public void test19_EndToEndViaChart() throws Exception {
@@ -821,8 +820,10 @@ public class ItMonitoringExporter extends BaseTest {
       installPrometheusGrafanaViaChart();
       fireAlert();
     } finally {
+      /*
       uninstallWebHookPrometheusGrafanaViaChart();
       uninstallMySQL();
+
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
       ExecCommand.exec(crdCmd);
@@ -831,6 +832,8 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator1 != null) {
         operator1.destroy();
       }
+      */
+
     }
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
@@ -847,9 +850,12 @@ public class ItMonitoringExporter extends BaseTest {
 
     TestUtils.checkPodReady("domain1-admin-server", "default");
     TestUtils.checkPodReady("domain1-managed-server-1", "default");
+    //sleep for 1 min to fire alert
+    Thread.sleep(60000);
     String webhookPod = getPodName("webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
     ExecResult webhookResult = TestUtils.exec(command);
+    logger.info(" webhook log " + webhookResult.stdout());
     assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
   }
 
@@ -946,7 +952,7 @@ public class ItMonitoringExporter extends BaseTest {
    * Remove monitoring exporter directory if exists and clone latest from github for monitoring
    * exporter code
    *
-   * @throws Exception if could not run the command successfully to clone from github
+   * @throws Exception if could not run the command successfully to install database
    */
   private static void setupPVMYSQL() throws Exception {
     String pvDir = monitoringExporterEndToEndDir + "pvDir";
@@ -1036,7 +1042,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Install wls image tool and update wls pods
    *
-   * @throws Exception if could not run the command successfully to clone from github
+   * @throws Exception if could not run the command successfully to create WLSImage and deploy
    */
   private static void createWLSImageAndDeploy() throws Exception {
     operator1 = TestUtils.createOperator(OPERATOR1_YAML);
@@ -1080,7 +1086,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Install Prometheus and Grafana using helm chart
    *
-   * @throws Exception if could not run the command successfully to clone from github
+   * @throws Exception if could not run the command successfully to install Prometheus and Grafana
    */
   private static void installPrometheusGrafanaViaChart() throws Exception {
     // delete any running pods
@@ -1139,7 +1145,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Install Prometheus and Grafana using helm chart
    *
-   * @throws Exception if could not run the command successfully to clone from github
+   * @throws Exception if could not run the command successfully to install webhook and alert manager
    */
   private static void installWebHookAndAlertManager() throws Exception {
 
@@ -1162,7 +1168,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Uninstall Prometheus and Grafana using helm chart
    *
-   * @throws Exception if could not run the command successfully to clone from github
+   * @throws Exception if could not run the command successfully to uninstall deployments
    */
   private static void uninstallWebHookPrometheusGrafanaViaChart() throws Exception {
     logger.info("Uninstalling webhook");
@@ -1199,7 +1205,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Unnstall MYSQL
    *
-   * @throws Exception if could not run the command successfully to clone from github
+   * @throws Exception if could not run the command successfully to uninstall MySQL
    */
   private static void uninstallMySQL() throws Exception {
     String monitoringExporterEndToEndDir =
@@ -1218,7 +1224,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Delete PvDir via docker
    *
-   * @throws Exception if could not run the command successfully to clone from github
+   * @throws Exception if could not run the command successfully to delete PV
    */
   private static void deletePvDir() throws Exception {
     String pvDir = monitoringExporterEndToEndDir + "pvDir";
@@ -1276,7 +1282,7 @@ public class ItMonitoringExporter extends BaseTest {
    * call operator to scale to specified number of replicas
    *
    * @param replicas - number of managed servers
-   * @throws Exception exception
+   * @throws Exception if scaling fails
    */
   private void scaleCluster(int replicas) throws Exception {
     logger.info("Scale up/down to " + replicas + " managed servers");
@@ -1288,7 +1294,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @param searchKey - metric query expression
    * @param expectedVal - expected metrics to search
-   * @throws Exception exception
+   * @throws Exception if command to check metrics fails
    */
   private static boolean checkMetricsViaPrometheus(String searchKey, String expectedVal)
       throws Exception {
