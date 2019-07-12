@@ -12,8 +12,8 @@
 RETVAL=$(test -f /weblogic-operator/debug/livenessProbeSuccessOverride ; echo $?)
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-source ${SCRIPTPATH}/traceUtils.sh
-[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit $RETVAL
+source ${SCRIPTPATH}/utils.sh
+[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/utils.sh" && exit $RETVAL
 
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:
 exportEffectiveDomainHome || exit $RETVAL

@@ -9,7 +9,7 @@
 
 while [ 1 -eq 1 ] ; do
   SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-  traceFile=${SCRIPTPATH}/traceUtils.sh
+  traceFile=${SCRIPTPATH}/utils.sh
   source ${traceFile}
   [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && break
 

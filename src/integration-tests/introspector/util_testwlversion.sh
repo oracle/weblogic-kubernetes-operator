@@ -12,7 +12,7 @@
 # and assumes the ORACLE_HOME env var has been set.
 #
 
-traceFile=/weblogic-operator/scripts/traceUtils.sh
+traceFile=/weblogic-operator/scripts/utils.sh
 source ${traceFile}
 [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && exit 1
 
