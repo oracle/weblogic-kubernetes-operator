@@ -34,7 +34,7 @@
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SOURCEPATH="`echo $SCRIPTPATH | sed 's/weblogic-kubernetes-operator.*/weblogic-kubernetes-operator/'`"
-traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils.sh
+traceFile=${SOURCEPATH}/operator/src/main/resources/scripts/utils.sh
 source ${traceFile}
 source ${SCRIPTPATH}/util_dots.sh
 [ $? -ne 0 ] && echo "Error: missing file ${traceFile}" && exit 1
@@ -256,7 +256,7 @@ function deployTestScriptConfigMap() {
 
   mkdir -p ${test_home}/test-scripts
 
-  cp ${SOURCEPATH}/operator/src/main/resources/scripts/traceUtils* ${test_home}/test-scripts || exit 1
+  cp ${SOURCEPATH}/operator/src/main/resources/scripts/utils* ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/wl-create-domain-pod.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/createTestRoot.sh ${test_home}/test-scripts || exit 1
   cp ${SCRIPTPATH}/wl-introspect-pod.sh ${test_home}/test-scripts || exit 1
