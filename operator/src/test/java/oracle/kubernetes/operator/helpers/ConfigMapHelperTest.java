@@ -64,8 +64,8 @@ public class ConfigMapHelperTest {
     "introspectDomain.sh",
     "introspectDomain.py",
     "startNodeManager.sh",
-    "traceUtils.py",
-    "traceUtils.sh",
+    "utils.py",
+    "utils.sh",
     "wlst.sh",
     "tailLog.sh",
     "monitorLog.sh"
