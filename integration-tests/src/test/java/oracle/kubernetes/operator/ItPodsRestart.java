@@ -121,7 +121,7 @@ public class ItPodsRestart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
+  //@Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -144,7 +144,7 @@ public class ItPodsRestart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
+  //@Test
   public void testServerPodsRestartByChangingLogHomeEnabled() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -166,7 +166,7 @@ public class ItPodsRestart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
+  //@Test
   public void testServerPodsRestartByChangingImagePullPolicy() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -189,7 +189,7 @@ public class ItPodsRestart extends BaseTest {
    *
    * @throws Exception exception
    */
-  @Test
+  //@Test
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -236,19 +236,13 @@ public class ItPodsRestart extends BaseTest {
             System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
         // tag image with repo name
         String tag =
-            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;*/
-      	String tag = "docker tag "
-            + getWeblogicImageName()
-            + ":"
-            + getWeblogicImageTag()
-            + " "
-            + getWeblogicImageName()
-            + ":duplicate";
-      	TestUtils.exec(tag, true);
-        TestUtils.exec("docker images", true);
+            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
+        TestUtils.exec(tag, true);
+        TestUtils.exec("docker images", true);*/
+      	String newImages = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
 
         // login and push image to ocir
-        //TestUtils.loginAndPushImageToOcir(newImage);
+        /*TestUtils.loginAndPushImageToOcir(newImage);
 
         // create ocir registry secret in the same ns as domain which is used while pulling the
         // image
@@ -258,15 +252,12 @@ public class ItPodsRestart extends BaseTest {
             System.getenv("REPO_USERNAME"),
             System.getenv("REPO_PASSWORD"),
             System.getenv("REPO_EMAIL"),
-            domain.getDomainNs());
+            domain.getDomainNs());*/
 
         // apply new domain yaml and verify pod restart
-        /*domain.verifyDomainServerPodRestart(
-            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
-            "\"" + newImage + "\"");*/
         domain.verifyDomainServerPodRestart(
             "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
-            "\"" + getWeblogicImageName() + ":duplicate" + "\"");
+            "\"" + newImage + "\"");
 
       } else {
         TestUtils.exec(
@@ -299,7 +290,7 @@ public class ItPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  @Test
+  //@Test
   public void testServerPodsRestartByChangingContSecurityContext() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -336,7 +327,7 @@ public class ItPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  @Test
+  //@Test
   public void testServerPodsRestartByChangingPodSecurityContext() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -374,7 +365,7 @@ public class ItPodsRestart extends BaseTest {
    *     are not restarted or after restart the server yaml file doesn't include the new added
    *     property
    */
-  @Test
+  //@Test
   public void testServerPodsRestartByChangingResource() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -455,7 +446,7 @@ public class ItPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  @Test
+  //@Test
   public void testClusterRestartVersion() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -549,7 +540,7 @@ public class ItPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  @Test
+  //@Test
   public void testDomainRestartVersion() throws Exception {
     Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
