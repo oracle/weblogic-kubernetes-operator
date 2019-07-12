@@ -41,9 +41,13 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
-  @Description("Status of WebLogic servers in this domain.")
+  @Description("Status of WebLogic Servers in this domain.")
   @Valid
-  private List<ServerStatus> servers = new ArrayList<ServerStatus>();
+  private List<ServerStatus> servers = new ArrayList<>();
+
+  @Description("Status of WebLogic clusters in this domain.")
+  @Valid
+  private List<ClusterStatus> clusters = new ArrayList<>();
 
   @Description(
       "RFC 3339 date and time at which the operator started the domain. This will be when "
@@ -52,7 +56,7 @@ public class DomainStatus {
   private DateTime startTime = SystemClock.now();
 
   @Description(
-      "The number of running managed servers in the WebLogic cluster if there is "
+      "The number of running Managed Servers in the WebLogic cluster if there is "
           + "only one cluster in the domain and where the cluster does not explicitly "
           + "configure its replicas in a cluster specification.")
   @Range(minimum = 0)
@@ -249,7 +253,7 @@ public class DomainStatus {
    * @param servers servers
    */
   public void setServers(List<ServerStatus> servers) {
-    if (isEqualIgnoringOrder(servers, this.servers)) {
+    if (isServersEqualIgnoringOrder(servers, this.servers)) {
       return;
     }
 
@@ -257,7 +261,7 @@ public class DomainStatus {
     modified = true;
   }
 
-  private boolean isEqualIgnoringOrder(List<ServerStatus> servers1, List<ServerStatus> servers2) {
+  private boolean isServersEqualIgnoringOrder(List<ServerStatus> servers1, List<ServerStatus> servers2) {
     return new HashSet<>(servers1).equals(new HashSet<>(servers2));
   }
 
@@ -269,6 +273,28 @@ public class DomainStatus {
    */
   public DomainStatus withServers(List<ServerStatus> servers) {
     this.servers = servers;
+    return this;
+  }
+
+  public List<ClusterStatus> getClusters() {
+    return clusters;
+  }
+
+  public void setClusters(List<ClusterStatus> clusters) {
+    if (isClustersEqualIgnoringOrder(clusters, this.clusters)) {
+      return;
+    }
+
+    this.clusters = clusters;
+    modified = true;
+  }
+
+  private boolean isClustersEqualIgnoringOrder(List<ClusterStatus> clusters1, List<ClusterStatus> clusters2) {
+    return new HashSet<>(clusters1).equals(new HashSet<>(clusters2));
+  }
+
+  public DomainStatus withClusters(List<ClusterStatus> clusters) {
+    this.clusters = clusters;
     return this;
   }
 
@@ -298,6 +324,7 @@ public class DomainStatus {
         .append("message", message)
         .append("reason", reason)
         .append("servers", servers)
+        .append("clusters", clusters)
         .append("startTime", startTime)
         .toString();
   }
@@ -308,6 +335,7 @@ public class DomainStatus {
         .append(reason)
         .append(startTime)
         .append(Domain.sortOrNull(servers))
+        .append(Domain.sortOrNull(clusters))
         .append(Domain.sortOrNull(conditions))
         .append(message)
         .toHashCode();
@@ -326,6 +354,7 @@ public class DomainStatus {
         .append(reason, rhs.reason)
         .append(startTime, rhs.startTime)
         .append(Domain.sortOrNull(servers), Domain.sortOrNull(rhs.servers))
+        .append(Domain.sortOrNull(clusters), Domain.sortOrNull(rhs.clusters))
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
         .isEquals();

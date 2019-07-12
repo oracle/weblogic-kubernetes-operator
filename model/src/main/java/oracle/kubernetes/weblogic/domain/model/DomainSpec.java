@@ -43,7 +43,7 @@ public class DomainSpec extends BaseConfiguration {
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
       "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required."
-          + " Defaults to the value of metadata.name")
+          + " Defaults to the value of metadata.name.")
   @Pattern("^[a-z0-9_.]{1,253}$")
   @SerializedName("domainUID")
   private String domainUid;
@@ -54,14 +54,14 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The folder for the WebLogic Domain. Not required."
-          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false"
-          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true")
+          + " Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false."
+          + " Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true.")
   private String domainHome;
   /**
    * Tells the operator whether the customer wants the server to be running. For non-clustered
    * servers - the operator will start it if the policy isn't NEVER. For clustered servers - the
    * operator will start it if the policy is ALWAYS or the policy is IF_NEEDED and the server needs
-   * to be started to get to the cluster's replica count..
+   * to be started to get to the cluster's replica count.
    *
    * @since 2.0
    */
@@ -72,10 +72,10 @@ public class DomainSpec extends BaseConfiguration {
   private String serverStartPolicy;
   /**
    * Reference to secret containing WebLogic startup credentials username and password. Secret must
-   * contain keys names 'username' and 'password' (Required)
+   * contain keys names 'username' and 'password'. Required.
    */
   @Description(
-      "The name of a pre-created Kubernetes secret, in the domain's namepace, that holds"
+      "The name of a pre-created Kubernetes secret, in the domain's namespace, that holds"
           + " the username and password needed to boot WebLogic Server under the 'username' and "
           + "'password' fields.")
   @Valid
@@ -149,7 +149,7 @@ public class DomainSpec extends BaseConfiguration {
    * @since 2.0
    */
   @Description(
-      "True if this domain's home is defined in the docker image for the domain. Defaults to true.")
+      "True if this domain's home is defined in the Docker image for the domain. Defaults to true.")
   private Boolean domainHomeInImage;
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
@@ -170,14 +170,14 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Configuration for the admin server.")
+  @Description("Configuration for the Administration Server.")
   private AdminServer adminServer;
   /**
    * The configured managed servers.
    *
    * @since 2.0
    */
-  @Description("Configuration for the managed servers.")
+  @Description("Configuration for individual Managed Servers.")
   private List<ManagedServer> managedServers = new ArrayList<>();
 
   /**
@@ -212,8 +212,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
-   * to the value of metadata.name
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults
+   * to the value of metadata.name.
    *
    * @return domain UID
    */
@@ -222,8 +222,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Not required) Defaults
-   * to the value of metadata.name
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults
+   * to the value of metadata.name.
    *
    * @param domainUid domain UID
    */
@@ -232,7 +232,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Domain unique identifier. Must be unique across the Kubernetes cluster. (Required)
+   * Domain unique identifier. Must be unique across the Kubernetes cluster. Required.
    *
    * @param domainUid domain UID
    * @return this
@@ -295,7 +295,7 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * Reference to secret containing WebLogic startup credentials username and password. Secret must
-   * contain keys names 'username' and 'password' (Required)
+   * contain keys names 'username' and 'password'. Required.
    *
    * @param webLogicCredentialsSecret WebLogic startup credentials secret
    * @return this
