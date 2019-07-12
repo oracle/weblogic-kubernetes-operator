@@ -239,7 +239,7 @@ public class ItPodsRestart extends BaseTest {
             "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
         TestUtils.exec(tag, true);
         TestUtils.exec("docker images", true);*/
-      	String newImages = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
+      	String newImage = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
 
         // login and push image to ocir
         /*TestUtils.loginAndPushImageToOcir(newImage);
