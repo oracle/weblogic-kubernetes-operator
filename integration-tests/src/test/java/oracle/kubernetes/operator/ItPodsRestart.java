@@ -232,16 +232,23 @@ public class ItPodsRestart extends BaseTest {
               + "/weblogick8s/middleware/weblogic:duplicate");
 
       if (BaseTest.SHARED_CLUSTER) {
-        String newImage =
+        /*String newImage =
             System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
         // tag image with repo name
         String tag =
-            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
-        TestUtils.exec(tag, true);
+            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;*/
+      	String tag = "docker tag "
+            + getWeblogicImageName()
+            + ":"
+            + getWeblogicImageTag()
+            + " "
+            + getWeblogicImageName()
+            + ":duplicate";
+      	TestUtils.exec(tag, true);
         TestUtils.exec("docker images", true);
 
         // login and push image to ocir
-        TestUtils.loginAndPushImageToOcir(newImage);
+        //TestUtils.loginAndPushImageToOcir(newImage);
 
         // create ocir registry secret in the same ns as domain which is used while pulling the
         // image
@@ -254,9 +261,12 @@ public class ItPodsRestart extends BaseTest {
             domain.getDomainNs());
 
         // apply new domain yaml and verify pod restart
+        /*domain.verifyDomainServerPodRestart(
+            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
+            "\"" + newImage + "\"");*/
         domain.verifyDomainServerPodRestart(
             "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
-            "\"" + newImage + "\"");
+            "\"" + getWeblogicImageName() + ":duplicate" + "\"");
 
       } else {
         TestUtils.exec(
