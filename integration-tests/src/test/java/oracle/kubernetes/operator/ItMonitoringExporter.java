@@ -55,6 +55,8 @@ public class ItMonitoringExporter extends BaseTest {
   private static String exporterUrl = "";
   private static String configPath = "";
   private static String prometheusPort = "32000";
+  private static String wlsUser = "";
+  private static String wlsPassword = "";
   // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
   private static String prometheusSearchKey1 =
       "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
@@ -87,6 +89,8 @@ public class ItMonitoringExporter extends BaseTest {
         domain = createVerifyDomain(number, operator);
         Assert.assertNotNull(domain);
       }
+      wlsUser = BaseTest.getUsername();
+      wlsPassword = BaseTest.getPassword();
       myhost = domain.getHostNameForCurl();
       exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
       metricsUrl = exporterUrl + "metrics";
@@ -732,7 +736,7 @@ public class ItMonitoringExporter extends BaseTest {
         configPath + "/rest_snakecasetrue.yml",
         "401 Unauthorized for " + exporterUrl,
         "invaliduser",
-        "welcome1");
+        wlsPassword);
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -750,7 +754,7 @@ public class ItMonitoringExporter extends BaseTest {
         "replace",
         configPath + "/rest_snakecasetrue.yml",
         "401 Unauthorized for " + exporterUrl,
-        "weblogic",
+        wlsUser,
         "invalidpass");
   }
 
@@ -769,7 +773,7 @@ public class ItMonitoringExporter extends BaseTest {
         configPath + "/rest_snakecasetrue.yml",
         "401 Unauthorized for " + exporterUrl,
         "",
-        "welcome1");
+        wlsPassword);
     logger.info("SUCCESS - " + testMethodName);
   }
 
@@ -787,7 +791,7 @@ public class ItMonitoringExporter extends BaseTest {
         "replace",
         configPath + "/rest_snakecasetrue.yml",
         "401 Unauthorized for " + exporterUrl,
-        "weblogic",
+        wlsUser,
         "");
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -1050,13 +1054,13 @@ public class ItMonitoringExporter extends BaseTest {
     String command =
         "cd "
             + monitoringExporterEndToEndDir
-            + "/demo-domains/domainBuilder/ && ./build.sh domain1 weblogic welcome1  wluser1 wlpwd123";
+            + "/demo-domains/domainBuilder/ && ./build.sh domain1 " + wlsUser + " " + wlsPassword + " wluser1 wlpwd123";
     TestUtils.exec(command);
     String newImage = "domain1-image:1.0";
     command =
         "kubectl -n default create secret generic domain1-weblogic-credentials "
-            + "  --from-literal=username=weblogic "
-            + "  --from-literal=password=welcome1";
+            + "  --from-literal=username=" + wlsUser
+            + "  --from-literal=password=" + wlsPassword;
     TestUtils.exec(command);
     // apply new domain yaml and verify pod restart
     String crdCmd =
@@ -1074,11 +1078,11 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.checkPodReady("curl", "default");
     // access metrics
     crdCmd =
-        "kubectl exec curl -- curl http://weblogic:welcome1@domain1-managed-server-1:8001/wls-exporter/metrics";
+        "kubectl exec curl -- curl http://" + wlsUser + ":" + wlsPassword + "@domain1-managed-server-1:8001/wls-exporter/metrics";
     ExecResult result = TestUtils.exec(crdCmd);
     assertTrue((result.stdout().contains("wls_servlet_execution_time_average")));
     crdCmd =
-        "kubectl exec curl -- curl http://weblogic:welcome1@domain1-managed-server-2:8001/wls-exporter/metrics";
+        "kubectl exec curl -- curl http://" + wlsUser + ":" + wlsPassword + "@domain1-managed-server-2:8001/wls-exporter/metrics";
     result = TestUtils.exec(crdCmd);
     assertTrue((result.stdout().contains("wls_servlet_execution_time_average")));
   }
