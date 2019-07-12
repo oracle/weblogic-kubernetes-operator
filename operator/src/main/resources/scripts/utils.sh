@@ -263,6 +263,10 @@ checkWebLogicVersion()
       return 1
     fi
   fi
+  if versionEQ "$cur_wl_ver" "9999.9999.9999.9999" ; then
+    trace "Info: Could not determine WebLogic version. Assuming version is fine. (The Operator requires WebLogic version '${exp_wl_ver}' or higher, and also requires patches '$exp_wl_12213_patches' for version '12.2.1.3'.)."
+    return 0
+  fi
   if versionGE "$cur_wl_ver" "${exp_wl_ver}" ; then
     trace "Info: WebLogic version='$cur_wl_ver'. Version check passed. (The Operator requires WebLogic version '${exp_wl_ver}' or higher)."
   else
