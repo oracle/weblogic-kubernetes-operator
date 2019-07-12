@@ -47,8 +47,8 @@
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
-source ${SCRIPTPATH}/traceUtils.sh 
-[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1 
+source ${SCRIPTPATH}/utils.sh 
+[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/utils.sh" && exit 1 
 
 export WL_HOME="${WL_HOME:-/u01/oracle/wlserver}"
 
