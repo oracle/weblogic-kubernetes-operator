@@ -13,12 +13,12 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("ManagedServer represents the operator configuration for a single managed server.")
+@Description("ManagedServer represents the operator configuration for a single Managed Server.")
 public class ManagedServer extends Server implements Comparable<ManagedServer> {
-  /** The name of the managed server. Required. */
+  /** The name of the Managed Server. Required. */
   @SerializedName("serverName")
   @Expose
-  @Description("The name of the server. Required")
+  @Description("The name of the Managed Server. Required.")
   @Nonnull
   private String serverName;
 
