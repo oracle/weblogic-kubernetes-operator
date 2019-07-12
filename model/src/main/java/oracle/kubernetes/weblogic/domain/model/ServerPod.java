@@ -53,7 +53,7 @@ class ServerPod extends KubernetesResource {
    * @since 2.0
    */
   @Valid
-  @Description("A list of environment variables to add to a server")
+  @Description("A list of environment variables to add to a server.")
   private List<V1EnvVar> env = new ArrayList<>();
   /**
    * Defines the settings for the liveness probe. Any that are not specified will default to the
@@ -85,7 +85,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Memory and cpu minimum requirements and limits for the server.")
+  @Description("Memory and CPU minimum requirements and limits for the server.")
   private V1ResourceRequirements resources =
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
   /**
@@ -103,7 +103,7 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.1
    */
-  @Description("Initialization containers")
+  @Description("Initialization containers to be included in the server pod.")
   private List<V1Container> initContainers = new ArrayList<>();
   /**
    * The additional containers.
