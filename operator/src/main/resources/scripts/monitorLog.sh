@@ -14,7 +14,7 @@
 echo $$ > /tmp/monitorLog-pid
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-source ${SCRIPTPATH}/traceUtils.sh
+source ${SCRIPTPATH}/utils.sh
 
 trace "Monitoring server log file $1 every $2 seconds for selected known log messages."
 
