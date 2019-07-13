@@ -3,13 +3,15 @@
 
 #
 # Purpose:
-#   Define a trace functions that match format of the trace function
-#   in traceUtils.py and of the logging in the java operator.
+#   Define trace functions that match format of the trace function
+#   in utils.py and of the logging in the java operator.
+#
+#   Define various shared utility functions.
 #
 # Load this file via the following pattern:
 #   SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-#   source ${SCRIPTPATH}/traceUtils.sh
-#   [ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1
+#   source ${SCRIPTPATH}/utils.sh
+#   [ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/utils.sh" && exit 1
 #
 
 # timestamp
@@ -163,4 +165,113 @@ function exportEffectiveDomainHome() {
   # if we get this far, count is > 1 
   trace "Error: More than one config.xml found at DOMAIN_HOME/config/config.xml and DOMAIN_HOME/*/config/config.xml, DOMAIN_HOME='$DOMAIN_HOME': ${found_configs}. Configure your 'domainHome' setting in your WebLogic Operator Domain resource to reference a single WebLogic domain."
   return 1
+}
+
+
+# versionCmp
+#   Compares two wl versions $1 $2 up to the length of $2
+#     Expects form N.N.N.N
+#     Uses '0' for an N in $1 if $1 is shorter than $2
+#   echo "1"  if v1 >  v2
+#   echo "-1" if v1 <  v2
+#   echo "0"  if v1 == v2
+versionCmp()
+{
+  IFS='.' read -r -a v1_arr <<< "`echo $1`"
+  IFS='.' read -r -a v2_arr <<< "`echo $2`"
+
+  for i in "${!v2_arr[@]}"
+  do
+    [ ${v1_arr[i]:-0} -gt ${v2_arr[i]:-0} ] && echo "1" && return
+    [ ${v1_arr[i]:-0} -lt ${v2_arr[i]:-0} ] && echo "-1" && return
+  done
+  echo "0"
+}
+
+# versionGE
+#   return success if WL v1 >= v2
+versionGE()
+{
+  [ `versionCmp "$1" "$2"` -ge 0 ] && return 0
+  return 1
+}
+
+# versionEQ
+#   return success if v1 == v2
+versionEQ()
+{
+  [ `versionCmp "$1" "$2"` -eq 0 ] && return 0
+  return 1
+}
+
+# hasWebLogicPatches
+#   check for the given patch numbers in the install inventory, 
+#   and return 1 if not found
+#   - if we can't find the install inventory then we 
+#     assume the patch is there...
+#   - we parse the install inventory as this is far faster than
+#     using opatch or weblogic.version
+hasWebLogicPatches()
+{
+  local reg_file=$ORACLE_HOME/inventory/registry.xml
+  [ ! -f $reg_file ] && return 0
+  for pnum in "$@"; do
+    grep --silent "patch-id=\"$1\"" $reg_file || return 1
+  done
+}
+
+# getWebLogicVersion
+#   parse wl version from install inventory
+#   - if we can't get a version number then we return
+#     a high dummy version number that's sufficient
+#     to pass version checks "9999.9999.9999.9999"
+#   - we parse the install inventory as this is far faster than
+#     using opatch or weblogic.version
+getWebLogicVersion()
+{
+  local reg_file=$ORACLE_HOME/inventory/registry.xml
+
+  [ ! -f $reg_file ] && echo "9999.9999.9999.9999" && return
+
+  # The following grep captures both "WebLogic Server" and "WebLogic Server for FMW"
+  local wlver="`grep 'name="WebLogic Server.*version=' $reg_file \
+               | sed 's/.*version="\([0-9.]*\)".*/\1/g'`"
+
+  echo ${wlver:-"9999.9999.9999.9999"}
+}
+
+
+# checkWebLogicVersion
+#   check if the WL version is supported by the Operator
+#   - skip check if SKIP_WL_VERSION_CHECK = "true"
+#   - log an error if WL version < 12.2.1.3
+#   - log an error if WL version == 12.2.1.3 && patch 29135930 is missing
+#     - you can override the required 12.2.1.3 patches by exporting
+#       global WL12213REQUIREDPATCHES to an empty string or to other
+#       patch number(s)
+#   - return 1 if logged an error
+#   - return 0 otherwise
+checkWebLogicVersion()
+{
+  [ "$SKIP_WL_VERSION_CHECK" = "true" ] && return 0
+  local cur_wl_ver="`getWebLogicVersion`"
+  local exp_wl_ver="12.2.1.3" 
+  local exp_wl_12213_patches="${WL12213REQUIREDPATCHES:-"29135930"}"
+  if versionEQ "$cur_wl_ver" "12.2.1.3" ; then
+    if ! hasWebLogicPatches $exp_wl_12213_patches ; then
+      trace "Error: The Operator requires that WebLogic version '12.2.1.3' have patch '$exp_wl_12213_patches'. To bypass this check, set env var SKIP_WL_VERSION_CHECK to 'true'."
+      return 1
+    fi
+  fi
+  if versionEQ "$cur_wl_ver" "9999.9999.9999.9999" ; then
+    trace "Info: Could not determine WebLogic version. Assuming version is fine. (The Operator requires WebLogic version '${exp_wl_ver}' or higher, and also requires patches '$exp_wl_12213_patches' for version '12.2.1.3'.)."
+    return 0
+  fi
+  if versionGE "$cur_wl_ver" "${exp_wl_ver}" ; then
+    trace "Info: WebLogic version='$cur_wl_ver'. Version check passed. (The Operator requires WebLogic version '${exp_wl_ver}' or higher)."
+  else
+    trace "Error: WebLogic version='$cur_wl_ver' and the Operator requires WebLogic version '${exp_wl_ver}' or higher. To bypass this check, set env var SKIP_WL_VERSION_CHECK to 'true'."
+    return 1
+  fi
+  return 0
 }
