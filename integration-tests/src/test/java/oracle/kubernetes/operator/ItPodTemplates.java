@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -74,7 +75,7 @@ public class ItPodTemplates extends BaseTest {
 	 * $(DOMAIN_HOME), $(LOG_HOME) and $(CLUSTER_NAME) in serverPod.  Make sure the domain comes up
 	 * successfully.
 	 * @throws Exception when the domain crd creation fails or when updating the serverPod with variables 
-   *
+     *
 	 */
 	@Test
 	public void testPodTemplateUsingVariables() throws Exception {
