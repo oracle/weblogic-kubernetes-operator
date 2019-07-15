@@ -1,6 +1,7 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
+
 package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
@@ -60,9 +61,9 @@ public class ItOperatorUpgrade extends BaseTest {
     operatorMap.put("namespace", OP_NS);
     operatorMap.put("releaseName", OP_DEP_NAME);
     operatorMap.put("serviceAccount", OP_SA);
-    List<String> dom_ns = new ArrayList<String>();
-    dom_ns.add(DOM_NS);
-    operatorMap.put("domainNamespaces", dom_ns);
+    List<String> domNs = new ArrayList<String>();
+    domNs.add(DOM_NS);
+    operatorMap.put("domainNamespaces", domNs);
     operator = TestUtils.createOperator(operatorMap, Operator.RestCertType.LEGACY);
     TestUtils.exec("kubectl get all --all-namespaces", true);
 
@@ -79,7 +80,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * cleanup the domain and operator after every test
+   * cleanup the domain and operator after every test.
    *
    * @throws Exception when domain and operator cleanup fails
    */
@@ -99,7 +100,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories
+   * Releases k8s cluster lease, archives result, pv directories.
    *
    * @throws Exception when deleting pv directories or other tearDown tasks fail.
    */
@@ -115,7 +116,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Test for upgrading Operator from release 2.0 to develop branch
+   * Test for upgrading Operator from release 2.0 to develop branch.
    *
    * @throws Exception when upgrade fails
    */
@@ -135,7 +136,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Test for upgrading Operator from release 2.0.1 to develop branch
+   * Test for upgrading Operator from release 2.0.1 to develop branch.
    *
    * @throws Exception when upgrade fails
    */
@@ -155,7 +156,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Test for upgrading Operator from release 2.1 to develop branch
+   * Test for upgrading Operator from release 2.1 to develop branch.
    *
    * @throws Exception when upgrade fails
    */
@@ -175,7 +176,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Test for upgrading Operator from release 2.2.0 to develop branch
+   * Test for upgrading Operator from release 2.2.0 to develop branch.
    *
    * @throws Exception when upgrade fails
    */
@@ -195,7 +196,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Test for upgrading Operator from release 2.2.1 to develop branch
+   * Test for upgrading Operator from release 2.2.1 to develop branch.
    *
    * @throws Exception when upgrade fails
    */
@@ -215,7 +216,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Upgrades operator to develop branch by using the helm upgrade
+   * Upgrades operator to develop branch by using the helm upgrade.
    *
    * @param restart boolean parameter used to determine if a restart of domain is checked
    * @throws Exception when upgrade fails or basic usecase testing or scaling fails.
@@ -232,7 +233,7 @@ public class ItOperatorUpgrade extends BaseTest {
 
   /**
    * checks the expected version of the upgraded operator in a loop. In Jenkins it takes nearly 8
-   * minutes to show the updated value of the domain CRD
+   * minutes to show the updated value of the domain CRD.
    *
    * @throws Exception when version does not match
    */
@@ -260,7 +261,7 @@ public class ItOperatorUpgrade extends BaseTest {
   }
 
   /**
-   * Check whether the weblogic server instances are rolling restarted
+   * Check whether the weblogic server instances are rolling restarted.
    *
    * @throws Exception If restart fails or not restarted
    */
