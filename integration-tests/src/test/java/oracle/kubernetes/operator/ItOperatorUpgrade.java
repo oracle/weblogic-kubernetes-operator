@@ -3,17 +3,13 @@
 // http://oss.oracle.com/licenses/upl.
 package oracle.kubernetes.operator;
 
-import static oracle.kubernetes.operator.BaseTest.DOMAININIMAGE_WLST_YAML;
-import static oracle.kubernetes.operator.BaseTest.OPERATOR1_YAML;
-import static oracle.kubernetes.operator.BaseTest.QUICKTEST;
-import static oracle.kubernetes.operator.BaseTest.logger;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
@@ -41,8 +37,8 @@ public class ItOperatorUpgrade extends BaseTest {
   private static Operator operator;
 
   /**
-   * Creates operator based on operatorRelease passed to it and then creates a Weblogic domain
-   * controlled by that operator
+   * Creates operator based on operatorRelease passed to it and then creates a WebLogic domain
+   * controlled by that operator.
    *
    * @param operatorGitRelease Git branch name of the operator release version
    * @param operatorRelease Operator release version from the
