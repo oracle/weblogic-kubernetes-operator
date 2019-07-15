@@ -78,6 +78,7 @@ public class ItPodTemplates extends BaseTest {
 	 */
 	@Test
 	public void testPodTemplateUsingVariables() throws Exception {
+	  Assume.assumeFalse(QUICKTEST);
 		String testMethodName = new Object() {
 		}.getClass().getEnclosingMethod().getName();
 		logTestBegin(testMethodName);
