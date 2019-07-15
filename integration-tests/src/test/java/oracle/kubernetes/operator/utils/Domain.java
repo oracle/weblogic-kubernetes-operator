@@ -72,7 +72,8 @@ public class Domain {
   private String imageTag;
   private String imageName;
   private boolean voyager;
-
+  private boolean createDomainResource = true;
+  
   public Domain() throws Exception {
     domainMap = new HashMap<>();
   }
@@ -82,8 +83,18 @@ public class Domain {
     this(TestUtils.loadYaml(inputYaml));
   }
 
+  public Domain(String inputYaml, boolean createDomainResource) throws Exception {
+    // read input domain yaml to test
+    this(TestUtils.loadYaml(inputYaml), createDomainResource);
+  }
+  
   public Domain(Map<String, Object> inputDomainMap) throws Exception {
+    this(inputDomainMap, true);
+  }
+  
+  public Domain(Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
     initialize(inputDomainMap);
+    this.createDomainResource = createDomainResource;
     createPv();
     createSecret();
     generateInputYaml();
@@ -1226,7 +1237,8 @@ public class Domain {
     }
 
     // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
-    if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")) {
+    if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
+        || createDomainResource) {
       appendToDomainYamlAndCreate();
     }
   }
@@ -1693,7 +1705,7 @@ public class Domain {
 
     // skip executing yaml if configOverrides or domain in image
     if (!domainMap.containsKey("configOverrides")
-        && !domainMap.containsKey("domainHomeImageBase")) {
+        && !domainMap.containsKey("domainHomeImageBase") && createDomainResource) {
       createDomainScriptCmd.append(" -e ");
     }
 
