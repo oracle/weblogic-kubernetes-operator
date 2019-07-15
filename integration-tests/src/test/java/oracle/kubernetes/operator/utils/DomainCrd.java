@@ -415,29 +415,6 @@ public class DomainCrd {
   }
   
   /**
-   * Gets the object node entry from clusters ServerPod Domain CRD JSON tree.
-   *
-   * @param clusterName
-   *            Name of the cluster for which to get the serverPod
-   * @param objectName
-   *            Name of the object for which to get the JSON node
-   * @return object node entry from clusters Serverpod of Domain CRD JSON tree
-   */
-  private JsonNode getObjectNodeFromCluster(String clusterName, String objectName) {
-    JsonNode objectNode = null;
-    JsonNode clusterNode = getClusterNode(clusterName);
-    if (clusterNode.path(objectName).isMissingNode()) {
-      logger.info("Missing clusters "+objectName+" Node");
-      objectNode = objectMapper.createObjectNode();
-      ((ObjectNode) clusterNode).set(objectName, objectNode);
-      
-    } else {
-      objectNode = clusterNode.path(objectName);
-    }
-    return objectNode;
-  }
-  
-  /**
    * Utility method to create a file and write to it.
    *
    * @param dir - Directory in which to create the file
