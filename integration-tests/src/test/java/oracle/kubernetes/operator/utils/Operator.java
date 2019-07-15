@@ -10,14 +10,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.logging.Logger;
-
 import oracle.kubernetes.operator.BaseTest;
 
 /** Operator class with all the utility methods for Operator. */
 public class Operator {
 
-  public static final String CREATE_OPERATOR_SCRIPT_MESSAGE
-      = "The Oracle WebLogic Server Kubernetes Operator is deployed";
+  public static final String CREATE_OPERATOR_SCRIPT_MESSAGE =
+      "The Oracle WebLogic Server Kubernetes Operator is deployed";
   private static final Logger logger = Logger.getLogger("OperatorIT", "OperatorIT");
   private static int maxIterationsOp = BaseTest.getMaxIterationsPod(); // 50 * 5 = 250 seconds
   private static int waitTimeOp = BaseTest.getWaitTimePod();
@@ -300,9 +299,24 @@ public class Operator {
         System.getenv("IMAGE_PULL_POLICY_OPERATOR") != null
             ? System.getenv("IMAGE_PULL_POLICY_OPERATOR")
             : "IfNotPresent";
-    StringBuffer cmd = new StringBuffer("cd ");
-    cmd.append(BaseTest.getProjectRoot())
-        .append(" && helm install kubernetes/charts/weblogic-operator ");
+    StringBuffer cmd = new StringBuffer("");
+    if (operatorMap.containsKey("operatorGitVersion")
+        && operatorMap.containsKey("operatorGitVersionDir")) {
+      TestUtils.exec(
+          "cd "
+              + operatorMap.get("operatorGitVersionDir")
+              + " && git clone -b "
+              + operatorMap.get("operatorGitVersion")
+              + " https://github.com/oracle/weblogic-kubernetes-operator");
+      cmd.append("cd ");
+      cmd.append(operatorMap.get("operatorGitVersionDir"))
+          .append("/weblogic-kubernetes-operator")
+          .append(" && helm install kubernetes/charts/weblogic-operator ");
+    } else {
+      cmd.append("cd ");
+      cmd.append(BaseTest.getProjectRoot())
+          .append(" && helm install kubernetes/charts/weblogic-operator ");
+    }
     cmd.append(" --name ")
         .append(operatorMap.get("releaseName"))
         .append(" --values ")
@@ -311,7 +325,7 @@ public class Operator {
         .append(operatorNS)
         .append(" --set \"imagePullPolicy=")
         .append(imagePullPolicy)
-        .append("\" --wait --timeout 60");
+        .append("\" --wait --timeout 120");
     logger.info("Running " + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     if (result.exitValue() != 0) {
@@ -508,6 +522,10 @@ public class Operator {
       operatorMap.put(
           "image",
           System.getenv("IMAGE_NAME_OPERATOR") + ":" + System.getenv("IMAGE_TAG_OPERATOR"));
+    } else if (operatorMap.containsKey("operatorImageName")) {
+      operatorMap.put(
+          "image",
+          operatorMap.get("operatorImageName") + ":" + operatorMap.get("operatorImageTag"));
     } else {
       operatorMap.put(
           "image",

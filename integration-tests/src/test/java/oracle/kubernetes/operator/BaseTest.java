@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -74,6 +73,7 @@ public class BaseTest {
   private static String weblogicImageTag;
   private static String weblogicImageName;
   private static String weblogicImageServer;
+  private static String domainApiVersion;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -121,6 +121,10 @@ public class BaseTest {
         System.getenv("OCR_SERVER") != null
             ? System.getenv("OCR_SERVER")
             : appProps.getProperty("OCR_SERVER");
+    domainApiVersion =
+        System.getenv("DOMAIN_API_VERSION") != null
+            ? System.getenv("DOMAIN_API_VERSION")
+            : appProps.getProperty("DOMAIN_API_VERSION");
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
@@ -269,6 +273,10 @@ public class BaseTest {
    */
   public static String getWeblogicImageServer() {
     return weblogicImageServer;
+  }
+
+  public static String getDomainApiVersion() {
+    return domainApiVersion;
   }
 
   public static ExecResult cleanup() throws Exception {
