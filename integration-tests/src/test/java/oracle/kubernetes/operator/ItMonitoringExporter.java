@@ -824,7 +824,6 @@ public class ItMonitoringExporter extends BaseTest {
       installPrometheusGrafanaViaChart();
       fireAlert();
     } finally {
-      /*
       uninstallWebHookPrometheusGrafanaViaChart();
       uninstallMySQL();
 
@@ -836,8 +835,6 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator1 != null) {
         operator1.destroy();
       }
-      */
-
     }
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
