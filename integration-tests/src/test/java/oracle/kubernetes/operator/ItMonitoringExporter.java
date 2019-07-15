@@ -160,7 +160,7 @@ public class ItMonitoringExporter extends BaseTest {
         logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
         // git clone exporter project
         removeAndClone
-            .append(" git clone  -b alert https://github.com/oracle/weblogic-monitoring-exporter.git ")
+            .append(" git clone  https://github.com/oracle/weblogic-monitoring-exporter.git ")
             .append(monitoringExporterSrcDir);
         TestUtils.exec(removeAndClone.toString());
       }
@@ -824,7 +824,6 @@ public class ItMonitoringExporter extends BaseTest {
       installPrometheusGrafanaViaChart();
       fireAlert();
     } finally {
-      /*
       uninstallWebHookPrometheusGrafanaViaChart();
       uninstallMySQL();
 
@@ -836,8 +835,6 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator1 != null) {
         operator1.destroy();
       }
-      */
-
     }
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
@@ -854,8 +851,8 @@ public class ItMonitoringExporter extends BaseTest {
 
     TestUtils.checkPodReady("domain1-admin-server", "default");
     TestUtils.checkPodReady("domain1-managed-server-1", "default");
-    //sleep for 1.30 min to fire alert
-    Thread.sleep(90000);
+    //sleep for 2 min to fire alert
+    Thread.sleep(120000);
     String webhookPod = getPodName("webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
     ExecResult webhookResult = TestUtils.exec(command);
