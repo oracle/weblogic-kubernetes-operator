@@ -10,8 +10,8 @@
 #
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-source ${SCRIPTPATH}/traceUtils.sh
-[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exitOrLoop
+source ${SCRIPTPATH}/utils.sh
+[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/utils.sh" && exitOrLoop
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
@@ -175,6 +175,7 @@ checkEnv \
   DOMAIN_NAME \
   DOMAIN_HOME \
   NODEMGR_HOME \
+  ORACLE_HOME \
   SERVER_NAME \
   SERVICE_NAME \
   ADMIN_NAME \
@@ -190,6 +191,7 @@ trace "JAVA_OPTIONS=${JAVA_OPTIONS}"
 #
 # check DOMAIN_HOME for a config/config.xml, reset DOMAIN_HOME if needed:
 #
+
 exportEffectiveDomainHome || exitOrLoop
 
 #
@@ -199,6 +201,15 @@ exportEffectiveDomainHome || exitOrLoop
 
 if [ ! -f /weblogic-operator/introspector/boot.properties ]; then
   trace "Error:  Missing introspector file '${bootpfile}'.  Introspector failed to run."
+  exitOrLoop
+fi
+
+#
+# Check if we're using a supported WebLogic version. The check  will
+# log a message if it fails.
+#
+
+if ! checkWebLogicVersion ; then
   exitOrLoop
 fi
 
