@@ -169,14 +169,14 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Build monitoring exporter app
+   * Build monitoring exporter app.
    *
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void buildMonitoringExporter() throws Exception {
     String monitoringExporterSrcDir = monitoringExporterDir + "/src";
     // target dir for monitoring exporter webapp
-    String monitoringExporterWar =
+    final String monitoringExporterWar =
         monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
 
     // build monitoring exporter project
@@ -827,7 +827,7 @@ public class ItMonitoringExporter extends BaseTest {
     } finally {
       /*
       uninstallWebHookPrometheusGrafanaViaChart();
-      uninstallMySQL();
+      uninstallMysql();
 
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
@@ -1213,7 +1213,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if could not run the command successfully to uninstall MySQL
    */
-  private static void uninstallMySQL() throws Exception {
+  private static void uninstallMysql() throws Exception {
     String monitoringExporterEndToEndDir =
         monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     // unnstall mysql
@@ -1261,27 +1261,6 @@ public class ItMonitoringExporter extends BaseTest {
     content = content.replaceAll(oldValue, newValue);
     logger.log(Level.INFO, "to {0}", src.toString());
     Files.write(src, content.getBytes(charset));
-  }
-
-  /**
-   * A utility method to copy Cross Namespaces RBAC yaml template file replacing the DOMAIN_NS,
-   * OPERATOR_NS.
-   *
-   * @throws IOException when copying files from source location to staging area fails
-   */
-  private static void createCrossNSRBACFile(String domainNS, String operatorNS) throws IOException {
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-    Path src = Paths.get(samplesDir + "/crossnsrbac.yaml");
-    Path dst = Paths.get(samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml");
-    if (!dst.toFile().exists()) {
-      logger.log(Level.INFO, "Copying {0}", src.toString());
-      Charset charset = StandardCharsets.UTF_8;
-      String content = new String(Files.readAllBytes(src), charset);
-      content = content.replaceAll("weblogic-domain", domainNS);
-      content = content.replaceAll("weblogic-operator", operatorNS);
-      logger.log(Level.INFO, "to {0}", dst.toString());
-      Files.write(dst, content.getBytes(charset));
-    }
   }
 
   /**
