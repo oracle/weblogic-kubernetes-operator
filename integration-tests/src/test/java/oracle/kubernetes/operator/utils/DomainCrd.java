@@ -176,7 +176,7 @@ public class DomainCrd {
     
     for (Map.Entry<String, String> entry : attributes.entrySet()) {
       Object entryValue = entry.getValue();
-        ((ObjectNode) objectNode).put(entry.getKey(), (String) entryValue);
+      ((ObjectNode) objectNode).put(entry.getKey(), (String) entryValue);
     }
   }
   
@@ -223,7 +223,7 @@ public class DomainCrd {
    *            - A HashMap of key value pairs
    */
   public void addObjectNodeToServerPod(String objectName, Map<String, String> attributes) {
-    JsonNode objectNode = getObjectNodeFromServerPod(getSpecNode() ,objectName);
+    JsonNode objectNode = getObjectNodeFromServerPod(getSpecNode(), objectName);
     for (Map.Entry<String, String> entry : attributes.entrySet()) {
       ((ObjectNode) objectNode).put(entry.getKey(), entry.getValue());
     }
@@ -402,9 +402,8 @@ public class DomainCrd {
       
     } else {
       serverPodNode = serverPodsParentNode.path("serverPod");
-      if(serverPodNode.path(objectName).isMissingNode())
-      {
-        logger.info("Creating node with name "+objectName);
+      if (serverPodNode.path(objectName).isMissingNode()) {
+        logger.info("Creating node with name " + objectName);
         objectNode = objectMapper.createObjectNode();
         ((ObjectNode) serverPodNode).set(objectName, objectNode);
       } else {
