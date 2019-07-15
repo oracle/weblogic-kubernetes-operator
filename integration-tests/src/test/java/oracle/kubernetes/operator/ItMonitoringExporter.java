@@ -854,8 +854,8 @@ public class ItMonitoringExporter extends BaseTest {
 
     TestUtils.checkPodReady("domain1-admin-server", "default");
     TestUtils.checkPodReady("domain1-managed-server-1", "default");
-    //sleep for 1.30 min to fire alert
-    Thread.sleep(90000);
+    //sleep for 2 min to fire alert
+    Thread.sleep(120000);
     String webhookPod = getPodName("webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
     ExecResult webhookResult = TestUtils.exec(command);
