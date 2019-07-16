@@ -100,7 +100,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
   public static boolean isComplete(V1Job job) {
     V1JobStatus status = job.getStatus();
-    LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
+    LOGGER.fine("JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
     if (status != null) {
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {
