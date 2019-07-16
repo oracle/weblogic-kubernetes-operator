@@ -17,6 +17,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.Assume;
 import org.junit.runners.MethodSorters;
 
 import oracle.kubernetes.operator.utils.Domain;

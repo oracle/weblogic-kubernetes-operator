@@ -1248,7 +1248,7 @@ public class Domain {
 
     // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
     if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
-        || createDomainResource) {
+        || !createDomainResource) {
       appendToDomainYamlAndCreate();
     }
   }
