@@ -229,10 +229,10 @@ public class ItElasticLogging extends BaseTest {
 
     Map<String, Object> domainMap = domain.getDomainMap();
     String domainUid = domain.getDomainUid();
-    String adminServerName = (String) domainMap.get("adminServerName");
-    String adminServerPodName = domainUid + "-" + adminServerName;
-    String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
-    String managedServerPodName = domainUid + "-" + managedServerNameBase + "1";
+    final String adminServerName = (String) domainMap.get("adminServerName");
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+    final String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
+    final String managedServerPodName = domainUid + "-" + managedServerNameBase + "1";
 
     // Wait 30 seconds for WLS log to be pushed to ELK Stack
     logger.info("Wait 30 seconds for WLS log to be pushed to ELK Stack");

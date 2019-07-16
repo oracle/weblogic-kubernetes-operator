@@ -29,6 +29,7 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+
 import oracle.kubernetes.operator.BaseTest;
 import org.yaml.snakeyaml.Yaml;
 
@@ -902,9 +903,9 @@ public class Domain {
     
     logger.info("pvSharing for this domain is: " + pvSharing);
     if (!pvSharing) {
-    	pvMap.put("domainUID", domainUid);
+      pvMap.put("domainUID", domainUid);
     } else {
-    	pvMap.put("baseName", "weblogic-sharing");
+      pvMap.put("baseName", "weblogic-sharing");
     }
     logger.info("baseName of PVPVC for this domain is: " + (String) pvMap.get("baseName"));
 
@@ -912,7 +913,7 @@ public class Domain {
     if ((domainUid != null) && !pvSharing) {
       domainMap.put("persistentVolumeClaimName", domainUid + "-" + pvMap.get("baseName") + "-pvc");
     } else {
-    	domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
+      domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
     }
 
     if (domainMap.get("weblogicDomainStorageReclaimPolicy") != null) {

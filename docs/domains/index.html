@@ -1057,6 +1057,11 @@ window.onload = function() {
     "ClusterStatus": {
       "type": "object",
       "properties": {
+        "maximumReplicas": {
+          "description": "The maximum number of cluster members. Required.",
+          "type": "number",
+          "minimum": 0.0
+        },
         "replicas": {
           "description": "The number of intended cluster members. Required.",
           "type": "number",
@@ -1160,7 +1165,7 @@ window.onload = function() {
           "type": "boolean"
         },
         "domainUID": {
-          "pattern": "^[a-z0-9_.]{1,253}$",
+          "pattern": "^[a-z0-9-.]{1,253}$",
           "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
           "type": "string"
         },
