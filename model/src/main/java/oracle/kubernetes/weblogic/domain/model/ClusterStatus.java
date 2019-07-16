@@ -4,9 +4,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
@@ -32,6 +29,11 @@ public class ClusterStatus implements Comparable<ClusterStatus> {
   @Description("The number of ready cluster members. Required.")
   @Range(minimum = 0)
   private Integer readyReplicas;
+
+  /** The maximum number of cluster members. Required. */
+  @Description("The maximum number of cluster members. Required.")
+  @Range(minimum = 0)
+  private Integer maximumReplicas;
 
   /**
    * WebLogic cluster name. Required.
@@ -88,12 +90,26 @@ public class ClusterStatus implements Comparable<ClusterStatus> {
     return this;
   }
 
+  public Integer getMaximumReplicas() {
+    return maximumReplicas;
+  }
+
+  public void setMaximumReplicas(Integer maximumReplicas) {
+    this.maximumReplicas = maximumReplicas;
+  }
+
+  public ClusterStatus withMaximumReplicas(Integer maximumReplicas) {
+    this.maximumReplicas = maximumReplicas;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("clusterName", clusterName)
         .append("replicas", replicas)
         .append("readyReplicas", readyReplicas)
+        .append("maximumReplicas", maximumReplicas)
         .toString();
   }
 
@@ -103,6 +119,7 @@ public class ClusterStatus implements Comparable<ClusterStatus> {
         .append(clusterName)
         .append(replicas)
         .append(readyReplicas)
+        .append(maximumReplicas)
         .toHashCode();
   }
 
@@ -119,6 +136,7 @@ public class ClusterStatus implements Comparable<ClusterStatus> {
         .append(clusterName, rhs.clusterName)
         .append(replicas, rhs.replicas)
         .append(readyReplicas, rhs.readyReplicas)
+        .append(maximumReplicas, rhs.maximumReplicas)
         .isEquals();
   }
 

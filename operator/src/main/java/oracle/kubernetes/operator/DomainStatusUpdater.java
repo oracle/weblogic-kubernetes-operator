@@ -29,6 +29,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -368,7 +369,8 @@ public class DomainStatusUpdater {
             .withClusterName(clusterName)
             .withReplicas(Optional.ofNullable(getClusterCounts().get(clusterName)).map(Long::intValue).orElse(null))
             .withReadyReplicas(
-                Optional.ofNullable(getClusterCounts(true).get(clusterName)).map(Long::intValue).orElse(null));
+                Optional.ofNullable(getClusterCounts(true).get(clusterName)).map(Long::intValue).orElse(null))
+            .withMaximumReplicas(getClusterMaximumSize(clusterName));
       }
 
 
@@ -392,7 +394,14 @@ public class DomainStatusUpdater {
 
       private Collection<String> getServerNames() {
         Set<String> result = new HashSet<>();
-        getDomainConfig().stream().forEach(config -> result.addAll(config.getServerConfigs().keySet()));
+        getDomainConfig().stream().forEach(config -> {
+          result.addAll(config.getServerConfigs().keySet());
+          for (WlsClusterConfig cluster : config.getConfiguredClusters()) {
+            Optional.ofNullable(cluster.getDynamicServersConfig())
+                .ifPresent(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs())
+                    .ifPresent(servers -> servers.stream().forEach(item -> result.add(item.getName()))));
+          }
+        });
         return result;
       }
 
@@ -400,6 +409,11 @@ public class DomainStatusUpdater {
         Set<String> result = new HashSet<>();
         getDomainConfig().stream().forEach(config -> result.addAll(config.getClusterConfigs().keySet()));
         return result;
+      }
+
+      private Integer getClusterMaximumSize(String clusterName) {
+        return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
+            .map(cluster -> cluster.map(c -> c.getMaxClusterSize()).orElse(0)).get();
       }
     }
   }
