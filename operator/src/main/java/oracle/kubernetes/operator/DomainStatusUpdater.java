@@ -227,7 +227,8 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       StatusUpdateContext context = new StatusUpdateContext(packet);
-      DomainStatus status = context.getStatus().clearModified();
+      DomainStatus status = context.getStatus();
+      DomainStatus currentStatus = new DomainStatus(status);
 
       if (context.getDomain() != null) {
         if (context.getDomainConfig().isPresent()) {
@@ -250,12 +251,12 @@ public class DomainStatusUpdater {
         }
       }
 
-      if (status.isModified()) {
+      if (!status.equals(currentStatus)) {
         LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUid(), status);
       }
       LOGGER.exiting();
 
-      return status.isModified()
+      return !status.equals(currentStatus)
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, StatusUpdateStep.this, getNext())
           : doNext(packet);
@@ -433,7 +434,8 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus().clearModified();
+      DomainStatus status = context.getStatus();
+      DomainStatus currentStatus = new DomainStatus(status);
 
       status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
       status.removeConditionIf(c -> c.getType() == Failed);
@@ -444,7 +446,7 @@ public class DomainStatusUpdater {
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
-      return status.isModified()
+      return !status.equals(currentStatus)
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, ProgressingStep.this, getNext())
           : doNext(packet);
@@ -462,14 +464,15 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus().clearModified();
+      DomainStatus status = context.getStatus();
+      DomainStatus currentStatus = new DomainStatus(status);
 
       status.removeConditionIf(c -> c.getType() == Progressing && TRUE.equals(c.getStatus()));
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
-      return status.isModified()
+      return !status.equals(currentStatus)
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, EndProgressingStep.this, getNext())
           : doNext(packet);
@@ -489,14 +492,15 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus().clearModified();
+      DomainStatus status = context.getStatus();
+      DomainStatus currentStatus = new DomainStatus(status);
 
       status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(reason));
       status.removeConditionIf(c -> c.getType() == Failed);
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
-      return status.isModified()
+      return !status.equals(currentStatus)
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, AvailableStep.this, getNext())
           : doNext(packet);
@@ -516,7 +520,8 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      final DomainStatus status = context.getStatus().clearModified();
+      DomainStatus status = context.getStatus();
+      DomainStatus currentStatus = new DomainStatus(status);
 
       status.addCondition(
           new DomainCondition(Failed)
@@ -530,7 +535,7 @@ public class DomainStatusUpdater {
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
-      return status.isModified()
+      return !status.equals(currentStatus)
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, FailedStep.this, getNext())
           : doNext(packet);

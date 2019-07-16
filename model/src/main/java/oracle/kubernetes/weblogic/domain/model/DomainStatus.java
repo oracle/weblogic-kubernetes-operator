@@ -31,7 +31,7 @@ public class DomainStatus {
 
   @Description("Current service state of domain.")
   @Valid
-  private List<DomainCondition> conditions = new ArrayList<DomainCondition>();
+  private List<DomainCondition> conditions = new ArrayList<>();
 
   @Description(
       "A human readable message indicating details about why the domain is in this condition.")
@@ -62,8 +62,18 @@ public class DomainStatus {
   @Range(minimum = 0)
   private Integer replicas;
 
-  /** true if the domain status has been modified. * */
-  private volatile boolean modified;
+  public DomainStatus() {
+  }
+
+  public DomainStatus(DomainStatus that) {
+    conditions.addAll(that.conditions);
+    message = that.message;
+    reason = that.reason;
+    servers.addAll(that.servers);
+    clusters.addAll(that.clusters);
+    startTime = that.startTime;
+    replicas = that.replicas;
+  }
 
   /**
    * Current service state of domain.
@@ -86,7 +96,6 @@ public class DomainStatus {
     }
 
     conditions.add(condition);
-    modified = true;
     return this;
   }
 
@@ -116,8 +125,8 @@ public class DomainStatus {
   }
 
   private void removeCondition(DomainCondition condition) {
-    if (condition != null && conditions.remove(condition)) {
-      modified = true;
+    if (condition != null) {
+      conditions.remove(condition);
     }
   }
 
@@ -258,7 +267,6 @@ public class DomainStatus {
     }
 
     this.servers = servers;
-    modified = true;
   }
 
   private boolean isServersEqualIgnoringOrder(List<ServerStatus> servers1, List<ServerStatus> servers2) {
@@ -286,7 +294,6 @@ public class DomainStatus {
     }
 
     this.clusters = clusters;
-    modified = true;
   }
 
   private boolean isClustersEqualIgnoringOrder(List<ClusterStatus> clusters1, List<ClusterStatus> clusters2) {
@@ -306,15 +313,6 @@ public class DomainStatus {
    */
   DateTime getStartTime() {
     return startTime;
-  }
-
-  public boolean isModified() {
-    return modified;
-  }
-
-  public DomainStatus clearModified() {
-    modified = false;
-    return this;
   }
 
   @Override
