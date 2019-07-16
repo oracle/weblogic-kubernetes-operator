@@ -219,7 +219,7 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    //try {
+    try {
       TestUtils.exec("docker images", true);
       logger.info(
           "About to verifyDomainServerPodRestart for Domain: "
@@ -230,8 +230,8 @@ public class ItPodsRestart extends BaseTest {
               + getWeblogicImageTag()
               );
 
-     /*if (BaseTest.SHARED_CLUSTER) {
-        String newImage =
+     if (BaseTest.SHARED_CLUSTER) {
+        /*String newImage =
             System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
         // tag image with repo name
         String tag =
@@ -259,7 +259,7 @@ public class ItPodsRestart extends BaseTest {
             "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
             "\"" + newImage + "\"");
 
-     /* } else {
+      } else {
         TestUtils.exec(
             "docker tag "
                 + getWeblogicImageName()
@@ -276,7 +276,7 @@ public class ItPodsRestart extends BaseTest {
       if (!BaseTest.SHARED_CLUSTER) {
         TestUtils.exec("docker rmi -f " + getWeblogicImageName() + ":duplicate");
       }
-    }*/
+    }
 
     logger.info("SUCCESS - " + testMethodName);
   }
