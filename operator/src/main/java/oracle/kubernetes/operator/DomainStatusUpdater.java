@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -221,33 +222,42 @@ public class DomainStatusUpdater {
     public NextAction apply(Packet packet) {
       LOGGER.entering();
 
-      StatusUpdateContext context = new StatusUpdateContext(packet);
-      DomainStatus status = context.getStatus().clearModified();
+      final StatusUpdateContext context = new StatusUpdateContext(packet);
 
-      if (context.getDomain() != null) {
-        status.setServers(new ArrayList<>(context.getServerStatuses().values()));
-        status.setReplicas(context.getReplicaSetting());
+      DomainStatus status = context.getStatus();
 
-        if (context.isHasFailedPod()) {
-          status.removeConditionIf(c -> c.getType() == Available);
-          status.removeConditionIf(c -> c.getType() == Progressing);
-          status.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason("PodFailed"));
-        } else {
-          status.removeConditionIf(c -> c.getType() == Failed);
-          if (context.allIntendedServersRunning()) {
-            status.removeConditionIf(c -> c.getType() == Progressing);
-            status.addCondition(
-                new DomainCondition(Available).withStatus(TRUE).withReason(SERVERS_READY_REASON));
-          }
-        }
-      }
+      boolean isStatusModified =
+          modifyDomainStatus(
+              status,
+              s -> {
+                if (context.getDomain() != null) {
+                  s.setServers(new ArrayList<>(context.getServerStatuses().values()));
+                  s.setReplicas(context.getReplicaSetting());
 
-      if (status.isModified()) {
+                  if (context.isHasFailedPod()) {
+                    s.removeConditionIf(c -> c.getType() == Available);
+                    s.removeConditionIf(c -> c.getType() == Progressing);
+                    s.addCondition(
+                        new DomainCondition(Failed).withStatus(TRUE).withReason("PodFailed"));
+                  } else {
+                    s.removeConditionIf(c -> c.getType() == Failed);
+                    if (context.allIntendedServersRunning()) {
+                      s.removeConditionIf(c -> c.getType() == Progressing);
+                      s.addCondition(
+                          new DomainCondition(Available)
+                              .withStatus(TRUE)
+                              .withReason(SERVERS_READY_REASON));
+                    }
+                  }
+                }
+              });
+
+      if (isStatusModified) {
         LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getInfo().getDomainUid(), status);
       }
       LOGGER.exiting();
 
-      return status.isModified()
+      return isStatusModified
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, StatusUpdateStep.this, getNext())
           : doNext(packet);
@@ -367,18 +377,24 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus().clearModified();
+      DomainStatus status = context.getStatus();
 
-      status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
-      status.removeConditionIf(c -> c.getType() == Failed);
-      if (!isPreserveAvailable) {
-        status.removeConditionIf(c -> c.getType() == Available);
-      }
+      boolean isStatusModified =
+          modifyDomainStatus(
+              status,
+              s -> {
+                s.addCondition(
+                    new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
+                s.removeConditionIf(c -> c.getType() == Failed);
+                if (!isPreserveAvailable) {
+                  s.removeConditionIf(c -> c.getType() == Available);
+                }
+              });
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
-      return status.isModified()
+      return isStatusModified
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, ProgressingStep.this, getNext())
           : doNext(packet);
@@ -396,14 +412,19 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus().clearModified();
+      DomainStatus status = context.getStatus();
 
-      status.removeConditionIf(c -> c.getType() == Progressing && TRUE.equals(c.getStatus()));
+      boolean isStatusModified =
+          modifyDomainStatus(
+              status,
+              s ->
+                  s.removeConditionIf(
+                      c -> c.getType() == Progressing && TRUE.equals(c.getStatus())));
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
-      return status.isModified()
+      return isStatusModified
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, EndProgressingStep.this, getNext())
           : doNext(packet);
@@ -423,17 +444,30 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus().clearModified();
+      DomainStatus status = context.getStatus();
 
-      status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(reason));
-      status.removeConditionIf(c -> c.getType() == Failed);
+      boolean isStatusModified =
+          modifyDomainStatus(
+              status,
+              s -> {
+                s.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(reason));
+                s.removeConditionIf(c -> c.getType() == Failed);
+              });
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
-      return status.isModified()
+      return isStatusModified
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, AvailableStep.this, getNext())
           : doNext(packet);
+    }
+  }
+
+  private static boolean modifyDomainStatus(DomainStatus domainStatus, Consumer<DomainStatus> statusUpdateConsumer) {
+    synchronized (domainStatus) {
+      domainStatus.clearModified();
+      statusUpdateConsumer.accept(domainStatus);
+      return domainStatus.isModified();
     }
   }
 
@@ -450,21 +484,26 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      final DomainStatus status = context.getStatus().clearModified();
+      final DomainStatus status = context.getStatus();
 
-      status.addCondition(
-          new DomainCondition(Failed)
-              .withStatus(TRUE)
-              .withReason("Exception")
-              .withMessage(throwable.getMessage()));
-      if (status.hasConditionWith(c -> c.hasType(Progressing))) {
-        status.addCondition(new DomainCondition(Progressing).withStatus(FALSE));
-      }
+      boolean isStatusModified =
+          modifyDomainStatus(
+              status,
+              s -> {
+                s.addCondition(
+                    new DomainCondition(Failed)
+                        .withStatus(TRUE)
+                        .withReason("Exception")
+                        .withMessage(throwable.getMessage()));
+                if (s.hasConditionWith(c -> c.hasType(Progressing))) {
+                  s.addCondition(new DomainCondition(Progressing).withStatus(FALSE));
+                }
+              });
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
 
-      return status.isModified()
+      return isStatusModified
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, FailedStep.this, getNext())
           : doNext(packet);
