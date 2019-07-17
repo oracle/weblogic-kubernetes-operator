@@ -257,7 +257,8 @@ public class ItOperator extends BaseTest {
       operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
 
-    Domain domain1 = null, domain2 = null;
+    Domain domain1 = null;
+    Domain domain2 = null;
     boolean testCompletedSuccessfully = false;
     try {
       // load input yaml to map and add configOverrides
