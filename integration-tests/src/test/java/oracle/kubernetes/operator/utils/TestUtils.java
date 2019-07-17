@@ -787,10 +787,21 @@ public class TestUtils {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
-
+  
+  public static Domain createDomain(String inputYaml, boolean createDomainResource) throws Exception {
+    logger.info("Creating domain with yaml, waiting for the script to complete execution");
+    return new Domain(inputYaml, createDomainResource);
+  }
+  
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
+  }
+  
+  public static Domain createDomain(Map<String, Object> inputDomainMap, boolean createDomainResource)
+      throws Exception {
+    logger.info("Creating domain with Map, waiting for the script to complete execution");
+    return new Domain(inputDomainMap, createDomainResource);
   }
 
   public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
