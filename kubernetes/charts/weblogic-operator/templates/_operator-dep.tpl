@@ -36,6 +36,8 @@ spec:
           value: "false"
         - name: "JAVA_LOGGING_LEVEL"
           value: {{ .javaLoggingLevel | quote }}
+        - name: ISTIO_ENABLED
+          value: {{ .istioEnabled | quote }}
         {{- if .remoteDebugNodePortEnabled }}
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
