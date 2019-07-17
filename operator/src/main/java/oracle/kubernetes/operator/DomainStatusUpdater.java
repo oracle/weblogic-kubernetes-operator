@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -26,11 +27,15 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.Scan;
+import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -231,8 +236,11 @@ public class DomainStatusUpdater {
               status,
               s -> {
                 if (context.getDomain() != null) {
-                  s.setServers(new ArrayList<>(context.getServerStatuses().values()));
-                  s.setReplicas(context.getReplicaSetting());
+                  if (context.getDomainConfig().isPresent()) {
+                    s.setServers(new ArrayList<>(context.getServerStatuses().values()));
+                    s.setClusters(new ArrayList<>(context.getClusterStatuses().values()));
+                    s.setReplicas(context.getReplicaSetting());
+                  }
 
                   if (context.isHasFailedPod()) {
                     s.removeConditionIf(c -> c.getType() == Available);
@@ -288,6 +296,16 @@ public class DomainStatusUpdater {
             .orElse(Stream.empty());
       }
 
+      private Optional<WlsDomainConfig> getDomainConfig() {
+        return Optional.ofNullable(config).or(this::getScanCacheDomainConfig);
+      }
+
+      private Optional<WlsDomainConfig> getScanCacheDomainConfig() {
+        DomainPresenceInfo info = getInfo();
+        Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
+        return Optional.ofNullable(scan).map(s -> s.getWlsDomainConfig());
+      }
+
       private boolean shouldBeRunning(ServerStartupInfo startupInfo) {
         return !startupInfo.isServiceOnly() && RUNNING_STATE.equals(startupInfo.getDesiredState());
       }
@@ -298,6 +316,14 @@ public class DomainStatusUpdater {
 
       private boolean isHasFailedPod() {
         return getInfo().getServerPods().anyMatch(PodHelper::isFailed);
+      }
+
+      private boolean hasServerPod(String serverName) {
+        return Optional.ofNullable(getInfo().getServerPod(serverName)).isPresent();
+      }
+
+      private boolean hasReadyServerPod(String serverName) {
+        return Optional.ofNullable(getInfo().getServerPod(serverName)).filter(PodHelper::getReadyStatus).isPresent();
       }
 
       Map<String, ServerStatus> getServerStatuses() {
@@ -327,12 +353,36 @@ public class DomainStatusUpdater {
         }
       }
 
-      private Map<String, Long> getClusterCounts() {
+      private Stream<String> getServers(boolean isReadyOnly) {
         return getServerNames().stream()
+            .filter(isReadyOnly ? this::hasReadyServerPod : this::hasServerPod);
+      }
+
+      private Map<String, Long> getClusterCounts() {
+        return getClusterCounts(false);
+      }
+
+      private Map<String, Long> getClusterCounts(boolean isReadyOnly) {
+        return getServers(isReadyOnly)
             .map(this::getClusterNameFromPod)
             .filter(Objects::nonNull)
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
       }
+
+      Map<String, ClusterStatus> getClusterStatuses() {
+        return getClusterNames().stream()
+            .collect(Collectors.toMap(Function.identity(), this::createClusterStatus));
+      }
+
+      private ClusterStatus createClusterStatus(String clusterName) {
+        return new ClusterStatus()
+            .withClusterName(clusterName)
+            .withReplicas(Optional.ofNullable(getClusterCounts().get(clusterName)).map(Long::intValue).orElse(null))
+            .withReadyReplicas(
+                Optional.ofNullable(getClusterCounts(true).get(clusterName)).map(Long::intValue).orElse(null))
+            .withMaximumReplicas(getClusterMaximumSize(clusterName));
+      }
+
 
       private String getNodeName(String serverName) {
         return Optional.ofNullable(getInfo().getServerPod(serverName))
@@ -341,7 +391,7 @@ public class DomainStatusUpdater {
       }
 
       private String getClusterName(String serverName) {
-        return Optional.ofNullable(config)
+        return getDomainConfig()
             .map(c -> c.getClusterName(serverName))
             .orElse(getClusterNameFromPod(serverName));
       }
@@ -353,11 +403,27 @@ public class DomainStatusUpdater {
       }
 
       private Collection<String> getServerNames() {
-        Set<String> result = new HashSet<>(getInfo().getServerNames());
-        if (config != null) {
+        Set<String> result = new HashSet<>();
+        getDomainConfig().stream().forEach(config -> {
           result.addAll(config.getServerConfigs().keySet());
-        }
+          for (WlsClusterConfig cluster : config.getConfiguredClusters()) {
+            Optional.ofNullable(cluster.getDynamicServersConfig())
+                .ifPresent(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs())
+                    .ifPresent(servers -> servers.stream().forEach(item -> result.add(item.getName()))));
+          }
+        });
         return result;
+      }
+
+      private Collection<String> getClusterNames() {
+        Set<String> result = new HashSet<>();
+        getDomainConfig().stream().forEach(config -> result.addAll(config.getClusterConfigs().keySet()));
+        return result;
+      }
+
+      private Integer getClusterMaximumSize(String clusterName) {
+        return getDomainConfig().map(config -> Optional.ofNullable(config.getClusterConfig(clusterName)))
+            .map(cluster -> cluster.map(c -> c.getMaxClusterSize()).orElse(0)).get();
       }
     }
   }
@@ -456,6 +522,7 @@ public class DomainStatusUpdater {
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
+
       return isStatusModified
           ? doDomainUpdate(
               context.getDomain(), context.getInfo(), packet, AvailableStep.this, getNext())
@@ -464,10 +531,10 @@ public class DomainStatusUpdater {
   }
 
   private static boolean modifyDomainStatus(DomainStatus domainStatus, Consumer<DomainStatus> statusUpdateConsumer) {
+    final DomainStatus currentStatus = new DomainStatus(domainStatus);
     synchronized (domainStatus) {
-      domainStatus.clearModified();
       statusUpdateConsumer.accept(domainStatus);
-      return domainStatus.isModified();
+      return !domainStatus.equals(currentStatus);
     }
   }
 
@@ -499,6 +566,7 @@ public class DomainStatusUpdater {
                   s.addCondition(new DomainCondition(Progressing).withStatus(FALSE));
                 }
               });
+
 
       LOGGER.info(MessageKeys.DOMAIN_STATUS, context.getDomain().getDomainUid(), status);
       LOGGER.exiting();
