@@ -127,10 +127,24 @@ Configuration Overrides Usecases
 | Replace/Append Configuration with  config file written in non yml format via exporter console| Try to replace/append monitoring exporter configuration with config file written in non yml format, verify configuration has not changed |
 | Replace/Append Configuration with corrupted yml file via exporter console| Try to replace/append monitoring exporter configuration with config file written in corrupted yml format, verify configuration has not changed |
 | Replace/Append Configuration with dublicated values in the config file via exporter console| Try to replace/append monitoring exporter configuration with dublicated values in the config file, verify configuration has not changed |
-| Replace/Append Configuration with invalid credentials via exporter console| Try to replace/append monitoring exporter configuration with varios combos for invalid credentials, verify configuration has not changed and `401 Unauthorized` exception was thrown |
+| End to end test to demonstrate how to setup and run WebLogic Monitoring Exporter with operator and WebLogic domain| This is fully automated version of the sample, provided in the https://github.com/oracle/weblogic-monitoring-exporter/tree/alert/samples/kubernetes/end2end |
+
+
 
 | Logging with Elastic Stack | Use Case |
 | --- | --- |
 | Search log level | Use Elasticsearch Count API to query logs of level=INFO and verify that total number of logs for level=INFO is not zero and failed count is zero |
 | Search Operator log | Use Elasticsearch Search APIs to query Operator log info and verify that log hits for type=weblogic-operator are not empty |
 | Search Weblogic log | Use Elasticsearch Search APIs to query Weblogic log info and verify that log hits for Weblogic servers are not empty |
+
+| Operator Upgrade | Use Case |
+| --- | --- |
+| Upgrade 2.0 operator to develop | Upgrade the 2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.0.1 operator to develop | Upgrade the 2.0.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.1 operator to develop | Upgrade the 2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.2.0 operator to develop | Upgrade the 2.2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.2.1 operator to develop | Upgrade the 2.2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+
+| Pod Templates | Use Case |
+| --- | --- |
+| Using pod templates/variables | Use DOMAIN_UID, DOMAIN_NAME, DOMAIN_HOME, SERVER_NAME, LOG_HOME variables at domain level and CLUSTER_NAME at cluster level. Bring up the domain and make sure domain started successfully when pod templates are used |
