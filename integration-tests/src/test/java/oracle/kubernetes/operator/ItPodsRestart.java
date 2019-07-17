@@ -51,25 +51,25 @@ public class ItPodsRestart extends BaseTest {
    */
   @BeforeClass
   public static void staticPrepare() throws Exception {
-  	// initialize test properties and create the directories
-  	if (!QUICKTEST) {
-  		initialize(APP_PROPS_FILE);
+    // initialize test properties and create the directories
+    if (!QUICKTEST) {
+      initialize(APP_PROPS_FILE);
 
-  		logger.info("Checking if operator1 and domain are running, if not creating");
-  		if (operator1 == null) {
-  			operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-  		}
-  		restartTmpDir = BaseTest.getResultDir() + "/restarttemp";
-  		Files.createDirectories(Paths.get(restartTmpDir));
+      logger.info("Checking if operator1 and domain are running, if not creating");
+      if (operator1 == null) {
+        operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+      }
+      restartTmpDir = BaseTest.getResultDir() + "/restarttemp";
+      Files.createDirectories(Paths.get(restartTmpDir));
 
-  		domain = createPodsRestartdomain();
-  		originalYaml =
-  				BaseTest.getUserProjectsDir()
-  				+ "/weblogic-domains/"
-  				+ domain.getDomainUid()
-  				+ "/domain.yaml";
-  		Assert.assertNotNull(domain);
-  	}
+      domain = createPodsRestartdomain();
+      originalYaml =
+          BaseTest.getUserProjectsDir()
+              + "/weblogic-domains/"
+              + domain.getDomainUid()
+              + "/domain.yaml";
+      Assert.assertNotNull(domain);
+    }
   }
 
   /**
@@ -79,16 +79,16 @@ public class ItPodsRestart extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-  	if (!QUICKTEST) {
-  		logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
-  		logger.info("BEGIN");
-  		logger.info("Run once, release cluster lease");
+    if (!QUICKTEST) {
+      logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
+      logger.info("BEGIN");
+      logger.info("Run once, release cluster lease");
 
-  		destroyPodsRestartdomain();
-  		tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      destroyPodsRestartdomain();
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
 
-  		logger.info("SUCCESS");
-  	}
+      logger.info("SUCCESS");
+    }
   }
 
   private static Domain createPodsRestartdomain() throws Exception {
@@ -207,7 +207,9 @@ public class ItPodsRestart extends BaseTest {
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
    * Verify that all the server pods in the domain got re-started .The property tested is: image:
    * "container-registry.oracle.com/middleware/weblogic:12.2.1.3" --> image:
-   * "container-registry.oracle.com/middleware/weblogic:duplicate"
+   * "container-registry.oracle.com/middleware/weblogic:duplicate" for internal env
+   * "container-registry.oracle.com/middleware/weblogic:12.2.1.3-dev" for external shared cluster 
+   * env
    *
    * @throws Exception exception
    */
@@ -226,10 +228,12 @@ public class ItPodsRestart extends BaseTest {
               + getWeblogicImageName()
               + ":"
               + getWeblogicImageTag()
-              );
+              + " to "
+              + "/weblogick8s/middleware/weblogic:duplicate");
 
-     if (BaseTest.SHARED_CLUSTER) {
-        String newImage = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
+      if (BaseTest.SHARED_CLUSTER) {
+        String newImage =
+        		getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
             "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
@@ -469,7 +473,7 @@ public class ItPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  //@Test
+  // @Test
   public void testMsRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
