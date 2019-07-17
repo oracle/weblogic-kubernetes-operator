@@ -236,7 +236,11 @@ public abstract class JobStepContext extends StepContextBase {
             .addContainersItem(createContainer(tuningParameters))
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
-                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()));
+                new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
+            .addVolumesItem(
+                new V1Volume()
+                    .name(getDomainUID() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+                    .configMap(getIntrospectMD5VolumeSource()));
 
     podSpec.setImagePullSecrets(info.getDomain().getSpec().getImagePullSecrets());
 
@@ -285,7 +289,12 @@ public abstract class JobStepContext extends StepContextBase {
             .command(getContainerCommand())
             .env(getEnvironmentVariables(tuningParameters))
             .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
-            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH));
+            .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
+            .addVolumeMountsItem(
+                volumeMount(
+                        getDomainUID() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
+                        "/weblogic-operator/introspectormd5")
+                    .readOnly(false));
 
     for (V1VolumeMount additionalVolumeMount : getAdditionalVolumeMounts()) {
       container.addVolumeMountsItem(additionalVolumeMount);
@@ -361,6 +370,15 @@ public abstract class JobStepContext extends StepContextBase {
     return new V1ConfigMapVolumeSource()
         .name(KubernetesConstants.DOMAIN_CONFIG_MAP_NAME)
         .defaultMode(ALL_READ_AND_EXECUTE);
+  }
+
+  protected V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
+    V1ConfigMapVolumeSource result =
+        new V1ConfigMapVolumeSource()
+            .name(getDomainUID() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+            .defaultMode(ALL_READ_AND_EXECUTE);
+    result.setOptional(true);
+    return result;
   }
 
   protected V1ConfigMapVolumeSource getConfigMapVolumeSource(String name, int mode) {

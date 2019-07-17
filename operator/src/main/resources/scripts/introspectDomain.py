@@ -127,6 +127,11 @@ class OfflineWlstEnv(object):
     self.USERKEY_FILE       = self.INTROSPECT_HOME + '/userKeyNodeManager.secure'
     self.DOMAIN_ZIP         = self.INTROSPECT_HOME + '/domainzip.secure'
 
+
+    self.INVENTORY_IMAGE_MD5 = self.INTROSPECT_HOME + '/inventory_image.md5'
+    self.INVENTORY_CM_MD5 = self.INTROSPECT_HOME + '/inventory_cm.md5'
+    self.INVENTORY_PASSPHRASE_MD5 = self.INTROSPECT_HOME + '/inventory_passphrase.md5'
+
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
     self.CUSTOM_SECRET_ROOT      = self.getEnvOrDef('CUSTOM_SECRET_ROOT', '/weblogic-operator/config-overrides-secrets')
@@ -773,7 +778,7 @@ class DomainSeedGenerator(Generator):
 
   def zipdir_base64out(self):
     if self.domain_home:
-      os.path.walk(self.domain_home, self.myvisit, self.ziph)
+      os.path.walk(self.domain_home, self.dir_visit, self.ziph)
       self.ziph.close()
       domain_data = self.env.readBinaryFile(self.domainzip)
       b64 = ""
@@ -782,11 +787,43 @@ class DomainSeedGenerator(Generator):
       self.writeln(b64)
 
 
-  def myvisit(self, ziph, dir, files):
+  def dir_visit(self, ziph, dir, files):
     for file in files:
       file_name = os.path.join(dir,file)
       if os.path.isfile(file_name):
         ziph.write(file_name)
+
+
+#
+
+class InventoryMD5Generator(Generator):
+
+  def __init__(self, env, inventory, fromfile):
+    Generator.__init__(self, env, inventory)
+    self.env = env
+    self.fromfile = fromfile
+
+  def generate(self):
+    self.open()
+    try:
+      rc = self.addInventoryFile()
+      self.close()
+      if rc is not None:
+        self.addGeneratedFile()
+    finally:
+      self.close()
+
+  def addInventoryFile(self):
+    if os.path.exists(self.fromfile):
+      print 'reading from file ' + self.fromfile
+      file_str = self.env.readFile(self.fromfile)
+      self.writeln(file_str)
+      return "hasfile"
+    else:
+      return None
+#
+
+
 
 
 class SitConfigGenerator(Generator):
@@ -1203,6 +1240,10 @@ class DomainIntrospector(SecretManager):
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
       DomainSeedGenerator(self.env).generate()
+      InventoryMD5Generator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
+      InventoryMD5Generator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
+      InventoryMD5Generator(self.env, self.env.INVENTORY_PASSPHRASE_MD5, '/tmp/inventory_passphrase.md5').generate()
+
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()
     #WDTConfigIntrospector(self.env).generateAndValidate()

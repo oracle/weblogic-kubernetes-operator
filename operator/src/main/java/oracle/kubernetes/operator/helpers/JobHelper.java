@@ -149,11 +149,17 @@ public class JobHelper {
     LOGGER.fine("runIntrospector topology: " + topology);
     LOGGER.fine("runningServersCount: " + runningServersCount(info));
     LOGGER.fine("creatingServers: " + creatingServers(info));
-    return topology == null || isBringingUpNewDomain(info);
+    return topology == null || isBringingUpNewDomain(info) || isModelInImageUpdate(info);
   }
 
   private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
     return runningServersCount(info) == 0 && creatingServers(info);
+  }
+
+  // TODO: ... is there anyway to optimize it?
+
+  private static boolean isModelInImageUpdate(DomainPresenceInfo info) {
+    return true;
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
