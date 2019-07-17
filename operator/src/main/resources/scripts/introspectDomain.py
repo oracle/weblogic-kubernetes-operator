@@ -87,7 +87,7 @@ import shutil
 import re
 from datetime import datetime
 
-# Include this script's current directory in the import path (so we can import traceUtils, etc.)
+# Include this script's current directory in the import path (so we can import utils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
 
 # Alternative way to dynamically get script's current directory
@@ -96,7 +96,7 @@ tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
 tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
 
-from traceUtils import *
+from utils import *
 
 class OfflineWlstEnv(object):
 

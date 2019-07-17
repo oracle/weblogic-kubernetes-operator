@@ -45,18 +45,6 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenDomainCreated_isNotModified() {
-    assertThat(domainStatus.isModified(), is(false));
-  }
-
-  @Test
-  public void whenFirstConditionAdded_statusIsModified() {
-    domainStatus.addCondition(new DomainCondition(Available));
-
-    assertThat(domainStatus.isModified(), is(true));
-  }
-
-  @Test
   public void whenAddedConditionIsSameTypeAsExisting_oldConditionIsReplaced() {
     domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
 
@@ -77,26 +65,6 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenConditionIsReplaced_statusIsModifiedOnAdd() {
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
-    domainStatus.clearModified();
-
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
-
-    assertThat(domainStatus.isModified(), is(true));
-  }
-
-  @Test
-  public void whenNewConditionEqualsExisting_statusIsNotModifiedOnAdd() {
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
-    domainStatus.clearModified();
-
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
-
-    assertThat(domainStatus.isModified(), is(false));
-  }
-
-  @Test
   public void beforeConditionAdded_statusFailsPredicate() {
     assertThat(domainStatus.hasConditionWith(c -> c.hasType(Available)), is(false));
   }
@@ -106,32 +74,5 @@ public class DomainStatusTest {
     domainStatus.addCondition(new DomainCondition(Available));
 
     assertThat(domainStatus.hasConditionWith(c -> c.hasType(Available)), is(true));
-  }
-
-  @Test
-  public void whenSetServersEqualIgnoringOrder_originalStatusIsNotModified() {
-    ServerStatus server1 = new ServerStatus().withServerName("aa").withState("RUNNING");
-    ServerStatus server2 = new ServerStatus().withServerName("bb").withState("RUNNING");
-    ServerStatus server3 = new ServerStatus().withServerName("cc").withState("RUNNING");
-    domainStatus.setServers(Arrays.asList(server1, server2, server3));
-    domainStatus.clearModified();
-
-    domainStatus.setServers(Arrays.asList(server2, server3, server1));
-
-    assertThat(domainStatus.isModified(), is(false));
-  }
-
-  @Test
-  public void whenSetServersNotEquals_originalStatusIsModified() {
-    ServerStatus server1 = new ServerStatus().withServerName("aa").withState("RUNNING");
-    ServerStatus server2 = new ServerStatus().withServerName("bb").withState("RUNNING");
-    ServerStatus server3 = new ServerStatus().withServerName("cc").withState("RUNNING");
-    domainStatus.setServers(Arrays.asList(server1, server2, server3));
-    domainStatus.clearModified();
-
-    domainStatus.setServers(
-        Arrays.asList(server2, server3, new ServerStatus().withServerName("aa").withState("STOP")));
-
-    assertThat(domainStatus.isModified(), is(true));
   }
 }
