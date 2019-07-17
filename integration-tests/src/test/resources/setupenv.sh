@@ -175,7 +175,7 @@ function get_wlthint3client_from_image {
   docker rm -v $id
   
 }
-export OCR_SERVER=container-registry.oracle.com
+export OCR_SERVER="${OCR_SERVER:-container-registry.oracle.com}"
 export WLS_IMAGE_URI=/middleware/weblogic
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 export PROJECT_ROOT="$SCRIPTPATH/../../../.."
