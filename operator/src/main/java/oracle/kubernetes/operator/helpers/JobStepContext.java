@@ -123,6 +123,10 @@ public abstract class JobStepContext extends StepContextBase {
     return getDomain().isDomainHomeInImage();
   }
 
+  protected boolean istioEnabled() {
+    return getDomain().istioEnabled();
+  }
+
   String getEffectiveLogHome() {
     if (!getDomain().getLogHomeEnabled()) {
       return null;
@@ -196,6 +200,7 @@ public abstract class JobStepContext extends StepContextBase {
 
   private V1PodTemplateSpec createPodTemplateSpec(TuningParameters tuningParameters) {
     V1ObjectMeta metadata = new V1ObjectMeta().name(getJobName());
+    if (istioEnabled()) metadata.putAnnotationsItem("sidecar.istio.io/inject", "false");
     V1PodTemplateSpec podTemplateSpec =
         new V1PodTemplateSpec().metadata(metadata).spec(createPodSpec(tuningParameters));
     return podTemplateSpec;
