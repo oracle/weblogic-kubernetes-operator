@@ -14,16 +14,16 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-/** ServerStatus describes the current status of a specific WebLogic server. */
+/** ServerStatus describes the current status of a specific WebLogic Server. */
 public class ServerStatus implements Comparable<ServerStatus> {
 
-  @Description("WebLogic server name. Required")
+  @Description("WebLogic Server name. Required.")
   @SerializedName("serverName")
   @Expose
   @NotNull
   private String serverName;
 
-  @Description("Current state of this WebLogic server. Required")
+  @Description("Current state of this WebLogic Server. Required.")
   @SerializedName("state")
   @Expose
   @NotNull
@@ -34,19 +34,19 @@ public class ServerStatus implements Comparable<ServerStatus> {
   @Expose
   private String clusterName;
 
-  @Description("Name of node that is hosting the Pod containing this WebLogic server.")
+  @Description("Name of node that is hosting the Pod containing this WebLogic Server.")
   @SerializedName("nodeName")
   @Expose
   private String nodeName;
 
-  @Description("Current status and health of a specific WebLogic server.")
+  @Description("Current status and health of a specific WebLogic Server.")
   @SerializedName("health")
   @Expose
   @Valid
   private ServerHealth health;
 
   /**
-   * WebLogic server name. (Required)
+   * WebLogic Server name. Required.
    *
    * @return server name
    */
@@ -55,7 +55,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * WebLogic server name. (Required)
+   * WebLogic Server name. Required.
    *
    * @param serverName server name
    */
@@ -64,7 +64,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * WebLogic server name. (Required)
+   * WebLogic Server name. Required.
    *
    * @param serverName server name
    * @return this
@@ -75,7 +75,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * Current state of this WebLogic server. (Required)
+   * Current state of this WebLogic Server. Required.
    *
    * @return state
    */
@@ -84,7 +84,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * Current state of this WebLogic server. (Required)
+   * Current state of this WebLogic Server. Required.
    *
    * @param state state
    */
@@ -93,7 +93,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * Current state of this WebLogic server. (Required)
+   * Current state of this WebLogic Server. Required.
    *
    * @param state state
    * @return this
@@ -133,7 +133,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * Name of node that is hosting the Pod containing this WebLogic server.
+   * Name of node that is hosting the Pod containing this WebLogic Server.
    *
    * @return node name
    */
@@ -142,7 +142,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * Name of node that is hosting the Pod containing this WebLogic server.
+   * Name of node that is hosting the Pod containing this WebLogic Server.
    *
    * @param nodeName node name
    */
@@ -151,7 +151,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * Name of node that is hosting the Pod containing this WebLogic server.
+   * Name of node that is hosting the Pod containing this WebLogic Server.
    *
    * @param nodeName node name
    * @return this
@@ -162,7 +162,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * ServerHealth describes the current status and health of a specific WebLogic server.
+   * ServerHealth describes the current status and health of a specific WebLogic Server.
    *
    * @return health
    */
@@ -171,7 +171,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * ServerHealth describes the current status and health of a specific WebLogic server.
+   * ServerHealth describes the current status and health of a specific WebLogic Server.
    *
    * @param health health
    */
@@ -180,7 +180,7 @@ public class ServerStatus implements Comparable<ServerStatus> {
   }
 
   /**
-   * ServerHealth describes the current status and health of a specific WebLogic server.
+   * ServerHealth describes the current status and health of a specific WebLogic Server.
    *
    * @param health health
    * @return this
