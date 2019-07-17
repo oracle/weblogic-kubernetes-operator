@@ -9,7 +9,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
 import io.kubernetes.client.models.V1Pod;
 import oracle.kubernetes.operator.LabelConstants;
@@ -35,6 +37,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -155,6 +158,52 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(hasEnvVar(ITEM1, END_VALUE_1), hasEnvVar(ITEM2, END_VALUE_2)));
+  }
+
+  @Test
+  public void whenClusterHasAdditionalVolumesWithVariables_createManagedPodWithSubstitutions() {
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .configureCluster(CLUSTER_NAME)
+        .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
+        .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
+
+    assertThat(
+        getCreatedPod().getSpec().getVolumes(),
+        allOf(
+            hasVolume("volume1", "/source-" + SERVER_NAME),
+            hasVolume("volume2", "/source-domain1")));
+  }
+
+  @Test
+  public void whenClusterHasLabelsWithVariables_createManagedPodWithSubstitutions() {
+    V1EnvVar envVar = toEnvVar("TEST_ENV", "test-value");
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Arrays.asList(envVar));
+
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    getConfigurator()
+        .withLogHomeEnabled(true)
+        .withContainer(new V1Container()
+            .name("test")
+            .addCommandItem("/bin/bash")
+            .addArgsItem("echo")
+            .addArgsItem("This server is $(SERVER_NAME) and has $(TEST_ENV)"))
+        .configureCluster(CLUSTER_NAME)
+        .withPodLabel("myCluster", "my-$(CLUSTER_NAME)")
+        .withPodLabel("logHome", "$(LOG_HOME)");
+
+    V1Pod pod = getCreatedPod();
+    assertThat(
+        pod.getMetadata().getLabels(),
+        allOf(
+            hasEntry("myCluster", "my-" + CLUSTER_NAME),
+            hasEntry("logHome", "/shared/logs/" +  UID)));
+    Optional<V1Container> o = pod.getSpec().getContainers()
+        .stream().filter(c -> "test".equals(c.getName())).findFirst();
+    assertThat(
+        o.orElseThrow().getArgs(),
+        allOf(
+            hasItem("This server is " +  SERVER_NAME + " and has test-value")));
   }
 
   @Test
