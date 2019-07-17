@@ -52,7 +52,6 @@ public class ItPodsRestart extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-  	//if (QUICKTEST) {
   	if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
 
@@ -80,7 +79,6 @@ public class ItPodsRestart extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-  	//if (QUICKTEST) {
   	if (!QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
@@ -231,28 +229,6 @@ public class ItPodsRestart extends BaseTest {
               );
 
      if (BaseTest.SHARED_CLUSTER) {
-        /*String newImage =
-            System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
-        // tag image with repo name
-        String tag =
-            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
-        TestUtils.exec(tag, true);
-        TestUtils.exec("docker images", true);
-      	String newImage = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
-
-        // login and push image to ocir
-        TestUtils.loginAndPushImageToOcir(newImage);
-
-        // create ocir registry secret in the same ns as domain which is used while pulling the
-        // image
-        TestUtils.createDockerRegistrySecret(
-            "docker-store",
-            System.getenv("REPO_REGISTRY"),
-            System.getenv("REPO_USERNAME"),
-            System.getenv("REPO_PASSWORD"),
-            System.getenv("REPO_EMAIL"),
-            domain.getDomainNs());*/
-        
         String newImage = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
