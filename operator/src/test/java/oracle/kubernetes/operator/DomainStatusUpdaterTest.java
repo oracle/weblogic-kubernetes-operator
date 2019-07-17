@@ -118,6 +118,13 @@ public class DomainStatusUpdaterTest {
     setClusterAndNodeName(getPod("server1"), "clusterA", "node1");
     setClusterAndNodeName(getPod("server2"), "clusterB", "node2");
 
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+    configSupport.addWlsServer("server1");
+    configSupport.addWlsCluster("clusterA", "server1");
+    configSupport.addWlsServer("server2");
+    configSupport.addWlsCluster("clusterB", "server2");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
     testSupport.runSteps(new DomainStatusUpdater.StatusUpdateStep(endStep));
 
     assertThat(
@@ -223,6 +230,11 @@ public class DomainStatusUpdaterTest {
         SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
     setClusterAndNodeName(getPod("server1"), "clusterA", "node1");
 
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+    configSupport.addWlsServer("server1");
+    configSupport.addWlsCluster("clusterA", "server1");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
     testSupport.runSteps(new DomainStatusUpdater.StatusUpdateStep(endStep));
 
     assertThat(
@@ -277,6 +289,13 @@ public class DomainStatusUpdaterTest {
   public void whenDomainHasOneCluster_statusReplicaCountShowsServersInThatCluster() {
     defineCluster("cluster1", "server1", "server2", "server3");
 
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+    configSupport.addWlsServer("server1");
+    configSupport.addWlsServer("server2");
+    configSupport.addWlsServer("server3");
+    configSupport.addWlsCluster("cluster1", "server1", "server2", "server3");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
     testSupport.runSteps(new DomainStatusUpdater.StatusUpdateStep(endStep));
 
     assertThat(recordedDomain.getStatus().getReplicas(), equalTo(3));
@@ -287,6 +306,21 @@ public class DomainStatusUpdaterTest {
     defineCluster("cluster1", "server1", "server2", "server3");
     defineCluster("cluster2", "server4", "server5", "server6", "server7");
     defineCluster("cluster3", "server8", "server9");
+
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+    configSupport.addWlsServer("server1");
+    configSupport.addWlsServer("server2");
+    configSupport.addWlsServer("server3");
+    configSupport.addWlsCluster("cluster1", "server1", "server2", "server3");
+    configSupport.addWlsServer("server4");
+    configSupport.addWlsServer("server5");
+    configSupport.addWlsServer("server6");
+    configSupport.addWlsServer("server7");
+    configSupport.addWlsCluster("cluster2", "server4", "server5", "server6", "server7");
+    configSupport.addWlsServer("server8");
+    configSupport.addWlsServer("server9");
+    configSupport.addWlsCluster("cluster3", "server8", "server9");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
     testSupport.runSteps(new DomainStatusUpdater.StatusUpdateStep(endStep));
 
@@ -319,6 +353,13 @@ public class DomainStatusUpdaterTest {
         .addCondition(
             new DomainCondition(Available).withStatus("True").withReason(SERVERS_READY_REASON));
     setAllDesiredServersRunning();
+
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+    configSupport.addWlsServer("server1");
+    configSupport.addWlsCluster("clusterA", "server1");
+    configSupport.addWlsServer("server2");
+    configSupport.addWlsCluster("clusterB", "server2");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
     testSupport.runSteps(new DomainStatusUpdater.StatusUpdateStep(endStep));
 
@@ -384,6 +425,12 @@ public class DomainStatusUpdaterTest {
   public void whenNotAllDesiredServersRunningAndProgressingConditionFound_ignoreIt() {
     domain.getStatus().addCondition(new DomainCondition(Progressing));
     setDesiredServerNotRunning();
+
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+    configSupport.addWlsServer("server1");
+    configSupport.addWlsServer("server2");
+    configSupport.addWlsCluster("clusterA", "server1", "server2");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
     testSupport.runSteps(new DomainStatusUpdater.StatusUpdateStep(endStep));
 
