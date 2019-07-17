@@ -164,6 +164,23 @@ public class DomainCrd {
   }
 
   /**
+   * A utility method to add attributes to cluster node's server pod in domain.yaml.
+   *
+   * @param clusterName - Name of the cluster to which the attributes to be added
+   * @param objectName - name of the object in cluster to which the attributes to be added
+   * @param attributes - A HashMap of key value pairs
+   */
+  public void addObjectNodeToClusterServerPod(String clusterName, String objectName, Map<String, String> attributes) {
+
+    JsonNode objectNode = getObjectNodeFromServerPod(getClusterNode(clusterName),objectName);
+    
+    for (Map.Entry<String, String> entry : attributes.entrySet()) {
+      Object entryValue = entry.getValue();
+      ((ObjectNode) objectNode).put(entry.getKey(), (String) entryValue);
+    }
+  }
+  
+  /**
    * A utility method to add shutdown element and attributes to cluster node in domain.yaml.
    *
    * @param clusterName - Name of the cluster to which the attributes to be added
@@ -196,6 +213,28 @@ public class DomainCrd {
     }
   }
 
+  /**
+   * A utility method to add attributes to server pod node in domain.yaml.
+   *
+   * @param objectName
+   *            - Name of the node to which the attributes to be
+   *            added
+   * @param attributes
+   *            - A HashMap of key value pairs
+   */
+  public void addObjectNodeToServerPod(String objectName, Map<String, String> attributes) {
+    JsonNode objectNode = getObjectNodeFromServerPod(getSpecNode(), objectName);
+    for (Map.Entry<String, String> entry : attributes.entrySet()) {
+      ((ObjectNode) objectNode).put(entry.getKey(), entry.getValue());
+    }
+    try {
+      String jsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectNode);
+      System.out.println(jsonString);
+    } catch (Exception ex) {
+      // no-op
+    }
+  }
+  
   /**
    * A utility method to add attributes to managed server node in domain.yaml.
    *
@@ -263,6 +302,15 @@ public class DomainCrd {
     return root.path("spec");
   }
 
+  /**
+   * Gets the serverPod node entry from Domain CRD JSON tree.
+   *
+   * @return serverPod node
+   */
+  private JsonNode getServerPodNode() {
+    return root.path("spec").path("serverPod");
+  }
+  
   /**
    * Gets the administration server node entry from Domain CRD JSON tree.
    *
@@ -335,7 +383,36 @@ public class DomainCrd {
     }
     return managedserverNode;
   }
-
+  
+  /**
+   * Gets the object node entry from the server pod of the given parent node in Domain CRD JSON tree.
+   * @param serverPodsParentNode parent node of the server pod
+   * @param objectName Name of the object for which to get the JSON node
+   * @return object node 
+   */
+  private JsonNode getObjectNodeFromServerPod(JsonNode serverPodsParentNode, String objectName) {
+    JsonNode serverPodNode = null;
+    JsonNode objectNode = null;
+    if (serverPodsParentNode.path("serverPod").isMissingNode()) {
+      logger.info("Missing serverPod Node");
+      serverPodNode = objectMapper.createObjectNode();
+      ((ObjectNode) serverPodsParentNode).set("serverPod", serverPodNode);
+      objectNode = objectMapper.createObjectNode();
+      ((ObjectNode) serverPodNode).set(objectName, objectNode);
+      
+    } else {
+      serverPodNode = serverPodsParentNode.path("serverPod");
+      if (serverPodNode.path(objectName).isMissingNode()) {
+        logger.info("Creating node with name " + objectName);
+        objectNode = objectMapper.createObjectNode();
+        ((ObjectNode) serverPodNode).set(objectName, objectNode);
+      } else {
+        objectNode = serverPodNode.path(objectName);
+      }
+    }
+    return objectNode;
+  }
+  
   /**
    * Utility method to create a file and write to it.
    *
