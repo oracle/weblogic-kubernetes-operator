@@ -249,6 +249,10 @@
           "description": "Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name.",
           "type": "string"
         },
+        "istio": {
+          "description": "Istio service mesh integration configuration.",
+          "$ref": "#/definitions/Istio"
+        },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a server. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.",
           "type": "string",
@@ -298,18 +302,18 @@
           "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
           "type": "boolean"
         },
-        "clusters": {
-          "description": "Configuration for the clusters.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Cluster"
-          }
-        },
         "managedServers": {
           "description": "Configuration for individual Managed Servers.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/ManagedServer"
+          }
+        },
+        "clusters": {
+          "description": "Configuration for the clusters.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Cluster"
           }
         }
       }
@@ -355,6 +359,15 @@
           "items": {
             "$ref": "#/definitions/ClusterStatus"
           }
+        }
+      }
+    },
+    "Istio": {
+      "type": "object",
+      "properties": {
+        "istioEnabled": {
+          "description": "True, if this domain is deployed under an Istio service mesh. Defaults to true. Not required.",
+          "type": "boolean"
         }
       }
     },
