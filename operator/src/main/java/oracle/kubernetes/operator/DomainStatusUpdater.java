@@ -434,8 +434,8 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus();
-      DomainStatus currentStatus = new DomainStatus(status);
+      final DomainStatus status = context.getStatus();
+      final DomainStatus currentStatus = new DomainStatus(status);
 
       status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
       status.removeConditionIf(c -> c.getType() == Failed);
@@ -464,8 +464,8 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus();
-      DomainStatus currentStatus = new DomainStatus(status);
+      final DomainStatus status = context.getStatus();
+      final DomainStatus currentStatus = new DomainStatus(status);
 
       status.removeConditionIf(c -> c.getType() == Progressing && TRUE.equals(c.getStatus()));
 
@@ -492,8 +492,8 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus();
-      DomainStatus currentStatus = new DomainStatus(status);
+      final DomainStatus status = context.getStatus();
+      final DomainStatus currentStatus = new DomainStatus(status);
 
       status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(reason));
       status.removeConditionIf(c -> c.getType() == Failed);
@@ -520,8 +520,8 @@ public class DomainStatusUpdater {
       LOGGER.entering();
 
       DomainConditionStepContext context = new DomainConditionStepContext(packet);
-      DomainStatus status = context.getStatus();
-      DomainStatus currentStatus = new DomainStatus(status);
+      final DomainStatus status = context.getStatus();
+      final DomainStatus currentStatus = new DomainStatus(status);
 
       status.addCondition(
           new DomainCondition(Failed)
