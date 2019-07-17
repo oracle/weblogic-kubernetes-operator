@@ -227,8 +227,8 @@ public class ItElasticLogging extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    Map<String, Object> domainMap = domain.getDomainMap();
-    String domainUid = domain.getDomainUid();
+    final Map<String, Object> domainMap = domain.getDomainMap();
+    final String domainUid = domain.getDomainUid();
     final String adminServerName = (String) domainMap.get("adminServerName");
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
