@@ -129,6 +129,18 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return false;
   }
 
+  public static String getFailedReason(V1Job job) {
+    V1JobStatus status = job.getStatus();
+    if (status != null && status.getConditions() != null) {
+      for (V1JobCondition cond : status.getConditions()) {
+        if ("Failed".equals(cond.getType()) && "True".equals(cond.getStatus())) {
+          return cond.getReason();
+        }
+      }
+    }
+    return null;
+  }
+
   @Override
   public WatchI<V1Job> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
@@ -150,7 +162,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
         if (isComplete || isFailed) {
           Complete complete = completeCallbackRegistrations.get(jobName);
           if (complete != null) {
-            complete.isComplete(job);
+            complete.isComplete(job, isFailed);
           }
         }
         break;
@@ -175,7 +187,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
 
   @FunctionalInterface
   private interface Complete {
-    void isComplete(V1Job job);
+    void isComplete(V1Job job, boolean isJobFailed);
   }
 
   static class JobWatcherFactory {
@@ -231,7 +243,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       return doSuspend(
           (fiber) -> {
             Complete complete =
-                (V1Job job) -> {
+                (V1Job job, boolean isJobFailed) -> {
                   if (!shouldProcessJob(job)) {
                     return;
                   }
@@ -239,6 +251,13 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                   if (didResume.compareAndSet(false, true)) {
                     LOGGER.fine("Job status: " + job.getStatus());
                     packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
+                    // Do not proceed to next step such as ReadDomainIntrospectorPodLog if job
+                    // failed due to DeadlineExceeded, as the pod container would likely not
+                    // be available for reading
+                    if (isJobFailed && "DeadlineExceeded".equals(getFailedReason(job))) {
+                      fiber.terminate(
+                          new DeadlineExceededException(job.getMetadata().getName()), packet);
+                    }
                     fiber.resume(packet);
                   }
                 };
@@ -281,6 +300,19 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                     packet.clone(),
                     null);
           });
+    }
+  }
+
+  static class DeadlineExceededException extends Exception {
+    final String job;
+
+    public DeadlineExceededException(String job) {
+      super();
+      this.job = job;
+    }
+
+    public String toString() {
+      return "Job " + job + " failed. Reason: DeadlineExceeded";
     }
   }
 }
