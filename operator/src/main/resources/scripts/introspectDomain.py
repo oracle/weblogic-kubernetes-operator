@@ -763,7 +763,7 @@ class DomainSeedGenerator(Generator):
     self.domainzip = tempfile.mktemp(".zip")
     self.ziph = zipfile.ZipFile(self.domainzip, 'w', zipfile.ZIP_DEFLATED)
     self.domain_home = self.env.getDomainHome()
-
+    self.skiplist = [ os.path.join(self.domain_home, 'lib') ]
   def generate(self):
     self.open()
     try:
@@ -791,10 +791,10 @@ class DomainSeedGenerator(Generator):
     for file in files:
       file_name = os.path.join(dir,file)
       if os.path.isfile(file_name):
+        if os.path.dirname(file_name) in self.skiplist:
+          continue
         ziph.write(file_name)
 
-
-#
 
 class InventoryMD5Generator(Generator):
 
@@ -815,16 +815,11 @@ class InventoryMD5Generator(Generator):
 
   def addInventoryFile(self):
     if os.path.exists(self.fromfile):
-      print 'reading from file ' + self.fromfile
       file_str = self.env.readFile(self.fromfile)
       self.writeln(file_str)
       return "hasfile"
     else:
       return None
-#
-
-
-
 
 class SitConfigGenerator(Generator):
 

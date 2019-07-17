@@ -156,6 +156,11 @@ if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
   cd / && base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.zip && jar xvf /tmp/domain.zip
   # zip does not store external attributes - should we use find ?
   chmod +x $DOMAIN_HOME/bin/*.sh $DOMAIN_HOME/*.sh
+  # unzip the domainlib from archive
+  for fh in /u01/model_home/archives/*.zip ; do
+    cd $DOMAIN_HOME
+    jar xvf $file wlsdeploy/domainLibraries
+  done
 fi
 
 
