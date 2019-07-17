@@ -20,7 +20,7 @@ public class DomainCondition implements Comparable<DomainCondition> {
 
   @Description(
       "The type of the condition. Valid types are Progressing, "
-          + "Available, and Failed. Required")
+          + "Available, and Failed. Required.")
   @NotNull
   private final DomainConditionType type;
   @Description("Last time we probed the condition.")
@@ -39,7 +39,7 @@ public class DomainCondition implements Comparable<DomainCondition> {
   @SerializedName("reason")
   @Expose
   private String reason;
-  @Description("Status is the status of the condition. Can be True, False, Unknown. Required")
+  @Description("Status is the status of the condition. Can be True, False, Unknown. Required.")
   @SerializedName("status")
   @Expose
   @NotNull
@@ -131,7 +131,7 @@ public class DomainCondition implements Comparable<DomainCondition> {
   }
 
   /**
-   * Status is the status of the condition. Can be True, False, Unknown. (Required)
+   * Status is the status of the condition. Can be True, False, Unknown. Required.
    *
    * @return status
    */
@@ -140,7 +140,7 @@ public class DomainCondition implements Comparable<DomainCondition> {
   }
 
   /**
-   * Status is the status of the condition. Can be True, False, Unknown. (Required)
+   * Status is the status of the condition. Can be True, False, Unknown. Required.
    *
    * @param status status
    * @return this
@@ -153,7 +153,7 @@ public class DomainCondition implements Comparable<DomainCondition> {
 
   /**
    * Type is the type of the condition. Currently, valid types are Progressing, Available, and
-   * Failure. (Required)
+   * Failure. Required.
    *
    * @return type
    */
