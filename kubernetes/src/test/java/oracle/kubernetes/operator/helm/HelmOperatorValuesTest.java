@@ -242,6 +242,49 @@ public class HelmOperatorValuesTest {
     assertThat(values.getRemoteDebugNodePortEnabled(), equalTo("false"));
   }
 
+  // --------------- haltOnDebugStartup
+
+  @Test
+  public void whenHaltOnDebugStartupTrue_createdMapContainsValue() {
+    operatorValues.haltOnDebugStartup("true");
+
+    assertThat(operatorValues.createMap(), hasEntry("haltOnDebugStartup", true));
+  }
+
+  @Test
+  public void whenHaltOnDebugStartupFalse_createdMapContainsValue() {
+    operatorValues.haltOnDebugStartup("false");
+
+    assertThat(operatorValues.createMap(), hasEntry("haltOnDebugStartup", false));
+  }
+
+  @Test
+  public void whenHaltOnDebugStartupNotSet_createdMapLacksValue() {
+    assertThat(operatorValues.createMap(), not(hasKey("haltOnDebugStartup")));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithoutHaltOnDebugStartup_hasEmptyString() {
+    HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
+
+    assertThat(values.getHaltOnDebugStartup(), equalTo(""));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithHaltOnDebugStartupTrue_hasSpecifiedValue() {
+    HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of("haltOnDebugStartup", true));
+
+    assertThat(values.getHaltOnDebugStartup(), equalTo("true"));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithHaltOnDebugStartupFalse_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("haltOnDebugStartup", false));
+
+    assertThat(values.getHaltOnDebugStartup(), equalTo("false"));
+  }
+
   // --------------- elkIntegrationEnabled
 
   @Test
@@ -476,6 +519,7 @@ public class HelmOperatorValuesTest {
         .append("externalDebugHttpPort: 30999\n")
         .append("externalRestEnabled: false\n")
         .append("externalRestHttpsPort: 31001\n")
+        .append("haltOnDebugStartup: true\n")
         .append("image: oracle/weblogic-kubernetes-operator:2.2.1\n")
         .append("imagePullPolicy: IfNotPresent\n")
         .append("internalDebugHttpPort: 30999\n")

@@ -39,6 +39,12 @@ spec:
         {{- if .remoteDebugNodePortEnabled }}
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
+        - name: "DEBUG_SUSPEND"
+          {{- if .haltOnDebugStartup }}
+          value: "y"
+          {{- else }}
+          value: "n"
+          {{- end }}
         {{- end }}
         {{- if .mockWLS }}
         - name: "MOCK_WLS"

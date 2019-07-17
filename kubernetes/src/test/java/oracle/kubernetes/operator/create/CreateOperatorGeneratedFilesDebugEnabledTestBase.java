@@ -40,6 +40,7 @@ public abstract class CreateOperatorGeneratedFilesDebugEnabledTestBase
         expected.getSpec().getTemplate().getSpec().getContainers().get(0);
     operatorContainer.addEnvItem(
         newEnvVar().name("REMOTE_DEBUG_PORT").value(getInputs().getInternalDebugHttpPort()));
+    operatorContainer.addEnvItem(newEnvVar().name("DEBUG_SUSPEND").value("y"));
     return expected;
   }
 }

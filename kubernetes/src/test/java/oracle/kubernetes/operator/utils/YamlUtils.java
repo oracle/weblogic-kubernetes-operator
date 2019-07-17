@@ -9,6 +9,7 @@ import io.kubernetes.client.custom.Quantity;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.yaml.snakeyaml.DumperOptions;
@@ -107,26 +108,42 @@ public class YamlUtils {
   // Anyway, it doesn't hurt to always just convert to yaml and compare the strings so that
   // we don't have to write type-dependent code.
   private static class YamlMatcher extends TypeSafeDiagnosingMatcher<Object> {
-    private Object expectedObject;
+    private String expectedString;
 
     private YamlMatcher(Object expectedObject) {
-      this.expectedObject = expectedObject;
+      expectedString = objectToYaml(expectedObject);
     }
 
     @Override
     protected boolean matchesSafely(Object returnedObject, Description description) {
       String returnedString = objectToYaml(returnedObject);
-      String expectedString = objectToYaml(expectedObject);
-      if (!Objects.equals(returnedString, expectedString)) {
-        description.appendText("\nwas\n").appendText(returnedString);
-        return false;
-      }
-      return true;
+      if (Objects.equals(expectedString, returnedString)) return true;
+
+      int index = StringUtils.indexOfDifference(expectedString, returnedString);
+      if (index < 10) description.appendText("\nwas\n").appendText(returnedString);
+      else
+        description
+            .appendText("\ndiffers at position ")
+            .appendValue(index)
+            .appendText(toDifference(index, returnedString));
+      return false;
+    }
+
+    private String toDifference(int diffIndex, String returnedString) {
+      StringBuilder sb = new StringBuilder(":\n");
+      int firstDiffLineIndex =
+          Math.max(0, returnedString.substring(0, diffIndex).lastIndexOf('\n'));
+      int lastMatchLineIndex =
+          Math.max(0, returnedString.substring(0, firstDiffLineIndex).lastIndexOf('\n'));
+      sb.append(returnedString, lastMatchLineIndex, firstDiffLineIndex);
+      if (sb.length() > 0) sb.append("\n-----\n");
+      sb.append(returnedString, firstDiffLineIndex, firstDiffLineIndex + 100);
+      return sb.toString();
     }
 
     @Override
     public void describeTo(Description description) {
-      description.appendText("\n").appendText(objectToYaml(expectedObject));
+      description.appendText("\n").appendText(expectedString);
     }
 
     private String objectToYaml(Object object) {
