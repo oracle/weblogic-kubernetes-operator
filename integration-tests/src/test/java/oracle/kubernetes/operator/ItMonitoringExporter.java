@@ -283,7 +283,6 @@ public class ItMonitoringExporter extends BaseTest {
 
     logger.info(" webhook log " + webhookResult.stdout());
     TestUtils.checkPodCreated(domain.getDomainUid() + "-managed-server2", domain.getDomainNs());
-    //domain.callWebAppAndVerifyLoadBalancing(TESTWSSERVICE, false);
   }
 
 
