@@ -851,13 +851,10 @@ public class ItMonitoringExporter extends BaseTest {
 
     TestUtils.checkPodReady("domain1-admin-server", "default");
     TestUtils.checkPodReady("domain1-managed-server-1", "default");
-    //sleep for 2 min to fire alert
-    Thread.sleep(120000);
+    
     String webhookPod = getPodName("webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
-    ExecResult webhookResult = TestUtils.exec(command);
-    logger.info(" webhook log " + webhookResult.stdout());
-    assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
+    ExecResult webhookResult = TestUtils.checkAnyCmdInLoop(command, "Some WLS cluster has only one running server for more than 1 minutes");
   }
 
   private static String getPodName(String app, String namespace) throws Exception {
