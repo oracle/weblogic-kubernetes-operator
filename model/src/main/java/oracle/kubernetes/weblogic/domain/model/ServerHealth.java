@@ -16,7 +16,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.joda.time.DateTime;
 
-/** ServerHealth describes the current status and health of a specific WebLogic server. */
+/** ServerHealth describes the current status and health of a specific WebLogic Server. */
 public class ServerHealth {
 
   @Description("RFC 3339 date and time at which the server started.")
@@ -25,10 +25,10 @@ public class ServerHealth {
   private DateTime activationTime;
 
   @Description(
-      "Server health of this WebLogic server. If the value is \"Not available\", the operator has "
+      "Server health of this WebLogic Server. If the value is \"Not available\", the operator has "
           + "failed to read the health. If the value is \"Not available (possibly overloaded)\", the "
           + "operator has failed to read the health of the server possibly due to the server is "
-          + "in overloaded state")
+          + "in overloaded state.")
   @SerializedName("overallHealth")
   @Expose
   private String overallHealth;
