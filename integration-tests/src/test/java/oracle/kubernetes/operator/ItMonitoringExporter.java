@@ -124,7 +124,7 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      deletePrometheusGrafana();
+
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
     }
@@ -225,7 +225,7 @@ public class ItMonitoringExporter extends BaseTest {
 
     String crdCmd = " kubectl apply -f " + samplesDir + "monitoring-namespace.yaml";
     final ExecResult result1 = ExecCommand.exec(crdCmd);
-    replaceStringInFile(samplesDir + "prometheus-deployment.yaml","webapp=\"OpenSessionApp\"","app=\"testwsapp\"");
+    replaceStringInFile(samplesDir + "prometheus-deployment.yaml","webapp=\"OpenSessionApp\"","app=\"httpsessionreptestapp\"");
     crdCmd = " kubectl apply -f " + samplesDir + "prometheus-deployment.yaml";
     TestUtils.exec(crdCmd);
 
@@ -285,7 +285,12 @@ public class ItMonitoringExporter extends BaseTest {
     //invoke the app to increase number of the opened sessions
     // invoke webservice via servlet client
     scaleCluster(1);
-    domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
+    String testAppName = "httpsessionreptestapp";
+    String scriptName = "buildDeployAppInPod.sh";
+    domain.buildDeployJavaAppInPod(
+            testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
+    domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
+
     Thread.sleep(30000);
     TestUtils.checkPodCreated(domain.getDomainUid() + "managed-server2", domain.getDomainNs());
     //domain.callWebAppAndVerifyLoadBalancing(TESTWSSERVICE, false);
