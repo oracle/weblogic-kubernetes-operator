@@ -52,7 +52,7 @@ public class ItPodsRestart extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    if (!QUICKTEST) {
+    if (QUICKTEST) {
       initialize(APP_PROPS_FILE);
 
       logger.info("Checking if operator1 and domain are running, if not creating");
@@ -79,7 +79,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (!QUICKTEST) {
+    if (QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -207,15 +207,13 @@ public class ItPodsRestart extends BaseTest {
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
    * Verify that all the server pods in the domain got re-started .The property tested is: image:
    * "container-registry.oracle.com/middleware/weblogic:12.2.1.3" --> image:
-   * "container-registry.oracle.com/middleware/weblogic:duplicate" for internal env
-   * "container-registry.oracle.com/middleware/weblogic:12.2.1.3-dev" for external shared cluster 
-   * env
+   * "container-registry.oracle.com/middleware/weblogic:duplicate"
    *
    * @throws Exception exception
    */
   @Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
+    Assume.assumeTrue(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -230,10 +228,35 @@ public class ItPodsRestart extends BaseTest {
               + getWeblogicImageTag()
               + " to "
               + "/weblogick8s/middleware/weblogic:duplicate");
-
-      if (BaseTest.SHARED_CLUSTER) {
+      
+      String newImage = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
+      // apply new domain yaml and verify pod restart
+      domain.verifyDomainServerPodRestart(
+          "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
+          "\"" + newImage + "\"");
+      
+      /*if (BaseTest.SHARED_CLUSTER) {
         String newImage =
-        		getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
+            System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
+        // tag image with repo name
+        String tag =
+            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
+        TestUtils.exec(tag, true);
+        TestUtils.exec("docker images", true);
+
+        // login and push image to ocir
+        TestUtils.loginAndPushImageToOcir(newImage);
+
+        // create ocir registry secret in the same ns as domain which is used while pulling the
+        // image
+        TestUtils.createDockerRegistrySecret(
+            "docker-store",
+            System.getenv("REPO_REGISTRY"),
+            System.getenv("REPO_USERNAME"),
+            System.getenv("REPO_PASSWORD"),
+            System.getenv("REPO_EMAIL"),
+            domain.getDomainNs());
+
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
             "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
@@ -251,7 +274,7 @@ public class ItPodsRestart extends BaseTest {
         domain.verifyDomainServerPodRestart(
             "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
             "\"" + getWeblogicImageName() + ":duplicate" + "\"");
-      }
+      }*/
     } finally {
       if (!BaseTest.SHARED_CLUSTER) {
         TestUtils.exec("docker rmi -f " + getWeblogicImageName() + ":duplicate");
