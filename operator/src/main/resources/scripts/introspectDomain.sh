@@ -215,9 +215,12 @@ function createWLDomain() {
 
         echo "NEED TO CREATE DOMAIN"
         if [ $use_passphrase -eq 1 ]; then
-            yes ${wdt_passphrase} | /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption
+            yes ${wdt_passphrase} | /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home \
+            $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption -extract_location \
+            /u01/apps/$DOMAIN_UID
         else
-            /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list $archive_list $variable_list
+            /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home $DOMAIN_HOME $model_list \
+            $archive_list $variable_list -extract_location /u01/apps/$DOMAIN_UID
         fi
         ret=$?
         if [ $ret -ne 0 ]; then
@@ -328,7 +331,6 @@ if [ ${created_domain} -ne 0 ]; then
     trace "Running introspector WLST script ${SCRIPTPATH}/introspectDomain.py"
     ${SCRIPTPATH}/wlst.sh ${SCRIPTPATH}/introspectDomain.py || exit 1
 fi
-
 trace "Domain introspection complete"
 
 exit 0
