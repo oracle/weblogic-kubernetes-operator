@@ -292,7 +292,7 @@ public class ItMonitoringExporter extends BaseTest {
     domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
 
     Thread.sleep(30000);
-    TestUtils.checkPodCreated(domain.getDomainUid() + "managed-server2", domain.getDomainNs());
+    TestUtils.checkPodCreated(domain.getDomainUid() + "-managed-server2", domain.getDomainNs());
     //domain.callWebAppAndVerifyLoadBalancing(TESTWSSERVICE, false);
   }
 
