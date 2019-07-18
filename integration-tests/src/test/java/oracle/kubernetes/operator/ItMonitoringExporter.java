@@ -103,6 +103,7 @@ public class ItMonitoringExporter extends BaseTest {
       upgradeTraefikHostName();
       deployRunMonitoringExporter(domain, operator);
       buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
+      //deletePrometheusGrafana();
     }
   }
 
@@ -123,6 +124,7 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
+      deletePrometheusGrafana();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
     }
@@ -223,8 +225,13 @@ public class ItMonitoringExporter extends BaseTest {
 
     String crdCmd = " kubectl apply -f " + samplesDir + "monitoring-namespace.yaml";
     final ExecResult result1 = ExecCommand.exec(crdCmd);
+    replaceStringInFile(samplesDir + "prometheus-deployment.yaml","webapp=\"OpenSessionApp\"","app=\"testwsapp\"");
     crdCmd = " kubectl apply -f " + samplesDir + "prometheus-deployment.yaml";
     TestUtils.exec(crdCmd);
+
+    crdCmd = " kubectl apply -f " + samplesDir + "alertmanager-deployment.yaml";
+    TestUtils.exec(crdCmd);
+
 
     String domainNS = domain.getDomainNs();
     String domainUid = domain.getDomainUid();
@@ -234,6 +241,8 @@ public class ItMonitoringExporter extends BaseTest {
         " kubectl apply -f " + samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml";
     final ExecResult result2 = ExecCommand.exec(crdCmd);
     logger.info("command result " + result2.stdout().trim());
+
+    createWebHookForScale();
 
     // create and start coordinator
     createCoordinatorFile(domainNS);
@@ -256,6 +265,34 @@ public class ItMonitoringExporter extends BaseTest {
         "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
   }
 
+  private static void verifyScalingViaPrometheus(Domain domain, String  webappName) throws Exception{
+    /*
+    StringBuffer testAppUrl = new StringBuffer("http://");
+    testAppUrl.append(domain.getHostNameForCurl()).append(":").append(domain.getLoadBalancerWebPort()).append("/");
+    if (domain.getDomainMap().get("loadbalancer").equals("APACHE")) {
+      testAppUrl.append("weblogic/");
+    }
+    testAppUrl.append(webappName).append("/");
+    // curl cmd to call webapp
+    StringBuffer curlCmd = new StringBuffer("curl --silent --noproxy '*' ");
+    curlCmd
+            .append(" -H 'host: ")
+            .append(domain.getDomainUid())
+            .append(".org' ")
+            .append(testAppUrl.toString());
+
+     */
+    //invoke the app to increase number of the opened sessions
+    // invoke webservice via servlet client
+    scaleCluster(1);
+    domain.verifyWebAppLoadBalancing(TESTWSSERVICE + "Servlet");
+    Thread.sleep(30000);
+    TestUtils.checkPodCreated(domain.getDomainUid() + "managed-server2", domain.getDomainNs());
+    //domain.callWebAppAndVerifyLoadBalancing(TESTWSSERVICE, false);
+  }
+
+
+
   private static void redeployMonitoringExporter(Domain domain) throws Exception {
     String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
 
@@ -274,6 +311,12 @@ public class ItMonitoringExporter extends BaseTest {
     String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
 
     String crdCmd = " kubectl delete -f " + samplesDir + "prometheus-deployment.yaml";
+    TestUtils.exec(crdCmd);
+
+    crdCmd = " kubectl delete -f " + samplesDir + "alertmanager-deployment.yaml";
+    TestUtils.exec(crdCmd);
+
+    crdCmd = " kubectl delete -f " + monitoringExporterDir + "/webhook/webhook-deployment.yaml";
     TestUtils.exec(crdCmd);
 
     crdCmd = " kubectl delete -f " + samplesDir + "grafana-deployment.yaml";
@@ -408,6 +451,23 @@ public class ItMonitoringExporter extends BaseTest {
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
     assertTrue(checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "testwsapp"));
+    testCompletedSuccessfully = true;
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+  /**
+   * Check that configuration can be reviewed via Prometheus.
+   *
+   * @throws Exception if test fails
+   */
+  @Test
+  public void test01_1_VerifyScalingViaPrometheus() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    boolean testCompletedSuccessfully = false;
+    verifyScalingViaPrometheus(domain, TESTWSSERVICE);
+    //assertTrue(checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "testwsapp"));
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -820,7 +880,7 @@ public class ItMonitoringExporter extends BaseTest {
         throw new RuntimeException("FAILURE: failed to install database ");
       }
       createWLSImageAndDeploy();
-      installWebHookAndAlertManager();
+      installWebHook();
       installPrometheusGrafanaViaChart();
       fireAlert();
     } finally {
@@ -853,23 +913,36 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.checkPodReady("domain1-managed-server-1", "default");
     //sleep for 2 min to fire alert
     Thread.sleep(120000);
-    String webhookPod = getPodName("webhook", "webhook");
+    String webhookPod = getPodName("app=webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
     ExecResult webhookResult = TestUtils.exec(command);
     logger.info(" webhook log " + webhookResult.stdout());
     assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
   }
 
-  private static String getPodName(String app, String namespace) throws Exception {
+  private static String getInternalOpCert(Operator op) throws Exception {
     StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get pod -l app=" + app + " -n " + namespace + " -o jsonpath=\"{.items[0].metadata.name}\"");
+    cmd.append("kubectl get cm -n " + op.getOperatorNamespace() + " weblogic-operator-cm -o jsonpath='{.data.internalOperatorCert}'");
+    logger.info(" operator internal cert command =" + cmd);
+    ExecResult result = ExecCommand.exec(cmd.toString());
+    String internalCert = null;
+    if (result.exitValue() == 0) {
+      internalCert = result.stdout().trim();
+    }
+    assertNotNull(internalCert + "  can't retrieve ", internalCert);
+    return internalCert;
+  }
+
+  private static String getPodName(String labelExp, String namespace) throws Exception {
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod -l " + labelExp + " -n " + namespace + " -o jsonpath=\"{.items[0].metadata.name}\"");
     logger.info(" pod name cmd =" + cmd);
     ExecResult result = ExecCommand.exec(cmd.toString());
     String podName = null;
     if (result.exitValue() == 0) {
       podName = result.stdout().trim();
     }
-    assertNotNull(app + " was not created, can't find running pod ", podName);
+    assertNotNull(labelExp + " was not created, can't find running pod ", podName);
     return podName;
   }
 
@@ -985,7 +1058,7 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.exec(crdCmd);
 
     logger.fine("getSQL pod name ");
-    String sqlPod = getPodName("mysql", "default");
+    String sqlPod = getPodName("app=mysql", "default");
     TestUtils.checkPodReady(sqlPod, "default");
     Thread.sleep(15000);
     ExecResult result =
@@ -1144,11 +1217,11 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Install Prometheus and Grafana using helm chart
+   * Install WebHook
    *
    * @throws Exception if could not run the command successfully to install webhook and alert manager
    */
-  private static void installWebHookAndAlertManager() throws Exception {
+  private static void installWebHook() throws Exception {
 
     logger.info("building webhook image");
     String crdCmd = "cd " + monitoringExporterEndToEndDir + " && docker build ./webhook -t webhook-log:1.0";
@@ -1161,8 +1234,55 @@ public class ItMonitoringExporter extends BaseTest {
 
     crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
     TestUtils.exec(crdCmd);
-    String webhookPod = getPodName("webhook", "webhook");
+    String webhookPod = getPodName("app=webhook", "webhook");
     TestUtils.checkPodReady(webhookPod, "webhook");
+
+  }
+
+  /**
+   * Install WebHook for performing scaling via prometheus
+   *
+   * @throws Exception if could not run the command successfully to install webhook and alert manager
+   */
+  private static void createWebHookForScale() throws Exception {
+
+    String  webhookResourceDir = resourceExporterDir + "/../webhook";
+    String  webhookDir = monitoringExporterDir + "/webhook";
+    if (!new File(webhookDir).exists()) {
+      Files.createDirectories(Paths.get(webhookDir));
+      logger.info("webhookDir" + webhookDir);
+      logger.info("webhookResourceDir" + webhookResourceDir);
+      String crdCmd = "cp -rf " + webhookResourceDir + "/* " + webhookDir;
+      logger.info("executing command " + crdCmd);
+      TestUtils.exec(crdCmd);
+      crdCmd = " cp " + BaseTest.getProjectRoot() + "/src/scripts/scaling/scalingAction.sh " + webhookDir ;
+      TestUtils.exec(crdCmd);
+      logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
+      // git clone exporter project
+      StringBuffer getWebHook = new StringBuffer();
+
+      getWebHook.append("cd " + webhookDir)
+              .append(" && ")
+              .append(" wget  https://github.com/bhabermaas/kubernetes-projects/blob/master/apps/webhook");
+
+      TestUtils.exec(getWebHook.toString());
+    }
+
+
+    logger.info("building webhook image with scaling");
+
+    String crdCmd = "cd " + webhookDir + " && docker build . -t webhook:latest";
+    TestUtils.exec(crdCmd);
+
+     String internalOpCert = getInternalOpCert(operator);
+     replaceStringInFile(webhookDir+ "/webhook-deployment.yaml","@INTERNAL_OPERATOR_CERT@", internalOpCert);
+    // install webhook
+    logger.info("installing webhook ");
+
+    crdCmd = "kubectl apply -f " + webhookDir + "/webhook-deployment.yaml";
+    TestUtils.exec(crdCmd);
+    String webhookPod = getPodName("name=webhook", "monitoring");
+    TestUtils.checkPodReady(webhookPod, "monitoring");
 
   }
 
@@ -1285,7 +1405,7 @@ public class ItMonitoringExporter extends BaseTest {
    * @param replicas - number of managed servers
    * @throws Exception if scaling fails
    */
-  private void scaleCluster(int replicas) throws Exception {
+  private static void scaleCluster(int replicas) throws Exception {
     logger.info("Scale up/down to " + replicas + " managed servers");
     operator.scale(domain.getDomainUid(), domain.getClusterName(), replicas);
   }
