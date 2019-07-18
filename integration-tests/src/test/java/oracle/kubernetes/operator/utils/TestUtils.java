@@ -1163,6 +1163,49 @@ public class TestUtils {
     return myKeyStore;
   }
 
+  /**
+   *
+   * @param cmd command to run in the loop
+   * @param matchStr expected string to match in the output
+   * @return ExecResult object containing command output info
+   * @throws Exception exception if fails to execute
+   */
+  public static ExecResult checkAnyCmdInLoop(String cmd, String matchStr)
+          throws Exception {
+    int i = 0;
+    ExecResult result = null;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      result = ExecCommand.exec(cmd);
+
+      if (result.exitValue() != 0
+              || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+        logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
+        // check for last iteration
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+          throw new RuntimeException(
+                  "FAILURE: expected output " + matchStr + " from command " + cmd + " is not receieved, exiting!");
+        }
+        logger.info(
+                "did not receive the expected output "
+                        + matchStr
+                        + "from command " + cmd + " Ite ["
+                        + i
+                        + "/"
+                        + BaseTest.getMaxIterationsPod()
+                        + "], sleeping "
+                        + BaseTest.getWaitTimePod()
+                        + " seconds more");
+
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+        i++;
+      } else {
+        logger.info("Command " + cmd + " is successful");
+        break;
+      }
+    }
+    return result;
+  }
+
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
       throws Exception {
     int i = 0;
