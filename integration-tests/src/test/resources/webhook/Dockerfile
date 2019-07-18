@@ -1,7 +1,6 @@
-#FROM store/oracle/serverjre:8
-FROM container-registry.oracle.com/java/serverjre:latest
-
+FROM openjdk:11-oracle
 COPY webhook /bin/webhook
+RUN chmod +x /bin/webhook
 COPY hooks.json /etc/webhook/
 COPY scalingAction.sh /var/scripts/
 COPY scaleUpAction.sh /var/scripts/

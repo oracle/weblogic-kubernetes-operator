@@ -100,10 +100,10 @@ public class ItMonitoringExporter extends BaseTest {
       configPath = resourceExporterDir;
       monitoringExporterEndToEndDir =
               monitoringExporterDir + "/src/samples/kubernetes/end2end/";
+
       upgradeTraefikHostName();
       deployRunMonitoringExporter(domain, operator);
       buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
-      //deletePrometheusGrafana();
     }
   }
 
@@ -266,32 +266,22 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   private static void verifyScalingViaPrometheus(Domain domain, String  webappName) throws Exception{
-    /*
-    StringBuffer testAppUrl = new StringBuffer("http://");
-    testAppUrl.append(domain.getHostNameForCurl()).append(":").append(domain.getLoadBalancerWebPort()).append("/");
-    if (domain.getDomainMap().get("loadbalancer").equals("APACHE")) {
-      testAppUrl.append("weblogic/");
-    }
-    testAppUrl.append(webappName).append("/");
-    // curl cmd to call webapp
-    StringBuffer curlCmd = new StringBuffer("curl --silent --noproxy '*' ");
-    curlCmd
-            .append(" -H 'host: ")
-            .append(domain.getDomainUid())
-            .append(".org' ")
-            .append(testAppUrl.toString());
 
-     */
-    //invoke the app to increase number of the opened sessions
-    // invoke webservice via servlet client
+    //scale cluster to only one replica
     scaleCluster(1);
+    //invoke the app to increase number of the opened sessions
     String testAppName = "httpsessionreptestapp";
     String scriptName = "buildDeployAppInPod.sh";
     domain.buildDeployJavaAppInPod(
             testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
     domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
 
-    Thread.sleep(30000);
+
+    String webhookPod = getPodName("name=webhook", "monitoring");
+    String command = "kubectl -n monitoring logs " + webhookPod;
+    ExecResult webhookResult = TestUtils.checkAnyCmdInLoop(command, "scaleup hook triggered successfully");
+
+    logger.info(" webhook log " + webhookResult.stdout());
     TestUtils.checkPodCreated(domain.getDomainUid() + "-managed-server2", domain.getDomainNs());
     //domain.callWebAppAndVerifyLoadBalancing(TESTWSSERVICE, false);
   }
@@ -471,8 +461,11 @@ public class ItMonitoringExporter extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     boolean testCompletedSuccessfully = false;
-    verifyScalingViaPrometheus(domain, TESTWSSERVICE);
-    //assertTrue(checkMetricsViaPrometheus(testwsappPrometheusSearchKey, "testwsapp"));
+    try {
+      verifyScalingViaPrometheus(domain, TESTWSSERVICE);
+    } finally {
+      scaleCluster(2);
+    }
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -916,13 +909,14 @@ public class ItMonitoringExporter extends BaseTest {
 
     TestUtils.checkPodReady("domain1-admin-server", "default");
     TestUtils.checkPodReady("domain1-managed-server-1", "default");
-    //sleep for 2 min to fire alert
-    Thread.sleep(120000);
+
     String webhookPod = getPodName("app=webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
-    ExecResult webhookResult = TestUtils.exec(command);
+    ExecResult webhookResult = TestUtils.checkAnyCmdInLoop(command, "Some WLS cluster has only one running server for more than 1 minutes");
+
+
     logger.info(" webhook log " + webhookResult.stdout());
-    assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
+    //assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
   }
 
   private static String getInternalOpCert(Operator op) throws Exception {
@@ -1268,9 +1262,35 @@ public class ItMonitoringExporter extends BaseTest {
 
       getWebHook.append("cd " + webhookDir)
               .append(" && ")
-              .append(" wget  https://github.com/bhabermaas/kubernetes-projects/blob/master/apps/webhook");
+              .append(" wget  https://github.com/adnanh/webhook/releases/download/2.6.9/webhook-linux-amd64.tar.gz");
 
       TestUtils.exec(getWebHook.toString());
+      getWebHook = new StringBuffer();
+
+      getWebHook.append("cd " + webhookDir)
+              .append(" && ")
+              .append(" tar -xvf webhook-linux-amd64.tar.gz");
+
+      TestUtils.exec(getWebHook.toString());
+      getWebHook = new StringBuffer();
+
+      getWebHook.append("cd " + webhookDir)
+              .append(" && ")
+              .append(" cp webhook-linux-amd64/webhook .");
+
+      TestUtils.exec(getWebHook.toString());
+      /*
+
+      getWebHook = new StringBuffer();
+
+      getWebHook.append("cd " + webhookDir)
+              .append(" && ")
+              .append(" cp /home/opc/OperatorDomain/webhook/bin/webhook .");
+
+      TestUtils.exec(getWebHook.toString());
+
+       */
+
     }
 
 

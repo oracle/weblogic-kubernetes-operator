@@ -63,7 +63,7 @@ spec:
          name: webhook
     spec:
       containers:
-      - image: webhook-log:1.0
+      - image: webhook:latest
         imagePullPolicy: IfNotPresent
         name: webhook
         env:
