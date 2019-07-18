@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Map;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -128,11 +129,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    Operator firstoperator = null;
-    Operator secondoperator = null;
 
     logger.info("Creating first operator");
-    firstoperator =
+    Operator firstoperator =
         new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
     firstoperator.callHelmInstall();
     number = number + 1;
@@ -140,7 +139,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     logger.info(" new value for oprelease" + oprelease);
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
     operatorMap.replace("namespace", firstoperator.getOperatorMap().get("namespace"));
-    secondoperator = new Operator(operatorMap, false, true, true, RestCertType.SELF_SIGNED);
+    Operator secondoperator = new Operator(operatorMap, false, true, true, RestCertType.SELF_SIGNED);
     try {
       secondoperator.callHelmInstall();
       throw new RuntimeException(
@@ -281,11 +280,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    Operator secondoperator = null;
-    Operator firstoperator = null;
 
     logger.info("Creating first operator");
-    firstoperator =
+    Operator firstoperator =
         new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
     firstoperator.callHelmInstall();
     number = number + 1;
@@ -294,7 +291,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     ArrayList<String> targetDomainsNS =
         (ArrayList<String>) firstoperator.getOperatorMap().get("domainNamespaces");
     operatorMap.put("domainNamespaces", targetDomainsNS);
-    secondoperator = new Operator(operatorMap, true, true, false, RestCertType.SELF_SIGNED);
+    Operator secondoperator = new Operator(operatorMap, true, true, false, RestCertType.SELF_SIGNED);
     try {
       secondoperator.callHelmInstall();
       throw new RuntimeException(
@@ -399,11 +396,9 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    Operator operator1 = null;
-    Operator operator2 = null;
     int httpsRestPort = 0;
 
-    operator1 = new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
+    Operator operator1 = new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
     operator1.callHelmInstall();
 
     httpsRestPort = (int) operator1.getOperatorMap().get("externalRestHttpsPort");
@@ -413,7 +408,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
     operatorMap.replace("externalRestHttpsPort", httpsRestPort);
 
-    operator2 = new Operator(operatorMap, RestCertType.SELF_SIGNED);
+    Operator operator2 = new Operator(operatorMap, RestCertType.SELF_SIGNED);
     try {
       operator2.callHelmInstall();
 
