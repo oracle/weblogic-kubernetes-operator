@@ -52,7 +52,7 @@ public class ItPodsRestart extends BaseTest {
   @BeforeClass
   public static void staticPrepare() throws Exception {
     // initialize test properties and create the directories
-    if (QUICKTEST) {
+    if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
 
       logger.info("Checking if operator1 and domain are running, if not creating");
@@ -79,7 +79,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @AfterClass
   public static void staticUnPrepare() throws Exception {
-    if (QUICKTEST) {
+    if (!QUICKTEST) {
       logger.info("+++++++++++++++++++++++++++++++++---------------------------------+");
       logger.info("BEGIN");
       logger.info("Run once, release cluster lease");
@@ -213,7 +213,7 @@ public class ItPodsRestart extends BaseTest {
    */
   @Test
   public void testServerPodsRestartByChangingZImage() throws Exception {
-    Assume.assumeTrue(QUICKTEST);
+    Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
@@ -230,6 +230,7 @@ public class ItPodsRestart extends BaseTest {
               + "/weblogick8s/middleware/weblogic:duplicate");
       
       String newImage = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
+      TestUtils.exec("docker pull" + newImage, true);
       // apply new domain yaml and verify pod restart
       domain.verifyDomainServerPodRestart(
           "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
