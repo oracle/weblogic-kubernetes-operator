@@ -50,6 +50,7 @@ function sort_files() {
       done
     for k in "${!sequence_array[@]}"
     do
+        # MUST use echo , caller depends on stdout
         echo $k ' - ' ${sequence_array["$k"]}
     done |
     sort -n -k3  | cut -d' ' -f 1  
@@ -59,38 +60,38 @@ function sort_files() {
 function checkExistInventory() {
     has_md5=0
 
-    echo "Checking model in image"
+    trace "Checking model in image"
     if [ -f ${inventory_image_md5} ] ; then
         source -- ${inventory_image_md5}
         has_md5=1
         if [ ${#introspect_image[@]} -ne ${#inventory_image[@]} ]; then
-            echo "Contents in model home changed: create domain again"
+            trace "Contents in model home changed: create domain again"
             return 1
         fi
         for K in "${!inventory_image[@]}"; do
             extension="${K##*.}"
             if [ "$extension" == "yaml" -o "$extension" == "properties" -o "$extension" == "zip" ]; then
                 if [ ! "${inventory_image[$K]}" == "${introspect_image[$K]}" ]; then
-                    echo "md5 not equal: create domain" $K
+                    trace "md5 not equal: create domain" $K
                     return 1
                 fi
             fi
         done
     fi
 
-    echo "Checking images in config map"
+    trace "Checking images in config map"
     if [ -f ${inventory_cm_md5} ] ; then
         source -- ${inventory_cm_md5}
         has_md5=1
         if [ ${#introspect_cm[@]} -ne ${#inventory_cm[@]} ]; then
-            echo "Contents of config map changed: create domain again"
+            trace "Contents of config map changed: create domain again"
             return 1
         fi
         for K in "${!inventory_cm[@]}"; do
             extension="${K##*.}"
             if [ "$extension" == "yaml" -o "$extension" == "properties" ]; then
                 if [ ! "${inventory_cm[$K]}" == "${introspect_cm[$K]}" ]; then
-                    echo "md5 not equal: create domain" $K
+                    trace "md5 not equal: create domain" $K
                     return 1
                 fi
             fi
@@ -98,11 +99,11 @@ function checkExistInventory() {
     else
         # if no config map before but adding one now
         if [ ${#inventory_cm[@]} -ne 0 ]; then
-            echo "New inventory in cm: create domain"
+            trace "New inventory in cm: create domain"
             return 1
         fi
     fi
-    echo "Checking passphrase"
+    trace "Checking passphrase"
     if [ -f ${inventory_passphrase_md5} ] ; then
         has_md5=1
         source -- ${inventory_passphrase_md5}
@@ -112,19 +113,19 @@ function checkExistInventory() {
         fi
         for K in "${!inventory_passphrase[@]}"; do
             if [ ! "$target_md5" == "${inventory_passphrase[$K]}" ]; then
-                echo "passphrase changed: recreate domain " $target_md5 ${inventory_passphrase[$K]}
+                trace "passphrase changed: recreate domain " $target_md5 ${inventory_passphrase[$K]}
                 return 1
             fi
         done
     else
         if [ ${#inventory_passphrase[@]} -ne 0 ]; then
-            echo "new passphrase: recreate domain"
+            trace "new passphrase: recreate domain"
             return 1
         fi
     fi
 
     if [ $has_md5 -eq 0 ]; then
-        echo "no md5 found: create domain"
+        trace "no md5 found: create domain"
         return 1
     fi
     return 0
@@ -166,7 +167,7 @@ function createWLDomain() {
         do
             if [ "$archive_list" != "" ]; then
                 archive_list="${archive_list},"
-                echo "More than one archive file"
+                trace "More than one archive file"
                 exit 1
             fi
             inventory_image[$file]=$(md5sum $file | cut -d' ' -f1)
@@ -213,7 +214,7 @@ function createWLDomain() {
     create_domain=$?
     if  [ ${create_domain} -ne 0 ] ; then
 
-        echo "NEED TO CREATE DOMAIN"
+        trace "NEED TO CREATE DOMAIN"
         if [ $use_passphrase -eq 1 ]; then
             yes ${wdt_passphrase} | /u01/weblogic-deploy/bin/createDomain.sh -oracle_home $MW_HOME -domain_home \
             $DOMAIN_HOME $model_list $archive_list $variable_list -use_encryption -extract_location \
@@ -224,7 +225,7 @@ function createWLDomain() {
         fi
         ret=$?
         if [ $ret -ne 0 ]; then
-            echo "Create Domain Failed"
+            trace "Create Domain Failed"
             exit 1
         fi
 
@@ -310,7 +311,7 @@ if [ ! -d "$DOMAIN_HOME" ]; then
     mkdir -p $DOMAIN_HOME
     createWLDomain
     created_domain=$?
-    echo "created domain " ${created_domain}
+    trace "created domain " ${created_domain}
 else
     created_domain=1
 fi
