@@ -1496,7 +1496,7 @@ public class TestUtils {
     ExecResult result = TestUtils.exec(dockerLoginAndPullCmd);
     logger.info(
         "cmd "
-            + dockerLoginAndPushCmd
+            + dockerLoginAndPullCmd
             + "\n result "
             + result.stdout()
             + "\n err "
