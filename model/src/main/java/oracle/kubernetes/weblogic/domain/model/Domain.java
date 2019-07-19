@@ -66,7 +66,7 @@ public class Domain {
   @SerializedName("spec")
   @Expose
   @Valid
-  @Description("The specification of the domain. Required")
+  @Description("The specification of the domain. Required.")
   @Nonnull
   private DomainSpec spec = new DomainSpec();
 

@@ -388,7 +388,8 @@ public class PodHelper {
       return metadata;
     }
 
-    private String getClusterName() {
+    @Override
+    protected String getClusterName() {
       return clusterName;
     }
 

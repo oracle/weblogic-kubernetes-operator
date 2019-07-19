@@ -233,10 +233,94 @@ public class ItOperator extends BaseTest {
     logger.info("SUCCESS - " + testMethodName);
   }
 
+
+  /**
+   * Create one operator if it is not running. Create domain domain1 and domain2 dynamic cluster in
+   * default namespace, managed by operator1. Both domains share one PV. Verify scaling for domain2
+   * cluster from 2 to 3 servers and back to 2, plus verify no impact on domain1. Cycle domain1 down
+   * and back up, plus verify no impact on domain2. shutdown by the domains using the delete
+   * resource script from samples.
+   *
+   * <p>ToDo: configured cluster support is removed from samples, modify the test to create
+   *
+   * @throws Exception exception
+   */
+  @Test
+  public void testTwoDomainsManagedByOneOperatorSharingPV() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    logger.info("Creating Domain domain1 & verifing the domain creation");
+
+    logger.info("Checking if operator1 and domain1 are running, if not creating");
+    if (operator1 == null) {
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
+    }
+
+    Domain domain1 = null;
+    Domain domain2 = null;
+    boolean testCompletedSuccessfully = false;
+    try {
+      // load input yaml to map and add configOverrides
+      Map<String, Object> domain1Map = TestUtils.loadYaml(DOMAINONSHARINGPV_WLST_YAML);
+      domain1Map.put("domainUID", "d1onpv");
+      domain1Map.put("adminNodePort", new Integer("30711"));
+      domain1Map.put("t3ChannelPort", new Integer("30011"));
+      domain1Map.put("voyagerWebPort", new Integer("30388"));
+      domain1 = TestUtils.createDomain(domain1Map);
+      domain1.verifyDomainCreated();
+      testBasicUseCases(domain1);
+
+      Map<String, Object> domain2Map = TestUtils.loadYaml(DOMAINONSHARINGPV_WLST_YAML);
+      domain2Map.put("domainUID", "d2onpv");
+      domain2Map.put("adminNodePort", new Integer("30712"));
+      domain2Map.put("t3ChannelPort", new Integer("30021"));
+      // wdtDomainMap.put("clusterType", "Configured");
+      domain2Map.put("voyagerWebPort", new Integer("30399"));
+      domain2 = TestUtils.createDomain(domain2Map);
+      domain2.verifyDomainCreated();
+      testBasicUseCases(domain2);
+      logger.info("Verify the only remaining running domain domain1 is unaffected");
+      domain1.verifyDomainCreated();
+
+      testClusterScaling(operator1, domain2);
+
+      logger.info("Verify the only remaining running domain domain1 is unaffected");
+      domain1.verifyDomainCreated();
+
+      logger.info("Destroy and create domain1 and verify no impact on domain2");
+      domain1.destroy();
+      domain1.create();
+
+      logger.info("Verify no impact on domain2");
+      domain2.verifyDomainCreated();
+      testCompletedSuccessfully = true;
+
+    } finally {
+      String domainUidsToBeDeleted = "";
+
+      if (domain1 != null && (JENKINS || testCompletedSuccessfully)) {
+        domainUidsToBeDeleted = domain1.getDomainUid();
+      }
+      if (domain2 != null && (JENKINS || testCompletedSuccessfully)) {
+        domainUidsToBeDeleted = domainUidsToBeDeleted + "," + domain2.getDomainUid();
+      }
+      if (!domainUidsToBeDeleted.equals("")) {
+        logger.info("About to delete domains: " + domainUidsToBeDeleted);
+        TestUtils.deleteWeblogicDomainResources(domainUidsToBeDeleted);
+        TestUtils.verifyAfterDeletion(domain1);
+        TestUtils.verifyAfterDeletion(domain2);
+      }
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
+
+
   /**
    * Create operator if its not running and create domain with serverStartPolicy="ADMIN_ONLY".
-   * Verify only admin server is created. shutdown by deleting domain CRD. Create domain on existing
-   * PV dir, pv is already populated by a shutdown domain.
+   * Verify only admin server is created. Make domain configuration change and restart the domain.
+   * shutdown by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a
+   * shutdown domain.
    *
    * @throws Exception exception
    */
@@ -255,6 +339,10 @@ public class ItOperator extends BaseTest {
     try {
       domain = TestUtils.createDomain(DOMAIN_ADMINONLY_YAML);
       domain.verifyDomainCreated();
+      // change domain config by modifying accept backlog on adminserver tuning
+      modifyDomainConfig(domain);
+      domain.shutdownUsingServerStartPolicy();
+      domain.restartUsingServerStartPolicy();
     } finally {
       if (domain != null) {
         // create domain on existing dir
@@ -515,5 +603,29 @@ public class ItOperator extends BaseTest {
       testOperatorLifecycle(operator, domain);
     }
     return domain;
+  }
+
+  private void modifyDomainConfig(Domain domain) throws Exception {
+    String adminPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
+    String scriptsLocInPod = "/u01/oracle";
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/modifyAcceptBacklog.py",
+        scriptsLocInPod + "/modifyAcceptBacklog.py",
+        adminPod,
+        domain.getDomainNs());
+
+    TestUtils.copyFileViaCat(
+        BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
+        scriptsLocInPod + "/callpyscript.sh",
+        adminPod,
+        domain.getDomainNs());
+    String[] args = {
+      scriptsLocInPod + "/modifyAcceptBacklog.py",
+      BaseTest.getUsername(),
+      BaseTest.getPassword(),
+      "t3://" + adminPod + ":" + domain.getDomainMap().get("t3ChannelPort")
+    };
+    TestUtils.callShellScriptByExecToPod(
+        adminPod, domain.getDomainNs(), scriptsLocInPod, "callpyscript.sh", args);
   }
 }
