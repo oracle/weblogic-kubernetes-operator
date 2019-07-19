@@ -28,6 +28,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -786,10 +787,21 @@ public class TestUtils {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
-
+  
+  public static Domain createDomain(String inputYaml, boolean createDomainResource) throws Exception {
+    logger.info("Creating domain with yaml, waiting for the script to complete execution");
+    return new Domain(inputYaml, createDomainResource);
+  }
+  
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
+  }
+  
+  public static Domain createDomain(Map<String, Object> inputDomainMap, boolean createDomainResource)
+      throws Exception {
+    logger.info("Creating domain with Map, waiting for the script to complete execution");
+    return new Domain(inputDomainMap, createDomainResource);
   }
 
   public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
@@ -1213,6 +1225,49 @@ public class TestUtils {
       throw new RuntimeException("Keystore Obj is null");
     }
     return myKeyStore;
+  }
+
+  /**
+   *
+   * @param cmd command to run in the loop
+   * @param matchStr expected string to match in the output
+   * @return ExecResult object containing command output info
+   * @throws Exception exception if fails to execute
+   */
+  public static ExecResult checkAnyCmdInLoop(String cmd, String matchStr)
+          throws Exception {
+    int i = 0;
+    ExecResult result = null;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      result = ExecCommand.exec(cmd);
+
+      if (result.exitValue() != 0
+              || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+        logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
+        // check for last iteration
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+          throw new RuntimeException(
+                  "FAILURE: expected output " + matchStr + " from command " + cmd + " is not receieved, exiting!");
+        }
+        logger.info(
+                "did not receive the expected output "
+                        + matchStr
+                        + "from command " + cmd + " Ite ["
+                        + i
+                        + "/"
+                        + BaseTest.getMaxIterationsPod()
+                        + "], sleeping "
+                        + BaseTest.getWaitTimePod()
+                        + " seconds more");
+
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+        i++;
+      } else {
+        logger.info("Command " + cmd + " is successful");
+        break;
+      }
+    }
+    return result;
   }
 
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
