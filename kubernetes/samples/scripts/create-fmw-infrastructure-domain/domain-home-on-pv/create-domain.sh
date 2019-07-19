@@ -21,8 +21,8 @@
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-source ${scriptDir}/../common/utility.sh
-source ${scriptDir}/../common/validate.sh
+source ${scriptDir}/../../common/utility.sh
+source ${scriptDir}/../../common/validate.sh
 
 function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
@@ -118,7 +118,7 @@ function initialize {
     validationError "The template file ${deleteJobInput} for deleting a WebLogic domain was not found"
   fi
 
-  dcrInput="${scriptDir}/../common/domain-template.yaml"
+  dcrInput="${scriptDir}/../../common/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
