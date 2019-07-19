@@ -230,7 +230,7 @@ public class ItPodsRestart extends BaseTest {
               + "/weblogick8s/middleware/weblogic:duplicate");
       
       String newImage = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
-      TestUtils.exec("docker pull" + newImage, true);
+      TestUtils.exec("docker pull " + newImage, true);
       // apply new domain yaml and verify pod restart
       domain.verifyDomainServerPodRestart(
           "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
