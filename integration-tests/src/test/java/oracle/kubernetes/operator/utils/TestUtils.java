@@ -1482,6 +1482,28 @@ public class TestUtils {
             + result.stderr());
     return result;
   }
+  
+  public static ExecResult loginAndPullImageFromOcir(String image) throws Exception {
+    String dockerLoginAndPullCmd =
+        "docker login "
+            + System.getenv("REPO_REGISTRY")
+            + " -u "
+            + System.getenv("REPO_USERNAME")
+            + " -p \""
+            + System.getenv("REPO_PASSWORD")
+            + "\" && docker pull "
+            + image;
+    ExecResult result = TestUtils.exec(dockerLoginAndPullCmd);
+    logger.info(
+        "cmd "
+            + dockerLoginAndPushCmd
+            + "\n result "
+            + result.stdout()
+            + "\n err "
+            + result.stderr());
+    return result;
+  }
+
 
   public static ExecResult kubectlpatch(String domainUid, String domainNS, String patchStr)
       throws Exception {
