@@ -264,9 +264,9 @@ public class BaseTest {
   }
   
   /**
-   * getter method for weblogicImageTag field.
+   * getter method for weblogicImageDevTag field.
    *
-   * @return image tag of the WLS docker images
+   * @return image tag of the WLS Dev docker images
    */
   public static String getWeblogicImageDevTag() {
     return weblogicImageDevTag;
