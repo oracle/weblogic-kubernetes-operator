@@ -134,9 +134,18 @@ public class ItSessionMigration extends BaseTest {
     // Send the second HTTP request using HTTP header/sessionID info save before
     result = getHttpResponse(testAppPath, " -b ");
 
-    // Get primary server name & session create time af primaryServName1 is stopped
-    String primaryServName2 = getHttpResponseAttribute(result.stdout(), primaryServ);
-    String sessCreateTime2 = getHttpResponseAttribute(result.stdout(), sessCreateTime);
+    String primaryServName2 = null;
+    String sessCreateTime2 = null;
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      // Get primary server name & session create time af primaryServName1 is stopped
+      primaryServName2 = getHttpResponseAttribute(result.stdout(), primaryServ);
+      sessCreateTime2 = getHttpResponseAttribute(result.stdout(), sessCreateTime);
+      
+      if(null != primaryServName2) {
+        break;
+      }
+    }
 
     // Verify that the same session info is used
     Assume.assumeTrue("HTTP Session should NOT change!", sessCreateTime1.equals(sessCreateTime2));
@@ -191,9 +200,18 @@ public class ItSessionMigration extends BaseTest {
     // Send the second HTTP request using HTTP header/sessionID info save before
     result = getHttpResponse(webServiceGetUrl, " -b ");
 
-    // Get primary server name & count number af primaryServName1 is stopped
-    String primaryServName2 = getHttpResponseAttribute(result.stdout(), primaryServ);
-    String countattribute2 = getHttpResponseAttribute(result.stdout(), count);
+    String primaryServName2 = null;
+    String countattribute2 = null;
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      // Get primary server name & count number af primaryServName1 is stopped
+      primaryServName2 = getHttpResponseAttribute(result.stdout(), primaryServ);
+      countattribute2 = getHttpResponseAttribute(result.stdout(), count);
+      
+      if(null != primaryServName2) {
+        break;
+      }
+    }
 
     // Verify that the count number is from a new primary server
     Assume.assumeFalse(
