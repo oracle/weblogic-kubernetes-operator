@@ -341,56 +341,51 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
     final OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
-    Runnable command =
-        new Runnable() {
-          public void run() {
-            try {
-              Runnable r = this; // resolve visibility
-              Packet packet = new Packet();
-              packet
-                  .getComponents()
-                  .put(
-                      ProcessingConstants.DOMAIN_COMPONENT_NAME,
-                      Component.createFor(info, delegate.getVersion()));
-              packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
-              MainTuning main = TuningParameters.getInstance().getMainTuning();
-              Step strategy =
-                  DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
-              FiberGate gate = getStatusFiberGate(info.getNamespace());
-              gate.startFiberIfNoCurrentFiber(
-                  info.getDomainUid(),
-                  strategy,
-                  packet,
-                  new CompletionCallback() {
-                    @Override
-                    public void onCompletion(Packet packet) {
-                      AtomicInteger serverHealthRead =
-                          packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
-                      if (serverHealthRead == null || serverHealthRead.get() == 0) {
-                        loggingFilter.setFiltering(false).resetLogHistory();
-                      } else {
-                        loggingFilter.setFiltering(true);
-                      }
-                    }
-
-                    @Override
-                    public void onThrowable(Packet packet, Throwable throwable) {
-                      LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-                      loggingFilter.setFiltering(true);
-                    }
-                  });
-            } catch (Throwable t) {
-              LOGGER.severe(MessageKeys.EXCEPTION, t);
-            }
-          }
-        };
 
     MainTuning main = TuningParameters.getInstance().getMainTuning();
     registerStatusUpdater(
         info.getNamespace(),
         info.getDomainUid(),
         delegate.scheduleWithFixedDelay(
-            command, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
+            () -> {
+              try {
+                Packet packet = new Packet();
+                packet
+                    .getComponents()
+                    .put(
+                        ProcessingConstants.DOMAIN_COMPONENT_NAME,
+                        Component.createFor(info, delegate.getVersion()));
+                packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
+                Step strategy =
+                    DomainStatusUpdater.createStatusStep(main.statusUpdateTimeoutSeconds, null);
+                FiberGate gate = getStatusFiberGate(info.getNamespace());
+
+                Fiber f = gate.startFiberIfNoCurrentFiber(
+                    info.getDomainUid(),
+                    strategy,
+                    packet,
+                    new CompletionCallback() {
+                      @Override
+                      public void onCompletion(Packet packet) {
+                        AtomicInteger serverHealthRead =
+                            packet.getValue(ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ);
+                        if (serverHealthRead == null || serverHealthRead.get() == 0) {
+                          loggingFilter.setFiltering(false).resetLogHistory();
+                        } else {
+                          loggingFilter.setFiltering(true);
+                        }
+                      }
+
+                      @Override
+                      public void onThrowable(Packet packet, Throwable throwable) {
+                        LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+                        loggingFilter.setFiltering(true);
+                      }
+                    });
+              } catch (Throwable t) {
+                LOGGER.severe(MessageKeys.EXCEPTION, t);
+              }
+            }, main.initialShortDelay, main.initialShortDelay, TimeUnit.SECONDS));
   }
 
   public void makeRightDomainPresence(

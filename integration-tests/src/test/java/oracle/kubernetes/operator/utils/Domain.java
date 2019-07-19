@@ -29,6 +29,7 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+
 import oracle.kubernetes.operator.BaseTest;
 import org.yaml.snakeyaml.Yaml;
 
@@ -72,7 +73,8 @@ public class Domain {
   private String imageTag;
   private String imageName;
   private boolean voyager;
-
+  private boolean createDomainResource = true;
+  
   public Domain() throws Exception {
     domainMap = new HashMap<>();
   }
@@ -82,8 +84,18 @@ public class Domain {
     this(TestUtils.loadYaml(inputYaml));
   }
 
+  public Domain(String inputYaml, boolean createDomainResource) throws Exception {
+    // read input domain yaml to test
+    this(TestUtils.loadYaml(inputYaml), createDomainResource);
+  }
+  
   public Domain(Map<String, Object> inputDomainMap) throws Exception {
+    this(inputDomainMap, true);
+  }
+  
+  public Domain(Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
     initialize(inputDomainMap);
+    this.createDomainResource = createDomainResource;
     createPv();
     createSecret();
     generateInputYaml();
@@ -902,9 +914,9 @@ public class Domain {
     
     logger.info("pvSharing for this domain is: " + pvSharing);
     if (!pvSharing) {
-    	pvMap.put("domainUID", domainUid);
+      pvMap.put("domainUID", domainUid);
     } else {
-    	pvMap.put("baseName", "weblogic-sharing");
+      pvMap.put("baseName", "weblogic-sharing");
     }
     logger.info("baseName of PVPVC for this domain is: " + (String) pvMap.get("baseName"));
 
@@ -912,7 +924,7 @@ public class Domain {
     if ((domainUid != null) && !pvSharing) {
       domainMap.put("persistentVolumeClaimName", domainUid + "-" + pvMap.get("baseName") + "-pvc");
     } else {
-    	domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
+      domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
     }
 
     if (domainMap.get("weblogicDomainStorageReclaimPolicy") != null) {
@@ -1236,7 +1248,8 @@ public class Domain {
     }
 
     // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
-    if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")) {
+    if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
+        || !createDomainResource) {
       appendToDomainYamlAndCreate();
     }
   }
@@ -1717,7 +1730,7 @@ public class Domain {
 
     // skip executing yaml if configOverrides or domain in image
     if (!domainMap.containsKey("configOverrides")
-        && !domainMap.containsKey("domainHomeImageBase")) {
+        && !domainMap.containsKey("domainHomeImageBase") && createDomainResource) {
       createDomainScriptCmd.append(" -e ");
     }
 
