@@ -55,14 +55,9 @@ public abstract class JobStepContext extends StepContextBase {
 
   void init() {
     jobModel = createJobModel();
-    createSubstitutionMap();
   }
 
   // ------------------------ data methods ----------------------------
-
-  private void createSubstitutionMap() {
-    substitutionVariables.put("DOMAIN_HOME", getDomainHome());
-  }
 
   private V1Job getJobModel() {
     return jobModel;

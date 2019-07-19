@@ -3,7 +3,7 @@
 
 # Usage: trace('string')
 #
-# This matches format of bash trace_utils.sh trace, and the operator's log format.
+# This matches format of bash utils.sh trace, and the operator's log format.
 #
 # Sample output:   @[2018-09-28T17:23:55.335 UTC][introspectDomain.py:614] Domain introspection complete.
 #

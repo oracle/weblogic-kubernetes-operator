@@ -17,7 +17,6 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -130,20 +129,18 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    Operator firstoperator = null;
-    Operator secondoperator = null;
 
+    logger.info("Creating first operator");
+    Operator firstoperator =
+        new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
+    firstoperator.callHelmInstall();
+    number = number + 1;
+    oprelease = "op" + number;
+    logger.info(" new value for oprelease" + oprelease);
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
+    operatorMap.replace("namespace", firstoperator.getOperatorMap().get("namespace"));
+    Operator secondoperator = new Operator(operatorMap, false, true, true, RestCertType.SELF_SIGNED);
     try {
-      logger.info("Creating firs toperator");
-      firstoperator =
-          new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
-      firstoperator.callHelmInstall();
-      number = number + 1;
-      oprelease = "op" + number;
-      logger.info(" new value for oprelease" + oprelease);
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
-      operatorMap.replace("namespace", firstoperator.getOperatorMap().get("namespace"));
-      secondoperator = new Operator(operatorMap, false, true, true, RestCertType.SELF_SIGNED);
       secondoperator.callHelmInstall();
       throw new RuntimeException(
           "FAILURE: Helm installs second operator with same namespace as the first one");
@@ -184,32 +181,29 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception exception
    */
   @Test
-  @Ignore
   public void testNotPreCreatedOpNsCreateOperatorNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
+
+    operator =
+        new Operator(
+            (TestUtils.createOperatorMap(number, false)),
+            true,
+            false,
+            true,
+            RestCertType.SELF_SIGNED);
+    String command = " kubectl delete namespace weblogic-operator" + number;
+    TestUtils.exec(command);
     try {
-      operator =
-          new Operator(
-              (TestUtils.createOperatorMap(number, false)), false, false, true, RestCertType.NONE);
       operator.callHelmInstall();
       throw new RuntimeException("FAILURE: Helm install operator with not preexisted namespace ");
 
     } catch (Exception ex) {
-      String cmdLb = "helm list --failed " + "  | grep " + oprelease;
-      logger.info("Executing cmd " + cmdLb);
-      ExecResult result = ExecCommand.exec(cmdLb);
-      if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: Helm installs operator with not preexisted namespace ");
-      }
+      logger.info("Helm install operator with not preexisted ns failed as expected");
     } finally {
       number++;
-      if (operator != null) {
-        operator.destroy();
-      }
     }
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -221,16 +215,20 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception exception
    */
   @Test
-  @Ignore
   public void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
+
+    operator =
+        new Operator(
+            (TestUtils.createOperatorMap(number, false)),
+            true,
+            false,
+            true,
+            RestCertType.SELF_SIGNED);
     try {
-      operator =
-          new Operator(
-              (TestUtils.createOperatorMap(number, false)), true, false, true, RestCertType.NONE);
       operator.callHelmInstall();
       throw new RuntimeException(
           "FAILURE: Helm installs operator with not preexisted service account ");
@@ -240,8 +238,7 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
       logger.info("Executing cmd " + cmdLb);
       ExecResult result = ExecCommand.exec(cmdLb);
       if (result.exitValue() != 0) {
-        throw new RuntimeException(
-            "FAILURE: Helm installs operator with not preexisted service account ");
+        throw new RuntimeException("FAILURE: failed helm is not showed in the failed list ");
       }
       // create operator service account
       String serviceAccount = (String) operator.getOperatorMap().get("serviceAccount");
@@ -279,25 +276,23 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception exception
    */
   @Test
-  @Ignore
   public void testSecondOpSharingSameTargetDomainsNsNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    Operator secondoperator = null;
-    Operator firstoperator = null;
+
+    logger.info("Creating first operator");
+    Operator firstoperator =
+        new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
+    firstoperator.callHelmInstall();
+    number = number + 1;
+    oprelease = "op" + number;
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, false);
+    ArrayList<String> targetDomainsNS =
+        (ArrayList<String>) firstoperator.getOperatorMap().get("domainNamespaces");
+    operatorMap.put("domainNamespaces", targetDomainsNS);
+    Operator secondoperator = new Operator(operatorMap, true, true, false, RestCertType.SELF_SIGNED);
     try {
-      logger.info("Creating first operator");
-      firstoperator =
-          new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
-      firstoperator.callHelmInstall();
-      number = number + 1;
-      oprelease = "op" + number;
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, false);
-      ArrayList<String> targetDomainsNS =
-          (ArrayList<String>) firstoperator.getOperatorMap().get("domainNamespaces");
-      operatorMap.put("domainNamespaces", targetDomainsNS);
-      secondoperator = new Operator(operatorMap, true, true, false, RestCertType.NONE);
       secondoperator.callHelmInstall();
       throw new RuntimeException(
           "FAILURE: Helm installs second operator with same as first operator's target domains namespaces ");
@@ -342,20 +337,23 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
    * @throws Exception exception
    */
   @Test
-  @Ignore
   public void testTargetNsIsNotPreexistedNegativeInstall() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
+
+    operator =
+        new Operator(
+            TestUtils.createOperatorMap(number, false),
+            true,
+            true,
+            false,
+            RestCertType.SELF_SIGNED);
     try {
-      operator =
-          new Operator(
-              TestUtils.createOperatorMap(number, false), true, true, false, RestCertType.NONE);
       operator.callHelmInstall();
       throw new RuntimeException(
           "FAILURE: Helm install operator with not preexisted target domains namespaces ");
-
     } catch (Exception ex) {
       if (!ex.getMessage()
           .contains(
@@ -398,21 +396,20 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    Operator operator1 = null;
-    Operator operator2 = null;
     int httpsRestPort = 0;
+
+    Operator operator1 = new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
+    operator1.callHelmInstall();
+
+    httpsRestPort = (int) operator1.getOperatorMap().get("externalRestHttpsPort");
+    logger.info("Creating second operator with externalRestHttpPort " + httpsRestPort);
+    number = number + 1;
+    oprelease = "op" + number;
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
+    operatorMap.replace("externalRestHttpsPort", httpsRestPort);
+
+    Operator operator2 = new Operator(operatorMap, RestCertType.SELF_SIGNED);
     try {
-      operator1 = new Operator(TestUtils.createOperatorMap(number, true), RestCertType.SELF_SIGNED);
-      operator1.callHelmInstall();
-
-      httpsRestPort = (int) operator1.getOperatorMap().get("externalRestHttpsPort");
-      logger.info("Creating second operator with externalRestHttpPort " + httpsRestPort);
-      number = number + 1;
-      oprelease = "op" + number;
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
-      operatorMap.replace("externalRestHttpsPort", httpsRestPort);
-
-      operator2 = new Operator(operatorMap, RestCertType.SELF_SIGNED);
       operator2.callHelmInstall();
 
       throw new RuntimeException(
@@ -459,12 +456,13 @@ public class ItUsabilityOperatorHelmChart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
     Operator operator = null;
+
+    Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
+    ArrayList<String> targetDomainsNS = new ArrayList<String>();
+    targetDomainsNS.add("Test9");
+    operatorMap.replace("domainNamespaces", targetDomainsNS);
+    operator = new Operator(operatorMap, RestCertType.SELF_SIGNED);
     try {
-      Map<String, Object> operatorMap = TestUtils.createOperatorMap(number, true);
-      ArrayList<String> targetDomainsNS = new ArrayList<String>();
-      targetDomainsNS.add("Test9");
-      operatorMap.replace("domainNamespaces", targetDomainsNS);
-      operator = new Operator(operatorMap, RestCertType.SELF_SIGNED);
       operator.callHelmInstall();
       throw new RuntimeException(
           "FAILURE: Helm install operator with UpperCase for target domains ");
