@@ -47,6 +47,7 @@ public class BaseTest {
   public static final String DOMAIN_SAMPLE_DEFAULTS_YAML = "domainsampledefaults.yaml";
   public static final String DOMAININIMAGE_WLST_YAML = "domaininimagewlst.yaml";
   public static final String DOMAININIMAGE_WDT_YAML = "domaininimagewdt.yaml";
+  public static final String DOMAINONSHARINGPV_WLST_YAML = "domainonsharingpvwlst.yaml";
 
   // property file used to configure constants for integration tests
   public static final String APP_PROPS_FILE = "OperatorIT.properties";
@@ -73,6 +74,7 @@ public class BaseTest {
   private static String weblogicImageTag;
   private static String weblogicImageName;
   private static String weblogicImageServer;
+  private static String domainApiVersion;
 
   // Set QUICKTEST env var to true to run a small subset of tests.
   // Set SMOKETEST env var to true to run an even smaller subset of tests
@@ -120,6 +122,10 @@ public class BaseTest {
         System.getenv("OCR_SERVER") != null
             ? System.getenv("OCR_SERVER")
             : appProps.getProperty("OCR_SERVER");
+    domainApiVersion =
+        System.getenv("DOMAIN_API_VERSION") != null
+            ? System.getenv("DOMAIN_API_VERSION")
+            : appProps.getProperty("DOMAIN_API_VERSION");
     maxIterationsPod =
         new Integer(appProps.getProperty("maxIterationsPod", "" + maxIterationsPod)).intValue();
     waitTimePod = new Integer(appProps.getProperty("waitTimePod", "" + waitTimePod)).intValue();
@@ -268,6 +274,10 @@ public class BaseTest {
    */
   public static String getWeblogicImageServer() {
     return weblogicImageServer;
+  }
+
+  public static String getDomainApiVersion() {
+    return domainApiVersion;
   }
 
   public static ExecResult cleanup() throws Exception {

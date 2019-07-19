@@ -42,6 +42,7 @@ public class TestUtils {
 
   /**
    * Checks if pod is ready.
+   *
    * @param podName pod name
    * @param domainNS namespace
    * @throws Exception exception
@@ -73,6 +74,7 @@ public class TestUtils {
 
   /**
    * Checks that pod is created.
+   *
    * @param podName - pod name
    * @param domainNS - domain namespace name
    */
@@ -103,6 +105,7 @@ public class TestUtils {
 
   /**
    * Checks that service is created.
+   *
    * @param serviceName service name
    * @param domainNS namespace
    * @throws Exception exception
@@ -144,6 +147,7 @@ public class TestUtils {
 
   /**
    * Creates input file.
+   *
    * @param map - map with attributes
    * @param generatedInputYamlFile - output file with replaced values
    * @throws Exception exception
@@ -742,6 +746,20 @@ public class TestUtils {
     return operator;
   }
 
+  public static Operator createOperator(Map<String, Object> inputMap, RestCertType restCertType)
+      throws Exception {
+    // create op
+    Operator operator = new Operator(inputMap, restCertType);
+    operator.callHelmInstall();
+
+    logger.info("Check Operator status");
+    operator.verifyPodCreated();
+    operator.verifyOperatorReady();
+    operator.verifyExternalRestService();
+
+    return operator;
+  }
+
   public static Operator createOperator(String opYamlFile) throws Exception {
     return createOperator(opYamlFile, RestCertType.SELF_SIGNED);
   }
@@ -769,10 +787,21 @@ public class TestUtils {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
-
+  
+  public static Domain createDomain(String inputYaml, boolean createDomainResource) throws Exception {
+    logger.info("Creating domain with yaml, waiting for the script to complete execution");
+    return new Domain(inputYaml, createDomainResource);
+  }
+  
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
+  }
+  
+  public static Domain createDomain(Map<String, Object> inputDomainMap, boolean createDomainResource)
+      throws Exception {
+    logger.info("Creating domain with Map, waiting for the script to complete execution");
+    return new Domain(inputDomainMap, createDomainResource);
   }
 
   public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
@@ -970,6 +999,38 @@ public class TestUtils {
           "FAILURE: command " + cmdKubectlSh + " failed, returned " + result.stderr());
     }
     return result.stdout().trim();
+  }
+
+  /**
+   * exec into the pod and call the shell script with given arguments.
+   *
+   * @param podName pod name
+   * @param domainNS namespace
+   * @param scriptsLocInPod script location
+   * @param shScriptName script name
+   * @param args script arguments
+   * @throws Exception exception
+   */
+  public static void callShellScriptByExecToPod(
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
+      throws Exception {
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" -- bash -c 'chmod +x -R ")
+        .append(scriptsLocInPod)
+        .append("  && ")
+        .append(scriptsLocInPod)
+        .append("/")
+        .append(shScriptName)
+        .append(" ")
+        .append(String.join(" ", args).toString())
+        .append("'");
+
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    TestUtils.exec(cmdKubectlSh.toString());
   }
 
   public static void createDirUnderDomainPV(String dirPath) throws Exception {

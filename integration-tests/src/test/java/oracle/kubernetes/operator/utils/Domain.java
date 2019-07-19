@@ -69,10 +69,12 @@ public class Domain {
   private String domainHomeImageBuildPath = "";
   private String projectRoot = "";
   private boolean ingressPerDomain = true;
+  private boolean pvSharing = false;
   private String imageTag;
   private String imageName;
   private boolean voyager;
-
+  private boolean createDomainResource = true;
+  
   public Domain() throws Exception {
     domainMap = new HashMap<>();
   }
@@ -82,8 +84,18 @@ public class Domain {
     this(TestUtils.loadYaml(inputYaml));
   }
 
+  public Domain(String inputYaml, boolean createDomainResource) throws Exception {
+    // read input domain yaml to test
+    this(TestUtils.loadYaml(inputYaml), createDomainResource);
+  }
+  
   public Domain(Map<String, Object> inputDomainMap) throws Exception {
+    this(inputDomainMap, true);
+  }
+  
+  public Domain(Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
     initialize(inputDomainMap);
+    this.createDomainResource = createDomainResource;
     createPv();
     createSecret();
     generateInputYaml();
@@ -115,7 +127,7 @@ public class Domain {
    */
   public void verifyPodsCreated() throws Exception {
     // check admin pod
-    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Created");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
@@ -127,7 +139,7 @@ public class Domain {
                 + "-"
                 + managedServerNameBase
                 + i
-                + ") is Running");
+                + ") is Created");
         TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
       }
     }
@@ -188,13 +200,14 @@ public class Domain {
    */
   public void verifyServersReady() throws Exception {
     // check admin pod
-    logger.info("Checking if admin server is Running");
+    logger.info("Checking if admin server is Running and Ready");
     TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
 
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
       // check managed server pods
       for (int i = 1; i <= initialManagedServerReplicas; i++) {
-        logger.info("Checking if managed server (" + managedServerNameBase + i + ") is Running");
+        logger.info(
+            "Checking if managed server (" + managedServerNameBase + i + ") is Running and Ready");
         TestUtils.checkPodReady(domainUid + "-" + managedServerNameBase + i, domainNS);
       }
     } else {
@@ -483,8 +496,25 @@ public class Domain {
         adminPod,
         domainNS);
 
-    callShellScriptByExecToPod(
-        username, password, webappName, appLocationInPod, useAdminPortToDeploy);
+    String t3Url = "t3://" + adminPod + ":";
+    if (useAdminPortToDeploy) {
+      t3Url = t3Url + domainMap.getOrDefault("adminPort", 7001);
+    } else {
+      t3Url = t3Url + t3ChannelPort;
+    }
+
+    String[] args = {
+      appLocationInPod + "/deploywebapp.py",
+      BaseTest.getUsername(),
+      BaseTest.getPassword(),
+      t3Url,
+      webappName,
+      appLocationInPod + "/" + webappName + ".war",
+      clusterName
+    };
+
+    TestUtils.callShellScriptByExecToPod(
+        adminPod, domainNS, appLocationInPod, "callpyscript.sh", args);
   }
 
   /**
@@ -881,12 +911,21 @@ public class Domain {
                     + "/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc-inputs.yaml"));
     pvMap = yaml.load(pvis);
     pvis.close();
-    pvMap.put("domainUID", domainUid);
+    
+    logger.info("pvSharing for this domain is: " + pvSharing);
+    if (!pvSharing) {
+      pvMap.put("domainUID", domainUid);
+    } else {
+      pvMap.put("baseName", "weblogic-sharing");
+    }
+    logger.info("baseName of PVPVC for this domain is: " + (String) pvMap.get("baseName"));
 
-    // each domain uses its own pv for now
-    if (domainUid != null)
+    // Now there is only one pvSharing test case and we just use parameter "baseName"+"-pvc" as PVC
+    if ((domainUid != null) && !pvSharing) {
       domainMap.put("persistentVolumeClaimName", domainUid + "-" + pvMap.get("baseName") + "-pvc");
-    else domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
+    } else {
+      domainMap.put("persistentVolumeClaimName", pvMap.get("baseName") + "-pvc");
+    }
 
     if (domainMap.get("weblogicDomainStorageReclaimPolicy") != null) {
       pvMap.put(
@@ -1209,7 +1248,8 @@ public class Domain {
     }
 
     // write configOverride and configOverrideSecrets to domain.yaml and/or create domain
-    if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")) {
+    if (domainMap.containsKey("configOverrides") || domainMap.containsKey("domainHomeImageBase")
+        || !createDomainResource) {
       appendToDomainYamlAndCreate();
     }
   }
@@ -1270,79 +1310,6 @@ public class Domain {
     }
     lbMap.values().removeIf(Objects::isNull);
     new LoadBalancer(lbMap);
-  }
-
-  private void callShellScriptByExecToPod(
-      String username, String password, String webappName, String appLocationInPod)
-      throws Exception {
-    callShellScriptByExecToPod(username, password, webappName, appLocationInPod, false);
-  }
-
-  private void callShellScriptByExecToPod(
-      String username,
-      String password,
-      String webappName,
-      String appLocationInPod,
-      boolean usingAdminPortToDeploy)
-      throws Exception {
-
-    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
-    cmdKubectlSh
-        .append(domainNS)
-        .append(" exec -it ")
-        .append(domainUid)
-        .append("-")
-        .append(adminServerName)
-        .append(" -- bash -c 'chmod +x -R ")
-        .append(appLocationInPod)
-        .append("  && ")
-        .append(appLocationInPod)
-        .append("/callpyscript.sh ")
-        .append(appLocationInPod)
-        .append("/deploywebapp.py ")
-        .append(username)
-        .append(" ")
-        .append(password)
-        .append(" t3://")
-        // .append(TestUtils.getHostName())
-        .append(domainUid)
-        .append("-")
-        .append(adminServerName)
-        .append(":");
-
-    if (usingAdminPortToDeploy) {
-      String adminPort = (domainMap.getOrDefault("adminPort", 7001)).toString();
-      cmdKubectlSh.append(adminPort);
-    } else {
-      cmdKubectlSh.append(t3ChannelPort);
-    }
-
-    cmdKubectlSh
-        .append(" ")
-        .append(webappName)
-        .append(" ")
-        .append(appLocationInPod)
-        .append("/")
-        .append(webappName)
-        .append(".war ")
-        .append(clusterName)
-        .append("'");
-    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
-    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
-    String resultStr =
-        "Command= '"
-            + cmdKubectlSh
-            + "'"
-            + ", exitValue="
-            + result.exitValue()
-            + ", stdout='"
-            + result.stdout()
-            + "'"
-            + ", stderr='"
-            + result.stderr()
-            + "'";
-    if (result.exitValue() != 0 || !resultStr.contains("Deployment State : completed"))
-      throw new RuntimeException("FAILURE: webapp deploy failed - " + resultStr);
   }
 
   private void callWebAppAndWaitTillReady(String curlCmd) throws Exception {
@@ -1435,8 +1402,18 @@ public class Domain {
     this.projectRoot = BaseTest.getProjectRoot();
 
     // copy samples to RESULT_DIR
-    TestUtils.exec(
-        "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir());
+    if (domainMap.containsKey("projectRoot")) {
+      TestUtils.exec(
+          "cp -rf "
+              + domainMap.get("projectRoot")
+              + "/kubernetes/samples "
+              + BaseTest.getResultDir(),
+          true);
+    } else {
+      TestUtils.exec(
+          "cp -rf " + BaseTest.getProjectRoot() + "/kubernetes/samples " + BaseTest.getResultDir(),
+          true);
+    }
 
     this.voyager =
         (System.getenv("LB_TYPE") != null && System.getenv("LB_TYPE").equalsIgnoreCase("VOYAGER"))
@@ -1482,6 +1459,10 @@ public class Domain {
     clusterName = (String) domainMap.get("clusterName");
     clusterType = (String) domainMap.getOrDefault("clusterType", "DYNAMIC");
     serverStartPolicy = ((String) domainMap.get("serverStartPolicy")).trim();
+    if (domainMap.containsKey("pvSharing")) {
+      pvSharing = ((Boolean) domainMap.get("pvSharing")).booleanValue();
+    }
+    logger.info("pvSharing for this domain is: " + pvSharing);
 
     if (exposeAdminT3Channel) {
       domainMap.put("t3PublicAddress", TestUtils.getHostName());
@@ -1749,7 +1730,7 @@ public class Domain {
 
     // skip executing yaml if configOverrides or domain in image
     if (!domainMap.containsKey("configOverrides")
-        && !domainMap.containsKey("domainHomeImageBase")) {
+        && !domainMap.containsKey("domainHomeImageBase") && createDomainResource) {
       createDomainScriptCmd.append(" -e ");
     }
 
@@ -1797,6 +1778,7 @@ public class Domain {
   /**
    * Shut down a ms by setting serverStartPolicy to NEVER.
    *
+   * @param msName - a managed server name to be stopped
    * @throws Exception exception
    */
   public void shutdownManagedServerUsingServerStartPolicy(String msName) throws Exception {
@@ -1813,6 +1795,7 @@ public class Domain {
   /**
    * Restart a ms by setting serverStartPolicy to IF_NEEDED.
    *
+   * @param msName - a managed server name to be started
    * @throws Exception exception
    */
   public void restartManagedServerUsingServerStartPolicy(String msName) throws Exception {
