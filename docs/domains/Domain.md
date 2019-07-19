@@ -23,11 +23,11 @@ DomainSpec is a description of a domain.
 | `domainHome` | string | The folder for the WebLogic Domain. Not required. Defaults to /shared/domains/domains/domainUID if domainHomeInImage is false. Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage is true. |
 | `domainHomeInImage` | Boolean | True if this domain's home is defined in the Docker image for the domain. Defaults to true. |
 | `domainUID` | string | Domain unique identifier. Must be unique across the Kubernetes cluster. Not required. Defaults to the value of metadata.name. |
+| `experimental` | [Experimental](#experimental) | Experimental feature configurations. |
 | `image` | string | The WebLogic Docker image; required when domainHomeInImage is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.3. |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Docker image. Legal values are Always, Never and IfNotPresent. Defaults to Always if image ends in :latest, IfNotPresent otherwise. |
 | `imagePullSecrets` | array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull secrets for the WebLogic Docker image. |
 | `includeServerOutInPodLog` | Boolean | If true (the default), the server .out file will be included in the pod's stdout. |
-| `istio` | [Istio](#istio) | Istio service mesh integration configuration. |
 | `logHome` | string | The in-pod name of the directory in which to store the domain, node manager, server logs, and server  *.out files |
 | `logHomeEnabled` | Boolean | Specified whether the log home folder is enabled. Not required. Defaults to true if domainHomeInImage is false. Defaults to false if domainHomeInImage is true.  |
 | `managedServers` | array of [Managed Server](#managed-server) | Configuration for individual Managed Servers. |
@@ -82,11 +82,11 @@ An element representing a cluster in the domain configuration.
 | `serverStartPolicy` | string | The strategy for deciding whether to start a server. Legal values are NEVER, or IF_NEEDED. |
 | `serverStartState` | string | The state in which the server is to be started. Use ADMIN if server should start in the admin state. Defaults to RUNNING. |
 
-### Istio
+### Experimental
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `istioEnabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true. Not required. |
+| `istio` | [Istio](#istio) | Istio service mesh integration configuration. |
 
 ### Managed Server
 
@@ -174,6 +174,12 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 | --- | --- | --- |
 | `annotations` | Map | The annotations to be attached to generated resources. |
 | `labels` | Map | The labels to be attached to generated resources. The label names must not start with 'weblogic.'. |
+
+### Istio
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `istioEnabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true. Not required. |
 
 ### Probe Tuning
 
