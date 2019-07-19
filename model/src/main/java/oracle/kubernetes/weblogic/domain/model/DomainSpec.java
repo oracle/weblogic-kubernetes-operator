@@ -196,8 +196,8 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configuration for the clusters.")
   protected List<Cluster> clusters = new ArrayList<>();
 
-  @Description("Istio service mesh integration configuration.")
-  private Istio istio;
+  @Description("Experimental feature configurations.")
+  private Experimental experimental;
 
   /**
    * Adds a Cluster to the DomainSpec.
@@ -506,36 +506,9 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   boolean istioEnabled() {
-    return Optional.ofNullable(istio).map(i -> i.getIstioEnabled()).orElse(false);
-  }
-
-  /**
-   * Istio service mesh integration configuration.
-   *
-   * @return Istio service mesh integration configuration.
-   */
-  public Istio getIstio() {
-    return this.istio;
-  }
-
-  /**
-   * Istio service mesh integration configuration.
-   *
-   * @param istio Istio service mesh integration configuration.
-   */
-  public void setIstio(Istio istio) {
-    this.istio = istio;
-  }
-
-  /**
-   * Istio service mesh integration configuration.
-   *
-   * @param istio Istio service mesh integration configuration.
-   * @return this
-   */
-  public DomainSpec withIstio(Istio istio) {
-    this.istio = istio;
-    return this;
+    return Optional.ofNullable(experimental)
+        .map(e -> e.getIstio())
+        .map(i -> i.getIstioEnabled()).orElse(false);
   }
 
   @Override
@@ -560,7 +533,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("configOverrides", configOverrides)
             .append("configOverrideSecrets", configOverrideSecrets)
-            .append("istio", istio);
+            .append("experimental", experimental);
 
     return builder.toString();
   }
@@ -587,7 +560,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog)
             .append(configOverrides)
             .append(configOverrideSecrets)
-            .append(istio);
+            .append(experimental);
 
     return builder.toHashCode();
   }
@@ -622,7 +595,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)
-            .append(istio, rhs.istio);
+            .append(experimental, rhs.experimental);
 
     return builder.isEquals();
   }
