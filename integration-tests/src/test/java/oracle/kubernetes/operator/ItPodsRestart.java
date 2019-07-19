@@ -229,16 +229,16 @@ public class ItPodsRestart extends BaseTest {
               + " to "
               + "/weblogick8s/middleware/weblogic:duplicate");
       
-      String newImage = getWeblogicImageServer()+ "/middleware/weblogic:12.2.1.3-dev";
+      /*String newImage = getWeblogicImageName() + ":" + getWeblogicImageDevTag();
       TestUtils.exec("docker pull " + newImage, true);
       // apply new domain yaml and verify pod restart
       domain.verifyDomainServerPodRestart(
           "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
-          "\"" + newImage + "\"");
+          "\"" + newImage + "\"");*/
       
-      /*if (BaseTest.SHARED_CLUSTER) {
+      if (BaseTest.SHARED_CLUSTER) {
         String newImage =
-            System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
+            System.getenv("REPO_REGISTRY") + "/middleware/weblogic:duplicate";
         // tag image with repo name
         String tag =
             "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
@@ -257,6 +257,9 @@ public class ItPodsRestart extends BaseTest {
             System.getenv("REPO_PASSWORD"),
             System.getenv("REPO_EMAIL"),
             domain.getDomainNs());
+        
+        //for debugging
+        TestUtils.loginAndPullImageFromOcir(newImage);
 
         // apply new domain yaml and verify pod restart
         domain.verifyDomainServerPodRestart(
@@ -275,7 +278,7 @@ public class ItPodsRestart extends BaseTest {
         domain.verifyDomainServerPodRestart(
             "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
             "\"" + getWeblogicImageName() + ":duplicate" + "\"");
-      }*/
+      }
     } finally {
       if (!BaseTest.SHARED_CLUSTER) {
         TestUtils.exec("docker rmi -f " + getWeblogicImageName() + ":duplicate");

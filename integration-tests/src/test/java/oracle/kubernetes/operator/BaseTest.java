@@ -72,6 +72,7 @@ public class BaseTest {
   private static String appLocationOnHost;
   private static Properties appProps;
   private static String weblogicImageTag;
+  private static String weblogicImageDevTag;
   private static String weblogicImageName;
   private static String weblogicImageServer;
   private static String domainApiVersion;
@@ -114,6 +115,10 @@ public class BaseTest {
         System.getenv("IMAGE_TAG_WEBLOGIC") != null
             ? System.getenv("IMAGE_TAG_WEBLOGIC")
             : appProps.getProperty("weblogicImageTag");
+    weblogicImageDevTag =
+        System.getenv("IMAGE_DEVTAG_WEBLOGIC") != null
+            ? System.getenv("IMAGE_DEVTAG_WEBLOGIC")
+            : appProps.getProperty("weblogicImageDevTag");
     weblogicImageName =
         System.getenv("IMAGE_NAME_WEBLOGIC") != null
             ? System.getenv("IMAGE_NAME_WEBLOGIC")
@@ -256,6 +261,15 @@ public class BaseTest {
    */
   public static String getWeblogicImageTag() {
     return weblogicImageTag;
+  }
+  
+  /**
+   * getter method for weblogicImageTag field.
+   *
+   * @return image tag of the WLS docker images
+   */
+  public static String getWeblogicImageDevTag() {
+    return weblogicImageDevTag;
   }
 
   /**
