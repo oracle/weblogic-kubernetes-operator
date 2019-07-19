@@ -21,23 +21,14 @@ public class PersistentVolume {
   public PersistentVolume(String dirPath, Map pvMap) throws Exception {
     this.dirPath = dirPath;
     this.pvMap = pvMap;
-
+    
     String cmd =
             BaseTest.getProjectRoot()
-        + "/src/integration-tests/bash/krun.sh -m "+BaseTest.getPvRoot()+":/sharedparent -c 'mkdir -m 777 -p /sharedparent/"
-        + dirPath
+        + "/src/integration-tests/bash/krun.sh -m "+BaseTest.getPvRoot()+":/sharedparent -c 'mkdir -m 777 -p "
+        + dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/")
         + "'"; 
-
-    ExecResult result = ExecCommand.exec(cmd);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create domain PV directory "
-              + cmd
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
-    }
-    logger.info("command result " + result.stdout().trim());
+    
+    TestUtils.exec(cmd, true);
 
     Path parentDir =
         pvMap.get("domainUID") != null
@@ -60,16 +51,7 @@ public class PersistentVolume {
             + BaseTest.getUserProjectsDir();
     logger.info("Executing cmd " + cmdPvPvc);
 
-    result = ExecCommand.exec(cmdPvPvc);
-    if (result.exitValue() != 0) {
-      throw new RuntimeException(
-          "FAILURE: command to create PV/PVC "
-              + cmdPvPvc
-              + " failed, returned "
-              + result.stdout()
-              + result.stderr());
-    }
-    logger.info("command result " + result.stdout().trim());
+    TestUtils.exec(cmdPvPvc, true);
   }
 
   public String getDirPath() {
