@@ -1022,12 +1022,13 @@ public class TestUtils {
   }
 
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
-
+    dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
     String crdCmd =
         BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/job.sh \"mkdir -p "
-            + dirPath
-            + "\"";
+     + "/src/integration-tests/bash/krun.sh -m "+BaseTest.getPvRoot()+":/sharedparent -c 'mkdir -m 777 -p "
+     + dirPath
+     + "'"; 
+    
     ExecResult result = ExecCommand.exec(crdCmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -1046,31 +1047,33 @@ public class TestUtils {
     // copy wldf.py script tp pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
-        "/shared/wldf.py",
+        BaseTest.getAppLocationInPod() +"/wldf.py",
         adminPodName,
         domainNS);
 
     // copy callpyscript.sh to pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
-        "/shared/callpyscript.sh",
+        BaseTest.getAppLocationInPod() + "/callpyscript.sh",
         adminPodName,
         domainNS);
 
     // arguments to shell script to call py script
-    String arguments =
-        "/shared/wldf.py "
-            + BaseTest.getUsername()
-            + " "
-            + BaseTest.getPassword()
-            + " t3://"
+
+    String[] args = {
+        BaseTest.getAppLocationInPod() + "/wldf.py",
+        BaseTest.getUsername(),
+        BaseTest.getPassword(),
+        " t3://"
             + adminPodName
             + ":"
-            + t3ChannelPort;
-
+            + t3ChannelPort,
+        
+      };
+    
     // call callpyscript.sh in pod to deploy wldf module
-    TestUtils.callShellScriptByExecToPod(
-        "/shared/callpyscript.sh", arguments, adminPodName, domainNS);
+     TestUtils.callShellScriptByExecToPod(
+        adminPodName, domainNS, BaseTest.getAppLocationInPod(), "callpyscript.sh", args);
   }
 
   public static void createRbacPoliciesForWldfScaling() throws Exception {
