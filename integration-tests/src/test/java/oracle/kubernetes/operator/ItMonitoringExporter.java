@@ -4,17 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlFileInput;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
-import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -26,6 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import javax.xml.bind.DatatypeConverter;
+
+import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlFileInput;
+import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
+import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -38,6 +35,10 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /** This test is used for testing Monitoring Exporter with Operator(s) . */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -168,14 +169,14 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Build monitoring exporter app
+   * Build monitoring exporter app.
    *
    * @throws Exception if could not run the command successfully to clone from github
    */
   private static void buildMonitoringExporter() throws Exception {
     String monitoringExporterSrcDir = monitoringExporterDir + "/src";
     // target dir for monitoring exporter webapp
-    String monitoringExporterWar =
+    final String monitoringExporterWar =
         monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
 
     // build monitoring exporter project
@@ -797,7 +798,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Test End to End example from MonitoringExporter github project
+   * Test End to End example from MonitoringExporter github project.
    *
    * @throws Exception if test fails
    */
@@ -814,18 +815,18 @@ public class ItMonitoringExporter extends BaseTest {
       }
       gitCloneMonitoringExporter();
       try {
-        setupPVMYSQL();
+        setupPvMysql();
       } catch (Exception ex) {
         deletePvDir();
         throw new RuntimeException("FAILURE: failed to install database ");
       }
-      createWLSImageAndDeploy();
+      createWlsImageAndDeploy();
       installWebHookAndAlertManager();
       installPrometheusGrafanaViaChart();
       fireAlert();
     } finally {
       uninstallWebHookPrometheusGrafanaViaChart();
-      uninstallMySQL();
+      uninstallMysql();
 
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
@@ -854,7 +855,9 @@ public class ItMonitoringExporter extends BaseTest {
 
     String webhookPod = getPodName("webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
+
     ExecResult webhookResult = TestUtils.checkAnyCmdInLoop(command, "Some WLS cluster has only one running server for more than 1 minutes");
+    logger.info(" webhook log " + webhookResult.stdout());
   }
 
   private static String getPodName(String app, String namespace) throws Exception {
@@ -948,11 +951,11 @@ public class ItMonitoringExporter extends BaseTest {
 
   /**
    * Remove monitoring exporter directory if exists and clone latest from github for monitoring
-   * exporter code
+   * exporter code.
    *
    * @throws Exception if could not run the command successfully to install database
    */
-  private static void setupPVMYSQL() throws Exception {
+  private static void setupPvMysql() throws Exception {
     String pvDir = monitoringExporterEndToEndDir + "pvDir";
     if (new File(pvDir).exists()) {
       logger.info(" PV dir already exists , cleaning ");
@@ -1038,11 +1041,11 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Install wls image tool and update wls pods
+   * Install wls image tool and update wls pods.
    *
    * @throws Exception if could not run the command successfully to create WLSImage and deploy
    */
-  private static void createWLSImageAndDeploy() throws Exception {
+  private static void createWlsImageAndDeploy() throws Exception {
     operator1 = TestUtils.createOperator(OPERATOR1_YAML);
 
     String command =
@@ -1082,7 +1085,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Install Prometheus and Grafana using helm chart
+   * Install Prometheus and Grafana using helm chart.
    *
    * @throws Exception if could not run the command successfully to install Prometheus and Grafana
    */
@@ -1108,7 +1111,8 @@ public class ItMonitoringExporter extends BaseTest {
     crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
     TestUtils.exec(crdCmd);
     crdCmd =
-        "kubectl --namespace monitoring create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678";
+        "kubectl --namespace monitoring create secret generic grafana-secret"
+            + " --from-literal=username=admin --from-literal=password=12345678";
     TestUtils.exec(crdCmd);
     logger.info("calling helm install for grafana");
     crdCmd =
@@ -1141,7 +1145,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Install Prometheus and Grafana using helm chart
+   * Install Prometheus and Grafana using helm chart.
    *
    * @throws Exception if could not run the command successfully to install webhook and alert manager
    */
@@ -1164,7 +1168,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Uninstall Prometheus and Grafana using helm chart
+   * Uninstall Prometheus and Grafana using helm chart.
    *
    * @throws Exception if could not run the command successfully to uninstall deployments
    */
@@ -1201,11 +1205,11 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Unnstall MYSQL
+   * Uninstall MYSQL.
    *
    * @throws Exception if could not run the command successfully to uninstall MySQL
    */
-  private static void uninstallMySQL() throws Exception {
+  private static void uninstallMysql() throws Exception {
     String monitoringExporterEndToEndDir =
         monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     // unnstall mysql
@@ -1220,7 +1224,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * Delete PvDir via docker
+   * Delete PvDir via docker.
    *
    * @throws Exception if could not run the command successfully to delete PV
    */
@@ -1240,7 +1244,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * A utility method to sed files
+   * A utility method to sed files.
    *
    * @throws IOException when copying files from source location to staging area fails
    */
@@ -1256,28 +1260,7 @@ public class ItMonitoringExporter extends BaseTest {
   }
 
   /**
-   * A utility method to copy Cross Namespaces RBAC yaml template file replacing the DOMAIN_NS,
-   * OPERATOR_NS
-   *
-   * @throws IOException when copying files from source location to staging area fails
-   */
-  private static void createCrossNSRBACFile(String domainNS, String operatorNS) throws IOException {
-    String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-    Path src = Paths.get(samplesDir + "/crossnsrbac.yaml");
-    Path dst = Paths.get(samplesDir + "/crossnsrbac_" + domainNS + "_" + operatorNS + ".yaml");
-    if (!dst.toFile().exists()) {
-      logger.log(Level.INFO, "Copying {0}", src.toString());
-      Charset charset = StandardCharsets.UTF_8;
-      String content = new String(Files.readAllBytes(src), charset);
-      content = content.replaceAll("weblogic-domain", domainNS);
-      content = content.replaceAll("weblogic-operator", operatorNS);
-      logger.log(Level.INFO, "to {0}", dst.toString());
-      Files.write(dst, content.getBytes(charset));
-    }
-  }
-
-  /**
-   * call operator to scale to specified number of replicas
+   * call operator to scale to specified number of replicas.
    *
    * @param replicas - number of managed servers
    * @throws Exception if scaling fails
