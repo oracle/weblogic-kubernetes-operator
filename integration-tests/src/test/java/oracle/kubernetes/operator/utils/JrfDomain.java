@@ -69,7 +69,7 @@ public class JrfDomain extends Domain {
     if (adminPortEnabled) {
       String createDomainScript =
           BaseTest.getResultDir()
-              + "/samples/scripts/create-fmw-infrastructure-domain/wlst/create-domain-script.sh";
+              + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/wlst/create-domain-script.sh";
       TestUtils.replaceStringInFile(
           createDomainScript,
           "-managedNameBase ",
