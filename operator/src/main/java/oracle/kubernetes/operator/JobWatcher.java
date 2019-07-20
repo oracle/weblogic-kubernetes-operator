@@ -312,29 +312,19 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     }
 
     public String toString() {
-      StringBuilder sb = new StringBuilder("Job ")
-          .append(job.getMetadata().getName()).append(" failed due to reason: DeadlineExceeded.")
-          .append(" ActiveDeadlineSeconds of the job is configured with "
-              + job.getSpec().getActiveDeadlineSeconds()
-              + " seconds.")
-          .append(getJobStartedSecondsMessage())
-          .append(" Ensure all domain dependencies have been deployed")
-          .append(" (any secrets, config-maps, PVs, and PVCs that the domain resource references).")
-          .append(" Use kubectl describe the job and its pod for more job failure information.")
-          .append(" The job may be retried by the operator up to "
-              + DomainPresence.getDomainPresenceFailureRetryMaxCount()
-              + " times with longer ActiveDeadlineSeconds value in each subsequent retry.")
-          .append(" Use tuning parameter \"domainPresenceFailureRetryMaxCount\" to configure max retries.");
-      return sb.toString();
+      return LOGGER.getFormattedMessage(
+          MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,
+          job.getMetadata().getName(),
+          job.getSpec().getActiveDeadlineSeconds(),
+          getJobStartedSeconds(),
+          DomainPresence.getDomainPresenceFailureRetryMaxCount());
     }
 
-    private String getJobStartedSecondsMessage() {
+    private long getJobStartedSeconds() {
       if (job.getStatus() != null && job.getStatus().getStartTime() != null) {
-        return " The job was started "
-            + ((System.currentTimeMillis() - job.getStatus().getStartTime().getMillis()) / 1000)
-            + " seconds ago.";
+        return (System.currentTimeMillis() - job.getStatus().getStartTime().getMillis()) / 1000;
       }
-      return null;
+      return -1;
     }
   }
 }
