@@ -231,7 +231,7 @@ public class ItPodsRestart extends BaseTest {
          + ":"
          + getWeblogicImageDevTag());
 
-    tring newImage = getWeblogicImageName() + ":" + getWeblogicImageDevTag();
+    String newImage = getWeblogicImageName() + ":" + getWeblogicImageDevTag();
     TestUtils.exec("docker pull " + newImage, true);
     // apply new domain yaml and verify pod restart
     domain.verifyDomainServerPodRestart(
