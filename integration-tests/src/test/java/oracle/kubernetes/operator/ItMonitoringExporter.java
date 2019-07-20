@@ -313,6 +313,9 @@ public class ItMonitoringExporter extends BaseTest {
     crdCmd = " kubectl delete -f " + monitoringExporterDir + "/webhook/webhook-deployment.yaml";
     TestUtils.exec(crdCmd);
 
+    crdCmd = "kubectl apply -f " + monitoringExporterDir + "/webhook/crossrbac_monitoring.yaml";
+    TestUtils.exec(crdCmd);
+
     crdCmd = " kubectl delete -f " + samplesDir + "grafana-deployment.yaml";
     TestUtils.exec(crdCmd);
 
@@ -1278,21 +1281,8 @@ public class ItMonitoringExporter extends BaseTest {
               .append(" cp webhook-linux-amd64/webhook .");
 
       TestUtils.exec(getWebHook.toString());
-      /*
-
-      getWebHook = new StringBuffer();
-
-      getWebHook.append("cd " + webhookDir)
-              .append(" && ")
-              .append(" cp /home/opc/OperatorDomain/webhook/bin/webhook .");
-
-      TestUtils.exec(getWebHook.toString());
-
-       */
 
     }
-
-
     logger.info("building webhook image with scaling");
 
     String crdCmd = "cd " + webhookDir + " && docker build . -t webhook:latest";
@@ -1304,6 +1294,8 @@ public class ItMonitoringExporter extends BaseTest {
     logger.info("installing webhook ");
 
     crdCmd = "kubectl apply -f " + webhookDir + "/webhook-deployment.yaml";
+    TestUtils.exec(crdCmd);
+    crdCmd = "kubectl apply -f " + webhookDir + "/crossrbac_monitoring.yaml";
     TestUtils.exec(crdCmd);
     String webhookPod = getPodName("name=webhook", "monitoring");
     TestUtils.checkPodReady(webhookPod, "monitoring");
