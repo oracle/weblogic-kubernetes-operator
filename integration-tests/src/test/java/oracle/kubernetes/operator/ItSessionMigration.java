@@ -145,7 +145,25 @@ public class ItSessionMigration extends BaseTest {
       if(null != primaryServName2) {
         break;
       }
+      
+      // check for last iteration
+      if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        throw new RuntimeException("FAILURE: No new promary server picked");
+      }
+      
+      logger.info(
+          "New primary server is not picked Ite ["
+              + i
+              + "/"
+              + BaseTest.getMaxIterationsPod()
+              + "], sleeping "
+              + BaseTest.getWaitTimePod()
+              + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
     }
+    
+    logger.info("HTTP response: \n" + result.stdout());
 
     // Verify that the same session info is used
     Assume.assumeTrue("HTTP Session should NOT change!", sessCreateTime1.equals(sessCreateTime2));
@@ -211,7 +229,25 @@ public class ItSessionMigration extends BaseTest {
       if(null != primaryServName2) {
         break;
       }
+      
+      // check for last iteration
+      if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+        throw new RuntimeException("FAILURE: No new promary server picked");
+      }
+      
+      logger.info(
+          "New primary server is not picked Ite ["
+              + i
+              + "/"
+              + BaseTest.getMaxIterationsPod()
+              + "], sleeping "
+              + BaseTest.getWaitTimePod()
+              + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
     }
+    
+    logger.info("HTTP response: \n" + result.stdout());
 
     // Verify that the count number is from a new primary server
     Assume.assumeFalse(
