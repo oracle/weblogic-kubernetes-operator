@@ -31,7 +31,6 @@ public class DomainCrd {
   public static void main(String args[]) {
     try {
       DomainCrd test = new DomainCrd("/c/Users/sankar/Downloads/domain.yaml");
-      test.createInitContNode("spec", null, null);
     } catch (IOException ex) {
       Logger.getLogger(DomainCrd.class.getName()).log(Level.SEVERE, null, ex);
     }
