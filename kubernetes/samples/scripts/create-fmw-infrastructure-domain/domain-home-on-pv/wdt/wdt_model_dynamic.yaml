@@ -1,0 +1,29 @@
+domainInfo:
+    AdminUserName: '@@FILE:/weblogic-operator/secrets/username@@'
+    AdminPassword: '@@FILE:/weblogic-operator/secrets/password@@'
+    ServerStartMode: prod
+topology:
+    Name: '@@PROP:domainName@@'
+    AdminServerName: '@@PROP:adminServerName@@'
+    ProductionModeEnabled: '@@PROP:productionModeEnabled@@'
+    Cluster:
+        '@@PROP:clusterName@@':
+            DynamicServers:
+                CalculatedListenPorts: false
+                DynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
+                MaxDynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
+                ServerNamePrefix: '@@PROP:managedServerNameBase@@'
+                ServerTemplate: '@@PROP:clusterName@@-template'
+    Server:
+        '@@PROP:adminServerName@@':
+            NetworkAccessPoint:
+                T3Channel:
+                    ListenPort: '@@PROP:t3ChannelPort@@'
+                    PublicAddress: '@@PROP:t3PublicAddress@@'
+                    PublicPort: '@@PROP:t3ChannelPort@@'
+    ServerTemplate:
+        '@@PROP:clusterName@@-template':
+            Cluster: '@@PROP:clusterName@@'
+            ListenPort: '@@PROP:managedServerPort@@'
+            JTAMigratableTarget:
+                Cluster: '@@PROP:clusterName@@'
