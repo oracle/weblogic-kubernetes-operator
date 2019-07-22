@@ -79,7 +79,7 @@ public class ItSessionMigration extends BaseTest {
           testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
 
       // Wait some time for deployment gets ready
-      Thread.sleep(10 * 1000);
+      Thread.sleep(60 * 1000);
     }
   }
 
