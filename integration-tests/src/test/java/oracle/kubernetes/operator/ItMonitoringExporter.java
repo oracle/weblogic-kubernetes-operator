@@ -1259,7 +1259,7 @@ public class ItMonitoringExporter extends BaseTest {
       crdCmd = " cp " + BaseTest.getProjectRoot() + "/src/scripts/scaling/scalingAction.sh " + webhookDir ;
       TestUtils.exec(crdCmd);
       logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
-      // git clone exporter project
+      // git clone webhook project
       StringBuffer getWebHook = new StringBuffer();
 
       getWebHook.append("cd " + webhookDir)
