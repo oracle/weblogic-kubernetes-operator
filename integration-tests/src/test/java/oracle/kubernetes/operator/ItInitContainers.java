@@ -124,14 +124,18 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String podName = domainUid + "-" + domain.getAdminServerName();
+    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("spec", null, null);
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
-    testInitContainer(modYaml, podName);
+    testInitContainer(modYaml);
+    for (String pod : pods) {
+      logger.info("Verifying if the pods are recreated with initialization");
+      verifyPodInitialized(pod);
+    }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
@@ -147,14 +151,16 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String podName = domainUid + "-" + domain.getAdminServerName();
+    String adminPodName = domainUid + "-" + domain.getAdminServerName();
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("adminServer", null, null);
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
-    testInitContainer(modYaml, podName);
+    testInitContainer(modYaml);
+    logger.info("Verifying if the admin server pod is recreated with initialization");
+    verifyPodInitialized(adminPodName);
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
@@ -170,14 +176,18 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String podName = domainUid + "-" + domain.getAdminServerName();
+    String adminPodName = domainUid + "-" + domain.getAdminServerName();
+    String ms2PodName = domainUid + "-managed-server2";
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("clusters", "cluster-1", null);
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
-    testInitContainer(modYaml, podName);
+    testInitContainer(modYaml);
+    TestUtils.checkPodReady(adminPodName, domain.getDomainNs());
+    logger.info("Verifying if the managed server pods are recreated with initialization");
+    verifyPodInitialized(ms2PodName);
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
@@ -193,14 +203,18 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String podName = domainUid + "-" + domain.getAdminServerName();
+    String adminPodName = domainUid + "-" + domain.getAdminServerName();
+    String ms1PodName = domainUid + "-managed-server1";
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("managedServers", "cluster-1", "managed-server1");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
-    testInitContainer(modYaml, podName);
+    testInitContainer(modYaml);
+    TestUtils.checkPodReady(adminPodName, domain.getDomainNs());
+    logger.info("Verifying if the managed server pod is recreated with initialization");
+    verifyPodInitialized(ms1PodName);
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
@@ -211,7 +225,7 @@ public class ItInitContainers extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
    *     weblogic server pod doesn't go through initialization and ready state
    */
-  private void testInitContainer(String modYaml, String podName) throws Exception {
+  private void testInitContainer(String modYaml) throws Exception {
     // Write the modified yaml to a new file
     Path path = Paths.get(initContainerTmpDir, "domain.yaml");
     logger.log(Level.INFO, "Path of the modified domain.yaml :{0}", path.toString());
@@ -224,9 +238,6 @@ public class ItInitContainers extends BaseTest {
     logger.log(Level.INFO, "kubectl apply -f {0}", path.toString());
     ExecResult exec = TestUtils.exec("kubectl apply -f " + path.toString());
     logger.info(exec.stdout());
-
-    logger.info("Verifying if the server pod is recreated with initialization");
-    verifyPodInitialized(podName);
   }
 
   /**
@@ -236,12 +247,7 @@ public class ItInitContainers extends BaseTest {
    * @throws Exception when pod doesn't go through the initialization and ready state
    */
   private void verifyPodInitialized(String podName) throws Exception {
-    for (int i = 0; i < 30; i++) {
-      Thread.sleep(1000 * 10);
-      TestUtils.exec("kubectl get all --all-namespaces", true);
-    }
-
-    //      TestUtils.checkPodInitializing(podName, domain.getDomainNs());
-    //      TestUtils.checkPodReady(podName, domain.getDomainNs());
+    TestUtils.checkPodInitializing(podName, domain.getDomainNs());
+    TestUtils.checkPodReady(podName, domain.getDomainNs());
   }
 }
