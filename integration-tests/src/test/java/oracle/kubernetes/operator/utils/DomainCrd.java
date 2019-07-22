@@ -260,7 +260,7 @@ public class DomainCrd {
     busybox.put("image", "busybox");
     ArrayNode commandArrayNode = objectMapper.createArrayNode();
     commandArrayNode.add("sleep");
-    commandArrayNode.add(120);
+    commandArrayNode.add("30");
     busybox.put("command", commandArrayNode);
     ArrayNode add = initContNode.add(busybox);
     try {
