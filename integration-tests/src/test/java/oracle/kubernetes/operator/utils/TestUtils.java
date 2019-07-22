@@ -28,7 +28,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -85,6 +84,21 @@ public class TestUtils {
 
     // check for admin pod
     checkCmdInLoop(cmd.toString(), "Running", podName);
+  }
+
+  /**
+   * Checks that pod is initializing.
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   */
+  public static void checkPodInitializing(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    checkCmdInLoop(cmd.toString(), "Init", podName);
   }
 
   /**
@@ -787,19 +801,20 @@ public class TestUtils {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
-  
-  public static Domain createDomain(String inputYaml, boolean createDomainResource) throws Exception {
+
+  public static Domain createDomain(String inputYaml, boolean createDomainResource)
+      throws Exception {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml, createDomainResource);
   }
-  
+
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
   }
-  
-  public static Domain createDomain(Map<String, Object> inputDomainMap, boolean createDomainResource)
-      throws Exception {
+
+  public static Domain createDomain(
+      Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap, createDomainResource);
   }
@@ -1225,37 +1240,41 @@ public class TestUtils {
   }
 
   /**
-   *
    * @param cmd command to run in the loop
    * @param matchStr expected string to match in the output
    * @return ExecResult object containing command output info
    * @throws Exception exception if fails to execute
    */
-  public static ExecResult checkAnyCmdInLoop(String cmd, String matchStr)
-          throws Exception {
+  public static ExecResult checkAnyCmdInLoop(String cmd, String matchStr) throws Exception {
     int i = 0;
     ExecResult result = null;
     while (i < BaseTest.getMaxIterationsPod()) {
       result = ExecCommand.exec(cmd);
 
       if (result.exitValue() != 0
-              || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
         logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
-                  "FAILURE: expected output " + matchStr + " from command " + cmd + " is not receieved, exiting!");
+              "FAILURE: expected output "
+                  + matchStr
+                  + " from command "
+                  + cmd
+                  + " is not receieved, exiting!");
         }
         logger.info(
-                "did not receive the expected output "
-                        + matchStr
-                        + "from command " + cmd + " Ite ["
-                        + i
-                        + "/"
-                        + BaseTest.getMaxIterationsPod()
-                        + "], sleeping "
-                        + BaseTest.getWaitTimePod()
-                        + " seconds more");
+            "did not receive the expected output "
+                + matchStr
+                + "from command "
+                + cmd
+                + " Ite ["
+                + i
+                + "/"
+                + BaseTest.getMaxIterationsPod()
+                + "], sleeping "
+                + BaseTest.getWaitTimePod()
+                + " seconds more");
 
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
