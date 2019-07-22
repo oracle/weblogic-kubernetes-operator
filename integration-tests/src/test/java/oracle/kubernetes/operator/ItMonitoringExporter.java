@@ -319,6 +319,9 @@ public class ItMonitoringExporter extends BaseTest {
     crdCmd = " kubectl delete -f " + samplesDir + "grafana-deployment.yaml";
     TestUtils.exec(crdCmd);
 
+    crdCmd = " kubectl get pods -n monitoring";
+    TestUtils.checkAnyCmdInLoop(crdCmd, "No resources found");
+
     crdCmd = " kubectl delete -f " + samplesDir + "monitoring-namespace.yaml";
     TestUtils.exec(crdCmd);
     logger.info("Deleted Prometheus and Grafana");
@@ -915,10 +918,7 @@ public class ItMonitoringExporter extends BaseTest {
     String webhookPod = getPodName("app=webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
     ExecResult webhookResult = TestUtils.checkAnyCmdInLoop(command, "Some WLS cluster has only one running server for more than 1 minutes");
-
-
     logger.info(" webhook log " + webhookResult.stdout());
-    //assertTrue( webhookResult.stdout().contains("Some WLS cluster has only one running server for more than 1 minutes"));
   }
 
   private static String getInternalOpCert(Operator op) throws Exception {
@@ -1328,7 +1328,9 @@ public class ItMonitoringExporter extends BaseTest {
     logger.info("Uninstalling prometheus");
     crdCmd = "helm delete --purge prometheus";
     ExecCommand.exec(crdCmd);
-    Thread.sleep(15000);
+    crdCmd = " kubectl get pods -n monitoring";
+    TestUtils.checkAnyCmdInLoop(crdCmd, "No resources found");
+
     logger.info("Uninstalling prometheus persistence ");
     crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
     ExecCommand.exec(crdCmd);
