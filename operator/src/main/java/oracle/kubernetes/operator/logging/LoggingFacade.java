@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.logging;
 
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -630,6 +631,21 @@ public class LoggingFacade {
    */
   public void trace(String msg, Object... args) {
     finer(TRACE + msg, args);
+  }
+
+  /**
+   * Returns a formatted message.
+   *
+   * @param msg the message to be formatted, which is key to the resource bundle
+   * @param args parameters to the message
+   * @return A formatted message
+   */
+  public String getFormattedMessage(String msg, Object... args) {
+    try {
+      return MessageFormat.format(logger.getResourceBundle().getString(msg), args);
+    } catch (Exception ex) {
+      return msg;
+    }
   }
 
   /**
