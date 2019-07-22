@@ -34,6 +34,11 @@ spec:
   %LOG_HOME_ON_PV_PREFIX%logHomeEnabled: %LOG_HOME_ENABLED%
   # The in-pod location for domain log, server logs, server out, and Node Manager log files
   %LOG_HOME_ON_PV_PREFIX%logHome: %LOG_HOME%
+
+  # Experimental feature: Make WebLogic server pods compatible with running as part of an Istio service mesh.
+  %ISTIO_ENABLED_PREFIX%experimental:
+  %ISTIO_ENABLED_PREFIX%  istio: {}
+
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
   # - "NEVER" will not start any server in the domain
@@ -47,8 +52,6 @@ spec:
       value: "%JAVA_OPTIONS%"
     - name: USER_MEM_ARGS
       value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
-    - name: ISTIO_ENABLED
-      value: "%ISTIO_ENABLED%"
     %LOG_HOME_ON_PV_PREFIX%volumes:
     %LOG_HOME_ON_PV_PREFIX%- name: weblogic-domain-storage-volume
     %LOG_HOME_ON_PV_PREFIX%  persistentVolumeClaim:
@@ -78,4 +81,3 @@ spec:
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
   # 
-  istioEnabled: %ISTIO_ENABLED%

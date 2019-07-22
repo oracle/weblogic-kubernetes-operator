@@ -600,6 +600,9 @@ public abstract class PodStepContext extends StepContextBase {
     if (mockWls()) {
       addEnvVar(vars, "MOCK_WLS", "true");
     }
+    if (getDomain().istioEnabled()) {
+      addEnvVar(vars, "ISTIO_ENABLED", "true");
+    }
   }
 
   private String getDomainHome() {

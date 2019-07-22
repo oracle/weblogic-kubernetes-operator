@@ -203,6 +203,17 @@ function validateWeblogicImagePullSecret {
   failIfValidationErrors
 }
 
+#
+# Function to validate the Istio configuration
+#
+function validateIstio {
+  if [ ! -z ${istioEnabled} ]; then
+    istioEnabledPrefix=""
+  else
+    istioEnabledPrefix="#"
+  fi
+}
+
 # try to execute kubectl to see whether kubectl is available
 function validateKubectlAvailable {
   if ! [ -x "$(command -v kubectl)" ]; then
@@ -371,6 +382,7 @@ function validateCommonInputs {
   validateServerStartPolicy
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
+  validateIstio
 
   failIfValidationErrors
 }
