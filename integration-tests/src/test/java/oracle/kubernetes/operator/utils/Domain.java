@@ -1682,7 +1682,7 @@ public class Domain {
                 .toPath(),
             new File(
                     BaseTest.getResultDir()
-                        + "/samples/scripts/create-fmw-infrastructure-domain/common/createFMWDomain.py")
+                        + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/common/createFMWDomain.py")
                 .toPath(),
             StandardCopyOption.REPLACE_EXISTING);
       } else {
@@ -1721,7 +1721,7 @@ public class Domain {
           .append(" -k -i ");
     } else if (domainMap.containsKey("rcuDatabaseURL")) {
       createDomainScriptCmd.append(
-          "/samples/scripts/create-fmw-infrastructure-domain/create-domain.sh -v -i ");
+          "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/create-domain.sh -v -i ");
     } else {
       createDomainScriptCmd.append(
           "/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh -v -i ");
