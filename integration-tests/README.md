@@ -232,13 +232,13 @@ The below env variables are required for SHARED_CLUSTER=true:
 
 | Variable | Description |
 | --- | --- |
-| REPO_REGISTRY | OCIR Server to push/pull the Operator image |
-| REPO_USERNAME | OCIR Username |
-| REPO_PASSWORD | OCIR token |
-| REPO_EMAIL | OCIR email |
+| REPO_REGISTRY | OCR Server to push/pull the Operator image |
+| REPO_USERNAME | OCR username |
+| REPO_PASSWORD | OCR password |
+| REPO_EMAIL | OCR e-mail |
 | DOCKER_USERNAME | Docker username to pull the Weblogic image  |
 | DOCKER_PASSWORD | Docker password |
-| DOCKER_EMAIL | Docker email |
+| DOCKER_EMAIL | Docker e-mail |
 | K8S_NODEPORT_HOST | DNS name of a Kubernetes worker node. |
 
 Successful run will have the output like below:
@@ -303,9 +303,9 @@ JUnit test results can be seen at "integration-tests/target/failsafe-reports/TES
   - And get access to FMW Infrastructure 12c Image: **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3_**
   - export the following before running the tests:
     ```
-    export REPO_USERNAME=<ocir_username>
-    export REPO_PASSWORD=<ocir_password>
-    export REPO_EMAIL=<ocir_email>
+    export REPO_USERNAME=<ocr_username>
+    export REPO_PASSWORD=<ocr_password>
+    export REPO_EMAIL=<ocr_email>
     ```
  
  Method 2 
