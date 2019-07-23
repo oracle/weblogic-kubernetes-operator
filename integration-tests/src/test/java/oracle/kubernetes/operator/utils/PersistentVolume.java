@@ -25,7 +25,7 @@ public class PersistentVolume {
     String cmd =
             BaseTest.getProjectRoot()
         + "/src/integration-tests/bash/krun.sh -m "+BaseTest.getPvRoot()
-        + ":/sharedparent -t 120 -c 'ls -ltr /sharedparent/* && mkdir -m 777 -p "
+        + ":/sharedparent -t 120 -c 'ls -ltr /sharedparent && mkdir -m 777 -p "
         + dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/")
         + "'"; 
     
