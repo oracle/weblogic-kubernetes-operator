@@ -245,14 +245,46 @@ public class ItInitContainers extends BaseTest {
   }
 
   /**
-   * Add initContainers at domain and admin server level and verify init container run only at
-   * domain level
+   * Add initContainers at domain and admin server level and verify init container runs at both
+   * level when the names are different
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
    *     weblogic server pod doesn't go through initialization and ready state
    */
   @Test
-  public void testInitContainerDiffLevel() throws Exception {
+  public void testInitContainerDiffLevelDiffName() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
+
+    // Modify the original domain yaml to include restartVersion in admin server node
+    DomainCrd crd = new DomainCrd(originalYaml);
+    crd.addInitContNode("spec", null, null, "busybox1", "sleep");
+    crd.addInitContNode("adminServer", null, null, "busybox2", "sleep");
+    String modYaml = crd.getYamlTree();
+    logger.info(modYaml);
+    testInitContainer(modYaml);
+    String cmd = "kubectl get pod " + pods[0] + " -n " + domain.getDomainNs();
+
+    TestUtils.checkCmdInLoop(cmd, "Init:0/2", pods[0]);
+    TestUtils.checkCmdInLoop(cmd, "Init:1/2", pods[0]);
+    TestUtils.checkPodReady(pods[0], domain.getDomainNs());
+
+    logger.info("Verifying if the pods are recreated with initialization");
+    verifyPodInitialized(pods[1]);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  /**
+   * Add initContainers at domain and admin server level and verify init container is not run at
+   * both level when the names are same
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
+   *     weblogic server pod doesn't go through initialization and ready state
+   */
+  @Test
+  public void testInitContainerDiffLevelSameName() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
@@ -261,7 +293,7 @@ public class ItInitContainers extends BaseTest {
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
     crd.addInitContNode("spec", null, null, "busybox", "sleep");
-    crd.addInitContNode("adminServer", null, null, "busybox1", "foo");
+    crd.addInitContNode("adminServer", null, null, "busybox", "foo");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
@@ -271,7 +303,6 @@ public class ItInitContainers extends BaseTest {
     }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
-
   /**
    * Add multiple initContainers at domain level and verify all of the init containers are run
    *
