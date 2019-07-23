@@ -206,7 +206,7 @@ public class ItPodsRestart extends BaseTest {
    * Modify the domain scope property on the domain resource using kubectl apply -f domain.yaml
    * Verify that all the server pods in the domain got re-started .The property tested is: image:
    * "container-registry.oracle.com/middleware/weblogic:12.2.1.3" --> image:
-   * "container-registry.oracle.com/middleware/weblogic:duplicate"
+   * "container-registry.oracle.com/middleware/weblogic:12.2.1.3-dev"
    *
    * @throws Exception exception
    */
@@ -216,63 +216,26 @@ public class ItPodsRestart extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    try {
-      TestUtils.exec("docker images", true);
-      logger.info(
-          "About to verifyDomainServerPodRestart for Domain: "
-              + domain.getDomainUid()
-              + "  Image property: "
-              + getWeblogicImageName()
-              + ":"
-              + getWeblogicImageTag()
-              + " to "
-              + "/weblogick8s/middleware/weblogic:duplicate");
+    
+    TestUtils.exec("docker images", true);
+    logger.info(
+        "About to verifyDomainServerPodRestart for Domain: "
+         + domain.getDomainUid()
+         + "  Image property: "
+         + getWeblogicImageName()
+         + ":"
+         + getWeblogicImageTag()
+         + " to "
+         + getWeblogicImageName()
+         + ":"
+         + getWeblogicImageDevTag());
 
-      if (BaseTest.SHARED_CLUSTER) {
-        String newImage =
-            System.getenv("REPO_REGISTRY") + "/weblogick8s/middleware/weblogic:duplicate";
-        // tag image with repo name
-        String tag =
-            "docker tag " + getWeblogicImageName() + ":" + getWeblogicImageTag() + " " + newImage;
-        TestUtils.exec(tag, true);
-        TestUtils.exec("docker images", true);
-
-        // login and push image to ocir
-        TestUtils.loginAndPushImageToOcir(newImage);
-
-        // create ocir registry secret in the same ns as domain which is used while pulling the
-        // image
-        TestUtils.createDockerRegistrySecret(
-            "docker-store",
-            System.getenv("REPO_REGISTRY"),
-            System.getenv("REPO_USERNAME"),
-            System.getenv("REPO_PASSWORD"),
-            System.getenv("REPO_EMAIL"),
-            domain.getDomainNs());
-
-        // apply new domain yaml and verify pod restart
-        domain.verifyDomainServerPodRestart(
-            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
-            "\"" + newImage + "\"");
-
-      } else {
-        TestUtils.exec(
-            "docker tag "
-                + getWeblogicImageName()
-                + ":"
-                + getWeblogicImageTag()
-                + " "
-                + getWeblogicImageName()
-                + ":duplicate");
-        domain.verifyDomainServerPodRestart(
-            "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
-            "\"" + getWeblogicImageName() + ":duplicate" + "\"");
-      }
-    } finally {
-      if (!BaseTest.SHARED_CLUSTER) {
-        TestUtils.exec("docker rmi -f " + getWeblogicImageName() + ":duplicate");
-      }
-    }
+    String newImage = getWeblogicImageName() + ":" + getWeblogicImageDevTag();
+    TestUtils.exec("docker pull " + newImage, true);
+    // apply new domain yaml and verify pod restart
+    domain.verifyDomainServerPodRestart(
+        "\"" + getWeblogicImageName() + ":" + getWeblogicImageTag() + "\"",
+        "\"" + newImage + "\"");
 
     logger.info("SUCCESS - " + testMethodName);
   }
