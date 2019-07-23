@@ -28,6 +28,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -786,10 +787,21 @@ public class TestUtils {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
-
+  
+  public static Domain createDomain(String inputYaml, boolean createDomainResource) throws Exception {
+    logger.info("Creating domain with yaml, waiting for the script to complete execution");
+    return new Domain(inputYaml, createDomainResource);
+  }
+  
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
+  }
+  
+  public static Domain createDomain(Map<String, Object> inputDomainMap, boolean createDomainResource)
+      throws Exception {
+    logger.info("Creating domain with Map, waiting for the script to complete execution");
+    return new Domain(inputDomainMap, createDomainResource);
   }
 
   public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
@@ -1211,6 +1223,7 @@ public class TestUtils {
     }
     return myKeyStore;
   }
+
 
   public static void checkAnyCmdInLoop(String cmd, String matchStr)
       throws Exception {

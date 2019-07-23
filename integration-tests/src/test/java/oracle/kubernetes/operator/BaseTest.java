@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecCommand;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -71,6 +72,7 @@ public class BaseTest {
   private static String appLocationOnHost;
   private static Properties appProps;
   private static String weblogicImageTag;
+  private static String weblogicImageDevTag;
   private static String weblogicImageName;
   private static String weblogicImageServer;
   private static String domainApiVersion;
@@ -113,6 +115,10 @@ public class BaseTest {
         System.getenv("IMAGE_TAG_WEBLOGIC") != null
             ? System.getenv("IMAGE_TAG_WEBLOGIC")
             : appProps.getProperty("weblogicImageTag");
+    weblogicImageDevTag =
+        System.getenv("IMAGE_DEVTAG_WEBLOGIC") != null
+            ? System.getenv("IMAGE_DEVTAG_WEBLOGIC")
+            : appProps.getProperty("weblogicImageDevTag");
     weblogicImageName =
         System.getenv("IMAGE_NAME_WEBLOGIC") != null
             ? System.getenv("IMAGE_NAME_WEBLOGIC")
@@ -255,6 +261,15 @@ public class BaseTest {
    */
   public static String getWeblogicImageTag() {
     return weblogicImageTag;
+  }
+  
+  /**
+   * getter method for weblogicImageDevTag field.
+   *
+   * @return image tag of the WLS Dev docker images
+   */
+  public static String getWeblogicImageDevTag() {
+    return weblogicImageDevTag;
   }
 
   /**
