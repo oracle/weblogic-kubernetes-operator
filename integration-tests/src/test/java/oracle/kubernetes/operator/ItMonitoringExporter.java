@@ -124,7 +124,7 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-
+      uninstallMySQL();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
     }
@@ -157,6 +157,9 @@ public class ItMonitoringExporter extends BaseTest {
                 + " exists "
                 + new File(monitoringExporterSrcDir).exists());
         if (new File(monitoringExporterSrcDir).exists()) {
+          if (new File(monitoringExporterEndToEndDir + "/pvDir").exists()){
+            deletePvDir();
+          }
           removeAndClone.append("rm -rf ").append(monitoringExporterSrcDir).append(" && ");
         }
         logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
@@ -279,9 +282,8 @@ public class ItMonitoringExporter extends BaseTest {
 
     String webhookPod = getPodName("name=webhook", "monitoring");
     String command = "kubectl -n monitoring logs " + webhookPod;
-    ExecResult webhookResult = TestUtils.checkAnyCmdInLoop(command, "scaleup hook triggered successfully");
+    TestUtils.checkAnyCmdInLoop(command, "scaleup hook triggered successfully");
 
-    logger.info(" webhook log " + webhookResult.stdout());
     TestUtils.checkPodCreated(domain.getDomainUid() + "-managed-server2", domain.getDomainNs());
   }
 
@@ -303,28 +305,32 @@ public class ItMonitoringExporter extends BaseTest {
   private static void deletePrometheusGrafana() throws Exception {
 
     String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-
+    String podName = getPodName("app=prometheus", "monitoring");
     String crdCmd = " kubectl delete -f " + samplesDir + "prometheus-deployment.yaml";
     TestUtils.exec(crdCmd);
+    TestUtils.checkPodDeleted(podName, "monitoring");
 
+    podName = getPodName("name=alertmanager", "monitoring");
     crdCmd = " kubectl delete -f " + samplesDir + "alertmanager-deployment.yaml";
     TestUtils.exec(crdCmd);
+    TestUtils.checkPodDeleted(podName, "monitoring");
 
+    podName = getPodName("name=webhook", "monitoring");
     crdCmd = " kubectl delete -f " + monitoringExporterDir + "/webhook/webhook-deployment.yaml";
     TestUtils.exec(crdCmd);
+    TestUtils.checkPodDeleted(podName, "monitoring");
 
-    crdCmd = "kubectl apply -f " + monitoringExporterDir + "/webhook/crossrbac_monitoring.yaml";
+    crdCmd = "kubectl delete -f " + monitoringExporterDir + "/webhook/crossrbac_monitoring.yaml";
     TestUtils.exec(crdCmd);
 
+    podName = getPodName("name=grafana", "monitoring");
     crdCmd = " kubectl delete -f " + samplesDir + "grafana-deployment.yaml";
     TestUtils.exec(crdCmd);
-
-    crdCmd = " kubectl get pods -n monitoring";
-    TestUtils.checkAnyCmdInLoop(crdCmd, "No resources found");
+    TestUtils.checkPodDeleted(podName, "monitoring");
 
     crdCmd = " kubectl delete -f " + samplesDir + "monitoring-namespace.yaml";
     TestUtils.exec(crdCmd);
-    logger.info("Deleted Prometheus and Grafana");
+    logger.info("Deleted Prometheus, Grafana, Webhook, Alert Manager");
   }
 
   /**
@@ -888,7 +894,7 @@ public class ItMonitoringExporter extends BaseTest {
       fireAlert();
     } finally {
       uninstallWebHookPrometheusGrafanaViaChart();
-      uninstallMySQL();
+      //uninstallMySQL();
 
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
@@ -917,8 +923,7 @@ public class ItMonitoringExporter extends BaseTest {
 
     String webhookPod = getPodName("app=webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
-    ExecResult webhookResult = TestUtils.checkAnyCmdInLoop(command, "Some WLS cluster has only one running server for more than 1 minutes");
-    logger.info(" webhook log " + webhookResult.stdout());
+    TestUtils.checkAnyCmdInLoop(command, "Some WLS cluster has only one running server for more than 1 minutes");
   }
 
   private static String getInternalOpCert(Operator op) throws Exception {
@@ -938,10 +943,19 @@ public class ItMonitoringExporter extends BaseTest {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod -l " + labelExp + " -n " + namespace + " -o jsonpath=\"{.items[0].metadata.name}\"");
     logger.info(" pod name cmd =" + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
+    ExecResult result = null;
     String podName = null;
-    if (result.exitValue() == 0) {
-      podName = result.stdout().trim();
+    int i = 0;
+    while(i < 4) {
+      result = ExecCommand.exec(cmd.toString());
+      logger.info(" Result output" + result.stdout());
+      if (result.exitValue() == 0) {
+        podName = result.stdout().trim();
+        break;
+      } else {
+        Thread.sleep(10000);
+        i++;
+      }
     }
     assertNotNull(labelExp + " was not created, can't find running pod ", podName);
     return podName;
@@ -1180,10 +1194,12 @@ public class ItMonitoringExporter extends BaseTest {
             + monitoringExporterEndToEndDir
             + "/prometheus/values.yaml stable/prometheus";
     TestUtils.exec(crdCmd);
-
+    String podName = getPodName("app=prometheus", "monitoring");
+    TestUtils.checkPodReady(podName, "monitoring", "2/2");
     // install grafana
     crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
     TestUtils.exec(crdCmd);
+
     crdCmd =
         "kubectl --namespace monitoring create secret generic grafana-secret --from-literal=username=admin --from-literal=password=12345678";
     TestUtils.exec(crdCmd);
@@ -1192,8 +1208,11 @@ public class ItMonitoringExporter extends BaseTest {
         "helm install --wait --name grafana --namespace monitoring --values  "
             + monitoringExporterEndToEndDir
             + "/grafana/values.yaml stable/grafana";
-    // TestUtils.exec(crdCmd);
-    ExecResult result = ExecCommand.exec(crdCmd);
+    TestUtils.exec(crdCmd);
+
+
+    podName = getPodName("app=grafana", "monitoring");
+    TestUtils.checkPodReady(podName, "monitoring");
     Thread.sleep(10000);
 
     logger.info("installing grafana dashboard");
@@ -1213,7 +1232,7 @@ public class ItMonitoringExporter extends BaseTest {
             + "  -X POST http://admin:12345678@$HOSTNAME:31000/api/dashboards/db/"
             + "  --data-binary @grafana/dashboard.json";
     TestUtils.exec(crdCmd);
-    Thread.sleep(15000);
+    Thread.sleep(20000);
     assertTrue(checkMetricsViaPrometheus("wls_servlet_execution_time_average", "test-webapp"));
   }
 
@@ -1308,37 +1327,55 @@ public class ItMonitoringExporter extends BaseTest {
    * @throws Exception if could not run the command successfully to uninstall deployments
    */
   private static void uninstallWebHookPrometheusGrafanaViaChart() throws Exception {
+    String crdCmd;
+    String podName;
     logger.info("Uninstalling webhook");
-    String crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
-    ExecCommand.exec(crdCmd);
-    Thread.sleep(15000);
-    crdCmd = "kubectl delete ns webhook ";
-    ExecCommand.exec(crdCmd);
-    logger.info("Uninstalling grafana");
-    // uninstall grafana
-    crdCmd = "helm delete --purge grafana";
-    ExecCommand.exec(crdCmd);
-    crdCmd = "kubectl -n monitoring delete secret grafana-secret";
-    ExecCommand.exec(crdCmd);
-    crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
-    ExecCommand.exec(crdCmd);
-    Thread.sleep(15000);
+    try {
+      podName = getPodName("app=webhook", "webhook");
+      crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
+      ExecCommand.exec(crdCmd);
+      TestUtils.checkPodDeleted(podName, "webhook");
+      crdCmd = "kubectl delete ns webhook ";
+      ExecCommand.exec(crdCmd);
+    } catch (AssertionError assertionError) {
+      // ignore, pod may not be created
+    }
 
-    // uninstall prometheus
-    logger.info("Uninstalling prometheus");
-    crdCmd = "helm delete --purge prometheus";
-    ExecCommand.exec(crdCmd);
-    crdCmd = " kubectl get pods -n monitoring";
-    TestUtils.checkAnyCmdInLoop(crdCmd, "No resources found");
+    try {
+      podName = getPodName("app=grafana", "monitoring");
+      logger.info("Uninstalling grafana");
+      // uninstall grafana
+      crdCmd = "helm delete --purge grafana";
+      ExecCommand.exec(crdCmd);
+      TestUtils.checkPodDeleted(podName, "monitoring");
 
-    logger.info("Uninstalling prometheus persistence ");
-    crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
-    ExecCommand.exec(crdCmd);
-    Thread.sleep(15000);
+      crdCmd = "kubectl -n monitoring delete secret grafana-secret";
+      ExecCommand.exec(crdCmd);
+      crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
+      ExecCommand.exec(crdCmd);
+    } catch (AssertionError assertionError) {
+      //ignore , grafana pod may not be created
+    }
+    try {
+      podName = getPodName("app=prometheus", "monitoring");
+      // uninstall prometheus
+      logger.info("Uninstalling prometheus");
+      crdCmd = "helm delete --purge prometheus";
+      ExecCommand.exec(crdCmd);
 
-    crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
-    ExecCommand.exec(crdCmd);
-    Thread.sleep(15000);
+      TestUtils.checkPodDeleted(podName, "monitoring");
+
+      logger.info("Uninstalling prometheus persistence ");
+      crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
+      ExecCommand.exec(crdCmd);
+      Thread.sleep(15000);
+
+      crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
+      ExecCommand.exec(crdCmd);
+      Thread.sleep(15000);
+    } catch (AssertionError assertError) {
+      //ignore , the pod may not be created
+    }
   }
 
   /**
@@ -1351,12 +1388,20 @@ public class ItMonitoringExporter extends BaseTest {
         monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     // unnstall mysql
     logger.info("Uninstalling mysql");
-    String crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/mysql.yaml";
-    ExecCommand.exec(crdCmd);
-    Thread.sleep(15000);
-    crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/persistence.yaml";
-    ExecCommand.exec(crdCmd);
-    Thread.sleep(15000);
+    try {
+      String podName = getPodName("app=mysql", "default");
+      TestUtils.checkPodReady(podName, "default");
+      String crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/mysql.yaml";
+      TestUtils.exec(crdCmd);
+      TestUtils.checkPodDeleted(podName, "default");
+      //ExecCommand.exec(crdCmd);
+      //Thread.sleep(15000);
+      crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/persistence.yaml";
+      ExecCommand.exec(crdCmd);
+      Thread.sleep(15000);
+    } catch (AssertionError assertError) {
+      //ignore, the pod may not be existed
+    }
     deletePvDir();
   }
 
