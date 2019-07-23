@@ -128,7 +128,7 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("spec", null, null, "busybox");
+    crd.addInitContNode("spec", null, null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
@@ -155,7 +155,7 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("adminServer", null, null, "busybox");
+    crd.addInitContNode("adminServer", null, null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
@@ -181,7 +181,7 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("clusters", "cluster-1", null, "busybox");
+    crd.addInitContNode("clusters", "cluster-1", null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
@@ -208,7 +208,7 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("managedServers", "cluster-1", "managed-server1", "busybox");
+    crd.addInitContNode("managedServers", "cluster-1", "managed-server1", "busybox", "sleep");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
@@ -230,23 +230,23 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
+    String adminPodName = domainUid + "-" + domain.getAdminServerName();
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("spec", null, null, "busybox");
+    crd.addInitContNode("spec", null, null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
     modYaml = modYaml.replaceAll("sleep", "foo");
     logger.info(modYaml);
     testInitContainer(modYaml);
-    TestUtils.checkPodInitializing(pods[0], domain.getDomainNs());
-    TestUtils.checkPodReady(pods[0], domain.getDomainNs());
+    String cmd = "kubectl get pod " + adminPodName + " -n " + domain.getDomainNs();
+    TestUtils.checkCmdInLoop(cmd, "Init:CrashLoopBackOff", adminPodName);
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
-   * Add initContainers at domain and adminserver level and verify init containers are run at both
-   * level
+   * Add initContainers at domain and admin server level and verify init container run only at
+   * domain level
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
    *     weblogic server pod doesn't go through initialization and ready state
@@ -256,23 +256,24 @@ public class ItInitContainers extends BaseTest {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
-    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
+    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server2"};
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("spec", null, null, "busybox");
-    crd.addInitContNode("adminServer", null, null, "busybox1");
+    crd.addInitContNode("spec", null, null, "busybox", "sleep");
+    crd.addInitContNode("adminServer", null, null, "busybox1", "foo");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
-    TestUtils.checkPodInitializing(pods[0], domain.getDomainNs());
-    TestUtils.checkPodReady(pods[0], domain.getDomainNs());
+    for (String pod : pods) {
+      logger.info("Verifying if the pods are recreated with initialization");
+      verifyPodInitialized(pod);
+    }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
   /**
-   * Add initContainers at domain and adminserver level and verify init containers are run at both
-   * level
+   * Add multiple initContainers at domain level and verify all of the init containers are run
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
    *     weblogic server pod doesn't go through initialization and ready state
@@ -286,13 +287,17 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("spec", null, null, "busybox1");
-    crd.addInitContNode("spec", null, null, "busybox2");
+    crd.addInitContNode("spec", null, null, "busybox1", "sleep");
+    crd.addInitContNode("spec", null, null, "busybox2", "sleep");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
-    TestUtils.checkPodInitializing(pods[0], domain.getDomainNs());
-    TestUtils.checkPodReady(pods[0], domain.getDomainNs());
+    String cmd = "kubectl get pod " + pods[0] + " -n " + domain.getDomainNs();
+    for (String pod : pods) {
+      TestUtils.checkCmdInLoop(cmd, "Init:0/2", pod);
+      TestUtils.checkCmdInLoop(cmd, "Init:1/2", pod);
+      TestUtils.checkPodReady(pod, domain.getDomainNs());
+    }
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 

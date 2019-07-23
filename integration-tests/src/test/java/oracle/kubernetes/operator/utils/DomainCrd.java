@@ -237,7 +237,11 @@ public class DomainCrd {
   }
 
   public JsonNode addInitContNode(
-      String parentNodeName, String clusterName, String msName, java.lang.String containerName) {
+      String parentNodeName,
+      String clusterName,
+      String msName,
+      java.lang.String containerName,
+      String command) {
     ArrayNode initContNode = null;
     switch (parentNodeName) {
       case "spec":
@@ -260,7 +264,7 @@ public class DomainCrd {
     busybox.put("imagePullPolicy", "IfNotPresent");
     busybox.put("image", "busybox");
     ArrayNode commandArrayNode = objectMapper.createArrayNode();
-    commandArrayNode.add("sleep");
+    commandArrayNode.add(command);
     commandArrayNode.add("30");
     busybox.put("command", commandArrayNode);
     ArrayNode add = initContNode.add(busybox);
