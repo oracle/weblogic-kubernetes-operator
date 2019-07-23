@@ -67,6 +67,7 @@ spec:
           name: "log-dir"
           readOnly: false
         {{- end }}
+        {{- if not .remoteDebugNodePortEnabled }}
         livenessProbe:
           exec:
             command:
@@ -81,6 +82,7 @@ spec:
               - "/operator/readinessProbe.sh"
           initialDelaySeconds: 2
           periodSeconds: 10
+        {{- end }}
       {{- if .elkIntegrationEnabled }}
       - name: "logstash"
         image: {{ .logStashImage | quote }}

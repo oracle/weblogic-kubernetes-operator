@@ -56,11 +56,9 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
     ExtensionsV1beta1Deployment expected = super.getExpectedWeblogicOperatorDeployment();
     V1Container operatorContainer =
         expected.getSpec().getTemplate().getSpec().getContainers().get(0);
-    operatorContainer
-        .addVolumeMountsItem(newVolumeMount().name("log-dir").mountPath("/logs").readOnly(false))
-        .addEnvItem(
-            newEnvVar().name("REMOTE_DEBUG_PORT").value(getInputs().getInternalDebugHttpPort()))
-        .addEnvItem(newEnvVar().name("DEBUG_SUSPEND").value("n"));
+    operatorContainer.addVolumeMountsItem(
+        newVolumeMount().name("log-dir").mountPath("/logs").readOnly(false));
+    expectRemoteDebug(operatorContainer, "n");
     expected
         .getSpec()
         .getTemplate()
