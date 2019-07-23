@@ -144,3 +144,7 @@ Configuration Overrides Usecases
 | Upgrade 2.1 operator to develop | Upgrade the 2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
 | Upgrade 2.2.0 operator to develop | Upgrade the 2.2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
 | Upgrade 2.2.1 operator to develop | Upgrade the 2.2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+
+| Pod Templates | Use Case |
+| --- | --- |
+| Using pod templates/variables | Use DOMAIN_UID, DOMAIN_NAME, DOMAIN_HOME, SERVER_NAME, LOG_HOME variables at domain level and CLUSTER_NAME at cluster level. Bring up the domain and make sure domain started successfully when pod templates are used |

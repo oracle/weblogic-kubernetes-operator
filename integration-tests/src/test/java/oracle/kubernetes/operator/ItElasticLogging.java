@@ -124,37 +124,60 @@ public class ItElasticLogging extends BaseTest {
       logger.info("SUCCESS");
     }
   }
-
+  
   private static void verifyElasticStackReady() throws Exception {
     // Get Logstash info
     String healthStatus = execElasticStackStatusCheck("*logstash*", "$1");
     String indexStatus = execElasticStackStatusCheck("*logstash*", "$2");
     String indexName = execElasticStackStatusCheck("*logstash*", "$3");
 
-    // Verify that the health status of Logstash
     Assume.assumeNotNull(healthStatus);
+    Assume.assumeNotNull(indexStatus);
+    Assume.assumeNotNull(indexName);
+    // Verify that the health status of Logstash
     Assume.assumeTrue(
         "Logstash is not ready!",
-        healthStatus.equalsIgnoreCase("yellow") || healthStatus.equalsIgnoreCase("green"));
+        healthStatus.equalsIgnoreCase("yellow") || 
+        healthStatus.equalsIgnoreCase("green"));
     // Verify that the index is open for use
-    Assume.assumeNotNull(indexStatus);
-    Assume.assumeTrue("Logstash index is not open!", indexStatus.equalsIgnoreCase("open"));
+    Assume.assumeTrue("Logstash index is not open!", 
+                      indexStatus.equalsIgnoreCase("open"));
     // Add the index name to a Map
-    Assume.assumeNotNull(indexName);
     testVarMap.put("indexName", indexName);
 
     // Get Kibana info
     healthStatus = execElasticStackStatusCheck("*kibana*", "$1");
     indexStatus = execElasticStackStatusCheck("*kibana*", "$2");
-
-    // Verify that the health status of Kibana
+    indexName = execElasticStackStatusCheck("*kibana*", "$3");
+    
     Assume.assumeNotNull(healthStatus);
-    Assume.assumeTrue(
-        "Kibana is not ready!",
-        healthStatus.equalsIgnoreCase("yellow") || healthStatus.equalsIgnoreCase("green"));
-    // Verify that the index is open for use
     Assume.assumeNotNull(indexStatus);
-    Assume.assumeTrue("Kibana index is not open!", indexStatus.equalsIgnoreCase("open"));
+    Assume.assumeNotNull(indexName);
+
+    //There are multiple indexes from Kibana 6.8.0
+    String[] kibanahealthStatusArr = 
+      healthStatus.split(System.getProperty("line.separator"));
+    String[] kibanaindexStatusArr = 
+      indexStatus.split(System.getProperty("line.separator"));
+    String[] kibanaindexNameArr = 
+      indexName.split(System.getProperty("line.separator"));
+    
+    for(int i = 0; i < kibanaindexStatusArr.length; i++) {
+      logger.info("Health status of " + kibanaindexNameArr[i] + 
+                  "is:" + kibanahealthStatusArr[i]);
+      logger.info("Index status of " + kibanaindexNameArr[i] + 
+                  "is:" + kibanaindexStatusArr[i]);
+      // Verify that the health status of Kibana
+      Assume.assumeTrue(
+          "Kibana is not ready!",
+          kibanahealthStatusArr[i].trim().equalsIgnoreCase("yellow") || 
+          kibanahealthStatusArr[i].trim().equalsIgnoreCase("green"));
+      // Verify that the index is open for use
+      Assume.assumeTrue("Kibana index is not open!", 
+                        kibanaindexStatusArr[i].trim().equalsIgnoreCase("open"));
+    }
+    
+    logger.info("ELK Stack is up and running and ready to use!");
   }
 
   private static String execElasticStackStatusCheck(String indexName, String varLoc)
@@ -227,12 +250,12 @@ public class ItElasticLogging extends BaseTest {
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
-    Map<String, Object> domainMap = domain.getDomainMap();
-    String domainUid = domain.getDomainUid();
-    String adminServerName = (String) domainMap.get("adminServerName");
-    String adminServerPodName = domainUid + "-" + adminServerName;
-    String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
-    String managedServerPodName = domainUid + "-" + managedServerNameBase + "1";
+    final Map<String, Object> domainMap = domain.getDomainMap();
+    final String domainUid = domain.getDomainUid();
+    final String adminServerName = (String) domainMap.get("adminServerName");
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+    final String managedServerNameBase = domainMap.get("managedServerNameBase").toString();
+    final String managedServerPodName = domainUid + "-" + managedServerNameBase + "1";
 
     // Wait 30 seconds for WLS log to be pushed to ELK Stack
     logger.info("Wait 30 seconds for WLS log to be pushed to ELK Stack");
