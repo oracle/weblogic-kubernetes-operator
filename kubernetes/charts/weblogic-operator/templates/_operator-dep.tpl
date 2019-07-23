@@ -40,7 +40,7 @@ spec:
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
         - name: "DEBUG_SUSPEND"
-          {{- if .haltOnDebugStartup }}
+          {{- if .suspendOnDebugStartup }}
           value: "y"
           {{- else }}
           value: "n"

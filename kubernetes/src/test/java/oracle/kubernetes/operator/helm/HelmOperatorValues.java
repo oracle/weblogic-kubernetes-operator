@@ -36,7 +36,7 @@ class HelmOperatorValues extends OperatorValues {
 
     loadBooleanFromMap(map, this::setExternalRestEnabled, "externalRestEnabled");
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
-    loadBooleanFromMap(map, this::setHaltOnDebugStartup, "haltOnDebugStartup");
+    loadBooleanFromMap(map, this::setSuspendOnDebugStartup, "suspendOnDebugStartup");
     loadBooleanFromMap(map, this::setElkIntegrationEnabled, "elkIntegrationEnabled");
 
     loadIntegerFromMap(map, this::setExternalRestHttpsPort, "externalRestHttpsPort");
@@ -60,9 +60,9 @@ class HelmOperatorValues extends OperatorValues {
     }
   }
 
-  private void setHaltOnDebugStartup(Boolean enabled) {
+  private void setSuspendOnDebugStartup(Boolean enabled) {
     if (enabled != null) {
-      setHaltOnDebugStartup(enabled.toString());
+      setSuspendOnDebugStartup(enabled.toString());
     }
   }
 
@@ -111,7 +111,7 @@ class HelmOperatorValues extends OperatorValues {
 
     addMapEntry(map, this::isExternalRestEnabled, "externalRestEnabled");
     addMapEntry(map, this::isRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
-    addMapEntry(map, this::isHaltOnDebugStartup, "haltOnDebugStartup");
+    addMapEntry(map, this::isSuspendOnDebugStartup, "suspendOnDebugStartup");
     addMapEntry(map, this::isElkIntegrationEnabled, "elkIntegrationEnabled");
 
     addMapEntry(map, this::getExternalRestHttpsPortNum, "externalRestHttpsPort");
@@ -146,8 +146,8 @@ class HelmOperatorValues extends OperatorValues {
     return MapUtils.valueOf(getRemoteDebugNodePortEnabled());
   }
 
-  private Boolean isHaltOnDebugStartup() {
-    return MapUtils.valueOf(getHaltOnDebugStartup());
+  private Boolean isSuspendOnDebugStartup() {
+    return MapUtils.valueOf(getSuspendOnDebugStartup());
   }
 
   private Boolean isElkIntegrationEnabled() {

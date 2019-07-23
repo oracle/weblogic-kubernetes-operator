@@ -33,7 +33,7 @@ public abstract class CreateOperatorGeneratedFilesDebugEnabledTestBase
   @Override
   public ExtensionsV1beta1Deployment getExpectedWeblogicOperatorDeployment() {
     ExtensionsV1beta1Deployment expected = super.getExpectedWeblogicOperatorDeployment();
-    expectRemoteDebug(expected.getSpec().getTemplate().getSpec().getContainers().get(0), "y");
+    expectRemoteDebug(expected.getSpec().getTemplate().getSpec().getContainers().get(0), "n");
     return expected;
   }
 }

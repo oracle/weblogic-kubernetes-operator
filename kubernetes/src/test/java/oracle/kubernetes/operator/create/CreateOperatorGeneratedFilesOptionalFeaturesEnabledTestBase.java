@@ -31,7 +31,7 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
             .newOperatorValues()
             .setupExternalRestEnabled()
             .enableDebugging()
-            .haltOnDebugStartup("false")
+            .suspendOnDebugStartup("true")
             .elkIntegrationEnabled("true")
             .weblogicOperatorImagePullSecretName("test-operator-image-pull-secret-name"));
   }
@@ -58,7 +58,7 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
         expected.getSpec().getTemplate().getSpec().getContainers().get(0);
     operatorContainer.addVolumeMountsItem(
         newVolumeMount().name("log-dir").mountPath("/logs").readOnly(false));
-    expectRemoteDebug(operatorContainer, "n");
+    expectRemoteDebug(operatorContainer, "y");
     expected
         .getSpec()
         .getTemplate()

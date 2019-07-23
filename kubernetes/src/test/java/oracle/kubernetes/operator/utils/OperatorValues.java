@@ -33,7 +33,7 @@ public class OperatorValues {
   private String externalOperatorSecret = "";
   private String externalOperatorKey = "";
   private String remoteDebugNodePortEnabled = "";
-  private String haltOnDebugStartup = "";
+  private String suspendOnDebugStartup = "";
   private String internalDebugHttpPort = "";
   private String externalDebugHttpPort = "";
   private String javaLoggingLevel = "";
@@ -239,16 +239,16 @@ public class OperatorValues {
     return this;
   }
 
-  public String getHaltOnDebugStartup() {
-    return haltOnDebugStartup;
+  public String getSuspendOnDebugStartup() {
+    return suspendOnDebugStartup;
   }
 
-  public void setHaltOnDebugStartup(String val) {
-    haltOnDebugStartup = convertNullToEmptyString(val);
+  protected void setSuspendOnDebugStartup(String val) {
+    suspendOnDebugStartup = convertNullToEmptyString(val);
   }
 
-  public OperatorValues haltOnDebugStartup(String val) {
-    setHaltOnDebugStartup(val);
+  public OperatorValues suspendOnDebugStartup(String val) {
+    setSuspendOnDebugStartup(val);
     return this;
   }
 

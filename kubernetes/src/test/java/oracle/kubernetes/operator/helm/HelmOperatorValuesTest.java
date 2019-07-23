@@ -242,47 +242,48 @@ public class HelmOperatorValuesTest {
     assertThat(values.getRemoteDebugNodePortEnabled(), equalTo("false"));
   }
 
-  // --------------- haltOnDebugStartup
+  // --------------- suspendOnDebugStartup
 
   @Test
-  public void whenHaltOnDebugStartupTrue_createdMapContainsValue() {
-    operatorValues.haltOnDebugStartup("true");
+  public void whenSuspendOnDebugStartupTrue_createdMapContainsValue() {
+    operatorValues.suspendOnDebugStartup("true");
 
-    assertThat(operatorValues.createMap(), hasEntry("haltOnDebugStartup", true));
+    assertThat(operatorValues.createMap(), hasEntry("suspendOnDebugStartup", true));
   }
 
   @Test
-  public void whenHaltOnDebugStartupFalse_createdMapContainsValue() {
-    operatorValues.haltOnDebugStartup("false");
+  public void whenSuspendOnDebugStartupFalse_createdMapContainsValue() {
+    operatorValues.suspendOnDebugStartup("false");
 
-    assertThat(operatorValues.createMap(), hasEntry("haltOnDebugStartup", false));
+    assertThat(operatorValues.createMap(), hasEntry("suspendOnDebugStartup", false));
   }
 
   @Test
-  public void whenHaltOnDebugStartupNotSet_createdMapLacksValue() {
-    assertThat(operatorValues.createMap(), not(hasKey("haltOnDebugStartup")));
+  public void whenSuspendOnDebugStartupNotSet_createdMapLacksValue() {
+    assertThat(operatorValues.createMap(), not(hasKey("suspendOnDebugStartup")));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutHaltOnDebugStartup_hasEmptyString() {
+  public void whenCreatedFromMapWithoutSuspendOnDebugStartup_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
-    assertThat(values.getHaltOnDebugStartup(), equalTo(""));
+    assertThat(values.getSuspendOnDebugStartup(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithHaltOnDebugStartupTrue_hasSpecifiedValue() {
-    HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of("haltOnDebugStartup", true));
-
-    assertThat(values.getHaltOnDebugStartup(), equalTo("true"));
-  }
-
-  @Test
-  public void whenCreatedFromMapWithHaltOnDebugStartupFalse_hasSpecifiedValue() {
+  public void whenCreatedFromMapWithSuspendOnDebugStartupTrue_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("haltOnDebugStartup", false));
+        new HelmOperatorValues(ImmutableMap.of("suspendOnDebugStartup", true));
 
-    assertThat(values.getHaltOnDebugStartup(), equalTo("false"));
+    assertThat(values.getSuspendOnDebugStartup(), equalTo("true"));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithSuspendOnDebugStartupFalse_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("suspendOnDebugStartup", false));
+
+    assertThat(values.getSuspendOnDebugStartup(), equalTo("false"));
   }
 
   // --------------- elkIntegrationEnabled
@@ -519,14 +520,14 @@ public class HelmOperatorValuesTest {
         .append("externalDebugHttpPort: 30999\n")
         .append("externalRestEnabled: false\n")
         .append("externalRestHttpsPort: 31001\n")
-        .append("haltOnDebugStartup: true\n")
         .append("image: oracle/weblogic-kubernetes-operator:2.2.1\n")
         .append("imagePullPolicy: IfNotPresent\n")
         .append("internalDebugHttpPort: 30999\n")
         .append("javaLoggingLevel: INFO\n")
         .append("logStashImage: logstash:6.6.0\n")
         .append("remoteDebugNodePortEnabled: false\n")
-        .append("serviceAccount: default\n");
+        .append("serviceAccount: default\n")
+        .append("suspendOnDebugStartup: false\n");
     return sb.toString();
   }
 

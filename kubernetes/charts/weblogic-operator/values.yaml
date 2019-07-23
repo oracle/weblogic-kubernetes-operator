@@ -60,15 +60,15 @@ externalRestHttpsPort: 31001
 #externalRestIdentitySecret: 
 
 # remoteDebugNodePortEnabled specifies whether or not the operator will start a Java remote debug server on the
-# provided port. If the 'haltOnDebugStartup' property is specified, the operator will suspend execution
+# provided port. If the 'suspendOnDebugStartup' property is specified, the operator will suspend execution
 # until a remote debugger has attached.
 # The 'internalDebugHttpPort' property controls the port number inside the Kubernetes
 # cluster and the 'externalDebugHttpPort' property controls the port number outside
 # the Kubernetes cluster.
 remoteDebugNodePortEnabled: false
 
-#haltOnDebugStartup specifies whether the operator will halt on startup when a Java remote debug server is started.
-haltOnDebugStartup: true
+#suspendOnDebugStartup specifies whether the operator will suspend on startup when a Java remote debug server is started.
+suspendOnDebugStartup: false
 
 # internalDebugHttpPort specifies the port number inside the Kubernetes cluster for the operator's Java
 # remote debug server.
