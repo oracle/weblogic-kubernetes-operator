@@ -128,7 +128,7 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("spec", null, null);
+    crd.addInitContNode("spec", null, null, "busybox");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
@@ -155,7 +155,7 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("adminServer", null, null);
+    crd.addInitContNode("adminServer", null, null, "busybox");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
@@ -181,7 +181,7 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("clusters", "cluster-1", null);
+    crd.addInitContNode("clusters", "cluster-1", null, "busybox");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
@@ -208,13 +208,91 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("managedServers", "cluster-1", "managed-server1");
+    crd.addInitContNode("managedServers", "cluster-1", "managed-server1", "busybox");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
     TestUtils.checkPodReady(adminPodName, domain.getDomainNs());
     logger.info("Verifying if the managed server pod is recreated with initialization");
     verifyPodInitialized(ms1PodName);
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  /**
+   * Add initContainers which fails to run to completion and verify the weblogic server pods are not
+   * started as result of it.
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
+   *     weblogic server pod doesn't go through initialization and ready state
+   */
+  @Test
+  public void testDomainInitContainerNegative() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
+
+    // Modify the original domain yaml to include restartVersion in admin server node
+    DomainCrd crd = new DomainCrd(originalYaml);
+    crd.addInitContNode("spec", null, null, "busybox");
+    String modYaml = crd.getYamlTree();
+    modYaml = modYaml.replaceAll("sleep", "foo");
+    logger.info(modYaml);
+    testInitContainer(modYaml);
+    TestUtils.checkPodInitializing(pods[0], domain.getDomainNs());
+    TestUtils.checkPodReady(pods[0], domain.getDomainNs());
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  /**
+   * Add initContainers at domain and adminserver level and verify init containers are run at both
+   * level
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
+   *     weblogic server pod doesn't go through initialization and ready state
+   */
+  @Test
+  public void testInitContainerDiffLevel() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
+
+    // Modify the original domain yaml to include restartVersion in admin server node
+    DomainCrd crd = new DomainCrd(originalYaml);
+    crd.addInitContNode("spec", null, null, "busybox");
+    crd.addInitContNode("adminServer", null, null, "busybox1");
+    String modYaml = crd.getYamlTree();
+    logger.info(modYaml);
+    testInitContainer(modYaml);
+    TestUtils.checkPodInitializing(pods[0], domain.getDomainNs());
+    TestUtils.checkPodReady(pods[0], domain.getDomainNs());
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
+  }
+
+  /**
+   * Add initContainers at domain and adminserver level and verify init containers are run at both
+   * level
+   *
+   * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
+   *     weblogic server pod doesn't go through initialization and ready state
+   */
+  @Test
+  public void testInitContainerMultiple() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
+    String pods[] = {domainUid + "-" + domain.getAdminServerName(), domainUid + "-managed-server1"};
+
+    // Modify the original domain yaml to include restartVersion in admin server node
+    DomainCrd crd = new DomainCrd(originalYaml);
+    crd.addInitContNode("spec", null, null, "busybox1");
+    crd.addInitContNode("spec", null, null, "busybox2");
+    String modYaml = crd.getYamlTree();
+    logger.info(modYaml);
+    testInitContainer(modYaml);
+    TestUtils.checkPodInitializing(pods[0], domain.getDomainNs());
+    TestUtils.checkPodReady(pods[0], domain.getDomainNs());
     logger.log(Level.INFO, "SUCCESS - {0}", testMethodName);
   }
 
