@@ -324,8 +324,9 @@ public class ItInitContainers extends BaseTest {
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
-    String cmd = "kubectl get pod " + pods[0] + " -n " + domain.getDomainNs();
+    String cmd;
     for (String pod : pods) {
+      cmd = "kubectl get pod " + pod + " -n " + domain.getDomainNs();
       TestUtils.checkCmdInLoop(cmd, "Init:0/2", pod);
       TestUtils.checkCmdInLoop(cmd, "Init:1/2", pod);
       TestUtils.checkPodReady(pod, domain.getDomainNs());
