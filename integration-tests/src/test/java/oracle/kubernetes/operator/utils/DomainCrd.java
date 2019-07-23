@@ -28,14 +28,6 @@ public class DomainCrd {
   private final ObjectMapper objectMapper;
   private final JsonNode root;
 
-  public static void main(String args[]) {
-    try {
-      DomainCrd test = new DomainCrd("/c/Users/sankar/Downloads/domain.yaml");
-    } catch (IOException ex) {
-      Logger.getLogger(DomainCrd.class.getName()).log(Level.SEVERE, null, ex);
-    }
-  }
-
   /**
    * Constructor to read the yaml file and initialize the root JsonNode with yaml equivalent of JSON
    * tree.
@@ -479,6 +471,8 @@ public class DomainCrd {
         logger.log(Level.INFO, "Creating node with name {0}", arrayNodeName);
         arrayNode = objectMapper.createArrayNode();
         ((ObjectNode) serverPodNode).set(arrayNodeName, arrayNode);
+      } else {
+        return (ArrayNode) serverPodsParentNode.path("serverPod").path(arrayNodeName);
       }
     }
     return arrayNode;
