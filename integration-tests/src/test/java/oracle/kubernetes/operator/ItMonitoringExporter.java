@@ -101,7 +101,7 @@ public class ItMonitoringExporter extends BaseTest {
       configPath = resourceExporterDir;
       monitoringExporterEndToEndDir =
               monitoringExporterDir + "/src/samples/kubernetes/end2end/";
-
+      BaseTest.setWaitTimePod(10);
       upgradeTraefikHostName();
       deployRunMonitoringExporter(domain, operator);
       buildDeployWebServiceApp(domain, TESTWSAPP, TESTWSSERVICE);
