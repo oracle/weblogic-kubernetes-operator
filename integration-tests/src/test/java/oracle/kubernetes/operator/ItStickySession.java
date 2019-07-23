@@ -132,10 +132,16 @@ public class ItStickySession extends BaseTest {
     // Send the first HTTP request to the cluster to establish a connection
     ExecResult result = getHttpResponse(webServiceSetUrl, " -D ");
 
+    logger.info(" ========== result : " + result);
+    
     // Retrieve the session id and connected server name from the first HTTP response
     String serverName1 = getHttpResponseAttribute(result.stdout(), serverNameAttr);
     String serverID1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
 
+    if(null == serverName1) {
+      logger.info(" ========== serverName1 is  null !!");
+    }
+    
     Assume.assumeNotNull(serverName1);
     Assume.assumeNotNull(serverID1);
 
@@ -214,8 +220,14 @@ public class ItStickySession extends BaseTest {
     // Client1 sends a HTTP request to set a count number
     ExecResult result = getHttpResponse(webServiceSetUrl);
 
+    logger.info(" ========== result : " + result);
+    
     // Retrieve the session id from HTTP response
     String serverIdClient1 = getHttpResponseAttribute(result.stdout(), sessionIdAttr);
+    if(null == serverIdClient1) {
+      logger.info(" ========== serverIdClient1 is  null !!");
+    }
+    
     Assume.assumeNotNull(serverIdClient1);
 
     logger.info(

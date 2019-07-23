@@ -124,10 +124,15 @@ public class ItSessionMigration extends BaseTest {
     // Send the first HTTP request and save HTTP header/sessionID info
     ExecResult result = getHttpResponse(testAppPath, " -D ");
 
+    logger.info(" ========== result : " + result);
+    
     // Get primary server name & session create time bf primaryServName1 is stopped
     String primaryServName1 = getHttpResponseAttribute(result.stdout(), primaryServ);
     String sessCreateTime1 = getHttpResponseAttribute(result.stdout(), sessCreateTime);
 
+    if(null == primaryServName1) {
+      logger.info(" ========== primaryServName1 is  null !!");
+    }
     // Stop primary server
     domain.shutdownManagedServerUsingServerStartPolicy(primaryServName1);
 
@@ -208,10 +213,14 @@ public class ItSessionMigration extends BaseTest {
     // Send the first HTTP request and save HTTP header/sessionID info
     ExecResult result = getHttpResponse(webServiceSetUrl, " -D ");
 
+    logger.info(" ========== result : " + result);
+    
     // Get primary server name & count number bf primaryServName1 is stopped
     String primaryServName1 = getHttpResponseAttribute(result.stdout(), primaryServ);
     final String countattribute1 = getHttpResponseAttribute(result.stdout(), count);
-
+    if(null == primaryServName1) {
+      logger.info(" ========== primaryServName1 is  null !!");
+    }
     // Stop primary server
     domain.shutdownManagedServerUsingServerStartPolicy(primaryServName1);
 
