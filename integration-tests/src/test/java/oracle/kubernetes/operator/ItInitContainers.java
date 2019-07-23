@@ -292,8 +292,9 @@ public class ItInitContainers extends BaseTest {
 
     // Modify the original domain yaml to include restartVersion in admin server node
     DomainCrd crd = new DomainCrd(originalYaml);
-    crd.addInitContNode("spec", null, null, "busybox", "sleep");
-    crd.addInitContNode("adminServer", null, null, "busybox", "foo");
+    crd.addInitContNode("spec", null, null, "busybox", "foo");
+    crd.addInitContNode("adminServer", null, null, "busybox", "sleep");
+    crd.addInitContNode("clusters", "cluster-1", null, "busybox", "sleep");
     String modYaml = crd.getYamlTree();
     logger.info(modYaml);
     testInitContainer(modYaml);
