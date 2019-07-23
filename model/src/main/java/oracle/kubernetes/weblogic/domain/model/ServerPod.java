@@ -15,14 +15,21 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 
+import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Capabilities;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1HostAlias;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
+import io.kubernetes.client.models.V1LocalObjectReference;
+import io.kubernetes.client.models.V1PodDNSConfig;
+import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
@@ -36,17 +43,12 @@ import static java.util.Collections.emptyList;
 class ServerPod extends KubernetesResource {
 
   private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
-      (a, b) -> {
-        return a.getName().compareTo(b.getName());
-      };
+      Comparator.comparing(V1EnvVar::getName);
   private static final Comparator<V1Volume> VOLUME_COMPARATOR =
-      (a, b) -> {
-        return a.getName().compareTo(b.getName());
-      };
+      Comparator.comparing(V1Volume::getName);
   private static final Comparator<V1VolumeMount> VOLUME_MOUNT_COMPARATOR =
-      (a, b) -> {
-        return a.getName().compareTo(b.getName());
-      };
+      Comparator.comparing(V1VolumeMount::getName);
+
   /**
    * Environment variables to pass while starting a server.
    *
@@ -55,6 +57,7 @@ class ServerPod extends KubernetesResource {
   @Valid
   @Description("A list of environment variables to add to a server.")
   private List<V1EnvVar> env = new ArrayList<>();
+
   /**
    * Defines the settings for the liveness probe. Any that are not specified will default to the
    * runtime liveness probe tuning settings.
@@ -63,6 +66,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Settings for the liveness probe associated with a server.")
   private ProbeTuning livenessProbe = new ProbeTuning();
+
   /**
    * Defines the settings for the readiness probe. Any that are not specified will default to the
    * runtime readiness probe tuning settings.
@@ -71,6 +75,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Settings for the readiness probe associated with a server.")
   private ProbeTuning readinessProbe = new ProbeTuning();
+
   /**
    * Defines the key-value pairs for the pod to fit on a node, the node must have each of the
    * indicated key-value pairs as labels.
@@ -80,6 +85,35 @@ class ServerPod extends KubernetesResource {
   @Description(
       "Selector which must match a node's labels for the pod to be scheduled on that node.")
   private Map<String, String> nodeSelector = new HashMap<>();
+
+  @SerializedName("activeDeadlineSeconds")
+  private Long activeDeadlineSeconds = null;
+  @SerializedName("affinity")
+  private V1Affinity affinity = null;
+  @SerializedName("dnsConfig")
+  private V1PodDNSConfig dnsConfig = null;
+  @SerializedName("hostAliases")
+  private List<V1HostAlias> hostAliases = null;
+  @SerializedName("priority")
+  private Integer priority = null;
+  @SerializedName("priorityClassName")
+  private String priorityClassName = null;
+  @SerializedName("readinessGates")
+  private List<V1PodReadinessGate> readinessGates = null;
+  @SerializedName("restartPolicy")
+  private String restartPolicy = null;
+  @SerializedName("runtimeClassName")
+  private String runtimeClassName = null;
+  @SerializedName("schedulerName")
+  private String schedulerName = null;
+  @SerializedName("securityContext")
+  private V1PodSecurityContext securityContext = null;
+  @SerializedName("shareProcessNamespace")
+  private Boolean shareProcessNamespace = null;
+  @SerializedName("tolerations")
+  private List<V1Toleration> tolerations = null;
+
+
   /**
    * Defines the requirements and limits for the pod server.
    *
@@ -88,6 +122,7 @@ class ServerPod extends KubernetesResource {
   @Description("Memory and CPU minimum requirements and limits for the server.")
   private V1ResourceRequirements resources =
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
+
   /**
    * PodSecurityContext holds pod-level security attributes and common container settings. Some
    * fields are also present in container.securityContext. Field values of container.securityContext
@@ -97,6 +132,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Pod-level security attributes.")
   private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
+
   /**
    * InitContainers holds a list of initialization containers that should be run before starting the
    * main containers in this pod.
@@ -105,6 +141,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Initialization containers to be included in the server pod.")
   private List<V1Container> initContainers = new ArrayList<>();
+
   /**
    * The additional containers.
    *
@@ -112,6 +149,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Additional containers to be included in the server pod.")
   private List<V1Container> containers = new ArrayList<>();
+
   /**
    * Configures how the operator should shutdown the server instance.
    *
@@ -119,6 +157,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Configures how the operator should shutdown the server instance.")
   private Shutdown shutdown = new Shutdown();
+
   /**
    * SecurityContext holds security configuration that will be applied to a container. Some fields
    * are present in both SecurityContext and PodSecurityContext. When both are set, the values in
@@ -129,6 +168,7 @@ class ServerPod extends KubernetesResource {
   @Description(
       "Container-level security attributes. Will override any matching pod-level attributes.")
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
+
   /**
    * The additional volumes.
    *
@@ -136,6 +176,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Additional volumes to be created in the server pod.")
   private List<V1Volume> volumes = new ArrayList<>();
+
   /**
    * The additional volume mounts.
    *
