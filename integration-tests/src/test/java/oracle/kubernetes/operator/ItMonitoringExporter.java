@@ -1347,7 +1347,7 @@ public class ItMonitoringExporter extends BaseTest {
       // uninstall grafana
       crdCmd = "helm delete --purge grafana";
       ExecCommand.exec(crdCmd);
-      TestUtils.checkPodDeleted(podName, "monitoring");
+      Thread.sleep(15000);
 
       crdCmd = "kubectl -n monitoring delete secret grafana-secret";
       ExecCommand.exec(crdCmd);
