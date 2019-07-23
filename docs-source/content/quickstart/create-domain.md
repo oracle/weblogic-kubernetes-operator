@@ -6,7 +6,12 @@ weight: 6
 ---
 
 
-1. Create a Kubernetes secret containing the `username` and `password` for the domain using the [`create-weblogic-credentials`](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
+1. For use in the following steps:
+
+   * Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character).
+   * Pick or create a directory to which you can write output.
+
+1. Create a Kubernetes secret for the WebLogic administrator credentials containing the `username` and `password` for the domain, using the [create-weblogic-credentials](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 
     ```bash
     $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \
@@ -17,58 +22,22 @@ weight: 6
     with the value you provided.  For example, the command above would create a secret named
     `sample-domain1-weblogic-credentials`.
 
-1.	Create a new image with a domain home by running the [`create-domain`](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script.
-Follow the directions in the [sample]({{< relref "/samples/simple/domains/domain-home-in-image/_index.md" >}}),
-including:
-
-    * Copying the sample `kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml` file and updating your copy with the `domainUID` (`sample-domain1`),
-domain namespace (`sample-domain1-ns`), and the `domainHomeImageBase` (`container-registry.oracle.com/middleware/weblogic:12.2.1.3`).
-
-    * Setting `weblogicCredentialsSecretName` to the name of the secret containing the WebLogic credentials, in this case, `sample-domain1-weblogic-credentials`.
-
-    * Leaving the `image` empty unless you need to tag the new image that the script builds to a different name.
-{{% notice note %}}
-If you set the `domainHomeImageBuildPath` property to `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt`, make sure that your `JAVA_HOME` is set to a Java JDK version 1.8 or later.
-{{% /notice %}}
+1.	Create a new image with a domain home by running the [create-domain](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. First, copy the sample [create-domain-inputs.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml) file and update your copy with:  
+       * `domainUID`: `sample-domain1`
+       * `image`: Leave empty unless you need to tag the new image that the script builds to a different name.
+       * `namespace`: `sample-domain1-ns`
+       * `weblogicCredentialsSecretName`: `sample-domain1-weblogic-credentials`
+       * `domainHomeImageBase`: `container-registry.oracle.com/middleware/weblogic:12.2.1.3`
 
     For example, assuming you named your copy `my-inputs.yaml`:
 
     ```bash
     $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-    $ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u <username> -p <password> -e
+    $ ./create-domain.sh -i my-inputs.yaml -o /<your output directory> -u <username> -p <password> -e
     ```
-
-    You need to provide the WebLogic administration user name and password in the `-u` and `-p` options
-    respectively, as shown in the example.
-{{% notice note %}}
-When using this sample, the WebLogic Server credentials that you specify, in three separate places, must be consistent:
-
-- The secret that you create for the credentials.
-- The properties files in the sample project you choose to create the Docker image from.
-- The parameters you supply to the `create-domain.sh` script.
-{{% /notice %}}
-
-
-    If you specify the `-e` option, the script will generate the
-    Kubernetes YAML files *and* apply them to your cluster.  If you omit the `-e` option, the
-    script will just generate the YAML files, but will not take any action on your cluster.
-
-    If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following:
-
-    * Set the `image` property in the inputs file to the target image name (including the registry hostname/port, and the tag if needed).
-    * If you want Kubernetes to pull the image from a private registry, create a Kubernetes secret to hold your credentials and set the `imagePullSecretName` property in the inputs file to the name of the secret.
-{{% notice note %}}
-The Kubernetes secret must be in the same namespace where the domain will be running.
-For more information, see [domain home in image protection]({{<relref "/security/domain-security/image-protection.md#weblogic-domain-in-docker-image-protection">}})
-in the ***Security*** section.
-{{% /notice %}}
-    * Run the `create-domain.sh` script without the `-e` option.
-    * Push the `image` to the registry.
-    * Run the following command to create the domain.
-
-    ```bash
-    $ kubectl apply -f /some/output/directory/weblogic-domains/sample-domain1/domain.yaml
-    ```
+{{% notice note %}}You need to provide the same WebLogic domain administrator user name and password in the `-u` and `-p` options
+    respectively, as you provided when creating the Kubernetes secret in Step 1.
+    {{% /notice %}}
 
 1.	Confirm that the operator started the servers for the domain:
 
@@ -102,14 +71,23 @@ in the ***Security*** section.
 
 1.	To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods,
     you can send a request to the URL for the "WebLogic ReadyApp framework" which will return a HTTP 200 status code, as
-    shown in the example below.  If you used the host-based routing Ingress sample, you will need to
-    provide the hostname in the `-H` option.
+    shown in the example below.  
 
-    Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running:
+    **NOTE**: Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running:
 
     ```bash
-    $ kubectl get po -n sample-domain1-ns -o wide
+    $ kubectl get pods -n sample-domain1-ns -o wide
     ```
+    Here is an example of the output of this command:
+
+    ```
+    $ kubectl get pods -n sample-domain1-ns -o wide
+    NAME                                         READY     STATUS    RESTARTS   AGE   IP           NODE              NOMINATED NODE   READINESS GATES
+    sample-domain1-admin-server                  1/1       Running   0          30m   10.42.3.30   129.146.138.186   <none>           <none>
+    sample-domain1-managed-server1               1/1       Running   0          29m   10.42.1.42   129.146.48.84     <none>           <none>
+    sample-domain1-managed-server2               1/1       Running   0          29m   10.42.3.31   129.146.138.186   <none>           <none>
+    ```
+
     ```
     $ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/ready
       About to connect() to your.server.com port 30305 (#0)
