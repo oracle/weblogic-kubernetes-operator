@@ -128,7 +128,7 @@ Configuration Overrides Usecases
 | Replace/Append Configuration with corrupted yml file via exporter console| Try to replace/append monitoring exporter configuration with config file written in corrupted yml format, verify configuration has not changed |
 | Replace/Append Configuration with dublicated values in the config file via exporter console| Try to replace/append monitoring exporter configuration with dublicated values in the config file, verify configuration has not changed |
 | End to end test to demonstrate how to setup and run WebLogic Monitoring Exporter with operator and WebLogic domain| This is fully automated version of the sample, provided in the https://github.com/oracle/weblogic-monitoring-exporter/tree/alert/samples/kubernetes/end2end |
-
+| Test to scale up cluster using Prometheus Alert Manager and webhook | Use webhook, prometheus, monitoring exporter to scale up WebLogic Cluster based on metrics condition |
 
 
 | Logging with Elastic Stack | Use Case |
