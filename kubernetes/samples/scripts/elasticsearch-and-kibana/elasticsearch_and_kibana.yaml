@@ -43,15 +43,13 @@ spec:
     spec:
       containers:
       - name: "elasticsearch"
-        image: "elasticsearch:5"
+        image: "elasticsearch:6.8.0"
         ports:
         - containerPort: 9200
         - containerPort: 9300
         env:
         - name: ES_JAVA_OPTS
           value: -Xms1024m -Xmx1024m
-        - name: bootstrap.memory_lock
-          value: "true"
 
 ---
 kind: "Service"
@@ -92,7 +90,7 @@ spec:
     spec:
       containers:
       - name: "kibana"
-        image: "kibana:5"
+        image: "kibana:6.8.0"
         ports:
         - containerPort: 5601
 
