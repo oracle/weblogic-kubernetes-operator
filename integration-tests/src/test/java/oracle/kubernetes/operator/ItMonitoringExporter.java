@@ -124,7 +124,6 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
-      uninstallMySQL();
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
     }
@@ -305,28 +304,32 @@ public class ItMonitoringExporter extends BaseTest {
   private static void deletePrometheusGrafana() throws Exception {
 
     String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-    String podName = getPodName("app=prometheus", "monitoring");
+    String prompodName = getPodName("app=prometheus", "monitoring");
     String crdCmd = " kubectl delete -f " + samplesDir + "prometheus-deployment.yaml";
     TestUtils.exec(crdCmd);
-    TestUtils.checkPodDeleted(podName, "monitoring");
 
-    podName = getPodName("name=alertmanager", "monitoring");
+
+    String ampodName = getPodName("name=alertmanager", "monitoring");
     crdCmd = " kubectl delete -f " + samplesDir + "alertmanager-deployment.yaml";
     TestUtils.exec(crdCmd);
-    TestUtils.checkPodDeleted(podName, "monitoring");
 
-    podName = getPodName("name=webhook", "monitoring");
+
+    String webhookpodName = getPodName("name=webhook", "monitoring");
     crdCmd = " kubectl delete -f " + monitoringExporterDir + "/webhook/webhook-deployment.yaml";
     TestUtils.exec(crdCmd);
-    TestUtils.checkPodDeleted(podName, "monitoring");
+
 
     crdCmd = "kubectl delete -f " + monitoringExporterDir + "/webhook/crossrbac_monitoring.yaml";
     TestUtils.exec(crdCmd);
 
-    podName = getPodName("name=grafana", "monitoring");
+    String grafanapodName = getPodName("name=grafana", "monitoring");
     crdCmd = " kubectl delete -f " + samplesDir + "grafana-deployment.yaml";
     TestUtils.exec(crdCmd);
-    TestUtils.checkPodDeleted(podName, "monitoring");
+
+    TestUtils.checkPodDeleted(prompodName, "monitoring");
+    TestUtils.checkPodDeleted(grafanapodName, "monitoring");
+    TestUtils.checkPodDeleted(ampodName, "monitoring");
+    TestUtils.checkPodDeleted(webhookpodName, "monitoring");
 
     crdCmd = " kubectl delete -f " + samplesDir + "monitoring-namespace.yaml";
     TestUtils.exec(crdCmd);
@@ -894,7 +897,7 @@ public class ItMonitoringExporter extends BaseTest {
       fireAlert();
     } finally {
       uninstallWebHookPrometheusGrafanaViaChart();
-      //uninstallMySQL();
+      uninstallMySQL();
 
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
@@ -924,19 +927,6 @@ public class ItMonitoringExporter extends BaseTest {
     String webhookPod = getPodName("app=webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
     TestUtils.checkAnyCmdInLoop(command, "Some WLS cluster has only one running server for more than 1 minutes");
-  }
-
-  private static String getInternalOpCert(Operator op) throws Exception {
-    StringBuffer cmd = new StringBuffer();
-    cmd.append("kubectl get cm -n " + op.getOperatorNamespace() + " weblogic-operator-cm -o jsonpath='{.data.internalOperatorCert}'");
-    logger.info(" operator internal cert command =" + cmd);
-    ExecResult result = ExecCommand.exec(cmd.toString());
-    String internalCert = null;
-    if (result.exitValue() == 0) {
-      internalCert = result.stdout().trim();
-    }
-    assertNotNull(internalCert + "  can't retrieve ", internalCert);
-    return internalCert;
   }
 
   private static String getPodName(String labelExp, String namespace) throws Exception {
@@ -1268,54 +1258,12 @@ public class ItMonitoringExporter extends BaseTest {
 
     String  webhookResourceDir = resourceExporterDir + "/../webhook";
     String  webhookDir = monitoringExporterDir + "/webhook";
-    if (!new File(webhookDir).exists()) {
-      Files.createDirectories(Paths.get(webhookDir));
-      logger.info("webhookDir" + webhookDir);
-      logger.info("webhookResourceDir" + webhookResourceDir);
-      String crdCmd = "cp -rf " + webhookResourceDir + "/* " + webhookDir;
-      logger.info("executing command " + crdCmd);
-      TestUtils.exec(crdCmd);
-      crdCmd = " cp " + BaseTest.getProjectRoot() + "/src/scripts/scaling/scalingAction.sh " + webhookDir ;
-      TestUtils.exec(crdCmd);
-      logger.info(" Cloning and building Weblogic Server Monitoring Exporter application");
-      // git clone webhook project
-      StringBuffer getWebHook = new StringBuffer();
-
-      getWebHook.append("cd " + webhookDir)
-              .append(" && ")
-              .append(" wget  https://github.com/adnanh/webhook/releases/download/2.6.9/webhook-linux-amd64.tar.gz");
-
-      TestUtils.exec(getWebHook.toString());
-      getWebHook = new StringBuffer();
-
-      getWebHook.append("cd " + webhookDir)
-              .append(" && ")
-              .append(" tar -xvf webhook-linux-amd64.tar.gz");
-
-      TestUtils.exec(getWebHook.toString());
-      getWebHook = new StringBuffer();
-
-      getWebHook.append("cd " + webhookDir)
-              .append(" && ")
-              .append(" cp webhook-linux-amd64/webhook .");
-
-      TestUtils.exec(getWebHook.toString());
-
-    }
-    logger.info("building webhook image with scaling");
-
-    String crdCmd = "cd " + webhookDir + " && docker build . -t webhook:latest";
-    TestUtils.exec(crdCmd);
-
-     String internalOpCert = getInternalOpCert(operator);
-     replaceStringInFile(webhookDir+ "/webhook-deployment.yaml","@INTERNAL_OPERATOR_CERT@", internalOpCert);
     // install webhook
     logger.info("installing webhook ");
+    String crdCmd = "cd " + webhookResourceDir + " && chmod 777 ./setupWebHook.sh && . ./setupWebHook.sh "
+            + webhookDir + " " + webhookResourceDir + " " + operator.getOperatorNamespace() + " | tee script.log";
+    TestUtils.exec(crdCmd);
 
-    crdCmd = "kubectl apply -f " + webhookDir + "/webhook-deployment.yaml";
-    TestUtils.exec(crdCmd);
-    crdCmd = "kubectl apply -f " + webhookDir + "/crossrbac_monitoring.yaml";
-    TestUtils.exec(crdCmd);
     String webhookPod = getPodName("name=webhook", "monitoring");
     TestUtils.checkPodReady(webhookPod, "monitoring");
 
@@ -1337,7 +1285,7 @@ public class ItMonitoringExporter extends BaseTest {
       TestUtils.checkPodDeleted(podName, "webhook");
       crdCmd = "kubectl delete ns webhook ";
       ExecCommand.exec(crdCmd);
-    } catch (AssertionError assertionError) {
+    } catch (Exception assertionError) {
       // ignore, pod may not be created
     }
 
@@ -1353,7 +1301,7 @@ public class ItMonitoringExporter extends BaseTest {
       ExecCommand.exec(crdCmd);
       crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
       ExecCommand.exec(crdCmd);
-    } catch (AssertionError assertionError) {
+    } catch (Exception assertionError) {
       //ignore , grafana pod may not be created
     }
     try {
@@ -1368,12 +1316,12 @@ public class ItMonitoringExporter extends BaseTest {
       logger.info("Uninstalling prometheus persistence ");
       crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
       ExecCommand.exec(crdCmd);
-      Thread.sleep(15000);
+
 
       crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
       ExecCommand.exec(crdCmd);
-      Thread.sleep(15000);
-    } catch (AssertionError assertError) {
+
+    } catch (Exception assertError) {
       //ignore , the pod may not be created
     }
   }
