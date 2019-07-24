@@ -28,9 +28,10 @@
 #
 # Prerequisites:
 #
-#    - Optionally set WL_HOME - default is /u01/oracle/wlserver.
-#
-#    - Optionally set MW_HOME - default is /u01/oracle.
+#    - Optionally set
+#        ORACLE_HOME = Oracle Install Home - defaults via utils.sh/exportInstallHomes
+#        MW_HOME     = MiddleWare Install Home - defaults to ${ORACLE_HOME}
+#        WL_HOME     = WebLogic Install Home - defaults to ${ORACLE_HOME}/wlserver
 #
 #    - Transitively requires other env vars for startNodeManager.sh, wlst.sh,
 #      and introspectDomain.py (see these scripts to find out what else needs to be set).
@@ -47,10 +48,9 @@ trace "Introspecting the domain"
 
 env | tracePipe "Current environment:"
 
-# set defaults
+# set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
 
-export WL_HOME=${WL_HOME:-/u01/oracle/wlserver}
-export MW_HOME=${MW_HOME:-/u01/oracle}
+exportInstallHomes
 
 # check if prereq env-vars, files, and directories exist
 
