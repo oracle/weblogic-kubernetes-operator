@@ -8,7 +8,7 @@ if [ ! -d "$webhookDir" ]; then
     echo "Installing webhook files ${webhookDir}..."
     mkdir ${webhookDir}
     cp -rf ${webhookResourceDir}/* ${webhookDir}/.
-    cp ${PROJECT_ROOT}/src/scripts/scaling/scalingAction.sh ${webhookDir}
+    cp ${webhookResource}/../../../../../src/scripts/scaling/scalingAction.sh ${webhookDir}
     echo "cloning webhook executable"
     cd ${webhookDir}
     wget  https://github.com/adnanh/webhook/releases/download/2.6.9/webhook-linux-amd64.tar.gz

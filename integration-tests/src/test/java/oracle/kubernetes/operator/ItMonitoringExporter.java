@@ -1261,7 +1261,13 @@ public class ItMonitoringExporter extends BaseTest {
     logger.info("installing webhook ");
     String crdCmd = "cd " + webhookResourceDir + " && chmod 777 ./setupWebHook.sh && . ./setupWebHook.sh "
             + webhookDir + " " + webhookResourceDir + " " + operator.getOperatorNamespace() + " | tee script.log";
-    TestUtils.exec(crdCmd);
+    ExecResult result = ExecCommand.exec(crdCmd);
+    logger.info("Result output " + result.stdout());
+    crdCmd = " cat " + webhookResourceDir + "/script.log";
+    result = ExecCommand.exec(crdCmd);
+    logger.info("Result output from  the command " + crdCmd + " : " + result.stdout());
+
+
 
     String webhookPod = getPodName("name=webhook", "monitoring");
     TestUtils.checkPodReady(webhookPod, "monitoring");
