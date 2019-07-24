@@ -23,12 +23,11 @@ public class HelmOperatorValuesTest {
 
   private final int intValue = getRandomInt();
   private final String stringValue = Integer.toString(intValue);
+  private final HelmOperatorValues operatorValues = new HelmOperatorValues();
 
   private static int getRandomInt() {
     return (int) (1000000 * Math.random());
   }
-
-  private final HelmOperatorValues operatorValues = new HelmOperatorValues();
 
   @Test
   public void whenServiceAccountSet_createdMapContainsValue() {
@@ -67,7 +66,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void WeblogicOperatorImageIsGettableStringValue() {
+  public void weblogicOperatorImageIsGettableStringValue() {
     operatorValues.weblogicOperatorImage(stringValue);
 
     assertThat(operatorValues.getWeblogicOperatorImage(), equalTo(stringValue));
@@ -102,7 +101,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void JavaLoggingLevelIsGettableStringValue() {
+  public void javaLoggingLevelIsGettableStringValue() {
     operatorValues.javaLoggingLevel(stringValue);
 
     assertThat(operatorValues.getJavaLoggingLevel(), equalTo(stringValue));
@@ -133,7 +132,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void WeblogicOperatorNamespaceIsGettableStringValue() {
+  public void weblogicOperatorNamespaceIsGettableStringValue() {
     operatorValues.namespace(stringValue);
 
     assertThat(operatorValues.getNamespace(), equalTo(stringValue));
@@ -162,7 +161,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void WeblogicOperatorImagePullPolicyIsGettableStringValue() {
+  public void weblogicOperatorImagePullPolicyIsGettableStringValue() {
     operatorValues.weblogicOperatorImagePullPolicy(stringValue);
 
     assertThat(operatorValues.getWeblogicOperatorImagePullPolicy(), equalTo(stringValue));
@@ -240,6 +239,50 @@ public class HelmOperatorValuesTest {
         new HelmOperatorValues(ImmutableMap.of("remoteDebugNodePortEnabled", false));
 
     assertThat(values.getRemoteDebugNodePortEnabled(), equalTo("false"));
+  }
+
+  // --------------- suspendOnDebugStartup
+
+  @Test
+  public void whenSuspendOnDebugStartupTrue_createdMapContainsValue() {
+    operatorValues.suspendOnDebugStartup("true");
+
+    assertThat(operatorValues.createMap(), hasEntry("suspendOnDebugStartup", true));
+  }
+
+  @Test
+  public void whenSuspendOnDebugStartupFalse_createdMapContainsValue() {
+    operatorValues.suspendOnDebugStartup("false");
+
+    assertThat(operatorValues.createMap(), hasEntry("suspendOnDebugStartup", false));
+  }
+
+  @Test
+  public void whenSuspendOnDebugStartupNotSet_createdMapLacksValue() {
+    assertThat(operatorValues.createMap(), not(hasKey("suspendOnDebugStartup")));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithoutSuspendOnDebugStartup_hasEmptyString() {
+    HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
+
+    assertThat(values.getSuspendOnDebugStartup(), equalTo(""));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithSuspendOnDebugStartupTrue_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("suspendOnDebugStartup", true));
+
+    assertThat(values.getSuspendOnDebugStartup(), equalTo("true"));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithSuspendOnDebugStartupFalse_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("suspendOnDebugStartup", false));
+
+    assertThat(values.getSuspendOnDebugStartup(), equalTo("false"));
   }
 
   // --------------- elkIntegrationEnabled
@@ -337,7 +380,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void InternalDebugHttpPortIsGettableStringValue() {
+  public void internalDebugHttpPortIsGettableStringValue() {
     operatorValues.internalDebugHttpPort(stringValue);
 
     assertThat(operatorValues.getInternalDebugHttpPort(), equalTo(stringValue));
@@ -423,7 +466,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void ExternalDebugHttpPortIsGettableStringValue() {
+  public void externalDebugHttpPortIsGettableStringValue() {
     operatorValues.externalDebugHttpPort(stringValue);
 
     assertThat(operatorValues.getExternalDebugHttpPort(), equalTo(stringValue));
@@ -482,7 +525,8 @@ public class HelmOperatorValuesTest {
         .append("javaLoggingLevel: INFO\n")
         .append("logStashImage: logstash:6.6.0\n")
         .append("remoteDebugNodePortEnabled: false\n")
-        .append("serviceAccount: default\n");
+        .append("serviceAccount: default\n")
+        .append("suspendOnDebugStartup: false\n");
     return sb.toString();
   }
 

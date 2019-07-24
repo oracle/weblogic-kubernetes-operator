@@ -43,7 +43,7 @@ Basic Use Cases described above are verified in all the domain configurations. A
 | Domain | Use Case |
 | --- | --- |
 | Domain on PV using WDT | WLDF scaling |
-| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
+| Domain with ADMIN_ONLY | making sure only admin server is started and managed servers are not started. Make some changes in domain configuration by changing admin server tuning backlog configuration and restart domain. Shutdown domain by deleting domain CRD. Create domain on existing PV dir, pv is already populated by a shutdown domain. |
 | Domain with situational config | create domain with listen address not set for admin server and t3 channel/NAP and incorrect file for admin server log location. Introspector should override these with sit-config automatically. Also, with some junk value for t3 channel public address and using custom situational config override replace with valid public address using secret. Also, on Jenkins this domain uses NFS instead of HOSTPATH PV storage |	
 | Two domains managed by two operators | verify scaling and restart of one domain doesn't impact another domain. Delete domain resources using delete script from samples. |			
 | Domain with Recycle policy | create domain with pvReclaimPolicy="Recycle" and using Configured cluster. Verify that the PV is deleted once the domain and PVC are deleted |
@@ -127,10 +127,35 @@ Configuration Overrides Usecases
 | Replace/Append Configuration with  config file written in non yml format via exporter console| Try to replace/append monitoring exporter configuration with config file written in non yml format, verify configuration has not changed |
 | Replace/Append Configuration with corrupted yml file via exporter console| Try to replace/append monitoring exporter configuration with config file written in corrupted yml format, verify configuration has not changed |
 | Replace/Append Configuration with dublicated values in the config file via exporter console| Try to replace/append monitoring exporter configuration with dublicated values in the config file, verify configuration has not changed |
-| Replace/Append Configuration with invalid credentials via exporter console| Try to replace/append monitoring exporter configuration with varios combos for invalid credentials, verify configuration has not changed and `401 Unauthorized` exception was thrown |
+| End to end test to demonstrate how to setup and run WebLogic Monitoring Exporter with operator and WebLogic domain| This is fully automated version of the sample, provided in the https://github.com/oracle/weblogic-monitoring-exporter/tree/alert/samples/kubernetes/end2end |
+
+
 
 | Logging with Elastic Stack | Use Case |
 | --- | --- |
 | Search log level | Use Elasticsearch Count API to query logs of level=INFO and verify that total number of logs for level=INFO is not zero and failed count is zero |
 | Search Operator log | Use Elasticsearch Search APIs to query Operator log info and verify that log hits for type=weblogic-operator are not empty |
 | Search Weblogic log | Use Elasticsearch Search APIs to query Weblogic log info and verify that log hits for Weblogic servers are not empty |
+
+| Operator Upgrade | Use Case |
+| --- | --- |
+| Upgrade 2.0 operator to develop | Upgrade the 2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.0.1 operator to develop | Upgrade the 2.0.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.1 operator to develop | Upgrade the 2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.2.0 operator to develop | Upgrade the 2.2.0 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+| Upgrade 2.2.1 operator to develop | Upgrade the 2.2.1 operator running a Weblogic domain to develop version of the Operator and verify apiVersion of the domain CRD shows latest version |
+
+| Pod Templates | Use Case |
+| --- | --- |
+| Using pod templates/variables | Use DOMAIN_UID, DOMAIN_NAME, DOMAIN_HOME, SERVER_NAME, LOG_HOME variables at domain level and CLUSTER_NAME at cluster level. Bring up the domain and make sure domain started successfully when pod templates are used |
+
+| Init Container | Use Case |
+| --- | --- |
+| Add initContainers to domain | Add a initContainers object to spec level and verify the init containers are created for weblogic server pods prior to starting it and runs to completion and then weblogic pod are started |
+| Add initContainers to adminServer | Add a initContainers object to adminServer level and verify the init container is created for administration server weblogic server pod prior to starting it and runs to completion and then weblogic pod is started |
+| Add initContainers to Clusters | Add a initContainers object to Clusters level and verify the init containers are created for weblogic server pods prior to starting the clusters and runs to completion and then weblogic pod are started |
+| Add initContainers to managedServers | Add a initContainers object to managed server level and verify the init container is created for managed server weblogic server pod prior to starting it and runs to completion and then weblogic pod is started |
+| Add bad initContainers to domain | Add a bad initContainers object to domain and verify the init container run fails and no weblogic pod is started |
+| Add multiple initContainers to domain | Add multiple initContainers object to domain level and verify all of the init container are run before weblogic server pod are started |
+| Add initContainers with different names at different level | Add a multiple initContainers object at domain level and server level and verify all of the init containers are run before weblogic server pods are started |
+| Add initContainers with same names at different level | Add a multiple initContainers object at domain level and server level and verify only the server level init containers are run before weblogic server pods are started |

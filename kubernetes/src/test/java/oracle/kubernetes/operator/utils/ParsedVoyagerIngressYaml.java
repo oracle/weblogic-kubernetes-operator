@@ -4,9 +4,10 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.nio.file.Path;
+
 import com.appscode.voyager.client.models.V1beta1Ingress;
 import io.kubernetes.client.models.V1Service;
-import java.nio.file.Path;
 
 /**
  * Parses a generated weblogic-domain-voyager-ingress.yaml file into a set of typed k8s java objects
@@ -38,6 +39,6 @@ public class ParsedVoyagerIngressYaml extends ParsedKubernetesYaml {
   }
 
   private String getVoyagerIngressName() {
-    return inputs.getDomainUID() + "-voyager";
+    return inputs.getDomainUid() + "-voyager";
   }
 }

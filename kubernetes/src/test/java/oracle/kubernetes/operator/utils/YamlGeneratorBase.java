@@ -18,6 +18,8 @@ public abstract class YamlGeneratorBase {
       case DomainValues.LOAD_BALANCER_VOYAGER:
         defineYoyagerYaml(files);
         break;
+      default:
+        throw new IllegalArgumentException();
     }
   }
 

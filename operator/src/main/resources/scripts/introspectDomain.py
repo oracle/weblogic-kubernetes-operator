@@ -87,7 +87,7 @@ import shutil
 import re
 from datetime import datetime
 
-# Include this script's current directory in the import path (so we can import traceUtils, etc.)
+# Include this script's current directory in the import path (so we can import utils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
 
 # Alternative way to dynamically get script's current directory
@@ -96,7 +96,7 @@ tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
 tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
 
-from traceUtils import *
+from utils import *
 
 class OfflineWlstEnv(object):
 
@@ -210,7 +210,7 @@ class OfflineWlstEnv(object):
   def getEnv(self, name):
     val = os.getenv(name)
     if val is None or val == "null":
-      trace("ERROR: Env var "+name+" not set.")
+      trace("SEVERE","Env var "+name+" not set.")
       sys.exit(1)
     return val
 
@@ -930,7 +930,7 @@ class CustomSitConfigIntrospector(SecretManager):
         self.macroStr+=', '
       self.macroStr+='${' + key + '}'
 
-    trace("available macros: '" + self.macroStr + "'")
+    trace("Available macros: '" + self.macroStr + "'")
 
     # Populate module maps with known module files and names, log them
 
@@ -1149,19 +1149,21 @@ def main(env):
       env.close()
     exit(exitcode=0)
   except WLSTException, e:
+    trace("SEVERE","Domain introspection failed with WLST exception: " + str(e))
     print e
-    trace("Domain introspection failed with WLST exception:")
     traceback.print_exc()
+    dumpStack()
     exit(exitcode=1)
   except UndeclaredThrowableException, f:
-    dumpStack()
+    trace("SEVERE","Domain introspection failed with undeclared exception: " + str(f))
     print f
-    trace("Domain introspection failed with undeclared exception:")
     traceback.print_exc()
+    dumpStack()
     exit(exitcode=1)
   except:
-    trace("Domain introspection unexpectedly failed:")
+    trace("SEVERE","Domain introspection unexpectedly failed:")
     traceback.print_exc()
+    dumpStack()
     exit(exitcode=1)
 
 main(OfflineWlstEnv())

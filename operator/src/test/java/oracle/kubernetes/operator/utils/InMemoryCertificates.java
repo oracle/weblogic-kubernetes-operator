@@ -4,10 +4,11 @@
 
 package oracle.kubernetes.operator.utils;
 
-import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import java.nio.file.Path;
 import java.util.function.Function;
+
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 
 @SuppressWarnings("SameParameterValue")
 public class InMemoryCertificates {

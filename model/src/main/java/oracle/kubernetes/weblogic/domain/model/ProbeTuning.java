@@ -11,18 +11,19 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class ProbeTuning {
-  @Description("The number of seconds before the first check is performed")
+  @Description("The number of seconds before the first check is performed.")
   private Integer initialDelaySeconds = null;
 
-  @Description("The number of seconds between checks")
+  @Description("The number of seconds between checks.")
   @SerializedName("periodSeconds")
   private Integer periodSeconds = null;
 
-  @Description("The number of seconds with no response that indicates a failure")
+  @Description("The number of seconds with no response that indicates a failure.")
   @SerializedName("timeoutSeconds")
   private Integer timeoutSeconds = null;
 
-  public ProbeTuning() {}
+  public ProbeTuning() {
+  }
 
   void copyValues(ProbeTuning fromProbe) {
     if (initialDelaySeconds == null) {
