@@ -9,6 +9,7 @@ This sample demonstrates how to specify a domain model to use in an image for th
 2. In the image, create the following structures and place the `WebLogic Deploy Tool``` artifacts
 
 | directory | contents |
+|-----------|----------|
 | /u01/model_home/models| domain model yaml files |
 | /u01/model_home/variables | model variable files |
 | /u01/model_home/archives | deployment archive |
