@@ -12,7 +12,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.DomainCrd;
 import oracle.kubernetes.operator.utils.ExecResult;
@@ -453,7 +452,7 @@ public class ItPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  // @Test
+  @Test
   public void testMsRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
