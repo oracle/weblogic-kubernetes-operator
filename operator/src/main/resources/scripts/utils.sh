@@ -3,15 +3,15 @@
 
 #
 # Purpose:
-#   Define trace functions that match format of the trace function
+#   Define a trace function that matches the format of the trace function
 #   in utils.py and of the logging in the java operator.
 #
-#   Define various shared utility functions.
+#   Also define various shared utility functions.
 #
 # Load this file via the following pattern:
 #   SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 #   source ${SCRIPTPATH}/utils.sh
-#   [ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/utils.sh" && exit 1
+#   [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 #
 
 # timestamp
@@ -33,48 +33,145 @@ function timestamp() {
 }
 
 #
-# trace
-#   purpose: echo timestamp, caller's filename, and caller's line#
-#   example: trace "Situation normal."
-#            @[2018-09-28T18:10:52.417 UTC][myscript.sh:91] Info: situation normal.
+# trace [-cloc caller-location] -n [log-level] [text]*
+# trace [-cloc caller-location] -pipe [log-level] [text]*
+# trace [-cloc caller-location] [log-level] [text]*
+#
+#   Generate logging in a format similar to WLST utils.py using the
+#   same timestamp format as the Operator, and using the same 
+#   log levels as the Operator. This logging is may be parsed by the
+#   Operator when it reads in a job or pod log.
+#
+#   log-level can be one of SEVERE|ERROR|WARNING|INFO|CONFIG|FINE|FINER|FINEST
+#     - Default is 'FINE'.
+#     - NOTE: Use SEVERE, ERROR, WARNING, INFO sparingly since these log-levels
+#             are visible by default in the Operator log and the Operator captures
+#             some script logs and echos them to the Operator log.
+#     - if it's ERROR it's converted to SEVERE
+#     - if there's no log-level and the text starts with a
+#       recognized keyword like 'Error:' then the log-level is inferred
+#     - if there's no log-level and the text does not start with
+#       a recognized keyword, the log-level is assumed to be 'FINE' (the default)
+#
+#   -n     Suppress new-line.
+#
+#   -pipe  Redirect stdout through a trace, see example below.
+#
+#   -cloc  Use the supplied value as the caller location
+#
+#   examples:
+#     trace "Situation normal."
+#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][FINE] Situation normal.
+#
+#     trace INFO "Situation normal."
+#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][INFO] Situation normal.
+#
+#     trace "Info: Situation normal."
+#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][INFO] Info: Situation normal.
+#
+#     ls 2>&1 | tracePipe FINE "ls output: "
+#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][FINE] ls output: file1
+#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][FINE] ls output: file2
 #
 #   Set TRACE_INCLUDE_FILE env var to false to suppress file name and line number.
 #
 function trace() {
+  (
+  set +x
+
+  local logLoc=""
   if [ ${TRACE_INCLUDE_FILE:-true} = "true" ]; then
-    local line="${BASH_LINENO[0]}"
-    echo "@[`timestamp`][`basename $0`:${line}] $*"
-  else
-    echo "@[`timestamp`] $*"
+    if [ "$1" = "-cloc" ]; then
+      logLoc="$2"
+      shift
+      shift
+    else
+      logLoc="`basename $0`:${BASH_LINENO[0]}"
+    fi
   fi
+
+  local logMode='-normal'
+  case $1 in
+    -pipe|-n) logMode=$1; shift; ;;
+  esac
+
+  # Support log-levels in operator, if unknown then assume FINE
+  #  SEVERE|WARNING|INFO|CONFIG|FINE|FINER|FINEST
+  local logLevel='FINE'
+  case $1 in
+    SEVERE|WARNING|INFO|CONFIG|FINE|FINER|FINEST)
+      logLevel=$1
+      shift
+      ;;
+    ERROR)
+      logLevel='SEVERE'
+      shift
+      ;;
+    warning*|Warning*|WARNING*)
+      logLevel='WARNING'
+      ;;
+    error*|Error*|ERROR*|severe*|Severe*|SEVERE*)
+      logLevel='SEVERE'
+      ;;
+    info*|Info*|INFO*)
+      logLevel='INFO'
+      ;;
+    config*|Config*|CONFIG*)
+      logLevel='CONFIG'
+      ;;
+    finest*|Finest*|FINEST*)
+      logLevel='FINE'
+      ;;
+    finer*|Finer*|FINER*)
+      logLevel='FINER'
+      ;;
+    fine*|Fine*|FINE*)
+      logLevel='FINEST'
+      ;;
+  esac
+
+  logPrefix="@[`timestamp`][$logLoc][$logLevel]"
+
+  case $logMode in 
+    -pipe) 
+          (
+          # IFS='' causes read line to preserve leading spaces
+          # -r cause read to treat backslashes as-is, e.g. '\n' --> '\n'
+          IFS=''
+          while read -r line; do
+            echo "$logPrefix" "$@" "$line"
+          done
+          )
+          ;;
+    -n)
+          echo -n "$logPrefix" "$@"
+          ;;
+    *)
+          echo "$logPrefix" "$@"
+          ;;
+  esac
+  )
 }
 
 #
 # tracen
-#   purpose: same as trace, but no new new-line at the end.
+#   purpose: same as "trace -n"
 #
 function tracen() {
-  if [ ${TRACE_INCLUDE_FILE:-true} = "true" ]; then
-    local line="${BASH_LINENO[0]}"
-    echo -n "@[`timestamp`][`basename $0`:${line}] $*"
-  else
-    echo -n "@[`timestamp`] $*"
-  fi
+  (
+  set +x
+  trace -cloc "`basename $0`:${BASH_LINENO[0]}" -n "$@"
+  )
 }
 
 #
 # tracePipe
-#   purpose:  Use to redirect stdout through a trace statement.
-#   example:  ls 2>&1 | tracePipe "ls output:"
+#   purpose:  same as "trace -pipe"
 #
 function tracePipe() {
   (
-  # IFS='' causes read line to preserve leading spaces
-  # -r cause read to treat backslashes as-is, e.g. '\n' --> '\n'
-  IFS=''
-  while read -r line; do
-    trace "$@" "$line"
-  done
+  set +x
+  trace -cloc "`basename $0`:${BASH_LINENO[0]}" -pipe "$@"
   )
 }
 
@@ -82,12 +179,12 @@ function tracePipe() {
 # checkEnv
 #   purpose: Check and trace the values of the provided env vars.
 #            If any env vars don't exist or are empty, return non-zero
-#            and trace an 'Error:'.
+#            and trace an '[SEVERE]'.
 #
 #   sample:  checkEnv HOST NOTSET1 USER NOTSET2
-#            @[2018-10-05T22:48:04.368 UTC] Info: HOST='esscupcakes'
-#            @[2018-10-05T22:48:04.393 UTC] Info: USER='friendly'
-#            @[2018-10-05T22:48:04.415 UTC] Error: the following env vars are missing or empty:  NOTSET1 NOTSET2
+#            @[2018-10-05T22:48:04.368 UTC][FINE] HOST='esscupcakes'
+#            @[2018-10-05T22:48:04.393 UTC][FINE] USER='friendly'
+#            @[2018-10-05T22:48:04.415 UTC][SEVERE] The following env vars are missing or empty:  NOTSET1 NOTSET2
 #
 function checkEnv() {
   local not_found=""
@@ -95,12 +192,12 @@ function checkEnv() {
     if [ -z "${!1}" ]; then
       not_found="$not_found ${1}"
     else
-      trace "Info: ${1}='${!1}'"
+      trace FINE "${1}='${!1}'"
     fi
     shift
   done
   if [ ! -z "${not_found}" ]; then
-    trace "Error: the following env vars are missing or empty: ${not_found}"
+    trace SEVERE "The following env vars are missing or empty: ${not_found}"
     return 1
   fi
   return 0
@@ -158,12 +255,12 @@ function exportEffectiveDomainHome() {
   fi
 
   if [ $count -eq 0 ]; then
-    trace "Error: No config.xml found at DOMAIN_HOME/config/config.xml or DOMAIN_HOME/*/config/config.xml, DOMAIN_HOME='$DOMAIN_HOME'. Check your 'domainHome' setting in your WebLogic Operator Domain resource, and your pv/pvc mount location (if any)."
+    trace SEVERE "No config.xml found at DOMAIN_HOME/config/config.xml or DOMAIN_HOME/*/config/config.xml, DOMAIN_HOME='$DOMAIN_HOME'. Check your 'domainHome' setting in your WebLogic Operator Domain resource, and your pv/pvc mount location (if any)."
     return 1
   fi
     
   # if we get this far, count is > 1 
-  trace "Error: More than one config.xml found at DOMAIN_HOME/config/config.xml and DOMAIN_HOME/*/config/config.xml, DOMAIN_HOME='$DOMAIN_HOME': ${found_configs}. Configure your 'domainHome' setting in your WebLogic Operator Domain resource to reference a single WebLogic domain."
+  trace SEVERE "More than one config.xml found at DOMAIN_HOME/config/config.xml and DOMAIN_HOME/*/config/config.xml, DOMAIN_HOME='$DOMAIN_HOME': ${found_configs}. Configure your 'domainHome' setting in your WebLogic Operator Domain resource to reference a single WebLogic domain."
   return 1
 }
 
@@ -259,18 +356,18 @@ checkWebLogicVersion()
   local exp_wl_12213_patches="${WL12213REQUIREDPATCHES:-"29135930"}"
   if versionEQ "$cur_wl_ver" "12.2.1.3" ; then
     if ! hasWebLogicPatches $exp_wl_12213_patches ; then
-      trace "Error: The Operator requires that WebLogic version '12.2.1.3' have patch '$exp_wl_12213_patches'. To bypass this check, set env var SKIP_WL_VERSION_CHECK to 'true'."
+      trace SEVERE "The Operator requires that WebLogic version '12.2.1.3' have patch '$exp_wl_12213_patches'. To bypass this check, set env var SKIP_WL_VERSION_CHECK to 'true'."
       return 1
     fi
   fi
   if versionEQ "$cur_wl_ver" "9999.9999.9999.9999" ; then
-    trace "Info: Could not determine WebLogic version. Assuming version is fine. (The Operator requires WebLogic version '${exp_wl_ver}' or higher, and also requires patches '$exp_wl_12213_patches' for version '12.2.1.3'.)."
+    trace INFO "Could not determine WebLogic version. Assuming version is fine. (The Operator requires WebLogic version '${exp_wl_ver}' or higher, and also requires patches '$exp_wl_12213_patches' for version '12.2.1.3'.)."
     return 0
   fi
   if versionGE "$cur_wl_ver" "${exp_wl_ver}" ; then
-    trace "Info: WebLogic version='$cur_wl_ver'. Version check passed. (The Operator requires WebLogic version '${exp_wl_ver}' or higher)."
+    trace INFO "WebLogic version='$cur_wl_ver'. Version check passed. (The Operator requires WebLogic version '${exp_wl_ver}' or higher)."
   else
-    trace "Error: WebLogic version='$cur_wl_ver' and the Operator requires WebLogic version '${exp_wl_ver}' or higher. To bypass this check, set env var SKIP_WL_VERSION_CHECK to 'true'."
+    trace SEVERE "WebLogic version='$cur_wl_ver' and the Operator requires WebLogic version '${exp_wl_ver}' or higher. To bypass this check, set env var SKIP_WL_VERSION_CHECK to 'true'."
     return 1
   fi
   return 0
