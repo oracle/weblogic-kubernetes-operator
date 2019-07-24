@@ -4,12 +4,13 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -18,13 +19,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** SubsystemHealth describes the current health of a specific subsystem. */
 public class SubsystemHealth implements Comparable<SubsystemHealth> {
 
-  @Description("Server health of this WebLogic server. Required")
+  @Description("Server health of this WebLogic Server. Required.")
   @SerializedName("health")
   @Expose
   @NotNull
   private String health;
 
-  @Description("Name of subsystem providing symptom information. Required")
+  @Description("Name of subsystem providing symptom information. Required.")
   @SerializedName("subsystemName")
   @Expose
   @NotNull
@@ -37,7 +38,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
   private List<String> symptoms = new ArrayList<String>();
 
   /**
-   * Server health of this WebLogic server. (Required)
+   * Server health of this WebLogic Server. Required.
    *
    * @return health
    */
@@ -46,7 +47,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
   }
 
   /**
-   * Server health of this WebLogic server. (Required)
+   * Server health of this WebLogic Server. Required.
    *
    * @param health health
    */
@@ -55,7 +56,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
   }
 
   /**
-   * Server health of this WebLogic server. (Required)
+   * Server health of this WebLogic Server. Required.
    *
    * @param health health
    * @return this
@@ -66,7 +67,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
   }
 
   /**
-   * Name of subsystem providing symptom information. (Required)
+   * Name of subsystem providing symptom information. Required.
    *
    * @return subsystem name
    */
@@ -75,7 +76,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
   }
 
   /**
-   * Name of subsystem providing symptom information. (Required)
+   * Name of subsystem providing symptom information. Required.
    *
    * @param subsystemName subsystem name
    */
@@ -84,7 +85,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
   }
 
   /**
-   * Name of subsystem providing symptom information. (Required)
+   * Name of subsystem providing symptom information. Required.
    *
    * @param subsystemName subsystem name
    * @return this

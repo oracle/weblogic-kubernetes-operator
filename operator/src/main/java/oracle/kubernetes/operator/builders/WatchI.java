@@ -4,8 +4,9 @@
 
 package oracle.kubernetes.operator.builders;
 
-import io.kubernetes.client.util.Watch;
 import java.util.Iterator;
+
+import io.kubernetes.client.util.Watch;
 
 /**
  * An iterator over watch responses from the server. These objects maintain resources, which will be

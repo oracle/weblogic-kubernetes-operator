@@ -13,7 +13,6 @@ import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadIntegerFromMap;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +36,7 @@ class HelmOperatorValues extends OperatorValues {
 
     loadBooleanFromMap(map, this::setExternalRestEnabled, "externalRestEnabled");
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
+    loadBooleanFromMap(map, this::setSuspendOnDebugStartup, "suspendOnDebugStartup");
     loadBooleanFromMap(map, this::setElkIntegrationEnabled, "elkIntegrationEnabled");
 
     loadIntegerFromMap(map, this::setExternalRestHttpsPort, "externalRestHttpsPort");
@@ -57,6 +57,12 @@ class HelmOperatorValues extends OperatorValues {
   private void setRemoteDebugNodePortEnabled(Boolean enabled) {
     if (enabled != null) {
       setRemoteDebugNodePortEnabled(enabled.toString());
+    }
+  }
+
+  private void setSuspendOnDebugStartup(Boolean enabled) {
+    if (enabled != null) {
+      setSuspendOnDebugStartup(enabled.toString());
     }
   }
 
@@ -82,7 +88,7 @@ class HelmOperatorValues extends OperatorValues {
         (List<Map<String, String>>) map.get("imagePullSecrets");
     if (imagePullSecrets != null) {
       // TBD - enhance OperatorValues to have an array of image pull secrets, instead of just one
-      String secretName = (String) imagePullSecrets.get(0).get("name");
+      String secretName = imagePullSecrets.get(0).get("name");
       if (secretName != null) {
         setWeblogicOperatorImagePullSecretName(secretName);
       }
@@ -104,7 +110,8 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getElasticSearchHost, "elasticSearchHost");
 
     addMapEntry(map, this::isExternalRestEnabled, "externalRestEnabled");
-    addMapEntry(map, this::isRemoteDebugNotPortEnabled, "remoteDebugNodePortEnabled");
+    addMapEntry(map, this::isRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
+    addMapEntry(map, this::isSuspendOnDebugStartup, "suspendOnDebugStartup");
     addMapEntry(map, this::isElkIntegrationEnabled, "elkIntegrationEnabled");
 
     addMapEntry(map, this::getExternalRestHttpsPortNum, "externalRestHttpsPort");
@@ -120,11 +127,7 @@ class HelmOperatorValues extends OperatorValues {
   private void addDomainNamespaces(HashMap<String, Object> map) {
     String targetNamespaces = getTargetNamespaces();
     if (targetNamespaces.length() > 0) {
-      List<String> namespaces = new ArrayList<>();
-      for (String namespace : targetNamespaces.split(",")) {
-        namespaces.add(namespace);
-      }
-      map.put("domainNamespaces", namespaces);
+      map.put("domainNamespaces", Arrays.asList(targetNamespaces.split(",")));
     }
   }
 
@@ -139,8 +142,12 @@ class HelmOperatorValues extends OperatorValues {
     return MapUtils.valueOf(getExternalRestEnabled());
   }
 
-  private Boolean isRemoteDebugNotPortEnabled() {
+  private Boolean isRemoteDebugNodePortEnabled() {
     return MapUtils.valueOf(getRemoteDebugNodePortEnabled());
+  }
+
+  private Boolean isSuspendOnDebugStartup() {
+    return MapUtils.valueOf(getSuspendOnDebugStartup());
   }
 
   private Boolean isElkIntegrationEnabled() {

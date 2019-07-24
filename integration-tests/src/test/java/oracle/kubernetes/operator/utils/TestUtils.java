@@ -29,7 +29,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import oracle.kubernetes.operator.BaseTest;
-import oracle.kubernetes.operator.utils.Operator.RESTCertType;
+import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -40,8 +40,11 @@ public class TestUtils {
   private static K8sTestUtils k8sTestUtils = new K8sTestUtils();
 
   /**
-   * @param cmd - kubectl get pod <podname> -n namespace
-   * @throws Exception
+   * Checks if pod is ready.
+   *
+   * @param podName pod name
+   * @param domainNS namespace
+   * @throws Exception exception
    */
   public static void checkPodReady(String podName, String domainNS) throws Exception {
     StringBuffer cmd = new StringBuffer();
@@ -52,12 +55,12 @@ public class TestUtils {
   }
 
   /**
-   * check pod is in Running state
+   * check pod is in Running state.
    *
    * @param podName - pod name
    * @param domainNS - domain namespace name
    * @param containerNum - container number in a pod
-   * @throws Exception
+   * @throws Exception exception
    */
   public static void checkPodReady(String podName, String domainNS, String containerNum)
       throws Exception {
@@ -68,7 +71,12 @@ public class TestUtils {
     checkCmdInLoop(cmd.toString(), containerNum, podName);
   }
 
-  /** @param cmd - kubectl get pod <podname> -n namespace */
+  /**
+   * Checks that pod is created.
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   */
   public static void checkPodCreated(String podName, String domainNS) throws Exception {
 
     StringBuffer cmd = new StringBuffer();
@@ -79,10 +87,26 @@ public class TestUtils {
   }
 
   /**
-   * check pod is in Terminating state
+   * Checks that pod is initializing.
    *
-   * @param cmd - kubectl get pod <podname> -n namespace
-   * @throws Exception
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   */
+  public static void checkPodInitializing(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    checkCmdInLoop(cmd.toString(), "Init", podName);
+  }
+
+  /**
+   * check pod is in Terminating state.
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   * @throws Exception exception
    */
   public static void checkPodTerminating(String podName, String domainNS) throws Exception {
 
@@ -94,8 +118,11 @@ public class TestUtils {
   }
 
   /**
-   * @param cmd - kubectl get service <servicename> -n namespace
-   * @throws Exception
+   * Checks that service is created.
+   *
+   * @param serviceName service name
+   * @param domainNS namespace
+   * @throws Exception exception
    */
   public static void checkServiceCreated(String serviceName, String domainNS) throws Exception {
     int i = 0;
@@ -133,9 +160,11 @@ public class TestUtils {
   }
 
   /**
+   * Creates input file.
+   *
    * @param map - map with attributes
    * @param generatedInputYamlFile - output file with replaced values
-   * @throws Exception
+   * @throws Exception exception
    */
   public static void createInputFile(Map<String, Object> map, String generatedInputYamlFile)
       throws Exception {
@@ -219,17 +248,17 @@ public class TestUtils {
     checkCmdInLoopForDelete(cmd.toString(), "\"" + namespace + "\" not found", namespace);
   }
 
-  public static void deletePVC(String pvcName, String namespace, String domainUid, String jobName)
+  public static void deletePvc(String pvcName, String namespace, String domainUid, String jobName)
       throws Exception {
     StringBuffer cmdDelJob = new StringBuffer("kubectl delete job ");
     cmdDelJob.append(domainUid).append("-" + jobName + " -n ").append(namespace);
     logger.info("Deleting job " + cmdDelJob);
     exec(cmdDelJob.toString());
 
-    StringBuffer cmdDelPVC = new StringBuffer("kubectl delete pvc ");
-    cmdDelPVC.append(pvcName).append(" -n ").append(namespace);
-    logger.info("Deleting PVC " + cmdDelPVC);
-    exec(cmdDelPVC.toString());
+    StringBuffer cmdDelPvc = new StringBuffer("kubectl delete pvc ");
+    cmdDelPvc.append(pvcName).append(" -n ").append(namespace);
+    logger.info("Deleting PVC " + cmdDelPvc);
+    exec(cmdDelPvc.toString());
   }
 
   public static ExecResult exec(String cmd) throws Exception {
@@ -262,7 +291,7 @@ public class TestUtils {
     return result;
   }
 
-  public static boolean checkPVReleased(String pvBaseName, String namespace) throws Exception {
+  public static boolean checkPvReleased(String pvBaseName, String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pv ");
     cmd.append(pvBaseName).append("-pv -n ").append(namespace);
 
@@ -289,14 +318,14 @@ public class TestUtils {
 
   /**
    * NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) domain1-cluster-cluster-1 ClusterIP 10.105.146.61
-   * <none> 30032/TCP,8001/TCP domain1-managed-server1 ClusterIP None <none> 30032/TCP,8001/TCP
+   * 30032/TCP,8001/TCP domain1-managed-server1 ClusterIP None 30032/TCP,8001/TCP.
    *
-   * @param service
-   * @param namespace
-   * @param protocol
-   * @param port
-   * @return
-   * @throws Exception
+   * @param service service
+   * @param namespace namespace
+   * @param protocol portocol
+   * @param port port
+   * @return true, if service has channel port
+   * @throws Exception exception
    */
   public static boolean checkHasServiceChannelPort(
       String service, String namespace, String protocol, int port) throws Exception {
@@ -308,7 +337,7 @@ public class TestUtils {
     String stdout = result.stdout();
     logger.info(" Services found: ");
     logger.info(stdout);
-    String stdoutlines[] = stdout.split("\\r?\\n");
+    String[] stdoutlines = stdout.split("\\r?\\n");
     if (result.exitValue() == 0 && stdoutlines.length > 0) {
       for (String stdoutline : stdoutlines) {
         if (stdoutline.contains(service) && stdoutline.contains(port + "/" + protocol)) {
@@ -320,12 +349,12 @@ public class TestUtils {
   }
 
   /**
-   * kubectl describe service serviceName -n namespace
+   * kubectl describe service serviceName -n namespace.
    *
    * @param namespace namespace where the service is located
    * @param serviceName name of the service to be described
    * @return String containing output of the kubectl describe service command
-   * @throws Exception
+   * @throws Exception exception
    */
   public static String describeService(String namespace, String serviceName) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl describe service ");
@@ -348,11 +377,11 @@ public class TestUtils {
   }
 
   /**
-   * kubectl get pods -o wide -n namespace
+   * kubectl get pods -o wide -n namespace.
    *
    * @param namespace namespace in which the pods are to be listed
    * @return String containing output of the kubectl get pods command
-   * @throws Exception
+   * @throws Exception exception
    */
   public static String getPods(String namespace) throws Exception {
     StringBuffer cmd = new StringBuffer("kubectl get pods -o wide ");
@@ -365,15 +394,16 @@ public class TestUtils {
     logger.info(stdout);
     return stdout;
   }
+
   /**
    * First, kill the mgd server process in the container three times to cause the node manager to
    * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
    * initiates a pod restart.
    *
-   * @param domainUid
-   * @param serverName
-   * @param namespace
-   * @throws Exception
+   * @param domainUid uid
+   * @param serverName server name
+   * @param namespace namespace
+   * @throws Exception exception
    */
   public static void testWlsLivenessProbe(String domainUid, String serverName, String namespace)
       throws Exception {
@@ -409,7 +439,7 @@ public class TestUtils {
     long startTime = System.currentTimeMillis();
     long maxWaitMillis = 180 * 1000;
     while (true) {
-      long currentTime = System.currentTimeMillis();
+      final long currentTime = System.currentTimeMillis();
       int finalRestartCnt = getPodRestartCount(podName, namespace);
       logger.info("initialRestartCnt " + initialRestartCnt + " finalRestartCnt " + finalRestartCnt);
       if ((finalRestartCnt - initialRestartCnt) == 1) {
@@ -488,13 +518,13 @@ public class TestUtils {
   }
 
   /**
-   * Copy all App files to the k8s pod
+   * Copy all App files to the k8s pod.
    *
    * @param appLocationOnHost - App location on the local host
    * @param appLocationInPod - App location on the k8s pod
    * @param podName - the k8s pod name
    * @param namespace - namespace the k8s pod is in
-   * @throws Exception
+   * @throws Exception exception
    */
   public static void copyAppFilesToPod(
       String appLocationOnHost, String appLocationInPod, String podName, String namespace)
@@ -559,7 +589,7 @@ public class TestUtils {
 
     KeyStore myKeyStore = createKeyStore(operator);
 
-    Builder request = createRESTRequest(myKeyStore, url, token);
+    Builder request = createRestRequest(myKeyStore, url, token);
 
     Response response = null;
     int i = 0;
@@ -647,7 +677,7 @@ public class TestUtils {
                 + "/operator.cert.pem");
 
     StringBuffer opCertCmd;
-    if (RESTCertType.LEGACY == operator.getRestCertType()) {
+    if (RestCertType.LEGACY == operator.getRestCertType()) {
       opCertCmd = new StringBuffer("kubectl get cm -n ");
       opCertCmd
           .append(operator.getOperatorNamespace())
@@ -717,7 +747,7 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
-  public static Operator createOperator(String opYamlFile, RESTCertType restCertType)
+  public static Operator createOperator(String opYamlFile, RestCertType restCertType)
       throws Exception {
     // create op
     Operator operator = new Operator(opYamlFile, restCertType);
@@ -725,30 +755,44 @@ public class TestUtils {
     logger.info("Check Operator status");
     operator.verifyPodCreated();
     operator.verifyOperatorReady();
-    operator.verifyExternalRESTService();
+    operator.verifyExternalRestService();
+
+    return operator;
+  }
+
+  public static Operator createOperator(Map<String, Object> inputMap, RestCertType restCertType)
+      throws Exception {
+    // create op
+    Operator operator = new Operator(inputMap, restCertType);
+    operator.callHelmInstall();
+
+    logger.info("Check Operator status");
+    operator.verifyPodCreated();
+    operator.verifyOperatorReady();
+    operator.verifyExternalRestService();
 
     return operator;
   }
 
   public static Operator createOperator(String opYamlFile) throws Exception {
-    return createOperator(opYamlFile, RESTCertType.SELF_SIGNED);
+    return createOperator(opYamlFile, RestCertType.SELF_SIGNED);
   }
 
   /**
-   * Create operator pod with options for multiple container in it
+   * Create operator pod with options for multiple container in it.
    *
    * @param opYamlFile - yaml file to create the Operator
-   * @param ctnsNum - the number of containers in Operator pod
-   * @throws Exception
+   * @param containerNum - the number of containers in Operator pod
+   * @throws Exception exception
    */
   public static Operator createOperator(String opYamlFile, String containerNum) throws Exception {
     // create op
-    Operator operator = new Operator(opYamlFile, RESTCertType.SELF_SIGNED);
+    Operator operator = new Operator(opYamlFile, RestCertType.SELF_SIGNED);
 
     logger.info("Check Operator status");
     operator.verifyPodCreated();
     operator.verifyOperatorReady(containerNum);
-    operator.verifyExternalRESTService();
+    operator.verifyExternalRestService();
 
     return operator;
   }
@@ -758,9 +802,21 @@ public class TestUtils {
     return new Domain(inputYaml);
   }
 
+  public static Domain createDomain(String inputYaml, boolean createDomainResource)
+      throws Exception {
+    logger.info("Creating domain with yaml, waiting for the script to complete execution");
+    return new Domain(inputYaml, createDomainResource);
+  }
+
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
+  }
+
+  public static Domain createDomain(
+      Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
+    logger.info("Creating domain with Map, waiting for the script to complete execution");
+    return new Domain(inputDomainMap, createDomainResource);
   }
 
   public static Map<String, Object> loadYaml(String yamlFile) throws Exception {
@@ -831,7 +887,7 @@ public class TestUtils {
         "Command " + cmd + " returned " + leaseResult.stdout() + "\n" + leaseResult.stderr());
   }
 
-  private static Builder createRESTRequest(KeyStore myKeyStore, String url, String token) {
+  private static Builder createRestRequest(KeyStore myKeyStore, String url, String token) {
     // Create REST Client obj and verify it's not null
     Client javaClient =
         ClientBuilder.newBuilder()
@@ -960,13 +1016,46 @@ public class TestUtils {
     return result.stdout().trim();
   }
 
-  public static void createDirUnderDomainPV(String dirPath) throws Exception {
+  /**
+   * exec into the pod and call the shell script with given arguments.
+   *
+   * @param podName pod name
+   * @param domainNS namespace
+   * @param scriptsLocInPod script location
+   * @param shScriptName script name
+   * @param args script arguments
+   * @throws Exception exception
+   */
+  public static void callShellScriptByExecToPod(
+      String podName, String domainNS, String scriptsLocInPod, String shScriptName, String[] args)
+      throws Exception {
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(podName)
+        .append(" -- bash -c 'chmod +x -R ")
+        .append(scriptsLocInPod)
+        .append("  && ")
+        .append(scriptsLocInPod)
+        .append("/")
+        .append(shScriptName)
+        .append(" ")
+        .append(String.join(" ", args).toString())
+        .append("'");
 
+    logger.info("Command to call kubectl sh file " + cmdKubectlSh);
+    TestUtils.exec(cmdKubectlSh.toString());
+  }
+
+  public static void createDirUnderDomainPV(String dirPath) throws Exception {
+    dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
     String crdCmd =
         BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/job.sh \"mkdir -p "
-            + dirPath
-            + "\"";
+     + "/src/integration-tests/bash/krun.sh -m "+BaseTest.getPvRoot()+":/sharedparent -c 'mkdir -m 777 -p "
+     + dirPath
+     + "'"; 
+    
     ExecResult result = ExecCommand.exec(crdCmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -979,40 +1068,42 @@ public class TestUtils {
     logger.info("command result " + result.stdout().trim());
   }
 
-  public static void createWLDFModule(String adminPodName, String domainNS, int t3ChannelPort)
+  public static void createWldfModule(String adminPodName, String domainNS, int t3ChannelPort)
       throws Exception {
 
     // copy wldf.py script tp pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
-        "/shared/wldf.py",
+        BaseTest.getAppLocationInPod() +"/wldf.py",
         adminPodName,
         domainNS);
 
     // copy callpyscript.sh to pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
-        "/shared/callpyscript.sh",
+        BaseTest.getAppLocationInPod() + "/callpyscript.sh",
         adminPodName,
         domainNS);
 
     // arguments to shell script to call py script
-    String arguments =
-        "/shared/wldf.py "
-            + BaseTest.getUsername()
-            + " "
-            + BaseTest.getPassword()
-            + " t3://"
+
+    String[] args = {
+        BaseTest.getAppLocationInPod() + "/wldf.py",
+        BaseTest.getUsername(),
+        BaseTest.getPassword(),
+        " t3://"
             + adminPodName
             + ":"
-            + t3ChannelPort;
-
+            + t3ChannelPort,
+        
+      };
+    
     // call callpyscript.sh in pod to deploy wldf module
-    TestUtils.callShellScriptByExecToPod(
-        "/shared/callpyscript.sh", arguments, adminPodName, domainNS);
+     TestUtils.callShellScriptByExecToPod(
+        adminPodName, domainNS, BaseTest.getAppLocationInPod(), "callpyscript.sh", args);
   }
 
-  public static void createRBACPoliciesForWLDFScaling() throws Exception {
+  public static void createRbacPoliciesForWldfScaling() throws Exception {
     // create rbac policies
     StringBuffer cmd = new StringBuffer("kubectl apply -f ");
     cmd.append(BaseTest.getProjectRoot())
@@ -1144,11 +1235,58 @@ public class TestUtils {
     //    }
     logger.info("opExtCertFile " + opExtCertFile);
     // Create a java Keystore obj and verify it's not null
-    KeyStore myKeyStore = PEMImporter.createKeyStore(new File(opExtCertFile), "temp_password");
+    KeyStore myKeyStore = PemImporter.createKeyStore(new File(opExtCertFile), "temp_password");
     if (myKeyStore == null) {
       throw new RuntimeException("Keystore Obj is null");
     }
     return myKeyStore;
+  }
+
+  /**
+   * @param cmd command to run in the loop
+   * @param matchStr expected string to match in the output
+   * @return ExecResult object containing command output info
+   * @throws Exception exception if fails to execute
+   */
+  public static ExecResult checkAnyCmdInLoop(String cmd, String matchStr) throws Exception {
+    int i = 0;
+    ExecResult result = null;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      result = ExecCommand.exec(cmd);
+
+      if (result.exitValue() != 0
+          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+        logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
+        // check for last iteration
+        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
+          throw new RuntimeException(
+              "FAILURE: expected output "
+                  + matchStr
+                  + " from command "
+                  + cmd
+                  + " is not receieved, exiting!");
+        }
+        logger.info(
+            "did not receive the expected output "
+                + matchStr
+                + "from command "
+                + cmd
+                + " Ite ["
+                + i
+                + "/"
+                + BaseTest.getMaxIterationsPod()
+                + "], sleeping "
+                + BaseTest.getWaitTimePod()
+                + " seconds more");
+
+        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+        i++;
+      } else {
+        logger.info("Command " + cmd + " is successful");
+        break;
+      }
+    }
+    return result;
   }
 
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
@@ -1227,13 +1365,13 @@ public class TestUtils {
   }
 
   /**
-   * create yaml file with changed property
+   * create yaml file with changed property.
    *
-   * @param inputYamlFile
-   * @param generatedYamlFile
-   * @param oldString
-   * @paramnewString
-   * @throws Exception
+   * @param inputYamlFile input
+   * @param generatedYamlFile generated
+   * @param oldString old
+   * @param newString new
+   * @throws Exception exception
    */
   public static void createNewYamlFile(
       String inputYamlFile, String generatedYamlFile, String oldString, String newString)
@@ -1269,11 +1407,11 @@ public class TestUtils {
   }
 
   /**
-   * copy file from source to target
+   * copy file from source to target.
    *
-   * @param fromFile
-   * @param toFile
-   * @throws Exception
+   * @param fromFile from
+   * @param toFile to
+   * @throws Exception exception
    */
   public static void copyFile(String fromFile, String toFile) throws Exception {
     logger.info("Copying file from  " + fromFile + " to " + toFile);
@@ -1283,16 +1421,16 @@ public class TestUtils {
   /**
    * retrieve IP address info for cluster service.
    *
-   * @param domainUID - name of domain.
+   * @param domainUid - name of domain.
    * @param clusterName - name Web Logic cluster
    * @param domainNS - domain namespace
    * @throws Exception - exception will be thrown if kubectl command will fail
    */
-  public static String retrieveClusterIP(String domainUID, String clusterName, String domainNS)
+  public static String retrieveClusterIP(String domainUid, String clusterName, String domainNS)
       throws Exception {
     // kubectl get service domainonpvwlst-cluster-cluster-1 | grep ClusterIP | awk '{print $3}'
     StringBuffer cmd = new StringBuffer("kubectl get service ");
-    cmd.append(domainUID);
+    cmd.append(domainUid);
     cmd.append("-cluster-");
     cmd.append(clusterName);
     cmd.append(" -n ").append(domainNS);
@@ -1323,7 +1461,7 @@ public class TestUtils {
    * @param scriptName - a shell script to build and deploy the App in the admin pod
    * @param username - weblogic user name
    * @param password - weblogc password
-   * @param args - by default it use TestWSApp name for webservices impl files, or add arg for
+   * @param args - by default it use TestWsApp name for webservices impl files, or add arg for
    *     different name
    * @throws Exception - exception reported as a failure to build or deploy ws
    */
@@ -1336,19 +1474,19 @@ public class TestUtils {
       String... args)
       throws Exception {
     String adminServerPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
-    String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + appName;
-    String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + appName;
-    String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
-    String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
+    final String appLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + appName;
+    final String appLocationInPod = BaseTest.getAppLocationInPod() + "/" + appName;
+    final String scriptPathOnHost = BaseTest.getAppLocationOnHost() + "/" + scriptName;
+    final String scriptPathInPod = BaseTest.getAppLocationInPod() + "/" + scriptName;
 
     // Default values to build archive file
     final String initInfoDirName = "WEB-INF";
     String archiveExt = "war";
     String infoDirName = initInfoDirName;
-    String domainNS = domain.getDomainNS();
+    String domainNS = domain.getDomainNs();
     int managedServerPort = ((Integer) (domain.getDomainMap()).get("managedServerPort")).intValue();
     String wsServiceName = (args.length == 0) ? BaseTest.TESTWSSERVICE : args[0];
-    String clusterURL =
+    final String clusterUrl =
         retrieveClusterIP(domain.getDomainUid(), domain.getClusterName(), domainNS)
             + ":"
             + managedServerPort;
@@ -1386,10 +1524,10 @@ public class TestUtils {
 
     // Run the script to build WAR, EAR or JAR file and deploy the App in the admin pod
     domain.callShellScriptToBuildDeployAppInPod(
-        appName, scriptName, username, password, clusterURL, wsServiceName);
+        appName, scriptName, username, password, clusterUrl, wsServiceName);
   }
 
-  public static ExecResult loginAndPushImageToOCIR(String image) throws Exception {
+  public static ExecResult loginAndPushImageToOcir(String image) throws Exception {
     String dockerLoginAndPushCmd =
         "docker login "
             + System.getenv("REPO_REGISTRY")
