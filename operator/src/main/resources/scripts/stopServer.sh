@@ -13,6 +13,10 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/traceUtils.sh
 [ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1
 
+# setup ".out" location for a WL server
+serverLogHome="${LOG_HOME:-${DOMAIN_HOME}/servers/${SERVER_NAME}/logs}"
+STOP_OUT_FILE="${serverLogHome}/${SERVER_NAME}.stop.out"
+
 trace "Stop server ${SERVER_NAME}" &>> ${STOP_OUT_FILE}
 
 checkEnv SERVER_NAME || exit 1
@@ -46,9 +50,6 @@ function check_for_shutdown() {
   return 1
 }
 
-# setup ".out" location for a WL server
-serverLogHome="${LOG_HOME:-${DOMAIN_HOME}/servers/${SERVER_NAME}/logs}"
-STOP_OUT_FILE="${serverLogHome}/${SERVER_NAME}.stop.out"
 
 # Check if the server is already shutdown
 check_for_shutdown
