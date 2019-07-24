@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: soadb-pv
+spec:
+  storageClassName: db-storage-class
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  # Valid values are Retain, Delete or Recycle
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+  # nfs:
+    # server: %SAMPLE_STORAGE_NFS_SERVER%
+    path: "/scratch/k8s_dir/DB"

@@ -6,7 +6,7 @@ export DOMAIN_HOME=${DOMAIN_HOME_DIR}
 
 # Create the domain
 wlst.sh -skipWLSModuleScanning \
-        ${CREATE_DOMAIN_SCRIPT_DIR}/createFMWDomain.py \
+        ${CREATE_DOMAIN_SCRIPT_DIR}/createSOADomain.py \
         -oh /u01/oracle \
         -jh /usr/java/latest \
         -parent ${DOMAIN_HOME}/.. \
