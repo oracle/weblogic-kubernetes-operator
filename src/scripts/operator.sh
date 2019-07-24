@@ -20,7 +20,7 @@ trap relay_SIGTERM SIGTERM
 /operator/initialize-external-operator-identity.sh
 
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
-  DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:$REMOTE_DEBUG_PORT"
+  DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=$DEBUG_SUSPEND,address=*:$REMOTE_DEBUG_PORT"
   echo "DEBUG=$DEBUG"
 else
   DEBUG=""

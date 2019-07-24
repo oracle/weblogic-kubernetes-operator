@@ -10,8 +10,8 @@
 #
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-source ${SCRIPTPATH}/traceUtils.sh
-[ $? -ne 0 ] && echo "Error: missing file ${SCRIPTPATH}/traceUtils.sh" && exit 1
+source ${SCRIPTPATH}/utils.sh
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 
 # setup ".out" location for a WL server
 serverLogHome="${LOG_HOME:-${DOMAIN_HOME}/servers/${SERVER_NAME}/logs}"
@@ -27,7 +27,7 @@ if [ "${MOCK_WLS}" == 'true' ]; then
 fi
 
 function check_for_shutdown() {
-  [ ! -f "${SCRIPTPATH}/readState.sh" ] && trace "Error: missing file '${SCRIPTPATH}/readState.sh'." && exit 1
+  [ ! -f "${SCRIPTPATH}/readState.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/readState.sh'." && exit 1
 
   state=`${SCRIPTPATH}/readState.sh`
   exit_status=$?
@@ -56,7 +56,7 @@ check_for_shutdown
 [ $? -eq 0 ] && trace "Server already shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
 
 # Otherwise, connect to the node manager and stop the server instance
-[ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace "Error: missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
+[ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
 
 # Arguments for shutdown
 export SHUTDOWN_PORT_ARG=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}

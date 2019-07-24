@@ -4,12 +4,6 @@
 
 package oracle.kubernetes.operator;
 
-import io.kubernetes.client.ApiException;
-import io.kubernetes.client.models.V1Job;
-import io.kubernetes.client.models.V1JobCondition;
-import io.kubernetes.client.models.V1JobStatus;
-import io.kubernetes.client.models.V1ObjectMeta;
-import io.kubernetes.client.util.Watch;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +13,13 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
+
+import io.kubernetes.client.ApiException;
+import io.kubernetes.client.models.V1Job;
+import io.kubernetes.client.models.V1JobCondition;
+import io.kubernetes.client.models.V1JobStatus;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.builders.WatchI;
@@ -44,6 +45,16 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
   // Map of Pod name to Complete
   private final ConcurrentMap<String, Complete> completeCallbackRegistrations =
       new ConcurrentHashMap<>();
+
+  private JobWatcher(
+      String namespace,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      AtomicBoolean isStopping) {
+    super(initialResourceVersion, tuning, isStopping);
+    setListener(this);
+    this.namespace = namespace;
+  }
 
   /**
    * Returns a cached JobWatcher, if present; otherwise, creates a new one.
@@ -80,16 +91,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return watcher;
   }
 
-  private JobWatcher(
-      String namespace,
-      String initialResourceVersion,
-      WatchTuning tuning,
-      AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping);
-    setListener(this);
-    this.namespace = namespace;
-  }
-
   static void defineFactory(
       ThreadFactory threadFactory,
       WatchTuning tuning,
@@ -97,42 +98,9 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     factory = new JobWatcherFactory(threadFactory, tuning, isNamespaceStopping);
   }
 
-  @Override
-  public WatchI<V1Job> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
-    return watchBuilder
-        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
-        .createJobWatch(namespace);
-  }
-
-  public void receivedResponse(Watch.Response<V1Job> item) {
-    LOGGER.entering();
-
-    LOGGER.fine("JobWatcher.receivedResponse response item: " + item);
-    switch (item.type) {
-      case "ADDED":
-      case "MODIFIED":
-        V1Job job = item.object;
-        Boolean isComplete = isComplete(job);
-        Boolean isFailed = isFailed(job);
-        String jobName = job.getMetadata().getName();
-        if (isComplete || isFailed) {
-          Complete complete = completeCallbackRegistrations.get(jobName);
-          if (complete != null) {
-            complete.isComplete(job);
-          }
-        }
-        break;
-      case "DELETED":
-      case "ERROR":
-      default:
-    }
-
-    LOGGER.exiting();
-  }
-
   public static boolean isComplete(V1Job job) {
     V1JobStatus status = job.getStatus();
-    LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
+    LOGGER.fine("JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
     if (status != null) {
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {
@@ -161,6 +129,51 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     return false;
   }
 
+  public static String getFailedReason(V1Job job) {
+    V1JobStatus status = job.getStatus();
+    if (status != null && status.getConditions() != null) {
+      for (V1JobCondition cond : status.getConditions()) {
+        if ("Failed".equals(cond.getType()) && "True".equals(cond.getStatus())) {
+          return cond.getReason();
+        }
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public WatchI<V1Job> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+    return watchBuilder
+        .withLabelSelectors(LabelConstants.DOMAINUID_LABEL, LabelConstants.CREATEDBYOPERATOR_LABEL)
+        .createJobWatch(namespace);
+  }
+
+  public void receivedResponse(Watch.Response<V1Job> item) {
+    LOGGER.entering();
+
+    LOGGER.fine("JobWatcher.receivedResponse response item: " + item);
+    switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
+        V1Job job = item.object;
+        Boolean isComplete = isComplete(job);
+        Boolean isFailed = isFailed(job);
+        String jobName = job.getMetadata().getName();
+        if (isComplete || isFailed) {
+          Complete complete = completeCallbackRegistrations.get(jobName);
+          if (complete != null) {
+            complete.isComplete(job, isFailed);
+          }
+        }
+        break;
+      case "DELETED":
+      case "ERROR":
+      default:
+    }
+
+    LOGGER.exiting();
+  }
+
   /**
    * Waits until the Job is Ready.
    *
@@ -170,6 +183,37 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
    */
   public Step waitForReady(V1Job job, Step next) {
     return new WaitForJobReadyStep(job, next);
+  }
+
+  @FunctionalInterface
+  private interface Complete {
+    void isComplete(V1Job job, boolean isJobFailed);
+  }
+
+  static class JobWatcherFactory {
+    private ThreadFactory threadFactory;
+    private WatchTuning watchTuning;
+
+    private Function<String, AtomicBoolean> isNamespaceStopping;
+
+    JobWatcherFactory(
+        ThreadFactory threadFactory,
+        WatchTuning watchTuning,
+        Function<String, AtomicBoolean> isNamespaceStopping) {
+      this.threadFactory = threadFactory;
+      this.watchTuning = watchTuning;
+      this.isNamespaceStopping = isNamespaceStopping;
+    }
+
+    JobWatcher createFor(Domain domain) {
+      String namespace = getNamespace(domain);
+      return create(
+          threadFactory,
+          namespace,
+          domain.getMetadata().getResourceVersion(),
+          watchTuning,
+          isNamespaceStopping.apply(namespace));
+    }
   }
 
   private class WaitForJobReadyStep extends Step {
@@ -199,7 +243,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
       return doSuspend(
           (fiber) -> {
             Complete complete =
-                (V1Job job) -> {
+                (V1Job job, boolean isJobFailed) -> {
                   if (!shouldProcessJob(job)) {
                     return;
                   }
@@ -207,6 +251,13 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
                   if (didResume.compareAndSet(false, true)) {
                     LOGGER.fine("Job status: " + job.getStatus());
                     packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
+                    // Do not proceed to next step such as ReadDomainIntrospectorPodLog if job
+                    // failed due to DeadlineExceeded, as the pod container would likely not
+                    // be available for reading
+                    if (isJobFailed && "DeadlineExceeded".equals(getFailedReason(job))) {
+                      fiber.terminate(
+                          new DeadlineExceededException(job), packet);
+                    }
                     fiber.resume(packet);
                   }
                 };
@@ -252,34 +303,28 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job> {
     }
   }
 
-  static class JobWatcherFactory {
-    private ThreadFactory threadFactory;
-    private WatchTuning watchTuning;
+  static class DeadlineExceededException extends Exception {
+    final V1Job job;
 
-    private Function<String, AtomicBoolean> isNamespaceStopping;
-
-    JobWatcherFactory(
-        ThreadFactory threadFactory,
-        WatchTuning watchTuning,
-        Function<String, AtomicBoolean> isNamespaceStopping) {
-      this.threadFactory = threadFactory;
-      this.watchTuning = watchTuning;
-      this.isNamespaceStopping = isNamespaceStopping;
+    public DeadlineExceededException(V1Job job) {
+      super();
+      this.job = job;
     }
 
-    JobWatcher createFor(Domain domain) {
-      String namespace = getNamespace(domain);
-      return create(
-          threadFactory,
-          namespace,
-          domain.getMetadata().getResourceVersion(),
-          watchTuning,
-          isNamespaceStopping.apply(namespace));
+    public String toString() {
+      return LOGGER.getFormattedMessage(
+          MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,
+          job.getMetadata().getName(),
+          job.getSpec().getActiveDeadlineSeconds(),
+          getJobStartedSeconds(),
+          DomainPresence.getDomainPresenceFailureRetryMaxCount());
     }
-  }
 
-  @FunctionalInterface
-  private interface Complete {
-    void isComplete(V1Job job);
+    private long getJobStartedSeconds() {
+      if (job.getStatus() != null && job.getStatus().getStartTime() != null) {
+        return (System.currentTimeMillis() - job.getStatus().getStartTime().getMillis()) / 1000;
+      }
+      return -1;
+    }
   }
 }
