@@ -4,26 +4,6 @@
 
 package oracle.kubernetes.operator.create;
 
-import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1ClusterRole;
-import io.kubernetes.client.models.V1ClusterRoleBinding;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1Role;
-import io.kubernetes.client.models.V1RoleBinding;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1ServiceSpec;
-import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
-import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
-import oracle.kubernetes.operator.utils.OperatorValues;
-import oracle.kubernetes.operator.utils.OperatorYamlFactory;
-import org.apache.commons.codec.binary.Base64;
-import org.junit.Test;
-
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static oracle.kubernetes.operator.LabelConstants.APP_LABEL;
@@ -64,17 +44,36 @@ import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1Probe;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1Role;
+import io.kubernetes.client.models.V1RoleBinding;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceAccount;
+import io.kubernetes.client.models.V1ServiceSpec;
+import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
+import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
+import oracle.kubernetes.operator.utils.OperatorValues;
+import oracle.kubernetes.operator.utils.OperatorYamlFactory;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.Test;
+
 /**
  * Base class for testing that the all artifacts in the yaml files that create-weblogic-operator.sh
  * generates
  */
 public abstract class CreateOperatorGeneratedFilesTestBase {
 
-  private static String OPERATOR_RELEASE = "weblogic-operator";
-
   private static OperatorValues inputs;
   private static GeneratedOperatorObjects generatedFiles;
-  private static OperatorYamlFactory factory;
 
   protected static OperatorValues getInputs() {
     return inputs;
@@ -84,8 +83,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
     return generatedFiles;
   }
 
-  protected static void setup(OperatorYamlFactory factory, OperatorValues val) throws Exception {
-    CreateOperatorGeneratedFilesTestBase.factory = factory;
+  static void setup(OperatorYamlFactory factory, OperatorValues val) throws Exception {
     inputs = val;
     generatedFiles = factory.generate(val);
   }
@@ -229,25 +227,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                                             newVolumeMount()
                                                 .name("weblogic-operator-secrets-volume")
                                                 .mountPath("/operator/secrets")
-                                                .readOnly(true))
-                                        .livenessProbe(
-                                            newProbe()
-                                                .initialDelaySeconds(20)
-                                                .periodSeconds(5)
-                                                .exec(
-                                                    newExecAction()
-                                                        .addCommandItem("bash")
-                                                        .addCommandItem(
-                                                            "/operator/livenessProbe.sh")))
-                                        .readinessProbe(
-                                            newProbe()
-                                                .initialDelaySeconds(2)
-                                                .periodSeconds(10)
-                                                .exec(
-                                                    newExecAction()
-                                                        .addCommandItem("bash")
-                                                        .addCommandItem(
-                                                            "/operator/readinessProbe.sh"))))
+                                                .readOnly(true)))
                                 .addVolumesItem(
                                     newVolume()
                                         .name("weblogic-operator-cm-volume")
@@ -267,6 +247,19 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                                         .secret(
                                             newSecretVolumeSource()
                                                 .secretName("weblogic-operator-secrets"))))));
+  }
+
+  void expectProbes(V1Container container) {
+    container
+        .livenessProbe(createProbe(20, 5, "/operator/livenessProbe.sh"))
+        .readinessProbe(createProbe(2, 10, "/operator/readinessProbe.sh"));
+  }
+
+  private V1Probe createProbe(int initialDelaySeconds, int periodSeconds, String shellScript) {
+    return newProbe()
+        .initialDelaySeconds(initialDelaySeconds)
+        .periodSeconds(periodSeconds)
+        .exec(newExecAction().addCommandItem("bash").addCommandItem(shellScript));
   }
 
   @Test
@@ -814,5 +807,11 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
                 .putLabelsItem(RESOURCE_VERSION_LABEL, OPERATOR_V2)
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .spec(spec);
+  }
+
+  protected void expectRemoteDebug(V1Container operatorContainer, String debugSuspend) {
+    operatorContainer.addEnvItem(
+        newEnvVar().name("REMOTE_DEBUG_PORT").value(getInputs().getInternalDebugHttpPort()));
+    operatorContainer.addEnvItem(newEnvVar().name("DEBUG_SUSPEND").value(debugSuspend));
   }
 }
