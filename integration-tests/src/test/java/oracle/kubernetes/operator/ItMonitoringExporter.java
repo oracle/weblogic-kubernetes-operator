@@ -124,6 +124,9 @@ public class ItMonitoringExporter extends BaseTest {
       if (operator != null) {
         operator.destroy();
       }
+      if (operator1 != null) {
+        operator1.destroy();
+      }
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       logger.info("SUCCESS");
     }
@@ -896,17 +899,13 @@ public class ItMonitoringExporter extends BaseTest {
       installPrometheusGrafanaViaChart();
       fireAlert();
     } finally {
-      uninstallWebHookPrometheusGrafanaViaChart();
-      uninstallMySQL();
-
       String crdCmd =
           " kubectl delete -f " + monitoringExporterEndToEndDir + "/demo-domains/domain1.yaml";
       ExecCommand.exec(crdCmd);
       crdCmd = "kubectl delete secret domain1-weblogic-credentials";
       ExecCommand.exec(crdCmd);
-      if (operator1 != null) {
-        operator1.destroy();
-      }
+      uninstallWebHookPrometheusGrafanaViaChart();
+      uninstallMySQL();
     }
     testCompletedSuccessfully = true;
     logger.info("SUCCESS - " + testMethodName);
