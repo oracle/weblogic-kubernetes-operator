@@ -15,6 +15,7 @@ echo $$ > /tmp/monitorLog-pid
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 
 trace "Monitoring server log file $1 every $2 seconds for selected known log messages."
 
@@ -27,7 +28,7 @@ while true; do
          "For details, please search your pod log or"
          "${SERVER_OUT_FILE} for the keyword 'situational'."
         )
-    trace "${msg[*]}"
+    trace SEVERE "${msg[*]}"
     exit 0
   fi
   if grep -q "BEA-000360" $1 ; then
