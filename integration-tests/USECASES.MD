@@ -155,3 +155,7 @@ Configuration Overrides Usecases
 | Add initContainers to adminServer | Add a initContainers object to adminServer level and verify the init container is created for administration server weblogic server pod prior to starting it and runs to completion and then weblogic pod is started |
 | Add initContainers to Clusters | Add a initContainers object to Clusters level and verify the init containers are created for weblogic server pods prior to starting the clusters and runs to completion and then weblogic pod are started |
 | Add initContainers to managedServers | Add a initContainers object to managed server level and verify the init container is created for managed server weblogic server pod prior to starting it and runs to completion and then weblogic pod is started |
+| Add bad initContainers to domain | Add a bad initContainers object to domain and verify the init container run fails and no weblogic pod is started |
+| Add multiple initContainers to domain | Add multiple initContainers object to domain level and verify all of the init container are run before weblogic server pod are started |
+| Add initContainers with different names at different level | Add a multiple initContainers object at domain level and server level and verify all of the init containers are run before weblogic server pods are started |
+| Add initContainers with same names at different level | Add a multiple initContainers object at domain level and server level and verify only the server level init containers are run before weblogic server pods are started |
