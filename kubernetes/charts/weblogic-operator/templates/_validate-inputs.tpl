@@ -26,6 +26,7 @@
 {{- end -}}
 {{- if include "utils.verifyBoolean" (list $scope "remoteDebugNodePortEnabled") -}}
 {{-   if $scope.remoteDebugNodePortEnabled -}}
+{{-     $ignore := include "utils.verifyBoolean" (list $scope "suspendOnDebugStartup") -}}
 {{-     $ignore := include "utils.verifyInteger" (list $scope "internalDebugHttpPort") -}}
 {{-     $ignore := include "utils.verifyInteger" (list $scope "externalDebugHttpPort") -}}
 {{-   end -}}
