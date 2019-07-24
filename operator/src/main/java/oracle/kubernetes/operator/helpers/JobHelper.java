@@ -476,7 +476,7 @@ public class JobHelper {
         }
       }
     } catch (IOException ioe) {
-      LOGGER.fine("Unexpected exception " + ioe + " while parsing string:\n" + jobLogs);
+      LOGGER.fine(MessageKeys.JOB_LOG_PARSE_FAILURE, ioe.toString(), jobLogs);
     }
   }
 }
