@@ -4,12 +4,6 @@
 
 package oracle.kubernetes.operator.helm;
 
-import java.util.List;
-
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import org.junit.Test;
-
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -17,6 +11,11 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import java.util.List;
+import org.junit.Test;
 
 public class HelmOperatorValuesTest {
 
@@ -240,6 +239,50 @@ public class HelmOperatorValuesTest {
         new HelmOperatorValues(ImmutableMap.of("remoteDebugNodePortEnabled", false));
 
     assertThat(values.getRemoteDebugNodePortEnabled(), equalTo("false"));
+  }
+
+  // --------------- suspendOnDebugStartup
+
+  @Test
+  public void whenSuspendOnDebugStartupTrue_createdMapContainsValue() {
+    operatorValues.suspendOnDebugStartup("true");
+
+    assertThat(operatorValues.createMap(), hasEntry("suspendOnDebugStartup", true));
+  }
+
+  @Test
+  public void whenSuspendOnDebugStartupFalse_createdMapContainsValue() {
+    operatorValues.suspendOnDebugStartup("false");
+
+    assertThat(operatorValues.createMap(), hasEntry("suspendOnDebugStartup", false));
+  }
+
+  @Test
+  public void whenSuspendOnDebugStartupNotSet_createdMapLacksValue() {
+    assertThat(operatorValues.createMap(), not(hasKey("suspendOnDebugStartup")));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithoutSuspendOnDebugStartup_hasEmptyString() {
+    HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
+
+    assertThat(values.getSuspendOnDebugStartup(), equalTo(""));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithSuspendOnDebugStartupTrue_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("suspendOnDebugStartup", true));
+
+    assertThat(values.getSuspendOnDebugStartup(), equalTo("true"));
+  }
+
+  @Test
+  public void whenCreatedFromMapWithSuspendOnDebugStartupFalse_hasSpecifiedValue() {
+    HelmOperatorValues values =
+        new HelmOperatorValues(ImmutableMap.of("suspendOnDebugStartup", false));
+
+    assertThat(values.getSuspendOnDebugStartup(), equalTo("false"));
   }
 
   // --------------- elkIntegrationEnabled
@@ -482,7 +525,8 @@ public class HelmOperatorValuesTest {
         .append("javaLoggingLevel: INFO\n")
         .append("logStashImage: logstash:6.6.0\n")
         .append("remoteDebugNodePortEnabled: false\n")
-        .append("serviceAccount: default\n");
+        .append("serviceAccount: default\n")
+        .append("suspendOnDebugStartup: false\n");
     return sb.toString();
   }
 
