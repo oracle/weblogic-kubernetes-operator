@@ -4,26 +4,16 @@
 
 package oracle.kubernetes.operator;
 
-import static com.meterware.simplestub.Stub.createStrictStub;
-import static oracle.kubernetes.operator.DomainUpPlanTest.ContainerPortMatcher.hasContainerPort;
-import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStep;
-import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStepsInOrder;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.both;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1Pod;
 import io.kubernetes.client.models.V1SecretReference;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import oracle.kubernetes.TestUtils;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -43,18 +33,29 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.DomainUpPlanTest.ContainerPortMatcher.hasContainerPort;
+import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStep;
+import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStepsInOrder;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+
 public class DomainUpPlanTest {
   private static final String NS = "namespace";
   private static final String UID = "test-uid";
   private static final V1SecretReference SECRET = new V1SecretReference().name("secret");
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
   private final TerminalStep adminStep = new TerminalStep();
   private final TerminalStep managedServersStep = new TerminalStep();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private List<Memento> mementos = new ArrayList<>();
   private Domain domain =
       new Domain()
           .withMetadata(new V1ObjectMeta().namespace(NS))
-          .withSpec(new DomainSpec().withDomainUID(UID).withWebLogicCredentialsSecret(SECRET));
+          .withSpec(new DomainSpec().withDomainUid(UID).withWebLogicCredentialsSecret(SECRET));
   private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private DomainPresenceInfo domainPresenceInfo = new DomainPresenceInfo(domain);
   private DomainProcessorImpl processor =

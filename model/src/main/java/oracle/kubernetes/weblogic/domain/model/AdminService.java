@@ -4,12 +4,13 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -19,16 +20,16 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class AdminService implements ServiceConfigurator {
   @SerializedName("channels")
   @Description(
-      "Specifies which of the admin server's WebLogic channels should be exposed outside "
+      "Specifies which of the Administration Server's WebLogic channels should be exposed outside "
           + "the Kubernetes cluster via a node port service, along with the node port for "
-          + "each channel. If not specified, the admin server's node port service will "
+          + "each channel. If not specified, the Administration Server's node port service will "
           + "not be created.")
   private List<Channel> channels = new ArrayList<>();
 
-  @Description("Labels to associate with the external channel service")
+  @Description("Labels to associate with the external channel service.")
   private Map<String, String> labels = new HashMap<>();
 
-  @Description("Annotations to associate with the external channel service")
+  @Description("Annotations to associate with the external channel service.")
   private Map<String, String> annotations = new HashMap<>();
 
   /**

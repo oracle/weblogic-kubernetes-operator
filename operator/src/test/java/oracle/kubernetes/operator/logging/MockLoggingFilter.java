@@ -12,12 +12,12 @@ public class MockLoggingFilter implements LoggingFilter {
     this.returnValue = returnValue;
   }
 
+  public static MockLoggingFilter createWithReturnValue(boolean returnValue) {
+    return new MockLoggingFilter(returnValue);
+  }
+
   @Override
   public boolean canLog(String msg) {
     return returnValue;
-  }
-
-  public static MockLoggingFilter createWithReturnValue(boolean returnValue) {
-    return new MockLoggingFilter(returnValue);
   }
 }

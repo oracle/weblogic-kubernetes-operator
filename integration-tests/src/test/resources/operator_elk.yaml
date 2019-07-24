@@ -9,6 +9,6 @@ domainNamespaces: [ "default", "test1" ]
 externalRestEnabled: true
 javaLoggingLevel: INFO
 elkIntegrationEnabled: true
-logStashImage: "logstash:6.6.0"
+logStashImage: "logstash:6.8.0"
 elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 elasticSearchPort: 9200

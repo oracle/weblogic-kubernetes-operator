@@ -4,9 +4,6 @@
 
 package oracle.kubernetes.json;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.SerializedName;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,6 +24,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import javax.annotation.Nonnull;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.SerializedName;
 import org.joda.time.DateTime;
 
 public class SchemaGenerator {
@@ -69,6 +70,22 @@ public class SchemaGenerator {
     return new GsonBuilder().setPrettyPrinting().create().toJson(schema);
   }
 
+  static <T, S> Map<T, S> loadCachedSchema(URL cacheUrl) throws IOException {
+    StringBuilder sb = new StringBuilder();
+    try (BufferedReader schemaReader =
+        new BufferedReader(new InputStreamReader(cacheUrl.openStream()))) {
+      String inputLine;
+      while ((inputLine = schemaReader.readLine()) != null) sb.append(inputLine).append('\n');
+    }
+
+    return fromJson(sb.toString());
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T, S> Map<T, S> fromJson(String json) {
+    return new Gson().fromJson(json, HashMap.class);
+  }
+
   /**
    * Specifies the version of the Kubernetes schema to use.
    *
@@ -96,22 +113,6 @@ public class SchemaGenerator {
     for (Map.Entry<String, Object> entry : definitions.entrySet()) {
       if (isDefinitionToUse(entry.getValue())) schemaUrls.put(entry.getKey(), schemaUrl.toString());
     }
-  }
-
-  static <T, S> Map<T, S> loadCachedSchema(URL cacheUrl) throws IOException {
-    StringBuilder sb = new StringBuilder();
-    try (BufferedReader schemaReader =
-        new BufferedReader(new InputStreamReader(cacheUrl.openStream()))) {
-      String inputLine;
-      while ((inputLine = schemaReader.readLine()) != null) sb.append(inputLine).append('\n');
-    }
-
-    return fromJson(sb.toString());
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <T, S> Map<T, S> fromJson(String json) {
-    return new Gson().fromJson(json, HashMap.class);
   }
 
   @SuppressWarnings("unchecked")
@@ -287,62 +288,6 @@ public class SchemaGenerator {
     if (annotation.maximum() < Integer.MAX_VALUE) result.put("maximum", annotation.maximum());
   }
 
-  private class SubSchemaGenerator {
-    Field field;
-
-    SubSchemaGenerator(Field field) {
-      this.field = field;
-    }
-
-    @SuppressWarnings("unchecked")
-    private void generateTypeIn(Map<String, Object> result, Class<?> type) {
-      if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) result.put("type", "boolean");
-      else if (isNumeric(type)) result.put("type", "number");
-      else if (isString(type)) result.put("type", "string");
-      else if (type.isEnum()) generateEnumTypeIn(result, (Class<? extends Enum>) type);
-      else if (type.isArray()) this.generateArrayTypeIn(result, type);
-      else if (Collection.class.isAssignableFrom(type)) generateCollectionTypeIn(result);
-      else generateObjectFieldIn(result, type);
-    }
-
-    private void generateObjectFieldIn(Map<String, Object> result, Class<?> type) {
-      if (supportObjectReferences) {
-        generateObjectReferenceIn(result, type);
-      } else {
-        generateObjectTypeIn(result, type);
-      }
-    }
-
-    private void generateObjectReferenceIn(Map<String, Object> result, Class<?> type) {
-      addReference(type);
-      result.put("$ref", getReferencePath(type));
-    }
-
-    private void generateCollectionTypeIn(Map<String, Object> result) {
-      Map<String, Object> items = new HashMap<>();
-      result.put("type", "array");
-      result.put("items", items);
-      generateTypeIn(items, getGenericComponentType());
-    }
-
-    private Class<?> getGenericComponentType() {
-      try {
-        String typeName = field.getGenericType().getTypeName();
-        String className = typeName.substring(typeName.indexOf("<") + 1, typeName.indexOf(">"));
-        return field.getDeclaringClass().getClassLoader().loadClass(className);
-      } catch (ClassNotFoundException e) {
-        return Object.class;
-      }
-    }
-
-    private void generateArrayTypeIn(Map<String, Object> result, Class<?> type) {
-      Map<String, Object> items = new HashMap<>();
-      result.put("type", "array");
-      result.put("items", items);
-      generateTypeIn(items, type.getComponentType());
-    }
-  }
-
   private void addReference(Class<?> type) {
     if (definedObjects.containsKey(type)) return;
     if (addedKubernetesClass(type)) return;
@@ -420,7 +365,7 @@ public class SchemaGenerator {
       result.put("type", "string");
       result.put("format", "date-time");
     } else {
-      Map<String, Object> properties = new HashMap<>();
+      final Map<String, Object> properties = new HashMap<>();
       List<String> requiredFields = new ArrayList<>();
       result.put("type", "object");
       if (includeAdditionalProperties) result.put("additionalProperties", "false");
@@ -463,5 +408,61 @@ public class SchemaGenerator {
 
   private boolean isNonNull(Field field) {
     return field.getAnnotation(Nonnull.class) != null;
+  }
+
+  private class SubSchemaGenerator {
+    Field field;
+
+    SubSchemaGenerator(Field field) {
+      this.field = field;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void generateTypeIn(Map<String, Object> result, Class<?> type) {
+      if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) result.put("type", "boolean");
+      else if (isNumeric(type)) result.put("type", "number");
+      else if (isString(type)) result.put("type", "string");
+      else if (type.isEnum()) generateEnumTypeIn(result, (Class<? extends Enum>) type);
+      else if (type.isArray()) this.generateArrayTypeIn(result, type);
+      else if (Collection.class.isAssignableFrom(type)) generateCollectionTypeIn(result);
+      else generateObjectFieldIn(result, type);
+    }
+
+    private void generateObjectFieldIn(Map<String, Object> result, Class<?> type) {
+      if (supportObjectReferences) {
+        generateObjectReferenceIn(result, type);
+      } else {
+        generateObjectTypeIn(result, type);
+      }
+    }
+
+    private void generateObjectReferenceIn(Map<String, Object> result, Class<?> type) {
+      addReference(type);
+      result.put("$ref", getReferencePath(type));
+    }
+
+    private void generateCollectionTypeIn(Map<String, Object> result) {
+      Map<String, Object> items = new HashMap<>();
+      result.put("type", "array");
+      result.put("items", items);
+      generateTypeIn(items, getGenericComponentType());
+    }
+
+    private Class<?> getGenericComponentType() {
+      try {
+        String typeName = field.getGenericType().getTypeName();
+        String className = typeName.substring(typeName.indexOf("<") + 1, typeName.indexOf(">"));
+        return field.getDeclaringClass().getClassLoader().loadClass(className);
+      } catch (ClassNotFoundException e) {
+        return Object.class;
+      }
+    }
+
+    private void generateArrayTypeIn(Map<String, Object> result, Class<?> type) {
+      Map<String, Object> items = new HashMap<>();
+      result.put("type", "array");
+      result.put("items", items);
+      generateTypeIn(items, type.getComponentType());
+    }
   }
 }
