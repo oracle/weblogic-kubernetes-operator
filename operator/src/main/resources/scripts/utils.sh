@@ -97,8 +97,9 @@ function trace() {
 
   # Support log-levels in operator, if unknown then assume FINE
   #  SEVERE|WARNING|INFO|CONFIG|FINE|FINER|FINEST
+  #  (The '^^' trick below converts the var to upper case.)
   local logLevel='FINE'
-  case $1 in
+  case ${1^^} in
     SEVERE|WARNING|INFO|CONFIG|FINE|FINER|FINEST)
       logLevel=$1
       shift
@@ -107,26 +108,26 @@ function trace() {
       logLevel='SEVERE'
       shift
       ;;
-    warning*|Warning*|WARNING*)
+    WARNING*)
       logLevel='WARNING'
       ;;
-    error*|Error*|ERROR*|severe*|Severe*|SEVERE*)
+    ERROR*|SEVERE*)
       logLevel='SEVERE'
       ;;
-    info*|Info*|INFO*)
+    INFO*)
       logLevel='INFO'
       ;;
-    config*|Config*|CONFIG*)
+    CONFIG*)
       logLevel='CONFIG'
       ;;
-    finest*|Finest*|FINEST*)
-      logLevel='FINE'
+    FINEST*)
+      logLevel='FINEST'
       ;;
-    finer*|Finer*|FINER*)
+    FINER*)
       logLevel='FINER'
       ;;
-    fine*|Fine*|FINE*)
-      logLevel='FINEST'
+    FINE*)
+      logLevel='FINE'
       ;;
   esac
 
