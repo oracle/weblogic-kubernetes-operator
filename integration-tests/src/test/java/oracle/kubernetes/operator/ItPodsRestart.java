@@ -453,7 +453,7 @@ public class ItPodsRestart extends BaseTest {
    * @throws Exception when domain.yaml cannot be read or modified to include the
    *     restartVersion:v1.1
    */
-  // @Test
+  @Test
   public void testMsRestartVersion() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
