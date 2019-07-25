@@ -9,8 +9,10 @@
 #
 # Input env vars:
 #    - JAVA_HOME - required
-#    - WL_HOME - optional - default is /u01/oracle/wlserver
-#    - MW_HOME - optional - default is /u01/oracle
+#    - Optionally set
+#        ORACLE_HOME = Oracle Install Home - defaults via utils.sh/exportInstallHomes
+#        MW_HOME     = MiddleWare Install Home - defaults to ${ORACLE_HOME}
+#        WL_HOME     = WebLogic Install Home - defaults to ${ORACLE_HOME}/wlserver
 #
 # Usage:
 #   SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
@@ -25,10 +27,11 @@ wlst_script=${1?}
 
 trace "About to run wlst script '${wlst_script}'"
 
-export WL_HOME=${WL_HOME:-/u01/oracle/wlserver}
-export MW_HOME=${MW_HOME:-/u01/oracle}
+# Set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
+exportInstallHomes
 
 checkEnv JAVA_HOME \
+         ORACLE_HOME \
          WL_HOME \
          MW_HOME \
          || exit 1
@@ -40,7 +43,7 @@ wlst_loc1="${WL_HOME}/../oracle_common/common/bin/wlst.sh"
 wlst_loc2="${MW_HOME}/oracle_common/common/bin/wlst.sh"
 [ -f "$wlst_loc2" ]   && wlst_sh="$wlst_loc2"
 [ -f "$wlst_loc1" ]   && wlst_sh="$wlst_loc1"
-[ -z "$wlst_sh" ] && trace SEVERE "'${wlst_loc1}' or '${wlst_loc2}' not found, make sure WL_HOME or MW_HOME is set correctly." && exit 1
+[ -z "$wlst_sh" ] && trace SEVERE "'${wlst_loc1}' or '${wlst_loc2}' not found, make sure ORACLE_HOME, WL_HOME, or MW_HOME is set correctly." && exit 1
 
 trace "Running wlst script '${wlst_script}'"
 

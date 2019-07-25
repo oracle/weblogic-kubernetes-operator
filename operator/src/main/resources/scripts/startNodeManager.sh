@@ -19,7 +19,9 @@
 #
 #   SERVER_NAME       = If not set, assumes this is introspector.
 #
-#   WL_HOME           = WebLogic Install Home - defaults to /u01/oracle/wlserver
+#   ORACLE_HOME       = Oracle Install Home - defaults via utils.sh/exportInstallHomes
+#   MW_HOME           = MiddleWare Install Home - defaults to ${ORACLE_HOME}
+#   WL_HOME           = WebLogic Install Home - defaults to ${ORACLE_HOME}/wlserver
 #
 #   NODEMGR_LOG_HOME  = Directory that will contain contain both
 #                          ${DOMAIN_UID}/${SERVER_NAME}_nodemanager.log
@@ -50,7 +52,8 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh 
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1 
 
-export WL_HOME="${WL_HOME:-/u01/oracle/wlserver}"
+# Set ORACLE_HOME/WL_HOME/MW_HOME to defaults if needed
+exportInstallHomes
 
 stm_script=${WL_HOME}/server/bin/startNodeManager.sh
 
@@ -59,7 +62,7 @@ ADMIN_PORT_SECURE=${ADMIN_PORT_SECURE:-false}
 
 trace "Starting node manager for domain-uid='$DOMAIN_UID' and server='$SERVER_NAME'."
 
-checkEnv JAVA_HOME NODEMGR_HOME DOMAIN_HOME DOMAIN_UID WL_HOME || exit 1
+checkEnv JAVA_HOME NODEMGR_HOME DOMAIN_HOME DOMAIN_UID ORACLE_HOME MW_HOME WL_HOME || exit 1
 
 if [ "${SERVER_NAME}" = "introspector" ]; then
   SERVICE_NAME=localhost
