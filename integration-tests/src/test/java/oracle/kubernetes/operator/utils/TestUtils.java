@@ -82,9 +82,26 @@ public class TestUtils {
     StringBuffer cmd = new StringBuffer();
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
-    // check for admin pod
+    // check for pod to be running
     checkCmdInLoop(cmd.toString(), "Running", podName);
   }
+
+  /**
+   * Checks that pod is ready and running.
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   */
+  public static void checkPodReadyAndRunning(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for pod to be running
+    checkCmdInLoop(cmd.toString(), "Running", podName);
+    checkCmdInLoop(cmd.toString(), "1/1", podName);
+  }
+
 
   /**
    * Checks that pod is initializing.
@@ -115,6 +132,24 @@ public class TestUtils {
 
     // check for admin pod
     checkCmdInLoop(cmd.toString(), "Terminating", podName);
+  }
+
+  /**
+   * check pod is in Terminating state without waiting
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   *
+   * @return true if pod terminating else false
+   * @throws Exception exception
+   */
+  public static boolean checkPodTerminatingNoWait(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    return checkPodMatch(cmd.toString(), "Terminating", podName);
   }
 
   /**
@@ -1302,12 +1337,12 @@ public class TestUtils {
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
-              "FAILURE: pod " + k8sObjName + " is not running/ready, exiting!");
+              "FAILURE: Timeout - pod " + k8sObjName + " output does not contain '" + matchStr + "'");
         }
         logger.info(
             "Pod "
                 + k8sObjName
-                + " is not Running/Ready Ite ["
+                + "  output does not contain '" + matchStr + "'  Iteration ["
                 + i
                 + "/"
                 + BaseTest.getMaxIterationsPod()
@@ -1318,10 +1353,32 @@ public class TestUtils {
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
-        logger.info("Pod " + k8sObjName + " is Running");
+        logger.info("SUCCESS: Pod " + k8sObjName + " output contains '" + matchStr + "'");
         break;
       }
     }
+  }
+
+  /**
+   * Check if the pod is in a specific status.
+   *
+   * @param cmd        command to execute
+   * @param matchStr   matching string
+   * @param k8sObjName pod Name
+   *
+   * @return true for match else false
+   * @throws Exception
+   */
+  public static boolean checkPodMatch(String cmd, String matchStr, String k8sObjName)
+      throws Exception {
+      ExecResult result = ExecCommand.exec(cmd);
+      if (result.exitValue() != 0
+          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+        return false;
+      } else {
+        logger.info("Pod " + k8sObjName + " match found for " + matchStr);
+        return true;
+      }
   }
 
   private static void checkCmdInLoopForDelete(String cmd, String matchStr, String k8sObjName)
