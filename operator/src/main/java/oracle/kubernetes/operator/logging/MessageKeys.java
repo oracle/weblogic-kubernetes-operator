@@ -154,6 +154,7 @@ public class MessageKeys {
   public static final String EXTERNAL_CHANNEL_SERVICE_EXISTS = "WLSKO-0152";
   public static final String WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT = "WLSKO-0153";
   public static final String JOB_DEADLINE_EXCEEDED_MESSAGE = "WLSKO-0154";
+  public static final String JOB_LOG_PARSE_FAILURE = "WLSKO-0155";
 
   private MessageKeys() {
   }

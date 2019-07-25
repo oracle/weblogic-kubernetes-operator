@@ -28,7 +28,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -85,6 +84,21 @@ public class TestUtils {
 
     // check for admin pod
     checkCmdInLoop(cmd.toString(), "Running", podName);
+  }
+
+  /**
+   * Checks that pod is initializing.
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   */
+  public static void checkPodInitializing(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    checkCmdInLoop(cmd.toString(), "Init", podName);
   }
 
   /**
@@ -787,19 +801,20 @@ public class TestUtils {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
-  
-  public static Domain createDomain(String inputYaml, boolean createDomainResource) throws Exception {
+
+  public static Domain createDomain(String inputYaml, boolean createDomainResource)
+      throws Exception {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml, createDomainResource);
   }
-  
+
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
   }
-  
-  public static Domain createDomain(Map<String, Object> inputDomainMap, boolean createDomainResource)
-      throws Exception {
+
+  public static Domain createDomain(
+      Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap, createDomainResource);
   }
@@ -1034,12 +1049,13 @@ public class TestUtils {
   }
 
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
-
+    dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
     String crdCmd =
         BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/job.sh \"mkdir -p "
-            + dirPath
-            + "\"";
+     + "/src/integration-tests/bash/krun.sh -m "+BaseTest.getPvRoot()+":/sharedparent -c 'mkdir -m 777 -p "
+     + dirPath
+     + "'"; 
+    
     ExecResult result = ExecCommand.exec(crdCmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -1058,31 +1074,33 @@ public class TestUtils {
     // copy wldf.py script tp pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
-        "/shared/wldf.py",
+        BaseTest.getAppLocationInPod() +"/wldf.py",
         adminPodName,
         domainNS);
 
     // copy callpyscript.sh to pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
-        "/shared/callpyscript.sh",
+        BaseTest.getAppLocationInPod() + "/callpyscript.sh",
         adminPodName,
         domainNS);
 
     // arguments to shell script to call py script
-    String arguments =
-        "/shared/wldf.py "
-            + BaseTest.getUsername()
-            + " "
-            + BaseTest.getPassword()
-            + " t3://"
+
+    String[] args = {
+        BaseTest.getAppLocationInPod() + "/wldf.py",
+        BaseTest.getUsername(),
+        BaseTest.getPassword(),
+        " t3://"
             + adminPodName
             + ":"
-            + t3ChannelPort;
-
+            + t3ChannelPort,
+        
+      };
+    
     // call callpyscript.sh in pod to deploy wldf module
-    TestUtils.callShellScriptByExecToPod(
-        "/shared/callpyscript.sh", arguments, adminPodName, domainNS);
+     TestUtils.callShellScriptByExecToPod(
+        adminPodName, domainNS, BaseTest.getAppLocationInPod(), "callpyscript.sh", args);
   }
 
   public static void createRbacPoliciesForWldfScaling() throws Exception {
@@ -1225,6 +1243,11 @@ public class TestUtils {
   }
 
 
+/**
+   * @param cmd command to run in the loop
+   * @param matchStr expected string to match in the output
+   * @throws Exception exception if fails to execute
+   */
   public static void checkAnyCmdInLoop(String cmd, String matchStr)
       throws Exception {
     checkCmdInLoop(cmd,matchStr, "");
@@ -1238,7 +1261,7 @@ public class TestUtils {
 
       // loop command till condition
       if (result.exitValue() != 0
-              || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
         logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
@@ -1258,6 +1281,7 @@ public class TestUtils {
                         + "], sleeping "
                         + BaseTest.getWaitTimePod()
                         + " seconds more");
+
 
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
