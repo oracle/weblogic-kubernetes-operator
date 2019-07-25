@@ -32,7 +32,7 @@ public class CoherenceUtils {
   private static final String PREFIX = "Thread-";
   private static final int VALUE_SIZE = 1024;
   private static final int NUM_ITEMS =
-      200 * 1000; // Total number of items, regardless of thread count
+      100 * 1000; // Total number of items, regardless of thread count
   private static final int THREAD_COUNT = 1;
   private static final int MAX_BATCH_SIZE = 1000;
 
@@ -126,7 +126,7 @@ public class CoherenceUtils {
     Instant finishInstant = Instant.now();
     Duration duration = Duration.between(startInstant, finishInstant);
 
-    System.out.println("Load Test elaspsed Time = " + duration.getSeconds() + " seconds");
+    System.out.println("Load Test SUCCESS - elapsed Time = " + duration.getSeconds() + " seconds");
   }
 
   public void validateCache() {
@@ -156,7 +156,7 @@ public class CoherenceUtils {
     Instant finishInstant = Instant.now();
     Duration duration = Duration.between(startInstant, finishInstant);
 
-    System.out.println("Validate Test elaspsed Time = " + duration.getSeconds() + " seconds");
+    System.out.println("Validate Test SUCCESS - elapsed Time = " + duration.getSeconds() + " seconds");
   }
 
   /**

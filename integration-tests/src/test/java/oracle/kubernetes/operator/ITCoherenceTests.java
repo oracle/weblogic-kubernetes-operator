@@ -4,12 +4,9 @@
 
 package oracle.kubernetes.operator;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.CoherenceUtils;
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
@@ -49,6 +46,12 @@ public class ITCoherenceTests extends BaseTest {
     if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
 
+      // The default cmd loop sleep is too long and we could miss states like terminating. Change the
+      // sleep and iterations
+      //
+      setWaitTimePod(2);
+      setMaxIterationsPod(125);
+
       if (operator1 == null) {
         operator1 = TestUtils.createOperator(OPERATOR1_YAML);
       }
@@ -76,21 +79,20 @@ public class ITCoherenceTests extends BaseTest {
     domain = createDomain();
     Assert.assertNotNull(domain);
 
-    //  public static void exposePod(String podName, String domainNS, String serviceName,  int port,
-    // int targetPort)  throws Exception {
-
-
-//    String nodePortName = "coh-nodeport";
-//    String podName = "dd";
-//    int port = 9000;
-//    TestUtils.exposePod(podName, domain.getDomainNS(), nodePortName, port, port);
-//
+    //    String nodePortName = "coh-nodeport";
+    //    String podName = "dd";
+    //    int port = 9000;
+    //    TestUtils.exposePod(podName, domain.getDomainNS(), nodePortName, port, port);
+    //
     utils.loadCache();
+
+    // Do the rolling restart
+    testServerPodsRestartByChangingEnvProperty();
+
     utils.validateCache();
 
     destroyDomain();
   }
-
 
   /**
    * Modify the domain scope env property on the domain resource using kubectl apply -f domain.yaml
@@ -99,10 +101,7 @@ public class ITCoherenceTests extends BaseTest {
    *
    * @throws Exception
    */
-  @Ignore
-  @Test
   public void testServerPodsRestartByChangingEnvProperty() throws Exception {
-
 
     Assume.assumeFalse(QUICKTEST);
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -112,20 +111,11 @@ public class ITCoherenceTests extends BaseTest {
         "About to verifyDomainServerPodRestart for Domain: "
             + domain.getDomainUid()
             + "  env property: StdoutDebugEnabled=false to StdoutDebugEnabled=true");
+
     domain.verifyDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
 
     logger.info("SUCCESS - " + testMethodName);
-  }
-
-  private static Domain createDomain() throws Exception {
-
-    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WLST_YAML);
-    domainMap.put("namespace","test1");
-    domainMap.put("domainUID", "coh");
-    domain = TestUtils.createDomain(domainMap);
-    domain.verifyDomainCreated();
-    return domain;
   }
 
   private static void destroyDomain() throws Exception {
@@ -134,34 +124,21 @@ public class ITCoherenceTests extends BaseTest {
     }
   }
 
-  /**
-   * Utility method to check if a pod is in Terminating or Running status
-   *
-   * @param podName - String name of the pod to check the status for
-   * @param podStatusExpected - String the expected status of Terminating || RUnning
-   * @throws InterruptedException when thread is interrupted
-   */
-  private void verifyPodStatus(String podName, String podStatusExpected)
-      throws InterruptedException {
-    K8sTestUtils testUtil = new K8sTestUtils();
-    String domain1LabelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    String namespace = domain.getDomainNS();
-    boolean gotExpected = false;
-    for (int i = 0; i < BaseTest.getMaxIterationsPod(); i++) {
-      if (podStatusExpected.equals("Terminating")) {
-        if (testUtil.isPodTerminating(namespace, domain1LabelSelector, podName)) {
-          gotExpected = true;
-          break;
-        }
-      } else if (podStatusExpected.equals("Running")) {
-        if (testUtil.isPodRunning(namespace, domain1LabelSelector, podName)) {
-          gotExpected = true;
-          break;
-        }
-      }
+  private Domain createDomain() throws Exception {
 
-      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
-    }
-    Assert.assertTrue("Didn't get the expected pod status", gotExpected);
+    //    System.getenv().put("CUSTOM_WDT_ARCHIVE", "/Users/pmackin/archive-proxy.zip");
+
+    // create domain
+    Domain domain = null;
+    Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
+    domainMap.put("namespace", "test1");
+    domainMap.put("domainUID", "coh");
+    domainMap.put(
+        "customWdtTemplate",
+        BaseTest.getProjectRoot()
+            + "/integration-tests/src/test/resources/wdt/coh-wdt-config.yaml");
+    domain = TestUtils.createDomain(domainMap);
+    domain.verifyDomainCreated();
+    return domain;
   }
 }
