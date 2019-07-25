@@ -19,7 +19,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 /**
  * Tests that the artifacts in the yaml files that create-weblogic-operator.sh creates are correct
  * when all optional features are enabled: external rest self signed cert remote debug port enabled
- * elk enabled haveimage pull secret
+ * elk enabled have image pull secret
  */
 public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBase
     extends CreateOperatorGeneratedFilesTestBase {
@@ -31,6 +31,7 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
             .newOperatorValues()
             .setupExternalRestEnabled()
             .enableDebugging()
+            .suspendOnDebugStartup("true")
             .elkIntegrationEnabled("true")
             .weblogicOperatorImagePullSecretName("test-operator-image-pull-secret-name"));
   }
@@ -55,10 +56,9 @@ public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBas
     ExtensionsV1beta1Deployment expected = super.getExpectedWeblogicOperatorDeployment();
     V1Container operatorContainer =
         expected.getSpec().getTemplate().getSpec().getContainers().get(0);
-    operatorContainer
-        .addVolumeMountsItem(newVolumeMount().name("log-dir").mountPath("/logs").readOnly(false))
-        .addEnvItem(
-            newEnvVar().name("REMOTE_DEBUG_PORT").value(getInputs().getInternalDebugHttpPort()));
+    operatorContainer.addVolumeMountsItem(
+        newVolumeMount().name("log-dir").mountPath("/logs").readOnly(false));
+    expectRemoteDebug(operatorContainer, "y");
     expected
         .getSpec()
         .getTemplate()

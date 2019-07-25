@@ -34,6 +34,9 @@ public class ItSitConfig extends BaseTest {
   private static String ADMINPODNAME;
   private static String fqdn;
   private static String JDBC_URL;
+  private static final String JDBC_DRIVER_NEW = "com.mysql.cj.jdbc.Driver";
+  private static final String JDBC_DRIVER_OLD = "com.mysql.jdbc.Driver";
+  private static final String PS3_TAG = "12.2.1.3";
   private static String KUBE_EXEC_CMD;
   private static Domain domain;
   private static Operator operator1;
@@ -171,6 +174,9 @@ public class ItSitConfig extends BaseTest {
       Charset charset = StandardCharsets.UTF_8;
       String content = new String(Files.readAllBytes(path), charset);
       content = content.replaceAll("JDBC_URL", JDBC_URL);
+      if (getWeblogicImageTag().contains(PS3_TAG)) {
+        content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
+      }
       path = Paths.get(dstDir, file);
       logger.log(Level.INFO, "to {0}", path.toString());
       Files.write(path, content.getBytes(charset));
