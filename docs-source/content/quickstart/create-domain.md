@@ -71,9 +71,9 @@ weight: 6
 
 1.	To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain's server pods,
     you can send a request to the URL for the "WebLogic ReadyApp framework" which will return a HTTP 200 status code, as
-    shown in the example below.  
+    shown in the example below.   
 
-    **NOTE**: Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running:
+    Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running the following command. This example assumes that your worker nodes have IP addresses that are accessible from the machine where you are running the `curl` command. This may not be the case in all deployments.
 
     ```bash
     $ kubectl get pods -n sample-domain1-ns -o wide
