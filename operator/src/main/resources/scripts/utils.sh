@@ -3,16 +3,31 @@
 
 #
 # Purpose:
-#   Define a trace function that matches the format of the trace function
-#   in utils.py and of the logging in the java operator.
-#
-#   Also define various shared utility functions.
+#   Defines various shared utility functions, including a trace function.
 #
 # Load this file via the following pattern:
 #   SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 #   source ${SCRIPTPATH}/utils.sh
 #   [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 #
+
+# exportInstallHomes
+#   purpose:  export MW_HOME, WL_HOME, ORACLE_HOME
+#             with defaults as needed 
+function exportInstallHomes() {
+  export ORACLE_HOME=${ORACLE_HOME:-${MW_HOME}}
+
+  if [ -z ${ORACLE_HOME} ]; then
+    if [ -z ${WL_HOME} ]; then
+      export ORACLE_HOME='/u01/oracle'
+    else
+      export ORACLE_HOME="`dirname ${WL_HOME}`"
+    fi
+  fi
+
+  export WL_HOME=${WL_HOME:-${ORACLE_HOME}/wlserver}
+  export MW_HOME=${MW_HOME:-${ORACLE_HOME}}
+}
 
 # timestamp
 #   purpose:  echo timestamp in the form yyyymmddThh:mm:ss.mmm ZZZ
@@ -87,6 +102,11 @@ function trace() {
       shift
     else
       logLoc="`basename $0`:${BASH_LINENO[0]}"
+    fi
+  else
+    if [ "$1" = "-cloc" ]; then
+      shift
+      shift
     fi
   fi
 
@@ -207,7 +227,7 @@ function checkEnv() {
 
 #
 # exportEffectiveDomainHome
-#   if DOMAIN_HOME='/u01/oracle/user_projects/domains':
+#   if DOMAIN_HOME='${ORACLE_HOME}/user_projects/domains':
 #     1) look for a config.xml in DOMAIN_HOME/config and
 #        and in DOMAIN_HOME/*/config
 #     2) Export DOMAIN_HOME to reflect the actual location 
@@ -219,7 +239,9 @@ function exportEffectiveDomainHome() {
   local eff_domain_home=""
   local found_configs=""
 
-  if [ ! "${DOMAIN_HOME?}" = "/u01/oracle/user_projects/domains" ]; then
+  exportInstallHomes
+
+  if [ ! "${DOMAIN_HOME?}" = "${ORACLE_HOME}/user_projects/domains" ]; then
     # nothing to do
     return 0
   fi
