@@ -1218,18 +1218,18 @@ window.onload = function() {
           "description": "If true (the default), the server .out file will be included in the pod\u0027s stdout.",
           "type": "boolean"
         },
-        "clusters": {
-          "description": "Configuration for the clusters.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Cluster"
-          }
-        },
         "managedServers": {
           "description": "Configuration for individual Managed Servers.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/ManagedServer"
+          }
+        },
+        "clusters": {
+          "description": "Configuration for the clusters.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Cluster"
           }
         }
       }
@@ -1378,13 +1378,28 @@ window.onload = function() {
       "description": "ServerPod describes the configuration for a Kubernetes pod for a server.",
       "type": "object",
       "properties": {
+        "nodeName": {
+          "description": "NodeName is a request to schedule this pod onto a specific node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits resource requirements.",
+          "type": "string"
+        },
         "livenessProbe": {
           "description": "Settings for the liveness probe associated with a server.",
           "$ref": "#/definitions/ProbeTuning"
         },
+        "readinessGates": {
+          "description": "If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodReadinessGate"
+          }
+        },
         "podSecurityContext": {
           "description": "Pod-level security attributes.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+        },
+        "priorityClassName": {
+          "description": "If specified, indicates the pod\u0027s priority. \"system-node-critical\" and \"system-cluster-critical\" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be default or zero if there is no default.",
+          "type": "string"
         },
         "volumes": {
           "description": "Additional volumes to be created in the server pod.",
@@ -1408,6 +1423,14 @@ window.onload = function() {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         },
+        "priority": {
+          "description": "The priority value. Various system components use this field to find the priority of the pod. When Priority Admission Controller is enabled, it prevents users from setting this field. The admission controller populates this field from PriorityClassName. The higher the value, the higher the priority.",
+          "type": "number"
+        },
+        "restartPolicy": {
+          "description": "Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy",
+          "type": "string"
+        },
         "nodeSelector": {
           "description": "Selector which must match a node\u0027s labels for the pod to be scheduled on that node.",
           "$ref": "#/definitions/Map"
@@ -1422,6 +1445,17 @@ window.onload = function() {
         "labels": {
           "description": "The labels to be attached to generated resources. The label names must not start with \u0027weblogic.\u0027.",
           "$ref": "#/definitions/Map"
+        },
+        "runtimeClassName": {
+          "description": "RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an alpha feature and may change in the future.",
+          "type": "string"
+        },
+        "tolerations": {
+          "description": "If specified, the pod\u0027s tolerations.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Toleration"
+          }
         },
         "readinessProbe": {
           "description": "Settings for the readiness probe associated with a server.",
@@ -1438,6 +1472,10 @@ window.onload = function() {
           "description": "Container-level security attributes. Will override any matching pod-level attributes.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
+        "schedulerName": {
+          "description": "If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be dispatched by default scheduler.",
+          "type": "string"
+        },
         "initContainers": {
           "description": "Initialization containers to be included in the server pod.",
           "type": "array",
@@ -1448,6 +1486,10 @@ window.onload = function() {
         "shutdown": {
           "description": "Configures how the operator should shutdown the server instance.",
           "$ref": "#/definitions/Shutdown"
+        },
+        "affinity": {
+          "description": "If specified, the pod\u0027s scheduling constraints",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
         }
       }
     },

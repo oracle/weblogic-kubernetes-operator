@@ -518,7 +518,16 @@ public abstract class PodStepContext extends StepContextBase {
         new V1PodSpec()
             .containers(getServerSpec().getContainers())
             .addContainersItem(container)
+            .affinity(getServerSpec().getAffinity())
             .nodeSelector(getServerSpec().getNodeSelectors())
+            .nodeName(getServerSpec().getNodeName())
+            .schedulerName(getServerSpec().getSchedulerName())
+            .priority(getServerSpec().getPriority())
+            .priorityClassName(getServerSpec().getPriorityClassName())
+            .runtimeClassName(getServerSpec().getRuntimeClassName())
+            .tolerations(getServerSpec().getTolerations())
+            .readinessGates(getServerSpec().getReadinessGates())
+            .restartPolicy(getServerSpec().getRestartPolicy())
             .securityContext(getServerSpec().getPodSecurityContext())
             .initContainers(getServerSpec().getInitContainers());
 
