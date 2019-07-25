@@ -125,7 +125,7 @@ public class LoggingFacadeTest {
   @Test
   public void verifyGetFormattedMessage_withArgs_returnsFormattedMessage() {
     assertThat(loggingFacade.getFormattedMessage(MessageKeys.CYCLING_SERVERS, "domain1", "list1"),
-    is("Cycling of servers for Domain with UID domain1 in the list list1 now"));
+        is("Cycling of servers for Domain with UID domain1 in the list list1 now"));
   }
 
   @Test

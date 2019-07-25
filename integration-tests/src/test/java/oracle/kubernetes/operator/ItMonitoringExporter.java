@@ -856,7 +856,8 @@ public class ItMonitoringExporter extends BaseTest {
     String webhookPod = getPodName("webhook", "webhook");
     String command = "kubectl -n webhook logs " + webhookPod;
 
-    ExecResult webhookResult = TestUtils.checkAnyCmdInLoop(command, "Some WLS cluster has only one running server for more than 1 minutes");
+    ExecResult webhookResult = TestUtils.checkAnyCmdInLoop(command,
+        "Some WLS cluster has only one running server for more than 1 minutes");
     logger.info(" webhook log " + webhookResult.stdout());
   }
 

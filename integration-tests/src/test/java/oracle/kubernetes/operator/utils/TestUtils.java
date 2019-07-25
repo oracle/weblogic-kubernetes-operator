@@ -1225,7 +1225,7 @@ public class TestUtils {
   }
 
   /**
-   *
+   * Checks command in a loop.
    * @param cmd command to run in the loop
    * @param matchStr expected string to match in the output
    * @return ExecResult object containing command output info
