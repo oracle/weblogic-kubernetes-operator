@@ -1682,7 +1682,8 @@ public class Domain {
                 .toPath(),
             new File(
                     BaseTest.getResultDir()
-                        + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/common/createFMWDomain.py")
+                        + "/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv/"
+                        + "common/createFMWDomain.py")
                 .toPath(),
             StandardCopyOption.REPLACE_EXISTING);
       } else {

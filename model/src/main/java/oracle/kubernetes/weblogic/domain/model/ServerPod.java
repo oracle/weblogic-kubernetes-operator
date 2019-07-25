@@ -15,16 +15,16 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.validation.Valid;
 
-import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Capabilities;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
-import io.kubernetes.client.models.V1HostAlias;
 import io.kubernetes.client.models.V1HostPathVolumeSource;
-import io.kubernetes.client.models.V1LocalObjectReference;
-import io.kubernetes.client.models.V1PodDNSConfig;
+import io.kubernetes.client.models.V1NodeAffinity;
+import io.kubernetes.client.models.V1NodeSelector;
+import io.kubernetes.client.models.V1PodAffinity;
+import io.kubernetes.client.models.V1PodAntiAffinity;
 import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1ResourceRequirements;
@@ -86,33 +86,48 @@ class ServerPod extends KubernetesResource {
       "Selector which must match a node's labels for the pod to be scheduled on that node.")
   private Map<String, String> nodeSelector = new HashMap<>();
 
-  @SerializedName("activeDeadlineSeconds")
-  private Long activeDeadlineSeconds = null;
-  @SerializedName("affinity")
+  @Description("If specified, the pod's scheduling constraints")
   private V1Affinity affinity = null;
-  @SerializedName("dnsConfig")
-  private V1PodDNSConfig dnsConfig = null;
-  @SerializedName("hostAliases")
-  private List<V1HostAlias> hostAliases = null;
-  @SerializedName("priority")
-  private Integer priority = null;
-  @SerializedName("priorityClassName")
-  private String priorityClassName = null;
-  @SerializedName("readinessGates")
-  private List<V1PodReadinessGate> readinessGates = null;
-  @SerializedName("restartPolicy")
-  private String restartPolicy = null;
-  @SerializedName("runtimeClassName")
-  private String runtimeClassName = null;
-  @SerializedName("schedulerName")
-  private String schedulerName = null;
-  @SerializedName("securityContext")
-  private V1PodSecurityContext securityContext = null;
-  @SerializedName("shareProcessNamespace")
-  private Boolean shareProcessNamespace = null;
-  @SerializedName("tolerations")
-  private List<V1Toleration> tolerations = null;
 
+  @Description("The priority value. Various system components use this field to find the priority "
+      + "of the pod. When Priority Admission Controller is enabled, it prevents users from setting this field. "
+      + "The admission controller populates this field from PriorityClassName. The higher the value, the "
+      + "higher the priority.")
+  private Integer priority = null;
+
+  @Description("If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
+      + "are two special keywords which indicate the highest priorities with the former being the highest priority. "
+      + "Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod "
+      + "priority will be default or zero if there is no default.")
+  private String priorityClassName = null;
+
+  @Description("If specified, all readiness gates will be evaluated for pod readiness. A pod is ready when all its "
+      + "containers are ready AND all conditions specified in the readiness gates have status equal to \"True\" More "
+      + "info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md")
+  private List<V1PodReadinessGate> readinessGates = new ArrayList<>();
+
+  @Description("Restart policy for all containers within the pod. One of Always, OnFailure, Never. Default to Always. "
+      + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy")
+  private String restartPolicy = null;
+
+  @Description("RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
+      + "this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, "
+      + "the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the "
+      + "default runtime handler. More "
+      + "info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md This is an "
+      + "alpha feature and may change in the future.")
+  private String runtimeClassName = null;
+
+  @Description("NodeName is a request to schedule this pod onto a specific node. If it is non-empty, the scheduler "
+      + "simply schedules this pod onto that node, assuming that it fits resource requirements.")
+  private String nodeName = null;
+
+  @Description("If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be "
+      + "dispatched by default scheduler.")
+  private String schedulerName = null;
+
+  @Description("If specified, the pod's tolerations.")
+  private List<V1Toleration> tolerations = new ArrayList<>();
 
   /**
    * Defines the requirements and limits for the pod server.
@@ -275,6 +290,77 @@ class ServerPod extends KubernetesResource {
     }
   }
 
+  private void copyValues(V1Affinity to, V1Affinity from) {
+    if (to.getNodeAffinity() == null) {
+      to.setNodeAffinity(from.getNodeAffinity());
+    } else if (from.getNodeAffinity() != null) {
+      copyValues(to.getNodeAffinity(), from.getNodeAffinity());
+    }
+    if (to.getPodAffinity() == null) {
+      to.setPodAffinity(from.getPodAffinity());
+    } else if (from.getPodAffinity() != null) {
+      copyValues(to.getPodAffinity(), from.getPodAffinity());
+    }
+    if (to.getPodAntiAffinity() == null) {
+      to.setPodAntiAffinity(from.getPodAntiAffinity());
+    } else if (from.getPodAntiAffinity() != null) {
+      copyValues(to.getPodAntiAffinity(), from.getPodAntiAffinity());
+    }
+  }
+
+  private void copyValues(V1NodeAffinity to, V1NodeAffinity from) {
+    if (to.getPreferredDuringSchedulingIgnoredDuringExecution() == null) {
+      to.setPreferredDuringSchedulingIgnoredDuringExecution(from.getPreferredDuringSchedulingIgnoredDuringExecution());
+    } else if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
+      from.getPreferredDuringSchedulingIgnoredDuringExecution()
+          .forEach(to::addPreferredDuringSchedulingIgnoredDuringExecutionItem);
+    }
+    if (to.getRequiredDuringSchedulingIgnoredDuringExecution() == null) {
+      to.setRequiredDuringSchedulingIgnoredDuringExecution(from.getRequiredDuringSchedulingIgnoredDuringExecution());
+    } else if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
+      copyValues(to.getRequiredDuringSchedulingIgnoredDuringExecution(),
+          from.getRequiredDuringSchedulingIgnoredDuringExecution());
+    }
+  }
+
+  private void copyValues(V1NodeSelector to,V1NodeSelector from) {
+    if (to.getNodeSelectorTerms() == null) {
+      to.setNodeSelectorTerms(from.getNodeSelectorTerms());
+    } else if (from.getNodeSelectorTerms() != null) {
+      from.getNodeSelectorTerms().forEach(to::addNodeSelectorTermsItem);
+    }
+  }
+
+  private void copyValues(V1PodAffinity to, V1PodAffinity from) {
+    if (to.getPreferredDuringSchedulingIgnoredDuringExecution() == null) {
+      to.setPreferredDuringSchedulingIgnoredDuringExecution(from.getPreferredDuringSchedulingIgnoredDuringExecution());
+    } else if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
+      from.getPreferredDuringSchedulingIgnoredDuringExecution()
+          .forEach(to::addPreferredDuringSchedulingIgnoredDuringExecutionItem);
+    }
+    if (to.getRequiredDuringSchedulingIgnoredDuringExecution() == null) {
+      to.setRequiredDuringSchedulingIgnoredDuringExecution(from.getRequiredDuringSchedulingIgnoredDuringExecution());
+    } else if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
+      from.getRequiredDuringSchedulingIgnoredDuringExecution()
+          .forEach(to::addRequiredDuringSchedulingIgnoredDuringExecutionItem);
+    }
+  }
+
+  private void copyValues(V1PodAntiAffinity to, V1PodAntiAffinity from) {
+    if (to.getPreferredDuringSchedulingIgnoredDuringExecution() == null) {
+      to.setPreferredDuringSchedulingIgnoredDuringExecution(from.getPreferredDuringSchedulingIgnoredDuringExecution());
+    } else if (from.getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
+      from.getPreferredDuringSchedulingIgnoredDuringExecution()
+          .forEach(to::addPreferredDuringSchedulingIgnoredDuringExecutionItem);
+    }
+    if (to.getRequiredDuringSchedulingIgnoredDuringExecution() == null) {
+      to.setRequiredDuringSchedulingIgnoredDuringExecution(from.getRequiredDuringSchedulingIgnoredDuringExecution());
+    } else if (from.getRequiredDuringSchedulingIgnoredDuringExecution() != null) {
+      from.getRequiredDuringSchedulingIgnoredDuringExecution()
+          .forEach(to::addRequiredDuringSchedulingIgnoredDuringExecutionItem);
+    }
+  }
+
   Shutdown getShutdown() {
     return this.shutdown;
   }
@@ -332,6 +418,31 @@ class ServerPod extends KubernetesResource {
     copyValues(resources, serverPod1.resources);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
     copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
+    if (affinity == null) {
+      affinity = serverPod1.affinity;
+    } else if (serverPod1.affinity != null) {
+      copyValues(affinity, serverPod1.affinity);
+    }
+    if (priority == null) {
+      priority = serverPod1.priority;
+    }
+    if (priorityClassName == null) {
+      priorityClassName = serverPod1.priorityClassName;
+    }
+    readinessGates.addAll(serverPod1.readinessGates);
+    if (restartPolicy == null) {
+      restartPolicy = serverPod1.restartPolicy;
+    }
+    if (runtimeClassName == null) {
+      runtimeClassName = serverPod1.runtimeClassName;
+    }
+    if (nodeName == null) {
+      nodeName = serverPod1.nodeName;
+    }
+    if (schedulerName == null) {
+      schedulerName = serverPod1.schedulerName;
+    }
+    tolerations.addAll(serverPod1.tolerations);
   }
 
   private void addIfMissing(V1Volume var) {
@@ -516,6 +627,86 @@ class ServerPod extends KubernetesResource {
     return volumeMounts;
   }
 
+  V1Affinity getAffinity() {
+    return affinity;
+  }
+
+  void setAffinity(V1Affinity affinity) {
+    this.affinity = affinity;
+  }
+
+  Integer getPriority() {
+    return priority;
+  }
+
+  void setPriority(Integer priority) {
+    this.priority = priority;
+  }
+
+  String getPriorityClassName() {
+    return priorityClassName;
+  }
+
+  void setPriorityClassName(String priorityClassName) {
+    this.priorityClassName = priorityClassName;
+  }
+
+  List<V1PodReadinessGate> getReadinessGates() {
+    return readinessGates;
+  }
+
+  void setReadinessGates(List<V1PodReadinessGate> readinessGates) {
+    this.readinessGates = readinessGates;
+  }
+
+  void addReadinessGate(V1PodReadinessGate readinessGate) {
+    readinessGates.add(readinessGate);
+  }
+
+  String getRestartPolicy() {
+    return restartPolicy;
+  }
+
+  void setRestartPolicy(String restartPolicy) {
+    this.restartPolicy = restartPolicy;
+  }
+
+  String getRuntimeClassName() {
+    return runtimeClassName;
+  }
+
+  void setRuntimeClassName(String runtimeClassName) {
+    this.runtimeClassName = runtimeClassName;
+  }
+
+  String getNodeName() {
+    return nodeName;
+  }
+
+  void setNodeName(String nodeName) {
+    this.nodeName = nodeName;
+  }
+
+  String getSchedulerName() {
+    return schedulerName;
+  }
+
+  void setSchedulerName(String schedulerName) {
+    this.schedulerName = schedulerName;
+  }
+
+  List<V1Toleration> getTolerations() {
+    return tolerations;
+  }
+
+  void setTolerations(List<V1Toleration> tolerations) {
+    this.tolerations = tolerations;
+  }
+
+  void addToleration(V1Toleration toleration) {
+    tolerations.add(toleration);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -532,6 +723,15 @@ class ServerPod extends KubernetesResource {
         .append("initContainers", initContainers)
         .append("containers", containers)
         .append("shutdown", shutdown)
+        .append("affinity", affinity)
+        .append("priority", priority)
+        .append("priorityClassName", priorityClassName)
+        .append("readinessGates", readinessGates)
+        .append("restartPolicy", restartPolicy)
+        .append("runtimeClassName", runtimeClassName)
+        .append("nodeName", nodeName)
+        .append("schedulerName", schedulerName)
+        .append("tolerations", tolerations)
         .toString();
   }
 
@@ -567,6 +767,15 @@ class ServerPod extends KubernetesResource {
         .append(initContainers, that.initContainers)
         .append(containers, that.containers)
         .append(shutdown, that.shutdown)
+        .append(affinity, that.affinity)
+        .append(priority, that.priority)
+        .append(priorityClassName, that.priorityClassName)
+        .append(readinessGates, that.readinessGates)
+        .append(restartPolicy, that.restartPolicy)
+        .append(runtimeClassName, that.runtimeClassName)
+        .append(nodeName, that.nodeName)
+        .append(schedulerName, that.schedulerName)
+        .append(tolerations, that.tolerations)
         .isEquals();
   }
 
@@ -586,6 +795,15 @@ class ServerPod extends KubernetesResource {
         .append(initContainers)
         .append(containers)
         .append(shutdown)
+        .append(affinity)
+        .append(priority)
+        .append(priorityClassName)
+        .append(readinessGates)
+        .append(restartPolicy)
+        .append(runtimeClassName)
+        .append(nodeName)
+        .append(schedulerName)
+        .append(tolerations)
         .toHashCode();
   }
 }
