@@ -17,10 +17,13 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1016,6 +1019,7 @@ public class Domain {
       // verify the servers in the domain are being restarted in a sequence
       verifyAdminServerRestarted();
       verifyManagedServersRestarted();
+
       // make domain.yaml include the new changed property
       TestUtils.copyFile(
           BaseTest.getUserProjectsDir() + "/weblogic-domains/" + domainUid + "/domain_new.yaml",
@@ -1118,8 +1122,9 @@ public class Domain {
     logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Terminating");
     TestUtils.checkPodTerminating(domainUid + "-" + adminServerName, domainNS);
 
-    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Running");
+    logger.info("Checking if admin pod(" + domainUid + "-" + adminServerName + ") is Ready");
     TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
+    TestUtils.checkPodReady(domainUid + "-" + adminServerName, domainNS);
   }
 
   /**
@@ -1129,25 +1134,36 @@ public class Domain {
    */
   public void verifyManagedServersRestarted() throws Exception {
     if (!serverStartPolicy.equals("ADMIN_ONLY")) {
-      // check managed server pods
-      for (int i = 1; i <= initialManagedServerReplicas; i++) {
-        logger.info(
-            "Checking if managed pod("
-                + domainUid
-                + "-"
-                + managedServerNameBase
-                + i
-                + ") is Terminating");
-        TestUtils.checkPodTerminating(domainUid + "-" + managedServerNameBase + i, domainNS);
 
-        logger.info(
-            "Checking if managed pod("
-                + domainUid
-                + "-"
-                + managedServerNameBase
-                + i
-                + ") is Running");
-        TestUtils.checkPodCreated(domainUid + "-" + managedServerNameBase + i, domainNS);
+      // Note: Managed Servers can be stopped in any order.  Build the set of server names
+      // then loop until all servers have been recycled.  When we find one that is terminating,
+      // wait until it is running then remove it from the set.
+      Set<String> podNameSet = new HashSet<>();
+      for (int i = 1; i <= initialManagedServerReplicas; i++) {
+        podNameSet.add(managedServerNameBase + i);
+      }
+
+      // Loop until all the servers have recycled
+      //
+      while (podNameSet.size() > 0) {
+        Iterator<String> iter = podNameSet.iterator();
+        while (iter.hasNext()) {
+          String podName = iter.next();
+          if (TestUtils.checkPodTerminatingNoWait(domainUid + "-" + podName, domainNS)) {
+            // Server is terminating, wait until server running then remove it from the list
+            logger.info("Managed server pod " + podName + "  is terminating");
+            TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
+            TestUtils.checkPodReady(domainUid + "-" + podName, domainNS);
+            logger.info("Managed server pod " + podName + " has been recycled");
+            iter.remove();
+          }
+        }
+        // We iterated through all the servers and if there are some remaining then
+        // Sleep and loop through the remaining ones again.  Keep the sleep short so we don't miss the terminating status.
+        if (podNameSet.size() > 0) {
+          logger.info("Waiting for any managed server pod to be terminating...");
+          Thread.sleep(1000);
+        }
       }
     }
   }

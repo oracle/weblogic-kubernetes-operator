@@ -37,7 +37,7 @@ resources:
 appDeployments:
   Application:
     'coh-proxy-gar-1.0':
-      SourcePath: '@@PROP:GAR_PATH@@'
+      SourcePath: 'wlsdeploy/applications/coh-proxy-gar-1.0.gar'
       ModuleType: gar
       Target: '@@PROP:CLUSTER_NAME@@'
 
