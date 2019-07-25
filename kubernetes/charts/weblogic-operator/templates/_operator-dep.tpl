@@ -39,6 +39,12 @@ spec:
         {{- if .remoteDebugNodePortEnabled }}
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
+        - name: "DEBUG_SUSPEND"
+          {{- if .suspendOnDebugStartup }}
+          value: "y"
+          {{- else }}
+          value: "n"
+          {{- end }}
         {{- end }}
         {{- if .mockWLS }}
         - name: "MOCK_WLS"
@@ -61,6 +67,7 @@ spec:
           name: "log-dir"
           readOnly: false
         {{- end }}
+        {{- if not .remoteDebugNodePortEnabled }}
         livenessProbe:
           exec:
             command:
@@ -75,6 +82,7 @@ spec:
               - "/operator/readinessProbe.sh"
           initialDelaySeconds: 2
           periodSeconds: 10
+        {{- end }}
       {{- if .elkIntegrationEnabled }}
       - name: "logstash"
         image: {{ .logStashImage | quote }}
