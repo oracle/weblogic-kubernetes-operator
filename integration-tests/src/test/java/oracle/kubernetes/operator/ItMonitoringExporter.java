@@ -146,7 +146,7 @@ public class ItMonitoringExporter extends BaseTest {
     private static void gitCloneBuildMonitoringExporter() throws Exception {
 
         logger.info("installing monitoring exporter ");
-        executeShelScript(resourceExporterDir, monitoringExporterDir + "../scripts", "buildMonitoringExporter.sh", monitoringExporterDir + " " + resourceExporterDir);
+        executeShelScript(resourceExporterDir, monitoringExporterDir + "/../scripts", "buildMonitoringExporter.sh", monitoringExporterDir + " " + resourceExporterDir);
     }
 
     private static void executeShelScript(String srcLoc, String destLoc, String fileName, String args) throws Exception {
@@ -176,7 +176,7 @@ public class ItMonitoringExporter extends BaseTest {
         createWebHookForScale();
         // create coordinator
         createCoordinatorFile(domainNS);
-        executeShelScript(resourceExporterDir, monitoringExporterDir + "../scripts", "deployPromGrafana.sh", monitoringExporterDir + " " + domainNS + " " + operatorNS);
+        executeShelScript(resourceExporterDir, monitoringExporterDir + "/../scripts", "deployPromGrafana.sh", monitoringExporterDir + " " + domainNS + " " + operatorNS);
 
         Map<String, Object> domainMap = domain.getDomainMap();
         // create the app directory in admin pod
@@ -1194,7 +1194,7 @@ public class ItMonitoringExporter extends BaseTest {
         String webhookDir = monitoringExporterDir + "/webhook";
         // install webhook
         logger.info("installing webhook ");
-        executeShelScript(webhookResourceDir, monitoringExporterDir + "../scripts", "setupWebHook.sh", webhookDir + " " + webhookResourceDir + " " + operator.getOperatorNamespace());
+        executeShelScript(webhookResourceDir, monitoringExporterDir + "/../scripts", "setupWebHook.sh", webhookDir + " " + webhookResourceDir + " " + operator.getOperatorNamespace());
         String webhookPod = getPodName("name=webhook", "monitoring");
         TestUtils.checkPodReady(webhookPod, "monitoring");
     }
