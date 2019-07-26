@@ -3,7 +3,7 @@
 monitoringExporterDir=$1
 domainNS=$2
 operatorNS=$3
-samplesDir = ${monitoringExporterDir}/src/samples/kubernetes/deployments
+samplesDir=${monitoringExporterDir}/src/samples/kubernetes/deployments
 kubectl apply -f ${samplesDir}/monitoring-namespace.yaml
 kubectl apply -f ${samplesDir}/prometheus-deployment.yaml
 kubectl apply -f ${samplesDir}/alertmanager-deployment.yaml

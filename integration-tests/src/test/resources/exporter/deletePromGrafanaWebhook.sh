@@ -3,7 +3,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upload
 monitoringExporterDir=$1
 domainNS=$2
-samplesDir = ${monitoringExporterDir}/src/samples/kubernetes/deployments
+samplesDir=${monitoringExporterDir}/src/samples/kubernetes/deployments
+
 
 kubectl delete -f ${samplesDir}/coordinator_${domainNS}.yaml
 kubectl delete -f ${samplesDir}/prometheus-deployment.yaml
