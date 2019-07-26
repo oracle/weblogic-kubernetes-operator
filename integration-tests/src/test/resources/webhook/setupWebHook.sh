@@ -22,7 +22,10 @@ operator_cert_data=`kubectl get cm -n ${operatorNS} weblogic-operator-cm -o json
 echo " operator cert  ${operator_cert_data}"
 chmod +w ${webhookDir}/webhook-deployment.yaml
 sed -i -e "s:@INTERNAL_OPERATOR_CERT@:${operator_cert_data}:g" ${webhookDir}/webhook-deployment.yaml
+cat ${webhookDir}/webhook-deployment.yaml
+echo "deploying webhook"
 kubectl apply -f ${webhookDir}/webhook-deployment.yaml
+echo "after deploying webhook"
 sleep 15
 kubectl get pods -n monitoring
 kubectl apply -f ${webhookDir}/crossrbac_monitoring.yaml
