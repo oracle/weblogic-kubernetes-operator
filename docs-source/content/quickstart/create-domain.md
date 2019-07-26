@@ -73,26 +73,11 @@ weight: 6
     you can send a request to the URL for the "WebLogic ReadyApp framework" which will return a HTTP 200 status code, as
     shown in the example below.   
 
-    Substitute the Node IP address of the worker node for `your.server.com`. You can find it by running the following command. This example assumes that your worker nodes have IP addresses that are accessible from the machine where you are running the `curl` command. This may not be the case in all deployments.
-
-    ```bash
-    $ kubectl get pods -n sample-domain1-ns -o wide
     ```
-    Here is an example of the output of this command:
-
-    ```
-    $ kubectl get pods -n sample-domain1-ns -o wide
-    NAME                                         READY     STATUS    RESTARTS   AGE   IP           NODE              NOMINATED NODE   READINESS GATES
-    sample-domain1-admin-server                  1/1       Running   0          30m   10.42.3.30   129.146.138.186   <none>           <none>
-    sample-domain1-managed-server1               1/1       Running   0          29m   10.42.1.42   129.146.48.84     <none>           <none>
-    sample-domain1-managed-server2               1/1       Running   0          29m   10.42.3.31   129.146.138.186   <none>           <none>
-    ```
-
-    ```
-    $ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/ready
-      About to connect() to your.server.com port 30305 (#0)
+    $ curl -v -H 'host: sample-domain1.org' http://localhost:30305/weblogic/ready
+      About to connect() to localhost port 30305 (#0)
         Trying 10.196.1.64...
-        Connected to your.server.com (10.196.1.64) port 30305 (#0)
+        Connected to localhost (10.196.1.64) port 30305 (#0)
     > GET /weblogic/ HTTP/1.1
     > User-Agent: curl/7.29.0
     > Accept: */*
@@ -102,7 +87,7 @@ weight: 6
     < Content-Length: 0
     < Date: Thu, 20 Dec 2018 14:52:22 GMT
     < Vary: Accept-Encoding
-    <   Connection #0 to host your.server.com left intact
+    <   Connection #0 to host localhost left intact
     ```
 {{% notice note %}}
 Depending on where your Kubernetes cluster is running, you may need to open firewall ports or update security lists to allow ingress to this port.
@@ -113,6 +98,4 @@ Depending on where your Kubernetes cluster is running, you may need to open fire
 
     a. Edit the `my-inputs.yaml` file (assuming that you named your copy `my-inputs.yaml`) to set `exposedAdminNodePort: true`.
 
-    b. Open a browser to `http://your.server.com:30701`.
-
-    c. As in step 5, substitute the Node IP address of the worker node for `your.server.com`.
+    b. Open a browser to `http://localhost:30701`.
