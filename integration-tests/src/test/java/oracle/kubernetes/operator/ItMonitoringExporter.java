@@ -863,6 +863,8 @@ public class ItMonitoringExporter extends BaseTest {
         crdCmd =
                 " kubectl -n monitoring apply -f " + monitoringExporterEndToEndDir + "/cm.yaml";
         TestUtils.exec(crdCmd);
+        BaseTest.setWaitTimePod(10);
+        BaseTest.setMaxIterationsPod(50);
         assertTrue("Can't find expected metrics", checkMetricsViaPrometheus("webapp_config_open_sessions_current_count", "test5"));
     }
 
@@ -1369,8 +1371,6 @@ public class ItMonitoringExporter extends BaseTest {
         curlCmd.append(testAppUrl.toString());
         logger.info("Curl cmd " + curlCmd);
         try {
-            BaseTest.setWaitTimePod(15);
-            BaseTest.setMaxIterationsPod(50);
             TestUtils.checkAnyCmdInLoop(curlCmd.toString(), expectedVal);
             logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
             return true;
