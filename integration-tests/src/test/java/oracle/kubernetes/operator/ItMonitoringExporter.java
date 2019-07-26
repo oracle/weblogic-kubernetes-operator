@@ -1256,7 +1256,7 @@ public class ItMonitoringExporter extends BaseTest {
     }
 
     /**
-     * Unnstall MYSQL
+     * Unstall MYSQL
      *
      * @throws Exception if could not run the command successfully to uninstall MySQL
      */
@@ -1374,14 +1374,5 @@ public class ItMonitoringExporter extends BaseTest {
         } catch (Exception ex) {
             return false;
         }
-    /*
-    ExecResult result = ExecCommand.exec(curlCmd.toString());
-    logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
-
-    String checkPrometheus = result.stdout().trim();
-    logger.info("Result :" + checkPrometheus);
-    return checkPrometheus.contains(expectedVal);
-
-     */
     }
 }
