@@ -56,6 +56,7 @@ public class ItMonitoringExporter extends BaseTest {
     private static String monitoringExporterDir = "";
     private static String monitoringExporterEndToEndDir = "";
     private static String resourceExporterDir = "";
+    private static String monitoringExporterScriptDir = "";
     private static String exporterUrl = "";
     private static String configPath = "";
     private static String prometheusPort = "32000";
@@ -99,6 +100,7 @@ public class ItMonitoringExporter extends BaseTest {
             exporterUrl = "http://" + myhost + ":" + domain.getLoadBalancerWebPort() + "/wls-exporter/";
             metricsUrl = exporterUrl + "metrics";
             monitoringExporterDir = BaseTest.getResultDir() + "/monitoring";
+            monitoringExporterScriptDir = BaseTest.getResultDir() + "/scripts";
             resourceExporterDir =
                     BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/exporter";
             configPath = resourceExporterDir;
@@ -146,7 +148,7 @@ public class ItMonitoringExporter extends BaseTest {
     private static void gitCloneBuildMonitoringExporter() throws Exception {
 
         logger.info("installing monitoring exporter ");
-        executeShelScript(resourceExporterDir, monitoringExporterDir + "/../scripts", "buildMonitoringExporter.sh", monitoringExporterDir + " " + resourceExporterDir);
+        executeShelScript(resourceExporterDir, monitoringExporterScriptDir, "buildMonitoringExporter.sh", monitoringExporterDir + " " + resourceExporterDir);
     }
 
     private static void executeShelScript(String srcLoc, String destLoc, String fileName, String args) throws Exception {
@@ -176,7 +178,7 @@ public class ItMonitoringExporter extends BaseTest {
         createWebHookForScale();
         // create coordinator
         createCoordinatorFile(domainNS);
-        executeShelScript(resourceExporterDir, monitoringExporterDir + "/../scripts", "deployPromGrafana.sh", monitoringExporterDir + " " + domainNS + " " + operatorNS);
+        executeShelScript(resourceExporterDir, monitoringExporterScriptDir, "deployPromGrafana.sh", monitoringExporterDir + " " + domainNS + " " + operatorNS);
 
         Map<String, Object> domainMap = domain.getDomainMap();
         // create the app directory in admin pod
@@ -1194,7 +1196,7 @@ public class ItMonitoringExporter extends BaseTest {
         String webhookDir = monitoringExporterDir + "/webhook";
         // install webhook
         logger.info("installing webhook ");
-        executeShelScript(webhookResourceDir, monitoringExporterDir + "/../scripts", "setupWebHook.sh", webhookDir + " " + webhookResourceDir + " " + operator.getOperatorNamespace());
+        executeShelScript(webhookResourceDir, monitoringExporterScriptDir, "setupWebHook.sh", webhookDir + " " + webhookResourceDir + " " + operator.getOperatorNamespace());
         String webhookPod = getPodName("name=webhook", "monitoring");
         TestUtils.checkPodReady(webhookPod, "monitoring");
     }

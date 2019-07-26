@@ -11,4 +11,4 @@ kubectl apply -f ${samplesDir}/crossnsrbac_${domainNS}_${operatorNS}.yaml
 kubectl apply -f ${samplesDir}/coordinator_${domainNS}.yaml
 kubectl apply -f ${samplesDir}/grafana-deployment.yaml
 
-echo "Run the script [deletePromGrafanaWebhook.sh] ..."
+echo "Run the script [deployPromGrafana.sh] ..."
