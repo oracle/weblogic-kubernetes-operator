@@ -8,9 +8,6 @@ samplesDir=${monitoringExporterDir}/src/samples/kubernetes/deployments
 
 kubectl delete -f ${samplesDir}/coordinator_${domainNS}.yaml
 kubectl delete -f ${samplesDir}/prometheus-deployment.yaml
-kubectl delete -f ${samplesDir}/alertmanager-deployment.yaml
-kubectl delete -f ${monitoringExporterDir}/webhook/webhook-deployment.yaml
-kubectl delete -f ${monitoringExporterDir}/webhook/crossrbac_monitoring.yaml
 kubectl delete -f ${samplesDir}/grafana-deployment.yaml
 
-echo "Run the script [deletePromGrafanaWebhook.sh] ..."
+echo "Run the script [deletePromGrafana.sh] ..."

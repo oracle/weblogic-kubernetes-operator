@@ -151,6 +151,14 @@ public class ItMonitoringExporter extends BaseTest {
         executeShelScript(resourceExporterDir, monitoringExporterScriptDir, "buildMonitoringExporter.sh", monitoringExporterDir + " " + resourceExporterDir);
     }
 
+    /**
+     * Utility to execute any shell scipts
+     * @srcLoc - path to the shel script
+     * @destLoc - destination path there the shell script will be executed
+     * @fileName - name of the shell script
+     * @args - args to pass to the shell script
+     * @throws Exception if could not run the command successfully to clone from github
+     */
     private static void executeShelScript(String srcLoc, String destLoc, String fileName, String args) throws Exception {
         if (! new File(destLoc).exists()) {
             logger.info(" creating script dir ");
@@ -166,6 +174,13 @@ public class ItMonitoringExporter extends BaseTest {
         logger.info("Result output from  the command " + crdCmd + " : " + result.stdout());
     }
 
+    /**
+     * Deploy Monitoring Exporter webapp, Prometheus and Grafana.
+     * @param exporterAppPath path to exporter webapp
+     * @param domain - domain where monitoring exporter will be deployed
+     * @param operator operator object managing the domain
+     * @throws Exception if could not run the command successfully to clone from github
+     */
     private static void deployMonitoringExporterPrometethusGrafana(
             String exporterAppPath, Domain domain, Operator operator) throws Exception {
 
@@ -190,6 +205,12 @@ public class ItMonitoringExporter extends BaseTest {
                 "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
     }
 
+    /**
+     * Deploy Monitoring Exporter webapp, Prometheus and Grafana.
+     * @param webappName webapp name used to collect metrics for scaling
+     * @param domain - domain where monitoring exporter will be deployed
+     * @throws Exception if could not run the command successfully
+     */
     private static void verifyScalingViaPrometheus(Domain domain, String webappName) throws Exception {
 
         //scale cluster to only one replica
@@ -201,7 +222,6 @@ public class ItMonitoringExporter extends BaseTest {
                 testAppName, scriptName, BaseTest.getUsername(), BaseTest.getPassword());
         domain.callWebAppAndVerifyLoadBalancing(testAppName + "/CounterServlet?", false);
 
-
         String webhookPod = getPodName("name=webhook", "monitoring");
         String command = "kubectl -n monitoring logs " + webhookPod;
         TestUtils.checkAnyCmdInLoop(command, "scaleup hook triggered successfully");
@@ -209,10 +229,15 @@ public class ItMonitoringExporter extends BaseTest {
         TestUtils.checkPodCreated(domain.getDomainUid() + "-managed-server2", domain.getDomainNs());
     }
 
-
+    /**
+     * Redeploy Monitoring Exporter webapp with original configuration
+     * @param domain - domain where monitoring exporter will be deployed
+     * @throws Exception if could not run the command successfully
+     */
     private static void redeployMonitoringExporter(Domain domain) throws Exception {
         String exporterAppPath = monitoringExporterDir + "/apps/monitoringexporter/wls-exporter.war";
-
+        domain.undeployWebAppViaWlst(
+                "wls-exporter", appLocationInPod, true);
         domain.deployWebAppViaWlst(
                 "wls-exporter", exporterAppPath, appLocationInPod, getUsername(), getPassword(), true);
         // check if exporter is up
@@ -223,24 +248,36 @@ public class ItMonitoringExporter extends BaseTest {
         redeployMonitoringExporter(domain);
     }
 
+    /**
+     * Delete Prometheus, Grafana, Coordinator
+     * @throws Exception if could not run the command successfully
+     */
     private static void deletePrometheusGrafana() throws Exception {
 
         String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
-
         String prompodName = getPodName("app=prometheus", "monitoring");
-        String ampodName = getPodName("name=alertmanager", "monitoring");
-        String webhookpodName = getPodName("name=webhook", "monitoring");
         String grafanapodName = getPodName("name=grafana", "monitoring");
-
-        executeShelScript(resourceExporterDir, monitoringExporterDir, "deletePromGrafanaWebhook.sh", monitoringExporterDir + " " + domain.getDomainNs());
+        executeShelScript(resourceExporterDir, monitoringExporterDir, "deletePromGrafana.sh", monitoringExporterDir + " " + domain.getDomainNs());
         TestUtils.checkPodDeleted(prompodName, "monitoring");
         TestUtils.checkPodDeleted(grafanapodName, "monitoring");
-        TestUtils.checkPodDeleted(ampodName, "monitoring");
-        TestUtils.checkPodDeleted(webhookpodName, "monitoring");
-
         String crdCmd = " kubectl delete -f " + samplesDir + "monitoring-namespace.yaml";
         TestUtils.exec(crdCmd);
-        logger.info("Deleted Prometheus, Grafana, Webhook, Alert Manager, Coordinator");
+        logger.info("Deleted Prometheus, Grafana, Coordinator");
+    }
+
+    /**
+     * Delete Webhook and AlertManager
+     * @throws Exception if could not run the command successfully
+     */
+    private static void deleteWebHookAlertManager() throws Exception {
+
+        String samplesDir = monitoringExporterDir + "/src/samples/kubernetes/deployments/";
+        String ampodName = getPodName("name=alertmanager", "monitoring");
+        String webhookpodName = getPodName("name=webhook", "monitoring");
+        executeShelScript(resourceExporterDir, monitoringExporterDir, "deleteWebHookAlertManager.sh", monitoringExporterDir + " " + domain.getDomainNs());
+        TestUtils.checkPodDeleted(ampodName, "monitoring");
+        TestUtils.checkPodDeleted(webhookpodName, "monitoring");
+        logger.info("Deleted  Webhook, Alert Manager");
     }
 
     /**
@@ -303,7 +340,6 @@ public class ItMonitoringExporter extends BaseTest {
 
     /**
      * create operator, domain, run some verification tests to check domain runtime.
-     *
      * @throws Exception exception
      */
     private static Domain createVerifyDomain(int number, Operator operator) throws Exception {
@@ -356,7 +392,6 @@ public class ItMonitoringExporter extends BaseTest {
 
     /**
      * Check that configuration can be reviewed via Prometheus.
-     *
      * @throws Exception if test fails
      */
     @Test
@@ -386,6 +421,7 @@ public class ItMonitoringExporter extends BaseTest {
         try {
             verifyScalingViaPrometheus(domain, TESTWSSERVICE);
         } finally {
+            deleteWebHookAlertManager();
             scaleCluster(2);
         }
         testCompletedSuccessfully = true;
@@ -791,6 +827,7 @@ public class ItMonitoringExporter extends BaseTest {
                 "401 Unauthorized for " + exporterUrl,
                 wlsUser,
                 "");
+        resetMonitoringExporterToPreBuiltConfig();
         logger.info("SUCCESS - " + testMethodName);
     }
 
@@ -851,7 +888,7 @@ public class ItMonitoringExporter extends BaseTest {
 
     private void addMonitoringToExistedDomain() throws Exception {
         logger.info("Add monitoring to the running domain");
-
+        resetMonitoringExporterToPreBuiltConfig();
         // apply new domain yaml and verify pod restart
         String crdCmd =
                 " kubectl -n monitoring get cm prometheus-server -oyaml > " + monitoringExporterEndToEndDir + "/cm.yaml";
