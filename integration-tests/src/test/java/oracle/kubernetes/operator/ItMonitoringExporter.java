@@ -1370,6 +1370,7 @@ public class ItMonitoringExporter extends BaseTest {
         logger.info("Curl cmd " + curlCmd);
         try {
             BaseTest.setWaitTimePod(15);
+            BaseTest.setMaxIterationsPod(50);
             TestUtils.checkAnyCmdInLoop(curlCmd.toString(), expectedVal);
             logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
             return true;

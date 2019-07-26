@@ -19,8 +19,11 @@ cd ${webhookDir}
 docker build . -t webhook:latest
 # Here we need internal Certificate
 operator_cert_data=`kubectl get cm -n ${operatorNS} weblogic-operator-cm -o jsonpath='{.data.internalOperatorCert}'`
+echo " operator cert  ${operator_cert_data}"
 chmod +w ${webhookDir}/webhook-deployment.yaml
 sed -i -e "s:@INTERNAL_OPERATOR_CERT@:${operator_cert_data}:g" ${webhookDir}/webhook-deployment.yaml
 kubectl apply -f ${webhookDir}/webhook-deployment.yaml
+sleep 15
+kubectl get pods -n monitoring
 kubectl apply -f ${webhookDir}/crossrbac_monitoring.yaml
 echo "Run the script [setupWebHook.sh] ..."
