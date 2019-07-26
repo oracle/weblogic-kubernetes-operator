@@ -79,11 +79,6 @@ public class ITCoherenceTests extends BaseTest {
     domain = createDomain();
     Assert.assertNotNull(domain);
 
-    //    String nodePortName = "coh-nodeport";
-    //    String podName = "dd";
-    //    int port = 9000;
-    //    TestUtils.exposePod(podName, domain.getDomainNS(), nodePortName, port, port);
-    //
     utils.loadCache();
 
     // Do the rolling restart
