@@ -64,7 +64,8 @@ public class ItElasticLogging extends BaseTest {
               .append("/")
               .append(elasticStackYamlLoc);
       logger.info("Command to Install Elastic Stack: " + cmd.toString());
-      TestUtils.exec(cmd.toString());
+      ExecResult result = TestUtils.exec(cmd.toString());
+      logger.info("Output for Install Elastic Stack: " + result.stdout() + "\n " + result.stderr());
 
       // Create operator-elk
       if (operator == null) {
@@ -293,6 +294,7 @@ public class ItElasticLogging extends BaseTest {
 
   private static String execLoggingExpStatusCheck(String indexName, String varLoc)
       throws Exception {
+    ExecResult result = null;
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer(k8sExecCmdPrefix);
     String cmd =
         k8sExecCmdPrefixBuff
@@ -303,9 +305,26 @@ public class ItElasticLogging extends BaseTest {
             .append(" }'\\'")
             .toString();
     logger.info("Command to exec Elastic Stack status check: " + cmd);
-    ExecResult result = TestUtils.exec(cmd);
-    logger.info("Result: " + result.stdout());
-
+    int i = 0;
+    while (i < BaseTest.getMaxIterationsPod()) {
+      result = TestUtils.exec(cmd);
+      logger.info("Result: " + result.stdout());
+      if (null != result.stdout()) {
+        break;
+      }
+      
+      logger.info(
+          "ELK Stack is not ready Ite ["
+              + i
+              + "/"
+              + BaseTest.getMaxIterationsPod()
+              + "], sleeping "
+              + BaseTest.getWaitTimePod()
+              + " seconds more");
+      Thread.sleep(BaseTest.getWaitTimePod() * 1000);
+      i++;
+    }
+        
     return result.stdout();
   }
   
@@ -315,9 +334,10 @@ public class ItElasticLogging extends BaseTest {
     int failedCount = -1;
     String hits = "";
     
-    String results = execSearchQuery(queryCriteria, index);
+    String results = null;
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
+      results = execSearchQuery(queryCriteria, index);
       Pattern pattern = Pattern.compile(regex);
       Matcher matcher = pattern.matcher(results);
       if (matcher.find()) {
@@ -340,7 +360,6 @@ public class ItElasticLogging extends BaseTest {
               + BaseTest.getWaitTimePod()
               + " seconds more");
       Thread.sleep(BaseTest.getWaitTimePod() * 1000);
-      results = execSearchQuery(queryCriteria, index);
       i++;
     }
 
