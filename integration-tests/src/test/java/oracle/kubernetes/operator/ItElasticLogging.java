@@ -64,8 +64,7 @@ public class ItElasticLogging extends BaseTest {
               .append("/")
               .append(elasticStackYamlLoc);
       logger.info("Command to Install Elastic Stack: " + cmd.toString());
-      ExecResult result = TestUtils.exec(cmd.toString());
-      logger.info("Output for Install Elastic Stack: " + result.stdout() + "\n " + result.stderr());
+      TestUtils.exec(cmd.toString());
 
       // Create operator-elk
       if (operator == null) {
