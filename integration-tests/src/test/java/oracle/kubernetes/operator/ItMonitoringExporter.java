@@ -1271,7 +1271,7 @@ public class ItMonitoringExporter extends BaseTest {
             ExecCommand.exec(crdCmd);
             crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
             ExecCommand.exec(crdCmd);
-            TestUtils.checkPodDeleted(podName, "monitoring");
+            //TestUtils.checkPodDeleted(podName, "monitoring");
         } catch (AssertionError assertionError) {
             //ignore , grafana pod may not be created
         }
