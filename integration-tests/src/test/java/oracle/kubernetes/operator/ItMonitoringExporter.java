@@ -190,11 +190,11 @@ public class ItMonitoringExporter extends BaseTest {
         String domainNS = domain.getDomainNs();
         String operatorNS = operator.getOperatorNamespace();
         createCrossNsRbacFile(domainNS, operatorNS);
-        createWebHookForScale();
         // create coordinator
         createCoordinatorFile(domainNS);
         executeShelScript(resourceExporterDir, monitoringExporterScriptDir, "deployPromGrafana.sh", monitoringExporterDir + " " + domainNS + " " + operatorNS);
-
+        //deploy webhook
+        createWebHookForScale();
         Map<String, Object> domainMap = domain.getDomainMap();
         // create the app directory in admin pod
         TestUtils.kubectlexec(
