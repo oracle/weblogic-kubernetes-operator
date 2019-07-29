@@ -468,7 +468,9 @@ public class ItOperator extends BaseTest {
       domain11 = TestUtils.createDomain(domainMap);
       domain11.verifyDomainCreated();
       testBasicUseCases(domain11);
-      testAdminT3ChannelWithJms(domain11);
+      if(!getWeblogicImageTag().equalsIgnoreCase(PS4_SLIM_TAG)) {
+        testAdminT3ChannelWithJms(domain11);
+      }
       testCompletedSuccessfully = true;
 
     } finally {
