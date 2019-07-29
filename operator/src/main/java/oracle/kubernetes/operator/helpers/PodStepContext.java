@@ -626,9 +626,11 @@ public abstract class PodStepContext extends StepContextBase {
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(FAILURE_THRESHOLD);
     try {
-      boolean istioEnabled = Boolean.valueOf(System.getenv("ISTIO_ENABLED"));
+      boolean istioEnabled = getDomain().istioEnabled();
       if (istioEnabled) {
-        readinessProbe = readinessProbe.httpGet(httpGetAction(READINESS_PATH, 8888, false));
+        int istioReadinessPort = getDomain().getIstioReadinessPort();
+        readinessProbe =
+            readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort, false));
       } else {
         readinessProbe =
             readinessProbe.httpGet(

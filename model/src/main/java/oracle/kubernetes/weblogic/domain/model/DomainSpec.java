@@ -508,7 +508,15 @@ public class DomainSpec extends BaseConfiguration {
   boolean istioEnabled() {
     return Optional.ofNullable(experimental)
         .map(e -> e.getIstio())
-        .map(i -> i.getIstioEnabled()).orElse(false);
+        .map(i -> i.getEnabled())
+        .orElse(false);
+  }
+
+  int getIstioReadinessPort() {
+    return Optional.ofNullable(experimental)
+        .map(e -> e.getIstio())
+        .map(i -> i.getReadinessPort())
+        .orElse(8888);
   }
 
   @Override
