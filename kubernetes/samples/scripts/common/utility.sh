@@ -141,7 +141,7 @@ function checkPvState {
 function checkPvExists {
 
   echo "Checking if the persistent volume ${1} exists"
-  PV_EXISTS=`kubectl get pv | grep ${1} | wc | awk ' { print $1; } '`
+  PV_EXISTS=`kubectl get pv | grep ^${1} | wc | awk ' { print $1; } '`
   if [ "${PV_EXISTS}" = "1" ]; then
     echo "The persistent volume ${1} already exists"
     PV_EXISTS="true"
@@ -157,7 +157,7 @@ function checkPvExists {
 # $2 - namespace
 function checkPvcExists {
   echo "Checking if the persistent volume claim ${1} in namespace ${2} exists"
-  PVC_EXISTS=`kubectl get pvc -n ${2} | grep ${1} | wc | awk ' { print $1; } '`
+  PVC_EXISTS=`kubectl get pvc -n ${2} | grep ^${1} | wc | awk ' { print $1; } '`
   if [ "${PVC_EXISTS}" = "1" ]; then
     echo "The persistent volume claim ${1} already exists in namespace ${2}"
     PVC_EXISTS="true"
