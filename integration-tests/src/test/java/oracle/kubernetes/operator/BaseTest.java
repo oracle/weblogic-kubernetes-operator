@@ -31,6 +31,7 @@ public class BaseTest {
   public static final String TESTWEBAPP = "testwebapp";
   public static final String TESTWSAPP = "testwsapp";
   public static final String TESTWSSERVICE = "TestWsApp";
+  public static final String PS4_SLIM_TAG = "12.2.1.4-slim";
 
   // property file used to customize operator properties for operator inputs yaml
 
