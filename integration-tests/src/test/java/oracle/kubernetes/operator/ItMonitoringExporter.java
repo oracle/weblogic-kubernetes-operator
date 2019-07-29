@@ -1266,12 +1266,12 @@ public class ItMonitoringExporter extends BaseTest {
             // uninstall grafana
             crdCmd = "helm delete --purge grafana";
             ExecCommand.exec(crdCmd);
+            TestUtils.checkPodDeleted(podName, "monitoring");
 
             crdCmd = "kubectl -n monitoring delete secret grafana-secret";
             ExecCommand.exec(crdCmd);
             crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
             ExecCommand.exec(crdCmd);
-            //TestUtils.checkPodDeleted(podName, "monitoring");
         } catch (AssertionError assertionError) {
             //ignore , grafana pod may not be created
         }
