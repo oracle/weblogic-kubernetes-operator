@@ -11,25 +11,47 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Istio {
 
-  @Description("True, if this domain is deployed under an Istio service mesh. Defaults to true. Not required.")
-  private Boolean istioEnabled = true;
+  @Description(
+      "True, if this domain is deployed under an Istio service mesh. Defaults to true. Not required.")
+  private Boolean enabled = true;
+
+  @Description("The WebLogic readiness port for Istio. Defaults to 8888. Not required.")
+  private Integer readinessPort = 8666;
 
   /**
    * True, if this domain is deployed under an Istio service mesh.
    *
    * @return True, if this domain is deployed under an Istio service mesh.
    */
-  public Boolean getIstioEnabled() {
-    return this.istioEnabled;
+  public Boolean getEnabled() {
+    return this.enabled;
   }
 
   /**
    * Sets the Istio enabled status.
    *
-   * @param istioEnabled True, if this domain is deployed under an Istio service mesh.
+   * @param enabled True, if this domain is deployed under an Istio service mesh.
    */
-  public void setIstioEnabled(Boolean istioEnabled) {
-    this.istioEnabled = istioEnabled;
+  public void setEnabled(Boolean enabled) {
+    this.enabled = enabled;
+  }
+
+  /**
+   * Get the readyness port.
+   *
+   * @return the readiness port.
+   */
+  public Integer getReadinessPort() {
+    return this.readinessPort;
+  }
+
+  /**
+   * Sets the Istio readiness port.
+   *
+   * @param readinessPort the Istio readiness port.
+   */
+  public void setReadinessPort(Integer readinessPort) {
+    this.readinessPort = readinessPort;
   }
 
   /**
@@ -39,25 +61,23 @@ public class Istio {
    * @return this
    */
   public Istio withIstioEnabled(Boolean istioEnabled) {
-    this.istioEnabled = istioEnabled;
+    this.enabled = istioEnabled;
     return this;
   }
-
 
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
-            .append("istioEnabled", istioEnabled);
+            .append("enabled", enabled)
+            .append("readinessPort", readinessPort);
 
     return builder.toString();
   }
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder =
-        new HashCodeBuilder()
-            .append(istioEnabled);
+    HashCodeBuilder builder = new HashCodeBuilder().append(enabled).append(readinessPort);
 
     return builder.toHashCode();
   }
@@ -74,7 +94,9 @@ public class Istio {
     Istio rhs = ((Istio) other);
     EqualsBuilder builder =
         new EqualsBuilder()
-            .append(istioEnabled, rhs.istioEnabled);
+            .append(enabled, rhs.enabled)
+            .append("readinessPort", rhs.readinessPort);
+    ;
 
     return builder.isEquals();
   }
