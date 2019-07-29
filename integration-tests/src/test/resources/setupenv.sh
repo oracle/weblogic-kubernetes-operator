@@ -296,7 +296,7 @@ elif [ "$JENKINS" = "true" ]; then
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv_archive"
   /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv_archive"
   
-  if [ "$JRF_ENABLED" = false ]; then
+  if [ "$JRF_ENABLED" = false ] && [ "$IMAGE_TAG_WEBLOGIC" != "12.2.1.4-slim"];  then
   	get_wlthint3client_from_image
   fi
 else
