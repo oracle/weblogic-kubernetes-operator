@@ -133,6 +133,7 @@ public class ItMonitoringExporter extends BaseTest {
             if (operator1 != null) {
                 operator1.destroy();
             }
+            deletePvDir();
             tearDown(new Object() {
             }.getClass().getEnclosingClass().getSimpleName());
             logger.info("SUCCESS");
@@ -1251,7 +1252,7 @@ public class ItMonitoringExporter extends BaseTest {
         logger.info("Uninstalling webhook");
         try {
             podName = getPodName("app=webhook", "webhook");
-            crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml";
+            crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/webhook/server.yaml --ignore-not-found";
             ExecCommand.exec(crdCmd);
             TestUtils.checkPodDeleted(podName, "webhook");
         } catch (AssertionError assertionError) {
@@ -1279,9 +1280,9 @@ public class ItMonitoringExporter extends BaseTest {
             BaseTest.setMaxIterationsPod(50);
             TestUtils.checkPodDeleted(podName, "monitoring");
         }
-        crdCmd = "kubectl -n monitoring delete secret grafana-secret";
+        crdCmd = "kubectl -n monitoring delete secret grafana-secret --ignore-not-found";
         ExecCommand.exec(crdCmd);
-        crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
+        crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml --ignore-not-found";
         ExecCommand.exec(crdCmd);
         try {
             podName = getPodName("app=prometheus", "monitoring");
@@ -1299,10 +1300,10 @@ public class ItMonitoringExporter extends BaseTest {
             TestUtils.checkPodDeleted(podName, "monitoring");
         }
         logger.info("Uninstalling prometheus persistence ");
-        crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
+        crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml --ignore-not-found";
         ExecCommand.exec(crdCmd);
 
-        crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
+        crdCmd = "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml --ignore-not-found";
         ExecCommand.exec(crdCmd);
     }
 
@@ -1320,7 +1321,7 @@ public class ItMonitoringExporter extends BaseTest {
         String crdCmd = "";
         try {
             podName = getPodName("app=mysql", "default");
-            crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/mysql.yaml";
+            crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/mysql.yaml --ignore-not-found";
             TestUtils.exec(crdCmd);
             BaseTest.setWaitTimePod(10);
             TestUtils.checkPodDeleted(podName, "default");
@@ -1331,9 +1332,8 @@ public class ItMonitoringExporter extends BaseTest {
             BaseTest.setWaitTimePod(10);
             TestUtils.checkPodDeleted(podName, "default");
         }
-        crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/persistence.yaml";
+        crdCmd = " kubectl delete -f " + monitoringExporterEndToEndDir + "mysql/persistence.yaml --ignore-not-found";
         ExecCommand.exec(crdCmd);
-        deletePvDir();
     }
 
     /**
@@ -1342,18 +1342,33 @@ public class ItMonitoringExporter extends BaseTest {
      * @throws Exception if could not run the command successfully to delete PV
      */
     private static void deletePvDir() throws Exception {
-        String pvDir = monitoringExporterEndToEndDir + "pvDir";
+        String pvDir = monitoringExporterEndToEndDir + "/pvDir";
         String crdCmd =
                 "cd "
                         + monitoringExporterEndToEndDir
                         + " && docker run --rm -v "
                         + monitoringExporterEndToEndDir
                         + "pvDir:/tt -v $PWD/util:/util  nginx  /util/clean-pv.sh";
-        ExecCommand.exec(crdCmd);
-        StringBuffer removeDir = new StringBuffer();
-        logger.info("Cleaning PV dir " + pvDir);
-        removeDir.append("rm -rf ").append(pvDir);
-        ExecCommand.exec(removeDir.toString());
+        try {
+            if (new File(pvDir).exists()) {
+                ExecCommand.exec(crdCmd);
+                StringBuffer removeDir = new StringBuffer();
+                logger.info("Cleaning PV dir " + pvDir);
+                removeDir.append("rm -rf ").append(pvDir);
+                ExecCommand.exec(removeDir.toString());
+            }
+        }finally {
+            if (JENKINS) {
+                if (new File(pvDir).exists()) {
+
+                    logger.info("Deleting pv created dir " + pvDir);
+                    TestUtils.exec(
+                            "/usr/local/packages/aime/ias/run_as_root \"rm -rf "
+                                    + pvDir
+                    );
+                }
+            }
+        }
     }
 
     /**
@@ -1423,6 +1438,8 @@ public class ItMonitoringExporter extends BaseTest {
         StringBuffer curlCmd = new StringBuffer("curl --noproxy '*' ");
         curlCmd.append(testAppUrl.toString());
         logger.info("Curl cmd " + curlCmd);
+        logger.info("searchKey:" + searchKey);
+        logger.info("expected Value " + expectedVal);
         try {
             TestUtils.checkAnyCmdInLoop(curlCmd.toString(), expectedVal);
             logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
