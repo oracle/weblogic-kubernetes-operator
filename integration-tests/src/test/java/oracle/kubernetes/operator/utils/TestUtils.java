@@ -1265,14 +1265,13 @@ public class TestUtils {
         logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          logger.info("Result output" + result.stdout());
           throw new RuntimeException(
                   "FAILURE: command " + cmd + " failed to execute or does not match the expected output " + matchStr + " , exiting!");
         }
         logger.info(
                 "did not receive the expected output "
                         + matchStr
-                        + "from command "
+                        + " from command "
                         + cmd
                         + " Ite ["
                         + i
