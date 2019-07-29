@@ -9,5 +9,6 @@ samplesDir=${monitoringExporterDir}/src/samples/kubernetes/deployments
 kubectl delete -f ${samplesDir}/coordinator_${domainNS}.yaml
 kubectl delete -f ${samplesDir}/prometheus-deployment.yaml
 kubectl delete -f ${samplesDir}/grafana-deployment.yaml
+sleep 30
 
 echo "Run the script [deletePromGrafana.sh] ..."
