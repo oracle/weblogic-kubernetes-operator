@@ -61,7 +61,7 @@ The combined model files list passing to the ```WebLogic Deploy Tool``` as
 
 ```base_model.10.yaml,jdbc.20.yaml,jdbc-dev-urlprops.10.yaml```
 
-Similarly, the properties will use the same sorting algorithm, but they are appended together to form a single variable properties file.  The resulant properties file will be used during domain creation.
+Similarly, the properties will use the same sorting algorithm, but they are appended together to form a single variable properties file.  The resultant properties file will be used during domain creation.
 
 
 
