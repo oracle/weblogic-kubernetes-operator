@@ -136,4 +136,7 @@ createDomainScriptName: create-domain-job.sh
 createDomainFilesDir: wlst
 
 # istioEnabled specifies whether or not it is deployed under Istio.
-istioEnabled: false
+istioEnabled: true
+
+# istioReadinessPort specifies the WebLogic port for readiness probe which is used under Istio.
+istioReadinessPort: 8777

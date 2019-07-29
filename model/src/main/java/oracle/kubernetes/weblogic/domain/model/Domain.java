@@ -369,6 +369,10 @@ public class Domain {
     return spec.istioEnabled();
   }
 
+  public int getIstioReadinessPort() {
+    return spec.getIstioReadinessPort();
+  }
+
   /**
    * Returns the domain home.
    *
