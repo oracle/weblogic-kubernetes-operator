@@ -397,13 +397,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    Path path = Paths.get(JDBC_RES_SCRIPT);
-    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-    content = content.replaceAll("HOST", fqdn);
-    Files.write(path, content.getBytes(StandardCharsets.UTF_8));
-    TestUtils.copyFileViaCat(
-        JDBC_RES_SCRIPT, "create-jdbc-resource.py", ADMINPODNAME, domain.getDomainNs());
-    TestUtils.exec(KUBE_EXEC_CMD + "'wlst.sh create-jdbc-resource.py'", true);
+    createJdbcResource();
     recreateCRDWithNewConfigMap();
     ExecResult result =
         TestUtils.exec(
@@ -418,6 +412,21 @@ public class ItSitConfig extends BaseTest {
     assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  private void createJdbcResource() throws Exception {
+    Path path = Paths.get(JDBC_RES_SCRIPT);
+    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    content = content.replaceAll("HOST", fqdn);
+    Files.write(
+        Paths.get(sitconfigTmpDir, "create-jdbc-resource.py"),
+        content.getBytes(StandardCharsets.UTF_8));
+    TestUtils.copyFileViaCat(
+        Paths.get(sitconfigTmpDir, "create-jdbc-resource.py").toString(),
+        "create-jdbc-resource.py",
+        ADMINPODNAME,
+        domain.getDomainNs());
+    TestUtils.exec(KUBE_EXEC_CMD + " 'wlst.sh create-jdbc-resource.py'", true);
   }
 
   private void recreateCRDWithNewConfigMap() throws Exception {
