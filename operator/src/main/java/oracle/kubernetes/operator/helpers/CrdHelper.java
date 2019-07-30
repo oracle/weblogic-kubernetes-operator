@@ -111,7 +111,8 @@ public class CrdHelper {
 
     static V1ObjectMeta createMetadata() {
       return new V1ObjectMeta()
-          .name(KubernetesConstants.CRD_NAME);
+          .name(KubernetesConstants.CRD_NAME)
+          .putLabelsItem(LabelConstants.RESOURCE_VERSION_LABEL, DEFAULT_OPERATOR_VERSION);
     }
 
     static V1beta1CustomResourceDefinitionSpec createSpec(KubernetesVersion version) {
