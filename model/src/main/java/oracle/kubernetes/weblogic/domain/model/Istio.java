@@ -12,11 +12,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Istio {
 
   @Description(
-      "True, if this domain is deployed under an Istio service mesh. Defaults to true. Not required.")
-  private Boolean enabled = true;
+      "True, if this domain is deployed under an Istio service mesh. Defaults to false. Not required.")
+  private Boolean enabled = false;
 
   @Description("The WebLogic readiness port for Istio. Defaults to 8888. Not required.")
-  private Integer readinessPort = 8666;
+  private Integer readinessPort = 8888;
 
   /**
    * True, if this domain is deployed under an Istio service mesh.
@@ -37,7 +37,7 @@ public class Istio {
   }
 
   /**
-   * Get the readyness port.
+   * Get the readiness port.
    *
    * @return the readiness port.
    */
