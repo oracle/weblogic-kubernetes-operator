@@ -243,6 +243,25 @@ else:
   cmo.setCluster(cl)
   print('Done setting attributes for Server Template: %s' % templateName);
 
+  templateName = '${CLUSTER_NAME}' + "-template-dummy1"
+  print('Creating Server Template: %s' % templateName)
+  st1=create(templateName, 'ServerTemplate')
+  print('Done creating Server Template: %s' % templateName)
+  cd('/ServerTemplates/%s' % templateName)
+  cmo.setListenPort(${MANAGED_SERVER_PORT})
+  #cmo.setListenAddress('${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}${id}') # subst-ignore-missing
+  #cmo.setCluster(cl)
+  print('Done setting attributes for Server Template: %s' % templateName);
+ 
+  templateName = '${CLUSTER_NAME}' + "-template-dummy2"
+  print('Creating Server Template: %s' % templateName)
+  st1=create(templateName, 'ServerTemplate')
+  print('Done creating Server Template: %s' % templateName)
+  cd('/ServerTemplates/%s' % templateName)
+  cmo.setListenPort(${MANAGED_SERVER_PORT})
+  #cmo.setListenAddress('${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}${id}') # subst-ignore-missing
+  #cmo.setCluster(cl)
+  print('Done setting attributes for Server Template: %s' % templateName);
 
   cd('/Clusters/%s' % '${CLUSTER_NAME}')
   create('${CLUSTER_NAME}', 'DynamicServers')
