@@ -173,7 +173,7 @@ public class ItMonitoringExporter extends BaseTest {
         TestUtils.exec(crdCmd);
         crdCmd = " cat " + destLoc + "/script.log";
         ExecResult result = ExecCommand.exec(crdCmd);
-        assertFalse("Shel script failed: " + result.stdout(), result.stdout().contains("BUILD FAILED"));
+        assertFalse("Shel script failed: " + result.stdout(), result.stdout().contains("BUILD FAILURE"));
         logger.info("Result output from  the command " + crdCmd + " : " + result.stdout());
     }
 
