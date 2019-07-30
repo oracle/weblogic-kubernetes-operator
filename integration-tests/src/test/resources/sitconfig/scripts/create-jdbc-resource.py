@@ -1,7 +1,7 @@
 # Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
   
-def createDataSource(dsName):
+def createDataSource(dsName, dsURL, dsDriver, dsUser, dsPassword, dsTarget):
     edit()
     startEdit()
     cd('/')
@@ -16,10 +16,10 @@ def createDataSource(dsName):
     cmo.setDatasourceType('GENERIC')
     
     cd('/JDBCSystemResources/'+dsName+'/JDBCResource/'+dsName+'/JDBCDriverParams/'+dsName)
-    cmo.setUrl('jdbc:mysql://HOST:31306')
+    cmo.setUrl(dsURL)
     
-    cmo.setDriverName('com.mysql.jdbc.Driver')
-    set('PasswordEncrypted', 'root123')
+    cmo.setDriverName(dsDriver)
+    set('Password', encrypt(dsPassword))
     
     cd('/JDBCSystemResources/'+dsName+'/JDBCResource/'+dsName+'/JDBCConnectionPoolParams/'+dsName)
     cmo.setTestTableName('SQL SELECT 1\r\n\r\n')
@@ -28,18 +28,18 @@ def createDataSource(dsName):
     cmo.createProperty('user')
     
     cd('/JDBCSystemResources/'+dsName+'/JDBCResource/'+dsName+'/JDBCDriverParams/'+dsName+'/Properties/'+dsName+'/Properties/user')
-    cmo.setValue('root')
+    cmo.setValue(dsUser)
     
     cd('/JDBCSystemResources/'+dsName+'/JDBCResource/'+dsName+'/JDBCDataSourceParams/'+dsName)
     cmo.setGlobalTransactionsProtocol('OnePhaseCommit')
     
     cd('/JDBCSystemResources/'+dsName)
-    set('Targets',jarray.array([ObjectName('com.bea:Name=cluster-1,Type=Cluster')], ObjectName))
+    set('Targets',jarray.array([ObjectName('com.bea:Name='+dsTarget+',Type=Cluster')], ObjectName))
     
     save()    
     activate()    
 
 connect('weblogic', 'welcome1', 't3://DOMAINUID-admin-server:7001')
-createDataSource('JdbcTestDataSource-1')
+createDataSource('JdbcTestDataSource-1', 'JDBC_URL', 'com.mysql.cj.jdbc.Driver', 'root', 'root123', 'cluster-1')
 disconnect()
 exit()

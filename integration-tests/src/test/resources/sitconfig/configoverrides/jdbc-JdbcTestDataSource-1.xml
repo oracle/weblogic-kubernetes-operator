@@ -3,46 +3,17 @@
     xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
     xmlns:jdbcf="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
     xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
-    <jdbc:name  jdbcf:combine-mode="add">JdbcTestDataSource-1</jdbc:name>
-    <jdbc:datasource-type  jdbcf:combine-mode="add">GENERIC</jdbc:datasource-type>
-    <jdbc:jdbc-driver-params>
-        <jdbc:url>JDBC_URL</jdbc:url>
-        <jdbc:driver-name>com.mysql.cj.jdbc.Driver</jdbc:driver-name>
-        <jdbc:properties>
-            <jdbc:property>
-                <jdbc:name>user</jdbc:name>
-                <jdbc:value>${secret:customsitconfigdomain-test-secrets.dbusername}</jdbc:value>
-            </jdbc:property>
-        </jdbc:properties>
-        <jdbc:password-encrypted>${secret:customsitconfigdomain-test-secrets.dbpassword:encrypt}</jdbc:password-encrypted>
-    </jdbc:jdbc-driver-params>
-    <jdbc-connection-pool-params  jdbcf:combine-mode="add">
-        <initial-capacity>1</initial-capacity>
-        <max-capacity>15</max-capacity>
-        <min-capacity>1</min-capacity>
-        <shrink-frequency-seconds>900</shrink-frequency-seconds>
-        <highest-num-waiters>2147483647</highest-num-waiters>
-        <connection-creation-retry-frequency-seconds>0</connection-creation-retry-frequency-seconds>
-        <connection-reserve-timeout-seconds>10</connection-reserve-timeout-seconds>
-        <test-frequency-seconds>120</test-frequency-seconds>
-        <test-connections-on-reserve>false</test-connections-on-reserve>
-        <ignore-in-use-connections-enabled>true</ignore-in-use-connections-enabled>
-        <inactive-connection-timeout-seconds>0</inactive-connection-timeout-seconds>
-        <test-table-name>SQL SELECT 1</test-table-name>
-        <login-delay-seconds>10</login-delay-seconds>
-        <statement-cache-size>10</statement-cache-size>
-        <statement-cache-type>FIXED</statement-cache-type>
-        <remove-infected-connections>true</remove-infected-connections>
-        <seconds-to-trust-an-idle-pool-connection>10</seconds-to-trust-an-idle-pool-connection>
-        <statement-timeout>-1</statement-timeout>
-        <pinned-to-thread>false</pinned-to-thread>
-        <wrap-types>true</wrap-types>
-        <connection-harvest-max-count>1</connection-harvest-max-count>
-        <connection-harvest-trigger-count>-1</connection-harvest-trigger-count>
-        <count-of-test-failures-till-flush>2</count-of-test-failures-till-flush>
-        <count-of-refresh-failures-till-disable>2</count-of-refresh-failures-till-disable>
+    <jdbc:name >JdbcTestDataSource-1</jdbc:name>
+    <jdbc:datasource-type>GENERIC</jdbc:datasource-type>
+    <jdbc-connection-pool-params>
+        <initial-capacity jdbcf:combine-mode="replace">1</initial-capacity>
+        <max-capacity jdbcf:combine-mode="replace">15</max-capacity>
+        <min-capacity jdbcf:combine-mode="replace">3</min-capacity>
+        <ignore-in-use-connections-enabled jdbcf:combine-mode="replace">true</ignore-in-use-connections-enabled>
+        <login-delay-seconds jdbcf:combine-mode="replace">10</login-delay-seconds>
+        <statement-cache-type jdbcf:combine-mode="replace">FIXED</statement-cache-type>
     </jdbc-connection-pool-params>
-    <jdbc-data-source-params  jdbcf:combine-mode="add">
-        <global-transactions-protocol>EmulateTwoPhaseCommit</global-transactions-protocol>
+    <jdbc-data-source-params>
+        <global-transactions-protocol jdbcf:combine-mode="replace">EmulateTwoPhaseCommit</global-transactions-protocol>
     </jdbc-data-source-params>
 </jdbc:jdbc-data-source>

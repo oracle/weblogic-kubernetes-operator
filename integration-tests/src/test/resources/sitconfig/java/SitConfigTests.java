@@ -22,12 +22,12 @@ import javax.management.remote.JMXServiceURL;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
-
 import weblogic.diagnostics.descriptor.WLDFHarvestedTypeBean;
 import weblogic.diagnostics.descriptor.WLDFInstrumentationMonitorBean;
 import weblogic.diagnostics.descriptor.WLDFResourceBean;
 import weblogic.j2ee.descriptor.wl.JDBCConnectionPoolParamsBean;
 import weblogic.j2ee.descriptor.wl.JDBCDataSourceBean;
+import weblogic.j2ee.descriptor.wl.JDBCDataSourceParamsBean;
 import weblogic.j2ee.descriptor.wl.JDBCDriverParamsBean;
 import weblogic.j2ee.descriptor.wl.JMSBean;
 import weblogic.j2ee.descriptor.wl.UniformDistributedTopicBean;
@@ -148,6 +148,10 @@ public class SitConfigTests {
 
     if (testName.equals("testCustomSitConfigOverridesForWldf")) {
       test.testSystemResourcesWldfAttributeAdd();
+    }
+    
+    if (testName.equals("testOverrideJDBCResourceAfterDomainStart")) {
+        test.testOverrideJDBCResourceAfterDomainStart("JdbcTestDataSource-1");
     }
   }
 
@@ -428,6 +432,66 @@ public class SitConfigTests {
     } catch (SQLException ex) {
       Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
     }
+  }
+
+  /**
+   * Test that verifies a new JDBC data source is created after domain start can be overridden with
+   * configmap change verifies the JDBC resource overriden values initialCapacity, maxCapacity,
+   * LoginDelaySeconds, IgnoreInUseConnectionsEnabled, StatementCacheType,
+   * GlobalTransactionsProtocol
+   *
+   * @param jdbcResourceName - name of the JDBC resource overridden in jdbc-JdbcTestDataSource-0.xml
+   */
+  public void testOverrideJDBCResourceAfterDomainStart(String jdbcResourceName) {
+
+    // Assert datasource is working with overiridden JDBC URL value
+    DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
+
+    // Create DDL statement and execute it to verify the datasource actually works.
+    try {
+      Connection connection = dataSource.getConnection();
+      Statement stmt = connection.createStatement();
+      int createSchema = stmt.executeUpdate("CREATE SCHEMA `mysqldb` ;");
+      println("create schema returned " + createSchema);
+      int createTable =
+          stmt.executeUpdate(
+              "CREATE TABLE IF NOT EXISTS mysqldb.testtable (title VARCHAR(255) "
+                  + "NOT NULL,description TEXT)ENGINE=INNODB;");
+      println("create table returned " + createTable);
+      assert createSchema == 1 : "create schema failed";
+      assert createTable == 0 : "create table failed";
+    } catch (SQLException ex) {
+      Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
+    }
+
+    final int initialCapacity = 1;
+    final int maxCapacity = 15;
+
+    println("Verifying the configuration changes made by sit config file");
+
+    JDBCSystemResourceMBean jdbcSystemResource = getJdbcSystemResource(jdbcResourceName);
+    JDBCDataSourceBean jdbcDataSourceBean = jdbcSystemResource.getJDBCResource();
+
+    // Assert the connection pool properties
+    JDBCConnectionPoolParamsBean jcpb = jdbcDataSourceBean.getJDBCConnectionPoolParams();
+    println("initialCapacity:" + jcpb.getInitialCapacity());
+    assert initialCapacity == jcpb.getInitialCapacity()
+        : "Didn't get the expected value " + initialCapacity + " for initialCapacity";
+    println("maxCapacity:" + jcpb.getMaxCapacity());
+    assert maxCapacity == jcpb.getMaxCapacity()
+        : "Didn't get the expected value " + maxCapacity + " for maxCapacity";
+    println("testConnectionsonReserve:" + jcpb.isTestConnectionsOnReserve());
+
+    assert jcpb.getLoginDelaySeconds() == 10
+        : "Didn't get the expected value 10 for LoginDelaySeconds";
+    assert jcpb.isIgnoreInUseConnectionsEnabled()
+        : "Didn't get the expected value of true for IgnoreInUseConnectionsEnabled";
+    assert jcpb.getStatementCacheType().equals("FIXED")
+        : "Didn't get the expected value of FIXED for StatementCacheType";
+
+    JDBCDataSourceParamsBean jdbcDataSourceParams = jdbcDataSourceBean.getJDBCDataSourceParams();
+    assert jdbcDataSourceParams.getGlobalTransactionsProtocol().equals("EmulateTwoPhaseCommit")
+        : "Didn't get the expected value of EmulateTwoPhaseCommit for GlobalTransactionsProtocol";
   }
 
   /**

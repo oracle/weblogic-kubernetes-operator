@@ -1,7 +1,6 @@
 // Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 // Licensed under the Universal Permissive License v 1.0 as shown at
 // http://oss.oracle.com/licenses/upl.
-
 package oracle.kubernetes.operator;
 
 import java.io.IOException;
@@ -10,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
@@ -392,7 +392,7 @@ public class ItSitConfig extends BaseTest {
   }
 
   @Test
-  public void testAddNewJDBCResource() throws Exception {
+  public void testOverrideJDBCResourceAfterDomainStart() throws Exception {
     Assume.assumeFalse(QUICKTEST);
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
@@ -417,8 +417,11 @@ public class ItSitConfig extends BaseTest {
   private void createJdbcResource() throws Exception {
     Path path = Paths.get(JDBC_RES_SCRIPT);
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-    content = content.replaceAll("HOST", fqdn);
+    content = content.replaceAll("JDBC_URL", JDBC_URL);
     content = content.replaceAll("DOMAINUID", DOMAINUID);
+    if (getWeblogicImageTag().contains(PS3_TAG)) {
+      content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
+    }
     Files.write(
         Paths.get(sitconfigTmpDir, "create-jdbc-resource.py"),
         content.getBytes(StandardCharsets.UTF_8));
@@ -439,6 +442,12 @@ public class ItSitConfig extends BaseTest {
     domain.verifyDomainDeleted(clusterReplicas);
 
     // recreate the map with new situational config files
+    String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
+    String dstDir = configOverrideDir;
+    Files.copy(
+        Paths.get(srcDir, "jdbc-JdbcTestDataSource-0.xml"),
+        Paths.get(dstDir, "jdbc-JdbcTestDataSource-0.xml"),
+        StandardCopyOption.REPLACE_EXISTING);
     cmd =
         "kubectl create configmap "
             + DOMAINUID
