@@ -237,10 +237,7 @@ print 'Domain Created'
 # Update Domain
 readDomain(domain_path)
 cd('/')
-if production_mode_enabled == "true":
-    cmo.setProductionModeEnabled(true)
-else: 
-    cmo.setProductionModeEnabled(false)
+cmo.setProductionModeEnabled(false)
 updateDomain()
 closeDomain()
 print 'Domain Updated'
