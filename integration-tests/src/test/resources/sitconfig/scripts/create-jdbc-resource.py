@@ -19,7 +19,7 @@ def createDataSource(dsName, dsURL, dsDriver, dsUser, dsPassword, dsTarget):
     cmo.setUrl(dsURL)
     
     cmo.setDriverName(dsDriver)
-    set('Password', encrypt(dsPassword))
+    set('Password', dsPassword)
     
     cd('/JDBCSystemResources/'+dsName+'/JDBCResource/'+dsName+'/JDBCConnectionPoolParams/'+dsName)
     cmo.setTestTableName('SQL SELECT 1\r\n\r\n')
