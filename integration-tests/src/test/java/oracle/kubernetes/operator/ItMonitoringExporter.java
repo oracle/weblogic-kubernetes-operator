@@ -1152,7 +1152,7 @@ public class ItMonitoringExporter extends BaseTest {
         TestUtils.exec(crdCmd);
         crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
         TestUtils.exec(crdCmd);
-        replaceStringInFile(monitoringExporterEndToEndDir + "prometheus-deployment.yaml", "30000", "35000");
+        replaceStringInFile(monitoringExporterEndToEndDir + "values.yaml", "30000", "35000");
 
         crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
         TestUtils.exec(crdCmd);
