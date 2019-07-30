@@ -431,11 +431,12 @@ public class ItSitConfig extends BaseTest {
   }
 
   private void recreateCRDWithNewConfigMap() throws Exception {
+    int clusterReplicas =
+        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
     // delete the running domain
     String cmd = "kubectl delete -f " + domainYaml;
     TestUtils.exec(cmd, true);
-    domain.verifyDomainDeleted(
-        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs()));
+    domain.verifyDomainDeleted(clusterReplicas);
 
     // recreate the map with new situational config files
     cmd =

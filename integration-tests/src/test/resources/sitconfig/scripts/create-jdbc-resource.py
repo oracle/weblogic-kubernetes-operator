@@ -7,7 +7,7 @@ def createDataSource(dsName):
     cd('/')
     cmo.createJDBCSystemResource(dsName)
     cd('/JDBCSystemResources/'+dsName+'/JDBCResource/'+dsName)
-    cmo.setName(dsname)
+    cmo.setName(dsName)
     
     cd('/JDBCSystemResources/'+dsName+'/JDBCResource/'+dsName+'/JDBCDataSourceParams/'+dsName)
     set('JNDINames',jarray.array([String('jdbc/'+dsName)], String))
@@ -19,7 +19,7 @@ def createDataSource(dsName):
     cmo.setUrl('jdbc:mysql://HOST:31306')
     
     cmo.setDriverName('com.mysql.jdbc.Driver')
-    set('PasswordEncrypted', dsPassword)
+    set('PasswordEncrypted', 'root123')
     
     cd('/JDBCSystemResources/'+dsName+'/JDBCResource/'+dsName+'/JDBCConnectionPoolParams/'+dsName)
     cmo.setTestTableName('SQL SELECT 1\r\n\r\n')
