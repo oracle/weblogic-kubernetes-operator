@@ -1147,11 +1147,12 @@ public class ItMonitoringExporter extends BaseTest {
     private static void installPrometheusGrafanaViaChart() throws Exception {
         // delete any running pods
         deletePrometheusGrafana();
-        prometheusPort = "30000";
+        prometheusPort = "35000";
         String crdCmd = "kubectl create ns monitoring";
         TestUtils.exec(crdCmd);
         crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
         TestUtils.exec(crdCmd);
+        replaceStringInFile(monitoringExporterEndToEndDir + "prometheus-deployment.yaml", "30000", "35000");
 
         crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
         TestUtils.exec(crdCmd);
@@ -1258,6 +1259,7 @@ public class ItMonitoringExporter extends BaseTest {
                 // ignore, pod may not be created
                 return true;
         }
+        logger.info(" Executing command: " + cmdLines[0]);
         ExecCommand.exec(cmdLines[0]);
         try {
             TestUtils.checkPodDeleted(podName, namespace);
