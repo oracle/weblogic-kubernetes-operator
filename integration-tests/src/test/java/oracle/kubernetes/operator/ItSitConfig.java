@@ -43,6 +43,8 @@ public class ItSitConfig extends BaseTest {
   private static String mysqltmpDir = "";
   private static String configOverrideDir = "";
   private static String mysqlYamlFile = "";
+  private static String domainYaml;
+  private static String JDBC_RES_SCRIPT;
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -81,6 +83,11 @@ public class ItSitConfig extends BaseTest {
       // create weblogic domain with configOverrides
       domain = createSitConfigDomain();
       Assert.assertNotNull(domain);
+      domainYaml =
+          BaseTest.getUserProjectsDir()
+              + "/weblogic-domains/"
+              + domain.getDomainUid()
+              + "/domain.yaml";
       // copy the jmx test client file the administratioin server weblogic server pod
       ADMINPODNAME = domain.getDomainUid() + "-" + domain.getAdminServerName();
       TestUtils.copyFileViaCat(
@@ -95,6 +102,7 @@ public class ItSitConfig extends BaseTest {
           domain.getDomainNs());
       KUBE_EXEC_CMD =
           "kubectl -n " + domain.getDomainNs() + "  exec -it " + ADMINPODNAME + "  -- bash -c";
+      JDBC_RES_SCRIPT = TEST_RES_DIR + "/sitconfig/scripts/create-jdbc-resource.py";
     }
   }
 
@@ -360,6 +368,78 @@ public class ItSitConfig extends BaseTest {
     assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  @Test
+  public void testConfigOverrideAfterStartup() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    boolean testCompletedSuccessfully = false;
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh "
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + "'");
+    assertResult(result);
+    testCompletedSuccessfully = true;
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  @Test
+  public void testAddNewJDBCResource() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    boolean testCompletedSuccessfully = false;
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    Path path = Paths.get(JDBC_RES_SCRIPT);
+    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    content = content.replaceAll("HOST", fqdn);
+    Files.write(path, content.getBytes(StandardCharsets.UTF_8));
+    TestUtils.copyFileViaCat(
+        JDBC_RES_SCRIPT, "create-jdbc-resource.py", ADMINPODNAME, domain.getDomainNs());
+    TestUtils.exec(KUBE_EXEC_CMD + "'wlst.sh create-jdbc-resource.py'", true);
+    recreateCRDWithNewConfigMap();
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh "
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + "'");
+    assertResult(result);
+    testCompletedSuccessfully = true;
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  private void recreateCRDWithNewConfigMap() throws Exception {
+    // delete the running domain
+    String cmd = "kubectl delete -f " + domainYaml;
+    TestUtils.exec(cmd, true);
+    domain.verifyDomainDeleted(
+        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs()));
+
+    // recreate the map with new situational config files
+    cmd =
+        "kubectl create configmap "
+            + DOMAINUID
+            + "-sitconfigcm --from-file="
+            + configOverrideDir
+            + " -o yaml --dry-run | kubectl replace -f -";
+    TestUtils.exec(cmd, true);
+
+    // recreate the custom domain resource
+    cmd = "kubectl create -f " + domainYaml;
+    TestUtils.exec(cmd, true);
+    domain.verifyDomainCreated();
   }
 
   /**
