@@ -245,7 +245,7 @@ else:
 
   templateName = '${CLUSTER_NAME}' + "-template-dummy1"
   print('Creating Server Template: %s' % templateName)
-  st1=create(templateName, 'ServerTemplate')
+  st2=create(templateName, 'ServerTemplate')
   print('Done creating Server Template: %s' % templateName)
   cd('/ServerTemplates/%s' % templateName)
   cmo.setListenPort(${MANAGED_SERVER_PORT})
@@ -255,7 +255,7 @@ else:
  
   templateName = '${CLUSTER_NAME}' + "-template-dummy2"
   print('Creating Server Template: %s' % templateName)
-  st1=create(templateName, 'ServerTemplate')
+  st3=create(templateName, 'ServerTemplate')
   print('Done creating Server Template: %s' % templateName)
   cd('/ServerTemplates/%s' % templateName)
   cmo.setListenPort(${MANAGED_SERVER_PORT})
