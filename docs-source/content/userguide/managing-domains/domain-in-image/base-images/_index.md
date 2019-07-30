@@ -62,11 +62,11 @@ To pull an image from the Oracle Container Registry, in a web browser, navigate 
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.  
 
 Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
-Your acceptance of these terms are stored in a database that links the software images to your Oracle Single Sign-On login credentials.
+Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.
 
 The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image which already has the necessary patches applied.
 
-First, you will need to log into the Oracle Container Registry:
+First, you will need to log in to the Oracle Container Registry:
 
 ```
 $ docker login container-registry.oracle.com
