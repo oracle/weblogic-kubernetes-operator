@@ -1,4 +1,4 @@
-# Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 def getEnvVar(var):
@@ -69,9 +69,14 @@ set('Enabled', true)
 set('TwoWaySslEnabled', false)
 set('ClientCertificateEnforced', false)
 
-cd('/Servers/%s/NetworkAccessPoints/T3Channel' % admin_server_name)
-set('ListenAddress', '127.0.0.1')
+cd('/Servers/' + admin_server_name)
+delete('T3Channel', 'NetworkAccessPoint')
+create('istio-T3Channel', 'NetworkAccessPoint')
+cd('/Servers/%s/NetworkAccessPoints/istio-T3Channel' % admin_server_name)
+set('PublicPort', t3_channel_port)
 set('PublicAddress', domain_uid + '-' + admin_server_name)
+set('ListenAddress', '127.0.0.1')
+set('ListenPort', t3_channel_port)
 
 templateName = cluster_name + "-template"
 cd('/ServerTemplates/%s' % templateName)

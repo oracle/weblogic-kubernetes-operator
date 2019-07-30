@@ -505,6 +505,11 @@ public class DomainSpec extends BaseConfiguration {
     this.configOverrideSecrets = overridesSecretNames;
   }
 
+  /**
+   * Test if the domain is deployed under Istio environment.
+   *
+   * @return istioEnabled
+   */
   boolean istioEnabled() {
     return Optional.ofNullable(experimental)
         .map(e -> e.getIstio())
@@ -512,6 +517,11 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(false);
   }
 
+  /**
+   * The WebLogic readiness port used under Istio environment.
+   *
+   * @return readinessPort
+   */
   int getIstioReadinessPort() {
     return Optional.ofNullable(experimental)
         .map(e -> e.getIstio())
