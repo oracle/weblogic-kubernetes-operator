@@ -275,9 +275,9 @@ public class ItElasticLogging extends BaseTest {
     
     for(int i = 0; i < indexStatusArr.length; i++) {
       logger.info("Health status of " + indexNameArr[i] + 
-                  "is:" + healthStatusArr[i]);
+                  " is: " + healthStatusArr[i]);
       logger.info("Index status of " + indexNameArr[i] + 
-                  "is:" + indexStatusArr[i]);
+                  " is: " + indexStatusArr[i]);
       // Verify that the health status of index
       Assume.assumeTrue(
           index + " is not ready!",
@@ -304,6 +304,7 @@ public class ItElasticLogging extends BaseTest {
             .append(" }'\\'")
             .toString();
     logger.info("Command to exec Elastic Stack status check: " + cmd);
+    
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
       result = TestUtils.exec(cmd);
@@ -332,7 +333,6 @@ public class ItElasticLogging extends BaseTest {
     int count = -1;
     int failedCount = -1;
     String hits = "";
-    
     String results = null;
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
