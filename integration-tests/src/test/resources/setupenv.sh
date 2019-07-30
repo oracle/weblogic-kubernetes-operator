@@ -2,23 +2,7 @@
 # Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-function clean_jenkins {
-  echo "Cleaning."
-  /usr/local/packages/aime/ias/run_as_root "${PROJECT_ROOT}/src/integration-tests/bash/clean_docker_k8s.sh -y"
-}
-
-function setup_jenkins {
-  echo "Setting up."
-  /usr/local/packages/aime/ias/run_as_root "sh ${PROJECT_ROOT}/src/integration-tests/bash/install_docker_k8s.sh -y -u wls -v ${K8S_VERSION}"
-  if [ $? -ne 0 ]; then
-	  echo "k8s installation is not successful"
-	  exit 1
-  fi
-  set +x
-  . ~/.dockerk8senv
-  set -x
-  id
-
+function pull_tag_build_images {
   docker images
 
   if [ "$JRF_ENABLED" = true ] ; then
@@ -33,16 +17,7 @@ function setup_jenkins {
   docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
   
   docker images
-    
-  echo "Helm installation starts" 
-  wget -q -O  /tmp/helm-v2.8.2-linux-amd64.tar.gz https://kubernetes-helm.storage.googleapis.com/helm-v2.8.2-linux-amd64.tar.gz
-  mkdir /tmp/helm
-  tar xzf /tmp/helm-v2.8.2-linux-amd64.tar.gz -C /tmp/helm
-  chmod +x /tmp/helm/linux-amd64/helm
-  /usr/local/packages/aime/ias/run_as_root "cp /tmp/helm/linux-amd64/helm /usr/bin/"
-  rm -rf /tmp/helm
-  helm init
-  echo "Helm is configured."
+
 }
 
 function docker_login {
@@ -275,9 +250,7 @@ elif [ "$JENKINS" = "true" ]; then
   export M2_HOME=${M2_HOME:?}
   export K8S_VERSION=${K8S_VERSION}
 
-  clean_jenkins
-
-  setup_jenkins
+  pull_tag_build_images
 
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT"
   /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT"
