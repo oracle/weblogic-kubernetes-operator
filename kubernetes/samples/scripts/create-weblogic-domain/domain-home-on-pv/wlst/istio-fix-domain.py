@@ -26,6 +26,8 @@ domain_logs                  = getEnvVar("DOMAIN_LOGS_DIR")
 script_dir                   = getEnvVar("CREATE_DOMAIN_SCRIPT_DIR")
 istio_readiness_port         = int(getEnvVar("ISTIO_READINESS_PORT"))
 
+print('istio_readiness_port : [%s]' % istio_readiness_port);
+
 # Update Domain for Istio
 readDomain(domain_path)
 
@@ -77,6 +79,8 @@ set('PublicPort', t3_channel_port)
 set('PublicAddress', domain_uid + '-' + admin_server_name)
 set('ListenAddress', '127.0.0.1')
 set('ListenPort', t3_channel_port)
+
+print("Done updating Admin Server's configuration");
 
 templateName = cluster_name + "-template"
 cd('/ServerTemplates/%s' % templateName)
@@ -130,6 +134,8 @@ set('OutboundEnabled', false)
 set('Enabled', true)
 set('TwoWaySslEnabled', false)
 set('ClientCertificateEnforced', false)
+
+print("Done updating Managed Server's template: %s", templateName);
 
 updateDomain()
 closeDomain()
