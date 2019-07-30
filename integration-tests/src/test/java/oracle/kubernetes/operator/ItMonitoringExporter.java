@@ -1147,12 +1147,12 @@ public class ItMonitoringExporter extends BaseTest {
     private static void installPrometheusGrafanaViaChart() throws Exception {
         // delete any running pods
         deletePrometheusGrafana();
-        prometheusPort = "35000";
+        prometheusPort = "30500";
         String crdCmd = "kubectl create ns monitoring";
         TestUtils.exec(crdCmd);
         crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml";
         TestUtils.exec(crdCmd);
-        replaceStringInFile(monitoringExporterEndToEndDir + "values.yaml", "30000", "35000");
+        replaceStringInFile(monitoringExporterEndToEndDir + "/prometheus/values.yaml", "30000", "30500");
 
         crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml";
         TestUtils.exec(crdCmd);
@@ -1257,6 +1257,12 @@ public class ItMonitoringExporter extends BaseTest {
             podName = getPodName("app=" + depName, namespace);
         } catch (AssertionError assertionError) {
                 // ignore, pod may not be created
+            if (cmdLines.length > 1) {
+                for (int i = 1; i < cmdLines.length; i++) {
+                    logger.info(" Executing command: " + cmdLines[i]);
+                    ExecCommand.exec(cmdLines[i]);
+                }
+            }
                 return true;
         }
         logger.info(" Executing command: " + cmdLines[0]);
@@ -1441,12 +1447,15 @@ public class ItMonitoringExporter extends BaseTest {
         logger.info("Curl cmd " + curlCmd);
         logger.info("searchKey:" + searchKey);
         logger.info("expected Value " + expectedVal);
+        boolean result = false;
         try {
             TestUtils.checkAnyCmdInLoop(curlCmd.toString(), expectedVal);
             logger.info("Prometheus application invoked successfully with curlCmd:" + curlCmd);
-            return true;
+            result = true;
         } catch (Exception ex) {
-            return false;
+            new RuntimeException(
+                    "FAILURE: can't check metrics" + ex.getMessage());
         }
+        return result;
     }
 }
