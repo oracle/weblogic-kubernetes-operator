@@ -172,6 +172,7 @@ public class ItMonitoringExporter extends BaseTest {
         TestUtils.exec(crdCmd);
         crdCmd = " cat " + destLoc + "/script.log";
         ExecResult result = ExecCommand.exec(crdCmd);
+        assertFalse("Shel script failed: " + result.stdout(), result.stdout().contains("BUILD FAILED"));
         logger.info("Result output from  the command " + crdCmd + " : " + result.stdout());
     }
 
@@ -845,12 +846,8 @@ public class ItMonitoringExporter extends BaseTest {
         logTestBegin(testMethodName);
         boolean testCompletedSuccessfully = false;
         try {
-            try {
-                setupPVMYSQL();
-            } catch (Exception ex) {
-                deletePvDir();
-                throw new RuntimeException("FAILURE: failed to install database ");
-            }
+
+            setupPVMYSQL();
             createWLSImageAndDeploy();
             installWebHook();
             installPrometheusGrafanaViaChart();
@@ -865,6 +862,7 @@ public class ItMonitoringExporter extends BaseTest {
             ExecCommand.exec(crdCmd);
             uninstallWebHookPrometheusGrafanaViaChart();
             uninstallMySQL();
+            deletePvDir();
         }
         testCompletedSuccessfully = true;
         logger.info("SUCCESS - " + testMethodName);
@@ -917,6 +915,7 @@ public class ItMonitoringExporter extends BaseTest {
             result = ExecCommand.exec(cmd.toString());
             logger.info(" Result output" + result.stdout());
             if (result.exitValue() == 0) {
+                logger.info(result.stdout());
                 podName = result.stdout().trim();
                 break;
             } else {
@@ -1161,9 +1160,22 @@ public class ItMonitoringExporter extends BaseTest {
                 "helm install --wait --name prometheus --namespace monitoring --values  "
                         + monitoringExporterEndToEndDir
                         + "/prometheus/values.yaml stable/prometheus";
-        TestUtils.exec(crdCmd);
+        ExecResult result = ExecCommand.exec(crdCmd);
+        logger.info(" Result from helm install " + result.stdout() + " erros : " + result.stderr());
         String podName = getPodName("app=prometheus", "monitoring");
         TestUtils.checkPodReady(podName, "monitoring", "2/2");
+
+        crdCmd ="kubectl -n monitoring get pods -l app=prometheus";
+        result = ExecCommand.exec(crdCmd);
+        logger.info("Status of the pods " + result.stdout());
+
+        crdCmd ="kubectl -n monitoring get svc -l app=prometheus";
+        result = ExecCommand.exec(crdCmd);
+        assertTrue("Can't find prometheus-alertmanager service running" ,result.stdout().contains("prometheus-alertmanager"));
+        assertTrue("Can't find prometheus-kube-state-metrics service running" ,result.stdout().contains("prometheus-kube-state-metrics"));
+        assertTrue("Can't find prometheus-node-exporter service running" ,result.stdout().contains("prometheus-node-exporter"));
+        assertTrue("Can't find prometheus-server service running" ,result.stdout().contains("prometheus-server"));
+
         // install grafana
         crdCmd = "kubectl apply -f " + monitoringExporterEndToEndDir + "/grafana/persistence.yaml";
         TestUtils.exec(crdCmd);
@@ -1252,6 +1264,7 @@ public class ItMonitoringExporter extends BaseTest {
     private static boolean uninstallDeployments(String depName, String namespace, String ... cmdLines) throws Exception {
         String podName = "";
         boolean depUninstall = false;
+        ExecResult result;
         logger.info("Uninstalling " + depName);
         try {
             podName = getPodName("app=" + depName, namespace);
@@ -1260,15 +1273,19 @@ public class ItMonitoringExporter extends BaseTest {
             if (cmdLines.length > 1) {
                 for (int i = 1; i < cmdLines.length; i++) {
                     logger.info(" Executing command: " + cmdLines[i]);
-                    ExecCommand.exec(cmdLines[i]);
+                    result = ExecCommand.exec(cmdLines[i]);
+                    logger.info(" Command output : " + result.stdout() + " errors out: " + result.stderr());
                 }
             }
-                return true;
+            return true;
         }
-        logger.info(" Executing command: " + cmdLines[0]);
-        ExecCommand.exec(cmdLines[0]);
+
         try {
+            logger.info(" Executing command: " + cmdLines[0]);
+            result = ExecCommand.exec(cmdLines[0]);
+            logger.info(" Command output : " + result.stdout() + " errors out: " + result.stderr());
             TestUtils.checkPodDeleted(podName, namespace);
+            logger.info("Pod " + podName + "was deleted");
         } catch (Exception ex){
             // pod was not deleted
             depUninstall = false;
@@ -1276,7 +1293,8 @@ public class ItMonitoringExporter extends BaseTest {
         if (cmdLines.length > 1) {
             for (int i = 1; i < cmdLines.length; i++) {
                 logger.info(" Executing command: " + cmdLines[i]);
-                ExecCommand.exec(cmdLines[i]);
+                result = ExecCommand.exec(cmdLines[i]);
+                logger.info(" Command output : " + result.stdout() + " errors out: " + result.stderr());
             }
         }
         return depUninstall;
@@ -1299,8 +1317,7 @@ public class ItMonitoringExporter extends BaseTest {
                 );
         uninstallDeployments("prometheus", "monitoring",
                     "helm delete --purge prometheus",
-                "kubectl -n monitoring delete secret grafana-secret --ignore-not-found",
-                "kubectl delete -f " + monitoringExporterEndToEndDir + "/mysql/persistence.yaml --ignore-not-found",
+                "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/persistence.yaml --ignore-not-found",
                 "kubectl delete -f " + monitoringExporterEndToEndDir + "/prometheus/alert-persistence.yaml --ignore-not-found"
                     );
     }
