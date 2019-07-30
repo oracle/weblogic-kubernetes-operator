@@ -34,7 +34,7 @@ def createDataSource(dsName, dsURL, dsDriver, dsUser, dsPassword, dsTarget):
     cmo.setGlobalTransactionsProtocol('OnePhaseCommit')
     
     cd('/JDBCSystemResources/'+dsName)
-    set('Targets',jarray.array([ObjectName('com.bea:Name='+dsTarget+',Type=Cluster')], ObjectName))
+    set('Targets',jarray.array([ObjectName('com.bea:Name=admin-server,Type=Server'), ObjectName('com.bea:Name=cluster-1,Type=Cluster')], ObjectName))
     
     save()    
     activate()    

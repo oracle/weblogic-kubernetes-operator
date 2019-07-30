@@ -430,8 +430,8 @@ public class ItSitConfig extends BaseTest {
     String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
     String dstDir = configOverrideDir;
     Files.copy(
-        Paths.get(srcDir, "jdbc-JdbcTestDataSource-0.xml"),
-        Paths.get(dstDir, "jdbc-JdbcTestDataSource-0.xml"),
+        Paths.get(srcDir, "jdbc-JdbcTestDataSource-1.xml"),
+        Paths.get(dstDir, "jdbc-JdbcTestDataSource-1.xml"),
         StandardCopyOption.REPLACE_EXISTING);
     cmd =
         "kubectl create configmap "
