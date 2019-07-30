@@ -12,17 +12,17 @@
     <title>Domain home on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1562097077" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1564448178" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1562097077"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1564448178"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1562097077"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1562097077"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1564448178"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1564448178"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1562097077"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1564448178"></script>
 
     
   </div>
@@ -2190,9 +2190,9 @@
 <ul>
 <li>Make sure the WebLogic operator is running.</li>
 <li>The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied. The existing WebLogic Docker image, <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>, has all the necessary patches applied. Refer to <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/">WebLogic Docker images</a> for details on how to obtain or create the image.</li>
-<li>Create a Kubernetes namespace for the domain unless the intention is to use the default namespace.</li>
+<li>Create a Kubernetes namespace for the domain unless you intend to use the default namespace.</li>
 <li>In the same Kubernetes namespace, create the Kubernetes persistent volume (PV) where the domain home will be hosted, and the Kubernetes persistent volume claim (PVC) for the domain. For samples to create a PV and PVC, see <a href="/weblogic-kubernetes-operator/samples/simple/storage/">Create sample PV and PVC</a>. By default, the <code>create-domain.sh</code> script creates a domain with the <code>domainUID</code> set to <code>domain1</code> and expects the PVC <code>domain1-weblogic-sample-pvc</code> to be present. You can create <code>domain1-weblogic-sample-pvc</code> using <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh">create-pv-pvc.sh</a> with an inputs file that has the <code>domainUID</code> set to <code>domain1</code>.</li>
-<li>Create the Kubernetes secrets <code>username</code> and <code>password</code> of the admin account in the same Kubernetes namespace as the domain.</li>
+<li>Create the Kubernetes secrets <code>username</code> and <code>password</code> of the administrative account in the same Kubernetes namespace as the domain.</li>
 </ul>
 
 <h4 id="use-the-script-to-create-a-domain">Use the script to create a domain</h4>
@@ -2201,19 +2201,19 @@
 
 <pre><code>$ ./create-domain.sh \
   -i create-domain-inputs.yaml \
-  -o /path/to/output-directory
+  -o /&lt;path to output-directory&gt;
 </code></pre>
 
 <p>The script will perform the following steps:</p>
 
 <ul>
-<li>Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is <code>/path/to/weblogic-operator-output-directory/weblogic-domains/&lt;domainUID&gt;</code>. If the directory already exists, its contents must be removed before using this script.</li>
+<li>Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is <code>/&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;</code>. If the directory already exists, its contents must be removed before using this script.</li>
 <li>Create a Kubernetes job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.</li>
 <li>Run and wait for the job to finish.</li>
 
 <li><p>Create a Kubernetes domain YAML file, <code>domain.yaml</code>, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the <code>kubectl create -f</code> or <code>kubectl apply -f</code> command:</p>
 
-<pre><code>$ kubectl apply -f /path/to/output-directory/weblogic-domains/&lt;domainUID&gt;/domain.yaml
+<pre><code>$ kubectl apply -f /&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;/domain.yaml
 </code></pre></li>
 
 <li><p>Create a convenient utility script, <code>delete-domain-job.yaml</code>, to clean up the domain home created by the create script.</p></li>
@@ -2445,7 +2445,7 @@ usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
 </tbody>
 </table>
 
-<p>Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the <code>create-inputs.yaml</code> file. Those properties include the <code>adminServerName</code>, <code>clusterName</code> and <code>managedServerNameBase</code>. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore <code>(&quot;_&quot;)</code> is converted to a hyphen <code>(&quot;-&quot;)</code>.</p>
+<p>Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the <code>create-inputs.yaml</code> file. Those properties include the <code>adminServerName</code>, <code>clusterName</code>, and <code>managedServerNameBase</code>. If those values contain any characters that are invalid in a Kubernetes service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore <code>(&quot;_&quot;)</code> is converted to a hyphen <code>(&quot;-&quot;)</code>.</p>
 
 <p>The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain YAML file could also be modified to cover more use cases.</p>
 
@@ -2717,7 +2717,7 @@ domain1-managed-server2                     ClusterIP   None             &lt;non
 
 <h4 id="delete-the-generated-domain-home">Delete the generated domain home</h4>
 
-<p>Sometimes in production, but most likely in testing environments, you might want to remove the domain home that is generated using the <code>create-domain.sh</code> script. Do this by running the generated <code>delete domain job</code> script in the <code>/path/to/weblogic-operator-output-directory/weblogic-domains/&lt;domainUID&gt;</code> directory.</p>
+<p>Sometimes in production, but most likely in testing environments, you might want to remove the domain home that is generated using the <code>create-domain.sh</code> script. Do this by running the generated <code>delete domain job</code> script in the <code>/&lt;path to output-directory&gt;/weblogic-domains/&lt;domainUID&gt;</code> directory.</p>
 
 <pre><code>$ kubectl create -f delete-domain-job.yaml
 
@@ -2745,7 +2745,7 @@ Look for lines similar to:
 <code>
 weblogic-operator1   pod/weblogic-operator-
 </code>
-If you do not find something similar in the output, the WebLogic Operator for Kubernetes may not have been installed completely. Review the operator <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">installation instructions</a>.</li>
+If you do not find something similar in the output, the WebLogic Kubernetes Operator might not have been installed completely. Review the operator <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">installation instructions</a>.</li>
 </ul></li>
 
 <li><p>Message: <code>ERROR: Unable to create folder /shared/domains</code><br />
@@ -4226,20 +4226,20 @@ You will see this message if the directory <code>domains/domain1</code> exists i
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1562097077"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1564448178"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1562097077"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1564448178"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1562097077" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1562097077"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1564448178" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1564448178"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -447,9 +447,9 @@ $ helm upgrade \ --reuse-values \ --set &amp;quot;kubernetes.namespaces={traefik
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/create-domain/</guid>
-      <description>Create a Kubernetes secret containing the username and password for the domain using the create-weblogic-credentials script:
-$ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \ -u &amp;lt;username&amp;gt; -p &amp;lt;password&amp;gt; -n sample-domain1-ns -d sample-domain1  The sample will create a secret named domainUID-weblogic-credentials where the domainUID is replaced with the value you provided. For example, the command above would create a secret named sample-domain1-weblogic-credentials.
- Create a new image with a domain home by running the create-domain script.</description>
+      <description>For use in the following steps:
+ Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character). Pick or create a directory to which you can write output.  Create a Kubernetes secret for the WebLogic administrator credentials containing the username and password for the domain, using the create-weblogic-credentials script:
+$ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \ -u &amp;lt;username&amp;gt; -p &amp;lt;password&amp;gt; -n sample-domain1-ns -d sample-domain1  The sample will create a secret named domainUID-weblogic-credentials where the domainUID is replaced with the value you provided.</description>
     </item>
     
     <item>

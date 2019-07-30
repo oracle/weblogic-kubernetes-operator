@@ -12,17 +12,17 @@
     <title>FMW domains :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1562097077" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1562097077" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1564448178" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1562097077"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1564448178"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1562097077"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1562097077"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1564448178"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1564448178"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1562097077"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1564448178"></script>
 
     
   </div>
@@ -2191,17 +2191,17 @@
 <li><a href="#patching-the-fmw-infrastructure-image">Patching the FMW Infrastructure image</a></li>
 </ul>
 
-<p>Starting with release 2.2.0, the operator supports FMW Infrastructure domains.
-This means domains that are created with the FMW Infrastructure installer rather than the WebLogic
+<p>Starting with the 2.2.0 release, the operator supports FMW Infrastructure domains, that is,
+domains that are created with the FMW Infrastructure installer rather than the WebLogic
 Server installer.  These domains contain the Java Required Files (JRF) feature and are
-the pre-requisite for &ldquo;upper stack&rdquo; products like Oracle SOA Suite, for example.
+the prerequisite for &ldquo;upper stack&rdquo; products like Oracle SOA Suite, for example.
 These domains also require a database and the use of the Repository
 Creation Utility (RCU).</p>
 
 <p>This section provides details about the special considerations for running
 FMW Infrastructure domains with the operator.  Other than those considerations
 listed here, FMW Infrastructure domains work in the same way as WebLogic Server domains.
-That is, the remainder of the documentation in this site applies equally to FMW
+The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.</p>
 
 <p>FMW Infrastructure domains are supported using both the &ldquo;domain on a persistent volume&rdquo;
@@ -2217,8 +2217,8 @@ following limitations currently exist for FMW Infrastructure domains:</p>
 
 <ul>
 <li>The <a href="https://github.com/oracle/weblogic-logging-exporter">WebLogic Logging Exporter</a>
-currently supports WebLogic server logs only.  Other logs will not be sent to
-Elasticsearch.  Note however that you can use a sidecar with a log handling tool
+currently supports WebLogic Server logs only.  Other logs will not be sent to
+Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
 like Logstash or fluentd to get logs.</li>
 <li>The <a href="https://github.com/oracle/weblogic-monitoring-exporter">WebLogic Monitoring Exporter</a>
 currently supports the WebLogic MBean trees only.  Support for JRF MBeans has not
@@ -2233,15 +2233,15 @@ before version 2.2.0.</li>
 <h4 id="obtaining-the-fmw-infrastructure-docker-image">Obtaining the FMW Infrastructure Docker Image</h4>
 
 <p>The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
-The standard pre-built FMW Infrastructure image, <code>container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3</code>, already has this patch applied. For detailed instructions on how to log into the Oracle Container Registry and accept license agreement, see this <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/#obtaining-standard-images-from-the-oracle-container-registry">document</a>.</p>
+The standard pre-built FMW Infrastructure image, <code>container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3</code>, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/#obtaining-standard-images-from-the-oracle-container-registry">document</a>.</p>
 
 <p>To pull an image from the Oracle Container Registry, in a web browser, navigate to <a href="https://container-registry.oracle.com">https://container-registry.oracle.com</a> and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.</p>
 
 <p>Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
-Your acceptance of these terms are stored in a database that links the software images to your Oracle Single Sign-On login credentials.</p>
+Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.</p>
 
-<p>First, you will need to log into the Oracle Container Registry:</p>
+<p>First, you will need to log in to the Oracle Container Registry:</p>
 
 <pre><code>$ docker login container-registry.oracle.com
 </code></pre>
@@ -2265,11 +2265,10 @@ Your acceptance of these terms are stored in a database that links the software 
 <h4 id="creating-an-fmw-infrastructure-docker-image">Creating an FMW Infrastructure Docker image</h4>
 
 <p>You can also create a Docker image containing the FMW Infrastructure binaries.
-A <a href="https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure">sample</a>
-is provided in the Oracle GitHub account that demonstrates how to create a Docker image
-to run FMW Infrastructure.</p>
-
-<p>Please consult the <a href="https://github.com/oracle/docker-images/blob/master/OracleFMWInfrastructure/dockerfiles/12.2.1.3/README.md">README</a> file associated with this sample for important prerequisite steps,
+We provide a <a href="https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure">sample</a>
+ in the Oracle GitHub account that demonstrates how to create a Docker image
+to run the FMW Infrastructure. Please consult the <a href="https://github.com/oracle/docker-images/blob/master/OracleFMWInfrastructure/dockerfiles/12.2.1.3/README.md">README</a>
+file associated with this sample for important prerequisite steps,
 such as building or pulling the Server JRE Docker image and downloading the Fusion Middleware
 Infrastructure installer binary.</p>
 
@@ -2283,8 +2282,8 @@ or e-delivery, you create your image by running the provided script:</p>
 <p>The image produced will be named <code>oracle/fmw-infrastructure:12.2.1.3</code>.</p>
 
 <p>You must also install the <a href="/weblogic-kubernetes-operator/userguide/introduction/introduction/#prerequisites">required patch</a>
-to use this image with the operator.  A <a href="https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s">sample</a>
-is provided that demonstrates how to create a Docker image with the necessary patch installed.</p>
+to use this image with the operator.  We provide a <a href="https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s">sample</a>
+ that demonstrates how to create a Docker image with the necessary patch installed.</p>
 
 <p>After downloading the patch from My Oracle Support, you create the patched image
 by running the provided script:</p>
@@ -2300,7 +2299,7 @@ by running the provided script:</p>
 <pre><code>$ docker tag oracle/fmw-infrastructure:12213-update-k8s container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.3
 </code></pre>
 
-<p>These samples will allow you to create a Docker image containing the FMW Infrastructure
+<p>These samples allow you to create a Docker image containing the FMW Infrastructure
 binaries and the necessary patch.  You can use this image to run the Repository Creation Utility
 and to run your domain using the &ldquo;domain on a persistent volume&rdquo; model. If you want to use
 the &ldquo;domain in a Docker image&rdquo; model, you will need to go one step further and add another
@@ -2311,7 +2310,7 @@ layer with your domain in it.  You can use WLST or WDT to create your domain.</p
 <h4 id="configuring-access-to-your-database">Configuring access to your database</h4>
 
 <p>FMW Infrastructure domains require a database with the necessary schemas installed in them.
-A utility called Repository Creation Utility (RCU) is provided which allows you to create
+We provide a utility, called the Repository Creation Utility (RCU), which allows you to create
 those schemas.  You must set up the database before you create your domain.
 There are no additional requirements added by running FMW Infrastructure in Kubernetes; the
 same existing requirements apply.</p>
@@ -2322,7 +2321,7 @@ same existing requirements apply.</p>
 
 <p>If you wish to run the database inside Kubernetes, you can use the official Docker image
 <a href="https://hub.docker.com/_/oracle-database-enterprise-edition">from Docker Hub</a> or
-<a href="https://container-registry.oracle.com/pls/apex/f?p=113:1:10859199204803::NO:1:P1_BUSINESS_AREA:3">Oracle Container Registry</a>.
+the <a href="https://container-registry.oracle.com/pls/apex/f?p=113:1:10859199204803::NO:1:P1_BUSINESS_AREA:3">Oracle Container Registry</a>.
 Please note that there is a Slim Variant (<code>12.2.0.1-slim</code> tag) of EE that has reduced
 disk space (4GB) requirements and a quicker container startup.</p>
 
@@ -2450,7 +2449,7 @@ subsets:
 specified, as in the example above. In this example, the fully qualified name would be
 <code>database.default.svc.cluster.local</code>.  The second part is the namespace.
 If you looked up the <code>ClusterIP</code> for such a service, it would have an IP address on the overlay
-network, that is the network inside the Kubernetes cluster.  If you are using flannel
+network, that is the network inside the Kubernetes cluster.  If you are using flannel,
 for example, the address might be something like <code>10.0.1.25</code>.  Note that this is usually a
 non-routed address.</p>
 
@@ -2525,7 +2524,7 @@ for the regular schema users:</p>
 <p>You need to make sure that you maintain the association between the database schemas and the
 matching domain just like you did in a non-Kubernetes environment.  There is no specific
 functionality provided to help with this.  We recommend that you consider making the RCU
-prefix (value of <code>schemaPrefix</code> argument) the same as your <code>domainUID</code> to help maintain this association.</p>
+prefix (value of the <code>schemaPrefix</code> argument) the same as your <code>domainUID</code> to help maintain this association.</p>
 
 <h5 id="dropping-schemas">Dropping schemas</h5>
 
@@ -2558,16 +2557,16 @@ to enter the <code>sys</code> user password.</p>
 When you create your domain using the sample provided below, it will obtain the RCU credentials
 from this secret.</p>
 
-<p>A <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-credentials/README.md">sample</a>
-is provided that demonstrates how to create the secret.  The schema owner user name required will be the
+<p>We provide a <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-credentials/README.md">sample</a>
+that demonstrates how to create the secret.  The schema owner user name required will be the
 <code>schemaPrefix</code> value followed by an underscore and a component name, such as <code>FMW1_STB</code>.  The schema owner
 password will be the password you provided for regular schema users during RCU creation.</p>
 
 <h4 id="creating-an-fmw-infrastructure-domain">Creating an FMW Infrastructure domain</h4>
 
 <p>Now that you have your Docker images and you have created your RCU schemas, you are ready
-to create your domain.  A <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">sample</a>
-is provided that demonstrates how to create a FMW Infrastructure domain.</p>
+to create your domain.  We provide a <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">sample</a>
+that demonstrates how to create an FMW Infrastructure domain.</p>
 
 <h4 id="patching-the-fmw-infrastructure-image">Patching the FMW Infrastructure image</h4>
 
@@ -2590,12 +2589,12 @@ you can edit the domain custom resource with the name of the new image and
 the operator will initiate a rolling restart of the domain.</p>
 
 <p>If you wish to apply a non-ZDP compliant patch to the FMW Infrastructure binary image,
-you must shutdown the entire domain before applying the patch. Please see the documentation on
+you must shut down the entire domain before applying the patch. Please see the documentation on
 <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/">domain life cycle operations</a>
 for more information.</p>
 
 <p>An example of a non-ZDP compliant patch is one that includes a schema change
-that can not be applied dynamically.</p>
+that cannot be applied dynamically.</p>
 
 
 <footer class=" footline" >
@@ -4041,20 +4040,20 @@ that can not be applied dynamically.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1562097077"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1564448178"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1562097077"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1562097077"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1564448178"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1562097077" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1562097077"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1564448178" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1564448178"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

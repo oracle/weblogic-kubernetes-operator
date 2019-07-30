@@ -12,17 +12,17 @@
     <title>Create a domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1562097078" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1562097078" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1562097078" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1562097078" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1562097078" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1562097078" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1562097078" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1562097078" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1564448178" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1564448178" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1562097078"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-2.x.min.js?1564448178"></script>
 
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{
@@ -52,14 +52,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1562097078"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1562097078"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1564448178"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1564448178"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1562097078"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1564448178"></script>
 
     
   </div>
@@ -2142,7 +2142,14 @@
 
 
 <ol>
-<li><p>Create a Kubernetes secret containing the <code>username</code> and <code>password</code> for the domain using the <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh"><code>create-weblogic-credentials</code></a> script:</p>
+<li><p>For use in the following steps:</p>
+
+<ul>
+<li>Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character).</li>
+<li>Pick or create a directory to which you can write output.</li>
+</ul></li>
+
+<li><p>Create a Kubernetes secret for the WebLogic administrator credentials containing the <code>username</code> and <code>password</code> for the domain, using the <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh">create-weblogic-credentials</a> script:</p>
 
 <pre><code class="language-bash">$ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \
   -u &lt;username&gt; -p &lt;password&gt; -n sample-domain1-ns -d sample-domain1
@@ -2152,61 +2159,26 @@
 with the value you provided.  For example, the command above would create a secret named
 <code>sample-domain1-weblogic-credentials</code>.</p></li>
 
-<li><p>Create a new image with a domain home by running the <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh"><code>create-domain</code></a> script.
-Follow the directions in the <a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/">sample</a>,
-including:</p>
+<li><p>Create a new image with a domain home by running the <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh">create-domain</a> script. First, copy the sample <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml">create-domain-inputs.yaml</a> file and update your copy with:</p>
 
 <ul>
-<li><p>Copying the sample <code>kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml</code> file and updating your copy with the <code>domainUID</code> (<code>sample-domain1</code>),
-domain namespace (<code>sample-domain1-ns</code>), and the <code>domainHomeImageBase</code> (<code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>).</p></li>
-
-<li><p>Setting <code>weblogicCredentialsSecretName</code> to the name of the secret containing the WebLogic credentials, in this case, <code>sample-domain1-weblogic-credentials</code>.</p></li>
-
-<li><p>Leaving the <code>image</code> empty unless you need to tag the new image that the script builds to a different name.
-<div class="notices note" ><p>If you set the <code>domainHomeImageBuildPath</code> property to <code>./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt</code>, make sure that your <code>JAVA_HOME</code> is set to a Java JDK version 1.8 or later.</p>
-</div>
-</p></li>
+<li><code>domainUID</code>: <code>sample-domain1</code></li>
+<li><code>image</code>: Leave empty unless you need to tag the new image that the script builds to a different name.</li>
+<li><code>weblogicCredentialsSecretName</code>: <code>sample-domain1-weblogic-credentials</code></li>
+<li><code>namespace</code>: <code>sample-domain1-ns</code></li>
+<li><code>domainHomeImageBase</code>: <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code></li>
 </ul>
 
 <p>For example, assuming you named your copy <code>my-inputs.yaml</code>:</p>
 
 <pre><code class="language-bash">$ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
-$ ./create-domain.sh -i my-inputs.yaml -o /some/output/directory -u &lt;username&gt; -p &lt;password&gt; -e
+$ ./create-domain.sh -i my-inputs.yaml -o /&lt;your output directory&gt; -u &lt;username&gt; -p &lt;password&gt; -e
 </code></pre>
 
-<p>You need to provide the WebLogic administration user name and password in the <code>-u</code> and <code>-p</code> options
-respectively, as shown in the example.
-<div class="notices note" ><p>When using this sample, the WebLogic Server credentials that you specify, in three separate places, must be consistent:</p>
-
-<ul>
-<li>The secret that you create for the credentials.</li>
-<li>The properties files in the sample project you choose to create the Docker image from.</li>
-<li>The parameters you supply to the <code>create-domain.sh</code> script.</li>
-</ul>
-</div>
-</p>
-
-<p>If you specify the <code>-e</code> option, the script will generate the
-Kubernetes YAML files <em>and</em> apply them to your cluster.  If you omit the <code>-e</code> option, the
-script will just generate the YAML files, but will not take any action on your cluster.</p>
-
-<p>If you run the sample from a machine that is remote to the Kubernetes cluster, and you need to push the new image to a registry that is local to the cluster, you need to do the following:</p>
-
-<ul>
-<li>Set the <code>image</code> property in the inputs file to the target image name (including the registry hostname/port, and the tag if needed).</li>
-<li>If you want Kubernetes to pull the image from a private registry, create a Kubernetes secret to hold your credentials and set the <code>imagePullSecretName</code> property in the inputs file to the name of the secret.
-<div class="notices note" ><p>The Kubernetes secret must be in the same namespace where the domain will be running.
-For more information, see <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/#weblogic-domain-in-docker-image-protection">domain home in image protection</a>
-in the <strong><em>Security</em></strong> section.</p>
+<div class="notices note" ><p>You need to provide the same WebLogic domain administrator user name and password in the <code>-u</code> and <code>-p</code> options
+    respectively, as you provided when creating the Kubernetes secret in Step 1.</p>
 </div>
 </li>
-<li>Run the <code>create-domain.sh</code> script without the <code>-e</code> option.</li>
-<li>Push the <code>image</code> to the registry.</li>
-<li>Run the following command to create the domain.</li>
-</ul>
-
-<pre><code class="language-bash">$ kubectl apply -f /some/output/directory/weblogic-domains/sample-domain1/domain.yaml
-</code></pre></li>
 
 <li><p>Confirm that the operator started the servers for the domain:</p>
 
@@ -2236,18 +2208,12 @@ in the <strong><em>Security</em></strong> section.</p>
 
 <li><p>To confirm that the load balancer noticed the new Ingress and is successfully routing to the domain&rsquo;s server pods,
 you can send a request to the URL for the &ldquo;WebLogic ReadyApp framework&rdquo; which will return a HTTP 200 status code, as
-shown in the example below.  If you used the host-based routing Ingress sample, you will need to
-provide the hostname in the <code>-H</code> option.</p>
+shown in the example below.</p>
 
-<p>Substitute the Node IP address of the worker node for <code>your.server.com</code>. You can find it by running:</p>
-
-<pre><code class="language-bash">$ kubectl get po -n sample-domain1-ns -o wide
-</code></pre>
-
-<pre><code>$ curl -v -H 'host: sample-domain1.org' http://your.server.com:30305/weblogic/ready
-  About to connect() to your.server.com port 30305 (#0)
+<pre><code>$ curl -v -H 'host: sample-domain1.org' http://localhost:30305/weblogic/ready
+  About to connect() to localhost port 30305 (#0)
     Trying 10.196.1.64...
-    Connected to your.server.com (10.196.1.64) port 30305 (#0)
+    Connected to localhost (10.196.1.64) port 30305 (#0)
 &gt; GET /weblogic/ HTTP/1.1
 &gt; User-Agent: curl/7.29.0
 &gt; Accept: */*
@@ -2257,7 +2223,7 @@ provide the hostname in the <code>-H</code> option.</p>
 &lt; Content-Length: 0
 &lt; Date: Thu, 20 Dec 2018 14:52:22 GMT
 &lt; Vary: Accept-Encoding
-&lt;   Connection #0 to host your.server.com left intact
+&lt;   Connection #0 to host localhost left intact
 </code></pre>
 
 <div class="notices note" ><p>Depending on where your Kubernetes cluster is running, you may need to open firewall ports or update security lists to allow ingress to this port.</p>
@@ -2268,9 +2234,7 @@ provide the hostname in the <code>-H</code> option.</p>
 
 <p>a. Edit the <code>my-inputs.yaml</code> file (assuming that you named your copy <code>my-inputs.yaml</code>) to set <code>exposedAdminNodePort: true</code>.</p>
 
-<p>b. Open a browser to <code>http://your.server.com:30701</code>.</p>
-
-<p>c. As in step 5, substitute the Node IP address of the worker node for <code>your.server.com</code>.</p></li>
+<p>b. Open a browser to <code>http://localhost:30701</code>.</p></li>
 </ol>
 
 
@@ -3722,20 +3686,20 @@ if (!doNotTrack) {
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1562097078"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1562097078"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1562097078"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1562097078"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1562097078"></script>
-    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1562097078"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1562097078"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/html5shiv-printshiv.min.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1564448178"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1562097078"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1562097078"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1562097078"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom.71422.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1564448178"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1564448178"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1562097078" type="text/css" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1562097078"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1564448178" type="text/css" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1564448178"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
