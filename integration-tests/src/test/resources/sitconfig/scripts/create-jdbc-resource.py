@@ -39,7 +39,7 @@ def createDataSource(dsName):
     save()    
     activate()    
 
-connect('weblogic', 'welcome1', 't3://HOST:7001')
+connect('weblogic', 'welcome1', 't3://DOMAINUID-admin-server:7001')
 createDataSource('JdbcTestDataSource-1')
 disconnect()
 exit()

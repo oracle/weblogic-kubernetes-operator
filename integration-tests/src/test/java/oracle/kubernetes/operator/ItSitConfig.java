@@ -418,6 +418,7 @@ public class ItSitConfig extends BaseTest {
     Path path = Paths.get(JDBC_RES_SCRIPT);
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
     content = content.replaceAll("HOST", fqdn);
+    content = content.replaceAll("DOMAINUID", DOMAINUID);
     Files.write(
         Paths.get(sitconfigTmpDir, "create-jdbc-resource.py"),
         content.getBytes(StandardCharsets.UTF_8));
