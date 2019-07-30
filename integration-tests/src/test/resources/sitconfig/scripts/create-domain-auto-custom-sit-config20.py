@@ -176,7 +176,7 @@ cmo.setPassword(admin_password)
 # ==============================================
 setOption('OverwriteDomain', 'true')
 
-# Create a cluster
+# Create a cluster/
 # ======================
 cd('/')
 cl = create(cluster_name, 'Cluster')

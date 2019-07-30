@@ -224,6 +224,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -254,6 +255,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -289,6 +291,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -322,6 +325,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -355,27 +359,7 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    ExecResult result =
-        TestUtils.exec(
-            KUBE_EXEC_CMD
-                + " 'sh runSitConfigTests.sh "
-                + fqdn
-                + " "
-                + T3CHANNELPORT
-                + " weblogic welcome1 "
-                + testMethod
-                + "'");
-    assertResult(result);
-    testCompletedSuccessfully = true;
-    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
-  }
-
-  @Test
-  public void testConfigOverrideAfterStartup() throws Exception {
-    Assume.assumeFalse(QUICKTEST);
-    boolean testCompletedSuccessfully = false;
-    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethod);
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -399,6 +383,7 @@ public class ItSitConfig extends BaseTest {
     logTestBegin(testMethod);
     createJdbcResource();
     recreateCRDWithNewConfigMap();
+    transferTests();
     ExecResult result =
         TestUtils.exec(
             KUBE_EXEC_CMD
@@ -460,6 +445,19 @@ public class ItSitConfig extends BaseTest {
     cmd = "kubectl create -f " + domainYaml;
     TestUtils.exec(cmd, true);
     domain.verifyDomainCreated();
+  }
+
+  private void transferTests() throws Exception {
+    TestUtils.copyFileViaCat(
+        TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
+        "SitConfigTests.java",
+        ADMINPODNAME,
+        domain.getDomainNs());
+    TestUtils.copyFileViaCat(
+        TEST_RES_DIR + "sitconfig/scripts/runSitConfigTests.sh",
+        "runSitConfigTests.sh",
+        ADMINPODNAME,
+        domain.getDomainNs());
   }
 
   /**
