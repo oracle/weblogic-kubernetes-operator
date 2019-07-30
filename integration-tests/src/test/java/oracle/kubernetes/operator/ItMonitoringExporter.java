@@ -126,6 +126,7 @@ public class ItMonitoringExporter extends BaseTest {
             logger.info("Run once, release cluster lease");
             if (domain != null) {
                 domain.destroy();
+                TestUtils.deleteWeblogicDomainResources("test5");
             }
             if (operator != null) {
                 operator.destroy();
@@ -1166,8 +1167,14 @@ public class ItMonitoringExporter extends BaseTest {
         TestUtils.checkPodReady(podName, "monitoring", "2/2");
 
         crdCmd ="kubectl -n monitoring get pods -l app=prometheus";
+        ExecResult resultStatus = ExecCommand.exec(crdCmd);
+        logger.info("Status of the pods " + resultStatus.stdout());
+        result = ExecCommand.exec(crdCmd + "| grep prometheus-service");
+        podName = result.stdout().trim();
+        crdCmd ="kubectl -n monitoring describe pod " + podName;
         result = ExecCommand.exec(crdCmd);
-        logger.info("Status of the pods " + result.stdout());
+        logger.info("Status of the prometheus service pod " + result.stdout());
+        assertFalse("Can't create prometheus pods", resultStatus.stdout().contains("CrashLoopBackOff") || resultStatus.stdout().contains("Error"));
 
         crdCmd ="kubectl -n monitoring get svc -l app=prometheus";
         result = ExecCommand.exec(crdCmd);
