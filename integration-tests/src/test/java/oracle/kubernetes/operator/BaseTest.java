@@ -31,7 +31,6 @@ public class BaseTest {
   public static final String TESTWEBAPP = "testwebapp";
   public static final String TESTWSAPP = "testwsapp";
   public static final String TESTWSSERVICE = "TestWsApp";
-  public static final String PS4_SLIM_TAG = "12.2.1.4-slim";
 
   // property file used to customize operator properties for operator inputs yaml
 
@@ -539,7 +538,7 @@ public class BaseTest {
 
   /**
    * Verify t3channel port by a JMS connection.
-   *
+   * This method is not used. See OWLS-76081
    * @throws Exception exception
    */
   public void testAdminT3ChannelWithJms(Domain domain) throws Exception {
