@@ -2,24 +2,7 @@
 # Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-function pull_tag_build_images {
-  docker images
-
-  if [ "$JRF_ENABLED" = true ] ; then
-	pull_tag_images_jrf	
-  else
-  	pull_tag_images
-  fi
-
-  export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
-  # create a docker image for the operator code being tested
-  docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
-  docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
-  
-  docker images
-
-}
-
+# the below function is not used 
 function docker_login {
 
   set +x 
@@ -78,7 +61,7 @@ function clean_shared_cluster {
 	${PROJECT_ROOT}/src/integration-tests/bash/cleanup.sh
 }
 
-function pull_tag_images {
+function create_image_pull_secret_wl {
 
   set +x 
   if [ -z "$OCR_USERNAME" ] || [ -z "$OCR_PASSWORD" ]; then
@@ -90,7 +73,6 @@ function pull_tag_images {
   
   if [ -n "$OCR_USERNAME" ] && [ -n "$OCR_PASSWORD" ]; then  
 	  echo "Creating Docker Secret"
-	  
 	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
 	    --docker-server=${OCR_SERVER}/ \
 	    --docker-username=$OCR_USERNAME \
@@ -103,11 +85,6 @@ function pull_tag_images {
 	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
 	    exit 1
 	  fi
-	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
-          # echo "docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}"
-	  docker login -u $OCR_USERNAME -p $OCR_PASSWORD ${OCR_SERVER}
-          # echo "docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC"
-   	  docker pull $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC
   fi
   set -x
 }
@@ -128,7 +105,7 @@ function pull_tag_images_jrf {
   fi
 
   # reuse the create secret logic
-  pull_tag_images
+  create_image_pull_secret_wl
 
   # pull fmw infra images
   docker pull $IMAGE_NAME_FMWINFRA:$IMAGE_TAG_FMWINFRA
@@ -139,6 +116,7 @@ function pull_tag_images_jrf {
   set -x
 }
 
+# the below function is not used 
 function get_wlthint3client_from_image {
   # Get wlthint3client.jar from image
   id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
@@ -233,50 +211,35 @@ if [ "$SHARED_CLUSTER" = "true" ]; then
 	  	echo "When running in shared cluster option, provide DNS name or IP of a Kubernetes worker node using K8S_NODEPORT_HOST env variable"
 	  	exit 1
 	fi
-        pull_tag_images
+    create_image_pull_secret_wl
 	
   fi
   setup_shared_cluster
-  get_wlthint3client_from_image
   docker images
     
 elif [ "$JENKINS" = "true" ]; then
 
   echo "Test Suite is running on Jenkins and k8s is running locally on the same node."
+  docker images
 
-  # External customizable env vars unique to Jenkins:
-
-  export docker_pass=${docker_pass:?}
-  export M2_HOME=${M2_HOME:?}
-  export K8S_VERSION=${K8S_VERSION}
-
-  pull_tag_build_images
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT"
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT"
-
-  # 777 is needed because this script, k8s pods, and/or jobs may need access.
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp"
-  /usr/local/packages/aime/ias/run_as_root "chmod 777 $RESULT_ROOT/acceptance_test_tmp"
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $RESULT_ROOT/acceptance_test_tmp_archive"
-  /usr/local/packages/aime/ias/run_as_root "chmod 777 $RESULT_ROOT/acceptance_test_tmp_archive"
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv"
-  /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv"
-
-  /usr/local/packages/aime/ias/run_as_root "mkdir -p $PV_ROOT/acceptance_test_pv_archive"
-  /usr/local/packages/aime/ias/run_as_root "chmod 777 $PV_ROOT/acceptance_test_pv_archive"
-  
-  if [ "$JRF_ENABLED" = false ] && [ "$IMAGE_TAG_WEBLOGIC" != "12.2.1.4-slim" ];  then
-  	get_wlthint3client_from_image
+  if [ "$JRF_ENABLED" = true ] ; then
+	pull_tag_images_jrf	
+  else
+  	create_image_pull_secret_wl
   fi
+
+  export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
+  # create a docker image for the operator code being tested
+  docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
+  docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
+  
+  docker images
+
 else
   if [ "$JRF_ENABLED" = true ] ; then
 	pull_tag_images_jrf	
   else
-  	pull_tag_images
+  	create_image_pull_secret_wl
   fi
     
   #docker rmi -f $(docker images -q -f dangling=true)
@@ -287,8 +250,5 @@ else
   export JAR_VERSION="`grep -m1 "<version>" pom.xml | cut -f2 -d">" | cut -f1 -d "<"`"
   docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}"  --build-arg VERSION=$JAR_VERSION --no-cache=true .
   docker tag "${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}" weblogic-kubernetes-operator:latest
-  
-  if [ "$JRF_ENABLED" = false ] && [ "$IMAGE_TAG_WEBLOGIC" != "12.2.1.4-slim" ]; then
-  	get_wlthint3client_from_image
-  fi
+ 
 fi
