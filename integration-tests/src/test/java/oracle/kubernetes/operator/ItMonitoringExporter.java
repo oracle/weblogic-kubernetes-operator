@@ -1160,7 +1160,7 @@ public class ItMonitoringExporter extends BaseTest {
         crdCmd =
                 "helm install --wait --name prometheus --namespace monitoring --values  "
                         + monitoringExporterEndToEndDir
-                        + "/prometheus/values.yaml stable/prometheus";
+                        + "/prometheus/values.yaml stable/prometheus --version 8.14.3";
         ExecResult result = ExecCommand.exec(crdCmd);
         logger.info(" Result from helm install " + result.stdout() + " erros : " + result.stderr());
         String podName = getPodName("app=prometheus", "monitoring");
