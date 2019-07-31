@@ -381,7 +381,7 @@ public class SitConfigTests {
       assert startupClasse.getClassName().equals(startupClassName)
           : "Startup class name is not AddedStartupClassOne";
       assert startupClasse.getDeploymentOrder() == 5 : "Startup class deployment order is not 5";
-      assert startupClasse.getFailureIsFatal() : "FailureIsFatal is not false";
+      assert !startupClasse.getFailureIsFatal() : "FailureIsFatal is not false";
       assert startupClasse.getLoadBeforeAppDeployments() : "LoadBeforeAppDeployments is not true";
     }
     ShutdownClassMBean[] shutdownClasses =

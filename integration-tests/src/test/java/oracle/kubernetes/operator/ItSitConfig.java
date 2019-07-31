@@ -393,7 +393,7 @@ public class ItSitConfig extends BaseTest {
     String dstDir = configOverrideDir;
     Files.copy(
         Paths.get(srcDir, "config_1.xml"),
-        Paths.get(dstDir, "config_1.xml"),
+        Paths.get(dstDir, "config.xml"),
         StandardCopyOption.REPLACE_EXISTING);
     recreateCRDWithNewConfigMap();
     transferTests();
