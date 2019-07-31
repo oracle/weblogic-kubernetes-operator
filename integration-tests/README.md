@@ -8,7 +8,7 @@ The tests currently run in three modes: "shared cluster", "Jenkins", and "standa
 
 * "Standalone" Oracle Linux, i.e, run the tests manually with the `mvn` command.
 * Shared cluster(remote k8s cluster) - http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-quicktest/
-* Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development process. K8S is installed for every run.
+* Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development process. 
 
 Shared cluster runs only Quick test use cases, Jenkins runs both Quick and Full test use cases.
 
