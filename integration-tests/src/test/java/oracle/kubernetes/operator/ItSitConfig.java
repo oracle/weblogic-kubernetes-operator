@@ -375,6 +375,51 @@ public class ItSitConfig extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
+  /**
+   * Test to verify the configuration override after a domain is up and running Modifies the
+   * existing config.xml entries to add startup and shutdown classes verifies those are overridden
+   * when domain is recreated.
+   *
+   * @throws Exception when assertions fail.
+   */
+  @Test
+  public void testConfigOverrideAfterDomainStartup() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    boolean testCompletedSuccessfully = false;
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    // recreate the map with new situational config files
+    String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
+    String dstDir = configOverrideDir;
+    Files.copy(
+        Paths.get(srcDir, "config_1.xml"),
+        Paths.get(dstDir, "config_1.xml"),
+        StandardCopyOption.REPLACE_EXISTING);
+    recreateCRDWithNewConfigMap();
+    transferTests();
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh "
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + "'");
+    assertResult(result);
+    testCompletedSuccessfully = true;
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  /**
+   * This test covers the overriding of JDBC system resource after a domain is up and running It
+   * creates a datasource , recreates the K8S configmap with updated JDBC descriptor and verifies
+   * the CRD delete and create applies the new configmap there by overriding the JDBC system
+   * resource.
+   *
+   * @throws Exception when assertions fail.
+   */
   @Test
   public void testOverrideJDBCResourceAfterDomainStart() throws Exception {
     Assume.assumeFalse(QUICKTEST);
@@ -382,6 +427,13 @@ public class ItSitConfig extends BaseTest {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     createJdbcResource();
+    // recreate the map with new situational config files
+    String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
+    String dstDir = configOverrideDir;
+    Files.copy(
+        Paths.get(srcDir, "jdbc-JdbcTestDataSource-1.xml"),
+        Paths.get(dstDir, "jdbc-JdbcTestDataSource-1.xml"),
+        StandardCopyOption.REPLACE_EXISTING);
     recreateCRDWithNewConfigMap();
     transferTests();
     ExecResult result =
@@ -427,12 +479,6 @@ public class ItSitConfig extends BaseTest {
     domain.verifyDomainDeleted(clusterReplicas);
 
     // recreate the map with new situational config files
-    String srcDir = TEST_RES_DIR + "/sitconfig/configoverrides";
-    String dstDir = configOverrideDir;
-    Files.copy(
-        Paths.get(srcDir, "jdbc-JdbcTestDataSource-1.xml"),
-        Paths.get(dstDir, "jdbc-JdbcTestDataSource-1.xml"),
-        StandardCopyOption.REPLACE_EXISTING);
     cmd =
         "kubectl create configmap "
             + DOMAINUID

@@ -37,6 +37,8 @@ import weblogic.management.configuration.JMSSystemResourceMBean;
 import weblogic.management.configuration.NetworkAccessPointMBean;
 import weblogic.management.configuration.ServerDebugMBean;
 import weblogic.management.configuration.ServerMBean;
+import weblogic.management.configuration.ShutdownClassMBean;
+import weblogic.management.configuration.StartupClassMBean;
 import weblogic.management.configuration.WLDFSystemResourceMBean;
 import weblogic.management.jmx.MBeanServerInvocationHandler;
 import weblogic.management.mbeanservers.domainruntime.DomainRuntimeServiceMBean;
@@ -149,9 +151,13 @@ public class SitConfigTests {
     if (testName.equals("testCustomSitConfigOverridesForWldf")) {
       test.testSystemResourcesWldfAttributeAdd();
     }
-    
+
     if (testName.equals("testOverrideJDBCResourceAfterDomainStart")) {
-        test.testOverrideJDBCResourceAfterDomainStart("JdbcTestDataSource-1");
+      test.testOverrideJDBCResourceAfterDomainStart("JdbcTestDataSource-1");
+    }
+
+    if (testName.equals("testConfigOverrideAfterDomainStartup")) {
+      test.testConfigOverrideAfterDomainStartup();
     }
   }
 
@@ -364,6 +370,31 @@ public class SitConfigTests {
     return serverMBean;
   }
 
+  /** Test to verify the startup and shutdown class names after domain startup */
+  private void testConfigOverrideAfterDomainStartup() {
+    String startupClassName = "AddedStartupClassOne";
+    StartupClassMBean[] startupClasses =
+        runtimeServiceMBean.getDomainConfiguration().getStartupClasses();
+    for (StartupClassMBean startupClasse : startupClasses) {
+      assert startupClasse.getName().equals("StartupClass-0")
+          : "Startup class name is not StartupClass-0";
+      assert startupClasse.getClassName().equals(startupClassName)
+          : "Startup class name is not AddedStartupClassOne";
+      assert startupClasse.getDeploymentOrder() == 5 : "Startup class deployment order is not 5";
+      assert startupClasse.getFailureIsFatal() : "FailureIsFatal is not false";
+      assert startupClasse.getLoadBeforeAppDeployments() : "LoadBeforeAppDeployments is not true";
+    }
+    ShutdownClassMBean[] shutdownClasses =
+        runtimeServiceMBean.getDomainConfiguration().getShutdownClasses();
+    for (ShutdownClassMBean shutdownClasse : shutdownClasses) {
+      assert shutdownClasse.getName().equals("ShutdownClass-0")
+          : "Shutdown class name is not ShutdownClass-0";
+      assert shutdownClasse.getClassName().equals("AddedShutdownClassOne")
+          : "Shutdownclassname is not AddedShutdownClassOne";
+      assert shutdownClasse.getDeploymentOrder() == 6 : "Deployment order is not 6";
+    }
+  }
+
   /**
    * Test that verifies the initialCapacity, maxCapacity, testConnectionsonReserve, harvestMaxCount
    * and inactiveConnectionTimeoutSeconds on the given JDBC resource with the overridden values used
@@ -413,25 +444,7 @@ public class SitConfigTests {
     assert dsUrl.equals(jdbcDriverParams.getUrl())
         : "Didn't get the expected url for datasource " + dsUrl;
 
-    // Assert datasource is working with overiridden JDBC URL value
-    DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
-
-    // Create DDL statement and execute it to verify the datasource actually works.
-    try {
-      Connection connection = dataSource.getConnection();
-      Statement stmt = connection.createStatement();
-      int createSchema = stmt.executeUpdate("CREATE SCHEMA `mysqldb` ;");
-      println("create schema returned " + createSchema);
-      int createTable =
-          stmt.executeUpdate(
-              "CREATE TABLE IF NOT EXISTS mysqldb.testtable (title VARCHAR(255) "
-                  + "NOT NULL,description TEXT)ENGINE=INNODB;");
-      println("create table returned " + createTable);
-      assert createSchema == 1 : "create schema failed";
-      assert createTable == 0 : "create table failed";
-    } catch (SQLException ex) {
-      Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
-    }
+    createDatabase("mysqldb1", jdbcResourceName);
   }
 
   /**
@@ -444,28 +457,10 @@ public class SitConfigTests {
    */
   public void testOverrideJDBCResourceAfterDomainStart(String jdbcResourceName) {
 
-    // Assert datasource is working with overiridden JDBC URL value
-    DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
+    createDatabase("mysqldb2", jdbcResourceName);
 
-    // Create DDL statement and execute it to verify the datasource actually works.
-    try {
-      Connection connection = dataSource.getConnection();
-      Statement stmt = connection.createStatement();
-      int createSchema = stmt.executeUpdate("CREATE SCHEMA `mysqldb2` ;");
-      println("create schema returned " + createSchema);
-      int createTable =
-          stmt.executeUpdate(
-              "CREATE TABLE IF NOT EXISTS mysqldb.testtable (title VARCHAR(255) "
-                  + "NOT NULL,description TEXT)ENGINE=INNODB;");
-      println("create table returned " + createTable);
-      assert createSchema == 1 : "create schema failed";
-      assert createTable == 0 : "create table failed";
-    } catch (SQLException ex) {
-      Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
-    }
-
-    final int initialCapacity = 1;
-    final int maxCapacity = 15;
+    final int initialCapacity = 5;
+    final int maxCapacity = 10;
 
     println("Verifying the configuration changes made by sit config file");
 
@@ -480,6 +475,7 @@ public class SitConfigTests {
     println("maxCapacity:" + jcpb.getMaxCapacity());
     assert maxCapacity == jcpb.getMaxCapacity()
         : "Didn't get the expected value " + maxCapacity + " for maxCapacity";
+    assert jcpb.getMinCapacity() == 6 : "Didn't get the expected value 6 for minCapacity";
     assert jcpb.getLoginDelaySeconds() == 10
         : "Didn't get the expected value 10 for LoginDelaySeconds";
     assert jcpb.isIgnoreInUseConnectionsEnabled()
@@ -492,6 +488,33 @@ public class SitConfigTests {
         : "Didn't get the expected value of EmulateTwoPhaseCommit for GlobalTransactionsProtocol";
   }
 
+  /**
+   * Utility method to create a database schema using the data source name
+   *
+   * @param dbName - name of the database schema to create
+   * @param jdbcResourceName name of the data source to lookup
+   */
+  private void createDatabase(String dbName, String jdbcResourceName) {
+    // Assert datasource is working with overiridden JDBC URL value
+    DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
+    try {
+      Connection connection = dataSource.getConnection();
+      Statement stmt = connection.createStatement();
+      int createSchema = stmt.executeUpdate("CREATE SCHEMA `" + dbName + "` ;");
+      println("create schema returned " + createSchema);
+      int createTable =
+          stmt.executeUpdate(
+              "CREATE TABLE IF NOT EXISTS "
+                  + dbName
+                  + ".testtable (title VARCHAR(255) "
+                  + "NOT NULL,description TEXT)ENGINE=INNODB;");
+      println("create table returned " + createTable);
+      assert createSchema == 1 : "create schema failed";
+      assert createTable == 0 : "create table failed";
+    } catch (SQLException ex) {
+      Logger.getLogger(SitConfigTests.class.getName()).log(Level.SEVERE, null, ex);
+    }
+  }
   /**
    * Returns the JDBCSystemResourceMBean from the domain configuration matching with JDBC resource
    * name.
