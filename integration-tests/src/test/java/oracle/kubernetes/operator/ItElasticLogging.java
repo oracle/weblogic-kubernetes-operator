@@ -31,6 +31,9 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItElasticLogging extends BaseTest {
+  private static final String logstashIndexKey = "logstash";
+  private static final String kibanaIndexKey = "kibana";
+  private static final String wlsIndexKey = "wls";
   private static final String elasticStackYamlLoc =
       "kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml";
   private final String loggingJarRepos = 
@@ -39,9 +42,6 @@ public class ItElasticLogging extends BaseTest {
   private final String snakeyamlJarRepos = 
     "https://repo1.maven.org/maven2/org/yaml/snakeyaml/1.23";
   private final String snakeyamlJar = "snakeyaml-1.23.jar";
-  private static final String logstashIndexKey = "logstash";
-  private static final String kibanaIndexKey = "kibana";
-  private static final String wlsIndexKey = "wls";
   private static Operator operator;
   private static Domain domain;
   private static String k8sExecCmdPrefix;
