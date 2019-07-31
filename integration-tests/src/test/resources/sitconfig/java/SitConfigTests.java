@@ -451,7 +451,7 @@ public class SitConfigTests {
     try {
       Connection connection = dataSource.getConnection();
       Statement stmt = connection.createStatement();
-      int createSchema = stmt.executeUpdate("CREATE SCHEMA `mysqldb` ;");
+      int createSchema = stmt.executeUpdate("CREATE SCHEMA `mysqldb2` ;");
       println("create schema returned " + createSchema);
       int createTable =
           stmt.executeUpdate(
@@ -480,8 +480,6 @@ public class SitConfigTests {
     println("maxCapacity:" + jcpb.getMaxCapacity());
     assert maxCapacity == jcpb.getMaxCapacity()
         : "Didn't get the expected value " + maxCapacity + " for maxCapacity";
-    println("testConnectionsonReserve:" + jcpb.isTestConnectionsOnReserve());
-
     assert jcpb.getLoginDelaySeconds() == 10
         : "Didn't get the expected value 10 for LoginDelaySeconds";
     assert jcpb.isIgnoreInUseConnectionsEnabled()
