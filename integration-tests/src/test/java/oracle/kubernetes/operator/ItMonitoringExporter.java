@@ -1174,6 +1174,15 @@ public class ItMonitoringExporter extends BaseTest {
         crdCmd ="kubectl -n monitoring describe pod " + podName;
         result = ExecCommand.exec(crdCmd);
         logger.info("Status of the prometheus service pod " + result.stdout());
+
+        crdCmd ="kubectl -n monitoring -c prometheus-server-configmap-reload logs  " + podName;
+        result = ExecCommand.exec(crdCmd);
+        logger.info("Log for prometheus service pod , container prometheus-server-configmap-reload" + result.stdout());
+
+        crdCmd ="kubectl -n monitoring -c prometheus-server logs  " + podName;
+        result = ExecCommand.exec(crdCmd);
+        logger.info("Log for prometheus service pod , container prometheus-server" + result.stdout());
+
         assertFalse("Can't create prometheus pods", resultStatus.stdout().contains("CrashLoopBackOff") || resultStatus.stdout().contains("Error"));
 
         crdCmd ="kubectl -n monitoring get svc -l app=prometheus";
