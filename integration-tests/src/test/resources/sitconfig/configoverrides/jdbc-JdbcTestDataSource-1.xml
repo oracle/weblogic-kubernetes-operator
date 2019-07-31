@@ -5,15 +5,15 @@
     xmlns:s="http://xmlns.oracle.com/weblogic/situational-config" >
     <jdbc:name >JdbcTestDataSource-1</jdbc:name>
     <jdbc:datasource-type>GENERIC</jdbc:datasource-type>
-    <jdbc-connection-pool-params>
-        <initial-capacity jdbcf:combine-mode="replace">1</initial-capacity>
-        <max-capacity jdbcf:combine-mode="replace">15</max-capacity>
-        <min-capacity jdbcf:combine-mode="replace">3</min-capacity>
-        <ignore-in-use-connections-enabled jdbcf:combine-mode="replace">true</ignore-in-use-connections-enabled>
-        <login-delay-seconds jdbcf:combine-mode="replace">10</login-delay-seconds>
-        <statement-cache-type jdbcf:combine-mode="replace">FIXED</statement-cache-type>
-    </jdbc-connection-pool-params>
-    <jdbc-data-source-params>
-        <global-transactions-protocol jdbcf:combine-mode="replace">EmulateTwoPhaseCommit</global-transactions-protocol>
-    </jdbc-data-source-params>
+    <jdbc:jdbc-connection-pool-params>
+        <jdbc:initial-capacity jdbcf:combine-mode="replace">1</jdbc:initial-capacity>
+        <jdbc:max-capacity jdbcf:combine-mode="replace">15</jdbc:max-capacity>
+        <jdbc:min-capacity jdbcf:combine-mode="replace">3</jdbc:min-capacity>
+        <jdbc:ignore-in-use-connections-enabled jdbcf:combine-mode="replace">true</jdbc:ignore-in-use-connections-enabled>
+        <jdbc:login-delay-seconds jdbcf:combine-mode="replace">10</jdbc:login-delay-seconds>
+        <jdbc:statement-cache-type jdbcf:combine-mode="replace">FIXED</jdbc:statement-cache-type>
+    </jdbc:jdbc-connection-pool-params>
+    <jdbc:jdbc-data-source-params>
+        <jdbc:global-transactions-protocol jdbcf:combine-mode="replace">EmulateTwoPhaseCommit</jdbc:global-transactions-protocol>
+    </jdbc:jdbc-data-source-params>
 </jdbc:jdbc-data-source>
