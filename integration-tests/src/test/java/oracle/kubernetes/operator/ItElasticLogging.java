@@ -33,15 +33,21 @@ import org.junit.runners.MethodSorters;
 public class ItElasticLogging extends BaseTest {
   private static final String elasticStackYamlLoc =
       "kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml";
+  private final String loggingJarRepos = 
+    "https://github.com/oracle/weblogic-logging-exporter/releases/download/v0.1.1";
+  private final String wlsLoggingExpJar = "weblogic-logging-exporter-0.1.1.jar";
+  private final String snakeyamlJarRepos = 
+    "https://repo1.maven.org/maven2/org/yaml/snakeyaml/1.23";
+  private final String snakeyamlJar = "snakeyaml-1.23.jar";
+  private static final String logstashIndexKey = "logstash";
+  private static final String kibanaIndexKey = "kibana";
+  private static final String wlsIndexKey = "wls";
   private static Operator operator;
   private static Domain domain;
   private static String k8sExecCmdPrefix;
   private static String elasticSearchURL;
   private static Map<String, Object> testVarMap;
   private static String loggingExpArchiveLoc;
-  private static final String logstashIndexKey = "logstash";
-  private static final String kibanaIndexKey = "kibana";
-  private static final String wlsIndexKey = "wls";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -242,10 +248,9 @@ public class ItElasticLogging extends BaseTest {
     // Verify that hits of loggerName = WebLogicServer are not empty
     queryCriteria = "/_search?q=loggerName:WebLogicServer";
     verifySearchResults(queryCriteria, regex, wlsIndexKey, false);
-    // TODO: Verify that hits of _type:doc are not empty
-    //Will uncomment below when we have new wls logging exporter jar file pushed to github
-    //queryCriteria = "/_search?q=_type:doc";
-    //verifySearchResults(queryCriteria, regex, wlsIndexKey, false);
+    // Verify that hits of _type:doc are not empty
+    queryCriteria = "/_search?q=_type:doc";
+    verifySearchResults(queryCriteria, regex, wlsIndexKey, false);
  
     logger.info("SUCCESS - " + testMethodName);
   }
@@ -391,13 +396,8 @@ public class ItElasticLogging extends BaseTest {
   }
   
   private void downloadWLSLoggingExporterJars() throws Exception {
-    // Location of Weblogic logging exporter jar files
-    final String loggingJarRepos = 
-      "https://github.com/oracle/weblogic-logging-exporter/releases/download/v0.1";
-    final String snakeyamlJarRepos = 
-      "https://repo1.maven.org/maven2/org/yaml/snakeyaml/1.23";
     File loggingJatReposDir = new File(loggingExpArchiveLoc);
-            
+
     if (loggingJatReposDir.list().length == 0) {
       StringBuffer getJars = new StringBuffer();
       getJars
@@ -406,14 +406,14 @@ public class ItElasticLogging extends BaseTest {
           .append(" ")
           .append(loggingJarRepos)
           .append("/")
-          .append("weblogic-logging-exporter-0.1.jar ")
-          .append(";")
-          .append(" wget -P ")
+          .append(wlsLoggingExpJar)
+          .append(" ; ")
+          .append("wget -P ")
           .append(loggingExpArchiveLoc)
           .append(" ")
           .append(snakeyamlJarRepos)
           .append("/")
-          .append("snakeyaml-1.23.jar");
+          .append(snakeyamlJar);
       logger.info("Executing cmd " + getJars.toString());
       ExecResult result = TestUtils.exec(getJars.toString());
       logger.info("Result: " + result.stdout());
@@ -453,19 +453,17 @@ public class ItElasticLogging extends BaseTest {
     }
   }
   
-  private void copyResourceFilesToOnePod (String serverName, String domainNS) 
+  private void copyResourceFilesToOnePod(String serverName, String domainNS) 
       throws Exception {
     String resourceDir = 
       BaseTest.getProjectRoot() + "/integration-tests/src/test/resources";
     String testResourceDir = resourceDir + "/loggingexporter";
-    final String loggingArchJar = "weblogic-logging-exporter-0.1.jar";
-    final String snakeyamlJar = "snakeyaml-1.23.jar";
     final String loggingYamlFile = "WebLogicLoggingExporter.yaml";
     
     //Copy test files to Weblogic server pod
     TestUtils.kubectlcp(
-        loggingExpArchiveLoc + "/" + loggingArchJar,
-        "/shared/domains/domainonpvwlst/lib/" + loggingArchJar,
+        loggingExpArchiveLoc + "/" + wlsLoggingExpJar,
+        "/shared/domains/domainonpvwlst/lib/" + wlsLoggingExpJar,
         serverName,
         domainNS);
 
