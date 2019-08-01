@@ -2,37 +2,6 @@
 # Copyright 2018, 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
-# the below function is not used 
-function docker_login {
-
-  set +x 
-  if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
-        echo "DOCKER_USERNAME and DOCKER_PASSWORD not set !!!"
-	exit 1
-  fi
-  
-  if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then  
-	  echo "Creating Docker Secret"
-	  
-	  kubectl create secret docker-registry $IMAGE_PULL_SECRET_WEBLOGIC  \
-	    --docker-server=index.docker.io/v1/ \
-	    --docker-username=$DOCKER_USERNAME \
-	    --docker-password=$DOCKER_PASSWORD \
-            --dry-run -o yaml | kubectl apply -f -
-	  
-	  echo "Checking Secret"
-	  SECRET="`kubectl get secret $IMAGE_PULL_SECRET_WEBLOGIC | grep $IMAGE_PULL_SECRET_WEBLOGIC | wc | awk ' { print $1; }'`"
-	  if [ "$SECRET" != "1" ]; then
-	    echo "secret $IMAGE_PULL_SECRET_WEBLOGIC was not created successfully"
-	    exit 1
-	  fi
-	  # below docker pull is needed to get wlthint3client.jar from image to put in the classpath
-	  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-  fi
-  set -x
-
-}
-
 function setup_shared_cluster {
   echo "Perform setup for running on shared cluster"
   echo "Install tiller"
@@ -116,18 +85,6 @@ function pull_tag_images_jrf {
   set -x
 }
 
-# the below function is not used 
-function get_wlthint3client_from_image {
-  # Get wlthint3client.jar from image
-  id=$(docker create $IMAGE_NAME_WEBLOGIC:$IMAGE_TAG_WEBLOGIC)
-  docker cp $id:/u01/oracle/wlserver/server/lib/wlthint3client.jar $SCRIPTPATH
-  if [ ! "$?" = "0" ] ; then
-  	echo "Docker Copy failed for wlthint3client.jar"
-  	exit 1
-  fi
-  docker rm -v $id
-  
-}
 export OCR_SERVER="${OCR_SERVER:-container-registry.oracle.com}"
 export WLS_IMAGE_URI=/middleware/weblogic
 export SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
