@@ -915,9 +915,9 @@ public class Domain {
     logger.info("pvSharing for this domain is: " + pvSharing);
     if (!pvSharing) {
       pvMap.put("domainUID", domainUid);
-    } else {
+    } /*else {
       pvMap.put("baseName", "weblogic-sharing");
-    }
+    }*/
     logger.info("baseName of PVPVC for this domain is: " + (String) pvMap.get("baseName"));
 
     // Now there is only one pvSharing test case and we just use parameter "baseName"+"-pvc" as PVC
