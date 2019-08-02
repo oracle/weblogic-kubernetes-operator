@@ -1079,6 +1079,100 @@ public class TestUtils {
   }
 
   /**
+   * Build a jar archive.  The archive will only include the directory structure below the srcDir.
+   *
+   * @param jarPath  Jar file path for resulting archive
+   * @param srcDir   source directory
+   */
+  public static void buildJarArchive(
+      String jarPath, String srcDir)  {
+
+    try {
+      StringBuffer cmd = new StringBuffer("jar -cf ");
+      cmd
+          .append(jarPath)
+          .append(" -C ")
+          .append(srcDir)
+          .append(" . ")
+      ;
+      logger.info("Command to call build a jar file " + cmd);
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Build a zip archive.  The archive will only include the directory structure below the srcDir.
+   *
+   * @param zipPath  zip file path for resulting archive
+   * @param srcDir   source directory
+   */
+  public static void buildZipArchive(
+      String zipPath, String srcDir)  {
+
+    try {
+      StringBuffer cmd = new StringBuffer();
+      cmd
+          .append("cd ")
+          .append(srcDir)
+          .append(" ; zip -r ")
+          .append(zipPath)
+          .append(" . ")
+      ;
+      logger.info("Command to call build a zip file " + cmd);
+      ExecResult result = ExecCommand.exec(cmd.toString());
+      if (result.exitValue() != 0) {
+        throw new RuntimeException(
+            "FAILURE: command " + cmd + " failed, returned " + result.stderr());
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Build a WDT zip archive, which consists of a set of archives structured as follows:
+   *
+   * wlsdeploy/applications/archive1, archive2, etc
+   *
+   * for example, the WDT archive with 3 artifacts could have the following...
+   *
+   *  wlsdeploy/applications/archive1.ear, wlsdeploy/applications/coh-archive.gar, wlsdeploy/applications/mywebapp.war
+   *
+   * Copy each archive to temp location then build the WDT archive
+   *
+   * @param wdtArchivePath path where new archive should be created
+   * @param archivePaths   array of archives to be included in the WDT archive
+   * @param tmpDirRoot     tmp directory that can be used to create the archve
+   */
+  public static void buildWdtZip(
+      String wdtArchivePath, String[] archivePaths, String tmpDirRoot)  {
+
+    try {
+      // Create temp directory strucuture for the WDT archive
+      String archiveRoot = tmpDirRoot + "/wdt-archive-root";
+      String archiveDest = archiveRoot + "/wlsdeploy/applications";
+      File archiveDestDir = new File(archiveDest);
+      archiveDestDir.mkdirs();
+
+      // Copy archives to the dest
+      for (String archivePath: archivePaths) {
+        copyFile(archivePath, archiveDest + "/" + new File(archivePath).getName());
+      }
+
+      // Build the WDT zip
+      buildZipArchive(wdtArchivePath, archiveRoot);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
    * exec into the pod and call the shell script with given arguments.
    *
    * @param podName pod name

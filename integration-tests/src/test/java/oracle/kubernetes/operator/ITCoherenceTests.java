@@ -11,7 +11,6 @@ import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -28,6 +27,7 @@ public class ITCoherenceTests extends BaseTest {
 
   private static final String PROXY_CLIENT_SCRIPT = "buildRunProxyClient.sh";
   private static final String PROXY_CLIENT_APP_NAME = "coherence-proxy-client";
+  private static final String PROXY_SERVER_APP_NAME = "coherence-proxy-server";
   private static final String OP_CACHE_LOAD = "load";
   private static final String OP_CACHE_VALIDATE = "validate";
   private static final String PROXY_PORT = "9000";
@@ -70,11 +70,13 @@ public class ITCoherenceTests extends BaseTest {
     Assert.assertNotNull(domain);
 
     try {
+      // Build and run the proxy client on the admin VM to load the cache
       copyAndExecuteProxyClientInPod(OP_CACHE_LOAD);
 
       // Do the rolling restart
-      restartDomainByChangingEnvProperty();
+//      restartDomainByChangingEnvProperty();
 
+      // Build and run the proxy client on the admin VM to validate the cache
       copyAndExecuteProxyClientInPod(OP_CACHE_VALIDATE);
     } finally {
       destroyDomain();
@@ -83,7 +85,8 @@ public class ITCoherenceTests extends BaseTest {
   }
 
   /**
-   * Copy the shell script file and all coherence app files over to the admin pod.
+   * Since the coherence.jar is not open source, we need to build the proxy client on the admin VM, which has the
+   * coherence.jar.  Copy the shell script file and all coherence app files over to the admin pod.
    * Then run the script to build the proxy client and run the proxy test.
    *
    * @param cacheOp - cache operation
@@ -134,26 +137,6 @@ public class ITCoherenceTests extends BaseTest {
   }
 
   /**
-   * Modify the domain scope env property on the domain resource using kubectl apply -f domain.yaml
-   * Verify that all the server pods in the domain got re-started. The property tested is: env:
-   * "-Dweblogic.StdoutDebugEnabled=false"--> "-Dweblogic.StdoutDebugEnabled=true"
-   *
-   * @throws Exception
-   */
-  private void restartDomainByChangingEnvProperty() throws Exception {
-
-    // The default cmd loop sleep is too long and we could miss states like terminating. Change
-    // the
-    // sleep and iterations
-    //
-    setWaitTimePod(2);
-    setMaxIterationsPod(125);
-
-    domain.verifyDomainServerPodRestart(
-        "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
-  }
-
-  /**
    * Create the domain
    *
    * @return
@@ -161,9 +144,8 @@ public class ITCoherenceTests extends BaseTest {
    */
   private Domain createDomain() throws Exception {
 
-// TODO - Don't hardcode the archive location
     Map<String, String> envMap = new HashMap();
-    envMap.put("CUSTOM_WDT_ARCHIVE", "/Users/pmackin/archive-proxy.zip");
+    envMap.put("CUSTOM_WDT_ARCHIVE", buildProxyServerWdtZip());
 
     // create domain
     Domain domain = null;
@@ -192,4 +174,41 @@ public class ITCoherenceTests extends BaseTest {
     }
   }
 
+  /**
+   * Modify the domain scope env property on the domain resource using kubectl apply -f domain.yaml
+   * Verify that all the server pods in the domain got re-started. The property tested is: env:
+   * "-Dweblogic.StdoutDebugEnabled=false"--> "-Dweblogic.StdoutDebugEnabled=true"
+   *
+   * @throws Exception
+   */
+  private void restartDomainByChangingEnvProperty() throws Exception {
+
+    // The default cmd loop sleep is too long and we could miss states like terminating. Change
+    // the
+    // sleep and iterations
+    //
+    setWaitTimePod(2);
+    setMaxIterationsPod(125);
+
+    domain.verifyDomainServerPodRestart(
+        "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
+  }
+
+  /**
+   * Build the WDT zip that contains the Coherence proxy server
+   *
+   * @return the WDT zip path
+   */
+  private static String buildProxyServerWdtZip() {
+
+    // Build the proxy server gar file
+    String garPath = getResultDir() + "/coh-proxy-server.gar";
+    String cohAppLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + PROXY_SERVER_APP_NAME;
+    TestUtils.buildJarArchive(garPath, cohAppLocationOnHost);
+
+    // Build the WDT zip
+    String wdtArchivePath = getResultDir() + "/coh-wdt-archive.zip";
+    TestUtils.buildWdtZip(wdtArchivePath, new String[] {garPath}, getResultDir());
+    return wdtArchivePath;
+  }
 }
