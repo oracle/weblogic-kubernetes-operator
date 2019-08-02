@@ -5,9 +5,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.Map;
-import oracle.kubernetes.operator.utils.CoherenceUtils;
 import oracle.kubernetes.operator.utils.Domain;
-import oracle.kubernetes.operator.utils.K8sTestUtils;
 import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
@@ -15,7 +13,6 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 /**
@@ -28,9 +25,14 @@ public class ITCoherenceTests extends BaseTest {
 
   private static Domain domain = null;
   private static Operator operator1;
-  private static String domainUid = "";
-  private static String restartTmpDir = "";
-  private static String originalYaml;
+
+  private static final String testAppName = "coherence-proxy-client";
+
+  private static final String PROXY_CLIENT_SCRIPT = "buildRunProxyClient.sh";
+  private static final String PROXY_CLIENT_APP_NAME = "coherence-proxy-client";
+  private static final String OP_CACHE_LOAD = "load";
+  private static final String OP_CACHE_VALIDATE = "validate";
+  private static final String PROXY_PORT = "9000";
 
   /**
    * This method gets called only once before any of the test methods are executed. It does the
@@ -45,12 +47,6 @@ public class ITCoherenceTests extends BaseTest {
     // initialize test properties and create the directories
     if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
-
-      // The default cmd loop sleep is too long and we could miss states like terminating. Change the
-      // sleep and iterations
-      //
-      setWaitTimePod(2);
-      setMaxIterationsPod(125);
 
       if (operator1 == null) {
         operator1 = TestUtils.createOperator(OPERATOR1_YAML);
@@ -67,26 +63,80 @@ public class ITCoherenceTests extends BaseTest {
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
-      logger.info("SUCCESS");
     }
   }
 
   @Test
   public void testRollingRestart() throws Exception {
-
-    CoherenceUtils utils = new CoherenceUtils();
+    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethodName);
 
     domain = createDomain();
     Assert.assertNotNull(domain);
 
-    utils.loadCache();
+    try {
+      copyAndExecuteProxyClientInPod(OP_CACHE_LOAD);
 
-    // Do the rolling restart
-    testServerPodsRestartByChangingEnvProperty();
+      // Do the rolling restart
+      restartDomainByChangingEnvProperty();
 
-    utils.validateCache();
+      copyAndExecuteProxyClientInPod(OP_CACHE_VALIDATE);
+    } finally {
+      destroyDomain();
+    }
+    logger.info("SUCCESS - " + testMethodName);
+  }
 
-    destroyDomain();
+  /**
+   * Copy the shell script file and all App files over to the admin pod the run the script to build
+   * the proxy client and run the proxy test.
+   *
+   * @param cacheOp - cache operation
+   * @throws Exception exception
+   */
+  private static void copyAndExecuteProxyClientInPod(String cacheOp) {
+    try {
+      final String adminServerPod = domain.getDomainUid() + "-" + domain.getAdminServerName();
+
+      final String domainNS = domain.getDomainNs();
+
+      // Use the proxy running on Managed Server 1, get the internal POD IP
+      String podName = domain.getManagedSeverPodName(1);
+      String ProxyIP = TestUtils.getPodIP(domainNS, "", podName);
+
+      String cohAppLocationOnHost = BaseTest.getAppLocationOnHost() + "/" + PROXY_CLIENT_APP_NAME;
+      String cohAppLocationInPod = BaseTest.getAppLocationInPod() + "/" + PROXY_CLIENT_APP_NAME;
+      final String cohScriptPathOnHost = cohAppLocationOnHost + "/" + PROXY_CLIENT_SCRIPT;
+      final String cohScriptPathInPod = cohAppLocationInPod + "/" + PROXY_CLIENT_SCRIPT;
+      final String successMarker = "CACHE-SUCCESS";
+
+      logger.info("Copying files to admin pod for App " + PROXY_CLIENT_APP_NAME);
+
+      // Create app dir in the admin pod
+      StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ");
+      mkdirCmd.append(cohAppLocationInPod).append("'");
+      TestUtils.kubectlexec(adminServerPod, domainNS, mkdirCmd.toString());
+
+      // Copy shell script to the pod
+      TestUtils.copyFileViaCat(cohScriptPathOnHost, cohScriptPathInPod, adminServerPod, domainNS);
+
+      // Copy all App files to the admin pod
+      TestUtils.copyAppFilesToPod(
+          cohAppLocationOnHost, cohAppLocationInPod, adminServerPod, domainNS);
+
+      logger.info(
+          "Executing script "
+              + PROXY_CLIENT_SCRIPT
+              + " for App "
+              + PROXY_CLIENT_APP_NAME
+              + " in the admin pod");
+
+      // Run the script to on the admin pod (note first arg is app directory is applocation in pod)
+      domain.callShellScriptInAdminPod(
+          successMarker, cohScriptPathInPod, cohAppLocationInPod, cacheOp, ProxyIP, PROXY_PORT);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -96,21 +146,17 @@ public class ITCoherenceTests extends BaseTest {
    *
    * @throws Exception
    */
-  public void testServerPodsRestartByChangingEnvProperty() throws Exception {
+  private void restartDomainByChangingEnvProperty() throws Exception {
 
-    Assume.assumeFalse(QUICKTEST);
-    String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
-    logTestBegin(testMethodName);
-
-    logger.info(
-        "About to verifyDomainServerPodRestart for Domain: "
-            + domain.getDomainUid()
-            + "  env property: StdoutDebugEnabled=false to StdoutDebugEnabled=true");
+    // The default cmd loop sleep is too long and we could miss states like terminating. Change
+    // the
+    // sleep and iterations
+    //
+    setWaitTimePod(2);
+    setMaxIterationsPod(125);
 
     domain.verifyDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
-
-    logger.info("SUCCESS - " + testMethodName);
   }
 
   private static void destroyDomain() throws Exception {
