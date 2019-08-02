@@ -31,7 +31,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
-import org.bouncycastle.i18n.MissingEntryException;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -151,7 +150,7 @@ public class TestUtils {
     cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
 
     // check for admin pod
-    return checkPodMatch(cmd.toString(), "Terminating", podName);
+    return checkPodContains(cmd.toString(), "Terminating", podName);
   }
 
   /**
@@ -1445,7 +1444,7 @@ public class TestUtils {
   }
 
   /**
-   * Check if the pod is in a specific status.
+   * Check if the pod output contains the specified string
    *
    * @param cmd        command to execute
    * @param matchStr   matching string
@@ -1454,7 +1453,7 @@ public class TestUtils {
    * @return true for match else false
    * @throws Exception
    */
-  public static boolean checkPodMatch(String cmd, String matchStr, String k8sObjName)
+  public static boolean checkPodContains(String cmd, String matchStr, String k8sObjName)
       throws Exception {
       ExecResult result = ExecCommand.exec(cmd);
       if (result.exitValue() != 0

@@ -305,7 +305,6 @@ public class BaseTest {
             + getProjectRoot()
             + "/src/integration-tests/bash/cleanup.sh";
     logger.info("Command to call cleanup script " + cmd);
-
     return ExecCommand.exec(cmd);
   }
 
