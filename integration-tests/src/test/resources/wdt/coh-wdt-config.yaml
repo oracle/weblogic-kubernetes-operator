@@ -36,7 +36,7 @@ resources:
           ClusterListenPort: 7574
 appDeployments:
   Application:
-    'coh-proxy-gar-1.0':
+    'coh-proxy-server-gar':
       SourcePath: 'wlsdeploy/applications/coh-proxy-server.gar'
       ModuleType: gar
       Target: '@@PROP:CLUSTER_NAME@@'
