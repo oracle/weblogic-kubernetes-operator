@@ -74,7 +74,7 @@ public class ITCoherenceTests extends BaseTest {
       copyAndExecuteProxyClientInPod(OP_CACHE_LOAD);
 
       // Do the rolling restart
-//      restartDomainByChangingEnvProperty();
+      restartDomainByChangingEnvProperty();
 
       // Build and run the proxy client on the admin VM to validate the cache
       copyAndExecuteProxyClientInPod(OP_CACHE_VALIDATE);
