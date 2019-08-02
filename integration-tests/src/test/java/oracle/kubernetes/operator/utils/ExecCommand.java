@@ -27,7 +27,8 @@ public class ExecCommand {
     return exec(command, isRedirectToOut, null);
   }
 
-  public static ExecResult exec(String command, boolean isRedirectToOut, Map<String,String> additionalEnvMap)
+  public static ExecResult exec(
+      String command, boolean isRedirectToOut, Map<String, String> additionalEnvMap)
       throws Exception {
 
     Process p = null;
@@ -77,16 +78,17 @@ public class ExecCommand {
 
   /**
    * Generate a string array of name=value items, one for each env map entry.
+   *
    * @return
    */
-  private static String[]  generateNameValueArrayFromMap(Map<String, String> map) {
+  private static String[] generateNameValueArrayFromMap(Map<String, String> map) {
     int mapSize = map.size();
-    String[] strArrary = new String[mapSize];
+    String[] strArray = new String[mapSize];
     int i = 0;
-    for (Map.Entry<String,String> entry : map.entrySet()) {
-      strArrary[i++] = entry.getKey() + "=" + entry.getValue();
+    for (Map.Entry<String, String> entry : map.entrySet()) {
+      strArray[i++] = entry.getKey() + "=" + entry.getValue();
     }
-    return strArrary;
+    return strArray;
   }
 
   private static String read(InputStream is) throws Exception {
