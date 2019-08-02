@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.HashMap;
 import java.util.Map;
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.Operator;
@@ -15,18 +16,15 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+
 /**
- * Simple JUnit test file used for testing Operator.
- *
- * <p>This test is used for testing pods being restarted by some properties change.
+ * This class contains Coherence relates integraiton tests.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ITCoherenceTests extends BaseTest {
 
   private static Domain domain = null;
-  private static Operator operator1;
-
-  private static final String testAppName = "coherence-proxy-client";
+  private static Operator operator1 = null;
 
   private static final String PROXY_CLIENT_SCRIPT = "buildRunProxyClient.sh";
   private static final String PROXY_CLIENT_APP_NAME = "coherence-proxy-client";
@@ -37,8 +35,7 @@ public class ITCoherenceTests extends BaseTest {
   /**
    * This method gets called only once before any of the test methods are executed. It does the
    * initialization of the integration test properties defined in OperatorIT.properties and setting
-   * the resultRoot, pvRoot and projectRoot attributes. Create Operator1 and domainOnPVUsingWLST
-   * with admin server and 1 managed server if they are not running
+   * the resultRoot, pvRoot and projectRoot attributes. Also, create the operator.
    *
    * @throws Exception
    */
@@ -47,15 +44,12 @@ public class ITCoherenceTests extends BaseTest {
     // initialize test properties and create the directories
     if (!QUICKTEST) {
       initialize(APP_PROPS_FILE);
-
-      if (operator1 == null) {
-        operator1 = TestUtils.createOperator(OPERATOR1_YAML);
-      }
+      operator1 = TestUtils.createOperator(OPERATOR1_YAML);
     }
   }
 
   /**
-   * Releases k8s cluster lease, archives result, pv directories
+   * Releases k8s cluster lease, archives result, pv directories and destroy the operator
    *
    * @throws Exception
    */
@@ -63,6 +57,7 @@ public class ITCoherenceTests extends BaseTest {
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
       tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
+      operator1.destroy();
     }
   }
 
@@ -88,11 +83,10 @@ public class ITCoherenceTests extends BaseTest {
   }
 
   /**
-   * Copy the shell script file and all App files over to the admin pod the run the script to build
-   * the proxy client and run the proxy test.
+   * Copy the shell script file and all coherence app files over to the admin pod.
+   * Then run the script to build the proxy client and run the proxy test.
    *
    * @param cacheOp - cache operation
-   * @throws Exception exception
    */
   private static void copyAndExecuteProxyClientInPod(String cacheOp) {
     try {
@@ -159,21 +153,25 @@ public class ITCoherenceTests extends BaseTest {
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
   }
 
-  private static void destroyDomain() throws Exception {
-    if (domain != null) {
-      domain.destroy();
-    }
-  }
-
+  /**
+   * Create the domain
+   *
+   * @return
+   * @throws Exception
+   */
   private Domain createDomain() throws Exception {
 
-    //    System.getenv().put("CUSTOM_WDT_ARCHIVE", "/Users/pmackin/archive-proxy.zip");
+// TODO - Don't hardcode the archive location
+    Map<String, String> envMap = new HashMap();
+    envMap.put("CUSTOM_WDT_ARCHIVE", "/Users/pmackin/archive-proxy.zip");
 
     // create domain
     Domain domain = null;
     Map<String, Object> domainMap = TestUtils.loadYaml(DOMAININIMAGE_WDT_YAML);
     domainMap.put("namespace", "test1");
     domainMap.put("domainUID", "coh");
+    domainMap.put("additionalEnvMap", envMap);
+
     domainMap.put(
         "customWdtTemplate",
         BaseTest.getProjectRoot()
@@ -182,4 +180,16 @@ public class ITCoherenceTests extends BaseTest {
     domain.verifyDomainCreated();
     return domain;
   }
+
+  /**
+   * Destroy the domain
+   *
+   * @throws Exception
+   */
+  private static void destroyDomain() throws Exception {
+    if (domain != null) {
+      domain.destroy();
+    }
+  }
+
 }

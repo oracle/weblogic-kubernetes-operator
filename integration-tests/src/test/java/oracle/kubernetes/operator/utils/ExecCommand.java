@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.utils;
 
+import com.google.common.io.ByteStreams;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,21 +12,36 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.google.common.io.ByteStreams;
-
-/**
- * Class for executing shell commands from java.
- */
+/** Class for executing shell commands from java. */
 public class ExecCommand {
 
   public static ExecResult exec(String command) throws Exception {
-    return exec(command, false);
+    return exec(command, false, null);
   }
 
   public static ExecResult exec(String command, boolean isRedirectToOut) throws Exception {
-    Process p = Runtime.getRuntime().exec(new String[] {"/bin/sh", "-c", command});
+    return exec(command, isRedirectToOut, null);
+  }
+
+  public static ExecResult exec(String command, boolean isRedirectToOut, Map<String,String> additionalEnvMap)
+      throws Exception {
+
+    Process p = null;
+    if (additionalEnvMap == null) {
+      p = Runtime.getRuntime().exec(new String[] {"/bin/sh", "-c", command});
+    } else {
+      // Combine new env vars with existing ones and generate a string array with those values
+      // If the 2 maps have a dup key then the additional env map entry will replace the existing.
+      Map<String, String> combinedEnvMap = new HashMap();
+      combinedEnvMap.putAll(System.getenv());
+      combinedEnvMap.putAll(additionalEnvMap);
+      String[] envParams = generateNameValueArrayFromMap(combinedEnvMap);
+      p = Runtime.getRuntime().exec(new String[] {"/bin/sh", "-c", command}, envParams);
+    }
 
     InputStreamWrapper in = new SimpleInputStreamWrapper(p.getInputStream());
     Thread out = null;
@@ -38,13 +54,14 @@ public class ExecCommand {
         // this makes sense because CopyingOutputStream is an InputStreamWrapper
         in = copyOut;
         out =
-            new Thread(() -> {
-              try {
-                ByteStreams.copy(i, copyOut);
-              } catch (IOException ex) {
-                ex.printStackTrace();
-              }
-            });
+            new Thread(
+                () -> {
+                  try {
+                    ByteStreams.copy(i, copyOut);
+                  } catch (IOException ex) {
+                    ex.printStackTrace();
+                  }
+                });
         out.start();
       }
 
@@ -56,6 +73,20 @@ public class ExecCommand {
       }
       p.destroy();
     }
+  }
+
+  /**
+   * Generate a string array of name=value items, one for each env map entry.
+   * @return
+   */
+  private static String[]  generateNameValueArrayFromMap(Map<String, String> map) {
+    int mapSize = map.size();
+    String[] strArrary = new String[mapSize];
+    int i = 0;
+    for (Map.Entry<String,String> entry : map.entrySet()) {
+      strArrary[i++] = entry.getKey() + "=" + entry.getValue();
+    }
+    return strArrary;
   }
 
   private static String read(InputStream is) throws Exception {
