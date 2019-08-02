@@ -129,7 +129,7 @@ public class CacheClient {
     System.out.println("Clearing cache");
     cache.clear();
 
-   // System.exit(0);
+    // System.exit(0);
 
     System.out.println("Loading cache");
     Instant startInstant = Instant.now();
@@ -153,15 +153,6 @@ public class CacheClient {
 
     cache = getCcf().ensureCache(CACHE_NAME, this.getClass().getClassLoader());
     System.out.println("Cache size = " + cache.size());
-
-    // Validate the size
-    //      cache = getCcf().ensureCache(CACHE_NAME, this.getClass().getClassLoader());
-    //      int size = cache.size();
-    //      if (THREAD_COUNT * NUM_ITEMS != size)
-    //      {
-    //          throw new RuntimeException("Cache size is wrong: " + size);
-    //      }
-
 
     Instant finishInstant = Instant.now();
     Duration duration = Duration.between(startInstant, finishInstant);
@@ -221,14 +212,13 @@ public class CacheClient {
         ThreadConfig config = thread.config;
         System.out.println(config.operation + " " + config.prefix + " has terminated");
         if (thread.isError()) {
-          System.out.println(
-              "Fatal Error in thread " + config.prefix + " for operation " + config.operation);
-          System.out.println(thread.error);
-          assert (false);
+          String msg = "Fatal Error in thread " + config.prefix + " for operation " + config.operation + "\n" + thread.error;
+          System.out.println(msg);
+          throw new RuntimeException(msg);
         }
       } catch (Exception e) {
         e.printStackTrace();
-        return;
+        throw new RuntimeException(e);
       }
     }
   }
@@ -352,7 +342,7 @@ public class CacheClient {
 
     @Override
     String doCacheOperation(NamedCache cache, Map<String, String>map) {
-   //   System.out.println("Writing Map " + mapWriteCount.incrementAndGet());
+      //   System.out.println("Writing Map " + mapWriteCount.incrementAndGet());
       cache.putAll(map);
       return null;
     }
@@ -368,7 +358,7 @@ public class CacheClient {
     @Override
     String doCacheOperation(NamedCache cache, Map<String, String>map) {
 
-   //   System.out.println("Validating Map " + mapWriteCount.incrementAndGet());
+      //   System.out.println("Validating Map " + mapWriteCount.incrementAndGet());
       Map outMap = cache.getAll(map.keySet());
       if (!map.equals(outMap)) {
         error = "Validation Error: Cache data doesn't match";

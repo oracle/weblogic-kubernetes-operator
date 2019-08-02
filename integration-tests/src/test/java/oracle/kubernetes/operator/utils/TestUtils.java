@@ -4,6 +4,7 @@
 
 package oracle.kubernetes.operator.utils;
 
+import io.kubernetes.client.models.V1Pod;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
+import org.bouncycastle.i18n.MissingEntryException;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -431,6 +433,31 @@ public class TestUtils {
   }
 
   /**
+   * Get the POD IP.
+   *
+   * @param namespace  namespace of the POD
+   * @param labelSelectors  optional label selectors
+   * @param podName pod name
+   * @return podIP
+   */
+  public static String getPodIP(String namespace, String labelSelectors, String podName)
+      throws Exception {
+    V1Pod pod = null;
+    try {
+      labelSelectors = labelSelectors == null ? "" : labelSelectors;
+      pod = k8sTestUtils.getPod(namespace,"",podName);
+    } catch (Exception e) {
+      Exception re = new  Exception("Exception getting Pod  " + namespace  + "/" + podName);
+      re.initCause(e);
+      throw re;
+    }
+    if (pod == null) {
+      throw new Exception("Pod " + namespace  + "/" + podName  + "not found ");
+    }
+    return pod.getStatus().getPodIP();
+  }
+
+  /**
    * First, kill the mgd server process in the container three times to cause the node manager to
    * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
    * initiates a pod restart.
@@ -566,28 +593,28 @@ public class TestUtils {
       throws Exception {
     File appFileRoot = new File(appLocationOnHost);
     File[] appFileList = appFileRoot.listFiles();
-    String fileLocationInPod = appLocationInPod;
 
     if (appFileList == null) return;
 
     for (File file : appFileList) {
       if (file.isDirectory()) {
+
+        // Create the directory on the pod
+        String nestedDirOnPod = appLocationInPod + "/" + file.getName();
+        StringBuffer mkdirCmd = new StringBuffer(" -- bash -c 'mkdir -p ").append(nestedDirOnPod).append("'");
+        TestUtils.kubectlexec(podName, namespace, mkdirCmd.toString());
+
         // Find dir recursively
-        copyAppFilesToPod(file.getAbsolutePath(), appLocationInPod, podName, namespace);
+        copyAppFilesToPod(file.getAbsolutePath(), nestedDirOnPod, podName, namespace);
       } else {
         logger.info("Copy file: " + file.getAbsoluteFile().toString() + " to the pod: " + podName);
 
         String fileParent = file.getParentFile().getName();
         logger.fine("file Parent: " + fileParent);
 
-        if (!appLocationInPod.contains(fileParent)) {
-          // Copy files in child dir of appLocationInPod
-          fileLocationInPod = appLocationInPod + "/" + fileParent;
-        }
-
         StringBuffer copyFileCmd = new StringBuffer(" -- bash -c 'cat > ");
         copyFileCmd
-            .append(fileLocationInPod)
+            .append(appLocationInPod)
             .append("/")
             .append(file.getName())
             .append("' < ")

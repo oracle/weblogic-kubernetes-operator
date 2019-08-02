@@ -710,6 +710,16 @@ public class Domain {
   }
 
   /**
+   * Get the managed server pod name for a specific index
+   *
+   * @param index  the managed server index
+   * @return the managed server pod name
+   */
+  public String getManagedSeverPodName(int index) {
+    return domainUid + "-" + managedServerNameBase + index;
+  }
+
+  /**
    * delete PVC and check PV status released when weblogicDomainStorageReclaimPolicy is Recycle.
    *
    * @throws Exception exception
@@ -1152,7 +1162,7 @@ public class Domain {
           if (TestUtils.checkPodTerminatingNoWait(domainUid + "-" + podName, domainNS)) {
             // Server is terminating, wait until server running then remove it from the list
             logger.info("Managed server pod " + podName + "  is terminating");
-            TestUtils.checkPodCreated(domainUid + "-" + adminServerName, domainNS);
+            TestUtils.checkPodCreated(domainUid + "-" + podName, domainNS);
             TestUtils.checkPodReady(domainUid + "-" + podName, domainNS);
             logger.info("Managed server pod " + podName + " has been recycled");
             iter.remove();
@@ -1899,6 +1909,57 @@ public class Domain {
     }
   }
 
+
+  /**
+   * Run the shell script in the admin pod.
+   *
+   * @param successMarker output string from script that indicates success
+   * @param scriptPathInPod - bash script path name in the pod
+   * @param args - optional args to add for script if needed
+   * @throws Exception exception
+   */
+  public void callShellScriptInAdminPod(
+      String successMarker,  String scriptPathInPod, String... args)
+      throws Exception {
+
+    StringBuffer cmdKubectlSh = new StringBuffer("kubectl -n ");
+    cmdKubectlSh
+        .append(domainNS)
+        .append(" exec -it ")
+        .append(domainUid)
+        .append("-")
+        .append(adminServerName)
+        .append(" -- bash -c 'chmod +x -R ")
+        .append(scriptPathInPod)
+        .append(" && sh ")
+        .append(scriptPathInPod)
+        .append(" ")
+        .append(String.join(" ", args).toString())
+        .append("'");
+
+    logger.info("Command to exec script file: " + cmdKubectlSh);
+    ExecResult result = ExecCommand.exec(cmdKubectlSh.toString());
+
+    String resultStr =
+        "Command= '"
+            + cmdKubectlSh
+            + "'"
+            + ", exitValue="
+            + result.exitValue()
+            + ", stdout='"
+            + result.stdout()
+            + "'"
+            + ", stderr='"
+            + result.stderr()
+            + "'";
+
+    // Look for positive success marker.
+    if (!resultStr.contains(successMarker)) {
+      throw new RuntimeException("FAILURE: Success marker not found after executing script" + scriptPathInPod + " in admin pod - " + resultStr);
+    }
+  }
+
+
   /**
    * create config map and label with domainUid and create secret used in custom situational
    * configuration which contains hostname, db user, db password.
@@ -2019,4 +2080,5 @@ public class Domain {
     callShellScriptToBuildDeployAppInPod(
         appName, scriptName, username, password, infoDirName, archiveExt);
   }
+
 }
