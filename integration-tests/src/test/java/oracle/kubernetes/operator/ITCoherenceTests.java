@@ -145,6 +145,8 @@ public class ITCoherenceTests extends BaseTest {
   private Domain createDomain() throws Exception {
 
     Map<String, String> envMap = new HashMap();
+
+    // Set this ENV var with the WDT archive so that it is included in the image build.
     envMap.put("CUSTOM_WDT_ARCHIVE", buildProxyServerWdtZip());
 
     // create domain
