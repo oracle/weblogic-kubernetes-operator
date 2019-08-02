@@ -1,0 +1,11 @@
+# Copyright 2019, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upload
+FROM openjdk:11-oracle
+COPY webhook /bin/webhook
+RUN chmod +x /bin/webhook
+COPY hooks.json /etc/webhook/
+COPY scalingAction.sh /var/scripts/
+COPY scaleUpAction.sh /var/scripts/
+COPY scaleDnAction.sh /var/scripts/
+CMD ["-verbose", "-hooks=/etc/webhook/hooks.json", "-hotreload"]
+ENTRYPOINT ["/bin/webhook"]
