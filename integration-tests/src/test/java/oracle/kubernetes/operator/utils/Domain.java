@@ -77,7 +77,7 @@ public class Domain {
   private String imageName;
   private boolean voyager;
   private boolean createDomainResource = true;
-  
+
   public Domain() throws Exception {
     domainMap = new HashMap<>();
   }
@@ -95,7 +95,7 @@ public class Domain {
   public Domain(Map<String, Object> inputDomainMap) throws Exception {
     this(inputDomainMap, true);
   }
-  
+
   public Domain(Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
     initialize(inputDomainMap);
     this.createDomainResource = createDomainResource;
@@ -1242,8 +1242,11 @@ public class Domain {
     // as samples only support DYNAMIC cluster or copy config cluster topology for domain in image
     changeClusterTypeInCreateDomainJobTemplate();
 
+    // Get the map of any additional environment vars, or null
+    Map<String, String> additionalEnvMap = (Map<String, String>)domainMap.get("additionalEnvMap");;
+
     logger.info("Running " + createDomainScriptCmd);
-    ExecResult result = ExecCommand.exec(createDomainScriptCmd, true);
+    ExecResult result = ExecCommand.exec(createDomainScriptCmd, true, additionalEnvMap);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
           "FAILURE: command "
