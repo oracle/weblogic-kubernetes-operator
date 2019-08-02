@@ -11,6 +11,7 @@ import oracle.kubernetes.operator.utils.Operator;
 import oracle.kubernetes.operator.utils.TestUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -63,6 +64,8 @@ public class ITCoherenceTests extends BaseTest {
 
   @Test
   public void testRollingRestart() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+
     String testMethodName = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethodName);
 
