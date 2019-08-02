@@ -1214,17 +1214,24 @@ public class Domain {
         podNameSet.add(managedServerNameBase + i);
       }
 
-      // Loop until all the servers have recycled
+      // Loop until all the servers have recycled.  Wait 5 minutes max for a managed server to be terminating.
       //
+      final int MAX_TERMINATE_LOOP = 300;
+      int terminateLoopCount = 0;
       while (podNameSet.size() > 0) {
         Iterator<String> iter = podNameSet.iterator();
         while (iter.hasNext()) {
           String podName = iter.next();
           if (TestUtils.checkPodTerminatingNoWait(domainUid + "-" + podName, domainNS)) {
+            terminateLoopCount = 0;
+
             // Server is terminating, wait until server running then remove it from the list
-            logger.info("Managed server pod " + podName + "  is terminating");
+            logger.info("Managed managed server pod " + podName + "  is terminating, waiting until it is re-created and running.");
             TestUtils.checkPodCreated(domainUid + "-" + podName, domainNS);
+
+            logger.info("Waiting until managed server pod " + podName + "  is ready");
             TestUtils.checkPodReady(domainUid + "-" + podName, domainNS);
+
             logger.info("Managed server pod " + podName + " has been recycled");
             iter.remove();
           }
@@ -1232,6 +1239,9 @@ public class Domain {
         // We iterated through all the servers and if there are some remaining then
         // Sleep and loop through the remaining ones again.  Keep the sleep short so we don't miss the terminating status.
         if (podNameSet.size() > 0) {
+          if (++terminateLoopCount > MAX_TERMINATE_LOOP) {
+            throw new RuntimeException("Timeout waiting for any managed server to terminate");
+          }
           logger.info("Waiting for any managed server pod to be terminating...");
           Thread.sleep(1000);
         }
