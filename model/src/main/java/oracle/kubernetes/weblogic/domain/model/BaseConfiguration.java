@@ -169,10 +169,6 @@ public abstract class BaseConfiguration {
     return serverPod.getAffinity();
   }
 
-  public Integer getPriority() {
-    return serverPod.getPriority();
-  }
-
   public String getPriorityClassName() {
     return serverPod.getPriorityClassName();
   }

@@ -103,11 +103,6 @@ public abstract class ServerSpecBase implements ServerSpec {
   }
 
   @Override
-  public Integer getPriority() {
-    return null;
-  }
-
-  @Override
   public String getPriorityClassName() {
     return null;
   }
