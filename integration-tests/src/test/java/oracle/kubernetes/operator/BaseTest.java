@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
@@ -72,6 +73,7 @@ public class BaseTest {
   private static String appLocationOnHost;
   private static Properties appProps;
   private static String weblogicImageTag;
+  private static String weblogicImageDevTag;
   private static String weblogicImageName;
   private static String weblogicImageServer;
   private static String domainApiVersion;
@@ -114,6 +116,10 @@ public class BaseTest {
         System.getenv("IMAGE_TAG_WEBLOGIC") != null
             ? System.getenv("IMAGE_TAG_WEBLOGIC")
             : appProps.getProperty("weblogicImageTag");
+    weblogicImageDevTag =
+        System.getenv("IMAGE_DEVTAG_WEBLOGIC") != null
+            ? System.getenv("IMAGE_DEVTAG_WEBLOGIC")
+            : appProps.getProperty("weblogicImageDevTag");
     weblogicImageName =
         System.getenv("IMAGE_NAME_WEBLOGIC") != null
             ? System.getenv("IMAGE_NAME_WEBLOGIC")
@@ -256,6 +262,15 @@ public class BaseTest {
    */
   public static String getWeblogicImageTag() {
     return weblogicImageTag;
+  }
+  
+  /**
+   * getter method for weblogicImageDevTag field.
+   *
+   * @return image tag of the WLS Dev docker images
+   */
+  public static String getWeblogicImageDevTag() {
+    return weblogicImageDevTag;
   }
 
   /**
@@ -523,7 +538,7 @@ public class BaseTest {
 
   /**
    * Verify t3channel port by a JMS connection.
-   *
+   * This method is not used. See OWLS-76081
    * @throws Exception exception
    */
   public void testAdminT3ChannelWithJms(Domain domain) throws Exception {
@@ -673,14 +688,7 @@ public class BaseTest {
     String adminPodName = domainUid + "-" + adminServerName;
     String domainName = (String) domainMap.get("domainName");
 
-    String scriptsDir =
-        "/scratch/acceptance_test_pv/persistentVolume-"
-            + domainUid
-            + "/domains/"
-            + domainUid
-            + "/bin/scripts";
-
-    copyScalingScriptToPod(scriptsDir, domainUid, adminPodName, domainNS);
+    copyScalingScriptToPod(domainUid, adminPodName, domainNS);
     TestUtils.createRbacPoliciesForWldfScaling();
 
     // deploy opensessionapp
@@ -738,18 +746,23 @@ public class BaseTest {
     TestUtils.renewK8sClusterLease(getProjectRoot(), getLeaseId());
   }
 
-  private void copyScalingScriptToPod(
-      String dirPathToCreate, String domainUid, String podName, String domainNS) throws Exception {
+  private void copyScalingScriptToPod(String domainUid, String podName, String domainNS)
+      throws Exception {
+
+    String pvDir = BaseTest.getPvRoot() + "/acceptance_test_pv/persistentVolume-" + domainUid;
+    String scriptsDir = pvDir + "/domains/" + domainUid + "/bin/scripts";
 
     // create scripts dir under domain pv
-    TestUtils.createDirUnderDomainPV(dirPathToCreate);
-
+    TestUtils.createDirUnderDomainPV(scriptsDir);
+    // workaround for the issue with not allowing .. in the host-path in krun.sh
+    Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
+        Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
     // copy script to pod
-    TestUtils.copyFileViaCat(
-        getProjectRoot() + "/src/scripts/scaling/scalingAction.sh",
-        "/shared/domains/" + domainUid + "/bin/scripts/scalingAction.sh",
-        podName,
-        domainNS);
+    String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
+        + getResultDir() + ":/tmpdir -m " + pvDir
+        + ":/pvdir -c 'cp -f /tmpdir/scalingAction.sh /pvdir/domains/domainonpvwdt/bin/scripts' -n "
+        + domainNS;
+    TestUtils.exec(cpUsingKrunCmd, true);
   }
 
   private void callWebAppAndVerifyScaling(Domain domain, int replicas) throws Exception {
