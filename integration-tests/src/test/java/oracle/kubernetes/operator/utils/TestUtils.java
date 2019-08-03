@@ -1247,80 +1247,50 @@ public class TestUtils {
    * Checks command in a loop.
    * @param cmd command to run in the loop
    * @param matchStr expected string to match in the output
-   * @return ExecResult object containing command output info
    * @throws Exception exception if fails to execute
    */
-  public static ExecResult checkAnyCmdInLoop(String cmd, String matchStr) throws Exception {
-    int i = 0;
-    ExecResult result = null;
-    while (i < BaseTest.getMaxIterationsPod()) {
-      result = ExecCommand.exec(cmd);
-
-      if (result.exitValue() != 0
-          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
-        logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
-        // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          throw new RuntimeException(
-              "FAILURE: expected output "
-                  + matchStr
-                  + " from command "
-                  + cmd
-                  + " is not receieved, exiting!");
-        }
-        logger.info(
-            "did not receive the expected output "
-                + matchStr
-                + "from command "
-                + cmd
-                + " Ite ["
-                + i
-                + "/"
-                + BaseTest.getMaxIterationsPod()
-                + "], sleeping "
-                + BaseTest.getWaitTimePod()
-                + " seconds more");
-
-        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
-        i++;
-      } else {
-        logger.info("Command " + cmd + " is successful");
-        break;
-      }
-    }
-    return result;
+  public static void checkAnyCmdInLoop(String cmd, String matchStr)
+      throws Exception {
+    checkCmdInLoop(cmd,matchStr, "");
   }
 
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
-      throws Exception {
+          throws Exception {
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
       ExecResult result = ExecCommand.exec(cmd);
 
-      // pod might not have been created or if created loop till condition
+      // loop command till condition
       if (result.exitValue() != 0
           || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
         logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
-              "FAILURE: pod " + k8sObjName + " is not running/ready, exiting!");
+                  "FAILURE: command " + cmd + " failed to execute or does not match the expected output "
+                      + matchStr + " , exiting!");
         }
         logger.info(
-            "Pod "
-                + k8sObjName
-                + " is not Running/Ready Ite ["
-                + i
-                + "/"
-                + BaseTest.getMaxIterationsPod()
-                + "], sleeping "
-                + BaseTest.getWaitTimePod()
-                + " seconds more");
+                "did not receive the expected output "
+                        + matchStr
+                        + " from command "
+                        + cmd
+                        + " Ite ["
+                        + i
+                        + "/"
+                        + BaseTest.getMaxIterationsPod()
+                        + "], sleeping "
+                        + BaseTest.getWaitTimePod()
+                        + " seconds more");
+
 
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
-        logger.info("Pod " + k8sObjName + " is Running");
+        logger.info("Found expected output ");
+        if (!k8sObjName.equals("")) {
+          logger.info("Pod " + k8sObjName + " is Running");
+        }
         break;
       }
     }
