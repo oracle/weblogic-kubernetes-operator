@@ -179,7 +179,8 @@ ServerPod describes the configuration for a Kubernetes pod for a server.
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `istioEnabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true. Not required. |
+| `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to false. Not required. |
+| `readinessPort` | number | The WebLogic readiness port for Istio. Defaults to 8888. Not required. |
 
 ### Probe Tuning
 
