@@ -141,8 +141,6 @@ public interface ServerSpec {
 
   V1Affinity getAffinity();
 
-  Integer getPriority();
-
   String getPriorityClassName();
 
   List<V1PodReadinessGate> getReadinessGates();

@@ -168,11 +168,6 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   }
 
   @Override
-  public Integer getPriority() {
-    return server.getPriority();
-  }
-
-  @Override
   public String getPriorityClassName() {
     return server.getPriorityClassName();
   }

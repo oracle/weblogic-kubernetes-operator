@@ -89,12 +89,6 @@ class ServerPod extends KubernetesResource {
   @Description("If specified, the pod's scheduling constraints")
   private V1Affinity affinity = null;
 
-  @Description("The priority value. Various system components use this field to find the priority "
-      + "of the pod. When Priority Admission Controller is enabled, it prevents users from setting this field. "
-      + "The admission controller populates this field from PriorityClassName. The higher the value, the "
-      + "higher the priority.")
-  private Integer priority = null;
-
   @Description("If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
       + "are two special keywords which indicate the highest priorities with the former being the highest priority. "
       + "Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod "
@@ -423,9 +417,6 @@ class ServerPod extends KubernetesResource {
     } else if (serverPod1.affinity != null) {
       copyValues(affinity, serverPod1.affinity);
     }
-    if (priority == null) {
-      priority = serverPod1.priority;
-    }
     if (priorityClassName == null) {
       priorityClassName = serverPod1.priorityClassName;
     }
@@ -635,14 +626,6 @@ class ServerPod extends KubernetesResource {
     this.affinity = affinity;
   }
 
-  Integer getPriority() {
-    return priority;
-  }
-
-  void setPriority(Integer priority) {
-    this.priority = priority;
-  }
-
   String getPriorityClassName() {
     return priorityClassName;
   }
@@ -724,7 +707,6 @@ class ServerPod extends KubernetesResource {
         .append("containers", containers)
         .append("shutdown", shutdown)
         .append("affinity", affinity)
-        .append("priority", priority)
         .append("priorityClassName", priorityClassName)
         .append("readinessGates", readinessGates)
         .append("restartPolicy", restartPolicy)
@@ -768,7 +750,6 @@ class ServerPod extends KubernetesResource {
         .append(containers, that.containers)
         .append(shutdown, that.shutdown)
         .append(affinity, that.affinity)
-        .append(priority, that.priority)
         .append(priorityClassName, that.priorityClassName)
         .append(readinessGates, that.readinessGates)
         .append(restartPolicy, that.restartPolicy)
@@ -796,7 +777,6 @@ class ServerPod extends KubernetesResource {
         .append(containers)
         .append(shutdown)
         .append(affinity)
-        .append(priority)
         .append(priorityClassName)
         .append(readinessGates)
         .append(restartPolicy)
