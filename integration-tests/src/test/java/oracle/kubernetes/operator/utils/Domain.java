@@ -441,6 +441,67 @@ public class Domain {
     }
   }
 
+
+  /**
+   * deploy webapp using t3 channel port for wlst.
+   *
+   * @param webappName webappName
+   * @param appLocationInPod appLocation
+   * @throws Exception exception
+   */
+  public void undeployWebAppViaWlst(
+          String webappName,
+          String appLocationInPod)
+          throws Exception {
+    undeployWebAppViaWlst(webappName, appLocationInPod, false);
+  }
+
+  /**
+   * undeploy webapp using adminPort or t3 channel port.
+   *
+   * @param webappName webappName
+   * @param appLocationInPod appLocationInPod
+   * @param useAdminPortToDeploy useAdminPortToDeploy
+   * @throws Exception exception
+   */
+  public void undeployWebAppViaWlst(
+      String webappName,
+      String appLocationInPod,
+      boolean useAdminPortToDeploy)
+      throws Exception {
+    String adminPod = domainUid + "-" + adminServerName;
+
+    TestUtils.copyFileViaCat(
+        projectRoot + "/integration-tests/src/test/resources/undeploywebapp.py",
+        appLocationInPod + "/undeploywebapp.py",
+        adminPod,
+        domainNS);
+
+    TestUtils.copyFileViaCat(
+        projectRoot + "/integration-tests/src/test/resources/callpyscript.sh",
+        appLocationInPod + "/callpyscript.sh",
+        adminPod,
+        domainNS);
+
+    String t3Url = "t3://" + adminPod + ":";
+    if (useAdminPortToDeploy) {
+      t3Url = t3Url + domainMap.getOrDefault("adminPort", 7001);
+    } else {
+      t3Url = t3Url + t3ChannelPort;
+    }
+
+    String[] args = {
+        appLocationInPod + "/undeploywebapp.py",
+        BaseTest.getUsername(),
+        BaseTest.getPassword(),
+        t3Url,
+        webappName
+    };
+
+    TestUtils.callShellScriptByExecToPod(
+        adminPod, domainNS, appLocationInPod, "callpyscript.sh", args);
+  }
+
   /**
    * deploy webapp using t3 channel port for wlst.
    *
@@ -451,12 +512,12 @@ public class Domain {
    * @throws Exception exception
    */
   public void deployWebAppViaWlst(
-      String webappName,
-      String webappLocation,
-      String appLocationInPod,
-      String username,
-      String password)
-      throws Exception {
+          String webappName,
+          String webappLocation,
+          String appLocationInPod,
+          String username,
+          String password)
+          throws Exception {
     deployWebAppViaWlst(webappName, webappLocation, appLocationInPod, username, password, false);
   }
 
