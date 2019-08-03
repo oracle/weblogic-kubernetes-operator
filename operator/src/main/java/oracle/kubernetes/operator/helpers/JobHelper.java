@@ -4,6 +4,9 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
 
 import io.kubernetes.client.models.V1DeleteOptions;
@@ -33,6 +36,7 @@ import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+
 
 public class JobHelper {
 
@@ -329,6 +333,11 @@ public class JobHelper {
       // Log output to Operator log
       LOGGER.fine("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
 
+      // Parse out each job log message and log to Operator as SEVERE, FINE, etc...
+      if (result != null) {
+        convertJobLogsToOperatorLogs(result);
+      }
+
       V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
       if (domainIntrospectorJob != null && JobWatcher.isComplete(domainIntrospectorJob)) {
         if (result != null) {
@@ -404,6 +413,70 @@ public class JobHelper {
       }
 
       return doNext(packet);
+    }
+  }
+
+  // Convert a job log message to an operator log message
+  //   - assumes the messages contins a string like '[SEVERE]', etc, if
+  //     not, then assumes the log level is 'FINE'.
+  private static void logToOperator(StringBuffer logStr, StringBuffer extraStr) {
+    String logMsg = "Introspector Job Log: " 
+                    + logStr 
+                    + (extraStr.length() == 0 ? "" : "\n")
+                    + extraStr;
+    String regExp = ".*\\[(SEVERE|ERROR|WARNING|INFO|FINE|FINER|FINEST)\\].*";
+    String logLevel = logStr.toString().toUpperCase().replaceAll(regExp,"$1");
+    switch (logLevel) {
+      case "ERROR":   LOGGER.severe(logMsg);  
+                      break;
+      case "SEVERE":  LOGGER.severe(logMsg);  
+                      break;
+      case "WARNING": LOGGER.warning(logMsg); 
+                      break;
+      case "INFO":    LOGGER.info(logMsg);    
+                      break;
+      case "FINE":    LOGGER.fine(logMsg);    
+                      break;
+      case "FINER":   LOGGER.finer(logMsg);   
+                      break;
+      case "FINEST":  LOGGER.finest(logMsg);  
+                      break;
+      default:        LOGGER.fine(logMsg);    
+                      break;
+    }
+  }
+
+  // Parse log messages out of a Job Log 
+  //  - assumes each job log message starts with '@['
+  //  - assumes any lines that don't start with '@[' are part 
+  //    of the previous log message
+  //  - ignores all lines in the log up to the first line that starts with '@['
+  private static void convertJobLogsToOperatorLogs(String jobLogs) {
+    try { 
+      StringBuffer logString = new StringBuffer(1000);
+      StringBuffer logExtra = new StringBuffer(1000);
+      try (BufferedReader reader = new BufferedReader(new StringReader(jobLogs))) {
+        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+          if (line.startsWith("@[")) {
+            if (logString.length() > 0) { 
+              logToOperator(logString, logExtra);
+              logString.setLength(0);
+              logExtra.setLength(0);
+            }
+            logString.append(line);
+          } else if (logString.length() != 0) {
+            if (logExtra.length() > 0) { 
+              logExtra.append('\n');
+            }
+            logExtra.append(line);
+          }
+        }
+        if (logString.length() > 0) { 
+          logToOperator(logString, logExtra);
+        }
+      }
+    } catch (IOException ioe) {
+      LOGGER.fine(MessageKeys.JOB_LOG_PARSE_FAILURE, ioe.toString(), jobLogs);
     }
   }
 }

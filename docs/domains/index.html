@@ -1294,8 +1294,12 @@ window.onload = function() {
     "Istio": {
       "type": "object",
       "properties": {
-        "istioEnabled": {
-          "description": "True, if this domain is deployed under an Istio service mesh. Defaults to true. Not required.",
+        "readinessPort": {
+          "description": "The WebLogic readiness port for Istio. Defaults to 8888. Not required.",
+          "type": "number"
+        },
+        "enabled": {
+          "description": "True, if this domain is deployed under an Istio service mesh. Defaults to false. Not required.",
           "type": "boolean"
         }
       }
