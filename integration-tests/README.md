@@ -7,8 +7,8 @@ This documentation describes the functional use cases that are covered in integr
 The tests currently run in three modes: "shared cluster", "Jenkins", and "standalone" Oracle Linux, where the mode is controlled by the `SHARED_CLUSTER` and `JENKINS` environment variables described below. The default is "standalone".
 
 * "Standalone" Oracle Linux, i.e, run the tests manually with the `mvn` command.
-* Shared cluster - http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-quicktest/
-* Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development process.
+* Shared cluster(remote k8s cluster) - http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-quicktest/
+* Jenkins - http://wls-jenkins.us.oracle.com/view/weblogic-operator/job/weblogic-kubernetes-operator-javatest/ - Jenkins Run is restricted to Oracle Internal development process. 
 
 Shared cluster runs only Quick test use cases, Jenkins runs both Quick and Full test use cases.
 
@@ -183,18 +183,18 @@ K8sTestUtils - uses k8s java client api, this is used only for delete domain use
 * export WEBLOGIC_IMAGE_NAME and WEBLOGIC_IMAGE_TAG if different from container-registry.oracle.com/middleware/weblogic and 12.2.1.3
 * Setup docker access to WebLogic 12c Images 
 
- Method 1 
-  - Setup a personal account on container-registry.oracle.com
-  - Then sign in to container-registry.oracle.com and signup for access to WebLogic 12.2.1.3 images from container-registry.oracle.com/middleware/weblogic:12.2.1.3
-  - Then export the following before running the tests: 
+  * Method 1 
+    - Setup a personal account on container-registry.oracle.com
+    - Then sign in to container-registry.oracle.com and signup for access to WebLogic 12.2.1.3 images from container-registry.oracle.com/middleware/weblogic:12.2.1.3
+    - Then export the following before running the tests: 
 	```
 	export OCR_USERNAME=<ocr_username>
 	export OCR_PASSWORD=<ocr_password>
 	```
  
- Method 2 
- - Make sure the weblogic image i.e. container-registry.oracle.com/middleware/weblogic:12.2.1.3 already exists locally in a docker repository the k8s cluster can access
- - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
+  * Method 2 
+    - Make sure the weblogic image i.e. container-registry.oracle.com/middleware/weblogic:12.2.1.3 already exists locally in a docker repository the k8s cluster can access
+    - Make sure the weblogic image has patch p29135930 (required for the WebLogic Kubernetes Operator). 
 		
 		
 * Command to run the tests: 
@@ -296,20 +296,19 @@ JUnit test results can be seen at "integration-tests/target/failsafe-reports/TES
 
 # How to run JRF domain In Operator related tests
 * Setup docker access to FMW Infrastructure 12c Image and Oracle Database 12c Image
-
- Method 1 
-  - Setup a personal account on container-registry.oracle.com
-  - Then sign in to container-registry.oracle.com and accept license for access to Oracle Database 12c Images:  **_container-registry.oracle.com/database/enterprise:12.2.0.1-slim_**
-  - And get access to FMW Infrastructure 12c Image: **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3_**
-  - export the following before running the tests:
+   * Method 1 
+      - Setup a personal account on container-registry.oracle.com
+      - Then sign in to container-registry.oracle.com and accept license for access to Oracle Database 12c Images:  **_container-registry.oracle.com/database/enterprise:12.2.0.1-slim_**
+      - And get access to FMW Infrastructure 12c Image: **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3_**
+      - export the following before running the tests:
     ```
     export REPO_USERNAME=<ocr_username>
     export REPO_PASSWORD=<ocr_password>
     export REPO_EMAIL=<ocr_email>
     ```
  
- Method 2 
- - Make sure the FMW Infrastructure image i.e. **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3_** and the Oracle database image i.e. **_container-registry.oracle.com/database/enterprise:12.2.0.1-slim_** already exist locally in a docker repository the k8s cluster can access
+   * Method 2 
+     - Make sure the FMW Infrastructure image i.e. **_container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3_** and the Oracle database image i.e. **_container-registry.oracle.com/database/enterprise:12.2.0.1-slim_** already exist locally in a docker repository the k8s cluster can access
 		
 * Command to run the tests: 
 ```
