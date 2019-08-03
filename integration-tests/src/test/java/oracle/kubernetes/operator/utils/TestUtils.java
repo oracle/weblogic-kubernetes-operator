@@ -88,6 +88,21 @@ public class TestUtils {
   }
 
   /**
+   * Checks that pod is initializing.
+   *
+   * @param podName - pod name
+   * @param domainNS - domain namespace name
+   */
+  public static void checkPodInitializing(String podName, String domainNS) throws Exception {
+
+    StringBuffer cmd = new StringBuffer();
+    cmd.append("kubectl get pod ").append(podName).append(" -n ").append(domainNS);
+
+    // check for admin pod
+    checkCmdInLoop(cmd.toString(), "Init", podName);
+  }
+
+  /**
    * check pod is in Terminating state.
    *
    * @param podName - pod name
@@ -787,19 +802,20 @@ public class TestUtils {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml);
   }
-  
-  public static Domain createDomain(String inputYaml, boolean createDomainResource) throws Exception {
+
+  public static Domain createDomain(String inputYaml, boolean createDomainResource)
+      throws Exception {
     logger.info("Creating domain with yaml, waiting for the script to complete execution");
     return new Domain(inputYaml, createDomainResource);
   }
-  
+
   public static Domain createDomain(Map<String, Object> inputDomainMap) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap);
   }
-  
-  public static Domain createDomain(Map<String, Object> inputDomainMap, boolean createDomainResource)
-      throws Exception {
+
+  public static Domain createDomain(
+      Map<String, Object> inputDomainMap, boolean createDomainResource) throws Exception {
     logger.info("Creating domain with Map, waiting for the script to complete execution");
     return new Domain(inputDomainMap, createDomainResource);
   }
@@ -1034,12 +1050,12 @@ public class TestUtils {
   }
 
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
-
-    String crdCmd =
-        BaseTest.getProjectRoot()
-            + "/src/integration-tests/bash/job.sh \"mkdir -p "
-            + dirPath
-            + "\"";
+    dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
+    String crdCmd = BaseTest.getProjectRoot()
+        + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
+        + dirPath
+        + "'";
+    
     ExecResult result = ExecCommand.exec(crdCmd);
     if (result.exitValue() != 0) {
       throw new RuntimeException(
@@ -1058,31 +1074,33 @@ public class TestUtils {
     // copy wldf.py script tp pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
-        "/shared/wldf.py",
+        BaseTest.getAppLocationInPod() + "/wldf.py",
         adminPodName,
         domainNS);
 
     // copy callpyscript.sh to pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/callpyscript.sh",
-        "/shared/callpyscript.sh",
+        BaseTest.getAppLocationInPod() + "/callpyscript.sh",
         adminPodName,
         domainNS);
 
     // arguments to shell script to call py script
-    String arguments =
-        "/shared/wldf.py "
-            + BaseTest.getUsername()
-            + " "
-            + BaseTest.getPassword()
-            + " t3://"
+
+    String[] args = {
+        BaseTest.getAppLocationInPod() + "/wldf.py",
+        BaseTest.getUsername(),
+        BaseTest.getPassword(),
+        " t3://"
             + adminPodName
             + ":"
-            + t3ChannelPort;
-
+            + t3ChannelPort,
+        
+    };
+    
     // call callpyscript.sh in pod to deploy wldf module
     TestUtils.callShellScriptByExecToPod(
-        "/shared/callpyscript.sh", arguments, adminPodName, domainNS);
+        adminPodName, domainNS, BaseTest.getAppLocationInPod(), "callpyscript.sh", args);
   }
 
   public static void createRbacPoliciesForWldfScaling() throws Exception {
@@ -1224,32 +1242,40 @@ public class TestUtils {
     return myKeyStore;
   }
 
+
   /**
-   *
+   * Check command in loop.
    * @param cmd command to run in the loop
    * @param matchStr expected string to match in the output
-   * @return ExecResult object containing command output info
    * @throws Exception exception if fails to execute
    */
-  public static ExecResult checkAnyCmdInLoop(String cmd, String matchStr)
+  public static void checkAnyCmdInLoop(String cmd, String matchStr)
+      throws Exception {
+    checkCmdInLoop(cmd,matchStr, "");
+  }
+
+  public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
           throws Exception {
     int i = 0;
-    ExecResult result = null;
     while (i < BaseTest.getMaxIterationsPod()) {
-      result = ExecCommand.exec(cmd);
+      ExecResult result = ExecCommand.exec(cmd);
 
+      // loop command till condition
       if (result.exitValue() != 0
-              || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
+          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
         logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
-                  "FAILURE: expected output " + matchStr + " from command " + cmd + " is not receieved, exiting!");
+                  "FAILURE: command " + cmd + " failed to execute or does not match the expected output "
+                      + matchStr + " , exiting!");
         }
         logger.info(
                 "did not receive the expected output "
                         + matchStr
-                        + "from command " + cmd + " Ite ["
+                        + " from command "
+                        + cmd
+                        + " Ite ["
                         + i
                         + "/"
                         + BaseTest.getMaxIterationsPod()
@@ -1257,46 +1283,14 @@ public class TestUtils {
                         + BaseTest.getWaitTimePod()
                         + " seconds more");
 
+
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
-        logger.info("Command " + cmd + " is successful");
-        break;
-      }
-    }
-    return result;
-  }
-
-  public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
-      throws Exception {
-    int i = 0;
-    while (i < BaseTest.getMaxIterationsPod()) {
-      ExecResult result = ExecCommand.exec(cmd);
-
-      // pod might not have been created or if created loop till condition
-      if (result.exitValue() != 0
-          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
-        logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
-        // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          throw new RuntimeException(
-              "FAILURE: pod " + k8sObjName + " is not running/ready, exiting!");
+        logger.info("Found expected output ");
+        if (!k8sObjName.equals("")) {
+          logger.info("Pod " + k8sObjName + " is Running");
         }
-        logger.info(
-            "Pod "
-                + k8sObjName
-                + " is not Running/Ready Ite ["
-                + i
-                + "/"
-                + BaseTest.getMaxIterationsPod()
-                + "], sleeping "
-                + BaseTest.getWaitTimePod()
-                + " seconds more");
-
-        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
-        i++;
-      } else {
-        logger.info("Pod " + k8sObjName + " is Running");
         break;
       }
     }
