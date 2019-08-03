@@ -538,7 +538,7 @@ public class BaseTest {
 
   /**
    * Verify t3channel port by a JMS connection.
-   *
+   * This method is not used. See OWLS-76081
    * @throws Exception exception
    */
   public void testAdminT3ChannelWithJms(Domain domain) throws Exception {
