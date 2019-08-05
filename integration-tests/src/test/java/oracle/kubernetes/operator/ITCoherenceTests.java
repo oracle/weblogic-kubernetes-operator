@@ -57,8 +57,8 @@ public class ITCoherenceTests extends BaseTest {
   @AfterClass
   public static void staticUnPrepare() throws Exception {
     if (!QUICKTEST) {
-      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
       operator1.destroy();
+      tearDown(new Object() {}.getClass().getEnclosingClass().getSimpleName());
     }
   }
 
@@ -193,7 +193,7 @@ public class ITCoherenceTests extends BaseTest {
     // sleep and iterations
     //
     setWaitTimePod(2);
-    setMaxIterationsPod(125);
+    setMaxIterationsPod(150);
 
     domain.verifyDomainServerPodRestart(
         "\"-Dweblogic.StdoutDebugEnabled=false\"", "\"-Dweblogic.StdoutDebugEnabled=true\"");
