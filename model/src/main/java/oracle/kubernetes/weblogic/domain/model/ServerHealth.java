@@ -37,7 +37,7 @@ public class ServerHealth {
   @SerializedName("subsystems")
   @Expose
   @Valid
-  private List<SubsystemHealth> subsystems = new ArrayList<SubsystemHealth>();
+  private List<SubsystemHealth> subsystems = new ArrayList<>();
 
   /**
    * RFC 3339 date and time at which the server started.

@@ -4,6 +4,13 @@
 
 package oracle.kubernetes.operator.helm;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import oracle.kubernetes.operator.utils.OperatorValues;
+
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -13,14 +20,9 @@ import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadIntegerFromMap;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import oracle.kubernetes.operator.utils.OperatorValues;
-
 class HelmOperatorValues extends OperatorValues {
-  HelmOperatorValues() {}
+  HelmOperatorValues() {
+  }
 
   HelmOperatorValues(Map<String, Object> map) {
     loadFromMap(map, this::setServiceAccount, "serviceAccount");
