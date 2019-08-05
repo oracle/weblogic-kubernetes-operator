@@ -66,6 +66,8 @@ checkEnv JAVA_HOME NODEMGR_HOME DOMAIN_HOME DOMAIN_UID ORACLE_HOME MW_HOME WL_HO
 
 if [ "${SERVER_NAME}" = "introspector" ]; then
   SERVICE_NAME=localhost
+  trace "Contents of '${DOMAIN_HOME}/config/config.xml':"
+  cat ${DOMAIN_HOME}/config/config.xml
 else
   checkEnv SERVER_NAME ADMIN_NAME AS_SERVICE_NAME SERVICE_NAME USER_MEM_ARGS || exit 1
 fi
