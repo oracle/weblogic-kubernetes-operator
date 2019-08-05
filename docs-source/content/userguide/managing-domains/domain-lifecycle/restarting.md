@@ -199,3 +199,10 @@ If you've created a new image that is not rolling compatible, and you've changed
     the image, or the Kubernetes resources that register your domain with the operator.  For example, your servers are caching information from an external database and you've modified the contents of the database.
 
     In these cases, you must manually initiate a restart.
+
+* **Managed Coherence Server safe shutdown**.
+
+    If the domain is configued to use Coherence Clusters, then the Operator will automatically wait until the Coherence HAStatus MBean attribute
+    indicates that it is safe to shutdown the server.  If, for some reason, the Operator is not able to access the Coherence MBean then the server
+    will not be shutdown until the domain timeoutSeconds expires.  To minimize any possibility of cache data loss, you should increase
+    the timeoutSeconds value to a large number, for example: 15 minutes.
