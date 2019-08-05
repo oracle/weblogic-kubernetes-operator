@@ -16,13 +16,16 @@ source ${SCRIPTPATH}/utils.sh
 # setup ".out" location for a WL server
 serverLogHome="${LOG_HOME:-${DOMAIN_HOME}/servers/${SERVER_NAME}/logs}"
 STOP_OUT_FILE="${serverLogHome}/${SERVER_NAME}.stop.out"
+SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
+SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
+
 
 trace "Stop server ${SERVER_NAME}" &>> ${STOP_OUT_FILE}
 
 checkEnv SERVER_NAME || exit 1
 
 if [ "${MOCK_WLS}" == 'true' ]; then
-  touch /weblogic-operator/doShutdown
+  touch ${SHUTDOWN_MARKER_FILE}
   exit 0
 fi
 
@@ -79,9 +82,10 @@ if [ ! -z $pid ]; then
   kill -15 $pid
 fi
 
-touch /tmp/doShutdown
-if [ -f /weblogic-operator/pid ]; then
-  kill -2 $(</weblogic-operator/pid)
+touch ${SHUTDOWN_MARKER_FILE}
+
+if [ -f ${SERVER_PID_FILE} ]; then
+  kill -2 $(< ${SERVER_PID_FILE} )
 fi
 
 trace "Exit script"  &>> ${STOP_OUT_FILE}
