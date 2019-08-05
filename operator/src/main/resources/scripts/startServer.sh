@@ -238,6 +238,8 @@ copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
 copySitCfg /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 
+
+
 if [ "${MOCK_WLS}" == 'true' ]; then
   mockWLS
   waitForShutdownMarker
