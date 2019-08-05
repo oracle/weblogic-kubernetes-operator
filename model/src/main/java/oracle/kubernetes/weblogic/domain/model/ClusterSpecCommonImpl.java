@@ -7,7 +7,10 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1PodReadinessGate;
+import io.kubernetes.client.models.V1Toleration;
 
 public class ClusterSpecCommonImpl extends ClusterSpec {
   private final Cluster cluster;
@@ -60,4 +63,45 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   public Shutdown getShutdown() {
     return cluster.getShutdown();
   }
+
+  @Override
+  public V1Affinity getAffinity() {
+    return cluster.getAffinity();
+  }
+
+  @Override
+  public String getPriorityClassName() {
+    return cluster.getPriorityClassName();
+  }
+
+  @Override
+  public List<V1PodReadinessGate> getReadinessGates() {
+    return cluster.getReadinessGates();
+  }
+
+  @Override
+  public String getRestartPolicy() {
+    return cluster.getRestartPolicy();
+  }
+
+  @Override
+  public String getRuntimeClassName() {
+    return cluster.getRuntimeClassName();
+  }
+
+  @Override
+  public String getNodeName() {
+    return cluster.getNodeName();
+  }
+
+  @Override
+  public String getSchedulerName() {
+    return cluster.getSchedulerName();
+  }
+
+  @Override
+  public List<V1Toleration> getTolerations() {
+    return cluster.getTolerations();
+  }
+
 }

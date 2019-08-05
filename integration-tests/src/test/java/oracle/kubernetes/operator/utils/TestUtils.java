@@ -1051,7 +1051,8 @@ public class TestUtils {
 
   public static void createDirUnderDomainPV(String dirPath) throws Exception {
     dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
-    String crdCmd = BaseTest.getProjectRoot()
+    String crdCmd =
+        BaseTest.getProjectRoot()
         + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
         + dirPath
         + "'";
@@ -1242,9 +1243,8 @@ public class TestUtils {
     return myKeyStore;
   }
 
-
   /**
-   * Check command in loop.
+   * Checks command in a loop.
    * @param cmd command to run in the loop
    * @param matchStr expected string to match in the output
    * @throws Exception exception if fails to execute

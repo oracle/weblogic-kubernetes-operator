@@ -468,8 +468,8 @@ public class ItOperator extends BaseTest {
       domain11 = TestUtils.createDomain(domainMap);
       domain11.verifyDomainCreated();
       testBasicUseCases(domain11);
-      // OWLS-76081 - commenting the below check as its not a generic use case that
-      // works for all images, it needs wlthint3client.jar
+      // OWLS-76081 - commenting the below check as its not a generic use case that works for all images,
+      // it needs wlthint3client.jar
       // testAdminT3ChannelWithJms(domain11);
       testCompletedSuccessfully = true;
 
