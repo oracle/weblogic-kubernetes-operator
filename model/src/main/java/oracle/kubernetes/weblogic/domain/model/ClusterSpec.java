@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1PodReadinessGate;
+import io.kubernetes.client.models.V1Toleration;
 
 public abstract class ClusterSpec {
   /**
@@ -79,4 +82,21 @@ public abstract class ClusterSpec {
    */
   @Nonnull
   public abstract Shutdown getShutdown();
+
+  public abstract V1Affinity getAffinity();
+
+  public abstract String getPriorityClassName();
+
+  public abstract List<V1PodReadinessGate> getReadinessGates();
+
+  public abstract String getRestartPolicy();
+
+  public abstract String getRuntimeClassName();
+
+  public abstract String getNodeName();
+
+  public abstract String getSchedulerName();
+
+  public abstract List<V1Toleration> getTolerations();
+
 }
