@@ -15,6 +15,7 @@ import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1DeleteOptions;
@@ -27,9 +28,11 @@ import io.kubernetes.client.models.V1ObjectMeta;
 import io.kubernetes.client.models.V1PersistentVolume;
 import io.kubernetes.client.models.V1PersistentVolumeList;
 import io.kubernetes.client.models.V1Pod;
+import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSpec;
 import io.kubernetes.client.models.V1Probe;
 import io.kubernetes.client.models.V1Status;
+import io.kubernetes.client.models.V1Toleration;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -518,7 +521,15 @@ public abstract class PodStepContext extends StepContextBase {
         new V1PodSpec()
             .containers(getServerSpec().getContainers())
             .addContainersItem(container)
+            .affinity(getAffinity())
             .nodeSelector(getServerSpec().getNodeSelectors())
+            .nodeName(getServerSpec().getNodeName())
+            .schedulerName(getServerSpec().getSchedulerName())
+            .priorityClassName(getServerSpec().getPriorityClassName())
+            .runtimeClassName(getServerSpec().getRuntimeClassName())
+            .tolerations(getTolerations())
+            .readinessGates(getReadinessGates())
+            .restartPolicy(getServerSpec().getRestartPolicy())
             .securityContext(getServerSpec().getPodSecurityContext())
             .initContainers(getServerSpec().getInitContainers());
 
@@ -532,6 +543,20 @@ public abstract class PodStepContext extends StepContextBase {
   }
 
   // ---------------------- model methods ------------------------------
+
+  private V1Affinity getAffinity() {
+    return getServerSpec().getAffinity();
+  }
+
+  private List<V1Toleration> getTolerations() {
+    List<V1Toleration> tolerations = getServerSpec().getTolerations();
+    return tolerations.isEmpty() ? null : tolerations;
+  }
+
+  private List<V1PodReadinessGate> getReadinessGates() {
+    List<V1PodReadinessGate> readinessGates = getServerSpec().getReadinessGates();
+    return readinessGates.isEmpty() ? null : readinessGates;
+  }
 
   private List<V1Volume> getVolumes(String domainUid) {
     List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
