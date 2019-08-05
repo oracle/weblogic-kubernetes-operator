@@ -19,7 +19,7 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 /**
  * Tests that the artifacts in the yaml files that create-weblogic-operator.sh creates are correct
  * when all optional features are enabled: external rest self signed cert remote debug port enabled
- * elk enabled haveimage pull secret
+ * elk enabled have image pull secret
  */
 public abstract class CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBase
     extends CreateOperatorGeneratedFilesTestBase {

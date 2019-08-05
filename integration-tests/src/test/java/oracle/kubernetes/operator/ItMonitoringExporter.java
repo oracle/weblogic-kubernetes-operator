@@ -155,7 +155,7 @@ public class ItMonitoringExporter extends BaseTest {
   /**
    * Utility to execute any shell scripts.
    *
-   * @param srcLoc - path to the shel script
+   * @param srcLoc - path to the shell script
    * @param destLoc - destination path there the shell script will be executed
    * @param fileName - name of the shell script
    * @param args - args to pass to the shell script
@@ -873,7 +873,7 @@ public class ItMonitoringExporter extends BaseTest {
       crdCmd = "kubectl delete secret domain1-weblogic-credentials";
       ExecCommand.exec(crdCmd);
       uninstallWebHookPrometheusGrafanaViaChart();
-      uninstallMysql();
+      uninstallMySql();
       deletePvDir();
     }
     testCompletedSuccessfully = true;
@@ -1248,8 +1248,8 @@ public class ItMonitoringExporter extends BaseTest {
     TestUtils.exec(crdCmd);
 
     crdCmd =
-        "kubectl --namespace monitoring create secret generic grafana-secret "
-            + "--from-literal=username=admin --from-literal=password=12345678";
+        "kubectl --namespace monitoring create secret generic grafana-secret"
+            + " --from-literal=username=admin --from-literal=password=12345678";
     TestUtils.exec(crdCmd);
     logger.info("calling helm install for grafana");
     crdCmd =
@@ -1415,7 +1415,7 @@ public class ItMonitoringExporter extends BaseTest {
    *
    * @throws Exception if could not run the command successfully to uninstall MySQL
    */
-  private static void uninstallMysql() throws Exception {
+  private static void uninstallMySql() throws Exception {
     String monitoringExporterEndToEndDir =
         monitoringExporterDir + "/src/samples/kubernetes/end2end/";
     // unnstall mysql
