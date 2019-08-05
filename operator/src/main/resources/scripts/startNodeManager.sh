@@ -110,6 +110,7 @@ else
   export SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
   serverOutOption="-Dweblogic.Stdout=${SERVER_OUT_FILE}"
   createFolder "${serverLogHome}"
+  rm ${SHUTDOWN_MARKER_FILE}
 fi
 
 
