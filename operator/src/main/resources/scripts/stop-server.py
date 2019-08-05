@@ -107,12 +107,20 @@ def waitUntilCoherenceSafe():
   print ('Shutdown: getting all service Coherence MBeans')
   query='Coherence:type=PartitionAssignment,service=*,*'
 
+  # By default, Coherence will use a single Weblogic Runtime MBean server to managed
+  # its MBeans.  That server will correspond to the current Coherence senior member,
+  # which means that the Coherence MBeans will migrate to the oldest cluster member
+  # during rolling restart.  By using the DomainRuntime MBean server (in admin server)
+  # we can get access to the Coherence MBeans, regardless of the local Runtime MBean
+  # server being used, since the DomainRuntime server is federated and will call the
+  # individual MBean servers to get the MBeans througout the domain.
+  domainRuntime()
+
   # Wait forever until we get positive ack that it is ok to shutdown this server.
   done = False
   warnSleep = True
   while (not done):
     try:
-      domainRuntime()
       beans = list(mbs.queryMBeans(ObjectName(query), None))
       if beans is None or len(beans) == 0:
         # during rolling restart the beans might not be available right away

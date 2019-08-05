@@ -10,5 +10,5 @@
 # running this script.
 #
 
-echo $$ > /tmp/tailLog-pid
+echo $$ > $2
 tail -F -n +0 $1
