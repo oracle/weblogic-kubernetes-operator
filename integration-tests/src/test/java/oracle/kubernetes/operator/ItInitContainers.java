@@ -25,9 +25,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
-/**
- * Integration tests for testing the init container for WebLogic server pods.
- */
+/** Integration tests for testing the init container for WebLogic server pods. */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ItInitContainers extends BaseTest {
 
@@ -313,7 +311,7 @@ public class ItInitContainers extends BaseTest {
    * Add multiple initContainers at domain level and verify all of the init containers are run.
    *
    * @throws Exception when domain.yaml cannot be read or modified to include the initContainers or
-   *     weblogic server pod doesn't go through initialization and ready state
+   *     WebLogic server pod doesn't go through initialization and ready state
    */
   @Test
   public void testInitContainerMultiple() throws Exception {

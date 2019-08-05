@@ -35,7 +35,7 @@ public class SubsystemHealth implements Comparable<SubsystemHealth> {
   @SerializedName("symptoms")
   @Expose
   @Valid
-  private List<String> symptoms = new ArrayList<String>();
+  private List<String> symptoms = new ArrayList<>();
 
   /**
    * Server health of this WebLogic Server. Required.
