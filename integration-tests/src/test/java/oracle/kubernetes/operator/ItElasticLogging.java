@@ -137,8 +137,8 @@ public class ItElasticLogging extends BaseTest {
     // Verify that the health status of Logstash
     Assume.assumeTrue(
         "Logstash is not ready!",
-        healthStatus.equalsIgnoreCase("yellow") || 
-        healthStatus.equalsIgnoreCase("green"));
+        healthStatus.equalsIgnoreCase("yellow")
+            || healthStatus.equalsIgnoreCase("green"));
     // Verify that the index is open for use
     Assume.assumeTrue("Logstash index is not open!", 
                       indexStatus.equalsIgnoreCase("open"));
@@ -162,16 +162,16 @@ public class ItElasticLogging extends BaseTest {
     String[] kibanaindexNameArr = 
       indexName.split(System.getProperty("line.separator"));
     
-    for(int i = 0; i < kibanaindexStatusArr.length; i++) {
-      logger.info("Health status of " + kibanaindexNameArr[i] + 
-                  "is:" + kibanahealthStatusArr[i]);
-      logger.info("Index status of " + kibanaindexNameArr[i] + 
-                  "is:" + kibanaindexStatusArr[i]);
+    for (int i = 0; i < kibanaindexStatusArr.length; i++) {
+      logger.info("Health status of " + kibanaindexNameArr[i]
+          + "is:" + kibanahealthStatusArr[i]);
+      logger.info("Index status of " + kibanaindexNameArr[i]
+          + "is:" + kibanaindexStatusArr[i]);
       // Verify that the health status of Kibana
       Assume.assumeTrue(
           "Kibana is not ready!",
-          kibanahealthStatusArr[i].trim().equalsIgnoreCase("yellow") || 
-          kibanahealthStatusArr[i].trim().equalsIgnoreCase("green"));
+          kibanahealthStatusArr[i].trim().equalsIgnoreCase("yellow")
+              || kibanahealthStatusArr[i].trim().equalsIgnoreCase("green"));
       // Verify that the index is open for use
       Assume.assumeTrue("Kibana index is not open!", 
                         kibanaindexStatusArr[i].trim().equalsIgnoreCase("open"));
