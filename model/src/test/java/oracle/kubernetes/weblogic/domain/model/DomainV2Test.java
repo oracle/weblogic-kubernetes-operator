@@ -50,6 +50,7 @@ public class DomainV2Test extends DomainTestBase {
   private static final String DOMAIN_V2_SAMPLE_YAML_2 = "model/domain-sample-2.yaml";
   private static final String DOMAIN_V2_SAMPLE_YAML_3 = "model/domain-sample-3.yaml";
   private static final String DOMAIN_V2_SAMPLE_YAML_4 = "model/domain-sample-4.yaml";
+  private static final String DOMAIN_V2_SAMPLE_YAML_5 = "model/domain-sample-5.yaml";
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
   private static final int PERIOD = 5;
@@ -1131,6 +1132,54 @@ public class DomainV2Test extends DomainTestBase {
     assertThat(shutdown.getShutdownType(), is("Graceful"));
     assertThat(shutdown.getTimeoutSeconds(), is(60L));
     assertThat(shutdown.getIgnoreSessions(), is(false));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_RestartPolicyIsReadFromSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String restartPolicy = domain.getSpec().getRestartPolicy();
+    assertThat(restartPolicy, is("OnFailure"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_RestartPolicyIsReadFromClusterSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String restartPolicy = domain.getCluster("cluster2").getRestartPolicy();
+    assertThat(restartPolicy, is("OnFailure"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_RuntimeClassNameIsReadFromSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String runtimeClassName = domain.getSpec().getRuntimeClassName();
+    assertThat(runtimeClassName, is("weblogic-class"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_RuntimeClassNameIsReadFromClusterSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String runtimeClassName = domain.getCluster("cluster2").getRuntimeClassName();
+    assertThat(runtimeClassName, is("weblogic-class"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_SchedulerNameIsReadFromSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String schedulerName = domain.getSpec().getSchedulerName();
+    assertThat(schedulerName, is("my-scheduler"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_SchedulerClassNameIsReadFromClusterSpec() throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+
+    String schedulerName = domain.getCluster("cluster2").getSchedulerName();
+    assertThat(schedulerName, is("my-scheduler"));
   }
 
   @Test

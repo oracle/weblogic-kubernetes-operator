@@ -11,11 +11,14 @@ import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
@@ -160,6 +163,38 @@ public abstract class BaseConfiguration {
 
   Map<String, String> getNodeSelector() {
     return serverPod.getNodeSelector();
+  }
+
+  public V1Affinity getAffinity() {
+    return serverPod.getAffinity();
+  }
+
+  public String getPriorityClassName() {
+    return serverPod.getPriorityClassName();
+  }
+
+  public List<V1PodReadinessGate> getReadinessGates() {
+    return serverPod.getReadinessGates();
+  }
+
+  public String getRestartPolicy() {
+    return serverPod.getRestartPolicy();
+  }
+
+  public String getRuntimeClassName() {
+    return serverPod.getRuntimeClassName();
+  }
+
+  public String getNodeName() {
+    return serverPod.getNodeName();
+  }
+
+  public String getSchedulerName() {
+    return serverPod.getSchedulerName();
+  }
+
+  public List<V1Toleration> getTolerations() {
+    return serverPod.getTolerations();
   }
 
   public V1ResourceRequirements getResources() {

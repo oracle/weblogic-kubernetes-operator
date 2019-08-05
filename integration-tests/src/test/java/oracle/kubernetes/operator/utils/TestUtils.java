@@ -28,6 +28,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -1052,9 +1053,9 @@ public class TestUtils {
     dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
     String crdCmd =
         BaseTest.getProjectRoot()
-     + "/src/integration-tests/bash/krun.sh -m "+BaseTest.getPvRoot()+":/sharedparent -c 'mkdir -m 777 -p "
-     + dirPath
-     + "'"; 
+        + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
+        + dirPath
+        + "'";
     
     ExecResult result = ExecCommand.exec(crdCmd);
     if (result.exitValue() != 0) {
@@ -1074,7 +1075,7 @@ public class TestUtils {
     // copy wldf.py script tp pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
-        BaseTest.getAppLocationInPod() +"/wldf.py",
+        BaseTest.getAppLocationInPod() + "/wldf.py",
         adminPodName,
         domainNS);
 
@@ -1096,10 +1097,10 @@ public class TestUtils {
             + ":"
             + t3ChannelPort,
         
-      };
+    };
     
     // call callpyscript.sh in pod to deploy wldf module
-     TestUtils.callShellScriptByExecToPod(
+    TestUtils.callShellScriptByExecToPod(
         adminPodName, domainNS, BaseTest.getAppLocationInPod(), "callpyscript.sh", args);
   }
 
@@ -1242,8 +1243,8 @@ public class TestUtils {
     return myKeyStore;
   }
 
-
-/**
+  /**
+   * Checks command in a loop.
    * @param cmd command to run in the loop
    * @param matchStr expected string to match in the output
    * @throws Exception exception if fails to execute
@@ -1266,7 +1267,8 @@ public class TestUtils {
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
-                  "FAILURE: command " + cmd + " failed to execute or does not match the expected output " + matchStr + " , exiting!");
+                  "FAILURE: command " + cmd + " failed to execute or does not match the expected output "
+                      + matchStr + " , exiting!");
         }
         logger.info(
                 "did not receive the expected output "
@@ -1286,7 +1288,7 @@ public class TestUtils {
         i++;
       } else {
         logger.info("Found expected output ");
-        if(!k8sObjName.equals("")) {
+        if (!k8sObjName.equals("")) {
           logger.info("Pod " + k8sObjName + " is Running");
         }
         break;

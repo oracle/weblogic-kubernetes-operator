@@ -4,6 +4,28 @@
 
 package oracle.kubernetes.operator.create;
 
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
+import io.kubernetes.client.models.V1ClusterRole;
+import io.kubernetes.client.models.V1ClusterRoleBinding;
+import io.kubernetes.client.models.V1ConfigMap;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1Namespace;
+import io.kubernetes.client.models.V1Probe;
+import io.kubernetes.client.models.V1ResourceRequirements;
+import io.kubernetes.client.models.V1Role;
+import io.kubernetes.client.models.V1RoleBinding;
+import io.kubernetes.client.models.V1Secret;
+import io.kubernetes.client.models.V1Service;
+import io.kubernetes.client.models.V1ServiceAccount;
+import io.kubernetes.client.models.V1ServiceSpec;
+import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
+import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
+import oracle.kubernetes.operator.utils.OperatorValues;
+import oracle.kubernetes.operator.utils.OperatorYamlFactory;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.Test;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static oracle.kubernetes.operator.LabelConstants.APP_LABEL;
@@ -43,28 +65,6 @@ import static oracle.kubernetes.operator.utils.KubernetesArtifactUtils.newVolume
 import static oracle.kubernetes.operator.utils.YamlUtils.yamlEqualTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
-
-import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment;
-import io.kubernetes.client.models.V1ClusterRole;
-import io.kubernetes.client.models.V1ClusterRoleBinding;
-import io.kubernetes.client.models.V1ConfigMap;
-import io.kubernetes.client.models.V1Container;
-import io.kubernetes.client.models.V1Namespace;
-import io.kubernetes.client.models.V1Probe;
-import io.kubernetes.client.models.V1ResourceRequirements;
-import io.kubernetes.client.models.V1Role;
-import io.kubernetes.client.models.V1RoleBinding;
-import io.kubernetes.client.models.V1Secret;
-import io.kubernetes.client.models.V1Service;
-import io.kubernetes.client.models.V1ServiceAccount;
-import io.kubernetes.client.models.V1ServiceSpec;
-import oracle.kubernetes.operator.utils.GeneratedOperatorObjects;
-import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
-import oracle.kubernetes.operator.utils.OperatorValues;
-import oracle.kubernetes.operator.utils.OperatorYamlFactory;
-import org.apache.commons.codec.binary.Base64;
-import org.junit.Test;
 
 /**
  * Base class for testing that the all artifacts in the yaml files that create-weblogic-operator.sh
