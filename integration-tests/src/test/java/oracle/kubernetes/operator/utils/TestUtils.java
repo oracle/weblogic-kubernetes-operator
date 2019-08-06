@@ -28,6 +28,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import oracle.kubernetes.operator.BaseTest;
 import oracle.kubernetes.operator.utils.Operator.RestCertType;
 import org.glassfish.jersey.jsonp.JsonProcessingFeature;
@@ -1052,9 +1053,9 @@ public class TestUtils {
     dirPath = dirPath.replace(BaseTest.getPvRoot(), "/sharedparent/");
     String crdCmd =
         BaseTest.getProjectRoot()
-     + "/src/integration-tests/bash/krun.sh -m "+BaseTest.getPvRoot()+":/sharedparent -c 'mkdir -m 777 -p "
-     + dirPath
-     + "'"; 
+        + "/src/integration-tests/bash/krun.sh -m " + BaseTest.getPvRoot() + ":/sharedparent -c 'mkdir -m 777 -p "
+        + dirPath
+        + "'";
     
     ExecResult result = ExecCommand.exec(crdCmd);
     if (result.exitValue() != 0) {
@@ -1074,7 +1075,7 @@ public class TestUtils {
     // copy wldf.py script tp pod
     copyFileViaCat(
         BaseTest.getProjectRoot() + "/integration-tests/src/test/resources/wldf/wldf.py",
-        BaseTest.getAppLocationInPod() +"/wldf.py",
+        BaseTest.getAppLocationInPod() + "/wldf.py",
         adminPodName,
         domainNS);
 
@@ -1096,10 +1097,10 @@ public class TestUtils {
             + ":"
             + t3ChannelPort,
         
-      };
+    };
     
     // call callpyscript.sh in pod to deploy wldf module
-     TestUtils.callShellScriptByExecToPod(
+    TestUtils.callShellScriptByExecToPod(
         adminPodName, domainNS, BaseTest.getAppLocationInPod(), "callpyscript.sh", args);
   }
 
@@ -1243,82 +1244,53 @@ public class TestUtils {
   }
 
   /**
+   * Checks command in a loop.
    * @param cmd command to run in the loop
    * @param matchStr expected string to match in the output
-   * @return ExecResult object containing command output info
    * @throws Exception exception if fails to execute
    */
-  public static ExecResult checkAnyCmdInLoop(String cmd, String matchStr) throws Exception {
-    int i = 0;
-    ExecResult result = null;
-    while (i < BaseTest.getMaxIterationsPod()) {
-      result = ExecCommand.exec(cmd);
-
-      if (result.exitValue() != 0
-          || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
-        logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
-        // check for last iteration
-        if (i == (BaseTest.getMaxIterationsPod() - 1)) {
-          throw new RuntimeException(
-              "FAILURE: expected output "
-                  + matchStr
-                  + " from command "
-                  + cmd
-                  + " is not receieved, exiting!");
-        }
-        logger.info(
-            "did not receive the expected output "
-                + matchStr
-                + "from command "
-                + cmd
-                + " Ite ["
-                + i
-                + "/"
-                + BaseTest.getMaxIterationsPod()
-                + "], sleeping "
-                + BaseTest.getWaitTimePod()
-                + " seconds more");
-
-        Thread.sleep(BaseTest.getWaitTimePod() * 1000);
-        i++;
-      } else {
-        logger.info("Command " + cmd + " is successful");
-        break;
-      }
-    }
-    return result;
+  public static void checkAnyCmdInLoop(String cmd, String matchStr)
+      throws Exception {
+    checkCmdInLoop(cmd,matchStr, "");
   }
 
   public static void checkCmdInLoop(String cmd, String matchStr, String k8sObjName)
-      throws Exception {
+          throws Exception {
     int i = 0;
     while (i < BaseTest.getMaxIterationsPod()) {
       ExecResult result = ExecCommand.exec(cmd);
 
-      // pod might not have been created or if created loop till condition
+      // loop command till condition
       if (result.exitValue() != 0
           || (result.exitValue() == 0 && !result.stdout().contains(matchStr))) {
         logger.info("Output for " + cmd + "\n" + result.stdout() + "\n " + result.stderr());
         // check for last iteration
         if (i == (BaseTest.getMaxIterationsPod() - 1)) {
           throw new RuntimeException(
-              "FAILURE: pod " + k8sObjName + " is not running/ready, exiting!");
+                  "FAILURE: command " + cmd + " failed to execute or does not match the expected output "
+                      + matchStr + " , exiting!");
         }
         logger.info(
-            "Pod "
-                + k8sObjName
-                + " is not Running/Ready Ite ["
-                + i
-                + "/"
-                + BaseTest.getMaxIterationsPod()
-                + "], sleeping "
-                + BaseTest.getWaitTimePod()
-                + " seconds more");
+                "did not receive the expected output "
+                        + matchStr
+                        + " from command "
+                        + cmd
+                        + " Ite ["
+                        + i
+                        + "/"
+                        + BaseTest.getMaxIterationsPod()
+                        + "], sleeping "
+                        + BaseTest.getWaitTimePod()
+                        + " seconds more");
+
 
         Thread.sleep(BaseTest.getWaitTimePod() * 1000);
         i++;
       } else {
-        logger.info("Pod " + k8sObjName + " is Running");
+        logger.info("Found expected output ");
+        if (!k8sObjName.equals("")) {
+          logger.info("Pod " + k8sObjName + " is Running");
+        }
         break;
       }
     }
