@@ -375,6 +375,7 @@ public class SitConfigTests {
     String startupClassName = "AddedStartupClassOne";
     StartupClassMBean[] startupClasses =
         runtimeServiceMBean.getDomainConfiguration().getStartupClasses();
+    assert startupClasses.length > 0;
     for (StartupClassMBean startupClasse : startupClasses) {
       assert startupClasse.getName().equals("StartupClass-0")
           : "Startup class name is not StartupClass-0";
@@ -384,8 +385,10 @@ public class SitConfigTests {
       assert !startupClasse.getFailureIsFatal() : "FailureIsFatal is not false";
       assert startupClasse.getLoadBeforeAppDeployments() : "LoadBeforeAppDeployments is not true";
     }
+    
     ShutdownClassMBean[] shutdownClasses =
         runtimeServiceMBean.getDomainConfiguration().getShutdownClasses();
+    assert shutdownClasses.length > 0;
     for (ShutdownClassMBean shutdownClasse : shutdownClasses) {
       assert shutdownClasse.getName().equals("ShutdownClass-0")
           : "Shutdown class name is not ShutdownClass-0";
