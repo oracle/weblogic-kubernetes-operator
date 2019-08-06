@@ -12,7 +12,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.logging.Level;
-
 import oracle.kubernetes.operator.utils.Domain;
 import oracle.kubernetes.operator.utils.ExecResult;
 import oracle.kubernetes.operator.utils.Operator;
@@ -452,6 +451,11 @@ public class ItSitConfig extends BaseTest {
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
   }
 
+  /**
+   * Create a JDBC system resource in domain
+   *
+   * @throws Exception JDBC resource creation fails
+   */
   private void createJdbcResource() throws Exception {
     Path path = Paths.get(JDBC_RES_SCRIPT);
     String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
@@ -471,6 +475,11 @@ public class ItSitConfig extends BaseTest {
     TestUtils.exec(KUBE_EXEC_CMD + " 'wlst.sh create-jdbc-resource.py'", true);
   }
 
+  /**
+   * Update the configOverrides configmap and restart WLS pods.
+   *
+   * @throws Exception when pods restart fail
+   */
   private void recreateCRDWithNewConfigMap() throws Exception {
     int clusterReplicas =
         TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
@@ -479,11 +488,24 @@ public class ItSitConfig extends BaseTest {
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyServerPodsDeleted(clusterReplicas);
 
+    String cmd =
+        "kubectl create configmap "
+            + DOMAINUID
+            + "-sitconfigcm --from-file="
+            + configOverrideDir
+            + " -o yaml --dry-run | kubectl replace -f -";
+    TestUtils.exec(cmd, true);
+
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyDomainCreated();
   }
 
+  /**
+   * Transfer the tests to run in WLS pods
+   *
+   * @throws Exception
+   */
   private void transferTests() throws Exception {
     TestUtils.copyFileViaCat(
         TEST_RES_DIR + "sitconfig/java/SitConfigTests.java",
