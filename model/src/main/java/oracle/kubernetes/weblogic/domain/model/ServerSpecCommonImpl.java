@@ -9,11 +9,14 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.models.V1Affinity;
 import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1EnvVar;
+import io.kubernetes.client.models.V1PodReadinessGate;
 import io.kubernetes.client.models.V1PodSecurityContext;
 import io.kubernetes.client.models.V1ResourceRequirements;
 import io.kubernetes.client.models.V1SecurityContext;
+import io.kubernetes.client.models.V1Toleration;
 import io.kubernetes.client.models.V1Volume;
 import io.kubernetes.client.models.V1VolumeMount;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -157,6 +160,46 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   @Override
   public Map<String, String> getNodeSelectors() {
     return server.getNodeSelector();
+  }
+
+  @Override
+  public V1Affinity getAffinity() {
+    return server.getAffinity();
+  }
+
+  @Override
+  public String getPriorityClassName() {
+    return server.getPriorityClassName();
+  }
+
+  @Override
+  public List<V1PodReadinessGate> getReadinessGates() {
+    return server.getReadinessGates();
+  }
+
+  @Override
+  public String getRestartPolicy() {
+    return server.getRestartPolicy();
+  }
+
+  @Override
+  public String getRuntimeClassName() {
+    return server.getRuntimeClassName();
+  }
+
+  @Override
+  public String getNodeName() {
+    return server.getNodeName();
+  }
+
+  @Override
+  public String getSchedulerName() {
+    return server.getSchedulerName();
+  }
+
+  @Override
+  public List<V1Toleration> getTolerations() {
+    return server.getTolerations();
   }
 
   @Override

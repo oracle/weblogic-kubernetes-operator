@@ -539,7 +539,7 @@ public class BaseTest {
 
   /**
    * Verify t3channel port by a JMS connection.
-   *
+   * This method is not used. See OWLS-76081
    * @throws Exception exception
    */
   public void testAdminT3ChannelWithJms(Domain domain) throws Exception {
@@ -689,7 +689,7 @@ public class BaseTest {
     String adminPodName = domainUid + "-" + adminServerName;
     String domainName = (String) domainMap.get("domainName");
 
-    copyScalingScriptToPod( domainUid, adminPodName, domainNS);
+    copyScalingScriptToPod(domainUid, adminPodName, domainNS);
     TestUtils.createRbacPoliciesForWldfScaling();
 
     // deploy opensessionapp
@@ -757,7 +757,7 @@ public class BaseTest {
     TestUtils.createDirUnderDomainPV(scriptsDir);
     // workaround for the issue with not allowing .. in the host-path in krun.sh
     Files.copy(Paths.get(getProjectRoot() + "/src/scripts/scaling/scalingAction.sh"),
-        Paths.get(getResultDir()+"/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
+        Paths.get(getResultDir() + "/scalingAction.sh"), StandardCopyOption.REPLACE_EXISTING);
     // copy script to pod
     String cpUsingKrunCmd = getProjectRoot() + "/src/integration-tests/bash/krun.sh -m "
         + getResultDir() + ":/tmpdir -m " + pvDir
