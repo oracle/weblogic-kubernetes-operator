@@ -21,7 +21,7 @@ import org.junit.runners.MethodSorters;
  * This class contains Coherence relates integraiton tests.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ITCoherenceTests extends BaseTest {
+public class ItCoherenceTests extends BaseTest {
 
   private static Domain domain = null;
   private static Operator operator1 = null;
