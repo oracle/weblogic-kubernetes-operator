@@ -471,25 +471,27 @@ public class ItSitConfig extends BaseTest {
   }
 
   private void recreateCRDWithNewConfigMap() throws Exception {
-    int clusterReplicas =
-        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(), domain.getDomainNs());
-    // delete the running domain
-    String cmd = "kubectl delete -f " + domainYaml;
-    TestUtils.exec(cmd, true);
-    domain.verifyDomainDeleted(clusterReplicas);
-
-    // recreate the map with new situational config files
-    cmd =
-        "kubectl create configmap "
-            + DOMAINUID
-            + "-sitconfigcm --from-file="
-            + configOverrideDir
-            + " -o yaml --dry-run | kubectl replace -f -";
-    TestUtils.exec(cmd, true);
-
-    // recreate the custom domain resource
-    cmd = "kubectl create -f " + domainYaml;
-    TestUtils.exec(cmd, true);
+    domain.restartUsingServerStartPolicy();
+    //    int clusterReplicas =
+    //        TestUtils.getClusterReplicas(DOMAINUID, domain.getClusterName(),
+    // domain.getDomainNs());
+    //    // delete the running domain
+    //    String cmd = "kubectl delete -f " + domainYaml;
+    //    TestUtils.exec(cmd, true);
+    //    domain.verifyDomainDeleted(clusterReplicas);
+    //
+    //    // recreate the map with new situational config files
+    //    cmd =
+    //        "kubectl create configmap "
+    //            + DOMAINUID
+    //            + "-sitconfigcm --from-file="
+    //            + configOverrideDir
+    //            + " -o yaml --dry-run | kubectl replace -f -";
+    //    TestUtils.exec(cmd, true);
+    //
+    //    // recreate the custom domain resource
+    //    cmd = "kubectl create -f " + domainYaml;
+    //    TestUtils.exec(cmd, true);
     domain.verifyDomainCreated();
   }
 
