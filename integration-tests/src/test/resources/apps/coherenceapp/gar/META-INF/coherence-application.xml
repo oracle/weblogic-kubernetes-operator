@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<coherence-application>
+	<cache-configuration-ref>META-INF/cache-config.xml
+	</cache-configuration-ref>
+	<pof-configuration-ref>META-INF/pof-config.xml</pof-configuration-ref>
+</coherence-application>
