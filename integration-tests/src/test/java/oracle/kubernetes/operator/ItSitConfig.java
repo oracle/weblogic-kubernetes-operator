@@ -476,7 +476,7 @@ public class ItSitConfig extends BaseTest {
 
     String patchStr = "'{\"spec\":{\"serverStartPolicy\":\"NEVER\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
-    domain.verifyDomainDeleted(clusterReplicas);
+    domain.verifyServerPodsDeleted(clusterReplicas);
 
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
