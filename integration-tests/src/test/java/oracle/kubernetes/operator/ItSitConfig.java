@@ -486,6 +486,7 @@ public class ItSitConfig extends BaseTest {
         StandardOpenOption.TRUNCATE_EXISTING);
 
     TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
+    TestUtils.exec("kubectl delete apply -f " + domainYaml, true);
     createNewSecret(secretName);
     recreateCRDWithNewConfigMap();
     transferTests();
