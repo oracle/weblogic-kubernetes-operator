@@ -474,7 +474,7 @@ public class ItSitConfig extends BaseTest {
         content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
       }
       Files.write(
-          Paths.get(sitconfigTmpDir, file),
+          Paths.get(sitconfigTmpDir, "configoverridefiles", file),
           content.getBytes(StandardCharsets.UTF_8),
           StandardOpenOption.TRUNCATE_EXISTING);
     }
