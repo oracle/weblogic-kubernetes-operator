@@ -485,10 +485,10 @@ public class ItSitConfig extends BaseTest {
         content.getBytes(StandardCharsets.UTF_8),
         StandardOpenOption.TRUNCATE_EXISTING);
 
-    TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
-    TestUtils.exec("kubectl delete apply -f " + domainYaml, true);
+    TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);    
     createNewSecret(secretName);
-    recreateCRDWithNewConfigMap();
+    TestUtils.exec("kubectl apply -f " + domainYaml, true);
+    recreateCRDWithNewConfigMap();    
     transferTests();
     ExecResult result =
         TestUtils.exec(
