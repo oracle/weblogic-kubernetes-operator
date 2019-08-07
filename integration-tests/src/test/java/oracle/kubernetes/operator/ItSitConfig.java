@@ -467,13 +467,16 @@ public class ItSitConfig extends BaseTest {
     String files[] = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
     String secretName = "test-secrets-new";
     for (String file : files) {
-      Path path = Paths.get(TEST_RES_DIR, "/sitconfig/configoverrides", file);
+      Path path = Paths.get(sitconfigTmpDir, file);
       String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
       content = content.replaceAll("test-secrets", secretName);
       if (getWeblogicImageTag().contains(PS3_TAG)) {
         content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
       }
-      Files.write(Paths.get(sitconfigTmpDir, file), content.getBytes(StandardCharsets.UTF_8));
+      Files.write(
+          Paths.get(sitconfigTmpDir, file),
+          content.getBytes(StandardCharsets.UTF_8),
+          StandardOpenOption.TRUNCATE_EXISTING);
     }
     String content = new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
     content = content.replaceAll("test-secrets", secretName);
