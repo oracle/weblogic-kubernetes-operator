@@ -463,17 +463,17 @@ public class ItSitConfig extends BaseTest {
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
     // recreate the map with new situational config files
+    String files[] = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
     String secretName = "test-secrets-new";
-    Path path =
-        Paths.get(TEST_RES_DIR, "/sitconfig/configoverrides", "jdbc-JdbcTestDataSource-0.xml");
-    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
-    content = content.replaceAll("test-secrets", secretName);
-    if (getWeblogicImageTag().contains(PS3_TAG)) {
-      content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
+    for (String file : files) {
+      Path path = Paths.get(TEST_RES_DIR, "/sitconfig/configoverrides", file);
+      String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+      content = content.replaceAll("test-secrets", secretName);
+      if (getWeblogicImageTag().contains(PS3_TAG)) {
+        content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
+      }
+      Files.write(Paths.get(sitconfigTmpDir, file), content.getBytes(StandardCharsets.UTF_8));
     }
-    Files.write(
-        Paths.get(sitconfigTmpDir, "jdbc-JdbcTestDataSource-0.xml"),
-        content.getBytes(StandardCharsets.UTF_8));
     TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
     createNewSecret(secretName);
     recreateCRDWithNewConfigMap();
