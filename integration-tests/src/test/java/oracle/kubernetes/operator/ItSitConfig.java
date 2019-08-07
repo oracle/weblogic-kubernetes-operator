@@ -462,7 +462,6 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    createJdbcResource();
     // recreate the map with new situational config files
     String secretName = "test-secrets-new";
     Path path =
