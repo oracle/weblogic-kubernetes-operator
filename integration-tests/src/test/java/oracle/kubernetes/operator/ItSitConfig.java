@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.logging.Level;
 import oracle.kubernetes.operator.utils.Domain;
@@ -474,6 +475,13 @@ public class ItSitConfig extends BaseTest {
       }
       Files.write(Paths.get(sitconfigTmpDir, file), content.getBytes(StandardCharsets.UTF_8));
     }
+    String content = new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
+    content = content.replaceAll("test-secrets", secretName);
+    Files.write(
+        Paths.get(domainYaml),
+        content.getBytes(StandardCharsets.UTF_8),
+        StandardOpenOption.TRUNCATE_EXISTING);
+
     TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
     createNewSecret(secretName);
     recreateCRDWithNewConfigMap();
@@ -557,7 +565,7 @@ public class ItSitConfig extends BaseTest {
             + TestUtils.getHostName()
             + " --from-literal=dbusername=root"
             + " --from-literal=dbpassword=root123";
-    TestUtils.exec(cmd);
+    TestUtils.exec(cmd, true);
   }
 
   /**
