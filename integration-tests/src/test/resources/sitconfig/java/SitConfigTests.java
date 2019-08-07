@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.management.MBeanServerConnection;
@@ -504,6 +505,8 @@ public class SitConfigTests {
    */
   private void createDatabase(String dbName, String jdbcResourceName) {
     // Assert datasource is working with overiridden JDBC URL value
+    Random rand = new Random();
+    dbName = dbName + rand.nextInt(100);
     DataSource dataSource = getDataSource("jdbc/" + jdbcResourceName);
     try {
       Connection connection = dataSource.getConnection();
