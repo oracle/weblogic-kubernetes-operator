@@ -159,6 +159,11 @@ public class SitConfigTests {
     if (testName.equals("testConfigOverrideAfterDomainStartup")) {
       test.testConfigOverrideAfterDomainStartup();
     }
+
+    if (testName.equals("testOverrideJDBCResourceWithNewSecret")) {
+      String jdbcUrl = args[5];
+      test.testSystemResourcesJdbcAttributeChange("JdbcTestDataSource-0", jdbcUrl);
+    }
   }
 
   /**
@@ -385,7 +390,7 @@ public class SitConfigTests {
       assert !startupClasse.getFailureIsFatal() : "FailureIsFatal is not false";
       assert startupClasse.getLoadBeforeAppDeployments() : "LoadBeforeAppDeployments is not true";
     }
-    
+
     ShutdownClassMBean[] shutdownClasses =
         runtimeServiceMBean.getDomainConfiguration().getShutdownClasses();
     assert shutdownClasses.length > 0;

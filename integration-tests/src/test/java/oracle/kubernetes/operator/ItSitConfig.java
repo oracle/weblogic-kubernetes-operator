@@ -376,9 +376,9 @@ public class ItSitConfig extends BaseTest {
   }
 
   /**
-   * Test to verify the configuration override after a domain is up and running Modifies the
+   * Test to verify the configuration override after a domain is up and running. Modifies the
    * existing config.xml entries to add startup and shutdown classes verifies those are overridden
-   * when domain is recreated.
+   * when domain is restarted.
    *
    * @throws Exception when assertions fail.
    */
@@ -413,10 +413,9 @@ public class ItSitConfig extends BaseTest {
   }
 
   /**
-   * This test covers the overriding of JDBC system resource after a domain is up and running It
+   * This test covers the overriding of JDBC system resource after a domain is up and running. It
    * creates a datasource , recreates the K8S configmap with updated JDBC descriptor and verifies
-   * the CRD delete and create applies the new configmap there by overriding the JDBC system
-   * resource.
+   * the new overridden values with restart of the WLS pods
    *
    * @throws Exception when assertions fail.
    */
@@ -445,6 +444,52 @@ public class ItSitConfig extends BaseTest {
                 + T3CHANNELPORT
                 + " weblogic welcome1 "
                 + testMethod
+                + "'");
+    assertResult(result);
+    testCompletedSuccessfully = true;
+    logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
+  }
+
+  /**
+   * This test covers the overriding of JDBC system resource with new kubernetes secret name for
+   * dbusername and dbpassword
+   *
+   * @throws Exception when assertions fail.
+   */
+  @Test
+  public void testOverrideJDBCResourceWithNewSecret() throws Exception {
+    Assume.assumeFalse(QUICKTEST);
+    boolean testCompletedSuccessfully = false;
+    String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
+    logTestBegin(testMethod);
+    createJdbcResource();
+    // recreate the map with new situational config files
+    String secretName = "test-secrets-new";
+    Path path =
+        Paths.get(TEST_RES_DIR, "/sitconfig/configoverrides", "jdbc-JdbcTestDataSource-0.xml");
+    String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+    content = content.replaceAll("test-secrets", secretName);
+    if (getWeblogicImageTag().contains(PS3_TAG)) {
+      content = content.replaceAll(JDBC_DRIVER_NEW, JDBC_DRIVER_OLD);
+    }
+    Files.write(
+        Paths.get(sitconfigTmpDir, "jdbc-JdbcTestDataSource-0.xml"),
+        content.getBytes(StandardCharsets.UTF_8));
+    TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
+    createNewSecret(secretName);
+    recreateCRDWithNewConfigMap();
+    transferTests();
+    ExecResult result =
+        TestUtils.exec(
+            KUBE_EXEC_CMD
+                + " 'sh runSitConfigTests.sh "
+                + fqdn
+                + " "
+                + T3CHANNELPORT
+                + " weblogic welcome1 "
+                + testMethod
+                + " "
+                + JDBC_URL
                 + "'");
     assertResult(result);
     testCompletedSuccessfully = true;
@@ -499,6 +544,21 @@ public class ItSitConfig extends BaseTest {
     patchStr = "'{\"spec\":{\"serverStartPolicy\":\"IF_NEEDED\"}}'";
     TestUtils.kubectlpatch(DOMAINUID, domain.getDomainNs(), patchStr);
     domain.verifyDomainCreated();
+  }
+
+  private void createNewSecret(String secretName) throws Exception {
+    String cmd =
+        "kubectl -n "
+            + domain.getDomainNs()
+            + " create secret generic "
+            + domain.getDomainUid()
+            + "-"
+            + secretName
+            + " --from-literal=hostname="
+            + TestUtils.getHostName()
+            + " --from-literal=dbusername=root"
+            + " --from-literal=dbpassword=root123";
+    TestUtils.exec(cmd);
   }
 
   /**
