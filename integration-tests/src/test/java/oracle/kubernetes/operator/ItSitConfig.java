@@ -463,7 +463,6 @@ public class ItSitConfig extends BaseTest {
     boolean testCompletedSuccessfully = false;
     String testMethod = new Object() {}.getClass().getEnclosingMethod().getName();
     logTestBegin(testMethod);
-    try{
     // recreate the map with new situational config files
     String files[] = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
     String secretName = "test-secrets-new";
@@ -486,10 +485,10 @@ public class ItSitConfig extends BaseTest {
         content.getBytes(StandardCharsets.UTF_8),
         StandardOpenOption.TRUNCATE_EXISTING);
 
-    TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);    
+    TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
     createNewSecret(secretName);
     TestUtils.exec("kubectl apply -f " + domainYaml, true);
-    recreateCRDWithNewConfigMap();    
+    recreateCRDWithNewConfigMap();
     transferTests();
     ExecResult result =
         TestUtils.exec(
@@ -506,18 +505,6 @@ public class ItSitConfig extends BaseTest {
     assertResult(result);
     testCompletedSuccessfully = true;
     logger.log(Level.INFO, "SUCCESS - {0}", testMethod);
-    }
-    finally{
-        TestUtils.exec("kubectl delete secret " + domain.getDomainUid() + "-test-secrets", true);
-        createNewSecret("test-secrets");
-        String content = new String(Files.readAllBytes(Paths.get(domainYaml)), StandardCharsets.UTF_8);
-    content = content.replaceAll("test-secrets-new", "test-secrets");
-    Files.write(
-        Paths.get(domainYaml),
-        content.getBytes(StandardCharsets.UTF_8),
-        StandardOpenOption.TRUNCATE_EXISTING);
-    TestUtils.exec("kubectl apply -f " + domainYaml, true);
-    }
   }
 
   /**
