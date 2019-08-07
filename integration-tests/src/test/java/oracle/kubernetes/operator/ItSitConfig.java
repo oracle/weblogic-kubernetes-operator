@@ -467,7 +467,7 @@ public class ItSitConfig extends BaseTest {
     String files[] = {"config.xml", "jdbc-JdbcTestDataSource-0.xml"};
     String secretName = "test-secrets-new";
     for (String file : files) {
-      Path path = Paths.get(sitconfigTmpDir, file);
+      Path path = Paths.get(sitconfigTmpDir, "configoverridefiles", file);
       String content = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
       content = content.replaceAll("test-secrets", secretName);
       if (getWeblogicImageTag().contains(PS3_TAG)) {
