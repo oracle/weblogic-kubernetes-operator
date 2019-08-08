@@ -305,6 +305,12 @@
       <artifactId>simplestub</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.fatboyindustrial.gson-jodatime-serialisers</groupId>
+      <artifactId>gson-jodatime-serialisers</artifactId>
+      <version>1.7.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>
